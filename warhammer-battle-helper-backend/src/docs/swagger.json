@@ -1,0 +1,79 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API do obsługi systemu Battle Helper",
+        "title": "Battle Helper API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Zwraca powitalne przesłanie",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "główne"
+                ],
+                "summary": "Strona główna",
+                "responses": {
+                    "200": {
+                        "description": "Dzień dobry!!",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/characters": {
+            "get": {
+                "description": "Pobiera listę wszystkich postaci z plików JSON",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "characters"
+                ],
+                "summary": "Lista postaci",
+                "responses": {
+                    "200": {
+                        "description": "Lista postaci w formacie JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Error scanning directory",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Sprawdza stan zdrowia aplikacji",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Sprawdzenie stanu zdrowia",
+                "responses": {
+                    "200": {
+                        "description": "Health is OK!!",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

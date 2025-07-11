@@ -1,0 +1,24 @@
+{
+  "basicInfo": {
+    "name": "Walter Schreiner",
+    "race": "human",
+    "class": "scholar",
+    "profession" : "priest"
+  },
+  "characteristics": {
+    "WW": 29,
+    "US": 26,
+    "S": 26,
+    "Wt": 40,
+    "I": 34,
+    "Zw": 36,
+    "Zr": 27,
+    "Int": 32,
+    "SW": 42,
+    "Ogd": 47
+  },
+  "weapon": {
+    "name": "sword",
+    "bonus": 4
+  }
+}

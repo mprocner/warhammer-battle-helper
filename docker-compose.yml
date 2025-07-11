@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: ./warhammer-battle-helper-front
+    ports:
+      - "3000:3000"
+    restart: always
+  backend:
+    build: ./warhammer-battle-helper-backend
+    ports:
+      - "8080:8080"
