@@ -1,24 +1,62 @@
 {
-  "basicInfo": {
-    "name": "Ludger Pfister",
-    "race": "human",
-    "class": "scholar",
-    "profession" : "priest"
+  _id: ObjectId('68c2e1a81e91ada30ff5d14d'),
+  basicInfo: {
+    name: 'Ludger Pfister',
+    race: 'human',
+    'class': 'scholar',
+    profession: 'priest',
+    type: 'enemy'
   },
-  "characteristics": {
-    "WW": 29,
-    "US": 26,
-    "S": 26,
-    "Wt": 40,
-    "I": 34,
-    "Zw": 36,
-    "Zr": 27,
-    "Int": 32,
-    "SW": 42,
-    "Ogd": 47
+  characteristics: {
+    WW: {
+      base: 29,
+      advances: 0
+    },
+    US: {
+      base: 26,
+      advances: 0ą
+    },
+    S: {
+      base: 26,
+      advances: 0
+    },
+    Wt: {
+      base: 40,
+      advances: 0
+    },
+    I: {
+      base: 34,
+      advances: 0
+    },
+    Zw: {
+      base: 36,
+      advances: 0
+    },
+    Zr: {
+      base: 27,
+      advances: 0
+    },
+    Int: {
+      base: 32,
+      advances: 0
+    },
+    SW: {
+      base: 42,
+      advances: 0
+    },
+    Ogd: {
+      base: 47,
+      advances: 0
+    }
   },
-  "weapon": {
-    "name": "sword",
-    "bonus": 4
-  }
+  skills: {
+    melee: 10
+  },
+  weapons: [
+    {
+      name: 'sword',
+      bonus: 4
+    }
+  ],
+  avatar: ''
 }

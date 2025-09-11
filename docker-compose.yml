@@ -3,8 +3,41 @@ services:
     build: ./warhammer-battle-helper-front
     ports:
       - "3000:3000"
-    restart: always
+    restart: "no"
+    volumes:
+      - ./warhammer-battle-helper-front:/app
+      - /app/node_modules  # prevent overwriting node_modules
   backend:
-    build: ./warhammer-battle-helper-backend
+    build:
+      context: ./warhammer-battle-helper-backend
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - ./warhammer-battle-helper-backend/src:/app
+    environment:
+      - GIN_MODE=debug
+      - DB_PATH=/app/data/app.db
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      ME_CONFIG_BASICAUTH_ENABLED: true
+      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
+      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
+
+volumes:
+  mongo-data:

@@ -1,9 +1,11 @@
 package warhammer
 
 type Sheet struct {
+	Id              string          `json:"id"`
 	BasicInfo       BasicInfo       `json:"basicInfo"`
 	Characteristics Characteristics `json:"characteristics"`
 	Weapon          Weapon          `json:"weapon"`
+
 }
 
 type BasicInfo struct {
@@ -11,6 +13,7 @@ type BasicInfo struct {
 	Race       string `json:"race"`
 	Class      string `json:"class"`
 	Profession string `json:"profession"`
+	Type       string `json:"type"`
 }
 
 type Characteristics struct {
