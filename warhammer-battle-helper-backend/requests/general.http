@@ -1,0 +1,14 @@
+### Strona główna
+GET http://localhost:8080/
+
+###
+
+### Sprawdzenie stanu aplikacji
+GET http://localhost:8080/health
+
+###
+
+### Lista postaci
+GET http://localhost:8080/characters
+
+###

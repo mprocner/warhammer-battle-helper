@@ -40,17 +40,24 @@ func NewCharactersRepository() *CharactersRepository {
 }
 
 func (r *CharactersRepository) GetAll() ([]models.Character, error) {
+	fmt.Println("Fetching characters from MongoDB...2")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	cursor, err := r.Collection.Find(ctx, bson.M{})
 	if err != nil {
+		fmt.Println("Find error:", err)
 		return nil, err
 	}
 	var characters []models.Character
 	if err := cursor.All(ctx, &characters); err != nil {
+		fmt.Println("All error:", err)
 		return nil, err
 	}
+	count, _ := r.Collection.CountDocuments(ctx, bson.M{})
+	fmt.Println("Liczba dokumentów w kolekcji:", count)
+	fmt.Println(r.Collection.Name())
+	fmt.Println("Found characters:", characters)
 	return characters, nil
 }
 

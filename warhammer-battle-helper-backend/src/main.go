@@ -3,38 +3,24 @@ package main
 import (
 	_ "battle-helper/docs"
 	"battle-helper/fight"
+	"battle-helper/helpers"
+	"battle-helper/http"
 	"battle-helper/http/requests"
 	"battle-helper/infrastructure/repositories"
 	"battle-helper/roll"
 	"context"
 	"fmt"
-	"net/http"
+	nethttp "net/http"
 	"os"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	// echoSwagger "github.com/swaggo/echo-swagger" // usunięte, jeśli potrzebny Swagger dla Gin, dodać odpowiedni pakiet
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3001")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		// Handle preflight requests
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
 
 // @title Battle Helper API
 // @version 1.0
@@ -42,6 +28,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 // @host localhost:80801
 // @BasePath /
 func main() {
+	// --- JWT KEYS ---
+	helpers.LoadJWTKeys("./keys/private.pem", "./keys/public.pem")
+	// --- END JWT KEYS ---
 
 	// Connect to MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -58,45 +47,48 @@ func main() {
 	fmt.Println("Connected to MongoDB!")
 	db := client.Database("battle_helper")
 	charCollection = db.Collection("characters")
+	userCollection := db.Collection("users")
 
-	e := echo.New()
+	r := gin.Default()
 
-	// e.GET("/db/characters", func(c echo.Context) error {
-	// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// 	defer cancel()
-	// 	cursor, err := charCollection.Find(ctx, bson.M{})
-	// 	if err != nil {
-	// 		return c.JSON(500, map[string]string{"error": err.Error()})
-	// 	}
-	// 	var all []models.Character
-	// 	if err := cursor.All(ctx, &all); err != nil {
-	// 		return c.JSON(500, map[string]string{"error": err.Error()})
-	// 	}
-	// 	return c.JSON(200, all)
-	// })
-	// add endpoint to list characters
-	e.GET("/", handleHome)
-	e.GET("/health", handleHealth)
-	e.GET("/characters", handleCharacters)
-	e.POST("/fight", handleFight)
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-	e.POST("/roll", handleRoll)
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
+	}))
+
+	r.GET("/", handleHome)
+	r.GET("/health", handleHealth)
+	r.GET("/characters", handleCharacters)
+	r.POST("/fight", handleFight)
+	r.POST("/roll", handleRoll)
+
+	// --- AUTH ---
+	userRepo := repositories.NewUserRepository(userCollection)
+	authHandler := http.AuthHandler{UserRepo: userRepo}
+	r.POST("/register", authHandler.Register)
+	r.POST("/login", authHandler.Login)
+	// --- END AUTH ---
+
+	// --- PROTECTED ---
+	r.GET("/profile", http.JWTAuthMiddleware([]byte("super_secret_key_zmien_to")), func(c *gin.Context) {
+		token, _ := c.Get("jwt")
+		if claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims); ok {
+			email := claims["email"].(string)
+			c.JSON(nethttp.StatusOK, gin.H{"email": email})
+			return
+		}
+		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+	})
+	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")
 	if httpPort == "" {
 		httpPort = "8080"
 	}
 
-	// Konfiguracja CORS
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{echo.GET, echo.PUT, echo.POST, echo.DELETE, echo.OPTIONS},
-		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-		AllowCredentials: true,
-	}))
-
-	e.Logger.Fatal(e.Start(":" + httpPort))
-
+	r.Run(":" + httpPort)
 }
 
 // @Summary Strona główna
@@ -105,8 +97,8 @@ func main() {
 // @Produce plain
 // @Success 200 {string} string "Dzień dobry!!"
 // @Router / [get]
-func handleHome(c echo.Context) error {
-	return c.String(http.StatusOK, "Dzień dobry!!")
+func handleHome(c *gin.Context) {
+	c.String(nethttp.StatusOK, "Dzień dobry!!")
 }
 
 // @Summary Sprawdzenie stanu zdrowia
@@ -117,9 +109,8 @@ func handleHome(c echo.Context) error {
 // @Router /health [get]
 var charCollection *mongo.Collection
 
-func handleHealth(c echo.Context) error {
-
-	return c.String(http.StatusOK, "Health is OK!!")
+func handleHealth(c *gin.Context) {
+	c.String(nethttp.StatusOK, "Health is OK!!")
 }
 
 // @Summary Lista postaci
@@ -129,21 +120,15 @@ func handleHealth(c echo.Context) error {
 // @Success 200 {object} string "Lista postaci w formacie JSON"
 // @Failure 500 {string} string "Error scanning directory"
 // @Router /characters [get]
-func handleCharacters(c echo.Context) error {
-
+func handleCharacters(c *gin.Context) {
 	fmt.Println("Fetching characters from MongoDB...")
 	repo := repositories.NewCharactersRepository()
 	characters, err := repo.GetAll()
 	if err != nil {
-		// handle error
+		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-
-	// factory := warhammer.CharacterSheetFactory{}
-	// files, err := filepath.Glob("./*.json")
-	// if err != nil {
-	// 	return c.String(http.StatusInternalServerError, "Error scanning directory")
-	// }
-	return c.JSON(http.StatusOK, characters)
+	c.JSON(nethttp.StatusOK, characters)
 }
 
 // @Summary Atak
@@ -153,41 +138,30 @@ func handleCharacters(c echo.Context) error {
 // @Success 200 {object} string "Lista postaci w formacie JSON"
 // @Failure 500 {string} string "Error scanning directory"
 // @Router /characters [get]
-func handleFight(c echo.Context) error {
+func handleFight(c *gin.Context) {
 	request := new(requests.FightRequest)
-	fmt.Println("request: ", request)
-	// Bind the JSON request body to the struct
-	if err := c.Bind(request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request format: " + err.Error(),
-		})
+	if err := c.ShouldBindJSON(request); err != nil {
+		c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
+		return
 	}
-	// Log the received data
-	fmt.Printf("Fight request received: %+v\n", request)
-
 	fightService := fight.FightService{}
 	response := fightService.Fight(*request)
-	fmt.Printf("Fight response: %+v\n", response)
-
-	return c.JSON(http.StatusOK, response)
-
+	c.JSON(nethttp.StatusOK, response)
 }
 
-func handleRoll(c echo.Context) error {
+func handleRoll(c *gin.Context) {
 	request := new(requests.RollRequest)
-	if err := c.Bind(request); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Invalid request format: " + err.Error(),
-		})
+	if err := c.ShouldBindJSON(request); err != nil {
+		c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
+		return
 	}
 	if request.Sides < 1 {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "Sides must be greater than 0",
-		})
+		c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Sides must be greater than 0"})
+		return
 	}
 	rolls := roll.Dice{Sizes: request.Sides}
 	result := rolls.Roll()
-	return c.JSON(http.StatusOK, map[string]int{
+	c.JSON(nethttp.StatusOK, map[string]int{
 		"result": result,
 	})
 }
