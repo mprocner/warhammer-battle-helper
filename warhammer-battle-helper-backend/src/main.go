@@ -72,7 +72,7 @@ func main() {
 	// --- END AUTH ---
 
 	// --- PROTECTED ---
-	r.GET("/profile", http.JWTAuthMiddleware([]byte("super_secret_key_zmien_to")), func(c *gin.Context) {
+	r.GET("/profile", http.JWTAuthMiddleware(), func(c *gin.Context) {
 		token, _ := c.Get("jwt")
 		if claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims); ok {
 			email := claims["email"].(string)

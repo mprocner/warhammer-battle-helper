@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func JWTAuthMiddleware(_ []byte) gin.HandlerFunc {
+func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
 		if header == "" || !strings.HasPrefix(header, "Bearer ") {
