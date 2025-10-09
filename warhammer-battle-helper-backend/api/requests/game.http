@@ -1,0 +1,28 @@
+### Walka między postaciami
+POST http://localhost:8080/fight
+Content-Type: application/json
+
+{
+  "attacker": {
+    "id": "1",
+    "modifier": 10
+  },
+  "defender": {
+    "id": "2",
+    "modifier": 0
+  },
+  "zoneId": "battlefield_1"
+}
+
+###
+
+### Rzut kością
+POST http://localhost:8080/roll
+Content-Type: application/json
+
+{
+  "dice": 100,
+  "modifier": 5
+}
+
+###

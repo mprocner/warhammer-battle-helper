@@ -1,0 +1,37 @@
+### Test połączenia - sprawdzenie czy aplikacja działa
+GET http://localhost:8080/health
+
+###
+
+### Test strony głównej
+GET http://localhost:8080/
+
+###
+
+### Rejestracja użytkownika
+POST http://localhost:8080/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "haslo123"
+}
+
+###
+
+### Logowanie użytkownika - wygeneruj nowy token
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "haslo123"
+}
+
+###
+
+### Profil użytkownika (użyj nowego tokenu z odpowiedzi powyżej)
+GET http://localhost:8080/profile
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NTg4MDk1MDl9.upiBTEMyT6jqeFwf7foP8aZkDBgHaMswOeZhtp2QQpK_UReTLw7an4yeHEEtxQuyzf2eTOXYuWWlPEi_n-JGO4_wtYsXxy8rW0Zkq48WhZmqk5cNmJ2uL7qUffMrFppv7WEp0nf-pbEwhaWcGepwLJ6hDVjiz3A84nBsYE9FMILuP9e87GGBVjlLstKkpj-2QOTkvdHf0dO_ohCZ4RQJTVBscEmopzDggQFo9eAKqI8Isf_UYSxTYMl8fFN9XUKywSycZwafiXsWjejs-WIfGqpcZXvmFSGw9-tvooDuikMwBzXIoHGZTHkkm563Npzk25QZ4oDG-EpVobyXeGBkzQ
+
+###
