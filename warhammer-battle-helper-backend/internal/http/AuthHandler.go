@@ -25,10 +25,11 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func generateJWT(email string) (string, error) {
+func generateJWT(userID string, email string) (string, error) {
 	claims := jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		"user_id": userID,
+		"email":   email,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(helpers.PrivateKey)
@@ -78,7 +79,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
-	token, err := generateJWT(user.Email)
+	token, err := generateJWT(user.ID.Hex(), user.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation error"})
 		return

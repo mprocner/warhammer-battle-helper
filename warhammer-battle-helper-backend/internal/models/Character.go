@@ -8,6 +8,7 @@ import (
 
 type Character struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	OwnerID         primitive.ObjectID `bson:"ownerId" json:"ownerId"`
 	BasicInfo       BasicInfo          `bson:"basicInfo" json:"basicInfo"`
 	Characteristics CharacteristicList `bson:"characteristics" json:"characteristics"`
 	Skills          map[string]int     `bson:"skills" json:"skills"`

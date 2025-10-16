@@ -45,6 +45,7 @@ func main() {
 
 	// Initialize repositories
 	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
+	userRepo := repository.NewUserRepository(db.UsersCollection)
 
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
@@ -53,22 +54,27 @@ func main() {
 	r.POST("/roll", handleRoll)
 
 	// --- AUTH ---
-	userRepo := repository.NewUserRepository(db.UsersCollection)
 	authHandler := http.AuthHandler{UserRepo: userRepo}
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
 	// --- END AUTH ---
 
 	// --- PROTECTED ---
+	characterHandler := http.CharacterHandler{CharacterRepo: charRepo}
+
 	r.GET("/profile", http.JWTAuthMiddleware(), func(c *gin.Context) {
 		token, _ := c.Get("jwt")
 		if claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims); ok {
 			email := claims["email"].(string)
-			c.JSON(nethttp.StatusOK, gin.H{"email": email})
+			userID := claims["user_id"].(string)
+			c.JSON(nethttp.StatusOK, gin.H{"email": email, "user_id": userID})
 			return
 		}
 		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
 	})
+
+	r.GET("/my-characters", http.JWTAuthMiddleware(), characterHandler.GetMyCharacters)
+	r.POST("/my-characters", http.JWTAuthMiddleware(), characterHandler.CreateCharacter)
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

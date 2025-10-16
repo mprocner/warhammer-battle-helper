@@ -62,3 +62,39 @@ func (r *CharactersRepository) GetByID(id string) (*models.Character, error) {
 	}
 	return &character, nil
 }
+
+func (r *CharactersRepository) GetByOwnerID(ownerID string) ([]models.Character, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(ownerID)
+	if err != nil {
+		return nil, err
+	}
+
+	cursor, err := r.Collection.Find(ctx, bson.M{"ownerId": objectID})
+	if err != nil {
+		return nil, err
+	}
+	var characters []models.Character
+	if err := cursor.All(ctx, &characters); err != nil {
+		return nil, err
+	}
+	return characters, nil
+}
+
+func (r *CharactersRepository) Create(character *models.Character) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	character.CreatedAt = time.Now()
+	character.UpdatedAt = time.Now()
+
+	result, err := r.Collection.InsertOne(ctx, character)
+	if err != nil {
+		return err
+	}
+
+	character.ID = result.InsertedID.(primitive.ObjectID)
+	return nil
+}

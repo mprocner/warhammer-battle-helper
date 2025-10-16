@@ -54,8 +54,10 @@ func (m *MockCharactersRepository) GetAll() ([]models.Character, error) {
 // Helper function to create a test character with all necessary fields
 func createTestCharacterWithID(id, name string, ww, wwAdv, strength, strengthAdv int, weaponName string, weaponBonus int) *models.Character {
 	objectID, _ := primitive.ObjectIDFromHex(id)
+	ownerID, _ := primitive.ObjectIDFromHex("507f1f77bcf86cd799439999") // Default test owner ID
 	return &models.Character{
-		ID: objectID,
+		ID:      objectID,
+		OwnerID: ownerID,
 		BasicInfo: models.BasicInfo{
 			Name:       name,
 			Race:       "Human",
