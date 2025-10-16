@@ -15,7 +15,7 @@ services:
       - "8080:8080"
     restart: unless-stopped
     volumes:
-      - ./warhammer-battle-helper-backend/src:/app
+      - ./warhammer-battle-helper-backend:/app
     environment:
       - GIN_MODE=debug
       - DB_PATH=/app/data/app.db

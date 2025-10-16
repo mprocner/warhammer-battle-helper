@@ -2,23 +2,19 @@ package main
 
 import (
 	_ "battle-helper/api"
+	"battle-helper/internal/config"
 	"battle-helper/internal/config/helpers"
 	"battle-helper/internal/http"
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
-	"context"
 	"fmt"
 	nethttp "net/http"
 	"os"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	// echoSwagger "github.com/swaggo/echo-swagger" // usunięte, jeśli potrzebny Swagger dla Gin, dodać odpowiedni pakiet
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // @title Battle Helper API
@@ -32,21 +28,11 @@ func main() {
 	// --- END JWT KEYS ---
 
 	// Connect to MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	mongoURI := "mongodb://root:example@mongo:27017"
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
+	db, err := config.ConnectDatabase()
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Failed to connect to database: %v", err))
 	}
-	if err := client.Ping(ctx, nil); err != nil {
-		fmt.Println("MongoDB not connected: " + err.Error())
-		panic("MongoDB not connected: " + err.Error())
-	}
-	fmt.Println("Connected to MongoDB!")
-	db := client.Database("battle_helper")
-	charCollection = db.Collection("characters")
-	userCollection := db.Collection("users")
+	defer db.Disconnect()
 
 	r := gin.Default()
 
@@ -57,14 +43,17 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	// Initialize repositories
+	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
+
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
-	r.GET("/characters", handleCharacters)
-	r.POST("/fight", handleFight)
+	r.GET("/characters", handleCharactersHandler(charRepo))
+	r.POST("/fight", handleFightHandler(charRepo))
 	r.POST("/roll", handleRoll)
 
 	// --- AUTH ---
-	userRepo := repository.NewUserRepository(userCollection)
+	userRepo := repository.NewUserRepository(db.UsersCollection)
 	authHandler := http.AuthHandler{UserRepo: userRepo}
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
@@ -106,8 +95,6 @@ func handleHome(c *gin.Context) {
 // @Produce plain
 // @Success 200 {string} string "Health is OK!!"
 // @Router /health [get]
-var charCollection *mongo.Collection
-
 func handleHealth(c *gin.Context) {
 	c.String(nethttp.StatusOK, "Health is OK!!")
 }
@@ -119,15 +106,16 @@ func handleHealth(c *gin.Context) {
 // @Success 200 {object} string "Lista postaci w formacie JSON"
 // @Failure 500 {string} string "Error scanning directory"
 // @Router /characters [get]
-func handleCharacters(c *gin.Context) {
-	fmt.Println("Fetching characters from MongoDB...")
-	repo := repository.NewCharactersRepository()
-	characters, err := repo.GetAll()
-	if err != nil {
-		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+func handleCharactersHandler(repo *repository.CharactersRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Println("Fetching characters from MongoDB...")
+		characters, err := repo.GetAll()
+		if err != nil {
+			c.JSON(nethttp.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(nethttp.StatusOK, characters)
 	}
-	c.JSON(nethttp.StatusOK, characters)
 }
 
 // @Summary Atak
@@ -137,15 +125,17 @@ func handleCharacters(c *gin.Context) {
 // @Success 200 {object} string "Lista postaci w formacie JSON"
 // @Failure 500 {string} string "Error scanning directory"
 // @Router /characters [get]
-func handleFight(c *gin.Context) {
-	request := new(requests.FightRequest)
-	if err := c.ShouldBindJSON(request); err != nil {
-		c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
-		return
+func handleFightHandler(repo *repository.CharactersRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		request := new(requests.FightRequest)
+		if err := c.ShouldBindJSON(request); err != nil {
+			c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
+			return
+		}
+		fightService := service.NewFightService(repo)
+		response := fightService.Fight(*request)
+		c.JSON(nethttp.StatusOK, response)
 	}
-	fightService := service.FightService{}
-	response := fightService.Fight(*request)
-	c.JSON(nethttp.StatusOK, response)
 }
 
 func handleRoll(c *gin.Context) {

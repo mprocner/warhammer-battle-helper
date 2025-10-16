@@ -8,20 +8,24 @@ import (
 )
 
 type FightService struct {
+	CharRepo *repository.CharactersRepository
 }
 
-func (FightService) Fight(request requests.FightRequest) responses.FightResponse {
+func NewFightService(charRepo *repository.CharactersRepository) *FightService {
+	return &FightService{CharRepo: charRepo}
+}
 
-	repo := repository.NewCharactersRepository()
+func (fs *FightService) Fight(request requests.FightRequest) responses.FightResponse {
+
 	fmt.Printf("Fetching attacker with ID: %s\n", request.Attacker.Id)
-	attackerChar, err := repo.GetByID(request.Attacker.Id)
+	attackerChar, err := fs.CharRepo.GetByID(request.Attacker.Id)
 	if err != nil {
 		fmt.Printf("Error fetching attacker: %v\n", err)
 	} else {
 		fmt.Printf("Attacker: %+v\n", attackerChar)
 	}
 	fmt.Printf("Fetching defender with ID: %s\n", request.Defender.Id)
-	defenderChar, err := repo.GetByID(request.Defender.Id)
+	defenderChar, err := fs.CharRepo.GetByID(request.Defender.Id)
 	if err != nil {
 		fmt.Printf("Error fetching defender: %v\n", err)
 	} else {
