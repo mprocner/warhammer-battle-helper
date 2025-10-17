@@ -103,7 +103,6 @@ const LogWindow = ({
                 sx={{
                     flexGrow: 1,
                     overflow: 'auto',
-                    maxHeight: '400px',
                     bgcolor: 'background.paper'
                 }}
             >

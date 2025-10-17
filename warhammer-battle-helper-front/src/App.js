@@ -115,18 +115,20 @@ function App() {
                         path="/app"
                         element={
                             <ProtectedRoute user={user}>
-                                <div className="main">
+                                <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
                                     {/* Main battle content area */}
-                                    <DragAndDropContext addLogMessage={addLogMessage}/>
-                                </div>
-                                {/* Log window component */}
-                                <div style={{ maxWidth: '800px', margin: '20px' }}>
-                                    <LogWindow
-                                        messages={logs}
-                                        maxMessages={50}
-                                        autoScroll={true}
-                                        addLogMessage={addLogMessage}
-                                    />
+                                    <div className="main" style={{ flex: 1, overflow: 'auto' }}>
+                                        <DragAndDropContext addLogMessage={addLogMessage}/>
+                                    </div>
+                                    {/* Log window component - fixed on right */}
+                                    <div style={{ width: '400px', height: '100%', borderLeft: '1px solid #ccc' }}>
+                                        <LogWindow
+                                            messages={logs}
+                                            maxMessages={50}
+                                            autoScroll={true}
+                                            addLogMessage={addLogMessage}
+                                        />
+                                    </div>
                                 </div>
                             </ProtectedRoute>
                         }

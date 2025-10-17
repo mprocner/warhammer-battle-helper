@@ -23,7 +23,6 @@ header nav a {
 .main {
   padding: 1rem;
   gap: 1rem;
-  margin-right: 350px; /* space for log window */
 }
 .dnd-context {
   display: flex;
