@@ -70,7 +70,7 @@ func (Dice) prepareFightOutput(winner *models.Character, successLevel int, attac
 			winner.Weapons[0].Name,
 			damages,
 			successLevel,
-			int(math.Round(float64(winner.Characteristics.S.Base+winner.Characteristics.S.Advances)/10)),
+			int(math.Floor(float64(winner.Characteristics.S.Base+winner.Characteristics.S.Advances)/10)),
 			winner.Weapons[0].Bonus)
 	} else {
 		return fmt.Sprintf("%s wins and defends", winner.BasicInfo.Name)

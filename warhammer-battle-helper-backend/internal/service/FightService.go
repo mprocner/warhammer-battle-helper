@@ -32,15 +32,8 @@ func (fs *FightService) Fight(request requests.FightRequest) responses.FightResp
 		fmt.Printf("Defender: %+v\n", defenderChar)
 	}
 	fmt.Println("FightService.Fight called with request:")
-	// factory := warhammer.CharacterSheetFactory{}
-
-	// m := make(map[string]string)
-	// m["1"] = "LudgerCharacterSheet.json"
-	// m["2"] = "WalterCharacterSheet.json"
 
 	rolls := Dice{Sizes: 100}
-	// attacker := factory.Prepare(m[request.Attacker.Id])
-	// defender := factory.Prepare(m[request.Defender.Id])
 
 	return responses.FightResponse{Messages: rolls.Fight(attackerChar, defenderChar, request.Attacker.Modifier, request.Defender.Modifier)}
 }
