@@ -8,6 +8,7 @@ import (
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
+	"battle-helper/internal/websocket"
 	"fmt"
 	nethttp "net/http"
 	"os"
@@ -37,15 +38,24 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "https://*.ngrok-free.dev", "https://*.loca.lt"},
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "ngrok-skip-browser-warning"},
 		AllowCredentials: true,
+		AllowWildcard:    true,
 	}))
 
 	// Initialize repositories
 	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
 	userRepo := repository.NewUserRepository(db.UsersCollection)
+	gameRepo := repository.NewGameRepository(db.GamesCollection)
+
+	// Initialize WebSocket hub
+	hub := websocket.NewHub()
+	go hub.Run()
+
+	// Initialize services
+	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub)
 
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
@@ -75,6 +85,26 @@ func main() {
 
 	r.GET("/my-characters", http.JWTAuthMiddleware(), characterHandler.GetMyCharacters)
 	r.POST("/my-characters", http.JWTAuthMiddleware(), characterHandler.CreateCharacter)
+
+	// --- GAME ROUTES ---
+	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
+
+	// Public game routes
+	r.GET("/games", gameHandler.GetGames)
+	r.GET("/games/:id", gameHandler.GetGame)
+
+	// Protected game routes
+	r.POST("/games", http.JWTAuthMiddleware(), gameHandler.CreateGame)
+	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
+	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
+	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), gameHandler.AddCharacter)
+	r.PUT("/games/:id/characters/move", http.JWTAuthMiddleware(), gameHandler.MoveCharacter)
+	r.POST("/games/:id/fight", http.JWTAuthMiddleware(), gameHandler.Fight)
+	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
+
+	// WebSocket route
+	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
+	// --- END GAME ROUTES ---
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

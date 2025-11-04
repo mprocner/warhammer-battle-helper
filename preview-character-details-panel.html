@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Details Panel - Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%);
+            color: #f5e6d3;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left Sidebar */
+        .left-sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, #2a1a12 0%, #1f1209 100%);
+            border-right: 3px solid #8b4513;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Character Details Panel */
+        .character-details {
+            background: linear-gradient(135deg, #3d2817 0%, #2d1f12 100%);
+            border-bottom: 3px solid #8b4513;
+            padding: 15px;
+            max-height: 350px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .character-details.empty {
+            display: none;
+        }
+
+        .character-details h2 {
+            font-family: 'Cinzel', serif;
+            color: #d4af37;
+            font-size: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #8b4513;
+            padding-bottom: 5px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            border: 2px solid #a0522d;
+            border-radius: 6px;
+            padding: 10px;
+            color: #f5e6d3;
+            font-family: 'Crimson Text', serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 45px;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+            border-color: #d4af37;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #c74a4a 0%, #8b2e2e 100%);
+            border-color: #ff6b6b;
+        }
+
+        .action-btn.primary:hover {
+            background: linear-gradient(135deg, #ff6b6b 0%, #c74a4a 100%);
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, #4a7c59 0%, #2d5a3d 100%);
+            border-color: #6db88a;
+        }
+
+        .action-btn.secondary:hover {
+            background: linear-gradient(135deg, #6db88a 0%, #4a7c59 100%);
+        }
+
+        .action-btn-icon {
+            font-size: 20px;
+        }
+
+        .action-btn-text {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #d4af37;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border: 1px solid #8b4513;
+            z-index: 100;
+        }
+
+        .action-btn:hover .action-btn-text {
+            opacity: 1;
+        }
+
+        .action-btn-text::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid rgba(0, 0, 0, 0.9);
+        }
+
+        /* State Icons */
+        .states-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #654321;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 12px;
+        }
+
+        .states-label {
+            font-size: 11px;
+            color: #d4af37;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+
+        .state-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 2px solid transparent;
+            background: rgba(139, 69, 19, 0.2);
+        }
+
+        .state-icon.active {
+            background: rgba(139, 69, 19, 0.5);
+            border-color: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+        }
+
+        .state-icon:hover {
+            transform: scale(1.1);
+            border-color: #8b4513;
+        }
+
+        .state-tooltip {
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #d4af37;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border: 1px solid #8b4513;
+            z-index: 100;
+        }
+
+        .state-icon:hover .state-tooltip {
+            opacity: 1;
+        }
+
+        .state-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid rgba(0, 0, 0, 0.9);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .modifier-input-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modifier-btn {
+            width: 32px;
+            height: 28px;
+            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            border: 1px solid #a0522d;
+            border-radius: 3px;
+            color: #f5e6d3;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .modifier-btn:hover {
+            background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+            border-color: #d4af37;
+        }
+
+        .modifier-btn:active {
+            transform: scale(0.95);
+        }
+
+        .modifier-value {
+            min-width: 40px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #f5e6d3;
+        }
+
+        .modifier-value.positive {
+            color: #6db88a;
+        }
+
+        .modifier-value.negative {
+            color: #ff6b6b;
+        }
+
+        .detail-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #654321;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: #d4af37;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #f5e6d3;
+            margin-top: 2px;
+        }
+
+        .characteristics-mini {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .char-box {
+            background: rgba(139, 69, 19, 0.2);
+            border: 1px solid #8b4513;
+            border-radius: 3px;
+            padding: 4px;
+            text-align: center;
+        }
+
+        .char-box-label {
+            font-size: 9px;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .char-box-value {
+            font-size: 13px;
+            color: #f5e6d3;
+            font-weight: 700;
+        }
+
+        /* Characters List */
+        .characters-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .characters-list h3 {
+            font-family: 'Cinzel', serif;
+            color: #d4af37;
+            font-size: 16px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .character-tile {
+            background: linear-gradient(135deg, #3d2817 0%, #2d1f12 100%);
+            border: 2px solid #654321;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .character-tile:hover {
+            border-color: #d4af37;
+            transform: translateX(5px);
+            box-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .character-tile.selected {
+            border-color: #d4af37;
+            background: linear-gradient(135deg, #4d3827 0%, #3d2f22 100%);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+        }
+
+        .character-tile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .character-name {
+            font-family: 'Cinzel', serif;
+            font-size: 15px;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .character-hp {
+            font-size: 12px;
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .character-position {
+            font-size: 11px;
+            color: #b8b8b8;
+        }
+
+        /* Battle Grid */
+        .battle-grid-container {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .grid-header {
+            font-family: 'Cinzel', serif;
+            color: #d4af37;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .battle-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 60px);
+            grid-template-rows: repeat(10, 60px);
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #8b4513;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .grid-cell {
+            background: rgba(139, 69, 19, 0.1);
+            border: 1px solid #654321;
+            border-radius: 3px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .grid-cell.highlight-range {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .grid-cell.highlight-target {
+            background: rgba(255, 107, 107, 0.4);
+            border-color: #ff6b6b;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .character-marker {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+            border: 3px solid;
+        }
+
+        .character-marker.ally {
+            background: linear-gradient(135deg, #4a7c59 0%, #2d5a3d 100%);
+            border-color: #6db88a;
+            color: #fff;
+        }
+
+        .character-marker.enemy {
+            background: linear-gradient(135deg, #8b2e2e 0%, #5a1d1d 100%);
+            border-color: #c74a4a;
+            color: #fff;
+        }
+
+        .character-marker:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .character-marker.selected {
+            border-width: 4px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #8b4513;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .info-panel h3 {
+            font-family: 'Cinzel', serif;
+            color: #d4af37;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .info-panel ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-panel li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(139, 69, 19, 0.3);
+        }
+
+        .info-panel li:last-child {
+            border-bottom: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #8b4513;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0522d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <!-- Character Details Panel -->
+            <div class="character-details" id="detailsPanel">
+                <h2 id="detailsName">Select a character</h2>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn primary" onclick="performAttack()">
+                        <span class="action-btn-icon">⚔️</span>
+                        <span class="action-btn-text">Attack</span>
+                    </button>
+                    <button class="action-btn primary" onclick="performRangedAttack()">
+                        <span class="action-btn-icon">🏹</span>
+                        <span class="action-btn-text">Range Attack</span>
+                    </button>
+                    <button class="action-btn secondary" onclick="castSpell()">
+                        <span class="action-btn-icon">✨</span>
+                        <span class="action-btn-text">Cast Spell</span>
+                    </button>
+                    <button class="action-btn" onclick="showCharacterCard()">
+                        <span class="action-btn-icon">📜</span>
+                        <span class="action-btn-text">Character Card</span>
+                    </button>
+                </div>
+
+                <!-- States -->
+                <div class="states-container">
+                    <div class="states-label">Conditions</div>
+                    <div class="states-grid">
+                        <div class="state-icon" data-state="prone">
+                            <span>🛏️</span>
+                            <span class="state-tooltip">Prone</span>
+                        </div>
+                        <div class="state-icon" data-state="stunned">
+                            <span>😵</span>
+                            <span class="state-tooltip">Stunned</span>
+                        </div>
+                        <div class="state-icon" data-state="unconscious">
+                            <span>😴</span>
+                            <span class="state-tooltip">Unconscious</span>
+                        </div>
+                        <div class="state-icon" data-state="bleeding">
+                            <span>🩸</span>
+                            <span class="state-tooltip">Bleeding</span>
+                        </div>
+                        <div class="state-icon" data-state="poisoned">
+                            <span>🧪</span>
+                            <span class="state-tooltip">Poisoned</span>
+                        </div>
+                        <div class="state-icon" data-state="ablaze">
+                            <span>🔥</span>
+                            <span class="state-tooltip">Ablaze</span>
+                        </div>
+                        <div class="state-icon" data-state="blinded">
+                            <span>👁️</span>
+                            <span class="state-tooltip">Blinded</span>
+                        </div>
+                        <div class="state-icon" data-state="deafened">
+                            <span>🔇</span>
+                            <span class="state-tooltip">Deafened</span>
+                        </div>
+                        <div class="state-icon" data-state="entangled">
+                            <span>🕸️</span>
+                            <span class="state-tooltip">Entangled</span>
+                        </div>
+                        <div class="state-icon" data-state="fatigued">
+                            <span>😪</span>
+                            <span class="state-tooltip">Fatigued</span>
+                        </div>
+                        <div class="state-icon" data-state="surprised">
+                            <span>😲</span>
+                            <span class="state-tooltip">Surprised</span>
+                        </div>
+                        <div class="state-icon" data-state="broken">
+                            <span>💔</span>
+                            <span class="state-tooltip">Broken</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">HP</div>
+                        <div class="detail-value" id="detailsHP">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Movement</div>
+                        <div class="detail-value" id="detailsMovement">-</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Modifier</div>
+                        <div class="modifier-input-container">
+                            <button class="modifier-btn" onclick="adjustModifier(-10)">-10</button>
+                            <span class="modifier-value" id="modifierValue">0</span>
+                            <button class="modifier-btn" onclick="adjustModifier(10)">+10</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="characteristics-mini">
+                    <div class="char-box">
+                        <div class="char-box-label">WS</div>
+                        <div class="char-box-value" id="detailsWS">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">BS</div>
+                        <div class="char-box-value" id="detailsBS">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">S</div>
+                        <div class="char-box-value" id="detailsS">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">T</div>
+                        <div class="char-box-value" id="detailsT">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">I</div>
+                        <div class="char-box-value" id="detailsI">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">Ag</div>
+                        <div class="char-box-value" id="detailsAg">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">Dex</div>
+                        <div class="char-box-value" id="detailsDex">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">Int</div>
+                        <div class="char-box-value" id="detailsInt">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">WP</div>
+                        <div class="char-box-value" id="detailsWP">-</div>
+                    </div>
+                    <div class="char-box">
+                        <div class="char-box-label">Fel</div>
+                        <div class="char-box-value" id="detailsFel">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Characters List -->
+            <div class="characters-list">
+                <h3>Your Characters</h3>
+                <div id="charactersList"></div>
+            </div>
+        </div>
+
+        <!-- Battle Grid -->
+        <div class="battle-grid-container">
+            <h1 class="grid-header">Battle Grid</h1>
+            <div class="battle-grid" id="battleGrid"></div>
+
+            <div class="info-panel">
+                <h3>How It Works</h3>
+                <ul>
+                    <li><strong>Click on a character tile</strong> on the left to view details and highlight nearby characters</li>
+                    <li><strong>Character details</strong> show HP, Movement, and adjustable Modifier</li>
+                    <li><strong>Modifier buttons</strong> - Use -10/+10 to adjust attack roll modifier (Range: -60 to +60)</li>
+                    <li><strong>Action buttons</strong> (⚔️🏹✨📜) - Hover to see action names, click to perform (modifier is applied)</li>
+                    <li><strong>Condition icons</strong> - Click to toggle states (Prone, Bleeding, Poisoned, etc.)</li>
+                    <li><strong>Active states</strong> are highlighted with golden border and glow</li>
+                    <li><strong>Nearby characters</strong> within range are highlighted on the grid</li>
+                    <li><strong>Potential targets</strong> (enemies in range) pulse with red glow</li>
+                </ul>
+                <h3 style="margin-top: 15px;">Available States</h3>
+                <ul>
+                    <li>🛏️ <strong>Prone</strong> - Character is on the ground</li>
+                    <li>😵 <strong>Stunned</strong> - Cannot act this turn</li>
+                    <li>😴 <strong>Unconscious</strong> - Knocked out</li>
+                    <li>🩸 <strong>Bleeding</strong> - Taking damage over time</li>
+                    <li>🧪 <strong>Poisoned</strong> - Suffering from poison</li>
+                    <li>🔥 <strong>Ablaze</strong> - On fire!</li>
+                    <li>👁️ <strong>Blinded</strong> - Cannot see</li>
+                    <li>🔇 <strong>Deafened</strong> - Cannot hear</li>
+                    <li>🕸️ <strong>Entangled</strong> - Movement restricted</li>
+                    <li>😪 <strong>Fatigued</strong> - Exhausted</li>
+                    <li>😲 <strong>Surprised</strong> - Caught off guard</li>
+                    <li>💔 <strong>Broken</strong> - Morale broken</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample character data
+        const characters = [
+            {
+                id: 1,
+                name: 'Ludger',
+                class: 'Academic',
+                career: 'Priest',
+                hp: { current: 15, max: 18 },
+                movement: 4,
+                position: { x: 2, y: 3 },
+                type: 'ally',
+                stats: { WS: 45, BS: 35, S: 45, T: 48, I: 40, Ag: 35, Dex: 45, Int: 57, WP: 57, Fel: 48 },
+                states: ['bleeding', 'fatigued']
+            },
+            {
+                id: 2,
+                name: 'Walter',
+                class: 'Ranger',
+                career: 'Scout',
+                hp: { current: 12, max: 14 },
+                movement: 5,
+                position: { x: 3, y: 4 },
+                type: 'ally',
+                stats: { WS: 50, BS: 55, S: 40, T: 42, I: 50, Ag: 48, Dex: 50, Int: 35, WP: 40, Fel: 30 },
+                states: []
+            },
+            {
+                id: 3,
+                name: 'Goblin 1',
+                class: 'Warrior',
+                career: 'Raider',
+                hp: { current: 8, max: 10 },
+                movement: 4,
+                position: { x: 5, y: 3 },
+                type: 'enemy',
+                stats: { WS: 35, BS: 30, S: 30, T: 35, I: 40, Ag: 40, Dex: 35, Int: 20, WP: 25, Fel: 15 },
+                states: ['prone', 'stunned']
+            },
+            {
+                id: 4,
+                name: 'Goblin 2',
+                class: 'Warrior',
+                career: 'Raider',
+                hp: { current: 10, max: 10 },
+                movement: 4,
+                position: { x: 6, y: 4 },
+                type: 'enemy',
+                stats: { WS: 35, BS: 30, S: 30, T: 35, I: 40, Ag: 40, Dex: 35, Int: 20, WP: 25, Fel: 15 },
+                states: ['ablaze']
+            }
+        ];
+
+        let selectedCharacter = null;
+        let currentModifier = 0;
+
+        // Initialize battle grid
+        function initGrid() {
+            const grid = document.getElementById('battleGrid');
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        // Place characters on grid
+        function placeCharacters() {
+            characters.forEach(char => {
+                const cell = document.querySelector(`[data-x="${char.position.x}"][data-y="${char.position.y}"]`);
+                if (cell) {
+                    const marker = document.createElement('div');
+                    marker.className = `character-marker ${char.type}`;
+                    marker.textContent = char.name;
+                    marker.dataset.charId = char.id;
+                    marker.onclick = () => selectCharacter(char.id);
+                    cell.appendChild(marker);
+                }
+            });
+        }
+
+        // Render character list
+        function renderCharacterList() {
+            const list = document.getElementById('charactersList');
+            list.innerHTML = '';
+
+            characters.filter(c => c.type === 'ally').forEach(char => {
+                const tile = document.createElement('div');
+                tile.className = 'character-tile';
+                tile.onclick = () => selectCharacter(char.id);
+
+                tile.innerHTML = `
+                    <div class="character-tile-header">
+                        <div class="character-name">${char.name}</div>
+                        <div class="character-hp">${char.hp.current}/${char.hp.max} HP</div>
+                    </div>
+                    <div class="character-position">Position: (${char.position.x}, ${char.position.y})</div>
+                `;
+
+                list.appendChild(tile);
+            });
+        }
+
+        // Select character and show details
+        function selectCharacter(charId) {
+            const char = characters.find(c => c.id === charId);
+            if (!char) return;
+
+            selectedCharacter = char;
+
+            // Update character tiles selection
+            document.querySelectorAll('.character-tile').forEach(tile => {
+                tile.classList.remove('selected');
+            });
+            document.querySelectorAll('.character-tile')[characters.filter(c => c.type === 'ally').findIndex(c => c.id === charId)]?.classList.add('selected');
+
+            // Update character markers
+            document.querySelectorAll('.character-marker').forEach(marker => {
+                marker.classList.remove('selected');
+                if (parseInt(marker.dataset.charId) === charId) {
+                    marker.classList.add('selected');
+                }
+            });
+
+            // Show details panel
+            const panel = document.getElementById('detailsPanel');
+            panel.classList.remove('empty');
+
+            document.getElementById('detailsName').textContent = char.name;
+            document.getElementById('detailsHP').textContent = `${char.hp.current}/${char.hp.max}`;
+            document.getElementById('detailsMovement').textContent = char.movement;
+
+            // Reset modifier
+            currentModifier = 0;
+            updateModifierDisplay();
+
+            // Reset state icons
+            document.querySelectorAll('.state-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+
+            // Set active states for the character (example: Ludger is bleeding and fatigued)
+            if (char.states && char.states.length > 0) {
+                char.states.forEach(state => {
+                    const stateIcon = document.querySelector(`[data-state="${state}"]`);
+                    if (stateIcon) stateIcon.classList.add('active');
+                });
+            }
+
+            // Update stats
+            Object.keys(char.stats).forEach(stat => {
+                const element = document.getElementById(`details${stat}`);
+                if (element) element.textContent = char.stats[stat];
+            });
+
+            // Highlight nearby characters
+            highlightNearbyCharacters(char);
+        }
+
+        // Highlight characters in range
+        function highlightNearbyCharacters(char) {
+            const range = 3; // Attack range
+
+            // Clear previous highlights
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.classList.remove('highlight-range', 'highlight-target');
+            });
+
+            // Highlight range
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    const distance = Math.abs(x - char.position.x) + Math.abs(y - char.position.y);
+                    if (distance <= range && distance > 0) {
+                        const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+                        cell.classList.add('highlight-range');
+                    }
+                }
+            }
+
+            // Highlight enemy targets in range
+            characters.forEach(target => {
+                if (target.type !== char.type) {
+                    const distance = Math.abs(target.position.x - char.position.x) +
+                                   Math.abs(target.position.y - char.position.y);
+                    if (distance <= range) {
+                        const cell = document.querySelector(`[data-x="${target.position.x}"][data-y="${target.position.y}"]`);
+                        cell.classList.add('highlight-target');
+                    }
+                }
+            });
+        }
+
+        // Modifier functions
+        function adjustModifier(amount) {
+            if (!selectedCharacter) {
+                alert('Select a character first!');
+                return;
+            }
+
+            // Apply limits: -60 to +60
+            const newModifier = currentModifier + amount;
+            if (newModifier < -60) {
+                currentModifier = -60;
+            } else if (newModifier > 60) {
+                currentModifier = 60;
+            } else {
+                currentModifier = newModifier;
+            }
+
+            updateModifierDisplay();
+        }
+
+        function updateModifierDisplay() {
+            const modifierElement = document.getElementById('modifierValue');
+            const sign = currentModifier > 0 ? '+' : '';
+            modifierElement.textContent = sign + currentModifier;
+
+            // Update color based on value
+            modifierElement.classList.remove('positive', 'negative');
+            if (currentModifier > 0) {
+                modifierElement.classList.add('positive');
+            } else if (currentModifier < 0) {
+                modifierElement.classList.add('negative');
+            }
+        }
+
+        // Action button handlers
+        function performAttack() {
+            if (!selectedCharacter) {
+                alert('No character selected!');
+                return;
+            }
+
+            const targets = characters.filter(c => {
+                if (c.type === selectedCharacter.type) return false;
+                const distance = Math.abs(c.position.x - selectedCharacter.position.x) +
+                               Math.abs(c.position.y - selectedCharacter.position.y);
+                return distance <= 3;
+            });
+
+            if (targets.length === 0) {
+                alert('No enemies in melee range!');
+                return;
+            }
+
+            const modifierText = currentModifier !== 0 ? ` (Modifier: ${currentModifier >= 0 ? '+' : ''}${currentModifier})` : '';
+            alert(`${selectedCharacter.name} attacks with WS ${selectedCharacter.stats.WS}${modifierText}!\n\nAvailable targets:\n${targets.map(t => `• ${t.name} at (${t.position.x}, ${t.position.y})`).join('\n')}`);
+        }
+
+        function performRangedAttack() {
+            if (!selectedCharacter) {
+                alert('No character selected!');
+                return;
+            }
+
+            const targets = characters.filter(c => {
+                if (c.type === selectedCharacter.type) return false;
+                const distance = Math.abs(c.position.x - selectedCharacter.position.x) +
+                               Math.abs(c.position.y - selectedCharacter.position.y);
+                return distance > 3 && distance <= 6;
+            });
+
+            if (targets.length === 0) {
+                alert('No enemies in ranged attack range (4-6 tiles)!');
+                return;
+            }
+
+            const modifierText = currentModifier !== 0 ? ` (Modifier: ${currentModifier >= 0 ? '+' : ''}${currentModifier})` : '';
+            alert(`${selectedCharacter.name} ranged attacks with BS ${selectedCharacter.stats.BS}${modifierText}!\n\nAvailable targets:\n${targets.map(t => `• ${t.name} at (${t.position.x}, ${t.position.y})`).join('\n')}`);
+        }
+
+        function castSpell() {
+            if (!selectedCharacter) {
+                alert('No character selected!');
+                return;
+            }
+
+            alert(`${selectedCharacter.name} prepares to cast a spell!\n\nAvailable spells:\n• Heal\n• Fireball\n• Shield of Faith`);
+        }
+
+        function showCharacterCard() {
+            if (!selectedCharacter) {
+                alert('No character selected!');
+                return;
+            }
+
+            const statsText = Object.entries(selectedCharacter.stats)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n');
+
+            alert(`CHARACTER CARD\n\n${selectedCharacter.name}\n${'-'.repeat(30)}\nClass: ${selectedCharacter.class}\nCareer: ${selectedCharacter.career}\nHP: ${selectedCharacter.hp.current}/${selectedCharacter.hp.max}\n\nSTATISTICS:\n${statsText}`);
+        }
+
+        // Toggle state on character
+        function toggleState(event) {
+            const stateIcon = event.currentTarget;
+            const stateName = stateIcon.dataset.state;
+
+            if (!selectedCharacter) {
+                alert('Select a character first!');
+                return;
+            }
+
+            // Toggle the state
+            const char = characters.find(c => c.id === selectedCharacter.id);
+            if (!char.states) char.states = [];
+
+            const stateIndex = char.states.indexOf(stateName);
+            if (stateIndex > -1) {
+                char.states.splice(stateIndex, 1);
+                stateIcon.classList.remove('active');
+            } else {
+                char.states.push(stateName);
+                stateIcon.classList.add('active');
+            }
+
+            console.log(`${char.name} states:`, char.states);
+        }
+
+        // Add click handlers to state icons
+        function initStateIcons() {
+            document.querySelectorAll('.state-icon').forEach(icon => {
+                icon.addEventListener('click', toggleState);
+            });
+        }
+
+        // Initialize
+        initGrid();
+        placeCharacters();
+        renderCharacterList();
+        initStateIcons();
+    </script>
+</body>
+</html>

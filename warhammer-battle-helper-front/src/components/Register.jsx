@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
     Box,
@@ -48,9 +49,11 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             addLogMessage(`Attempting to register user ${formData.email}`, 'info');
 
             // eslint-disable-next-line no-unused-vars
-            const response = await axios.post('http://localhost:8080/register', {
+            const response = await axios.post(`${getApiUrl()}/register`, {
                 email: formData.email,
                 password: formData.password
+            }, {
+                headers: getApiHeaders()
             });
 
             addLogMessage(`Successfully registered user ${formData.email}`, 'success');

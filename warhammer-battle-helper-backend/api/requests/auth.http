@@ -8,18 +8,41 @@ GET http://localhost:8080/
 
 ###
 
-### Rejestracja użytkownika
+### Rejestracja użytkownika - Game Master
 POST http://localhost:8080/register
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
+  "email": "gm@test.com",
+  "password": "password123"
+}
+
+###
+
+### Rejestracja użytkownika - Player 1
+POST http://localhost:8080/register
+Content-Type: application/json
+
+{
+  "email": "player1@test.com",
+  "password": "password123"
+}
+
+###
+
+### Rejestracja użytkownika - Player 2
+POST http://localhost:8080/register
+Content-Type: application/json
+
+{
+  "email": "player2@test.com",
   "password": "haslo123"
 }
 
 ###
 
-### Logowanie użytkownika - wygeneruj nowy token
+### Logowanie - Game Master
+# @name loginGM
 POST http://localhost:8080/login
 Content-Type: application/json
 
@@ -30,8 +53,78 @@ Content-Type: application/json
 
 ###
 
-### Profil użytkownika (użyj nowego tokenu z odpowiedzi powyżej)
+### Logowanie - Player 1
+# @name loginPlayer1
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "email": "player1@test.com",
+  "password": "password123"
+}
+
+###
+
+### Logowanie - Player 2
+# @name loginPlayer2
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "email": "player2@test.com",
+  "password": "password123"
+}
+
+###
+
+### Profil użytkownika (użyj tokenu z odpowiedzi logowania)
+# Replace YOUR_TOKEN with actual token from login response
 GET http://localhost:8080/profile
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NTg4MDk1MDl9.upiBTEMyT6jqeFwf7foP8aZkDBgHaMswOeZhtp2QQpK_UReTLw7an4yeHEEtxQuyzf2eTOXYuWWlPEi_n-JGO4_wtYsXxy8rW0Zkq48WhZmqk5cNmJ2uL7qUffMrFppv7WEp0nf-pbEwhaWcGepwLJ6hDVjiz3A84nBsYE9FMILuP9e87GGBVjlLstKkpj-2QOTkvdHf0dO_ohCZ4RQJTVBscEmopzDggQFo9eAKqI8Isf_UYSxTYMl8fFN9XUKywSycZwafiXsWjejs-WIfGqpcZXvmFSGw9-tvooDuikMwBzXIoHGZTHkkm563Npzk25QZ4oDG-EpVobyXeGBkzQ
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### Moje postacie
+GET http://localhost:8080/my-characters
+Authorization: Bearer YOUR_TOKEN
+
+###
+
+### Utwórz nową postać
+POST http://localhost:8080/my-characters
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN
+
+{
+  "basicInfo": {
+    "name": "Sigmar the Brave",
+    "race": "Human",
+    "class": "Warrior",
+    "profession": "Soldier",
+    "type": "hero"
+  },
+  "characteristics": {
+    "WW": {"base": 40, "advances": 10},
+    "US": {"base": 35, "advances": 5},
+    "S": {"base": 35, "advances": 0},
+    "Wt": {"base": 35, "advances": 5},
+    "I": {"base": 40, "advances": 10},
+    "Zw": {"base": 30, "advances": 0},
+    "Zr": {"base": 35, "advances": 5},
+    "Int": {"base": 30, "advances": 0},
+    "SW": {"base": 35, "advances": 5},
+    "Ogd": {"base": 30, "advances": 0}
+  },
+  "skills": {
+    "Melee": 50,
+    "Athletics": 40,
+    "Dodge": 35
+  },
+  "weapons": [
+    {"name": "Longsword", "bonus": 5},
+    {"name": "Shield", "bonus": 2}
+  ],
+  "avatar": "https://example.com/avatar/sigmar.png"
+}
 
 ###

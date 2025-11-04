@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warhammer Fantasy Roleplay - Character Sheet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #2a2a2a;
+            font-family: 'IM Fell English', serif;
+            padding: 20px;
+            color: #1a1a1a;
+        }
+
+        .sheet-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sheet-page {
+            flex: 1;
+            min-width: 550px;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8dcc8 100%);
+            border: 15px solid;
+            border-image: repeating-linear-gradient(
+                45deg,
+                #3a2817,
+                #3a2817 10px,
+                #4a3827 10px,
+                #4a3827 20px
+            ) 15;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 60px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            position: relative;
+        }
+
+        .sheet-page::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 2px solid #3a2817;
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #8b0000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #3a2817;
+            font-style: italic;
+        }
+
+        .section {
+            border: 2px solid #3a2817;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .section-header {
+            background: linear-gradient(90deg, #6b5a47 0%, #8b7355 50%, #6b5a47 100%);
+            color: #f5f0e8;
+            padding: 4px 8px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 2px solid #3a2817;
+        }
+
+        .section-content {
+            padding: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .info-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-field label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+            color: #3a2817;
+        }
+
+        .info-field input,
+        .info-field textarea {
+            background: white;
+            border: 1px solid #3a2817;
+            padding: 4px;
+            font-family: 'IM Fell English', serif;
+            font-size: 12px;
+            color: #1a1a1a;
+        }
+
+        .characteristics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+        }
+
+        .characteristics-table th {
+            background: #d4af37;
+            border: 1px solid #3a2817;
+            padding: 4px 2px;
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .characteristics-table td {
+            border: 1px solid #3a2817;
+            padding: 4px;
+            text-align: center;
+        }
+
+        .characteristics-table input {
+            width: 100%;
+            border: none;
+            background: white;
+            text-align: center;
+            font-size: 11px;
+            padding: 2px;
+        }
+
+        .characteristics-table .row-label {
+            background: #e8dcc8;
+            font-weight: 700;
+            font-size: 10px;
+            text-align: left;
+            padding-left: 6px;
+        }
+
+        .three-col-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .mini-section {
+            border: 2px solid #3a2817;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .mini-section-header {
+            background: #8b7355;
+            color: #f5f0e8;
+            padding: 3px 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 1px solid #3a2817;
+        }
+
+        .mini-section-content {
+            padding: 6px;
+        }
+
+        .mini-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .mini-field label {
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .mini-field input {
+            width: 40px;
+            border: 1px solid #3a2817;
+            background: white;
+            text-align: center;
+            padding: 2px;
+            font-size: 11px;
+        }
+
+        .skills-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .skills-table th {
+            background: #d4af37;
+            border: 1px solid #3a2817;
+            padding: 3px;
+            font-size: 9px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .skills-table td {
+            border: 1px solid #3a2817;
+            padding: 2px 4px;
+        }
+
+        .skills-table .skill-name {
+            text-align: left;
+        }
+
+        .skills-table .char-abbr {
+            text-align: center;
+            font-size: 9px;
+        }
+
+        .skills-table input {
+            width: 100%;
+            border: none;
+            background: white;
+            text-align: center;
+            font-size: 10px;
+            padding: 1px;
+        }
+
+        .two-col-skills {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .talents-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .talents-table th {
+            background: #d4af37;
+            border: 1px solid #3a2817;
+            padding: 3px;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .talents-table td {
+            border: 1px solid #3a2817;
+            padding: 3px;
+        }
+
+        .talents-table input {
+            width: 100%;
+            border: none;
+            background: white;
+            font-size: 10px;
+            padding: 2px;
+        }
+
+        .armour-diagram {
+            position: relative;
+            width: 140px;
+            height: 280px;
+            margin: 10px auto;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 280"><ellipse cx="70" cy="30" rx="25" ry="30" fill="none" stroke="%233a2817" stroke-width="2"/><rect x="40" y="60" width="60" height="80" fill="none" stroke="%233a2817" stroke-width="2"/><rect x="10" y="70" width="25" height="60" fill="none" stroke="%233a2817" stroke-width="2"/><rect x="105" y="70" width="25" height="60" fill="none" stroke="%233a2817" stroke-width="2"/><rect x="45" y="145" width="20" height="70" fill="none" stroke="%233a2817" stroke-width="2"/><rect x="75" y="145" width="20" height="70" fill="none" stroke="%233a2817" stroke-width="2"/><circle cx="120" cy="40" r="15" fill="none" stroke="%233a2817" stroke-width="2"/></svg>') center/contain no-repeat;
+        }
+
+        .armour-point {
+            position: absolute;
+            width: 35px;
+            height: 25px;
+            border: 1px solid #3a2817;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+        }
+
+        .armour-point input {
+            width: 100%;
+            border: none;
+            text-align: center;
+            font-size: 10px;
+            background: transparent;
+        }
+
+        .ap-head { top: 15px; left: 52px; }
+        .ap-left-arm { top: 75px; left: 5px; }
+        .ap-right-arm { top: 75px; right: 5px; }
+        .ap-body { top: 95px; left: 52px; }
+        .ap-left-leg { bottom: 50px; left: 38px; }
+        .ap-right-leg { bottom: 50px; right: 38px; }
+        .ap-shield { top: 35px; right: 8px; width: 25px; height: 25px; }
+
+        .armour-label {
+            position: absolute;
+            font-size: 8px;
+            font-weight: 700;
+            color: #3a2817;
+        }
+
+        .movement-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .wounds-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .wealth-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        textarea.notes-area {
+            width: 100%;
+            min-height: 60px;
+            border: 1px solid #3a2817;
+            background: white;
+            padding: 6px;
+            font-family: 'IM Fell English', serif;
+            font-size: 11px;
+            resize: vertical;
+        }
+
+        @media (max-width: 1200px) {
+            .sheet-page {
+                min-width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .sheet-container {
+                gap: 0;
+            }
+            .sheet-page {
+                page-break-after: always;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sheet-container">
+        <!-- PAGE 1 -->
+        <div class="sheet-page">
+            <div class="header">
+                <div class="logo">WARHAMMER</div>
+                <div class="subtitle">FANTASY ROLEPLAY</div>
+            </div>
+
+            <!-- Basic Info -->
+            <div class="section">
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-field">
+                            <label>Name</label>
+                            <input type="text" value="Ludger von Eschenbach">
+                        </div>
+                        <div class="info-field">
+                            <label>Species</label>
+                            <input type="text" value="Human">
+                        </div>
+                        <div class="info-field">
+                            <label>Class</label>
+                            <input type="text" value="Academic">
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-field">
+                            <label>Career</label>
+                            <input type="text" value="Priest">
+                        </div>
+                        <div class="info-field">
+                            <label>Career Level</label>
+                            <input type="text" value="2">
+                        </div>
+                        <div class="info-field">
+                            <label>Status</label>
+                            <input type="text" value="Silver 3">
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-field">
+                            <label>Career Path</label>
+                            <input type="text" value="Priest of Sigmar">
+                        </div>
+                        <div class="info-field" style="grid-column: span 2;">
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-field">
+                            <label>Age</label>
+                            <input type="text" value="32">
+                        </div>
+                        <div class="info-field">
+                            <label>Height</label>
+                            <input type="text" value="5'10&quot;">
+                        </div>
+                        <div class="info-field">
+                            <label>Hair</label>
+                            <input type="text" value="Brown">
+                        </div>
+                    </div>
+                    <div class="info-field">
+                        <label>Eyes</label>
+                        <input type="text" value="Blue">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Characteristics -->
+            <div class="section">
+                <div class="section-header">Characteristics</div>
+                <div class="section-content" style="padding: 0;">
+                    <table class="characteristics-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>WS</th>
+                                <th>BS</th>
+                                <th>S</th>
+                                <th>T</th>
+                                <th>I</th>
+                                <th>Ag</th>
+                                <th>Dex</th>
+                                <th>Int</th>
+                                <th>WP</th>
+                                <th>Fel</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="row-label">Initial</td>
+                                <td><input type="text" value="35"></td>
+                                <td><input type="text" value="30"></td>
+                                <td><input type="text" value="40"></td>
+                                <td><input type="text" value="38"></td>
+                                <td><input type="text" value="32"></td>
+                                <td><input type="text" value="28"></td>
+                                <td><input type="text" value="35"></td>
+                                <td><input type="text" value="42"></td>
+                                <td><input type="text" value="45"></td>
+                                <td><input type="text" value="38"></td>
+                            </tr>
+                            <tr>
+                                <td class="row-label">Advances</td>
+                                <td><input type="text" value="10"></td>
+                                <td><input type="text" value="5"></td>
+                                <td><input type="text" value="5"></td>
+                                <td><input type="text" value="10"></td>
+                                <td><input type="text" value="8"></td>
+                                <td><input type="text" value="7"></td>
+                                <td><input type="text" value="10"></td>
+                                <td><input type="text" value="15"></td>
+                                <td><input type="text" value="12"></td>
+                                <td><input type="text" value="10"></td>
+                            </tr>
+                            <tr>
+                                <td class="row-label">Current</td>
+                                <td><input type="text" value="45"></td>
+                                <td><input type="text" value="35"></td>
+                                <td><input type="text" value="45"></td>
+                                <td><input type="text" value="48"></td>
+                                <td><input type="text" value="40"></td>
+                                <td><input type="text" value="35"></td>
+                                <td><input type="text" value="45"></td>
+                                <td><input type="text" value="57"></td>
+                                <td><input type="text" value="57"></td>
+                                <td><input type="text" value="48"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Fate, Resilience, Experience -->
+            <div class="three-col-layout">
+                <div class="mini-section">
+                    <div class="mini-section-header">Fate</div>
+                    <div class="mini-section-content">
+                        <div class="mini-field">
+                            <label>Fate</label>
+                            <input type="text" value="3">
+                        </div>
+                        <div class="mini-field">
+                            <label>Fortune</label>
+                            <input type="text" value="3">
+                        </div>
+                    </div>
+                </div>
+                <div class="mini-section">
+                    <div class="mini-section-header">Resilience</div>
+                    <div class="mini-section-content">
+                        <div class="mini-field">
+                            <label>Resilience</label>
+                            <input type="text" value="3">
+                        </div>
+                        <div class="mini-field">
+                            <label>Resolve</label>
+                            <input type="text" value="3">
+                        </div>
+                        <div class="mini-field">
+                            <label>Motivation</label>
+                            <input type="text" style="width: 100%;" value="Serve Sigmar">
+                        </div>
+                    </div>
+                </div>
+                <div class="mini-section">
+                    <div class="mini-section-header">Experience</div>
+                    <div class="mini-section-content">
+                        <div class="mini-field">
+                            <label>Current</label>
+                            <input type="text" value="125">
+                        </div>
+                        <div class="mini-field">
+                            <label>Spent</label>
+                            <input type="text" value="875">
+                        </div>
+                        <div class="mini-field">
+                            <label>Total</label>
+                            <input type="text" value="1000">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movement -->
+            <div class="section">
+                <div class="section-header">Movement</div>
+                <div class="section-content">
+                    <div class="movement-grid">
+                        <div class="info-field">
+                            <label>Movement</label>
+                            <input type="text" value="4">
+                        </div>
+                        <div class="info-field">
+                            <label>Walk</label>
+                            <input type="text" value="8">
+                        </div>
+                        <div class="info-field">
+                            <label>Run</label>
+                            <input type="text" value="16">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="section">
+                <div class="section-header">Basic Skills</div>
+                <div class="section-content" style="padding: 8px 4px;">
+                    <div class="two-col-skills">
+                        <table class="skills-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Char.</th>
+                                    <th>Adv</th>
+                                    <th>Skill</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="skill-name">Art</td>
+                                    <td class="char-abbr">Dex</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="45"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Athletics</td>
+                                    <td class="char-abbr">Ag</td>
+                                    <td><input type="text" value="5"></td>
+                                    <td><input type="text" value="40"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Bribery</td>
+                                    <td class="char-abbr">Fel</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="48"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Charm</td>
+                                    <td class="char-abbr">Fel</td>
+                                    <td><input type="text" value="10"></td>
+                                    <td><input type="text" value="58"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Charm Animal</td>
+                                    <td class="char-abbr">WP</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="57"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Climb</td>
+                                    <td class="char-abbr">S</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="45"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Cool</td>
+                                    <td class="char-abbr">WP</td>
+                                    <td><input type="text" value="15"></td>
+                                    <td><input type="text" value="72"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <table class="skills-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Char.</th>
+                                    <th>Adv</th>
+                                    <th>Skill</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="skill-name">Gossip</td>
+                                    <td class="char-abbr">Fel</td>
+                                    <td><input type="text" value="5"></td>
+                                    <td><input type="text" value="53"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Haggle</td>
+                                    <td class="char-abbr">Fel</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="48"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Intimidate</td>
+                                    <td class="char-abbr">S</td>
+                                    <td><input type="text" value=""></td>
+                                    <td><input type="text" value="45"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Intuition</td>
+                                    <td class="char-abbr">I</td>
+                                    <td><input type="text" value="10"></td>
+                                    <td><input type="text" value="50"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Leadership</td>
+                                    <td class="char-abbr">Fel</td>
+                                    <td><input type="text" value="10"></td>
+                                    <td><input type="text" value="58"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Melee (Basic)</td>
+                                    <td class="char-abbr">WS</td>
+                                    <td><input type="text" value="10"></td>
+                                    <td><input type="text" value="55"></td>
+                                </tr>
+                                <tr>
+                                    <td class="skill-name">Perception</td>
+                                    <td class="char-abbr">I</td>
+                                    <td><input type="text" value="10"></td>
+                                    <td><input type="text" value="50"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Skills -->
+            <div class="section">
+                <div class="section-header">Grouped & Advanced Skills</div>
+                <div class="section-content" style="padding: 4px;">
+                    <table class="skills-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Characteristic</th>
+                                <th>Adv</th>
+                                <th>Skill</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" value="Channelling (Divine)"></td>
+                                <td class="char-abbr">WP</td>
+                                <td><input type="text" value="15"></td>
+                                <td><input type="text" value="72"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Heal"></td>
+                                <td class="char-abbr">Int</td>
+                                <td><input type="text" value="10"></td>
+                                <td><input type="text" value="67"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Lore (Theology)"></td>
+                                <td class="char-abbr">Int</td>
+                                <td><input type="text" value="15"></td>
+                                <td><input type="text" value="72"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Melee (Flail)"></td>
+                                <td class="char-abbr">WS</td>
+                                <td><input type="text" value="10"></td>
+                                <td><input type="text" value="55"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Pray"></td>
+                                <td class="char-abbr">Fel</td>
+                                <td><input type="text" value="15"></td>
+                                <td><input type="text" value="63"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text"></td>
+                                <td class="char-abbr"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Talents -->
+            <div class="section">
+                <div class="section-header">Talents</div>
+                <div class="section-content" style="padding: 4px;">
+                    <table class="talents-table">
+                        <thead>
+                            <tr>
+                                <th>Talent Name</th>
+                                <th style="width: 50px;">Times</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" value="Bless"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="May learn Blessings as if Priest"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Holy Visions"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="May reroll Intuition tests to see hidden"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Read/Write"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="Can read and write in Reikspiel"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ambitions & Party -->
+            <div class="section">
+                <div class="section-header">Ambitions</div>
+                <div class="section-content">
+                    <div class="info-field">
+                        <label>Short-term</label>
+                        <input type="text" value="Investigate the undead sightings">
+                    </div>
+                    <div class="info-field" style="margin-top: 6px;">
+                        <label>Long-term</label>
+                        <input type="text" value="Rise to become a High Priest of Sigmar">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">Party</div>
+                <div class="section-content">
+                    <div class="info-field">
+                        <label>Party Name</label>
+                        <input type="text" value="The Sigmar's Chosen">
+                    </div>
+                    <div class="info-field" style="margin-top: 6px;">
+                        <label>Members</label>
+                        <input type="text" value="Ludger, Walter, Friedrich, Helena">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 2 -->
+        <div class="sheet-page">
+            <div class="header">
+                <div class="logo">WARHAMMER</div>
+                <div class="subtitle">FANTASY ROLEPLAY</div>
+            </div>
+
+            <!-- Armour and Armour Points -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div class="section">
+                    <div class="section-header">Armour</div>
+                    <div class="section-content" style="padding: 4px;">
+                        <table class="skills-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Locations</th>
+                                    <th>Enc</th>
+                                    <th>AP</th>
+                                    <th>Qualities</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" value="Leather Jack"></td>
+                                    <td><input type="text" value="Body, Arms"></td>
+                                    <td><input type="text" value="1"></td>
+                                    <td><input type="text" value="1"></td>
+                                    <td><input type="text" value=""></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text" value="Leather Leggings"></td>
+                                    <td><input type="text" value="Legs"></td>
+                                    <td><input type="text" value="1"></td>
+                                    <td><input type="text" value="1"></td>
+                                    <td><input type="text" value=""></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                    <td><input type="text"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">Armour Points</div>
+                    <div class="section-content" style="padding: 8px; position: relative;">
+                        <div class="armour-diagram">
+                            <div class="armour-point ap-head">
+                                <input type="text" value="0">
+                            </div>
+                            <div class="armour-point ap-left-arm">
+                                <input type="text" value="1">
+                            </div>
+                            <div class="armour-point ap-right-arm">
+                                <input type="text" value="1">
+                            </div>
+                            <div class="armour-point ap-body">
+                                <input type="text" value="1">
+                            </div>
+                            <div class="armour-point ap-left-leg">
+                                <input type="text" value="1">
+                            </div>
+                            <div class="armour-point ap-right-leg">
+                                <input type="text" value="1">
+                            </div>
+                            <div class="armour-point ap-shield">
+                                <input type="text" value="0">
+                            </div>
+                        </div>
+                        <div class="armour-label" style="top: 8px; left: 10px; font-size: 7px;">Head</div>
+                        <div class="armour-label" style="top: 85px; left: 2px; font-size: 6px;">Left arm</div>
+                        <div class="armour-label" style="top: 85px; right: 2px; font-size: 6px;">Right arm</div>
+                        <div class="armour-label" style="top: 120px; left: 48px; font-size: 7px;">Body</div>
+                        <div class="armour-label" style="bottom: 80px; left: 20px; font-size: 6px;">Left leg</div>
+                        <div class="armour-label" style="bottom: 80px; right: 20px; font-size: 6px;">Right leg</div>
+                        <div class="armour-label" style="top: 60px; right: 5px; font-size: 6px;">Shield</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trappings, Psychology, Corruption -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div class="section">
+                    <div class="section-header">Trappings</div>
+                    <div class="section-content">
+                        <textarea class="notes-area" style="min-height: 80px;">Religious symbol (Sigmar)
+Holy book
+Writing kit
+Healing poultices
+Robes
+2 candles</textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section" style="margin-bottom: 8px;">
+                        <div class="section-header">Psychology</div>
+                        <div class="section-content">
+                            <textarea class="notes-area" style="min-height: 35px;">Devoted to Sigmar</textarea>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">Corruption & Mutation</div>
+                        <div class="section-content">
+                            <textarea class="notes-area" style="min-height: 35px;">None</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wealth, Encumbrance, Wounds -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div class="section">
+                    <div class="section-header">Wealth</div>
+                    <div class="section-content">
+                        <div class="wealth-grid">
+                            <div class="info-field">
+                                <label style="font-size: 8px;">D (Brass)</label>
+                                <input type="text" value="8">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 8px;">SS (Silver)</label>
+                                <input type="text" value="12">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 8px;">GC (Gold)</label>
+                                <input type="text" value="25">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">Encumbrance</div>
+                    <div class="section-content">
+                        <div class="mini-field">
+                            <label>Weapons</label>
+                            <input type="text" value="2">
+                        </div>
+                        <div class="mini-field">
+                            <label>Armour</label>
+                            <input type="text" value="2">
+                        </div>
+                        <div class="mini-field">
+                            <label>Trappings</label>
+                            <input type="text" value="3">
+                        </div>
+                        <div class="mini-field">
+                            <label>Total</label>
+                            <input type="text" value="7">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">Wounds</div>
+                    <div class="section-content">
+                        <div class="wounds-grid">
+                            <div class="info-field">
+                                <label style="font-size: 7px;">SB</label>
+                                <input type="text" value="4" style="width: 30px;">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 7px;">TB+2</label>
+                                <input type="text" value="6" style="width: 30px;">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 7px;">WPB</label>
+                                <input type="text" value="5" style="width: 30px;">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 7px;">Hardy</label>
+                                <input type="text" value="3" style="width: 30px;">
+                            </div>
+                            <div class="info-field">
+                                <label style="font-size: 7px;">Total</label>
+                                <input type="text" value="18" style="width: 30px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weapons -->
+            <div class="section">
+                <div class="section-header">Weapons</div>
+                <div class="section-content" style="padding: 4px;">
+                    <table class="skills-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Group</th>
+                                <th>Enc</th>
+                                <th>Range/Reach</th>
+                                <th>Damage</th>
+                                <th>Qualities</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" value="Warhammer"></td>
+                                <td><input type="text" value="Flail"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="Average"></td>
+                                <td><input type="text" value="SB+7"></td>
+                                <td><input type="text" value="Impact, Pummel"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Dagger"></td>
+                                <td><input type="text" value="Basic"></td>
+                                <td><input type="text" value="0"></td>
+                                <td><input type="text" value="Personal"></td>
+                                <td><input type="text" value="SB+3"></td>
+                                <td><input type="text" value=""></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Spells and Prayers -->
+            <div class="section">
+                <div class="section-header">Spells and Prayers</div>
+                <div class="section-content" style="padding: 4px;">
+                    <table class="talents-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th style="width: 40px;">TN</th>
+                                <th style="width: 60px;">Range</th>
+                                <th style="width: 60px;">Target</th>
+                                <th style="width: 60px;">Duration</th>
+                                <th>Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" value="Shield of Faith"></td>
+                                <td><input type="text" value="5"></td>
+                                <td><input type="text" value="Touch"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="WPB Rds"></td>
+                                <td><input type="text" value="+1 Armour Points all locations"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Healing Hand"></td>
+                                <td><input type="text" value="6"></td>
+                                <td><input type="text" value="Touch"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="Instant"></td>
+                                <td><input type="text" value="Restore 1d10 Wounds"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Hammer of Sigmar"></td>
+                                <td><input type="text" value="8"></td>
+                                <td><input type="text" value="WPB yds"></td>
+                                <td><input type="text" value="1"></td>
+                                <td><input type="text" value="Instant"></td>
+                                <td><input type="text" value="Magical attack, 1d10 damage per SL"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                                <td><input type="text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

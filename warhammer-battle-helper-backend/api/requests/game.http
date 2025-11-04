@@ -1,3 +1,120 @@
+### ========================================
+### MULTIPLAYER GAME SYSTEM - API REQUESTS
+### ========================================
+
+### IMPORTANT: Replace these placeholders:
+# YOUR_GM_TOKEN - Token from GM login
+# YOUR_PLAYER_TOKEN - Token from player login
+# YOUR_GAME_ID - Game ID from create game response
+# YOUR_CHARACTER_ID - Character ID from character creation
+
+### ========================================
+### 1. GAME MANAGEMENT
+### ========================================
+
+### Lista wszystkich aktywnych gier (PUBLIC)
+GET http://localhost:8080/games
+
+###
+
+### Szczegóły konkretnej gry (PUBLIC)
+# Replace YOUR_GAME_ID with actual game ID
+GET http://localhost:8080/games/YOUR_GAME_ID
+
+###
+
+### Utwórz nową grę (GAME MASTER)
+# @name createGame
+POST http://localhost:8080/games
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NjEwNzYxMjYsInVzZXJfaWQiOiI2OGQzZjk2OTk3ZTBjMGVkZmQ0MmM4YTQifQ.D5muORN4XEKDXmjrUAEBkjNmJ2gQZpOsAs4F09GbS8Y94rEK0f625uCBNdgKh61qBea8kgKxQC09Xnr2rIjCKopHjItPPjVTkXLzDsGCGt747Aaleb4HeMeZ7Pxt4My5TSxoZM85YYyPJlFijeptqxEo5gcz8FrM0xU515c1RcJ4VbqlQpnU9gIYTfDxJ4bPvyfDdeGEBMIVXIraT1pmALlhQ86lkzEu2qheHdcZj75n1By30QyFZ_IsW9tslVwSamGx7j8tPtX-9c1UTXQ81UQS4N0Hs7kl7yIuBFw4ZgrLbH5G1ZuxdSSFI4-ZCSUlM_gT7RvybofwXWJ2rZZPeQ
+
+{
+  "name": "Epic Battle at Altdorf"
+}
+
+###
+
+### Utwórz grę - Test 2
+POST http://localhost:8080/games
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "name": "Siege of Middenheim"
+}
+
+###
+
+### ========================================
+### 2. PARTICIPANT MANAGEMENT
+### ========================================
+
+### Dołącz do gry (PLAYER)
+# Replace YOUR_GAME_ID
+POST http://localhost:8080/games/68f6969184c042e69c0daeca/join
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NjEwNzYxMjYsInVzZXJfaWQiOiI2OGQzZjk2OTk3ZTBjMGVkZmQ0MmM4YTQifQ.D5muORN4XEKDXmjrUAEBkjNmJ2gQZpOsAs4F09GbS8Y94rEK0f625uCBNdgKh61qBea8kgKxQC09Xnr2rIjCKopHjItPPjVTkXLzDsGCGt747Aaleb4HeMeZ7Pxt4My5TSxoZM85YYyPJlFijeptqxEo5gcz8FrM0xU515c1RcJ4VbqlQpnU9gIYTfDxJ4bPvyfDdeGEBMIVXIraT1pmALlhQ86lkzEu2qheHdcZj75n1By30QyFZ_IsW9tslVwSamGx7j8tPtX-9c1UTXQ81UQS4N0Hs7kl7yIuBFw4ZgrLbH5G1ZuxdSSFI4-ZCSUlM_gT7RvybofwXWJ2rZZPeQ
+
+###
+
+### Opuść grę (PLAYER)
+# Replace YOUR_GAME_ID
+POST http://localhost:8080/games/YOUR_GAME_ID/leave
+Authorization: Bearer YOUR_PLAYER_TOKEN
+
+###
+
+### ========================================
+### 3. CHARACTER MANAGEMENT ON GRID
+### ========================================
+
+### Dodaj postać na pole bitwy
+# Replace YOUR_GAME_ID and YOUR_CHARACTER_ID
+POST http://localhost:8080/games/YOUR_GAME_ID/characters
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "characterId": "YOUR_CHARACTER_ID",
+  "positionX": 5,
+  "positionY": 5,
+  "isEnemy": false
+}
+
+###
+
+### Dodaj wroga na pole bitwy
+POST http://localhost:8080/games/YOUR_GAME_ID/characters
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "characterId": "YOUR_CHARACTER_ID",
+  "positionX": 10,
+  "positionY": 10,
+  "isEnemy": true
+}
+
+###
+
+### Przesuń postać na polu bitwy
+# Replace YOUR_GAME_ID and YOUR_CHARACTER_ID
+PUT http://localhost:8080/games/YOUR_GAME_ID/characters/move
+Content-Type: application/json
+Authorization: Bearer YOUR_PLAYER_TOKEN
+
+{
+  "characterId": "YOUR_CHARACTER_ID",
+  "positionX": 7,
+  "positionY": 8
+}
+
+###
+
+### ========================================
+### 4. EXISTING GAME ACTIONS (From old file)
+### ========================================
+
 ### Walka między postaciami
 POST http://localhost:8080/fight
 Content-Type: application/json
@@ -21,8 +138,109 @@ POST http://localhost:8080/roll
 Content-Type: application/json
 
 {
-  "dice": 100,
-  "modifier": 5
+  "sides": 100
 }
+
+###
+
+### Rzut kością d20
+POST http://localhost:8080/roll
+Content-Type: application/json
+
+{
+  "sides": 20
+}
+
+###
+
+### Rzut kością d6
+POST http://localhost:8080/roll
+Content-Type: application/json
+
+{
+  "sides": 6
+}
+
+###
+
+### ========================================
+### FULL TESTING WORKFLOW
+### ========================================
+
+### STEP 1: Register users (see auth.http)
+### STEP 2: Login as GM (see auth.http) - Save token
+### STEP 3: Login as Player (see auth.http) - Save token
+### STEP 4: Create character (see auth.http) - Save character ID
+
+### STEP 5: Create game as GM
+# @name step5CreateGame
+POST http://localhost:8080/games
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "name": "Test Game - Full Workflow"
+}
+
+### STEP 6: Get all games to verify creation
+GET http://localhost:8080/games
+
+### STEP 7: Join game as Player
+# Use game ID from step 5
+POST http://localhost:8080/games/YOUR_GAME_ID/join
+Authorization: Bearer YOUR_PLAYER_TOKEN
+
+### STEP 8: Add character to grid as GM
+POST http://localhost:8080/games/YOUR_GAME_ID/characters
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "characterId": "YOUR_CHARACTER_ID",
+  "positionX": 3,
+  "positionY": 4,
+  "isEnemy": false
+}
+
+### STEP 9: Move character as Player
+PUT http://localhost:8080/games/YOUR_GAME_ID/characters/move
+Content-Type: application/json
+Authorization: Bearer YOUR_PLAYER_TOKEN
+
+{
+  "characterId": "YOUR_CHARACTER_ID",
+  "positionX": 5,
+  "positionY": 6
+}
+
+### STEP 10: Get game details to see all updates
+GET http://localhost:8080/games/YOUR_GAME_ID
+
+###
+
+### ========================================
+### WEBSOCKET TESTING
+### ========================================
+
+### To test WebSocket real-time updates:
+###
+### 1. Install wscat: npm install -g wscat
+###
+### 2. Connect to WebSocket (Terminal 1 - GM):
+###    wscat -c "ws://localhost:8080/games/YOUR_GAME_ID/ws?token=YOUR_GM_TOKEN"
+###
+### 3. Connect to WebSocket (Terminal 2 - Player):
+###    wscat -c "ws://localhost:8080/games/YOUR_GAME_ID/ws?token=YOUR_PLAYER_TOKEN"
+###
+### 4. Make API calls above and watch real-time events in both terminals!
+###
+### Expected WebSocket Events:
+### - GAME_STATE (on connect)
+### - PARTICIPANT_JOINED (when someone joins)
+### - PARTICIPANT_LEFT (when someone leaves)
+### - CHARACTER_ADDED (when character placed on grid)
+### - CHARACTER_MOVED (when character moved)
+### - LOG_MESSAGE (game log messages)
+### - DICE_ROLLED (dice roll results)
 
 ###

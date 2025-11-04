@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
     Box,
@@ -37,9 +38,11 @@ const Login = ({ onLogin, addLogMessage }) => {
         try {
             addLogMessage(`Attempting to log in as ${formData.email}`, 'info');
 
-            const response = await axios.post('http://localhost:8080/login', {
+            const response = await axios.post(`${getApiUrl()}/login`, {
                 email: formData.email,
                 password: formData.password
+            }, {
+                headers: getApiHeaders()
             });
 
             const { token } = response.data;

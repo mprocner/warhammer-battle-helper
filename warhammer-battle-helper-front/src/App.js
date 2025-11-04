@@ -11,6 +11,8 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
+import GameLobby from './components/GameLobby';
+import GameSession from './components/GameSession';
 
 function App() {
     const [logs, setLogs] = useState([
@@ -23,6 +25,7 @@ function App() {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [currentGameId, setCurrentGameId] = useState(null);
 
     // Example: Add a new log message
     const addLogMessage = (text, type = 'info') => {
@@ -72,6 +75,16 @@ function App() {
         addLogMessage(`User ${email} registered successfully. Please log in.`, 'success');
     };
 
+    const handleJoinGame = (gameId) => {
+        setCurrentGameId(gameId);
+        addLogMessage(`Joining game ${gameId}`, 'info');
+    };
+
+    const handleLeaveGame = () => {
+        setCurrentGameId(null);
+        addLogMessage('Left game', 'info');
+    };
+
     // Show loading spinner while checking auth status
     if (loading) {
         return (
@@ -111,8 +124,35 @@ function App() {
                             <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
                         }
                     />
+
+                    {/* Game Lobby - Main multiplayer hub */}
                     <Route
-                        path="/app"
+                        path="/"
+                        element={
+                            user ? (
+                                <ProtectedRoute user={user}>
+                                    {currentGameId ? (
+                                        <GameSession
+                                            gameId={currentGameId}
+                                            token={user.token}
+                                            onLeaveGame={handleLeaveGame}
+                                        />
+                                    ) : (
+                                        <GameLobby
+                                            onJoinGame={handleJoinGame}
+                                            token={user.token}
+                                        />
+                                    )}
+                                </ProtectedRoute>
+                            ) : (
+                                <Navigate to="/login" replace />
+                            )
+                        }
+                    />
+
+                    {/* Legacy single-player battle mode */}
+                    <Route
+                        path="/solo"
                         element={
                             <ProtectedRoute user={user}>
                                 <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
@@ -133,8 +173,6 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-                    {/* Catch all route - redirect to home */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </div>
             </Router>

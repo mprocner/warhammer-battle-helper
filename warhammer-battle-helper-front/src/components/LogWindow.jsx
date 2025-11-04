@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import axios from 'axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Paper,
     Box,
@@ -7,7 +8,6 @@ import {
     List,
     ListItem,
     ListItemText,
-    Chip,
     Button,
     TextField,
     Stack,
@@ -23,14 +23,26 @@ import {
 
 const LogWindow = ({
     messages = [],
+    logs = [],
     maxMessages = 100,
     autoScroll = true,
-    addLogMessage
+    addLogMessage,
+    gameId = null,
+    token = null
 }) => {
     const logEndRef = useRef(null);
     const [customSides, setCustomSides] = useState('');
 
-    const trimmedMessages = messages.slice(-maxMessages);
+    // Support both 'messages' and 'logs' props
+    const allMessages = logs.length > 0
+        ? logs.map(log => ({
+            text: log.message,
+            type: log.type || 'info',
+            timestamp: log.timestamp
+          }))
+        : messages;
+
+    const trimmedMessages = allMessages.slice(-maxMessages);
 
     useEffect(() => {
         if (autoScroll && logEndRef.current) {
@@ -39,13 +51,39 @@ const LogWindow = ({
     }, [trimmedMessages, autoScroll]);
 
     const rollDice = async (sides) => {
-        const response = await axios.post('http://localhost:8080/roll', {
-            "sides": sides
-        }, {
-            withCredentials: true
-        });
-        if (addLogMessage) {
-            addLogMessage(`Rolled d${sides}: ${response.data.result}`, 'info');
+        try {
+            // If in a game session, use the game-specific endpoint
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({ sides })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to roll dice');
+                }
+
+                // Don't add local message - result will come via WebSocket
+            } else {
+                // Fallback to single-player mode
+                const response = await axios.post(`${getApiUrl()}/roll`, {
+                    "sides": sides
+                }, {
+                    withCredentials: true
+                });
+                if (addLogMessage) {
+                    addLogMessage(`Rolled d${sides}: ${response.data.result}`, 'info');
+                }
+            }
+        } catch (error) {
+            console.error('Error rolling dice:', error);
+            if (addLogMessage) {
+                addLogMessage('Failed to roll dice', 'error');
+            }
         }
     };
 
@@ -67,19 +105,6 @@ const LogWindow = ({
                 return <ErrorIcon fontSize="small" color="error" />;
             default:
                 return <InfoIcon fontSize="small" color="info" />;
-        }
-    };
-
-    const getMessageColor = (type) => {
-        switch (type) {
-            case 'success':
-                return 'success.light';
-            case 'warning':
-                return 'warning.light';
-            case 'error':
-                return 'error.light';
-            default:
-                return 'info.light';
         }
     };
 
