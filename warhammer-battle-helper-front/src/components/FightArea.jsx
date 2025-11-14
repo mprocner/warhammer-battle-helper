@@ -3,16 +3,17 @@ import {useDroppable} from '@dnd-kit/core';
 import Character from './Character';
 
 function FightArea({
-    currentZone, 
-    fightZones, 
-    addLogMessage, 
-    isActiveDrop, 
+    currentZone,
+    fightZones,
+    addLogMessage,
+    isActiveDrop,
     activeId,
     highlightedTargets,
     highlightPossibleTargets,
     clearHighlightedTargets,
     setCurrentAttacker,
-    setCurrentDefender
+    setCurrentDefender,
+    onCharacterUpdate
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
 
@@ -33,11 +34,12 @@ function FightArea({
                         addLogMessage={addLogMessage}
                         onFightComplete={() => {}}
                         activeId={activeId}
-                        isHighlighted={highlightedTargets.has(currentZone.character.id)}  
-                        highlightPossibleTargets={highlightPossibleTargets}       
+                        isHighlighted={highlightedTargets.has(currentZone.character.id)}
+                        highlightPossibleTargets={highlightPossibleTargets}
                         clearHighlightedTargets={clearHighlightedTargets}
                         setCurrentAttacker={setCurrentAttacker}
                         setCurrentDefender={setCurrentDefender}
+                        onCharacterUpdate={onCharacterUpdate}
                     />
                 </div>
             )}

@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharactersList from './CharactersList';
@@ -26,8 +26,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const [activeId, setActiveId] = useState(null);
   const [overId, setOverId] = useState(null);
   const [attacker, setAttacker] = useState(null);
+  const hasInitializedRef = useRef(false);
 
   const [highlightedTargets, setHighlightedTargets] = useState(new Set());
+
+  // Keep fightZonesRef in sync with fightZones state
+  useEffect(() => {
+    fightZonesRef.current = fightZones;
+  }, [fightZones]);
 
   // Dodaj te funkcje przed return
   const highlightPossibleTargets = (attackerZone, allFightZones) => {
@@ -187,12 +193,32 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
-  const fetchCharacters = async () => {
+  const fetchCharacters = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await axiosInstance.get('/my-characters');
-      setInitialCharacters(res.data);
-      setCharacters(res.data);
+      const charactersData = res.data || [];
+      setInitialCharacters(charactersData);
+
+      // Filter out characters that are currently on the grid
+      // Use functional update to read current fightZones without adding it as dependency
+      setCharacters(prevCharacters => {
+        // Add null check for fightZonesRef.current
+        if (!fightZonesRef.current || !Array.isArray(fightZonesRef.current)) {
+          return charactersData;
+        }
+
+        const characterIdsOnGrid = new Set(
+          fightZonesRef.current
+            .filter(zone => zone.character)
+            .map(zone => zone.character.id)
+        );
+
+        return charactersData.filter(
+          char => !characterIdsOnGrid.has(char.id)
+        );
+      });
+
       setError(null);
     } catch (e) {
       console.error(e);
@@ -200,10 +226,34 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const handleCharacterUpdate = (updatedCharacter) => {
+    // Update in initialCharacters
+    setInitialCharacters(prev => {
+      if (!prev || !Array.isArray(prev)) return [];
+      return prev.map(char => char.id === updatedCharacter.id ? updatedCharacter : char);
+    });
+
+    // Update in available characters pool
+    setCharacters(prev => {
+      if (!prev || !Array.isArray(prev)) return [];
+      return prev.map(char => char.id === updatedCharacter.id ? updatedCharacter : char);
+    });
+
+    // Update in fight zones if character is on grid
+    setFightZones(prev =>
+      prev.map(zone => {
+        if (zone.character?.id === updatedCharacter.id) {
+          return { ...zone, character: updatedCharacter };
+        }
+        return zone;
+      })
+    );
   };
 
   // Fetch game state and populate characters on grid (multiplayer mode)
-  const fetchGameCharacters = async () => {
+  const fetchGameCharacters = useCallback(async () => {
     if (!gameId || !token) return;
 
     try {
@@ -227,7 +277,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       if (game.characters && game.characters.length > 0) {
         // Get all full character data first
         const allCharsResponse = await axiosInstance.get('/characters');
-        const allCharacters = allCharsResponse.data;
+        const allCharacters = allCharsResponse.data || [];
 
         // Track which character IDs are on the grid
         const characterIdsOnGrid = new Set();
@@ -251,7 +301,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
         // Remove characters that are on the grid from the available pool
         setCharacters(prev => {
-          if (!prev || prev.length === 0) return prev;
+          if (!prev || prev.length === 0) return [];
           return prev.filter(c => !characterIdsOnGrid.has(c.id));
         });
       } else {
@@ -261,9 +311,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     } catch (error) {
       console.error('Error fetching game characters:', error);
     }
-  };
+  }, [gameId, token]);
 
   useEffect(() => {
+    // Only run initial load once
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     const init = async () => {
       await fetchCharacters();
       // After characters are loaded, fetch game characters if in multiplayer mode
@@ -272,6 +326,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Watch for character updates in multiplayer mode
@@ -281,7 +336,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       console.log('Character update trigger changed:', characterUpdateTrigger);
       fetchGameCharacters();
     }
-  }, [characterUpdateTrigger]);
+  }, [characterUpdateTrigger, fetchGameCharacters, gameId, token]);
 
   const handleDragStart = e => setActiveId(e.active.id);
   const handleDragOver = e => setOverId(e.over ? e.over.id : null);
@@ -353,7 +408,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
       // Usuń z listy dostępnych
       setCharacters(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
+        if (!prev || !Array.isArray(prev)) return [];
         return prev.filter(c => c.id !== draggedId);
       });
       
@@ -369,7 +424,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         );
       }
       setCharacters(prev => {
-        if (!prev || !Array.isArray(prev)) return prev;
+        if (!prev || !Array.isArray(prev)) return [];
         return prev.some(c => c.id === draggedId) ? prev : [...prev, draggedChar];
       });
     }
@@ -404,6 +459,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           characters={characters}
           addLogMessage={addLogMessage}
           activeId={activeId}
+          onCharacterUpdate={handleCharacterUpdate}
         />
         <div className="fight-grid">
           {fightZones.map(zone => (
@@ -419,6 +475,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                 clearHighlightedTargets={clearHighlightedTargets}
                 setCurrentAttacker={setCurrentAttacker}
                 setCurrentDefender={setCurrentDefender}
+                onCharacterUpdate={handleCharacterUpdate}
             />
           ))}
         </div>
@@ -429,9 +486,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         {activeCharacter && (
           <div className="drag-overlay-wrapper">
             <Character
-              character={activeCharacter}            
-              currentZone={null}                   
-              fightZones={fightZones}                 
+              character={activeCharacter}
+              currentZone={null}
+              fightZones={fightZones}
               addLogMessage={()=>{}}
               onFightComplete={()=>{}}
               activeId={activeId}
@@ -440,6 +497,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
               highlightPossibleTargets={highlightPossibleTargets}
               clearHighlightedTargets={clearHighlightedTargets}
               setCurrentAttacker={setCurrentAttacker}
+              onCharacterUpdate={handleCharacterUpdate}
             />
           </div>
         )}

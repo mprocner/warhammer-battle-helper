@@ -1,0 +1,729 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import axiosInstance from '../api/axios';
+
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [position, setPosition] = useState({ x: 100, y: 100 });
+    const [size, setSize] = useState({ width: 1400, height: 800 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [resizeDirection, setResizeDirection] = useState(null);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    const [editedCharacter, setEditedCharacter] = useState(character);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+    const popupRef = useRef(null);
+
+    // Update edited character when character prop changes
+    useEffect(() => {
+        setEditedCharacter(character);
+    }, [character]);
+
+    // Handle field changes
+    const handleFieldChange = (path, value) => {
+        const pathParts = path.split('.');
+        setEditedCharacter(prev => {
+            const newCharacter = JSON.parse(JSON.stringify(prev)); // Deep clone
+            let current = newCharacter;
+
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                if (!current[pathParts[i]]) {
+                    current[pathParts[i]] = {};
+                }
+                current = current[pathParts[i]];
+            }
+
+            current[pathParts[pathParts.length - 1]] = value;
+            return newCharacter;
+        });
+    };
+
+    // Save character
+    const handleSave = async () => {
+        setIsSaving(true);
+        setSaveSuccess(false);
+        try {
+            const response = await axiosInstance.put(
+                `/characters/${editedCharacter.id}`,
+                editedCharacter
+            );
+
+            console.log('Character saved successfully11:', response.data);
+
+            // Show success indicator
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+
+            // Update character data in parent component with edited data
+            if (onCharacterUpdate) {
+                onCharacterUpdate(editedCharacter);
+            }
+        } catch (error) {
+            console.error('Error saving character:', error);
+            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Drag handlers
+    const handleMouseDown = (e) => {
+        if (e.target.closest('.sheet-header') && !e.target.closest('.sheet-header-buttons')) {
+            setIsDragging(true);
+            const rect = popupRef.current.getBoundingClientRect();
+            setDragOffset({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            });
+        }
+    };
+
+    // Resize handlers
+    const handleResizeMouseDown = (e, direction) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsResizing(true);
+        setResizeDirection(direction);
+        setResizeStart({
+            x: e.clientX,
+            y: e.clientY,
+            width: size.width,
+            height: size.height,
+            posX: position.x,
+            posY: position.y
+        });
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (isDragging) {
+                setPosition({
+                    x: e.clientX - dragOffset.x,
+                    y: e.clientY - dragOffset.y
+                });
+            }
+
+            if (isResizing && resizeDirection) {
+                const deltaX = e.clientX - resizeStart.x;
+                const deltaY = e.clientY - resizeStart.y;
+
+                let newWidth = resizeStart.width;
+                let newHeight = resizeStart.height;
+                let newX = resizeStart.posX;
+                let newY = resizeStart.posY;
+
+                // Minimum sizes
+                const minWidth = 600;
+                const minHeight = 400;
+
+                if (resizeDirection.includes('e')) {
+                    newWidth = Math.max(minWidth, resizeStart.width + deltaX);
+                }
+                if (resizeDirection.includes('w')) {
+                    const potentialWidth = resizeStart.width - deltaX;
+                    if (potentialWidth >= minWidth) {
+                        newWidth = potentialWidth;
+                        newX = resizeStart.posX + deltaX;
+                    }
+                }
+                if (resizeDirection.includes('s')) {
+                    newHeight = Math.max(minHeight, resizeStart.height + deltaY);
+                }
+                if (resizeDirection.includes('n')) {
+                    const potentialHeight = resizeStart.height - deltaY;
+                    if (potentialHeight >= minHeight) {
+                        newHeight = potentialHeight;
+                        newY = resizeStart.posY + deltaY;
+                    }
+                }
+
+                setSize({ width: newWidth, height: newHeight });
+                if (newX !== resizeStart.posX || newY !== resizeStart.posY) {
+                    setPosition({ x: newX, y: newY });
+                }
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsDragging(false);
+            setIsResizing(false);
+            setResizeDirection(null);
+        };
+
+        if (isDragging || isResizing) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStart, size, position]);
+
+    const popupContent = (
+        <div
+            ref={popupRef}
+            className="character-sheet-popup"
+            style={{
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                width: isMinimized ? 'auto' : `${size.width}px`,
+                height: isMinimized ? 'auto' : `${size.height}px`,
+                maxWidth: 'none'
+            }}
+            onMouseDown={handleMouseDown}
+        >
+            {/* Resize handles */}
+            {!isMinimized && (
+                <>
+                    <div className="resize-handle resize-n" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
+                    <div className="resize-handle resize-s" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
+                    <div className="resize-handle resize-e" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+                    <div className="resize-handle resize-w" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
+                    <div className="resize-handle resize-ne" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
+                    <div className="resize-handle resize-nw" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
+                    <div className="resize-handle resize-se" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+                    <div className="resize-handle resize-sw" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
+                </>
+            )}
+            <div className="sheet-header" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
+                <h2 style={{ fontSize: isMinimized ? '14px' : undefined }}>
+                    {editedCharacter.basicInfo?.name || 'Character Sheet'}
+                </h2>
+                <div className="sheet-header-buttons">
+                    {!isMinimized && (
+                        <button
+                            className="save-btn-sheet"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSave();
+                            }}
+                            disabled={isSaving}
+                            title={saveSuccess ? "Saved!" : "Save Character"}
+                        >
+                            {isSaving ? '⏳' : saveSuccess ? '✓' : '💾'}
+                        </button>
+                    )}
+                    <button
+                        className="minimize-btn"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsMinimized(!isMinimized);
+                        }}
+                        title={isMinimized ? "Expand" : "Minimize"}
+                    >
+                        {isMinimized ? '▢' : '─'}
+                    </button>
+                    <button
+                        className="close-btn-sheet"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClose();
+                        }}
+                    >
+                        ×
+                    </button>
+                </div>
+            </div>
+
+            {!isMinimized && (
+                <div className="sheet-content" style={{ maxHeight: `${size.height - 80}px` }}>
+                    <div className="two-page-layout">
+                        {/* LEFT SIDE - PAGE 1 */}
+                        <div className="page-one">
+                            {/* Character Information */}
+                            <div className="card-section">
+                                <h3>Character Information</h3>
+                                <div className="form-grid">
+                                    <div className="form-group">
+                                        <label>Name</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.name || ''} onChange={(e) => handleFieldChange('basicInfo.name', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Species</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.species || ''} onChange={(e) => handleFieldChange('basicInfo.species', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Class</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.class || ''} onChange={(e) => handleFieldChange('basicInfo.class', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-grid" style={{ marginTop: '10px' }}>
+                                    <div className="form-group">
+                                        <label>Career</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.career || ''} onChange={(e) => handleFieldChange('basicInfo.career', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Career Level</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.careerLevel || ''} onChange={(e) => handleFieldChange('basicInfo.careerLevel', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Status</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.status || ''} onChange={(e) => handleFieldChange('basicInfo.status', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-group" style={{ marginTop: '10px' }}>
+                                    <label>Career Path</label>
+                                    <input type="text" value={editedCharacter.basicInfo?.careerPath || ''} onChange={(e) => handleFieldChange('basicInfo.careerPath', e.target.value)} />
+                                </div>
+                                <div className="form-grid" style={{ marginTop: '10px' }}>
+                                    <div className="form-group">
+                                        <label>Age</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.age || ''} onChange={(e) => handleFieldChange('basicInfo.age', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Height</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.height || ''} onChange={(e) => handleFieldChange('basicInfo.height', e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Hair</label>
+                                        <input type="text" value={editedCharacter.basicInfo?.hair || ''} onChange={(e) => handleFieldChange('basicInfo.hair', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-group" style={{ marginTop: '10px' }}>
+                                    <label>Eyes</label>
+                                    <input type="text" value={editedCharacter.basicInfo?.eyes || ''} onChange={(e) => handleFieldChange('basicInfo.eyes', e.target.value)} />
+                                </div>
+                            </div>
+
+                            {/* Fate, Resilience, Experience */}
+                            <div className="three-col-grid">
+                                <div className="mini-box">
+                                    <h4>Fate</h4>
+                                    <div className="mini-field">
+                                        <label>Fate</label>
+                                        <input type="text" value={character.fate?.fate || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Fortune</label>
+                                        <input type="text" value={character.fate?.fortune || ''} readOnly />
+                                    </div>
+                                </div>
+                                <div className="mini-box">
+                                    <h4>Resilience</h4>
+                                    <div className="mini-field">
+                                        <label>Resilience</label>
+                                        <input type="text" value={character.resilience?.resilience || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Resolve</label>
+                                        <input type="text" value={character.resilience?.resolve || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Motivation</label>
+                                        <input type="text" style={{ width: '100%' }} value={character.resilience?.motivation || ''} readOnly />
+                                    </div>
+                                </div>
+                                <div className="mini-box">
+                                    <h4>Experience</h4>
+                                    <div className="mini-field">
+                                        <label>Current</label>
+                                        <input type="text" value={character.experience?.current || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Spent</label>
+                                        <input type="text" value={character.experience?.spent || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Total</label>
+                                        <input type="text" value={character.experience?.total || ''} readOnly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Movement */}
+                            <div className="card-section">
+                                <h3>Movement</h3>
+                                <div className="three-col-grid">
+                                    <div className="mini-field">
+                                        <label>Movement</label>
+                                        <input type="text" value={character.movement?.movement || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Walk</label>
+                                        <input type="text" value={character.movement?.walk || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Run</label>
+                                        <input type="text" value={character.movement?.run || ''} readOnly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Wounds */}
+                            <div className="card-section">
+                                <h3>Wounds</h3>
+                                <div className="three-col-grid">
+                                    <div className="mini-field">
+                                        <label>SB</label>
+                                        <input type="text" value={character.wounds?.sb || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>TB+2</label>
+                                        <input type="text" value={character.wounds?.tb || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>WPB</label>
+                                        <input type="text" value={character.wounds?.wpb || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Hardy</label>
+                                        <input type="text" value={character.wounds?.hardy || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>Total</label>
+                                        <input type="text" value={character.wounds?.total || ''} readOnly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Talents */}
+                            <div className="card-section">
+                                <h3>Talents</h3>
+                                <table className="skills-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Talent Name</th>
+                                            <th style={{ width: '60px' }}>Times Taken</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {character.talents?.map((talent, idx) => (
+                                            <tr key={idx}>
+                                                <td><input type="text" value={talent.name || ''} readOnly /></td>
+                                                <td><input type="text" value={talent.timesTaken || ''} readOnly /></td>
+                                                <td><input type="text" value={talent.description || ''} readOnly /></td>
+                                            </tr>
+                                        )) || (
+                                            <tr>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Weapons */}
+                            <div className="card-section">
+                                <h3>Weapons</h3>
+                                <table className="skills-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th style={{ width: '70px' }}>Group</th>
+                                            <th style={{ width: '50px' }}>Enc</th>
+                                            <th style={{ width: '80px' }}>Range/Reach</th>
+                                            <th style={{ width: '70px' }}>Damage</th>
+                                            <th>Qualities</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {character.weapons?.map((weapon, idx) => (
+                                            <tr key={idx}>
+                                                <td><input type="text" value={weapon.name || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.group || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.enc || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.range || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.damage || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.qualities || ''} readOnly /></td>
+                                            </tr>
+                                        )) || (
+                                            <tr>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Armour */}
+                            <div className="card-section">
+                                <h3>Armour</h3>
+                                <table className="skills-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th style={{ width: '100px' }}>Locations</th>
+                                            <th style={{ width: '50px' }}>Enc</th>
+                                            <th style={{ width: '50px' }}>AP</th>
+                                            <th>Qualities</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {character.armour?.map((armour, idx) => (
+                                            <tr key={idx}>
+                                                <td><input type="text" value={armour.name || ''} readOnly /></td>
+                                                <td><input type="text" value={armour.locations || ''} readOnly /></td>
+                                                <td><input type="text" value={armour.enc || ''} readOnly /></td>
+                                                <td><input type="text" value={armour.ap || ''} readOnly /></td>
+                                                <td><input type="text" value={armour.qualities || ''} readOnly /></td>
+                                            </tr>
+                                        )) || (
+                                            <tr>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Wealth */}
+                            <div className="card-section">
+                                <h3>Wealth</h3>
+                                <div className="three-col-grid">
+                                    <div className="mini-field">
+                                        <label>D (Brass)</label>
+                                        <input type="text" value={character.wealth?.brass || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>SS (Silver)</label>
+                                        <input type="text" value={character.wealth?.silver || ''} readOnly />
+                                    </div>
+                                    <div className="mini-field">
+                                        <label>GC (Gold)</label>
+                                        <input type="text" value={character.wealth?.gold || ''} readOnly />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT SIDE - PAGE 2 */}
+                        <div className="page-one-right">
+                            {/* Characteristics */}
+                            <div className="card-section">
+                                <h3>Characteristics</h3>
+                                <table className="characteristics-table">
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: '80px' }}></th>
+                                            <th>WS</th>
+                                            <th>BS</th>
+                                            <th>S</th>
+                                            <th>T</th>
+                                            <th>I</th>
+                                            <th>Ag</th>
+                                            <th>Dex</th>
+                                            <th>Int</th>
+                                            <th>WP</th>
+                                            <th>Fel</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className="row-label">Initial</td>
+                                            <td><input type="text" value={character.characteristics?.initial?.WS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.BS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.S || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.T || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.I || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.Ag || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.Dex || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.Int || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.WP || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.initial?.Fel || ''} readOnly /></td>
+                                        </tr>
+                                        <tr>
+                                            <td className="row-label">Advances</td>
+                                            <td><input type="text" value={character.characteristics?.advances?.WS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.BS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.S || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.T || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.I || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.Ag || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.Dex || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.Int || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.WP || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.advances?.Fel || ''} readOnly /></td>
+                                        </tr>
+                                        <tr>
+                                            <td className="row-label">Current</td>
+                                            <td><input type="text" value={character.characteristics?.current?.WS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.BS || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.S || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.T || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.I || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.Ag || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.Dex || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.Int || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.WP || ''} readOnly /></td>
+                                            <td><input type="text" value={character.characteristics?.current?.Fel || ''} readOnly /></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Basic Skills */}
+                            <div className="card-section">
+                                <h3>Basic Skills</h3>
+                                <div className="two-col-layout">
+                                    <table className="skills-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th style={{ width: '50px' }}>Char</th>
+                                                <th style={{ width: '50px' }}>Adv</th>
+                                                <th style={{ width: '50px' }}>Skill</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {character.basicSkills?.slice(0, 10).map((skill, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="skill-name">{skill.name || ''}</td>
+                                                    <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
+                                                    <td><input type="text" value={skill.advances || ''} readOnly /></td>
+                                                    <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                                </tr>
+                                            )) || <tr><td colSpan="4">No skills</td></tr>}
+                                        </tbody>
+                                    </table>
+
+                                    <table className="skills-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th style={{ width: '50px' }}>Char</th>
+                                                <th style={{ width: '50px' }}>Adv</th>
+                                                <th style={{ width: '50px' }}>Skill</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {character.basicSkills?.slice(10).map((skill, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="skill-name">{skill.name || ''}</td>
+                                                    <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
+                                                    <td><input type="text" value={skill.advances || ''} readOnly /></td>
+                                                    <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                                </tr>
+                                            )) || <tr><td colSpan="4">-</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Grouped & Advanced Skills */}
+                            <div className="card-section">
+                                <h3>Grouped & Advanced Skills</h3>
+                                <table className="skills-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th style={{ width: '70px' }}>Characteristic</th>
+                                            <th style={{ width: '50px' }}>Adv</th>
+                                            <th style={{ width: '50px' }}>Skill</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {character.advancedSkills?.map((skill, idx) => (
+                                            <tr key={idx}>
+                                                <td><input type="text" value={skill.name || ''} readOnly /></td>
+                                                <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
+                                                <td><input type="text" value={skill.advances || ''} readOnly /></td>
+                                                <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                            </tr>
+                                        )) || (
+                                            <tr>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Spells and Prayers */}
+                            <div className="card-section">
+                                <h3>Spells and Prayers</h3>
+                                <table className="skills-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th style={{ width: '50px' }}>TN</th>
+                                            <th style={{ width: '70px' }}>Range</th>
+                                            <th style={{ width: '70px' }}>Target</th>
+                                            <th style={{ width: '70px' }}>Duration</th>
+                                            <th>Effect</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {character.spells?.map((spell, idx) => (
+                                            <tr key={idx}>
+                                                <td><input type="text" value={spell.name || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.tn || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.range || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.target || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.duration || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.effect || ''} readOnly /></td>
+                                            </tr>
+                                        )) || (
+                                            <tr>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                                <td><input type="text" readOnly /></td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Ambitions */}
+                            <div className="card-section">
+                                <h3>Ambitions</h3>
+                                <div className="form-group">
+                                    <label>Short Term</label>
+                                    <input type="text" value={character.ambitions?.shortTerm || ''} readOnly />
+                                </div>
+                                <div className="form-group" style={{ marginTop: '8px' }}>
+                                    <label>Long Term</label>
+                                    <input type="text" value={character.ambitions?.longTerm || ''} readOnly />
+                                </div>
+                            </div>
+
+                            {/* Party */}
+                            <div className="card-section">
+                                <h3>Party</h3>
+                                <div className="form-group">
+                                    <label>Party Name</label>
+                                    <input type="text" value={character.party?.name || ''} readOnly />
+                                </div>
+                                <div className="form-group" style={{ marginTop: '8px' }}>
+                                    <label>Members</label>
+                                    <textarea className="notes" style={{ minHeight: '60px' }} value={character.party?.members || ''} readOnly />
+                                </div>
+                            </div>
+
+                            {/* Trappings */}
+                            <div className="card-section">
+                                <h3>Trappings</h3>
+                                <textarea className="notes" value={character.trappings || ''} readOnly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    return createPortal(popupContent, document.body);
+}
+
+export default CharacterSheetPopup;

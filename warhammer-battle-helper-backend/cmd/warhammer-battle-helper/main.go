@@ -85,6 +85,7 @@ func main() {
 
 	r.GET("/my-characters", http.JWTAuthMiddleware(), characterHandler.GetMyCharacters)
 	r.POST("/my-characters", http.JWTAuthMiddleware(), characterHandler.CreateCharacter)
+	r.PUT("/characters/:id", http.JWTAuthMiddleware(), characterHandler.UpdateCharacter)
 
 	// --- GAME ROUTES ---
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}

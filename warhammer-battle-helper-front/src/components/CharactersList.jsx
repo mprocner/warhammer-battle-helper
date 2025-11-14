@@ -13,6 +13,7 @@ function CharactersList( props ) {
             addLogMessage={props.addLogMessage}
             id={char.id}
             character={char}
+            onCharacterUpdate={props.onCharacterUpdate}
         />
 
       ))}

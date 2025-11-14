@@ -98,3 +98,22 @@ func (r *CharactersRepository) Create(character *models.Character) error {
 	character.ID = result.InsertedID.(primitive.ObjectID)
 	return nil
 }
+
+func (r *CharactersRepository) Update(id string, character *models.Character) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	character.UpdatedAt = time.Now()
+
+	update := bson.M{
+		"$set": character,
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
+}

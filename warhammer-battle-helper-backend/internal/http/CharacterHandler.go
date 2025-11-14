@@ -15,11 +15,12 @@ type CharacterHandler struct {
 }
 
 type CreateCharacterRequest struct {
-	BasicInfo       models.BasicInfo          `json:"basicInfo" binding:"required"`
-	Characteristics models.CharacteristicList `json:"characteristics" binding:"required"`
-	Skills          map[string]int            `json:"skills"`
-	Weapons         []models.Weapon           `json:"weapons"`
-	Avatar          string                    `json:"avatar"`
+	BasicInfo       models.BasicInfo            `json:"basicInfo" binding:"required"`
+	Characteristics models.CharacteristicsTable `json:"characteristics"`
+	BasicSkills     []models.Skill              `json:"basicSkills"`
+	AdvancedSkills  []models.Skill              `json:"advancedSkills"`
+	Weapons         []models.Weapon             `json:"weapons"`
+	Talents         []models.Talent             `json:"talents"`
 }
 
 // GetMyCharacters returns all characters owned by the authenticated user
@@ -87,9 +88,10 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		OwnerID:         ownerObjectID,
 		BasicInfo:       req.BasicInfo,
 		Characteristics: req.Characteristics,
-		Skills:          req.Skills,
+		BasicSkills:     req.BasicSkills,
+		AdvancedSkills:  req.AdvancedSkills,
 		Weapons:         req.Weapons,
-		Avatar:          req.Avatar,
+		Talents:         req.Talents,
 	}
 
 	if err := h.CharacterRepo.Create(character); err != nil {
@@ -98,4 +100,60 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, character)
+}
+
+// UpdateCharacter updates an existing character owned by the authenticated user
+func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
+	token, exists := c.Get("jwt")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
+		return
+	}
+
+	characterID := c.Param("id")
+	if characterID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Character ID is required"})
+		return
+	}
+
+	// Verify the character belongs to the user
+	existingCharacter, err := h.CharacterRepo.GetByID(characterID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
+		return
+	}
+
+	if existingCharacter.OwnerID.Hex() != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
+		return
+	}
+
+	var updatedCharacter models.Character
+	if err := c.ShouldBindJSON(&updatedCharacter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Preserve ownership
+	updatedCharacter.OwnerID = existingCharacter.OwnerID
+	updatedCharacter.CreatedAt = existingCharacter.CreatedAt
+
+	if err := h.CharacterRepo.Update(characterID, &updatedCharacter); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedCharacter)
 }

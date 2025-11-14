@@ -1,19 +1,20 @@
 import React, {useRef, useState} from 'react';
-import {createPortal} from 'react-dom';
 import {useDraggable} from '@dnd-kit/core';
 import CharacterAttackButton from './buttons/CharacterAttackButton';
+import CharacterSheetPopup from './CharacterSheetPopup';
 import Avatar from './Avatar';
 
 function Character({
-        currentZone, 
-        fightZones, 
-        onFightComplete, 
+        currentZone,
+        fightZones,
+        onFightComplete,
         addLogMessage,
         character,
         activeId, isOverlay = false,
         isHighlighted = false, highlightPossibleTargets, clearHighlightedTargets,
-        setCurrentAttacker, 
-        setCurrentDefender
+        setCurrentAttacker,
+        setCurrentDefender,
+        onCharacterUpdate
     }) {
     
     console.log('Rendering Character:', character?.basicInfo?.name, 'in zone:', currentZone);
@@ -31,22 +32,6 @@ function Character({
     const isDragging = character.id === activeId && !isOverlay;
     const characterEntryClass = `character-entry${isEnemy ? " enemy" : ""} ${isDragging ? 'dragging' : ''}`;
     const [showDetails, setShowDetails] = useState(false);
-
-    // Modal portal
-    const modalContent = showDetails && createPortal(
-        <div className="char-modal-overlay" onClick={() => setShowDetails(false)}>
-            <div className="char-modal" onClick={e => e.stopPropagation()}>
-                <div className="char-modal-header">
-                    <h4>{character.basicInfo?.name}</h4>
-                    <button className="close-btn" onClick={() => setShowDetails(false)}>×</button>
-                </div>
-                <pre className="char-json">
-{JSON.stringify(character, null, 2)}
-                </pre>
-            </div>
-        </div>,
-        document.body
-    );
 
     // attack button
     const targetButton = isHighlighted ? (
@@ -147,7 +132,7 @@ function Character({
                 {moreButton}
             </div>
             {targetButton}
-            {modalContent}
+            {showDetails && <CharacterSheetPopup character={character} onClose={() => setShowDetails(false)} onCharacterUpdate={onCharacterUpdate} />}
             {actionButtons}
         </div>
     );

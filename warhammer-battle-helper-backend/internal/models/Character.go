@@ -7,44 +7,173 @@ import (
 )
 
 type Character struct {
-	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	OwnerID         primitive.ObjectID `bson:"ownerId" json:"ownerId"`
-	BasicInfo       BasicInfo          `bson:"basicInfo" json:"basicInfo"`
-	Characteristics CharacteristicList `bson:"characteristics" json:"characteristics"`
-	Skills          map[string]int     `bson:"skills" json:"skills"`
-	Weapons         []Weapon           `bson:"weapons" json:"weapons"`
-	Avatar          string             `bson:"avatar" json:"avatar"`
-	CreatedAt       time.Time          `bson:"createdat" json:"createdAt"`
-	UpdatedAt       time.Time          `bson:"updatedat" json:"updatedAt"`
+	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
+	OwnerID         primitive.ObjectID   `bson:"ownerId" json:"ownerId"`
+	BasicInfo       BasicInfo            `bson:"basicInfo" json:"basicInfo"`
+	Fate            FateInfo             `bson:"fate" json:"fate"`
+	Resilience      ResilienceInfo       `bson:"resilience" json:"resilience"`
+	Experience      ExperienceInfo       `bson:"experience" json:"experience"`
+	Movement        MovementInfo         `bson:"movement" json:"movement"`
+	Wounds          WoundsInfo           `bson:"wounds" json:"wounds"`
+	Talents         []Talent             `bson:"talents" json:"talents"`
+	ArmourPoints    ArmourPoints         `bson:"armourPoints" json:"armourPoints"`
+	Weapons         []Weapon             `bson:"weapons" json:"weapons"`
+	Armour          []ArmourItem         `bson:"armour" json:"armour"`
+	Wealth          WealthInfo           `bson:"wealth" json:"wealth"`
+	Equipment       []EquipmentItem      `bson:"equipment" json:"equipment"`
+	Encumbrance     EncumbranceInfo      `bson:"encumbrance" json:"encumbrance"`
+	Characteristics CharacteristicsTable `bson:"characteristics" json:"characteristics"`
+	BasicSkills     []Skill              `bson:"basicSkills" json:"basicSkills"`
+	AdvancedSkills  []Skill              `bson:"advancedSkills" json:"advancedSkills"`
+	Spells          []Spell              `bson:"spells" json:"spells"`
+	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
+	Party           PartyInfo            `bson:"party" json:"party"`
+	Trappings       string               `bson:"trappings" json:"trappings"`
+	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
+	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
 }
 
 type BasicInfo struct {
-	Name       string `bson:"name" json:"name"`
-	Race       string `bson:"race" json:"race"`
-	Class      string `bson:"class" json:"class"`
-	Profession string `bson:"profession" json:"profession"`
-	Type       string `bson:"type" json:"type"`
+	Name        string `bson:"name" json:"name"`
+	Species     string `bson:"species" json:"species"`
+	Class       string `bson:"class" json:"class"`
+	Career      string `bson:"career" json:"career"`
+	CareerLevel string `bson:"careerLevel" json:"careerLevel"`
+	Status      string `bson:"status" json:"status"`
+	CareerPath  string `bson:"careerPath" json:"careerPath"`
+	Age         string `bson:"age" json:"age"`
+	Height      string `bson:"height" json:"height"`
+	Hair        string `bson:"hair" json:"hair"`
+	Eyes        string `bson:"eyes" json:"eyes"`
+	Type        string `bson:"type" json:"type"` // "ally" or "enemy"
+	Avatar      string `bson:"avatar" json:"avatar"`
 }
 
-type CharacteristicList struct {
-	WW  Characteristic `bson:"WW" json:"WW"`
-	US  Characteristic `bson:"US" json:"US"`
-	S   Characteristic `bson:"S" json:"S"`
-	Wt  Characteristic `bson:"Wt" json:"Wt"`
-	I   Characteristic `bson:"I" json:"I"`
-	Zw  Characteristic `bson:"Zw" json:"Zw"`
-	Zr  Characteristic `bson:"Zr" json:"Zr"`
-	Int Characteristic `bson:"Int" json:"Int"`
-	SW  Characteristic `bson:"SW" json:"SW"`
-	Ogd Characteristic `bson:"Ogd" json:"Ogd"`
+type FateInfo struct {
+	Fate    string `bson:"fate" json:"fate"`
+	Fortune string `bson:"fortune" json:"fortune"`
 }
 
-type Characteristic struct {
-	Base     int `bson:"base" json:"base"`
-	Advances int `bson:"advances" json:"advances"`
+type ResilienceInfo struct {
+	Resilience string `bson:"resilience" json:"resilience"`
+	Resolve    string `bson:"resolve" json:"resolve"`
+	Motivation string `bson:"motivation" json:"motivation"`
+}
+
+type ExperienceInfo struct {
+	Current string `bson:"current" json:"current"`
+	Spent   string `bson:"spent" json:"spent"`
+	Total   string `bson:"total" json:"total"`
+}
+
+type MovementInfo struct {
+	Movement string `bson:"movement" json:"movement"`
+	Walk     string `bson:"walk" json:"walk"`
+	Run      string `bson:"run" json:"run"`
+}
+
+type WoundsInfo struct {
+	SB    string `bson:"sb" json:"sb"`
+	TB    string `bson:"tb" json:"tb"`
+	WPB   string `bson:"wpb" json:"wpb"`
+	Hardy string `bson:"hardy" json:"hardy"`
+	Total string `bson:"total" json:"total"`
+}
+
+type Talent struct {
+	Name        string `bson:"name" json:"name"`
+	TimesTaken  string `bson:"timesTaken" json:"timesTaken"`
+	Description string `bson:"description" json:"description"`
+}
+
+type ArmourPoints struct {
+	Head     string `bson:"head" json:"head"`
+	LeftArm  string `bson:"leftArm" json:"leftArm"`
+	RightArm string `bson:"rightArm" json:"rightArm"`
+	Body     string `bson:"body" json:"body"`
+	LeftLeg  string `bson:"leftLeg" json:"leftLeg"`
+	RightLeg string `bson:"rightLeg" json:"rightLeg"`
+	Shield   string `bson:"shield" json:"shield"`
 }
 
 type Weapon struct {
-	Name  string `bson:"name" json:"name"`
-	Bonus int    `bson:"bonus" json:"bonus"`
+	Name      string `bson:"name" json:"name"`
+	Group     string `bson:"group" json:"group"`
+	Enc       string `bson:"enc" json:"enc"`
+	Range     string `bson:"range" json:"range"`
+	Damage    string `bson:"damage" json:"damage"`
+	Qualities string `bson:"qualities" json:"qualities"`
+}
+
+type ArmourItem struct {
+	Name      string `bson:"name" json:"name"`
+	Locations string `bson:"locations" json:"locations"`
+	Enc       string `bson:"enc" json:"enc"`
+	AP        string `bson:"ap" json:"ap"`
+	Qualities string `bson:"qualities" json:"qualities"`
+}
+
+type WealthInfo struct {
+	Brass  string `bson:"brass" json:"brass"`
+	Silver string `bson:"silver" json:"silver"`
+	Gold   string `bson:"gold" json:"gold"`
+}
+
+type EquipmentItem struct {
+	Name        string `bson:"name" json:"name"`
+	Enc         string `bson:"enc" json:"enc"`
+	Description string `bson:"description" json:"description"`
+}
+
+type EncumbranceInfo struct {
+	Weapons   string `bson:"weapons" json:"weapons"`
+	Armour    string `bson:"armour" json:"armour"`
+	Trappings string `bson:"trappings" json:"trappings"`
+	MaxEnc    string `bson:"maxEnc" json:"maxEnc"`
+	Total     string `bson:"total" json:"total"`
+}
+
+type CharacteristicsTable struct {
+	Initial  CharacteristicRow `bson:"initial" json:"initial"`
+	Advances CharacteristicRow `bson:"advances" json:"advances"`
+	Current  CharacteristicRow `bson:"current" json:"current"`
+}
+
+type CharacteristicRow struct {
+	WS  string `bson:"WS" json:"WS"`
+	BS  string `bson:"BS" json:"BS"`
+	S   string `bson:"S" json:"S"`
+	T   string `bson:"T" json:"T"`
+	I   string `bson:"I" json:"I"`
+	Ag  string `bson:"Ag" json:"Ag"`
+	Dex string `bson:"Dex" json:"Dex"`
+	Int string `bson:"Int" json:"Int"`
+	WP  string `bson:"WP" json:"WP"`
+	Fel string `bson:"Fel" json:"Fel"`
+}
+
+type Skill struct {
+	Name           string `bson:"name" json:"name"`
+	Characteristic string `bson:"characteristic" json:"characteristic"`
+	Advances       string `bson:"advances" json:"advances"`
+	Skill          string `bson:"skill" json:"skill"`
+}
+
+type Spell struct {
+	Name     string `bson:"name" json:"name"`
+	TN       string `bson:"tn" json:"tn"`
+	Range    string `bson:"range" json:"range"`
+	Target   string `bson:"target" json:"target"`
+	Duration string `bson:"duration" json:"duration"`
+	Effect   string `bson:"effect" json:"effect"`
+}
+
+type AmbitionsInfo struct {
+	ShortTerm string `bson:"shortTerm" json:"shortTerm"`
+	LongTerm  string `bson:"longTerm" json:"longTerm"`
+}
+
+type PartyInfo struct {
+	Name    string `bson:"name" json:"name"`
+	Members string `bson:"members" json:"members"`
 }

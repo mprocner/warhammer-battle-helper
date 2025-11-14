@@ -165,7 +165,7 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 	gameChar := models.GameCharacter{
 		CharacterID: charObjectID,
 		Name:        character.BasicInfo.Name,
-		Avatar:      character.Avatar,
+		Avatar:      character.BasicInfo.Avatar,
 		PositionX:   x,
 		PositionY:   y,
 		IsEnemy:     isEnemy,
