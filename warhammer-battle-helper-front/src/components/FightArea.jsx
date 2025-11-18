@@ -13,18 +13,29 @@ function FightArea({
     clearHighlightedTargets,
     setCurrentAttacker,
     setCurrentDefender,
-    onCharacterUpdate
+    onCharacterUpdate,
+    onSelectCharacter,
+    selectedCharacterId
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
+
+    const isSelected = currentZone.character?.id === selectedCharacterId;
 
     const classNames = [
         'fight-zone',
         isOver && 'drag-over',
-        isActiveDrop && 'drag-target'
+        isActiveDrop && 'drag-target',
+        isSelected && 'selected'
     ].filter(Boolean).join(' ');
 
+    const handleZoneClick = () => {
+        if (currentZone.character && onSelectCharacter) {
+            onSelectCharacter(currentZone.character);
+        }
+    };
+
     return (
-        <div ref={setNodeRef} className={classNames}>
+        <div ref={setNodeRef} className={classNames} onClick={handleZoneClick}>
             {currentZone.character && (
                 <div className="zone-characters-row">
                     <Character

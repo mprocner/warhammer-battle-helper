@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
-import CharactersList from './CharactersList';
+import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
 import {DndContext, DragOverlay} from '@dnd-kit/core';
 
@@ -30,10 +30,41 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
   const [highlightedTargets, setHighlightedTargets] = useState(new Set());
 
+  // Selected character for details panel
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [attackModifier, setAttackModifier] = useState(0);
+
   // Keep fightZonesRef in sync with fightZones state
   useEffect(() => {
     fightZonesRef.current = fightZones;
   }, [fightZones]);
+
+  // Select character and highlight nearby targets
+  const handleSelectCharacter = (character) => {
+    setSelectedCharacter(character);
+    setAttackModifier(0);
+
+    // Find the zone where this character is located
+    const characterZone = fightZones.find(z => z.character?.id === character.id);
+    if (characterZone) {
+      // Highlight nearby targets
+      highlightPossibleTargets(characterZone, fightZones);
+      setAttacker(character);
+    } else {
+      clearHighlightedTargets();
+    }
+  };
+
+  // Handle attack from details panel
+  const handlePanelAttack = () => {
+    if (!selectedCharacter) return;
+
+    const characterZone = fightZones.find(z => z.character?.id === selectedCharacter.id);
+    if (characterZone) {
+      highlightPossibleTargets(characterZone, fightZones);
+      setAttacker(selectedCharacter);
+    }
+  };
 
   // Dodaj te funkcje przed return
   const highlightPossibleTargets = (attackerZone, allFightZones) => {
@@ -448,6 +479,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   if (isLoading) return <div>Ładowanie postaci...</div>;
   if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
 
+  // Check if character is on grid
+  const isCharacterOnGrid = (charId) => {
+    return fightZones.some(z => z.character?.id === charId);
+  };
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -455,12 +491,46 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       onDragEnd={handleDragEnd}
     >
       <div className="dnd-context">
-        <CharactersList
-          characters={characters}
-          addLogMessage={addLogMessage}
-          activeId={activeId}
-          onCharacterUpdate={handleCharacterUpdate}
-        />
+        {/* Left Sidebar */}
+        <div className="left-sidebar">
+          <CharacterDetailsPanel
+            character={selectedCharacter}
+            onAttack={handlePanelAttack}
+            onCharacterUpdate={handleCharacterUpdate}
+            modifier={attackModifier}
+            onModifierChange={setAttackModifier}
+          />
+
+          {/* Characters List - always show all characters */}
+          <div className="characters-list">
+            <h3>Your Characters</h3>
+            <div className="characters-list-content">
+              {(initialCharacters || []).map(char => {
+                const onGrid = isCharacterOnGrid(char.id);
+                const isSelected = selectedCharacter?.id === char.id;
+                return (
+                  <div
+                    key={char.id}
+                    className={`character-tile ${isSelected ? 'selected' : ''} ${onGrid ? 'on-grid' : ''}`}
+                    onClick={() => handleSelectCharacter(char)}
+                  >
+                    <div className="character-tile-header">
+                      <div className="character-name">{char.basicInfo?.name}</div>
+                      <div className="character-hp">
+                        {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
+                      </div>
+                    </div>
+                    <div className="character-position">
+                      {onGrid ? 'On Grid' : 'Available'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Fight Grid */}
         <div className="fight-grid">
           {fightZones.map(zone => (
             <FightArea
@@ -476,6 +546,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                 setCurrentAttacker={setCurrentAttacker}
                 setCurrentDefender={setCurrentDefender}
                 onCharacterUpdate={handleCharacterUpdate}
+                onSelectCharacter={handleSelectCharacter}
+                selectedCharacterId={selectedCharacter?.id}
             />
           ))}
         </div>
