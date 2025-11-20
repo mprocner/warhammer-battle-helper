@@ -525,8 +525,33 @@ header nav a:hover::after {
 
 /* ================== SELECTED ZONE HIGHLIGHT ================== */
 .fight-zone.selected {
-  border: 2px solid #d4af37;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  border: 3px solid #d4af37;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 249, 240, 0.9) 0%,
+    rgba(253, 248, 236, 0.9) 100%
+  );
+  box-shadow:
+    0 0 20px rgba(212, 175, 55, 0.8),
+    0 0 30px rgba(212, 175, 55, 0.4),
+    inset 0 0 30px rgba(212, 175, 55, 0.2);
+  animation: selectedPulse 2s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes selectedPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(212, 175, 55, 0.8),
+      0 0 30px rgba(212, 175, 55, 0.4),
+      inset 0 0 30px rgba(212, 175, 55, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(212, 175, 55, 1),
+      0 0 40px rgba(212, 175, 55, 0.6),
+      inset 0 0 35px rgba(212, 175, 55, 0.3);
+  }
 }
 
 /* ================== CHARACTER LIST (poza gridem) ================== */
@@ -536,7 +561,7 @@ header nav a:hover::after {
   align-items: center;
   gap: .5rem;
   background: linear-gradient(135deg, #fff9f0 0%, #fdf8ec 100%);
-  padding: .75rem;
+  padding: .25rem;
   margin-bottom: .75rem;
   border: 2px solid #c9975b;
   border-radius: 0;

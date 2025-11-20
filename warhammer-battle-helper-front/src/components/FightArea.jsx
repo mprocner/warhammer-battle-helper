@@ -19,7 +19,7 @@ function FightArea({
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
 
-    const isSelected = currentZone.character?.id === selectedCharacterId;
+    const isSelected = currentZone.character && selectedCharacterId && currentZone.character.id === selectedCharacterId;
 
     const classNames = [
         'fight-zone',

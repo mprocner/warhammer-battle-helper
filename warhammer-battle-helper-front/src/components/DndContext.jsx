@@ -3,7 +3,7 @@ import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
-import {DndContext, DragOverlay} from '@dnd-kit/core';
+import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 
 const GRID_SIZE = 20;
 const generateFightZones = () => {
@@ -476,6 +476,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
            fightZones.find(z => z.character?.id === activeId)?.character || null;
   }, [activeId, characters, fightZones]);
 
+  // Configure drag sensors with distance threshold to allow clicks
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    })
+  );
+
   if (isLoading) return <div>Ładowanie postaci...</div>;
   if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
 
@@ -486,6 +495,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
   return (
     <DndContext
+      sensors={sensors}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
