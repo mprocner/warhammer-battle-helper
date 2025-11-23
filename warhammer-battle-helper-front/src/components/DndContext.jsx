@@ -166,6 +166,30 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
+  // Multiplayer: Remove character from grid
+  const handleRemoveCharacter = async (characterId) => {
+    if (!gameId || !token) return;
+
+    try {
+      const response = await fetch(`${getApiUrl()}/games/${gameId}/characters/${characterId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders({
+          'Authorization': `Bearer ${token}`
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove character');
+      }
+
+      // Success - WebSocket will handle the update
+    } catch (error) {
+      console.error('Error removing character from grid:', error);
+      addLogMessage('Failed to remove character from grid', 'error');
+    }
+  };
+
   const handleAttack = async (attacker, defender) => {
     console.log("handleAttack called with:", { attacker, defender });
 
@@ -518,6 +542,51 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
               {(initialCharacters || []).map(char => {
                 const onGrid = isCharacterOnGrid(char.id);
                 const isSelected = selectedCharacter?.id === char.id;
+
+                const handleGridToggle = async (e) => {
+                  e.stopPropagation(); // Prevent selection when clicking button
+
+                  if (onGrid) {
+                    // Remove from grid
+                    if (gameId && token) {
+                      // Multiplayer mode - sync with backend
+                      await handleRemoveCharacter(char.id);
+                    } else {
+                      // Single-player mode - update locally
+                      setFightZones(prev =>
+                        prev.map(zone =>
+                          zone.character?.id === char.id
+                            ? { ...zone, character: null }
+                            : zone
+                        )
+                      );
+                    }
+                  } else {
+                    // Add to grid - find first empty zone
+                    const emptyZoneIndex = fightZones.findIndex(z => !z.character);
+                    if (emptyZoneIndex !== -1) {
+                      const targetZone = fightZones[emptyZoneIndex];
+
+                      if (gameId && token) {
+                        // Multiplayer mode - sync with backend
+                        // col is X, row is Y
+                        await handleAddCharacterToGrid(char.id, targetZone.col, targetZone.row, false);
+                      } else {
+                        // Single-player mode - update locally
+                        setFightZones(prev =>
+                          prev.map((zone, idx) =>
+                            idx === emptyZoneIndex
+                              ? { ...zone, character: char }
+                              : zone
+                          )
+                        );
+                      }
+                    } else {
+                      addLogMessage('No empty spaces on grid', 'warning');
+                    }
+                  }
+                };
+
                 return (
                   <div
                     key={char.id}
@@ -532,6 +601,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                     </div>
                     <div className="character-position">
                       {onGrid ? 'On Grid' : 'Available'}
+                      <button
+                        className="grid-toggle-btn"
+                        onClick={handleGridToggle}
+                        title={onGrid ? 'Remove from grid' : 'Add to grid'}
+                      >
+                        {onGrid ? '←' : '→'}
+                      </button>
                     </div>
                   </div>
                 );

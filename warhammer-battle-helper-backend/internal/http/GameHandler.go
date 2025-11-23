@@ -197,6 +197,38 @@ func (h *GameHandler) MoveCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Character moved successfully"})
 }
 
+// RemoveCharacter removes a character from the game grid
+func (h *GameHandler) RemoveCharacter(c *gin.Context) {
+	gameID := c.Param("id")
+	characterID := c.Param("characterId")
+
+	// Get user from JWT
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	username := claims["email"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	charObjID, err := primitive.ObjectIDFromHex(characterID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid character ID"})
+		return
+	}
+
+	err = h.GameService.RemoveCharacter(gameID, charObjID, userID, username)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Character removed successfully"})
+}
+
 // Fight initiates combat between two characters
 func (h *GameHandler) Fight(c *gin.Context) {
 	gameID := c.Param("id")

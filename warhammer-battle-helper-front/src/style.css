@@ -521,6 +521,62 @@ header nav a:hover::after {
 .character-position {
   font-size: 11px;
   color: #7a5c42;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grid-toggle-btn {
+  background: linear-gradient(135deg, #c9975b 0%, #b8864a 100%);
+  border: 1px solid #7a5c42;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  width: 28px;
+  height: 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.2);
+  position: relative;
+}
+
+.grid-toggle-btn:hover {
+  background: linear-gradient(135deg, #d4af37 0%, #c9975b 100%);
+  border-color: #6b4423;
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+}
+
+.grid-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.grid-toggle-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: rgba(58, 47, 31, 0.95);
+  color: #f4e8d8;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  border: 1px solid #7a5c42;
+  margin-bottom: 4px;
+  font-weight: normal;
+}
+
+.grid-toggle-btn:hover::after {
+  opacity: 1;
 }
 
 /* ================== SELECTED ZONE HIGHLIGHT ================== */

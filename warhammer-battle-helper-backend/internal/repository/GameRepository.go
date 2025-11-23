@@ -278,7 +278,7 @@ func (r *GameRepository) RemoveCharacter(gameID string, characterID primitive.Ob
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{
-		"$pull": bson.M{"characters": bson.M{"_id": characterID}},
+		"$pull": bson.M{"characters": bson.M{"characterId": characterID}},
 		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 
