@@ -3,6 +3,7 @@ import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
+import ModifierSelectionModal from './ModifierSelectionModal';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 
 const GRID_SIZE = 20;
@@ -33,6 +34,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   // Selected character for details panel
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [attackModifier, setAttackModifier] = useState(0);
+
+  // Modifier selection modal
+  const [showModifierModal, setShowModifierModal] = useState(false);
+  const [pendingDefender, setPendingDefender] = useState(null);
+  const [mousePosition, setMousePosition] = useState(null);
 
   // Keep fightZonesRef in sync with fightZones state
   useEffect(() => {
@@ -100,9 +106,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       console.log("highlightedTargets:", [...highlightedTargets]);
 
   };
-  const setCurrentDefender = (character) => {
+  const setCurrentDefender = (character, event) => {
       console.log("Defender set to:", character?.basicInfo?.name);
-      handleAttack(attacker, character);
+      setPendingDefender(character);
+
+      // Capture mouse position from the event
+      if (event) {
+          setMousePosition({ x: event.clientX, y: event.clientY });
+      }
+
+      setShowModifierModal(true);
   };
 
   // Multiplayer: Add character to grid
@@ -190,8 +203,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
-  const handleAttack = async (attacker, defender) => {
-    console.log("handleAttack called with:", { attacker, defender });
+  const handleAttack = async (attacker, defender, modifier = 0) => {
+    console.log("handleAttack called with:", { attacker, defender, modifier });
 
     try {
       // If in multiplayer mode, use game-specific endpoint
@@ -205,11 +218,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           body: JSON.stringify({
             attacker: {
               id: attacker?.id,
-              modifier: attacker?.modifier || 0
+              modifier: modifier
             },
             defender: {
               id: defender?.id,
-              modifier: defender?.modifier || 0
+              modifier: 0
             }
           })
         });
@@ -225,15 +238,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         const response = await axiosInstance.post('/fight', {
           attacker: {
             id: attacker?.id,
-            modifier: attacker?.modifier || 0
+            modifier: modifier
           },
           defender: {
             id: defender?.id,
-            modifier: defender?.modifier || 0
+            modifier: 0
           },
         });
         addLogMessage(`Fight initiated:`, 'warning');
-        console.log('Fight initiated:', {attacker, defender});
+        console.log('Fight initiated:', {attacker, defender, modifier});
         for (const message in response.data.messages) {
           addLogMessage(response.data.messages[message], 'info');
         }
@@ -246,6 +259,17 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       console.error('Error initiating fight:', error);
       addLogMessage('Failed to initiate fight', 'error');
     }
+  };
+
+  const handleModifierConfirm = (modifier) => {
+    setShowModifierModal(false);
+    handleAttack(attacker, pendingDefender, modifier);
+    setPendingDefender(null);
+  };
+
+  const handleModifierCancel = () => {
+    setShowModifierModal(false);
+    setPendingDefender(null);
   };
 
   const fetchCharacters = useCallback(async () => {
@@ -660,6 +684,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           </div>
         )}
       </DragOverlay>
+
+      {/* Modifier Selection Modal */}
+      {showModifierModal && (
+        <ModifierSelectionModal
+          mousePosition={mousePosition}
+          onConfirm={handleModifierConfirm}
+          onCancel={handleModifierCancel}
+        />
+      )}
     </DndContext>
   );
 }

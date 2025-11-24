@@ -28,7 +28,7 @@ function Character({
         <button className='target-btn'
             onClick={(e) => {
                 e.stopPropagation();
-                setCurrentDefender(character);
+                setCurrentDefender(character, e);
             }}
         >
             <img src="/img/attack.png" alt="Target" draggable="false" />
