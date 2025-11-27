@@ -329,6 +329,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         return zone;
       })
     );
+
+    // Update selectedCharacter if it's the one being updated
+    setSelectedCharacter(prev => {
+      if (prev?.id === updatedCharacter.id) {
+        return updatedCharacter;
+      }
+      return prev;
+    });
   };
 
   // Fetch game state and populate characters on grid (multiplayer mode)

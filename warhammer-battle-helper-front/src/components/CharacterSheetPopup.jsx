@@ -295,41 +295,41 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                     <h4>Fate</h4>
                                     <div className="mini-field">
                                         <label>Fate</label>
-                                        <input type="text" value={character.fate?.fate || ''} readOnly />
+                                        <input type="text" value={editedCharacter.fate?.fate || ''} onChange={(e) => handleFieldChange('fate.fate', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Fortune</label>
-                                        <input type="text" value={character.fate?.fortune || ''} readOnly />
+                                        <input type="text" value={editedCharacter.fate?.fortune || ''} onChange={(e) => handleFieldChange('fate.fortune', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="mini-box">
                                     <h4>Resilience</h4>
                                     <div className="mini-field">
                                         <label>Resilience</label>
-                                        <input type="text" value={character.resilience?.resilience || ''} readOnly />
+                                        <input type="text" value={editedCharacter.resilience?.resilience || ''} onChange={(e) => handleFieldChange('resilience.resilience', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Resolve</label>
-                                        <input type="text" value={character.resilience?.resolve || ''} readOnly />
+                                        <input type="text" value={editedCharacter.resilience?.resolve || ''} onChange={(e) => handleFieldChange('resilience.resolve', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Motivation</label>
-                                        <input type="text" style={{ width: '100%' }} value={character.resilience?.motivation || ''} readOnly />
+                                        <input type="text" style={{ width: '100%' }} value={editedCharacter.resilience?.motivation || ''} onChange={(e) => handleFieldChange('resilience.motivation', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="mini-box">
                                     <h4>Experience</h4>
                                     <div className="mini-field">
                                         <label>Current</label>
-                                        <input type="text" value={character.experience?.current || ''} readOnly />
+                                        <input type="text" value={editedCharacter.experience?.current || ''} onChange={(e) => handleFieldChange('experience.current', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Spent</label>
-                                        <input type="text" value={character.experience?.spent || ''} readOnly />
+                                        <input type="text" value={editedCharacter.experience?.spent || ''} onChange={(e) => handleFieldChange('experience.spent', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Total</label>
-                                        <input type="text" value={character.experience?.total || ''} readOnly />
+                                        <input type="text" value={editedCharacter.experience?.total || ''} onChange={(e) => handleFieldChange('experience.total', e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -340,15 +340,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>Movement</label>
-                                        <input type="text" value={character.movement?.movement || ''} readOnly />
+                                        <input type="text" value={editedCharacter.movement?.movement || ''} onChange={(e) => handleFieldChange('movement.movement', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Walk</label>
-                                        <input type="text" value={character.movement?.walk || ''} readOnly />
+                                        <input type="text" value={editedCharacter.movement?.walk || ''} onChange={(e) => handleFieldChange('movement.walk', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Run</label>
-                                        <input type="text" value={character.movement?.run || ''} readOnly />
+                                        <input type="text" value={editedCharacter.movement?.run || ''} onChange={(e) => handleFieldChange('movement.run', e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -359,23 +359,23 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>SB</label>
-                                        <input type="text" value={character.wounds?.sb || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wounds?.sb || ''} onChange={(e) => handleFieldChange('wounds.sb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>TB+2</label>
-                                        <input type="text" value={character.wounds?.tb || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wounds?.tb || ''} onChange={(e) => handleFieldChange('wounds.tb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>WPB</label>
-                                        <input type="text" value={character.wounds?.wpb || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wounds?.wpb || ''} onChange={(e) => handleFieldChange('wounds.wpb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Hardy</label>
-                                        <input type="text" value={character.wounds?.hardy || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wounds?.hardy || ''} onChange={(e) => handleFieldChange('wounds.hardy', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>Total</label>
-                                        <input type="text" value={character.wounds?.total || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wounds?.total || ''} onChange={(e) => handleFieldChange('wounds.total', e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -488,15 +488,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>D (Brass)</label>
-                                        <input type="text" value={character.wealth?.brass || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wealth?.brass || ''} onChange={(e) => handleFieldChange('wealth.brass', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>SS (Silver)</label>
-                                        <input type="text" value={character.wealth?.silver || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wealth?.silver || ''} onChange={(e) => handleFieldChange('wealth.silver', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>GC (Gold)</label>
-                                        <input type="text" value={character.wealth?.gold || ''} readOnly />
+                                        <input type="text" value={editedCharacter.wealth?.gold || ''} onChange={(e) => handleFieldChange('wealth.gold', e.target.value)} />
                                     </div>
                                 </div>
                             </div>
@@ -690,11 +690,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>Ambitions</h3>
                                 <div className="form-group">
                                     <label>Short Term</label>
-                                    <input type="text" value={character.ambitions?.shortTerm || ''} readOnly />
+                                    <input type="text" value={editedCharacter.ambitions?.shortTerm || ''} onChange={(e) => handleFieldChange('ambitions.shortTerm', e.target.value)} />
                                 </div>
                                 <div className="form-group" style={{ marginTop: '8px' }}>
                                     <label>Long Term</label>
-                                    <input type="text" value={character.ambitions?.longTerm || ''} readOnly />
+                                    <input type="text" value={editedCharacter.ambitions?.longTerm || ''} onChange={(e) => handleFieldChange('ambitions.longTerm', e.target.value)} />
                                 </div>
                             </div>
 
@@ -703,18 +703,18 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>Party</h3>
                                 <div className="form-group">
                                     <label>Party Name</label>
-                                    <input type="text" value={character.party?.name || ''} readOnly />
+                                    <input type="text" value={editedCharacter.party?.name || ''} onChange={(e) => handleFieldChange('party.name', e.target.value)} />
                                 </div>
                                 <div className="form-group" style={{ marginTop: '8px' }}>
                                     <label>Members</label>
-                                    <textarea className="notes" style={{ minHeight: '60px' }} value={character.party?.members || ''} readOnly />
+                                    <textarea className="notes" style={{ minHeight: '60px' }} value={editedCharacter.party?.members || ''} onChange={(e) => handleFieldChange('party.members', e.target.value)} />
                                 </div>
                             </div>
 
                             {/* Trappings */}
                             <div className="card-section">
                                 <h3>Trappings</h3>
-                                <textarea className="notes" value={character.trappings || ''} readOnly />
+                                <textarea className="notes" value={editedCharacter.trappings || ''} onChange={(e) => handleFieldChange('trappings', e.target.value)} />
                             </div>
                         </div>
                     </div>

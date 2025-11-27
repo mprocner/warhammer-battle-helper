@@ -698,7 +698,6 @@ header nav a:hover::after {
   width: 80%;
   box-sizing: border-box;
   align-content: start;
-  gap: 2px;
   background: #c9975b;
   border: 6px solid #7a5c42;
   box-shadow:
