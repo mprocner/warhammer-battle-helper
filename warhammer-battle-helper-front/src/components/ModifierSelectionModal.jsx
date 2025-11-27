@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 function ModifierSelectionModal({ mousePosition, onConfirm, onCancel }) {
-    const modifierOptions = [-60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50, 60];
+    const modifierOptions = [60, 50, 40, 30, 20, 10, 0, -10, -20, -30, -40, -50, -60];
     const modalRef = useRef(null);
 
     useEffect(() => {
