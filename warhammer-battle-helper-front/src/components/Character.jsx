@@ -48,18 +48,10 @@ function Character({
                 style={style}
                 
             >
-                {currentZone?.id ? (
-                    <div className="drag-handle" {...attributes} {...listeners}>
-                        <Avatar src={character.basicInfo?.avatar} />
-                    </div>
-                ) : (
-                    <>
-                        <div className="drag-handle" {...attributes} {...listeners}>
-                            <Avatar src={character.basicInfo?.avatar} />
-                        </div>
-                        <span className="character-name">{character.basicInfo?.name}</span>
-                    </>
-                )}
+                <div className="drag-handle" {...attributes} {...listeners}>
+                    <Avatar src={character.basicInfo?.avatar} />
+                </div>
+                <span className="character-name">{character.basicInfo?.name}</span>
             </div>
             {targetButton}
         </div>
