@@ -140,16 +140,16 @@ type CharacteristicsTable struct {
 }
 
 type CharacteristicRow struct {
-	WS  string `bson:"WS" json:"WS"`
-	BS  string `bson:"BS" json:"BS"`
-	S   string `bson:"S" json:"S"`
-	T   string `bson:"T" json:"T"`
-	I   string `bson:"I" json:"I"`
-	Ag  string `bson:"Ag" json:"Ag"`
-	Dex string `bson:"Dex" json:"Dex"`
-	Int string `bson:"Int" json:"Int"`
-	WP  string `bson:"WP" json:"WP"`
-	Fel string `bson:"Fel" json:"Fel"`
+	WS  int `bson:"WS" json:"WS"`
+	BS  int `bson:"BS" json:"BS"`
+	S   int `bson:"S" json:"S"`
+	T   int `bson:"T" json:"T"`
+	I   int `bson:"I" json:"I"`
+	Ag  int `bson:"Ag" json:"Ag"`
+	Dex int `bson:"Dex" json:"Dex"`
+	Int int `bson:"Int" json:"Int"`
+	WP  int `bson:"WP" json:"WP"`
+	Fel int `bson:"Fel" json:"Fel"`
 }
 
 type Skill struct {

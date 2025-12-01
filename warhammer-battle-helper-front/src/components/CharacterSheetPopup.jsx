@@ -21,6 +21,20 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         setEditedCharacter(character);
     }, [character]);
 
+    // Calculate current characteristics from initial + advances
+    const calculateCurrentCharacteristics = (char) => {
+        const stats = ['WS', 'BS', 'S', 'T', 'I', 'Ag', 'Dex', 'Int', 'WP', 'Fel'];
+        const current = {};
+
+        stats.forEach(stat => {
+            const initial = parseInt(char.characteristics?.initial?.[stat]) || 0;
+            const advances = parseInt(char.characteristics?.advances?.[stat]) || 0;
+            current[stat] = initial + advances;
+        });
+
+        return current;
+    };
+
     // Handle field changes
     const handleFieldChange = (path, value) => {
         const pathParts = path.split('.');
@@ -35,7 +49,21 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                 current = current[pathParts[i]];
             }
 
-            current[pathParts[pathParts.length - 1]] = value;
+            // Convert characteristic values to integers
+            if (path.startsWith('characteristics.initial') || path.startsWith('characteristics.advances')) {
+                current[pathParts[pathParts.length - 1]] = parseInt(value) || 0;
+            } else {
+                current[pathParts[pathParts.length - 1]] = value;
+            }
+
+            // If changing characteristics initial or advances, recalculate current
+            if (path.startsWith('characteristics.initial') || path.startsWith('characteristics.advances')) {
+                if (!newCharacter.characteristics) {
+                    newCharacter.characteristics = {};
+                }
+                newCharacter.characteristics.current = calculateCurrentCharacteristics(newCharacter);
+            }
+
             return newCharacter;
         });
     };
@@ -526,42 +554,42 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                     <tbody>
                                         <tr>
                                             <td className="row-label">Initial</td>
-                                            <td><input type="text" value={character.characteristics?.initial?.WS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.BS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.S || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.T || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.I || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.Ag || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.Dex || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.Int || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.WP || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.initial?.Fel || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.WS || ''} onChange={(e) => handleFieldChange('characteristics.initial.WS', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.BS || ''} onChange={(e) => handleFieldChange('characteristics.initial.BS', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.S || ''} onChange={(e) => handleFieldChange('characteristics.initial.S', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.T || ''} onChange={(e) => handleFieldChange('characteristics.initial.T', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.I || ''} onChange={(e) => handleFieldChange('characteristics.initial.I', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.Ag || ''} onChange={(e) => handleFieldChange('characteristics.initial.Ag', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.Dex || ''} onChange={(e) => handleFieldChange('characteristics.initial.Dex', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.Int || ''} onChange={(e) => handleFieldChange('characteristics.initial.Int', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.WP || ''} onChange={(e) => handleFieldChange('characteristics.initial.WP', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.initial?.Fel || ''} onChange={(e) => handleFieldChange('characteristics.initial.Fel', e.target.value)} /></td>
                                         </tr>
                                         <tr>
-                                            <td className="row-label">Advances</td>
-                                            <td><input type="text" value={character.characteristics?.advances?.WS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.BS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.S || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.T || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.I || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.Ag || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.Dex || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.Int || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.WP || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.advances?.Fel || ''} readOnly /></td>
+                                            <td className="row-label">Advances</td> 
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.WS || ''} onChange={(e) => handleFieldChange('characteristics.advances.WS', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.BS || ''} onChange={(e) => handleFieldChange('characteristics.advances.BS', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.S || ''} onChange={(e) => handleFieldChange('characteristics.advances.S', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.T || ''} onChange={(e) => handleFieldChange('characteristics.advances.T', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.I || ''} onChange={(e) => handleFieldChange('characteristics.advances.I', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.Ag || ''} onChange={(e) => handleFieldChange('characteristics.advances.Ag', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.Dex || ''} onChange={(e) => handleFieldChange('characteristics.advances.Dex', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.Int || ''} onChange={(e) => handleFieldChange('characteristics.advances.Int', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.WP || ''} onChange={(e) => handleFieldChange('characteristics.advances.WP', e.target.value)} /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.advances?.Fel || ''} onChange={(e) => handleFieldChange('characteristics.advances.Fel', e.target.value)} /></td>
                                         </tr>
                                         <tr>
                                             <td className="row-label">Current</td>
-                                            <td><input type="text" value={character.characteristics?.current?.WS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.BS || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.S || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.T || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.I || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.Ag || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.Dex || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.Int || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.WP || ''} readOnly /></td>
-                                            <td><input type="text" value={character.characteristics?.current?.Fel || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.WS || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.BS || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.S || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.T || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.I || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.Ag || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.Dex || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.Int || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.WP || ''} readOnly /></td>
+                                            <td><input type="text" value={editedCharacter.characteristics?.current?.Fel || ''} readOnly /></td>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -31,14 +31,14 @@ func (d Dice) Fight(attacker *models.Character, defender *models.Character, modi
 	attackerResult := d.Roll()
 	defenderResult := d.Roll()
 
-	// Parse WS from current characteristics (use 30 as default if not set)
-	attackerWS := parseInt(attacker.Characteristics.Current.WS)
+	// Get WS from current characteristics (use 30 as default if not set)
+	attackerWS := attacker.Characteristics.Current.WS
 	if attackerWS == 0 {
 		attackerWS = 30
 	}
 	attackerWSWithModifier := attackerWS + modifier
 
-	defenderWS := parseInt(defender.Characteristics.Current.WS)
+	defenderWS := defender.Characteristics.Current.WS
 	if defenderWS == 0 {
 		defenderWS = 30
 	}
@@ -81,7 +81,7 @@ func (Dice) calculateSuccessLevel(rollResult int, attribute int) int {
 func (Dice) prepareFightOutput(winner *models.Character, successLevel int, attackerWins bool) string {
 	if attackerWins {
 		// Parse Strength from current characteristics (use 30 as default)
-		strength := parseInt(winner.Characteristics.Current.S)
+		strength := winner.Characteristics.Current.S
 		if strength == 0 {
 			strength = 30
 		}
