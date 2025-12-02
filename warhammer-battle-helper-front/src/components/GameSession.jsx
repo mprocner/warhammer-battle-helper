@@ -148,10 +148,33 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
         break;
 
       case 'DICE_ROLLED':
-        addLogMessage(
-          `${message.payload.username} rolled d${message.payload.sides}: ${message.payload.result}`,
-          'success'
-        );
+        // Check if this is a characteristic test
+        if (message.payload.attribute && message.payload.attributeValue) {
+          const rollResult = message.payload.result;
+          const attributeValue = message.payload.attributeValue;
+          const attributeModifier = message.payload.attributeModifier || 0;
+          const successLevel = Math.floor(attributeValue / 10) - Math.floor(rollResult / 10);
+          const success = rollResult <= attributeValue;
+          const successText = success
+            ? `Success! (SL: ${successLevel})`
+            : `Failure! (SL: ${successLevel})`;
+
+          // Add modifier text if non-zero
+          const modifierText = attributeModifier !== 0
+            ? ` (${attributeModifier > 0 ? '+' : ''}${attributeModifier})`
+            : '';
+
+          addLogMessage(
+            `${message.payload.characterName || 'Character'} - ${message.payload.attribute}${modifierText} Test: Rolled ${rollResult} vs ${attributeValue} - ${successText}`,
+            success ? 'success' : 'error'
+          );
+        } else {
+          // Regular dice roll
+          addLogMessage(
+            `${message.payload.username} rolled d${message.payload.sides}: ${message.payload.result}`,
+            'success'
+          );
+        }
         break;
 
       case 'FIGHT_RESULT':

@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
 import CharacterSheetPopup from './CharacterSheetPopup';
+import ModifierSelectionModal from './ModifierSelectionModal';
+import axios from 'axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 
 function CharacterDetailsPanel({
     character,
     onAttack,
     onCharacterUpdate,
     modifier,
-    onModifierChange
+    onModifierChange,
+    addLogMessage,
+    gameId = null,
+    token = null
 }) {
     const [showDetails, setShowDetails] = useState(false);
+    const [showModifierModal, setShowModifierModal] = useState(false);
+    const [mousePosition, setMousePosition] = useState(null);
+    const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
 
     if (!character) {
         return (
@@ -32,6 +41,96 @@ function CharacterDetailsPanel({
         if (modifier > 0) return 'positive';
         if (modifier < 0) return 'negative';
         return '';
+    };
+
+    const handleCharacteristicClick = (charName, charValue, event) => {
+        if (!charValue || charValue === '-') {
+            if (addLogMessage) {
+                addLogMessage(`Cannot roll ${charName}: No value set`, 'warning');
+            }
+            return;
+        }
+
+        // Store pending characteristic and show modifier modal
+        setPendingCharacteristic({ name: charName, value: charValue });
+        setMousePosition({ x: event.clientX, y: event.clientY });
+        setShowModifierModal(true);
+    };
+
+    const handleModifierConfirm = (selectedModifier) => {
+        setShowModifierModal(false);
+        if (pendingCharacteristic) {
+            rollCharacteristic(
+                pendingCharacteristic.name,
+                pendingCharacteristic.value,
+                selectedModifier
+            );
+        }
+        setPendingCharacteristic(null);
+    };
+
+    const handleModifierCancel = () => {
+        setShowModifierModal(false);
+        setPendingCharacteristic(null);
+    };
+
+    const rollCharacteristic = async (charName, charValue, modifierValue) => {
+        try {
+            // Roll d100 for characteristic test
+            const sides = 100;
+
+            // If in a game session, use the game-specific endpoint
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({
+                        sides,
+                        characterId: character.id,
+                        attribute: charName,
+                        attributeModifier: modifierValue
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to roll dice');
+                }
+
+                // WebSocket will handle broadcasting the message with characteristic details
+                // Backend calculates modified value from database (server-authoritative)
+            } else {
+                // Fallback to single-player mode
+                const modifiedValue = charValue + modifierValue;
+                const response = await axios.post(`${getApiUrl()}/roll`, {
+                    "sides": sides
+                }, {
+                    withCredentials: true
+                });
+
+                const rollResult = response.data.result;
+                const successLevel = Math.floor(modifiedValue / 10) - Math.floor(rollResult / 10);
+                const success = rollResult <= modifiedValue;
+
+                if (addLogMessage) {
+                    const successText = success
+                        ? `Success! (SL: ${successLevel})`
+                        : `Failure! (SL: ${successLevel})`;
+                    const modifierText = modifierValue !== 0 ? ` (${modifierValue > 0 ? '+' : ''}${modifierValue})` : '';
+                    addLogMessage(
+                        `${character.basicInfo?.name} - ${charName}${modifierText} Test: Rolled ${rollResult} vs ${modifiedValue} - ${successText}`,
+                        success ? 'success' : 'error'
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Error rolling characteristic:', error);
+            if (addLogMessage) {
+                addLogMessage('Failed to roll characteristic', 'error');
+            }
+        }
     };
 
     return (
@@ -117,46 +216,96 @@ function CharacterDetailsPanel({
 
             {/* Characteristics Mini */}
             <div className="characteristics-mini">
-                <div className="char-box">
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('WS', stats.WS, e)}
+                    title="Roll WS Test"
+                    disabled={!stats.WS || stats.WS === '-'}
+                >
                     <div className="char-box-label">WS</div>
                     <div className="char-box-value">{stats.WS || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('BS', stats.BS, e)}
+                    title="Roll BS Test"
+                    disabled={!stats.BS || stats.BS === '-'}
+                >
                     <div className="char-box-label">BS</div>
                     <div className="char-box-value">{stats.BS || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('S', stats.S, e)}
+                    title="Roll S Test"
+                    disabled={!stats.S || stats.S === '-'}
+                >
                     <div className="char-box-label">S</div>
                     <div className="char-box-value">{stats.S || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('T', stats.T, e)}
+                    title="Roll T Test"
+                    disabled={!stats.T || stats.T === '-'}
+                >
                     <div className="char-box-label">T</div>
                     <div className="char-box-value">{stats.T || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('I', stats.I, e)}
+                    title="Roll I Test"
+                    disabled={!stats.I || stats.I === '-'}
+                >
                     <div className="char-box-label">I</div>
                     <div className="char-box-value">{stats.I || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('Ag', stats.Ag, e)}
+                    title="Roll Ag Test"
+                    disabled={!stats.Ag || stats.Ag === '-'}
+                >
                     <div className="char-box-label">Ag</div>
                     <div className="char-box-value">{stats.Ag || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('Dex', stats.Dex, e)}
+                    title="Roll Dex Test"
+                    disabled={!stats.Dex || stats.Dex === '-'}
+                >
                     <div className="char-box-label">Dex</div>
                     <div className="char-box-value">{stats.Dex || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('Int', stats.Int, e)}
+                    title="Roll Int Test"
+                    disabled={!stats.Int || stats.Int === '-'}
+                >
                     <div className="char-box-label">Int</div>
                     <div className="char-box-value">{stats.Int || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('WP', stats.WP, e)}
+                    title="Roll WP Test"
+                    disabled={!stats.WP || stats.WP === '-'}
+                >
                     <div className="char-box-label">WP</div>
                     <div className="char-box-value">{stats.WP || '-'}</div>
-                </div>
-                <div className="char-box">
+                </button>
+                <button
+                    className="char-box char-box-button"
+                    onClick={(e) => handleCharacteristicClick('Fel', stats.Fel, e)}
+                    title="Roll Fel Test"
+                    disabled={!stats.Fel || stats.Fel === '-'}
+                >
                     <div className="char-box-label">Fel</div>
                     <div className="char-box-value">{stats.Fel || '-'}</div>
-                </div>
+                </button>
             </div>
 
             {showDetails && (
@@ -164,6 +313,14 @@ function CharacterDetailsPanel({
                     character={character}
                     onClose={() => setShowDetails(false)}
                     onCharacterUpdate={onCharacterUpdate}
+                />
+            )}
+
+            {showModifierModal && (
+                <ModifierSelectionModal
+                    mousePosition={mousePosition}
+                    onConfirm={handleModifierConfirm}
+                    onCancel={handleModifierCancel}
                 />
             )}
         </div>

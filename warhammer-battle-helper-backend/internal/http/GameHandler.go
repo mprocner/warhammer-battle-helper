@@ -5,6 +5,7 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
 	"battle-helper/internal/websocket"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -275,13 +276,16 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		Sides int `json:"sides" binding:"required"`
+		Sides             int    `json:"sides" binding:"required"`
+		CharacterId       string `json:"characterId"`
+		Attribute         string `json:"attribute"`
+		AttributeModifier int    `json:"attributeModifier"`
 	}
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Printf("Request = %v", req)
 
 	// Get user from JWT
 	token, _ := c.Get("jwt")
@@ -295,7 +299,7 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username)
+	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.CharacterId, req.Attribute, req.AttributeModifier)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

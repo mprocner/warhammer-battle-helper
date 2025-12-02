@@ -296,7 +296,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         return charactersData.filter(
           char => !characterIdsOnGrid.has(char.id)
         );
-      });
+      }); 
 
       setError(null);
     } catch (e) {
@@ -565,6 +565,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             onCharacterUpdate={handleCharacterUpdate}
             modifier={attackModifier}
             onModifierChange={setAttackModifier}
+            addLogMessage={addLogMessage}
+            gameId={gameId}
+            token={token}
           />
 
           {/* Characters List - always show all characters */}

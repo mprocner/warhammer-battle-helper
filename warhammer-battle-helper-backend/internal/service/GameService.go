@@ -329,31 +329,100 @@ func (s *GameService) Fight(gameID string, attackerID, defenderID string, attack
 }
 
 // RollDice rolls dice and logs the result
-func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string) (int, error) {
+func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, characterID string, attributeName string, attributeModifier int) (int, error) {
 	// Use the Dice service for proper random rolls
 	dice := Dice{Sizes: sides}
 	result := dice.Roll()
+
+	eventData := map[string]interface{}{
+		"sides":  sides,
+		"result": result,
+	}
+
+	var characterName string
+	var attributeValue int
+
+	// Add characteristic test data if provided
+	if characterID != "" && attributeName != "" {
+		// Fetch character from database to get actual characteristic value
+		character, err := s.charRepo.GetByID(characterID)
+		if err != nil {
+			return 0, fmt.Errorf("character not found: %w", err)
+		}
+
+		characterName = character.BasicInfo.Name
+
+		// Get the characteristic value based on attribute name
+		baseValue := 0
+		switch attributeName {
+		case "WS":
+			baseValue = character.Characteristics.Current.WS
+		case "BS":
+			baseValue = character.Characteristics.Current.BS
+		case "S":
+			baseValue = character.Characteristics.Current.S
+		case "T":
+			baseValue = character.Characteristics.Current.T
+		case "I":
+			baseValue = character.Characteristics.Current.I
+		case "Ag":
+			baseValue = character.Characteristics.Current.Ag
+		case "Dex":
+			baseValue = character.Characteristics.Current.Dex
+		case "Int":
+			baseValue = character.Characteristics.Current.Int
+		case "WP":
+			baseValue = character.Characteristics.Current.WP
+		case "Fel":
+			baseValue = character.Characteristics.Current.Fel
+		default:
+			return 0, fmt.Errorf("unknown attribute: %s", attributeName)
+		}
+
+		if baseValue == 0 {
+			return 0, fmt.Errorf("characteristic %s not found or is zero", attributeName)
+		}
+
+		// Apply modifier on backend (server-authoritative)
+		attributeValue = baseValue + attributeModifier
+
+		eventData["characterId"] = characterID
+		eventData["characterName"] = characterName
+		eventData["attribute"] = attributeName
+		eventData["attributeValue"] = attributeValue
+		eventData["attributeModifier"] = attributeModifier
+		eventData["baseValue"] = baseValue
+	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
 		Username:  username,
-		Data: map[string]interface{}{
-			"sides":  sides,
-			"result": result,
-		},
+		Data:      eventData,
 	}
 
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return 0, err
 	}
 
-	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", map[string]interface{}{
+	// Prepare broadcast data
+	broadcastData := map[string]interface{}{
 		"sides":    sides,
 		"result":   result,
 		"username": username,
-	})
+	}
+
+	// Add characteristic test data to broadcast if provided
+	if characterID != "" && attributeName != "" {
+		broadcastData["characterId"] = characterID
+		broadcastData["characterName"] = characterName
+		broadcastData["attribute"] = attributeName
+		broadcastData["attributeValue"] = attributeValue
+		broadcastData["attributeModifier"] = attributeModifier
+	}
+
+	// Broadcast to all clients
+	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", broadcastData)
 
 	return result, nil
 }

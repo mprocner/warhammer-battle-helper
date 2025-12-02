@@ -434,6 +434,31 @@ header nav a:hover::after {
   font-weight: 700;
 }
 
+.char-box-button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid #c9975b;
+}
+
+.char-box-button:hover:not(:disabled) {
+  background: rgba(201, 151, 91, 0.35);
+  border-color: #a87d49;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(107, 68, 35, 0.2);
+}
+
+.char-box-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(107, 68, 35, 0.2);
+  background: rgba(201, 151, 91, 0.4);
+}
+
+.char-box-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: rgba(201, 151, 91, 0.1);
+}
+
 /* ================== CHARACTERS LIST ================== */
 .characters-list {
   flex: 1;
@@ -645,7 +670,7 @@ header nav a:hover::after {
 
 .character-entry.enemy:hover {
   background: linear-gradient(135deg, #fff0f0 0%, #ffe8e8 100%);
-  border-color: #a93434;
+  border-color: #a93434; 
 }
 
 .character-name {
