@@ -1,6 +1,10 @@
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Tunneling
+` ngrok http 8080`
+Set geenrated url in frontend env file as REACT_APP_API_URL
+` lt --port 3000`
 
 ## Available Scripts
 
