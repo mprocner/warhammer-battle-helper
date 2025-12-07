@@ -895,6 +895,11 @@ align-items: center;
   border-color: #c94444;
 }
 
+.character-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
 .character-wrapper:hover {
   z-index: 100;
 }

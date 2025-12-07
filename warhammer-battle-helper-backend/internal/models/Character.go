@@ -50,20 +50,20 @@ type BasicInfo struct {
 }
 
 type FateInfo struct {
-	Fate    string `bson:"fate" json:"fate"`
-	Fortune string `bson:"fortune" json:"fortune"`
+	Fate    int `bson:"fate" json:"fate"`
+	Fortune int `bson:"fortune" json:"fortune"`
 }
 
 type ResilienceInfo struct {
-	Resilience string `bson:"resilience" json:"resilience"`
-	Resolve    string `bson:"resolve" json:"resolve"`
+	Resilience int    `bson:"resilience" json:"resilience"`
+	Resolve    int    `bson:"resolve" json:"resolve"`
 	Motivation string `bson:"motivation" json:"motivation"`
 }
 
 type ExperienceInfo struct {
-	Current string `bson:"current" json:"current"`
-	Spent   string `bson:"spent" json:"spent"`
-	Total   string `bson:"total" json:"total"`
+	Current int `bson:"current" json:"current"`
+	Spent   int `bson:"spent" json:"spent"`
+	Total   int `bson:"total" json:"total"`
 }
 
 type MovementInfo struct {

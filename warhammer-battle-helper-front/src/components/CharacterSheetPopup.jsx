@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import axiosInstance from '../api/axios';
 
@@ -14,11 +14,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     const [editedCharacter, setEditedCharacter] = useState(character);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
     const popupRef = useRef(null);
+    const saveTimeoutRef = useRef(null);
 
     // Update edited character when character prop changes
     useEffect(() => {
         setEditedCharacter(character);
+        setHasChanges(false);
     }, [character]);
 
     // Calculate current characteristics from initial + advances
@@ -35,41 +38,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         return current;
     };
 
-    // Handle field changes
-    const handleFieldChange = (path, value) => {
-        const pathParts = path.split('.');
-        setEditedCharacter(prev => {
-            const newCharacter = JSON.parse(JSON.stringify(prev)); // Deep clone
-            let current = newCharacter;
-
-            for (let i = 0; i < pathParts.length - 1; i++) {
-                if (!current[pathParts[i]]) {
-                    current[pathParts[i]] = {};
-                }
-                current = current[pathParts[i]];
-            }
-
-            // Convert characteristic values to integers
-            if (path.startsWith('characteristics.initial') || path.startsWith('characteristics.advances')) {
-                current[pathParts[pathParts.length - 1]] = parseInt(value) || 0;
-            } else {
-                current[pathParts[pathParts.length - 1]] = value;
-            }
-
-            // If changing characteristics initial or advances, recalculate current
-            if (path.startsWith('characteristics.initial') || path.startsWith('characteristics.advances')) {
-                if (!newCharacter.characteristics) {
-                    newCharacter.characteristics = {};
-                }
-                newCharacter.characteristics.current = calculateCurrentCharacteristics(newCharacter);
-            }
-
-            return newCharacter;
-        });
-    };
-
     // Save character
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         setIsSaving(true);
         setSaveSuccess(false);
         try {
@@ -88,12 +58,84 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
             if (onCharacterUpdate) {
                 onCharacterUpdate(editedCharacter);
             }
+
+            setHasChanges(false);
         } catch (error) {
             console.error('Error saving character:', error);
             alert('Failed to save character: ' + (error.response?.data?.error || error.message));
         } finally {
             setIsSaving(false);
         }
+    }, [editedCharacter, onCharacterUpdate]);
+
+    // Auto-save when character is edited (with debouncing)
+    useEffect(() => {
+        if (!hasChanges) return;
+
+        // Clear existing timeout
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // Set new timeout to save after 1 second of no changes
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+
+        // Cleanup timeout on unmount
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [hasChanges, handleSave]);
+
+    // Handle field changes
+    const handleFieldChange = (path, value) => {
+        const pathParts = path.split('.');
+        setEditedCharacter(prev => {
+            const newCharacter = JSON.parse(JSON.stringify(prev)); // Deep clone
+            let current = newCharacter;
+
+            for (let i = 0; i < pathParts.length - 1; i++) {
+                if (!current[pathParts[i]]) {
+                    current[pathParts[i]] = {};
+                }
+                current = current[pathParts[i]];
+            }
+
+            // Convert numeric fields to integers
+            const numericFields = [
+                'characteristics.initial',
+                'characteristics.advances',
+                'fate.fate',
+                'fate.fortune',
+                'resilience.resilience',
+                'resilience.resolve',
+                'experience.current',
+                'experience.spent',
+                'experience.total'
+            ];
+
+            const shouldConvertToInt = numericFields.some(field => path.startsWith(field));
+
+            if (shouldConvertToInt) {
+                current[pathParts[pathParts.length - 1]] = parseInt(value) || 0;
+            } else {
+                current[pathParts[pathParts.length - 1]] = value;
+            }
+
+            // If changing characteristics initial or advances, recalculate current
+            if (path.startsWith('characteristics.initial') || path.startsWith('characteristics.advances')) {
+                if (!newCharacter.characteristics) {
+                    newCharacter.characteristics = {};
+                }
+                newCharacter.characteristics.current = calculateCurrentCharacteristics(newCharacter);
+            }
+
+            return newCharacter;
+        });
+        setHasChanges(true);
     };
 
     // Drag handlers

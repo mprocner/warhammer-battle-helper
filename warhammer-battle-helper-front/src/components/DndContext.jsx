@@ -308,6 +308,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   }, []);
 
   const handleCharacterUpdate = (updatedCharacter) => {
+    // Update local state only - saving is handled by the component making the changes
+
     // Update in initialCharacters
     setInitialCharacters(prev => {
       if (!prev || !Array.isArray(prev)) return [];
@@ -520,10 +522,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     setOverId(null);
   };
 
-  const handleReset = () => {
-    setFightZones(fightZonesRef.current.map(z => ({ ...z, character: null })));
-    setCharacters(initialCharacters);
-  };
 
   const activeCharacter = useMemo(() => {
     if (!activeId) return null;
@@ -564,7 +562,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             onAttack={handlePanelAttack}
             onCharacterUpdate={handleCharacterUpdate}
             modifier={attackModifier}
-            onModifierChange={setAttackModifier}
+            onFortuneChange={setAttackModifier}
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
@@ -673,7 +671,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           ))}
         </div>
       </div>
-      <button onClick={handleReset} className="reset-button">Resetuj</button>
 
       <DragOverlay>
         {activeCharacter && (

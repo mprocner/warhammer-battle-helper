@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
 import axios from 'axios';
-import { getApiUrl, getApiHeaders } from '../api/axios';
+import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 
 function CharacterDetailsPanel({
     character,
     onAttack,
     onCharacterUpdate,
     modifier,
-    onModifierChange,
+    onFortuneChange,
     addLogMessage,
     gameId = null,
     token = null
@@ -32,9 +32,31 @@ function CharacterDetailsPanel({
     const hp = character.secondaryAttributes?.wounds || {};
     const movement = character.secondaryAttributes?.movement?.current || 4;
 
-    const adjustModifier = (amount) => {
-        const newModifier = Math.max(-60, Math.min(60, modifier + amount));
-        onModifierChange(newModifier);
+    const adjustFortune = async (amount) => {
+        const currentFortune = Number(character.fate.fortune) || 0;
+        const newFortune = Math.max(0, currentFortune + amount);
+        console.log(`Adjusting fortune by ${amount}: ${newFortune}, current: ${character.fate.fortune}`);
+        const updatedCharacter = {
+            ...character,
+            fate: {
+                ...character.fate,
+                fortune: newFortune
+            }
+        };
+
+        // Save to backend
+        try {
+            await axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter);
+            console.log('Fortune updated and saved');
+        } catch (error) {
+            console.error('Error saving fortune change:', error);
+            if (addLogMessage) {
+                addLogMessage('Failed to save fortune change', 'error');
+            }
+        }
+
+        // Update local state
+        onCharacterUpdate(updatedCharacter);
     };
 
     const getModifierClass = () => {
@@ -203,13 +225,13 @@ function CharacterDetailsPanel({
                     <div className="detail-value">{movement}</div>
                 </div>
                 <div className="detail-item">
-                    <div className="detail-label">Modifier</div>
+                    <div className="detail-label">Fortune</div>
                     <div className="modifier-input-container">
-                        <button className="modifier-btn" onClick={() => adjustModifier(-10)}>-10</button>
+                        <button className="modifier-btn" onClick={() => adjustFortune(-1)}>-1</button>
                         <span className={`modifier-value ${getModifierClass()}`}>
-                            {modifier > 0 ? '+' : ''}{modifier}
+                            {character.fate.fortune}
                         </span>
-                        <button className="modifier-btn" onClick={() => adjustModifier(10)}>+10</button>
+                        <button className="modifier-btn" onClick={() => adjustFortune(1)}>+1</button>
                     </div>
                 </div>
             </div>
