@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
   Box,
@@ -22,6 +23,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 
 const GameLobby = ({ onJoinGame, token }) => {
+  const { t } = useTranslation();
   const [games, setGames] = useState([]);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGameName, setNewGameName] = useState('');
@@ -52,7 +54,7 @@ const GameLobby = ({ onJoinGame, token }) => {
   // Create new game
   const handleCreateGame = async () => {
     if (!newGameName.trim()) {
-      setError('Game name is required');
+      setError(t('validation.gameNameRequired'));
       return;
     }
 
@@ -137,7 +139,7 @@ const GameLobby = ({ onJoinGame, token }) => {
             textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
           }}
         >
-          Game Rooms
+          {t('game.gameRooms')}
         </Typography>
 
         <Button
@@ -153,7 +155,7 @@ const GameLobby = ({ onJoinGame, token }) => {
             py: 1.5
           }}
         >
-          Create New Game
+          {t('game.createNewGame')}
         </Button>
       </Box>
 
@@ -181,7 +183,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                   fontStyle: 'italic'
                 }}
               >
-                No active games. Create one to start your adventure!
+                {t('game.noActiveGames')}
               </Typography>
             </Card>
           </Grid>
@@ -227,7 +229,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                         fontSize: '1rem'
                       }}
                     >
-                      <strong>Game Master:</strong> {game.participants?.find(p => p.role === 'gm')?.username || 'Unknown'}
+                      <strong>{t('game.gameMaster')}:</strong> {game.participants?.find(p => p.role === 'gm')?.username || t('common.unknown')}
                     </Typography>
                   </Box>
 
@@ -240,13 +242,13 @@ const GameLobby = ({ onJoinGame, token }) => {
                         fontSize: '1rem'
                       }}
                     >
-                      <strong>Players:</strong> {game.participants?.length || 0}
+                      <strong>{t('game.players')}:</strong> {game.participants?.length || 0}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2 }}>
                     <Chip
-                      label={game.status || 'active'}
+                      label={game.status === 'active' ? t('game.active') : game.status}
                       color={game.status === 'active' ? 'success' : 'default'}
                       size="small"
                       sx={{
@@ -271,7 +273,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                       py: 1
                     }}
                   >
-                    Join Game
+                    {t('game.joinGame')}
                   </Button>
                 </CardActions>
               </Card>
@@ -300,14 +302,14 @@ const GameLobby = ({ onJoinGame, token }) => {
           fontSize: '1.8rem',
           color: 'primary.main'
         }}>
-          Create New Game
+          {t('game.createNewGame')}
         </DialogTitle>
 
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Game Name"
+            label={t('game.gameName')}
             fullWidth
             variant="outlined"
             value={newGameName}
@@ -338,7 +340,7 @@ const GameLobby = ({ onJoinGame, token }) => {
             disabled={loading}
             sx={{ fontFamily: 'Crimson Text, serif' }}
           >
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleCreateGame}
@@ -349,7 +351,7 @@ const GameLobby = ({ onJoinGame, token }) => {
               fontWeight: 600
             }}
           >
-            {loading ? 'Creating...' : 'Create'}
+            {loading ? t('common.creating') : t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>

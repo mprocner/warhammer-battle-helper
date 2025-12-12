@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
@@ -15,6 +16,7 @@ import {
 import { PersonAdd as PersonAddIcon } from '@mui/icons-material';
 
 const Register = ({ onRegisterSuccess, addLogMessage }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -40,7 +42,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
         setSuccess('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('validation.passwordsDoNotMatch'));
             setIsLoading(false);
             return;
         }
@@ -57,7 +59,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             });
 
             addLogMessage(`Successfully registered user ${formData.email}`, 'success');
-            setSuccess('Registration successful! You can now log in.');
+            setSuccess(t('auth.registrationSuccess'));
 
             setFormData({
                 email: '',
@@ -70,7 +72,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             }
 
         } catch (error) {
-            const errorMessage = error.response?.data?.error || 'Registration failed';
+            const errorMessage = error.response?.data?.error || t('auth.registrationFailed');
             setError(errorMessage);
             addLogMessage(`Registration failed: ${errorMessage}`, 'error');
         } finally {
@@ -93,10 +95,10 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                         <PersonAddIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
                         <Typography component="h1" variant="h4" fontWeight="bold" color="text.primary">
-                            Warhammer Battle Helper
+                            {t('navigation.title')}
                         </Typography>
                         <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-                            Create Account
+                            {t('auth.createAccount')}
                         </Typography>
                     </Box>
 
@@ -106,7 +108,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             required
                             fullWidth
                             id="email"
-                            label="Email Address"
+                            label={t('auth.email')}
                             name="email"
                             autoComplete="email"
                             autoFocus
@@ -119,7 +121,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             required
                             fullWidth
                             name="password"
-                            label="Password"
+                            label={t('auth.password')}
                             type="password"
                             id="password"
                             autoComplete="new-password"
@@ -127,14 +129,14 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             onChange={handleChange}
                             disabled={isLoading}
                             inputProps={{ minLength: 6 }}
-                            helperText="Minimum 6 characters"
+                            helperText={t('auth.minimumCharacters')}
                         />
                         <TextField
                             margin="normal"
                             required
                             fullWidth
                             name="confirmPassword"
-                            label="Confirm Password"
+                            label={t('auth.confirmPassword')}
                             type="password"
                             id="confirmPassword"
                             autoComplete="new-password"
@@ -164,14 +166,14 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             disabled={isLoading}
                             startIcon={isLoading ? <CircularProgress size={20} /> : <PersonAddIcon />}
                         >
-                            {isLoading ? 'Creating Account...' : 'Register'}
+                            {isLoading ? t('auth.creatingAccount') : t('auth.registerButton')}
                         </Button>
 
                         <Box sx={{ textAlign: 'center', mt: 2 }}>
                             <Typography variant="body2">
-                                Already have an account?{' '}
+                                {t('auth.alreadyHaveAccount')}{' '}
                                 <Link href="/login" underline="hover">
-                                    Login here
+                                    {t('auth.loginHere')}
                                 </Link>
                             </Typography>
                         </Box>

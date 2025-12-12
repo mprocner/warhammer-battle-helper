@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 
 function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
+    const { t } = useTranslation();
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [size, setSize] = useState({ width: 1400, height: 800 });
@@ -261,7 +263,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
             )}
             <div className="sheet-header" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
                 <h2 style={{ fontSize: isMinimized ? '14px' : undefined }}>
-                    {editedCharacter.basicInfo?.name || 'Character Sheet'}
+                    {editedCharacter.basicInfo?.name || t('characterSheet.title')}
                 </h2>
                 <div className="sheet-header-buttons">
                     {!isMinimized && (
@@ -272,7 +274,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 handleSave();
                             }}
                             disabled={isSaving}
-                            title={saveSuccess ? "Saved!" : "Save Character"}
+                            title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
                         >
                             {isSaving ? '⏳' : saveSuccess ? '✓' : '💾'}
                         </button>
@@ -283,7 +285,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                             e.stopPropagation();
                             setIsMinimized(!isMinimized);
                         }}
-                        title={isMinimized ? "Expand" : "Minimize"}
+                        title={isMinimized ? t('common.expand') : t('common.minimize')}
                     >
                         {isMinimized ? '▢' : '─'}
                     </button>
@@ -306,7 +308,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                         <div className="page-one">
                             {/* Character Information */}
                             <div className="card-section">
-                                <h3>Character Information</h3>
+                                <h3>{t('characterSheet.characterInformation')}</h3>
                                 <div className="form-grid">
                                     <div className="form-group">
                                         <label>Name</label>
@@ -406,7 +408,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Movement */}
                             <div className="card-section">
-                                <h3>Movement</h3>
+                                <h3>{t('characterSheet.movement')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>Movement</label>
@@ -425,7 +427,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Wounds */}
                             <div className="card-section">
-                                <h3>Wounds</h3>
+                                <h3>{t('characterSheet.wounds')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>SB</label>
@@ -452,7 +454,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Talents */}
                             <div className="card-section">
-                                <h3>Talents</h3>
+                                <h3>{t('characterSheet.talents')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -481,7 +483,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Weapons */}
                             <div className="card-section">
-                                <h3>Weapons</h3>
+                                <h3>{t('characterSheet.weapons')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -519,7 +521,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Armour */}
                             <div className="card-section">
-                                <h3>Armour</h3>
+                                <h3>{t('characterSheet.armour')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -554,7 +556,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Wealth */}
                             <div className="card-section">
-                                <h3>Wealth</h3>
+                                <h3>{t('characterSheet.wealth')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>D (Brass)</label>
@@ -576,7 +578,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                         <div className="page-one-right">
                             {/* Characteristics */}
                             <div className="card-section">
-                                <h3>Characteristics</h3>
+                                <h3>{t('characterSheet.characteristics')}</h3>
                                 <table className="characteristics-table">
                                     <thead>
                                         <tr>
@@ -639,7 +641,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Basic Skills */}
                             <div className="card-section">
-                                <h3>Basic Skills</h3>
+                                <h3>{t('characterSheet.basicSkills')}</h3>
                                 <div className="two-col-layout">
                                     <table className="skills-table">
                                         <thead>
@@ -687,7 +689,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Grouped & Advanced Skills */}
                             <div className="card-section">
-                                <h3>Grouped & Advanced Skills</h3>
+                                <h3>{t('characterSheet.groupedAdvancedSkills')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -719,7 +721,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Spells and Prayers */}
                             <div className="card-section">
-                                <h3>Spells and Prayers</h3>
+                                <h3>{t('characterSheet.spellsAndPrayers')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -757,7 +759,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Ambitions */}
                             <div className="card-section">
-                                <h3>Ambitions</h3>
+                                <h3>{t('characterSheet.ambitions')}</h3>
                                 <div className="form-group">
                                     <label>Short Term</label>
                                     <input type="text" value={editedCharacter.ambitions?.shortTerm || ''} onChange={(e) => handleFieldChange('ambitions.shortTerm', e.target.value)} />
@@ -770,7 +772,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Party */}
                             <div className="card-section">
-                                <h3>Party</h3>
+                                <h3>{t('characterSheet.party')}</h3>
                                 <div className="form-group">
                                     <label>Party Name</label>
                                     <input type="text" value={editedCharacter.party?.name || ''} onChange={(e) => handleFieldChange('party.name', e.target.value)} />
@@ -783,7 +785,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
                             {/* Trappings */}
                             <div className="card-section">
-                                <h3>Trappings</h3>
+                                <h3>{t('characterSheet.trappings')}</h3>
                                 <textarea className="notes" value={editedCharacter.trappings || ''} onChange={(e) => handleFieldChange('trappings', e.target.value)} />
                             </div>
                         </div>

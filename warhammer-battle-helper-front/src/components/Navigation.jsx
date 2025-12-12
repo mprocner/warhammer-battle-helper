@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     AppBar,
     Toolbar,
@@ -14,16 +15,23 @@ import {
     Login as LoginIcon,
     PersonAdd as PersonAddIcon,
     Logout as LogoutIcon,
-    SportsKabaddi as BattleIcon
+    SportsKabaddi as BattleIcon,
+    Language as LanguageIcon
 } from '@mui/icons-material';
 
 const Navigation = ({ user, onLogout }) => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         onLogout();
         navigate('/login');
+    };
+
+    const toggleLanguage = () => {
+        const newLang = i18n.language === 'en' ? 'pl' : 'en';
+        i18n.changeLanguage(newLang);
     };
 
     return (
@@ -47,7 +55,7 @@ const Navigation = ({ user, onLogout }) => {
                             flexGrow: 1
                         }}
                     >
-                        WARHAMMER BATTLE HELPER
+                        {t('navigation.title')}
                     </Typography>
 
                     <BattleIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
@@ -71,6 +79,16 @@ const Navigation = ({ user, onLogout }) => {
                     </Typography>
 
                     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <IconButton
+                            color="inherit"
+                            onClick={toggleLanguage}
+                            title={`Language: ${i18n.language.toUpperCase()}`}
+                        >
+                            <LanguageIcon />
+                            <Typography variant="caption" sx={{ ml: 0.5 }}>
+                                {i18n.language.toUpperCase()}
+                            </Typography>
+                        </IconButton>
                         {user ? (
                             <>
                                 <Chip
@@ -84,14 +102,14 @@ const Navigation = ({ user, onLogout }) => {
                                     startIcon={<BattleIcon />}
                                     onClick={() => navigate('/app')}
                                 >
-                                    Battle Arena
+                                    {t('navigation.battleArena')}
                                 </Button>
                                 <Button
                                     color="inherit"
                                     startIcon={<LogoutIcon />}
                                     onClick={handleLogout}
                                 >
-                                    Logout
+                                    {t('navigation.logout')}
                                 </Button>
                             </>
                         ) : (
@@ -101,7 +119,7 @@ const Navigation = ({ user, onLogout }) => {
                                     startIcon={<LoginIcon />}
                                     onClick={() => navigate('/login')}
                                 >
-                                    Login
+                                    {t('navigation.login')}
                                 </Button>
                                 <Button
                                     variant="outlined"
@@ -110,7 +128,7 @@ const Navigation = ({ user, onLogout }) => {
                                     onClick={() => navigate('/register')}
                                     sx={{ display: { xs: 'none', sm: 'flex' } }}
                                 >
-                                    Register
+                                    {t('navigation.register')}
                                 </Button>
                                 <IconButton
                                     color="inherit"

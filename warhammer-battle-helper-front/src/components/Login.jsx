@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
@@ -15,6 +16,7 @@ import {
 import { Login as LoginIcon } from '@mui/icons-material';
 
 const Login = ({ onLogin, addLogMessage }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -75,10 +77,10 @@ const Login = ({ onLogin, addLogMessage }) => {
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                         <LoginIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
                         <Typography component="h1" variant="h4" fontWeight="bold" color="text.primary">
-                            Warhammer Battle Helper
+                            {t('navigation.title')}
                         </Typography>
                         <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
-                            Login
+                            {t('navigation.login')}
                         </Typography>
                     </Box>
 
@@ -88,7 +90,7 @@ const Login = ({ onLogin, addLogMessage }) => {
                             required
                             fullWidth
                             id="email"
-                            label="Email Address"
+                            label={t('auth.email')}
                             name="email"
                             autoComplete="email"
                             autoFocus
@@ -101,7 +103,7 @@ const Login = ({ onLogin, addLogMessage }) => {
                             required
                             fullWidth
                             name="password"
-                            label="Password"
+                            label={t('auth.password')}
                             type="password"
                             id="password"
                             autoComplete="current-password"
@@ -124,14 +126,14 @@ const Login = ({ onLogin, addLogMessage }) => {
                             disabled={isLoading}
                             startIcon={isLoading ? <CircularProgress size={20} /> : <LoginIcon />}
                         >
-                            {isLoading ? 'Logging in...' : 'Login'}
+                            {isLoading ? t('common.loading') : t('auth.loginButton')}
                         </Button>
 
                         <Box sx={{ textAlign: 'center', mt: 2 }}>
                             <Typography variant="body2">
-                                Don't have an account?{' '}
+                                {t('auth.dontHaveAccount')}{' '}
                                 <Link href="/register" underline="hover">
-                                    Register here
+                                    {t('auth.registerHere')}
                                 </Link>
                             </Typography>
                         </Box>

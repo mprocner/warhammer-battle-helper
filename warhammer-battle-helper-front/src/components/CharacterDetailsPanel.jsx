@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
 import axios from 'axios';
@@ -14,6 +15,7 @@ function CharacterDetailsPanel({
     gameId = null,
     token = null
 }) {
+    const { t } = useTranslation();
     const [showDetails, setShowDetails] = useState(false);
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
@@ -22,8 +24,8 @@ function CharacterDetailsPanel({
     if (!character) {
         return (
             <div className="character-details empty">
-                <h2>Select a character</h2>
-                <p className="empty-hint">Click on a character in the grid or list to view details</p>
+                <h2>{t('character.selectCharacter')}</h2>
+                <p className="empty-hint">{t('character.selectCharacterHint')}</p>
             </div>
         );
     }
@@ -51,7 +53,7 @@ function CharacterDetailsPanel({
         } catch (error) {
             console.error('Error saving fortune change:', error);
             if (addLogMessage) {
-                addLogMessage('Failed to save fortune change', 'error');
+                addLogMessage(t('combat.saveFortuneFailed'), 'error');
             }
         }
 
@@ -68,7 +70,7 @@ function CharacterDetailsPanel({
     const handleCharacteristicClick = (charName, charValue, event) => {
         if (!charValue || charValue === '-') {
             if (addLogMessage) {
-                addLogMessage(`Cannot roll ${charName}: No value set`, 'warning');
+                addLogMessage(t('combat.cannotRoll', { characteristic: charName }), 'warning');
             }
             return;
         }
@@ -138,8 +140,8 @@ function CharacterDetailsPanel({
 
                 if (addLogMessage) {
                     const successText = success
-                        ? `Success! (SL: ${successLevel})`
-                        : `Failure! (SL: ${successLevel})`;
+                        ? t('combat.success', { level: successLevel })
+                        : t('combat.failure', { level: successLevel });
                     const modifierText = modifierValue !== 0 ? ` (${modifierValue > 0 ? '+' : ''}${modifierValue})` : '';
                     addLogMessage(
                         `${character.basicInfo?.name} - ${charName}${modifierText} Test: Rolled ${rollResult} vs ${modifiedValue} - ${successText}`,
@@ -150,7 +152,7 @@ function CharacterDetailsPanel({
         } catch (error) {
             console.error('Error rolling characteristic:', error);
             if (addLogMessage) {
-                addLogMessage('Failed to roll characteristic', 'error');
+                addLogMessage(t('combat.rollFailed'), 'error');
             }
         }
     };
@@ -161,55 +163,55 @@ function CharacterDetailsPanel({
 
             {/* Action Buttons */}
             <div className="action-buttons">
-                <button className="action-btn primary" onClick={onAttack} title="Attack">
+                <button className="action-btn primary" onClick={onAttack} title={t('combat.attack')}>
                     <span className="action-btn-icon">⚔️</span>
-                    <span className="action-btn-text">Attack</span>
+                    <span className="action-btn-text">{t('combat.attack')}</span>
                 </button>
-                <button className="action-btn primary" title="Ranged Attack">
+                <button className="action-btn primary" title={t('combat.rangeAttack')}>
                     <span className="action-btn-icon">🏹</span>
-                    <span className="action-btn-text">Range Attack</span>
+                    <span className="action-btn-text">{t('combat.rangeAttack')}</span>
                 </button>
-                <button className="action-btn secondary" title="Cast Spell">
+                <button className="action-btn secondary" title={t('combat.castSpell')}>
                     <span className="action-btn-icon">✨</span>
-                    <span className="action-btn-text">Cast Spell</span>
+                    <span className="action-btn-text">{t('combat.castSpell')}</span>
                 </button>
                 <button
                     className="action-btn"
                     onClick={() => setShowDetails(true)}
-                    title="Character Card"
+                    title={t('character.characterCard')}
                 >
                     <span className="action-btn-icon">📜</span>
-                    <span className="action-btn-text">Character Card</span>
+                    <span className="action-btn-text">{t('character.characterCard')}</span>
                 </button>
             </div>
 
             {/* States/Conditions */}
             <div className="states-container">
-                <div className="states-label">Conditions</div>
+                <div className="states-label">{t('conditions.label')}</div>
                 <div className="states-grid">
                     <div className="state-icon" data-state="prone">
                         <span>🛏️</span>
-                        <span className="state-tooltip">Prone</span>
+                        <span className="state-tooltip">{t('conditions.prone')}</span>
                     </div>
                     <div className="state-icon" data-state="stunned">
                         <span>😵</span>
-                        <span className="state-tooltip">Stunned</span>
+                        <span className="state-tooltip">{t('conditions.stunned')}</span>
                     </div>
                     <div className="state-icon" data-state="unconscious">
                         <span>😴</span>
-                        <span className="state-tooltip">Unconscious</span>
+                        <span className="state-tooltip">{t('conditions.unconscious')}</span>
                     </div>
                     <div className="state-icon" data-state="bleeding">
                         <span>🩸</span>
-                        <span className="state-tooltip">Bleeding</span>
+                        <span className="state-tooltip">{t('conditions.bleeding')}</span>
                     </div>
                     <div className="state-icon" data-state="poisoned">
                         <span>🧪</span>
-                        <span className="state-tooltip">Poisoned</span>
+                        <span className="state-tooltip">{t('conditions.poisoned')}</span>
                     </div>
                     <div className="state-icon" data-state="ablaze">
                         <span>🔥</span>
-                        <span className="state-tooltip">Ablaze</span>
+                        <span className="state-tooltip">{t('conditions.ablaze')}</span>
                     </div>
                 </div>
             </div>
@@ -217,15 +219,15 @@ function CharacterDetailsPanel({
             {/* Detail Grid */}
             <div className="detail-grid">
                 <div className="detail-item">
-                    <div className="detail-label">HP</div>
+                    <div className="detail-label">{t('attributes.hp')}</div>
                     <div className="detail-value">{hp.current || '-'}/{hp.max || '-'}</div>
                 </div>
                 <div className="detail-item">
-                    <div className="detail-label">Movement</div>
+                    <div className="detail-label">{t('attributes.movement')}</div>
                     <div className="detail-value">{movement}</div>
                 </div>
                 <div className="detail-item">
-                    <div className="detail-label">Fortune</div>
+                    <div className="detail-label">{t('attributes.fortune')}</div>
                     <div className="modifier-input-container">
                         <button className="modifier-btn" onClick={() => adjustFortune(-1)}>-1</button>
                         <span className={`modifier-value ${getModifierClass()}`}>
@@ -241,91 +243,91 @@ function CharacterDetailsPanel({
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('WS', stats.WS, e)}
-                    title="Roll WS Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.WEAPON_SKILL') })}
                     disabled={!stats.WS || stats.WS === '-'}
                 >
-                    <div className="char-box-label">WS</div>
+                    <div className="char-box-label">{t('characteristicsShort.WEAPON_SKILL')}</div>
                     <div className="char-box-value">{stats.WS || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('BS', stats.BS, e)}
-                    title="Roll BS Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.BALLISTIC_SKILL') })}
                     disabled={!stats.BS || stats.BS === '-'}
                 >
-                    <div className="char-box-label">BS</div>
+                    <div className="char-box-label">{t('characteristicsShort.BALLISTIC_SKILL')}</div>
                     <div className="char-box-value">{stats.BS || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('S', stats.S, e)}
-                    title="Roll S Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.STRENGTH') })}
                     disabled={!stats.S || stats.S === '-'}
                 >
-                    <div className="char-box-label">S</div>
+                    <div className="char-box-label">{t('characteristicsShort.STRENGTH')}</div>
                     <div className="char-box-value">{stats.S || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('T', stats.T, e)}
-                    title="Roll T Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.TOUGHNESS') })}
                     disabled={!stats.T || stats.T === '-'}
                 >
-                    <div className="char-box-label">T</div>
+                    <div className="char-box-label">{t('characteristicsShort.TOUGHNESS')}</div>
                     <div className="char-box-value">{stats.T || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('I', stats.I, e)}
-                    title="Roll I Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.INITIATIVE') })}
                     disabled={!stats.I || stats.I === '-'}
                 >
-                    <div className="char-box-label">I</div>
+                    <div className="char-box-label">{t('characteristicsShort.INITIATIVE')}</div>
                     <div className="char-box-value">{stats.I || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('Ag', stats.Ag, e)}
-                    title="Roll Ag Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.AGILITY') })}
                     disabled={!stats.Ag || stats.Ag === '-'}
                 >
-                    <div className="char-box-label">Ag</div>
+                    <div className="char-box-label">{t('characteristicsShort.AGILITY')}</div>
                     <div className="char-box-value">{stats.Ag || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('Dex', stats.Dex, e)}
-                    title="Roll Dex Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.DEXTERITY') })}
                     disabled={!stats.Dex || stats.Dex === '-'}
                 >
-                    <div className="char-box-label">Dex</div>
+                    <div className="char-box-label">{t('characteristicsShort.DEXTERITY')}</div>
                     <div className="char-box-value">{stats.Dex || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('Int', stats.Int, e)}
-                    title="Roll Int Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.INTELLIGENCE') })}
                     disabled={!stats.Int || stats.Int === '-'}
                 >
-                    <div className="char-box-label">Int</div>
+                    <div className="char-box-label">{t('characteristicsShort.INTELLIGENCE')}</div>
                     <div className="char-box-value">{stats.Int || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('WP', stats.WP, e)}
-                    title="Roll WP Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.WILLPOWER') })}
                     disabled={!stats.WP || stats.WP === '-'}
                 >
-                    <div className="char-box-label">WP</div>
+                    <div className="char-box-label">{t('characteristicsShort.WILLPOWER')}</div>
                     <div className="char-box-value">{stats.WP || '-'}</div>
                 </button>
                 <button
                     className="char-box char-box-button"
                     onClick={(e) => handleCharacteristicClick('Fel', stats.Fel, e)}
-                    title="Roll Fel Test"
+                    title={t('combat.rollTest', { characteristic: t('characteristicsShort.FELLOWSHIP') })}
                     disabled={!stats.Fel || stats.Fel === '-'}
                 >
-                    <div className="char-box-label">Fel</div>
+                    <div className="char-box-label">{t('characteristicsShort.FELLOWSHIP')}</div>
                     <div className="char-box-value">{stats.Fel || '-'}</div>
                 </button>
             </div>
