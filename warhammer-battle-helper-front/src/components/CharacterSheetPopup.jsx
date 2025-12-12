@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
+import skillsData from '../data/skills.json';
 
 function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
-    const { t } = useTranslation();
+    const { t } = useTranslation(['translation', 'skills']);
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [size, setSize] = useState({ width: 1400, height: 800 });
@@ -25,6 +26,21 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         setEditedCharacter(character);
         setHasChanges(false);
     }, [character]);
+
+    // Get all basic skills sorted alphabetically by translated name
+    const basicSkills = useMemo(() => {
+        const skills = skillsData
+            .filter(skill => skill.type === 'basic')
+            .map(skill => ({
+                key: skill.key,
+                name: t(`skills:${skill.key}.name`),
+                characteristic: skill.characteristic,
+                grouped: skill.grouped,
+                specialisations: skill.specialisations
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        return skills;
+    }, [t]);
 
     // Calculate current characteristics from initial + advances
     const calculateCurrentCharacteristics = (char) => {
@@ -311,52 +327,52 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>{t('characterSheet.characterInformation')}</h3>
                                 <div className="form-grid">
                                     <div className="form-group">
-                                        <label>Name</label>
+                                        <label>{t('characterSheet.name')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.name || ''} onChange={(e) => handleFieldChange('basicInfo.name', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Species</label>
+                                        <label>{t('characterSheet.species')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.species || ''} onChange={(e) => handleFieldChange('basicInfo.species', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Class</label>
+                                        <label>{t('characterSheet.class')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.class || ''} onChange={(e) => handleFieldChange('basicInfo.class', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="form-grid" style={{ marginTop: '10px' }}>
                                     <div className="form-group">
-                                        <label>Career</label>
+                                        <label>{t('characterSheet.career')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.career || ''} onChange={(e) => handleFieldChange('basicInfo.career', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Career Level</label>
+                                        <label>{t('characterSheet.careerLevel')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.careerLevel || ''} onChange={(e) => handleFieldChange('basicInfo.careerLevel', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Status</label>
+                                        <label>{t('characterSheet.status')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.status || ''} onChange={(e) => handleFieldChange('basicInfo.status', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="form-group" style={{ marginTop: '10px' }}>
-                                    <label>Career Path</label>
+                                    <label>{t('characterSheet.careerPath')}</label>
                                     <input type="text" value={editedCharacter.basicInfo?.careerPath || ''} onChange={(e) => handleFieldChange('basicInfo.careerPath', e.target.value)} />
                                 </div>
                                 <div className="form-grid" style={{ marginTop: '10px' }}>
                                     <div className="form-group">
-                                        <label>Age</label>
+                                        <label>{t('characterSheet.age')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.age || ''} onChange={(e) => handleFieldChange('basicInfo.age', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Height</label>
+                                        <label>{t('characterSheet.height')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.height || ''} onChange={(e) => handleFieldChange('basicInfo.height', e.target.value)} />
                                     </div>
                                     <div className="form-group">
-                                        <label>Hair</label>
+                                        <label>{t('characterSheet.hair')}</label>
                                         <input type="text" value={editedCharacter.basicInfo?.hair || ''} onChange={(e) => handleFieldChange('basicInfo.hair', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="form-group" style={{ marginTop: '10px' }}>
-                                    <label>Eyes</label>
+                                    <label>{t('characterSheet.eyes')}</label>
                                     <input type="text" value={editedCharacter.basicInfo?.eyes || ''} onChange={(e) => handleFieldChange('basicInfo.eyes', e.target.value)} />
                                 </div>
                             </div>
@@ -364,43 +380,43 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                             {/* Fate, Resilience, Experience */}
                             <div className="three-col-grid">
                                 <div className="mini-box">
-                                    <h4>Fate</h4>
+                                    <h4>{t('characterSheet.fateTitle')}</h4>
                                     <div className="mini-field">
-                                        <label>Fate</label>
+                                        <label>{t('characterSheet.fate')}</label>
                                         <input type="text" value={editedCharacter.fate?.fate || ''} onChange={(e) => handleFieldChange('fate.fate', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Fortune</label>
+                                        <label>{t('characterSheet.fortune')}</label>
                                         <input type="text" value={editedCharacter.fate?.fortune || ''} onChange={(e) => handleFieldChange('fate.fortune', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="mini-box">
-                                    <h4>Resilience</h4>
+                                    <h4>{t('characterSheet.resilienceTitle')}</h4>
                                     <div className="mini-field">
-                                        <label>Resilience</label>
+                                        <label>{t('characterSheet.resilience')}</label>
                                         <input type="text" value={editedCharacter.resilience?.resilience || ''} onChange={(e) => handleFieldChange('resilience.resilience', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Resolve</label>
+                                        <label>{t('characterSheet.resolve')}</label>
                                         <input type="text" value={editedCharacter.resilience?.resolve || ''} onChange={(e) => handleFieldChange('resilience.resolve', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Motivation</label>
+                                        <label>{t('characterSheet.motivation')}</label>
                                         <input type="text" style={{ width: '100%' }} value={editedCharacter.resilience?.motivation || ''} onChange={(e) => handleFieldChange('resilience.motivation', e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="mini-box">
-                                    <h4>Experience</h4>
+                                    <h4>{t('characterSheet.experienceTitle')}</h4>
                                     <div className="mini-field">
-                                        <label>Current</label>
+                                        <label>{t('characterSheet.currentExperience')}</label>
                                         <input type="text" value={editedCharacter.experience?.current || ''} onChange={(e) => handleFieldChange('experience.current', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Spent</label>
+                                        <label>{t('characterSheet.spent')}</label>
                                         <input type="text" value={editedCharacter.experience?.spent || ''} onChange={(e) => handleFieldChange('experience.spent', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Total</label>
+                                        <label>{t('characterSheet.total')}</label>
                                         <input type="text" value={editedCharacter.experience?.total || ''} onChange={(e) => handleFieldChange('experience.total', e.target.value)} />
                                     </div>
                                 </div>
@@ -411,15 +427,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>{t('characterSheet.movement')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
-                                        <label>Movement</label>
+                                        <label>{t('characterSheet.movement')}</label>
                                         <input type="text" value={editedCharacter.movement?.movement || ''} onChange={(e) => handleFieldChange('movement.movement', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Walk</label>
+                                        <label>{t('characterSheet.walk')}</label>
                                         <input type="text" value={editedCharacter.movement?.walk || ''} onChange={(e) => handleFieldChange('movement.walk', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Run</label>
+                                        <label>{t('characterSheet.run')}</label>
                                         <input type="text" value={editedCharacter.movement?.run || ''} onChange={(e) => handleFieldChange('movement.run', e.target.value)} />
                                     </div>
                                 </div>
@@ -430,23 +446,23 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>{t('characterSheet.wounds')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
-                                        <label>SB</label>
+                                        <label>{t('characterSheet.sb')}</label>
                                         <input type="text" value={editedCharacter.wounds?.sb || ''} onChange={(e) => handleFieldChange('wounds.sb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>TB+2</label>
+                                        <label>{t('characterSheet.tbPlus2')}</label>
                                         <input type="text" value={editedCharacter.wounds?.tb || ''} onChange={(e) => handleFieldChange('wounds.tb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>WPB</label>
+                                        <label>{t('characterSheet.wpb')}</label>
                                         <input type="text" value={editedCharacter.wounds?.wpb || ''} onChange={(e) => handleFieldChange('wounds.wpb', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Hardy</label>
+                                        <label>{t('characterSheet.hardy')}</label>
                                         <input type="text" value={editedCharacter.wounds?.hardy || ''} onChange={(e) => handleFieldChange('wounds.hardy', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>Total</label>
+                                        <label>{t('characterSheet.total')}</label>
                                         <input type="text" value={editedCharacter.wounds?.total || ''} onChange={(e) => handleFieldChange('wounds.total', e.target.value)} />
                                     </div>
                                 </div>
@@ -458,9 +474,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
-                                            <th>Talent Name</th>
-                                            <th style={{ width: '60px' }}>Times Taken</th>
-                                            <th>Description</th>
+                                            <th>{t('characterSheet.talentName')}</th>
+                                            <th style={{ width: '60px' }}>{t('characterSheet.timesTaken')}</th>
+                                            <th>{t('characterSheet.description')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -487,12 +503,12 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th style={{ width: '70px' }}>Group</th>
-                                            <th style={{ width: '50px' }}>Enc</th>
-                                            <th style={{ width: '80px' }}>Range/Reach</th>
-                                            <th style={{ width: '70px' }}>Damage</th>
-                                            <th>Qualities</th>
+                                            <th>{t('characterSheet.name')}</th>
+                                            <th style={{ width: '70px' }}>{t('characterSheet.group')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
+                                            <th style={{ width: '80px' }}>{t('characterSheet.rangeReach')}</th>
+                                            <th style={{ width: '70px' }}>{t('characterSheet.damage')}</th>
+                                            <th>{t('characterSheet.qualities')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -525,11 +541,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th style={{ width: '100px' }}>Locations</th>
-                                            <th style={{ width: '50px' }}>Enc</th>
-                                            <th style={{ width: '50px' }}>AP</th>
-                                            <th>Qualities</th>
+                                            <th>{t('characterSheet.name')}</th>
+                                            <th style={{ width: '100px' }}>{t('characterSheet.location')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.ap')}</th>
+                                            <th>{t('characterSheet.qualities')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -559,15 +575,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <h3>{t('characterSheet.wealth')}</h3>
                                 <div className="three-col-grid">
                                     <div className="mini-field">
-                                        <label>D (Brass)</label>
+                                        <label>{t('characterSheet.brass')}</label>
                                         <input type="text" value={editedCharacter.wealth?.brass || ''} onChange={(e) => handleFieldChange('wealth.brass', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>SS (Silver)</label>
+                                        <label>{t('characterSheet.silver')}</label>
                                         <input type="text" value={editedCharacter.wealth?.silver || ''} onChange={(e) => handleFieldChange('wealth.silver', e.target.value)} />
                                     </div>
                                     <div className="mini-field">
-                                        <label>GC (Gold)</label>
+                                        <label>{t('characterSheet.gold')}</label>
                                         <input type="text" value={editedCharacter.wealth?.gold || ''} onChange={(e) => handleFieldChange('wealth.gold', e.target.value)} />
                                     </div>
                                 </div>
@@ -583,21 +599,21 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                     <thead>
                                         <tr>
                                             <th style={{ width: '80px' }}></th>
-                                            <th>WS</th>
-                                            <th>BS</th>
-                                            <th>S</th>
-                                            <th>T</th>
-                                            <th>I</th>
-                                            <th>Ag</th>
-                                            <th>Dex</th>
-                                            <th>Int</th>
-                                            <th>WP</th>
-                                            <th>Fel</th>
+                                            <th>{t('characteristicsShort.WEAPON_SKILL')}</th>
+                                            <th>{t('characteristicsShort.BALLISTIC_SKILL')}</th>
+                                            <th>{t('characteristicsShort.STRENGTH')}</th>
+                                            <th>{t('characteristicsShort.TOUGHNESS')}</th>
+                                            <th>{t('characteristicsShort.INITIATIVE')}</th>
+                                            <th>{t('characteristicsShort.AGILITY')}</th>
+                                            <th>{t('characteristicsShort.DEXTERITY')}</th>
+                                            <th>{t('characteristicsShort.INTELLIGENCE')}</th>
+                                            <th>{t('characteristicsShort.WILLPOWER')}</th>
+                                            <th>{t('characteristicsShort.FELLOWSHIP')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td className="row-label">Initial</td>
+                                            <td className="row-label">{t('characterSheet.initial')}</td>
                                             <td><input type="text" value={editedCharacter.characteristics?.initial?.WS || ''} onChange={(e) => handleFieldChange('characteristics.initial.WS', e.target.value)} /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.initial?.BS || ''} onChange={(e) => handleFieldChange('characteristics.initial.BS', e.target.value)} /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.initial?.S || ''} onChange={(e) => handleFieldChange('characteristics.initial.S', e.target.value)} /></td>
@@ -610,7 +626,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             <td><input type="text" value={editedCharacter.characteristics?.initial?.Fel || ''} onChange={(e) => handleFieldChange('characteristics.initial.Fel', e.target.value)} /></td>
                                         </tr>
                                         <tr>
-                                            <td className="row-label">Advances</td> 
+                                            <td className="row-label">{t('characterSheet.advances')}</td>
                                             <td><input type="text" value={editedCharacter.characteristics?.advances?.WS || ''} onChange={(e) => handleFieldChange('characteristics.advances.WS', e.target.value)} /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.advances?.BS || ''} onChange={(e) => handleFieldChange('characteristics.advances.BS', e.target.value)} /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.advances?.S || ''} onChange={(e) => handleFieldChange('characteristics.advances.S', e.target.value)} /></td>
@@ -623,7 +639,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             <td><input type="text" value={editedCharacter.characteristics?.advances?.Fel || ''} onChange={(e) => handleFieldChange('characteristics.advances.Fel', e.target.value)} /></td>
                                         </tr>
                                         <tr>
-                                            <td className="row-label">Current</td>
+                                            <td className="row-label">{t('characterSheet.current')}</td>
                                             <td><input type="text" value={editedCharacter.characteristics?.current?.WS || ''} readOnly /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.current?.BS || ''} readOnly /></td>
                                             <td><input type="text" value={editedCharacter.characteristics?.current?.S || ''} readOnly /></td>
@@ -646,42 +662,42 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
-                                                <th>Name</th>
+                                                <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>Char</th>
                                                 <th style={{ width: '50px' }}>Adv</th>
                                                 <th style={{ width: '50px' }}>Skill</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {character.basicSkills?.slice(0, 10).map((skill, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="skill-name">{skill.name || ''}</td>
-                                                    <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
-                                                    <td><input type="text" value={skill.advances || ''} readOnly /></td>
-                                                    <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                            {basicSkills.slice(0, Math.ceil(basicSkills.length / 2)).map((skill) => (
+                                                <tr key={skill.key}>
+                                                    <td className="skill-name">{skill.name}</td>
+                                                    <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                    <td><input type="text" value="" readOnly /></td>
+                                                    <td><input type="text" value="" readOnly /></td>
                                                 </tr>
-                                            )) || <tr><td colSpan="4">No skills</td></tr>}
+                                            ))}
                                         </tbody>
                                     </table>
 
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
-                                                <th>Name</th>
+                                                <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>Char</th>
                                                 <th style={{ width: '50px' }}>Adv</th>
                                                 <th style={{ width: '50px' }}>Skill</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {character.basicSkills?.slice(10).map((skill, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="skill-name">{skill.name || ''}</td>
-                                                    <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
-                                                    <td><input type="text" value={skill.advances || ''} readOnly /></td>
-                                                    <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                            {basicSkills.slice(Math.ceil(basicSkills.length / 2)).map((skill) => (
+                                                <tr key={skill.key}>
+                                                    <td className="skill-name">{skill.name}</td>
+                                                    <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                    <td><input type="text" value="" readOnly /></td>
+                                                    <td><input type="text" value="" readOnly /></td>
                                                 </tr>
-                                            )) || <tr><td colSpan="4">-</td></tr>}
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -693,7 +709,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
+                                            <th>{t('characterSheet.name')}</th>
                                             <th style={{ width: '70px' }}>Characteristic</th>
                                             <th style={{ width: '50px' }}>Adv</th>
                                             <th style={{ width: '50px' }}>Skill</th>
@@ -725,12 +741,12 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th style={{ width: '50px' }}>TN</th>
-                                            <th style={{ width: '70px' }}>Range</th>
-                                            <th style={{ width: '70px' }}>Target</th>
-                                            <th style={{ width: '70px' }}>Duration</th>
-                                            <th>Effect</th>
+                                            <th>{t('characterSheet.name')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.tn')}</th>
+                                            <th style={{ width: '70px' }}>{t('characterSheet.range')}</th>
+                                            <th style={{ width: '70px' }}>{t('characterSheet.target')}</th>
+                                            <th style={{ width: '70px' }}>{t('characterSheet.duration')}</th>
+                                            <th>{t('characterSheet.effect')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -761,11 +777,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                             <div className="card-section">
                                 <h3>{t('characterSheet.ambitions')}</h3>
                                 <div className="form-group">
-                                    <label>Short Term</label>
+                                    <label>{t('characterSheet.shortTerm')}</label>
                                     <input type="text" value={editedCharacter.ambitions?.shortTerm || ''} onChange={(e) => handleFieldChange('ambitions.shortTerm', e.target.value)} />
                                 </div>
                                 <div className="form-group" style={{ marginTop: '8px' }}>
-                                    <label>Long Term</label>
+                                    <label>{t('characterSheet.longTerm')}</label>
                                     <input type="text" value={editedCharacter.ambitions?.longTerm || ''} onChange={(e) => handleFieldChange('ambitions.longTerm', e.target.value)} />
                                 </div>
                             </div>
@@ -774,11 +790,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                             <div className="card-section">
                                 <h3>{t('characterSheet.party')}</h3>
                                 <div className="form-group">
-                                    <label>Party Name</label>
+                                    <label>{t('characterSheet.partyName')}</label>
                                     <input type="text" value={editedCharacter.party?.name || ''} onChange={(e) => handleFieldChange('party.name', e.target.value)} />
                                 </div>
                                 <div className="form-group" style={{ marginTop: '8px' }}>
-                                    <label>Members</label>
+                                    <label>{t('characterSheet.members')}</label>
                                     <textarea className="notes" style={{ minHeight: '60px' }} value={editedCharacter.party?.members || ''} onChange={(e) => handleFieldChange('party.members', e.target.value)} />
                                 </div>
                             </div>

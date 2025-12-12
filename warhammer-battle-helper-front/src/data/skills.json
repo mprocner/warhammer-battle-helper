@@ -1,0 +1,287 @@
+[
+  {
+    "key": "ANIMAL_CARE",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "ANIMAL_TRAINING",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["DEMIGRYPH", "DOG", "HORSE", "PEGASUS", "PIGEON"]
+  },
+  {
+    "key": "ART",
+    "characteristic": "DEXTERITY",
+    "type": "basic",
+    "grouped": true,
+    "specialisations": ["CARTOGRAPHY", "ENGRAVING", "MOSAICS", "PAINTING", "SCULPTURE", "TATTOO", "WEAVING"]
+  },
+  {
+    "key": "ATHLETICS",
+    "characteristic": "AGILITY",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "BRIBERY",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "CHANNELLING",
+    "characteristic": "WILLPOWER",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["AQSHY", "AZYR", "CHAMON", "DHAR", "GHUR", "GHYRAN", "HYSH", "SHYISH", "ULGU"]
+  },
+  {
+    "key": "CHARM",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "CHARM_ANIMAL",
+    "characteristic": "WILLPOWER",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "CLIMB",
+    "characteristic": "STRENGTH",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "CONSUME_ALCOHOL",
+    "characteristic": "TOUGHNESS",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "COOL",
+    "characteristic": "WILLPOWER",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "DODGE",
+    "characteristic": "AGILITY",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "DRIVE",
+    "characteristic": "AGILITY",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "ENDURANCE",
+    "characteristic": "TOUGHNESS",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "ENTERTAIN",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": true,
+    "specialisations": ["ACTING", "COMEDY", "SINGING", "STORYTELLING"]
+  },
+  {
+    "key": "EVALUATE",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "GAMBLE",
+    "characteristic": "INTELLIGENCE",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "GOSSIP",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "HAGGLE",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "HEAL",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "INTIMIDATE",
+    "characteristic": "STRENGTH",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "INTUITION",
+    "characteristic": "INITIATIVE",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "LANGUAGE",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["BATTLE_TONGUE", "BRETONNIAN", "CLASSICAL", "GUILDER", "KHAZALID", "MAGICK", "THIEF", "TILEAN"]
+  },
+  {
+    "key": "LEADERSHIP",
+    "characteristic": "FELLOWSHIP",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "LORE",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["ENGINEERING", "GEOLOGY", "HERALDRY", "HISTORY", "LAW", "MAGICK", "METALLURGY", "SCIENCE", "THEOLOGY"]
+  },
+  {
+    "key": "MELEE",
+    "characteristic": "WEAPON_SKILL",
+    "type": "basic",
+    "grouped": true,
+    "specialisations": ["BASIC", "BRAWLING", "CAVALRY", "FENCING", "FLAIL", "PARRY", "POLE_ARM", "TWO_HANDED"]
+  },
+  {
+    "key": "NAVIGATION",
+    "characteristic": "INITIATIVE",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "OUTDOOR_SURVIVAL",
+    "characteristic": "INTELLIGENCE",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "PERCEPTION",
+    "characteristic": "INITIATIVE",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "PERFORM",
+    "characteristic": "AGILITY",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["ACROBATICS", "CLOWNING", "DANCING", "FIREBREATHING", "JUGGLING", "MIMING", "ROPE_WALKING"]
+  },
+  {
+    "key": "PICK_LOCK",
+    "characteristic": "DEXTERITY",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "PLAY",
+    "characteristic": "DEXTERITY",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["BAGPIPE", "LUTE", "HARPSICHORD", "HORN", "VIOLIN"]
+  },
+  {
+    "key": "PRAY",
+    "characteristic": "FELLOWSHIP",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "RANGED",
+    "characteristic": "BALLISTIC_SKILL",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["BLACKPOWDER", "BOW", "CROSSBOW", "ENGINEERING", "ENTANGLING", "EXPLOSIVES", "SLING", "THROWING"]
+  },
+  {
+    "key": "RESEARCH",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "RIDE",
+    "characteristic": "AGILITY",
+    "type": "basic",
+    "grouped": true,
+    "specialisations": ["DEMIGRYPH", "GREAT_WOLF", "GRIFFON", "HORSE", "PEGASUS"]
+  },
+  {
+    "key": "ROW",
+    "characteristic": "STRENGTH",
+    "type": "basic",
+    "grouped": false
+  },
+  {
+    "key": "SAIL",
+    "characteristic": "AGILITY",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["BARGE", "CARAVEL", "COG", "FRIGATE", "WOLFSHIP"]
+  },
+  {
+    "key": "SECRET_SIGNS",
+    "characteristic": "INTELLIGENCE",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["GREY_ORDER", "GUILD", "RANGER", "SCOUT", "THIEF", "VAGABOND"]
+  },
+  {
+    "key": "SET_TRAP",
+    "characteristic": "DEXTERITY",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "SLEIGHT_OF_HAND",
+    "characteristic": "DEXTERITY",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "STEALTH",
+    "characteristic": "AGILITY",
+    "type": "basic",
+    "grouped": true,
+    "specialisations": ["RURAL", "UNDERGROUND", "URBAN"]
+  },
+  {
+    "key": "SWIM",
+    "characteristic": "STRENGTH",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "TRACK",
+    "characteristic": "INITIATIVE",
+    "type": "advanced",
+    "grouped": false
+  },
+  {
+    "key": "TRADE",
+    "characteristic": "DEXTERITY",
+    "type": "advanced",
+    "grouped": true,
+    "specialisations": ["APOTHECARY", "CALLIGRAPHER", "CHANDLER", "CARPENTER", "COOK", "EMBALMER", "SMITH", "TANNER"]
+  }
+]

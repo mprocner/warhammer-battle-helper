@@ -4,6 +4,8 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import enTranslation from './locales/en/translation.json';
 import plTranslation from './locales/pl/translation.json';
+import enSkills from './locales/en/skills.json';
+import plSkills from './locales/pl/skills.json';
 
 i18n
   // Detect user language
@@ -15,10 +17,12 @@ i18n
     // Available languages
     resources: {
       en: {
-        translation: enTranslation
+        translation: enTranslation,
+        skills: enSkills
       },
       pl: {
-        translation: plTranslation
+        translation: plTranslation,
+        skills: plSkills
       }
     },
     // Fallback language if detection fails

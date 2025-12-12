@@ -1,0 +1,309 @@
+{
+  "ANIMAL_CARE": {
+    "name": "Opieka nad Zwierzętami",
+    "description": "Opieka nad Zwierzętami pozwala ci dbać o zwierzęta i leczyć je, jeśli zachorują lub zostaną ranne. Jedno Rozwinięcie w tej Umiejętności oznacza, że nie musisz wykonywać Testów, by utrzymać zwierzęta w zdrowiu. Rzut na Opiekę nad Zwierzętami może być potrzebny, by: zauważyć oznaki choroby; zrozumieć, dlaczego zwierzęta są nieposłuszne, krnąbrne lub źle się mają; ocenić jakość zwierzęcia; wyleczyć zwierze, przywracając mu tyle Żywotności, ile wynosi Bonus z Inteligencji postaci plus Poziomy Sukcesu; zatamować Stan Krwawienie; przygotować zwierze na wystawę."
+  },
+  "ANIMAL_TRAINING": {
+    "name": "Tresura",
+    "description": "Ta Umiejętność pokazuje, na ile znasz dany gatunek zwierząt i jak dobrze jesteś w stanie go wytresować. Udany Test Umiejętności pozwala ci określić, jakie zdolności wpojono już zwierzęciu należącemu do gatunku, w którym się specjalizujesz. Tresura pozwala także na podjęcie Zajęcia Tresura Zwierząt pomiędzy przygodami.",
+    "specialisations": {
+      "DEMIGRYPH": "Półgryfy",
+      "DOG": "Psy",
+      "HORSE": "Konie",
+      "PEGASUS": "Pegazy",
+      "PIGEON": "Gołębie"
+    }
+  },
+  "ART": {
+    "name": "Sztuka",
+    "description": "Potrafisz tworzyć dzieła sztuki w jednej z jej licznych odmian. Brak fachowych narzędzi może wiązać się z negatywnymi modyfikatorami do Testu. Poziomy Sukcesu osiągnięte podczas Testu określają, jak wysokiej jakości jest tworzone dzieło. Skomplikowane lub duże przedsięwzięcie artystyczne może wymagać Testu Wydłużonego.",
+    "specialisations": {
+      "CARTOGRAPHY": "Kartografia",
+      "ENGRAVING": "Grawerstwo",
+      "MOSAICS": "Układanie Mozaiki",
+      "PAINTING": "Malarstwo",
+      "SCULPTURE": "Rzeźbiarstwo",
+      "TATTOO": "Tatuowanie",
+      "WEAVING": "Tkactwo"
+    }
+  },
+  "ATHLETICS": {
+    "name": "Atletyka",
+    "description": "Atletyka określa twoją umiejętność biegania, skakania, poruszania się z szybkością i gracją oraz ogólną sprawność fizyczną. Wykorzystanie Atletyki w walce jest dokładniej opisane na stronie 164 w podrozdziale Poruszanie się."
+  },
+  "BRIBERY": {
+    "name": "Przekupstwo",
+    "description": "Ta Umiejętność pozwala ci ocenić, czy dana osoba przyjmie łapówkę oraz ile minimalnie należy jej zaoferować, by przystała na korupcyjną propozycję. Udany Test Przekupstwa powie ci, czy w ogóle jest sens cokolwiek oferować. Jeśli tak, MG powinien w tajemnicy określić, jakiej wysokości łapówka wchodzi w grę."
+  },
+  "CHANNELLING": {
+    "name": "Splatanie Magii",
+    "description": "Ta Umiejętność określa, jak sprawny jest bohater w przywoływaniu i kontrolowaniu różnych Wiatrów Magii, i jest ściśle powiązana z zasadami nią rządzącymi. To wyjątkowa Umiejętność, ponieważ z jednej strony, dla czarodziejów, zawiera w sobie Specjalizacje, z drugiej zaś, dla nieparających się magią, nie jest Grupą Umiejętności. Więcej informacji na ten temat znajduje się w Rozdziale 8: Magia.",
+    "specialisations": {
+      "AQSHY": "Aqshy",
+      "AZYR": "Azyr",
+      "CHAMON": "Chamon",
+      "DHAR": "Dhar",
+      "GHUR": "Ghur",
+      "GHYRAN": "Ghyran",
+      "HYSH": "Hysh",
+      "SHYISH": "Shyish",
+      "ULGU": "Ulgu"
+    }
+  },
+  "CHARM": {
+    "name": "Charyzma",
+    "description": "Dzięki Charyzmie możesz sprawić, że ludzie będą dobrze o tobie myśleli, zgadzali się z twoim zdaniem i przystaną na twoje propozycje. Udany Przeciwstawny Test Charyzmy przeciw Opanowaniu pozwala wpłynąć na zachowanie jednej lub więcej istot. Ich liczba jest określana przez Bonus z Ogłady + PS Testu. Określanie, kogo udało się przekonać, należy zacząć od istot z najniższą Siłą Woli. Jeśli takie postaci są pozytywnie nastawione do bohaterów, nie trzeba tu wykonywać Testu Przeciwstawnego, wystarczy Test Prosty."
+  },
+  "CHARM_ANIMAL": {
+    "name": "Oswajanie",
+    "description": "Ta Umiejętność opisuje, jak dobrze potrafisz zaprzyjaźnić się ze zwierzęciem, uspokoić je i zmusić do uległości. Udany Test Oswajania pozwala ci wpłynąć na zachowanie jednego lub więcej zwierząt (maksymalnie tylu, ile wynosi twój Bonus z Siły Woli + PS). Jeśli zwierzęta są z natury uległe, Test nie jest Przeciwstawny, choć z reguły zwierzę opiera się twoim wysiłkom swoją Siłą Woli."
+  },
+  "CLIMB": {
+    "name": "Wspinaczka",
+    "description": "Umiejętność pokonywania pionowych przeszkód. Jeśli czas nie jest przeszkodą, wspinaczka jest dość prosta i każda istota dysponująca tą Umiejętnością może wdrapać się na niewysokie wzniesienie. Jeśli wspinaczka przebiega w innych warunkach, należy zastosować reguły znajdujące się na stronie 165."
+  },
+  "CONSUME_ALCOHOL": {
+    "name": "Mocna Głowa",
+    "description": "Umiejętność pokazuje to, że potrafisz spożywać napoje wyskokowe, nie tracąc rezonu, pomyślunku ani przytomności. Po wypiciu każdej porcji należy wykonać Test Mocnej Głowy, zmodyfikowany o siłę trunku. Każdy nieudany Test oznacza upicie się i związany z tym modyfikator -10 do Walki Wręcz, Umiejętności Strzeleckich, Zwinności i Zręczności oraz Inteligencji. Maksymalnie każda z tych Cech może zostać zmniejszona o -30."
+  },
+  "COOL": {
+    "name": "Opanowanie",
+    "description": "Opanowanie pozwala zachować spokój w nerwowej sytuacji, oprzeć się strachowi w obliczu czegoś potwornego i obstawać przy swoim. Opanowanie jest głównie wykorzystywane w Testach Przeciwstawnych przeciw Charyzmie, Zastraszaniu i im podobnych. Możesz zostać zmuszony do wykonania Testu Opanowania, gdy twoja postać ma zrobić coś, czego normalnie by się nie dopuściła. Opanowanie jest Umiejętnością wykorzystywaną do ograniczenia efektów Psychologii."
+  },
+  "DODGE": {
+    "name": "Unik",
+    "description": "Ta Umiejętność pozwala na unikanie, uskakiwanie i schodzenie z drogi wszelkim niebezpieczeństwom, takim jak spadające kamienie, uruchamiane pułapki i tak dalej. W walce Unik wykorzystywany jest, by... uniknąć zadawanych obrażeń."
+  },
+  "DRIVE": {
+    "name": "Powożenie",
+    "description": "Powożenie pozwala ci kierować pojazdami, zazwyczaj prostymi wozami, ogromnymi karetami czy tymi bardziej eksperymentalnymi pojazdami – dziełami imperialnych inżynierów. Dzięki niemu jesteś w stanie prowadzić je po drogach, powodując przy tym jak najmniej wypadków. Jeśli masz choć jedno Rozwinięcie w tej Umiejętności, nie musisz wykonywać Testów w normalnych sytuacjach na drodze."
+  },
+  "ENDURANCE": {
+    "name": "Odporność",
+    "description": "Odporność pozwala oprzeć się trudnościom fizycznym, wytrzymać głód i pragnienie, siedzieć bez ruchu przez kilka godzin albo nie zważać na pogodę. Test Odporności jest wykonywany, by oprzeć się różnym Stanom czy uwolnić się spod ich wpływu lub gdy postać odzyskuje utraconą Żywotność."
+  },
+  "ENTERTAIN": {
+    "name": "Występy",
+    "description": "Ta Umiejętność pozwala ci zabawiać tłumy słowem mówionym, być może śpiewem, odgrywaniem ról lub nawet dowcipem. Udany Test oznacza, że widzowie słuchali występu, a PS wskazują, jak dobrze wypadłeś.",
+    "specialisations": {
+      "ACTING": "Aktorstwo",
+      "COMEDY": "Komedianctwo",
+      "SINGING": "Śpiewanie",
+      "STORYTELLING": "Gawędziarstwo"
+    }
+  },
+  "EVALUATE": {
+    "name": "Wycena",
+    "description": "Wycena pozwala określić wartość pradawnych artefaktów, niecodziennych towarów czy dzieł sztuki. Choć każdy wie, co jest bardziej, a co mniej cenne, to wykorzystanie tej Umiejętności umożliwia określenie wartości rzadko spotykanych rzeczy. Udany Test Wyceny pozwala rozpoznać podrabiane dobra lub monety. Jest to Test Przeciwstawny, wykonywany przeciwko PS fałszerza, uzyskanym w jego Teście Rzemiosła lub Sztuki."
+  },
+  "GAMBLE": {
+    "name": "Hazard",
+    "description": "Ta Umiejętność pozwala ci określić, jak opłacalny jest zakład i czy warto próbować szczęścia w grach na pieniądze. Podczas rozgrywki wszyscy jej uczestnicy wykonują Test Hazardu, korzystając ze wszystkich przysługujących im modyfikatorów. Wygrywa ten, kto uzyska najwięcej PS. Jeśli dojdzie do remisu, z gry odpadają te postaci, które uzyskały niższe wyniki, a remisujący muszą wykonać kolejny Test Hazardu i powtarzać go, aż zostanie wyłoniony jeden zwycięzca."
+  },
+  "GOSSIP": {
+    "name": "Plotkowanie",
+    "description": "Potrafisz szybko zdobywać i gromadzić nowinki, a także rozpuszczać plotki. Udany Test Plotkowania oznacza, że bohater trafił na jedną przydatną informację o okolicy. Każdy PS pozwala zdobyć kolejną albo rozpuścić własną plotkę, która dotrze do tylu osób, ile wynosi Bonus z twojej Ogłady. Czasochłonność plotkowania zależy od pomysłowości graczy oraz od tego, jak wiele dzieje się w okolicy (co zależy już od MG)."
+  },
+  "HAGGLE": {
+    "name": "Targowanie",
+    "description": "Ta Umiejętność pozwala ci na dobicie najlepszego targu w historii. Jej Test pozwala określić, czy uda ci się dokonać korzystnej transakcji, czy nie. Należy wykonać Przeciwstawny Test Targowania. Najczęściej będzie wykorzystywana podczas kupna ekwipunku, by obniżyć jego cenę."
+  },
+  "HEAL": {
+    "name": "Leczenie",
+    "description": "Zostałeś nauczony, jak leczyć rany i choroby. Udany Test Leczenia pozwala na: zdiagnozowanie choroby, infekcji czy zarazy; leczenie choroby; wyleczenie tylu Punktów Żywotności, ile wynosi twój Bonus z Inteligencji + PS (pacjent może skorzystać z efektów tylko jednego Testu Leczenia na spotkanie); zatamowanie Stanu Krwawienie (każdy PS niweluje jedno wystąpienie tego Stanu)."
+  },
+  "INTIMIDATE": {
+    "name": "Zastraszanie",
+    "description": "Ta Umiejętność pozwala zmuszać do czegoś lub zastraszać inne istoty. To, jak wygląda samo zastraszanie, zależy od sytuacji. Niekiedy jest to wyraźna groźba, innym razem zawoalowana lub samo spojrzenie. Zastraszanie prawie zawsze jest Przeciwstawnym Testem, wykonywanym przeciwko Opanowaniu. Jeśli Test Zastraszania się powiedzie, wpływasz na liczbę istot równą Bonusowi z Siły + PS. Każdy z zastraszanych zareaguje zgodnie ze swoją naturą oraz tym, jak groźny się wydajesz."
+  },
+  "INTUITION": {
+    "name": "Intuicja",
+    "description": "Intuicja pozwala ci orientować się w otoczeniu tak, byś mógł ustalić, czy wszystko jest w porządku. Umożliwia także wyczuwanie, czy inne osoby są wobec ciebie szczere, a udany Test da ci podpowiedź dotyczącą tego, co tak naprawdę dzieje się wokoło. MG określa, co to za informacja, na przykład czy dana osoba wierzy w to, co mówi, jakie panuje nastawienie wobec miejscowego szlachcica, czy pomoc oferowana jest szczerze."
+  },
+  "LANGUAGE": {
+    "name": "Język",
+    "description": "Ta Umiejętność pozwala ci władać innymi językami niż twój ojczysty. Wszyscy bohaterowie potrafią mówić w reikspielu (mowie Imperium), oraz rodzimym języku (jeśli postać pochodzi z rejonów, gdzie nie mawia się w reikspielu). Nie trzeba wykonywać Testu, by porozumieć się w ten sposób, a jeśli twoja gra dzieje się w innym regionie Starego Świata, zastąp reikspiel miejscowym językiem. Jeśli posiadasz Umiejętność Język, jesteś w stanie dogadać się w danej mowie oraz rozumieć proste pojęcia. Jeżeli temat rozmowy stanie się trudniejszy, możesz być zmuszony do wykonania Testu Umiejętności, by sprawdzić, czy znasz mało używany dialekt lub specjalistyczne słownictwo.",
+    "specialisations": {
+      "BATTLE_TONGUE": "Język Bitewny",
+      "BRETONNIAN": "Bretoński",
+      "CLASSICAL": "Klasyczny",
+      "GUILDER": "Gildii",
+      "KHAZALID": "Khazalid",
+      "MAGICK": "Magiczny",
+      "THIEF": "Złodziei",
+      "TILEAN": "Tileański"
+    }
+  },
+  "LEADERSHIP": {
+    "name": "Dowodzenie",
+    "description": "Ta Umiejętność opisuje twoją zdolność do przewodzenia innym oraz wzbudzania w nich szacunku. Choć zwykle ujawnia się ona na polu bitwy, to urodzony przywódca potrafi błyskawicznie reagować na zagrożenia takie jak pożar, a szlachcic sprawnie wyda polecenia służbie. Udany Test Dowodzenia pozwala ci kierować grupą innych istot w liczbie równej twojemu Bonusowi z Ogłady + uzyskanym PS."
+  },
+  "LORE": {
+    "name": "Wiedza",
+    "description": "Posiadanie tej Umiejętności oznacza, że twoja postać została formalnie wykształcona w jakiejś dziedzinie lub w inny sposób posiada specjalistyczną wiedzę. Bohater ma na tyle rozległą wiedzę, że nie musi wykonywać Testu, by MG przedstawił mu potrzebne ogólne i powszechnie dostępne informacje. Jeśli bohater musi się odwołać do faktów mniej znanych, wtedy musi wykonać Test Wiedzy, a liczba PS oznacza, jak bardzo szczegółowe informacje posiada.",
+    "specialisations": {
+      "ENGINEERING": "Inżynieria",
+      "GEOLOGY": "Geologia",
+      "HERALDRY": "Heraldyka",
+      "HISTORY": "Historia",
+      "LAW": "Prawo",
+      "MAGICK": "Magia",
+      "METALLURGY": "Metalurgia",
+      "SCIENCE": "Nauka",
+      "THEOLOGY": "Teologia"
+    }
+  },
+  "MELEE": {
+    "name": "Broń Biała",
+    "description": "Ta Umiejętność opisuje twoją sprawność w posługiwaniu się rodzajem broni do walki wręcz. Każda Specjalizacja w Broni Białej oznacza, że zostałeś wyszkolony w walce daną kategorią oręża. Jeśli chcesz lub przyjdzie ci walczyć bronią, w której nie jesteś wyszkolony, zajrzyj do Rozdziału 11: Przewodnik konsumenta, gdzie w opisie broni znajdziesz zasady i negatywne modyfikatory stosowane w tej sytuacji.",
+    "specialisations": {
+      "BASIC": "Podstawowa",
+      "BRAWLING": "Bijatyka",
+      "CAVALRY": "Kawaleryjska",
+      "FENCING": "Szermiercza",
+      "FLAIL": "Korbacze",
+      "PARRY": "Parująca",
+      "POLE_ARM": "Drzewcowa",
+      "TWO_HANDED": "Dwuręczna"
+    }
+  },
+  "NAVIGATION": {
+    "name": "Nawigacja",
+    "description": "Dzięki tej Umiejętności potrafisz odnaleźć się w dziczy, podróżować orientując się według charakterystycznych punktów terenowych, gwiazd lub korzystać z map. Samo posiadanie tej Umiejętności sprawia, że z grubsza wiesz gdzie jesteś i bez Testu potrafisz dotrzeć z jednego charakterystycznego miejsca do drugiego. Rzut na tę Umiejętność jest wymagany wtedy, gdy bohater jest zdezorientowany lub gdy podróżuje z dala od utartych szlaków i znanych mu okolic."
+  },
+  "OUTDOOR_SURVIVAL": {
+    "name": "Sztuka Przetrwania",
+    "description": "To Umiejętność wykorzystywana w dziczy, która pokazuje, jak dobrym myśliwym, rybakiem i zbieraczem jest postać, czy umie rozpalać ogień i budować schronienie. Doświadczeni podróżnicy potrafią rozpoznawać oznaki naturalnych niebezpieczeństw czy tropy pozostawiane przez groźną zwierzynę. Rozbijając obóz, wykonaj Test Sztuki Przetrwania, zmodyfikowany o panujące warunki. Jego powodzenie oznacza, że jesteś w stanie zapewnić sobie pożywienie i schronienie na tę noc. Każdy PS oznacza, że możesz zadbać o kolejną osobę."
+  },
+  "PERCEPTION": {
+    "name": "Percepcja",
+    "description": "Percepcja to twoje zmysły: wzrok, węch, słuch, dotyk i smak, a także wszystkie inne, którymi może dysponować istota żywa, jak również magiczne postrzeganie rzeczywistości. MG może wymagać Testu Percepcji, gdy chce wiedzieć, czy postać zauważy ruch za jej plecami, wypatrzy pułapkę, usłyszy śledzącego ją napastnika. Stopień trudności zależy od sytuacji, Percepcja zaś jest Umiejętnością używaną w Przeciwstawnych Testach Zwinnych Palców czy Skradania."
+  },
+  "PERFORM": {
+    "name": "Kuglarstwo",
+    "description": "Opanowałeś którąś z dziedzin sztuki, być może występując na ulicach, by zarobić na życie, lub podróżując z wędrowną trupą. Udany Test Umiejętności pozwala ci zabawiać widzów znajdujących się dość blisko, by cię widzieć lub słyszeć, a PS pokazują, jak dobrze się spisałeś.",
+    "specialisations": {
+      "ACROBATICS": "Akrobatyka",
+      "CLOWNING": "Komedianctwo",
+      "DANCING": "Taniec",
+      "FIREBREATHING": "Połykanie Ognia",
+      "JUGGLING": "Żonglowanie",
+      "MIMING": "Mimika",
+      "ROPE_WALKING": "Chodzenie po Linie"
+    }
+  },
+  "PICK_LOCK": {
+    "name": "Otwieranie Zamków",
+    "description": "Wiesz, jak działają zamki, i potrafisz je otworzyć, nie posiadając kluczy. Rozpracowanie zabezpieczenia wymaga zwykle Wydłużonego Testu i określonej liczby PS, zależnej od skomplikowania mechanizmu."
+  },
+  "PLAY": {
+    "name": "Muzyka",
+    "description": "Ta Umiejętność wyraża, jak dobrze potrafisz grać na instrumencie muzycznym i zabawiać publiczność. Udany Test pozwala ci grać dla tych, którzy są dość blisko, by cię widzieć i słyszeć, a PS pokazują, jak dobrze wykonałeś utwór.",
+    "specialisations": {
+      "BAGPIPE": "Dudy",
+      "LUTE": "Lutnia",
+      "HARPSICHORD": "Harfa",
+      "HORN": "Obój",
+      "VIOLIN": "Skrzypce"
+    }
+  },
+  "PRAY": {
+    "name": "Modlitwa",
+    "description": "Twoja umiejętność przywoływania mocy boskiej i komunikowania się z nadprzyrodzonym patronem. Więcej informacji o tym, jak działają modlitwy i jak szukać boskiej pomocy, znajduje się w Rozdziale 7: Religie i Wierzenia. Jeśli MG (biorąc pod uwagę zasady wiary i sytuację) zgodzi się na to, możesz modlić się z prośbą o skupienie umysłu. Każda Runda poświęcona na to i udany Test Modlitwy dają ci +1 Przewagę."
+  },
+  "RANGED": {
+    "name": "Broń Zasięgowa",
+    "description": "Byle pierwszy lepszy potrafi cisnąć kamieniem, wykorzystując do tego Umiejętności Strzeleckie, ale skuteczne używanie łuków czy pistoletów wymaga ćwiczeń i praktyki. Jeśli chcesz lub przyjdzie ci strzelać czy miotać bronią, gdy nie jesteś wyszkolony, zajrzyj do Rozdziału 11: Przewodnik konsumenta, gdzie w opisie oręża znajdziesz zasady i negatywne modyfikatory stosowane w tej sytuacji.",
+    "specialisations": {
+      "BLACKPOWDER": "Broń Prochowa",
+      "BOW": "Łuki",
+      "CROSSBOW": "Kusze",
+      "ENGINEERING": "Broń Eksperymentalna",
+      "ENTANGLING": "Broń Oplatująca",
+      "EXPLOSIVES": "Materiały Wybuchowe",
+      "SLING": "Proce",
+      "THROWING": "Broń Miotana"
+    }
+  },
+  "RESEARCH": {
+    "name": "Badania Naukowe",
+    "description": "Ta Umiejętność opisuje, jak sprawnie idzie ci łączenie faktów i synteza informacji znalezionych w zakamarkach bibliotek. Badania Naukowe wymagają posiadania Talentu Czytanie i Pisanie. Samo posiadanie tej Umiejętności oznacza, że nie musisz wykonywać Testu, by odnaleźć potrzebne informacje w uporządkowanej bibliotece, jeśli tylko będziesz miał dość czasu. Jeżeli szukasz konkretnej, choć mało znanej informacji lub jeśli się śpieszysz, będziesz musiał wykonać Wydłużony Test Badań Naukowych o stopniu trudności zmodyfikowanym przez zawartość biblioteki. Wymagany PS zależy od tego, jak wąski jest temat badań."
+  },
+  "RIDE": {
+    "name": "Jeździectwo",
+    "description": "Ta Umiejętność określa, jak dobrze radzisz sobie z jeżdżeniem na określonym rodzaju zwierząt. Jeździectwo (Konie) pozwala ci dosiadać koni, mułów czy osłów i im podobnych. Testy Jeździectwa musisz wykonywać jedynie wtedy, gdy podejmujesz się czegoś niecodziennego: zmuszasz rumaka do wyścigu, podejmujesz się ujeżdżania, pokonujesz niebezpieczny teren czy szarżujesz do walki. Jeśli robisz coś prostszego i posiadasz choć jeden punkt Rozwinięcia w tej Umiejętności, działanie kończy się sukcesem bez Testu.",
+    "specialisations": {
+      "DEMIGRYPH": "Półgryfy",
+      "GREAT_WOLF": "Wielkie Wilki",
+      "GRIFFON": "Gryfy",
+      "HORSE": "Konie",
+      "PEGASUS": "Pegazy"
+    }
+  },
+  "ROW": {
+    "name": "Wioślarstwo",
+    "description": "Ta Umiejętność pokazuje, jak dobrze idzie ci napędzanie łodzi na wodzie. Zwykle testowana jest podczas zawodów, pokonywania wodospadów, ucieczek przed bagiennymi ośmiornicami oraz w podobnie niebezpiecznych sytuacjach. Każdy, kto posiada tę Umiejętność, potrafi przepłynąć łodzią przez spokojne jezioro czy leniwy nurt rzeki. Nie ma potrzeby wykonywania Testu w takiej sytuacji."
+  },
+  "SAIL": {
+    "name": "Żeglarstwo",
+    "description": "Ta Umiejętność pokazuje, jak dobrze radzisz sobie z obsługą łodzi i statków żaglowych oraz sterowaniem czy manewrowaniem nimi. Zawiera się w niej znajomość węzłów, oceniania siły i kierunku wiatru oraz wiele innych przydatnych na żaglowcu biegłości. Jeśli masz odpowiednio liczną i wyszkoloną załogę, wykonujesz Test Żeglowania tylko wtedy, gdy musisz zmusić statek do trudnego manewru, podczas wyścigu, gdy lawiruje on między płyciznami czy zmaga się ze sztormową pogodą.",
+    "specialisations": {
+      "BARGE": "Barki",
+      "CARAVEL": "Karawele",
+      "COG": "Kogi",
+      "FRIGATE": "Fregaty",
+      "WOLFSHIP": "Wilcze Statki"
+    }
+  },
+  "SECRET_SIGNS": {
+    "name": "Sekretne Znaki",
+    "description": "Zostałeś wtajemniczony w znaczenie tajemnych znaków, które rozpoznawać potrafią tylko członkowie pewnej grupy. Istnieje wiele powodów, z których ktoś mógłby chcieć zostawić zaszyfrowaną wiadomość: włóczędzy informują innych o tym, kto chętniej udziela jałmużny, złodzieje wskazują na słabości zabezpieczeń, a zwiadowcy ostrzegają, gdzie znajdują się leża groźnych potworów. Zazwyczaj nie ma potrzeby testowania tej Umiejętności: potrafisz odcyfrować znaki, kiedy je widzisz.",
+    "specialisations": {
+      "GREY_ORDER": "Kolegium Cienia",
+      "GUILD": "Gildii (wybranej)",
+      "RANGER": "Łowców",
+      "SCOUT": "Zwiadowców",
+      "THIEF": "Złodziei",
+      "VAGABOND": "Włóczęgów"
+    }
+  },
+  "SET_TRAP": {
+    "name": "Zastawianie Pułapek",
+    "description": "Od prostych wnyków i sideł na niedźwiedzie po skomplikowane urządzenia jak Rozpruwacz Złodziei von Grizzela, pułapki na pewno będą czyhały na bohaterów przemierzających Stary Świat. Ta Umiejętność pokazuje, jak radzisz sobie z zastawianiem i rozbrajaniem wszelkiego rodzaju pułapek. Jeśli ją posiadasz i nie spieszy ci się, zrobisz to bez konieczności wykonywania Testu. Ten jest z kolei wymagany, jeśli chcesz to samo zrobić szybko, w sytuacji stresowej albo gdy pułapka jest szczególnie skomplikowana."
+  },
+  "SLEIGHT_OF_HAND": {
+    "name": "Zwinne Palce",
+    "description": "To Umiejętność, która pozwala na okradanie, ukrywanie niewielkich przedmiotów w dłoni, wykonywanie sztuczek, a także kantowanie podczas gier hazardowych. Testy Zwinnych Palców są zazwyczaj Przeciwstawne przeciwko Percepcji. Sukces oznacza, że udało ci się coś zwędzić, okraść ofiarę czy podmienić karty. Marginalny sukces (od +0 do +1 PS) oznacza, że twój przeciwnik zrobił się podejrzliwy."
+  },
+  "STEALTH": {
+    "name": "Skradanie",
+    "description": "Ta Umiejętność pozwala ci na podkradanie się i ukrywanie w lepszym stopniu niż innym. Testy Skradania są Testami Przeciwstawnymi, wykonywanymi przeciwko Percepcji przeciwnika i modyfikowanymi przez warunki, takie jak ciemność, łatwość ukrycia się w trakcie przemykania czy choćby twój ubiór. Spora lub Zdumiewająca Porażka podczas Testu Skradania oznacza, że ściągasz na siebie uwagę wrogów, przed którymi chciałeś się ukryć.",
+    "specialisations": {
+      "RURAL": "Wieś",
+      "UNDERGROUND": "Podziemia",
+      "URBAN": "Miasto"
+    }
+  },
+  "SWIM": {
+    "name": "Pływanie",
+    "description": "Dzięki tej Umiejętności potrafisz pływać i po wpadnięciu do wody nie idziesz na dno. O ile się ją wykupi, nie trzeba jej testować w normalnych, spokojnych warunkach. Sprawa ma się inaczej, jeśli porwie cię rwaący prąd lub gdy uciekasz przed ogromnym rekinem, wysłanym przez Stromfelsa, boga tonących. Wtedy należy wykonać Test Pływania, na trudność którego mogą wpłynąć stan wody, obciążenie odzieżem, pancerzem czy dobytkiem."
+  },
+  "TRACK": {
+    "name": "Tropienie",
+    "description": "Ta Umiejętność umożliwia ci podążanie śladami, które pozostawili inni. Jest wykorzystywana, by odnaleźć drogę w dziczy. Byle lebiega pójdzie po śladach pozostawionych na śniegu, do tego wystarczy zwykły Test Percepcji. Tropienie to sztuka rozpoznawania drobnych znaków i wiedza, jak je wykorzystać, by dopaść zwierzynę. Dzięki tej Umiejętności potrafisz też zacierać własne ślady, wykonując Przeciwstawny Test swojego Tropienia przeciwko Tropieniu przeciwnika."
+  },
+  "TRADE": {
+    "name": "Rzemiosło",
+    "description": "Większość mieszkańców Reiklandu wykonuje jakiś fach, nawet poszukiwacze przygód zwykle mają stabilne zajęcie czy pełnią godną funkcję, zapewniającą im byt pomiędzy przygodami. Posiadanie tej Umiejętności oznacza, że potrafisz coś wytwarzać lub oferujesz usługi i posiadasz wiedzę związaną z wykonywanym zawodem. Dzięki posiadaniu tej Umiejętności jesteś w stanie bez Testu wykonywać codzienne obowiązki związane z pracą, zakładając, że masz potrzebne narzędzia.",
+    "specialisations": {
+      "APOTHECARY": "Aptekarstwo",
+      "CALLIGRAPHER": "Kaligrafia",
+      "CHANDLER": "Świecarstwo",
+      "CARPENTER": "Kowalstwo",
+      "COOK": "Gotowanie",
+      "EMBALMER": "Balsamowanie",
+      "SMITH": "Kowalstwo",
+      "TANNER": "Garbarstwo"
+    }
+  }
+}
