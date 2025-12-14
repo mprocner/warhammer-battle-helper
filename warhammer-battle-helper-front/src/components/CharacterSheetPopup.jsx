@@ -14,7 +14,10 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     const [resizeDirection, setResizeDirection] = useState(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
-    const [editedCharacter, setEditedCharacter] = useState(character);
+    const [editedCharacter, setEditedCharacter] = useState({
+        ...character,
+        basicSkills: character.basicSkills || {}
+    });
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
@@ -23,9 +26,21 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
 
     // Update edited character when character prop changes
     useEffect(() => {
-        setEditedCharacter(character);
+        setEditedCharacter({
+            ...character,
+            basicSkills: character.basicSkills || {}
+        });
         setHasChanges(false);
     }, [character]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Get all basic skills sorted alphabetically by translated name
     const basicSkills = useMemo(() => {
@@ -41,6 +56,63 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
             .sort((a, b) => a.name.localeCompare(b.name));
         return skills;
     }, [t]);
+
+    // Map characteristic key to short form used in character data
+    const getCharacteristicShortKey = (characteristic) => {
+        const mapping = {
+            'WEAPON_SKILL': 'WS',
+            'BALLISTIC_SKILL': 'BS',
+            'STRENGTH': 'S',
+            'TOUGHNESS': 'T',
+            'INITIATIVE': 'I',
+            'AGILITY': 'Ag',
+            'DEXTERITY': 'Dex',
+            'INTELLIGENCE': 'Int',
+            'WILLPOWER': 'WP',
+            'FELLOWSHIP': 'Fel'
+        };
+        return mapping[characteristic] || characteristic;
+    };
+
+    // Get characteristic value for a skill
+    const getCharacteristicValue = (characteristic) => {
+        const shortKey = getCharacteristicShortKey(characteristic);
+        const current = calculateCurrentCharacteristics(editedCharacter);
+        return current[shortKey] || 0;
+    };
+
+    // Get skill advances
+    const getSkillAdvances = (skillKey) => {
+        return parseInt(editedCharacter.basicSkills?.[skillKey]) || 0;
+    };
+
+    // Calculate total skill value (characteristic + advances)
+    const calculateSkillValue = (skillKey, characteristic) => {
+        const charValue = getCharacteristicValue(characteristic);
+        const advances = getSkillAdvances(skillKey);
+        return charValue + advances;
+    };
+
+    // Handle skill advances change
+    const handleSkillAdvancesChange = (skillKey, value) => {
+        const numValue = parseInt(value) || 0;
+        setEditedCharacter(prev => ({
+            ...prev,
+            basicSkills: {
+                ...prev.basicSkills,
+                [skillKey]: numValue
+            }
+        }));
+        setHasChanges(true);
+
+        // Auto-save after 1 second
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
 
     // Calculate current characteristics from initial + advances
     const calculateCurrentCharacteristics = (char) => {
@@ -663,9 +735,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                         <thead>
                                             <tr>
                                                 <th>{t('characterSheet.name')}</th>
-                                                <th style={{ width: '50px' }}>Char</th>
-                                                <th style={{ width: '50px' }}>Adv</th>
-                                                <th style={{ width: '50px' }}>Skill</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -673,8 +745,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                                 <tr key={skill.key}>
                                                     <td className="skill-name">{skill.name}</td>
                                                     <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
-                                                    <td><input type="text" value="" readOnly /></td>
-                                                    <td><input type="text" value="" readOnly /></td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={getSkillAdvances(skill.key)}
+                                                            onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </td> 
+                                                    <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -684,9 +763,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                         <thead>
                                             <tr>
                                                 <th>{t('characterSheet.name')}</th>
-                                                <th style={{ width: '50px' }}>Char</th>
-                                                <th style={{ width: '50px' }}>Adv</th>
-                                                <th style={{ width: '50px' }}>Skill</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -694,8 +773,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                                 <tr key={skill.key}>
                                                     <td className="skill-name">{skill.name}</td>
                                                     <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
-                                                    <td><input type="text" value="" readOnly /></td>
-                                                    <td><input type="text" value="" readOnly /></td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={getSkillAdvances(skill.key)}
+                                                            onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </td>
+                                                    <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
                                                 </tr>
                                             ))}
                                         </tbody>

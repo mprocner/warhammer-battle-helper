@@ -17,7 +17,7 @@ type CharacterHandler struct {
 type CreateCharacterRequest struct {
 	BasicInfo       models.BasicInfo            `json:"basicInfo" binding:"required"`
 	Characteristics models.CharacteristicsTable `json:"characteristics"`
-	BasicSkills     []models.Skill              `json:"basicSkills"`
+	BasicSkills     map[string]int              `json:"basicSkills"`
 	AdvancedSkills  []models.Skill              `json:"advancedSkills"`
 	Weapons         []models.Weapon             `json:"weapons"`
 	Talents         []models.Talent             `json:"talents"`

@@ -23,7 +23,7 @@ type Character struct {
 	Equipment       []EquipmentItem      `bson:"equipment" json:"equipment"`
 	Encumbrance     EncumbranceInfo      `bson:"encumbrance" json:"encumbrance"`
 	Characteristics CharacteristicsTable `bson:"characteristics" json:"characteristics"`
-	BasicSkills     []Skill              `bson:"basicSkills" json:"basicSkills"`
+	BasicSkills     map[string]int       `bson:"basicSkills" json:"basicSkills"`
 	AdvancedSkills  []Skill              `bson:"advancedSkills" json:"advancedSkills"`
 	Spells          []Spell              `bson:"spells" json:"spells"`
 	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
