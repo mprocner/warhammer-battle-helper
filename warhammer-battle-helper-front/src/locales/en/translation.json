@@ -1,5 +1,5 @@
 {
-  "common": {
+  "common": { 
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -48,7 +48,8 @@
     "invalidEmail": "Invalid email address",
     "passwordTooShort": "Password must be at least 6 characters",
     "passwordsDoNotMatch": "Passwords do not match",
-    "gameNameRequired": "Game name is required"
+    "gameNameRequired": "Game name is required",
+    "skillAlreadyAdded": "This skill is already added"
   },
   "game": {
     "createGame": "Create Game",
@@ -88,7 +89,11 @@
     "wealth": "Wealth",
     "characteristics": "Characteristics",
     "basicSkills": "Basic Skills",
+    "weaponSkills": "Weapon Skills",
     "groupedAdvancedSkills": "Grouped & Advanced Skills",
+    "advancedSkills": "Advanced Skills",
+    "addAdvancedSkill": "-- Add Advanced Skill --",
+    "noAdvancedSkills": "No advanced skills added",
     "spellsAndPrayers": "Spells and Prayers",
     "ambitions": "Ambitions",
     "party": "Party",

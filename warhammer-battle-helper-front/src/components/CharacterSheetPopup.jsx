@@ -16,7 +16,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
     const [editedCharacter, setEditedCharacter] = useState({
         ...character,
-        basicSkills: character.basicSkills || {}
+        basicSkills: character.basicSkills || {},
+        advancedSkills: character.advancedSkills || {}
     });
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -28,7 +29,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     useEffect(() => {
         setEditedCharacter({
             ...character,
-            basicSkills: character.basicSkills || {}
+            basicSkills: character.basicSkills || {},
+            advancedSkills: character.advancedSkills || {}
         });
         setHasChanges(false);
     }, [character]);
@@ -42,20 +44,78 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         };
     }, []);
 
-    // Get all basic skills sorted alphabetically by translated name
+    // Get all basic skills except Melee (including other grouped skills as single rows)
     const basicSkills = useMemo(() => {
         const skills = skillsData
-            .filter(skill => skill.type === 'basic')
+            .filter(skill => skill.type === 'basic' && skill.key !== 'MELEE')
             .map(skill => ({
                 key: skill.key,
                 name: t(`skills:${skill.key}.name`),
-                characteristic: skill.characteristic,
-                grouped: skill.grouped,
-                specialisations: skill.specialisations
+                characteristic: skill.characteristic
             }))
             .sort((a, b) => a.name.localeCompare(b.name));
         return skills;
     }, [t]);
+
+    // Get Melee skill for weapon skills table
+    const meleeSkill = useMemo(() => {
+        const skill = skillsData.find(s => s.key === 'MELEE');
+        if (!skill) return null;
+        return {
+            key: skill.key,
+            name: t(`skills:${skill.key}.name`),
+            characteristic: skill.characteristic,
+            specialisations: skill.specialisations || []
+        };
+    }, [t]);
+
+    // Get all advanced skills options for dropdown (expanded with specializations)
+    const advancedSkillsOptions = useMemo(() => {
+        const options = [];
+        skillsData
+            .filter(skill => skill.type === 'advanced')
+            .forEach(skill => {
+                if (skill.grouped && skill.specialisations) {
+                    // Add each specialization as separate option
+                    skill.specialisations.forEach(spec => {
+                        options.push({
+                            key: `${skill.key}_${spec}`,
+                            name: `${t(`skills:${skill.key}.name`)} (${t(`skills:${skill.key}.specialisations.${spec}`)})`,
+                            characteristic: skill.characteristic
+                        });
+                    });
+                } else {
+                    // Add ungrouped skill
+                    options.push({
+                        key: skill.key,
+                        name: t(`skills:${skill.key}.name`),
+                        characteristic: skill.characteristic
+                    });
+                }
+            });
+        return options.sort((a, b) => a.name.localeCompare(b.name));
+    }, [t]);
+
+    // Convert advanced skills map to array for rendering (sorted alphabetically)
+    const advancedSkillsList = useMemo(() => {
+        if (!editedCharacter.advancedSkills) return [];
+
+        return Object.keys(editedCharacter.advancedSkills)
+            .map(skillKey => {
+                // Find the skill option to get name and characteristic
+                const skillOption = advancedSkillsOptions.find(s => s.key === skillKey);
+                if (!skillOption) return null;
+
+                return {
+                    key: skillKey,
+                    name: skillOption.name,
+                    characteristic: skillOption.characteristic,
+                    advances: editedCharacter.advancedSkills[skillKey]
+                };
+            })
+            .filter(s => s !== null)
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [editedCharacter.advancedSkills, advancedSkillsOptions]);
 
     // Map characteristic key to short form used in character data
     const getCharacteristicShortKey = (characteristic) => {
@@ -86,10 +146,30 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         return parseInt(editedCharacter.basicSkills?.[skillKey]) || 0;
     };
 
+    // Calculate advanced skill value (characteristic + advances)
+    const calculateAdvancedSkillValue = (skillKey, characteristic) => {
+        const charValue = getCharacteristicValue(characteristic);
+        const advances = parseInt(editedCharacter.advancedSkills?.[skillKey]) || 0;
+        return charValue + advances;
+    };
+
+    // Get skill advances for grouped skill (with compound key like MELEE_BASIC)
+    const getGroupedSkillAdvances = (parentKey, specializationKey) => {
+        const compoundKey = `${parentKey}_${specializationKey}`;
+        return parseInt(editedCharacter.basicSkills?.[compoundKey]) || 0;
+    };
+
     // Calculate total skill value (characteristic + advances)
     const calculateSkillValue = (skillKey, characteristic) => {
         const charValue = getCharacteristicValue(characteristic);
         const advances = getSkillAdvances(skillKey);
+        return charValue + advances;
+    };
+
+    // Calculate total skill value for grouped skill
+    const calculateGroupedSkillValue = (parentKey, specializationKey, characteristic) => {
+        const charValue = getCharacteristicValue(characteristic);
+        const advances = getGroupedSkillAdvances(parentKey, specializationKey);
         return charValue + advances;
     };
 
@@ -106,6 +186,98 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         setHasChanges(true);
 
         // Auto-save after 1 second
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Handle grouped skill advances change
+    const handleGroupedSkillAdvancesChange = (parentKey, specializationKey, value) => {
+        const compoundKey = `${parentKey}_${specializationKey}`;
+        const numValue = parseInt(value) || 0;
+        setEditedCharacter(prev => ({
+            ...prev,
+            basicSkills: {
+                ...prev.basicSkills,
+                [compoundKey]: numValue
+            }
+        }));
+        setHasChanges(true);
+
+        // Auto-save after 1 second
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Add advanced skill from dropdown
+    const handleAddAdvancedSkill = (skillKey) => {
+        if (!skillKey) return;
+
+        // Check if skill already exists
+        if (editedCharacter.advancedSkills?.[skillKey] !== undefined) {
+            alert(t('validation.skillAlreadyAdded'));
+            return;
+        }
+
+        setEditedCharacter(prev => ({
+            ...prev,
+            advancedSkills: {
+                ...prev.advancedSkills,
+                [skillKey]: 0
+            }
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update advanced skill advances
+    const handleAdvancedSkillAdvancesChange = (skillKey, value) => {
+        const numValue = parseInt(value) || 0;
+        setEditedCharacter(prev => ({
+            ...prev,
+            advancedSkills: {
+                ...prev.advancedSkills,
+                [skillKey]: numValue
+            }
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove advanced skill
+    const handleRemoveAdvancedSkill = (skillKey) => {
+        setEditedCharacter(prev => {
+            const newAdvancedSkills = { ...prev.advancedSkills };
+            delete newAdvancedSkills[skillKey];
+            return {
+                ...prev,
+                advancedSkills: newAdvancedSkills
+            };
+        });
+        setHasChanges(true);
+
+        // Auto-save
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
@@ -752,7 +924,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                                             onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
                                                             min="0"
                                                         />
-                                                    </td> 
+                                                    </td>
                                                     <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
                                                 </tr>
                                             ))}
@@ -789,36 +961,105 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                 </div>
                             </div>
 
-                            {/* Grouped & Advanced Skills */}
+                            {/* Melee (Weapon Skills) */}
+                            {meleeSkill && (
+                                <div className="card-section">
+                                    <h3>{t('characterSheet.weaponSkills')}</h3>
+                                    <table className="skills-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('characterSheet.name')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {meleeSkill.specialisations.map((spec) => (
+                                                <tr key={`${meleeSkill.key}_${spec}`}>
+                                                    <td className="skill-name">
+                                                        {meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})
+                                                    </td>
+                                                    <td><input type="text" value={t(`characteristicsShort.${meleeSkill.characteristic}`)} readOnly /></td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={getGroupedSkillAdvances(meleeSkill.key, spec)}
+                                                            onChange={(e) => handleGroupedSkillAdvancesChange(meleeSkill.key, spec, e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </td>
+                                                    <td><input type="text" value={calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic)} readOnly /></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Advanced Skills */}
                             <div className="card-section">
-                                <h3>{t('characterSheet.groupedAdvancedSkills')}</h3>
+                                <h3>{t('characterSheet.advancedSkills')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
                                             <th>{t('characterSheet.name')}</th>
-                                            <th style={{ width: '70px' }}>Characteristic</th>
-                                            <th style={{ width: '50px' }}>Adv</th>
-                                            <th style={{ width: '50px' }}>Skill</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {character.advancedSkills?.map((skill, idx) => (
-                                            <tr key={idx}>
-                                                <td><input type="text" value={skill.name || ''} readOnly /></td>
-                                                <td><input type="text" value={skill.characteristic || ''} readOnly /></td>
-                                                <td><input type="text" value={skill.advances || ''} readOnly /></td>
-                                                <td><input type="text" value={skill.skill || ''} readOnly /></td>
+                                        {advancedSkillsList.map((skill) => (
+                                            <tr key={skill.key}>
+                                                <td className="skill-name">{skill.name}</td>
+                                                <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                <td>
+                                                    <input
+                                                        type="number"
+                                                        value={skill.advances}
+                                                        onChange={(e) => handleAdvancedSkillAdvancesChange(skill.key, e.target.value)}
+                                                        min="0"
+                                                    />
+                                                </td>
+                                                <td><input type="text" value={calculateAdvancedSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                <td>
+                                                    <button
+                                                        onClick={() => handleRemoveAdvancedSkill(skill.key)}
+                                                        style={{ fontSize: '12px', padding: '2px 6px' }}
+                                                        title={t('common.delete')}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        )) || (
+                                        ))}
+                                        {advancedSkillsList.length === 0 && (
                                             <tr>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
+                                                <td colSpan="5" style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                                    {t('characterSheet.noAdvancedSkills')}
+                                                </td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
+                                <div style={{ marginTop: '10px' }}>
+                                    <select
+                                        onChange={(e) => {
+                                            handleAddAdvancedSkill(e.target.value);
+                                            e.target.value = '';
+                                        }}
+                                        style={{ width: '100%', padding: '5px' }}
+                                    >
+                                        <option value="">{t('characterSheet.addAdvancedSkill')}</option>
+                                        {advancedSkillsOptions.map(option => (
+                                            <option key={option.key} value={option.key}>
+                                                {option.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Spells and Prayers */}

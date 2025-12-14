@@ -24,7 +24,7 @@ type Character struct {
 	Encumbrance     EncumbranceInfo      `bson:"encumbrance" json:"encumbrance"`
 	Characteristics CharacteristicsTable `bson:"characteristics" json:"characteristics"`
 	BasicSkills     map[string]int       `bson:"basicSkills" json:"basicSkills"`
-	AdvancedSkills  []Skill              `bson:"advancedSkills" json:"advancedSkills"`
+	AdvancedSkills  map[string]int       `bson:"advancedSkills" json:"advancedSkills"`
 	Spells          []Spell              `bson:"spells" json:"spells"`
 	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
 	Party           PartyInfo            `bson:"party" json:"party"`
@@ -155,8 +155,8 @@ type CharacteristicRow struct {
 type Skill struct {
 	Name           string `bson:"name" json:"name"`
 	Characteristic string `bson:"characteristic" json:"characteristic"`
-	Advances       string `bson:"advances" json:"advances"`
-	Skill          string `bson:"skill" json:"skill"`
+	Advances       int    `bson:"advances" json:"advances"`
+	Skill          int    `bson:"skill" json:"skill"`
 }
 
 type Spell struct {
