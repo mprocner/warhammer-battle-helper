@@ -22,6 +22,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [activeTooltip, setActiveTooltip] = useState(null);
     const popupRef = useRef(null);
     const saveTimeoutRef = useRef(null);
 
@@ -44,17 +45,54 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         };
     }, []);
 
+    // Close tooltip when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (activeTooltip && !e.target.closest('.skill-info-icon') && !e.target.closest('.skill-tooltip')) {
+                setActiveTooltip(null);
+            }
+        };
+
+        if (activeTooltip) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [activeTooltip]);
+
+    // Toggle skill tooltip
+    const handleTooltipToggle = (skillKey, e) => {
+        e.stopPropagation();
+        setActiveTooltip(activeTooltip === skillKey ? null : skillKey);
+    };
+
     // Get all basic skills except Melee (including other grouped skills as single rows)
     const basicSkills = useMemo(() => {
-        const skills = skillsData
+        const skills = [];
+        skillsData
             .filter(skill => skill.type === 'basic' && skill.key !== 'MELEE')
-            .map(skill => ({
-                key: skill.key,
-                name: t(`skills:${skill.key}.name`),
-                characteristic: skill.characteristic
-            }))
-            .sort((a, b) => a.name.localeCompare(b.name));
-        return skills;
+            .forEach(skill => {
+                if (skill.showAllSpecializations && skill.specialisations) {
+                    // Expand specializations as separate skills
+                    skill.specialisations.forEach(spec => {
+                        skills.push({
+                            key: `${skill.key}_${spec}`,
+                            name: `${t(`skills:${skill.key}.name`)} (${t(`skills:${skill.key}.specialisations.${spec}`)})`,
+                            characteristic: skill.characteristic,
+                            isGrouped: true,
+                            parentKey: skill.key,
+                            specializationKey: spec
+                        });
+                    });
+                } else {
+                    // Add as single skill
+                    skills.push({
+                        key: skill.key,
+                        name: t(`skills:${skill.key}.name`),
+                        characteristic: skill.characteristic
+                    });
+                }
+            });
+        return skills.sort((a, b) => a.name.localeCompare(b.name));
     }, [t]);
 
     // Get Melee skill for weapon skills table
@@ -69,11 +107,34 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         };
     }, [t]);
 
+    // Get Ranged skill for ranged weapon skills table
+    const rangedSkill = useMemo(() => {
+        const skill = skillsData.find(s => s.key === 'RANGED');
+        if (!skill) return null;
+        return {
+            key: skill.key,
+            name: t(`skills:${skill.key}.name`),
+            characteristic: skill.characteristic,
+            specialisations: skill.specialisations || []
+        };
+    }, [t]);
+
     // Get all advanced skills options for dropdown (expanded with specializations)
+    // Also includes grouped basic skills except weapon skills (MELEE, RANGED) and STEALTH
     const advancedSkillsOptions = useMemo(() => {
         const options = [];
         skillsData
-            .filter(skill => skill.type === 'advanced')
+            .filter(skill => {
+                // Exclude weapon skills (MELEE, RANGED)
+                if (skill.weaponSkill) return false;
+                // Include all advanced skills
+                if (skill.type === 'advanced') return true;
+                // Include grouped basic skills except STEALTH
+                if (skill.type === 'basic' && skill.grouped && !skill.showAllSpecializations) {
+                    return true;
+                }
+                return false;
+            })
             .forEach(skill => {
                 if (skill.grouped && skill.specialisations) {
                     // Add each specialization as separate option
@@ -257,6 +318,28 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         setHasChanges(true);
 
         // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove ranged skill
+    const handleRemoveRangedSkill = (parentKey, specializationKey) => {
+        const compoundKey = `${parentKey}_${specializationKey}`;
+        setEditedCharacter(prev => {
+            const newBasicSkills = { ...prev.basicSkills };
+            delete newBasicSkills[compoundKey];
+            return {
+                ...prev,
+                basicSkills: newBasicSkills
+            };
+        });
+        setHasChanges(true);
+
+        // Auto-save after 1 second
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
@@ -913,21 +996,38 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {basicSkills.slice(0, Math.ceil(basicSkills.length / 2)).map((skill) => (
-                                                <tr key={skill.key}>
-                                                    <td className="skill-name">{skill.name}</td>
-                                                    <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
-                                                    <td>
-                                                        <input
-                                                            type="number"
-                                                            value={getSkillAdvances(skill.key)}
-                                                            onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
-                                                            min="0"
-                                                        />
-                                                    </td>
-                                                    <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
-                                                </tr>
-                                            ))}
+                                            {basicSkills.slice(0, Math.ceil(basicSkills.length / 2)).map((skill) => {
+                                                const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
+                                                const tooltipKey = `basic-${skill.key}`;
+                                                return (
+                                                    <tr key={skill.key}>
+                                                        <td className="skill-name">
+                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                            >
+                                                                ⓘ
+                                                            </span>
+                                                            {activeTooltip === tooltipKey && (
+                                                                <div className="skill-tooltip">
+                                                                    {t(`skills:${skillKey}.description`)}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                value={getSkillAdvances(skill.key)}
+                                                                onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
+                                                                min="0"
+                                                            />
+                                                        </td>
+                                                        <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
 
@@ -941,21 +1041,38 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {basicSkills.slice(Math.ceil(basicSkills.length / 2)).map((skill) => (
-                                                <tr key={skill.key}>
-                                                    <td className="skill-name">{skill.name}</td>
-                                                    <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
-                                                    <td>
-                                                        <input
-                                                            type="number"
-                                                            value={getSkillAdvances(skill.key)}
-                                                            onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
-                                                            min="0"
-                                                        />
-                                                    </td>
-                                                    <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
-                                                </tr>
-                                            ))}
+                                            {basicSkills.slice(Math.ceil(basicSkills.length / 2)).map((skill) => {
+                                                const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
+                                                const tooltipKey = `basic2-${skill.key}`;
+                                                return (
+                                                    <tr key={skill.key}>
+                                                        <td className="skill-name">
+                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                            >
+                                                                ⓘ
+                                                            </span>
+                                                            {activeTooltip === tooltipKey && (
+                                                                <div className="skill-tooltip">
+                                                                    {t(`skills:${skillKey}.description`)}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                value={getSkillAdvances(skill.key)}
+                                                                onChange={(e) => handleSkillAdvancesChange(skill.key, e.target.value)}
+                                                                min="0"
+                                                            />
+                                                        </td>
+                                                        <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -972,34 +1089,118 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
+                                                <th style={{ width: '40px' }}></th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {meleeSkill.specialisations.map((spec) => (
-                                                <tr key={`${meleeSkill.key}_${spec}`}>
-                                                    <td className="skill-name">
-                                                        {meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})
-                                                    </td>
-                                                    <td><input type="text" value={t(`characteristicsShort.${meleeSkill.characteristic}`)} readOnly /></td>
-                                                    <td>
-                                                        <input
-                                                            type="number"
-                                                            value={getGroupedSkillAdvances(meleeSkill.key, spec)}
-                                                            onChange={(e) => handleGroupedSkillAdvancesChange(meleeSkill.key, spec, e.target.value)}
-                                                            min="0"
-                                                        />
-                                                    </td>
-                                                    <td><input type="text" value={calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic)} readOnly /></td>
-                                                </tr>
-                                            ))}
+                                            {/* Melee Weapon Skills */}
+                                            {meleeSkill.specialisations.map((spec) => {
+                                                const tooltipKey = `melee-${spec}`;
+                                                return (
+                                                    <tr key={`${meleeSkill.key}_${spec}`}>
+                                                        <td className="skill-name">
+                                                            <span>{meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})</span>
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                            >
+                                                                ⓘ
+                                                            </span>
+                                                            {activeTooltip === tooltipKey && (
+                                                                <div className="skill-tooltip">
+                                                                    {t(`skills:${meleeSkill.key}.description`)}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td><input type="text" value={t(`characteristicsShort.${meleeSkill.characteristic}`)} readOnly /></td>
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                value={getGroupedSkillAdvances(meleeSkill.key, spec)}
+                                                                onChange={(e) => handleGroupedSkillAdvancesChange(meleeSkill.key, spec, e.target.value)}
+                                                                min="0"
+                                                            />
+                                                        </td>
+                                                        <td><input type="text" value={calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic)} readOnly /></td>
+                                                        <td></td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {/* Ranged Weapon Skills - only show added ones */}
+                                            {rangedSkill && editedCharacter.basicSkills &&
+                                                Object.keys(editedCharacter.basicSkills)
+                                                    .filter(key => key.startsWith(`${rangedSkill.key}_`))
+                                                    .map((compoundKey) => {
+                                                        const spec = compoundKey.replace(`${rangedSkill.key}_`, '');
+                                                        const tooltipKey = `ranged-${spec}`;
+                                                        return (
+                                                            <tr key={compoundKey}>
+                                                                <td className="skill-name">
+                                                                    <span>{rangedSkill.name} ({t(`skills:${rangedSkill.key}.specialisations.${spec}`)})</span>
+                                                                    <span
+                                                                        className="skill-info-icon"
+                                                                        onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                                    >
+                                                                        ⓘ
+                                                                    </span>
+                                                                    {activeTooltip === tooltipKey && (
+                                                                        <div className="skill-tooltip">
+                                                                            {t(`skills:${rangedSkill.key}.description`)}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td><input type="text" value={t(`characteristicsShort.${rangedSkill.characteristic}`)} readOnly /></td>
+                                                                <td>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={getGroupedSkillAdvances(rangedSkill.key, spec)}
+                                                                        onChange={(e) => handleGroupedSkillAdvancesChange(rangedSkill.key, spec, e.target.value)}
+                                                                        min="0"
+                                                                    />
+                                                                </td>
+                                                                <td><input type="text" value={calculateGroupedSkillValue(rangedSkill.key, spec, rangedSkill.characteristic)} readOnly /></td>
+                                                                <td>
+                                                                    <button
+                                                                        className="skill-delete-btn"
+                                                                        onClick={() => handleRemoveRangedSkill(rangedSkill.key, spec)}
+                                                                        title={t('common.delete')}
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                            }
                                         </tbody>
                                     </table>
+                                    {/* Ranged Weapon Skills Dropdown */}
+                                    {rangedSkill && (
+                                        <div style={{ marginTop: '10px' }}>
+                                            <select
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        handleGroupedSkillAdvancesChange(rangedSkill.key, e.target.value, '0');
+                                                    }
+                                                    e.target.value = '';
+                                                }}
+                                                style={{ width: '100%', padding: '5px' }}
+                                            >
+                                                <option value="">{t('characterSheet.addRangedSkill')}</option>
+                                                {rangedSkill.specialisations.map(spec => (
+                                                    <option key={spec} value={spec}>
+                                                        {rangedSkill.name} ({t(`skills:${rangedSkill.key}.specialisations.${spec}`)})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {/* Advanced Skills */}
+                            {/* Advanced and Grouped Skills */}
                             <div className="card-section">
-                                <h3>{t('characterSheet.advancedSkills')}</h3>
+                                <h3>{t('characterSheet.groupedAdvancedSkills')}</h3>
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
@@ -1011,30 +1212,48 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {advancedSkillsList.map((skill) => (
-                                            <tr key={skill.key}>
-                                                <td className="skill-name">{skill.name}</td>
-                                                <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
-                                                <td>
-                                                    <input
-                                                        type="number"
-                                                        value={skill.advances}
-                                                        onChange={(e) => handleAdvancedSkillAdvancesChange(skill.key, e.target.value)}
-                                                        min="0"
-                                                    />
-                                                </td>
-                                                <td><input type="text" value={calculateAdvancedSkillValue(skill.key, skill.characteristic)} readOnly /></td>
-                                                <td>
-                                                    <button
-                                                        onClick={() => handleRemoveAdvancedSkill(skill.key)}
-                                                        style={{ fontSize: '12px', padding: '2px 6px' }}
-                                                        title={t('common.delete')}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {advancedSkillsList.map((skill) => {
+                                            // Extract base skill key for description (e.g., LANGUAGE from LANGUAGE_CLASSICAL)
+                                            const baseSkillKey = skill.key.includes('_') ? skill.key.split('_')[0] : skill.key;
+                                            const tooltipKey = `advanced-${skill.key}`;
+                                            return (
+                                                <tr key={skill.key}>
+                                                    <td className="skill-name">
+                                                        <span>{skill.name}</span>
+                                                        <span
+                                                            className="skill-info-icon"
+                                                            onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                        >
+                                                            ⓘ
+                                                        </span>
+                                                        {activeTooltip === tooltipKey && (
+                                                            <div className="skill-tooltip">
+                                                                {t(`skills:${baseSkillKey}.description`)}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={skill.advances}
+                                                            onChange={(e) => handleAdvancedSkillAdvancesChange(skill.key, e.target.value)}
+                                                            min="0"
+                                                        />
+                                                    </td>
+                                                    <td><input type="text" value={calculateAdvancedSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                    <td>
+                                                        <button
+                                                            className="skill-delete-btn"
+                                                            onClick={() => handleRemoveAdvancedSkill(skill.key)}
+                                                            title={t('common.delete')}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                         {advancedSkillsList.length === 0 && (
                                             <tr>
                                                 <td colSpan="5" style={{ textAlign: 'center', fontStyle: 'italic' }}>

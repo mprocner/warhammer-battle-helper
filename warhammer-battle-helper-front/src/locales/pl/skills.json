@@ -284,6 +284,18 @@
       "URBAN": "Miasto"
     }
   },
+  "STEALTH_RURAL": {
+    "name": "Skradanie (Wieś)",
+    "description": "Ta Umiejętność pozwala ci na podkradanie się i ukrywanie w lepszym stopniu niż innym. Testy Skradania są Testami Przeciwstawnymi, wykonywanymi przeciwko Percepcji przeciwnika i modyfikowanymi przez warunki, takie jak ciemność, łatwość ukrycia się w trakcie przemykania czy choćby twój ubiór. Spora lub Zdumiewająca Porażka podczas Testu Skradania oznacza, że ściągasz na siebie uwagę wrogów, przed którymi chciałeś się ukryć."
+  },
+  "STEALTH_UNDERGROUND": {
+    "name": "Skradanie (Podziemia)",
+    "description": "Ta Umiejętność pozwala ci na podkradanie się i ukrywanie w lepszym stopniu niż innym. Testy Skradania są Testami Przeciwstawnymi, wykonywanymi przeciwko Percepcji przeciwnika i modyfikowanymi przez warunki, takie jak ciemność, łatwość ukrycia się w trakcie przemykania czy choćby twój ubiór. Spora lub Zdumiewająca Porażka podczas Testu Skradania oznacza, że ściągasz na siebie uwagę wrogów, przed którymi chciałeś się ukryć."
+  },
+  "STEALTH_URBAN": {
+    "name": "Skradanie (Miasto)",
+    "description": "Ta Umiejętność pozwala ci na podkradanie się i ukrywanie w lepszym stopniu niż innym. Testy Skradania są Testami Przeciwstawnymi, wykonywanymi przeciwko Percepcji przeciwnika i modyfikowanymi przez warunki, takie jak ciemność, łatwość ukrycia się w trakcie przemykania czy choćby twój ubiór. Spora lub Zdumiewająca Porażka podczas Testu Skradania oznacza, że ściągasz na siebie uwagę wrogów, przed którymi chciałeś się ukryć."
+  },
   "SWIM": {
     "name": "Pływanie",
     "description": "Dzięki tej Umiejętności potrafisz pływać i po wpadnięciu do wody nie idziesz na dno. O ile się ją wykupi, nie trzeba jej testować w normalnych, spokojnych warunkach. Sprawa ma się inaczej, jeśli porwie cię rwaący prąd lub gdy uciekasz przed ogromnym rekinem, wysłanym przez Stromfelsa, boga tonących. Wtedy należy wykonać Test Pływania, na trudność którego mogą wpłynąć stan wody, obciążenie odzieżem, pancerzem czy dobytkiem."

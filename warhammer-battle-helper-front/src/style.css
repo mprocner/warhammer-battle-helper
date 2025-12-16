@@ -1862,3 +1862,111 @@ align-items: center;
 .modifier-popup-btn:active {
     transform: translateX(1px);
 }
+
+/* ================== SKILL INFO ICON ================== */
+.character-sheet-popup .skill-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #d4af37;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 1px solid #8b4513;
+    background: rgba(139, 69, 19, 0.3);
+    transition: all 0.2s ease;
+    vertical-align: middle;
+}
+
+.character-sheet-popup .skill-info-icon:hover {
+    background: rgba(212, 175, 55, 0.4);
+    border-color: #d4af37;
+    transform: scale(1.1);
+}
+
+.character-sheet-popup .skills-table .skill-name {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Delete button in skills table */
+.character-sheet-popup .skill-delete-btn {
+    background: rgba(139, 36, 36, 0.5);
+    border: 1px solid #8b2424;
+    border-radius: 4px;
+    color: #f5e6d3;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.character-sheet-popup .skill-delete-btn:hover {
+    background: rgba(201, 42, 42, 0.7);
+    border-color: #c92a2a;
+}
+
+.character-sheet-popup .skill-tooltip {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 10px;
+    background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+    color: #e8dcc4;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border: 2px solid #5c4a3a;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(122, 92, 66, 0.4);
+    font-size: 11px;
+    line-height: 1.5;
+    max-width: 350px;
+    width: max-content;
+    z-index: 10000;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.character-sheet-popup .skill-tooltip::before {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 8px solid transparent;
+    border-left-color: #5c4a3a;
+}
+
+.character-sheet-popup .skill-tooltip::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #3a2920;
+    margin-left: -2px;
+}

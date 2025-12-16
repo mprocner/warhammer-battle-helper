@@ -160,6 +160,7 @@
     "characteristic": "WEAPON_SKILL",
     "type": "basic",
     "grouped": true,
+    "weaponSkill": true,
     "specialisations": ["BASIC", "BRAWLING", "CAVALRY", "FENCING", "FLAIL", "PARRY", "POLE_ARM", "TWO_HANDED"]
   },
   {
@@ -211,6 +212,7 @@
     "characteristic": "BALLISTIC_SKILL",
     "type": "advanced",
     "grouped": true,
+    "weaponSkill": true,
     "specialisations": ["BLACKPOWDER", "BOW", "CROSSBOW", "ENGINEERING", "ENTANGLING", "EXPLOSIVES", "SLING", "THROWING"]
   },
   {
@@ -263,7 +265,8 @@
     "characteristic": "AGILITY",
     "type": "basic",
     "grouped": true,
-    "specialisations": ["RURAL", "UNDERGROUND", "URBAN"]
+    "specialisations": ["RURAL", "UNDERGROUND", "URBAN"],
+    "showAllSpecializations": true
   },
   {
     "key": "SWIM",

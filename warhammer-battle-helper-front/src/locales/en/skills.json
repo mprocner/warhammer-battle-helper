@@ -284,6 +284,18 @@
       "URBAN": "Urban"
     }
   },
+  "STEALTH_RURAL": {
+    "name": "Stealth (Rural)",
+    "description": "Allows you to creep quietly and conceal yourself in shadows more readily than most. Stealth is generally Opposed by an opponent's Perception Skill, and Tests will be modified by how dark or well concealed your route is, as well as how circumspectly you are dressed. An Impressive or Astounding Failure on a Stealth Test will likely draw the immediate attention of the enemies you were trying to avoid in the first place. Stealth has many potential applications in combat, most usefully to hide oneself in preparation for an Ambush, or to creep around an opponent in order to attack from behind. See Chapter 5: Rules for the implications of this. Of course, you can also use the Skill to escape a conflict unseen…"
+  },
+  "STEALTH_UNDERGROUND": {
+    "name": "Stealth (Underground)",
+    "description": "Allows you to creep quietly and conceal yourself in shadows more readily than most. Stealth is generally Opposed by an opponent's Perception Skill, and Tests will be modified by how dark or well concealed your route is, as well as how circumspectly you are dressed. An Impressive or Astounding Failure on a Stealth Test will likely draw the immediate attention of the enemies you were trying to avoid in the first place. Stealth has many potential applications in combat, most usefully to hide oneself in preparation for an Ambush, or to creep around an opponent in order to attack from behind. See Chapter 5: Rules for the implications of this. Of course, you can also use the Skill to escape a conflict unseen…"
+  },
+  "STEALTH_URBAN": {
+    "name": "Stealth (Urban)",
+    "description": "Allows you to creep quietly and conceal yourself in shadows more readily than most. Stealth is generally Opposed by an opponent's Perception Skill, and Tests will be modified by how dark or well concealed your route is, as well as how circumspectly you are dressed. An Impressive or Astounding Failure on a Stealth Test will likely draw the immediate attention of the enemies you were trying to avoid in the first place. Stealth has many potential applications in combat, most usefully to hide oneself in preparation for an Ambush, or to creep around an opponent in order to attack from behind. See Chapter 5: Rules for the implications of this. Of course, you can also use the Skill to escape a conflict unseen…"
+  },
   "SWIM": {
     "name": "Swim",
     "description": "Your ability to swim in water without drowning. If you have the Swim Skill, you are automatically presumed to be able to swim freely without a Test. But if you find yourself in difficult currents, racing, or fleeing from an oversized shark sent by Stromfels, the God of Drowning, a Test will be required. This may be modified by the condition of the water, or how encumbered you are by clothes, armour, and other trappings. Swim is only used in combat if you happen to be fighting in the water, where it replaces Skills like Athletics to govern Movement. If exact speeds are required, you swim at half your Movement rate, using the normal rules for moving found on page 164."
