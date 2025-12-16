@@ -3,8 +3,11 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 import skillsData from '../data/skills.json';
+import ModifierSelectionModal from './ModifierSelectionModal';
+import axios from 'axios';
+import { getApiUrl } from '../api/axios';
 
-function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage }) {
     const { t } = useTranslation(['translation', 'skills']);
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -23,6 +26,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [activeTooltip, setActiveTooltip] = useState(null);
+    const [showModifierModal, setShowModifierModal] = useState(false);
+    const [mousePosition, setMousePosition] = useState(null);
+    const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
     const popupRef = useRef(null);
     const saveTimeoutRef = useRef(null);
 
@@ -72,7 +78,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
             .filter(skill => skill.type === 'basic' && skill.key !== 'MELEE')
             .forEach(skill => {
                 if (skill.showAllSpecializations && skill.specialisations) {
-                    // Expand specializations as separate skills
+                    // Expand all specializations as separate skills (e.g., STEALTH)
                     skill.specialisations.forEach(spec => {
                         skills.push({
                             key: `${skill.key}_${spec}`,
@@ -82,6 +88,17 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                             parentKey: skill.key,
                             specializationKey: spec
                         });
+                    });
+                } else if (skill.basicSpecialization && skill.specialisations) {
+                    // Show only the basic specialization (e.g., RIDE - HORSE)
+                    const spec = skill.basicSpecialization;
+                    skills.push({
+                        key: `${skill.key}_${spec}`,
+                        name: `${t(`skills:${skill.key}.name`)} (${t(`skills:${skill.key}.specialisations.${spec}`)})`,
+                        characteristic: skill.characteristic,
+                        isGrouped: true,
+                        parentKey: skill.key,
+                        specializationKey: spec
                     });
                 } else {
                     // Add as single skill
@@ -103,7 +120,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
             key: skill.key,
             name: t(`skills:${skill.key}.name`),
             characteristic: skill.characteristic,
-            specialisations: skill.specialisations || []
+            specialisations: skill.specialisations || [],
+            basicMeleeSpecializations: skill.basicMeleeSpecializations || []
         };
     }, [t]);
 
@@ -119,17 +137,58 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         };
     }, [t]);
 
+    // Get magic skills (Channelling, Language (Magick), Pray)
+    const magicSkills = useMemo(() => {
+        const skills = [];
+        skillsData
+            .filter(skill => skill.magicSkill)
+            .forEach(skill => {
+                if (skill.key === 'CHANNELLING' && skill.showAsGeneral) {
+                    // Show Channelling as a single general skill
+                    skills.push({
+                        key: skill.key,
+                        name: t(`skills:${skill.key}.name`),
+                        characteristic: skill.characteristic,
+                        isGeneral: true
+                    });
+                } else if (skill.key === 'LANGUAGE' && skill.magicSpecialization) {
+                    // Show only Language (Magick)
+                    const spec = skill.magicSpecialization;
+                    skills.push({
+                        key: `${skill.key}_${spec}`,
+                        name: `${t(`skills:${skill.key}.name`)} (${t(`skills:${skill.key}.specialisations.${spec}`)})`,
+                        characteristic: skill.characteristic,
+                        isGrouped: true,
+                        parentKey: skill.key,
+                        specializationKey: spec
+                    });
+                } else if (!skill.grouped) {
+                    // Show ungrouped skills like Pray
+                    skills.push({
+                        key: skill.key,
+                        name: t(`skills:${skill.key}.name`),
+                        characteristic: skill.characteristic
+                    });
+                }
+            });
+        return skills;
+    }, [t]);
+
     // Get all advanced skills options for dropdown (expanded with specializations)
-    // Also includes grouped basic skills except weapon skills (MELEE, RANGED) and STEALTH
+    // Also includes grouped basic skills except weapon skills (MELEE, RANGED), STEALTH, and some magic skills
     const advancedSkillsOptions = useMemo(() => {
         const options = [];
         skillsData
             .filter(skill => {
                 // Exclude weapon skills (MELEE, RANGED)
                 if (skill.weaponSkill) return false;
-                // Include all advanced skills
+                // Exclude CHANNELLING and PRAY (shown in Magic section)
+                if (skill.magicSkill && (skill.key === 'CHANNELLING' || skill.key === 'PRAY')) return false;
+                // Include LANGUAGE (will filter out MAGICK specialization later)
+                if (skill.key === 'LANGUAGE') return true;
+                // Include all other advanced skills
                 if (skill.type === 'advanced') return true;
-                // Include grouped basic skills except STEALTH
+                // Include grouped basic skills except STEALTH (which has showAllSpecializations)
                 if (skill.type === 'basic' && skill.grouped && !skill.showAllSpecializations) {
                     return true;
                 }
@@ -139,6 +198,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                 if (skill.grouped && skill.specialisations) {
                     // Add each specialization as separate option
                     skill.specialisations.forEach(spec => {
+                        // Skip the basic specialization if it exists (e.g., RIDE - HORSE)
+                        if (skill.basicSpecialization && spec === skill.basicSpecialization) {
+                            return;
+                        }
+                        // Skip magic specialization if it exists (e.g., LANGUAGE - MAGICK)
+                        if (skill.magicSpecialization && spec === skill.magicSpecialization) {
+                            return;
+                        }
                         options.push({
                             key: `${skill.key}_${spec}`,
                             name: `${t(`skills:${skill.key}.name`)} (${t(`skills:${skill.key}.specialisations.${spec}`)})`,
@@ -348,6 +415,28 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         }, 1000);
     };
 
+    // Remove melee skill specialization
+    const handleRemoveMeleeSkill = (parentKey, specializationKey) => {
+        const compoundKey = `${parentKey}_${specializationKey}`;
+        setEditedCharacter(prev => {
+            const newBasicSkills = { ...prev.basicSkills };
+            delete newBasicSkills[compoundKey];
+            return {
+                ...prev,
+                basicSkills: newBasicSkills
+            };
+        });
+        setHasChanges(true);
+
+        // Auto-save after 1 second
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
     // Remove advanced skill
     const handleRemoveAdvancedSkill = (skillKey) => {
         setEditedCharacter(prev => {
@@ -367,6 +456,74 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
         saveTimeoutRef.current = setTimeout(() => {
             handleSave();
         }, 1000);
+    };
+
+    // Handle characteristic click for rolling
+    const handleCharacteristicClick = (charName, charValue, event) => {
+        if (!charValue || charValue === '-') {
+            if (addLogMessage) {
+                addLogMessage(t('combat.cannotRoll', { characteristic: charName }), 'warning');
+            }
+            return;
+        }
+
+        // Store pending characteristic and show modifier modal
+        setPendingCharacteristic({ name: charName, value: charValue });
+        setMousePosition({ x: event.clientX, y: event.clientY });
+        setShowModifierModal(true);
+    };
+
+    // Handle modifier confirmation
+    const handleModifierConfirm = (selectedModifier) => {
+        setShowModifierModal(false);
+        if (pendingCharacteristic) {
+            rollCharacteristic(
+                pendingCharacteristic.name,
+                pendingCharacteristic.value,
+                selectedModifier
+            );
+        }
+        setPendingCharacteristic(null);
+    };
+
+    // Handle modifier cancel
+    const handleModifierCancel = () => {
+        setShowModifierModal(false);
+        setPendingCharacteristic(null);
+    };
+
+    // Roll characteristic
+    const rollCharacteristic = async (charName, charValue, modifierValue) => {
+        try {
+            // Roll d100 for characteristic test
+            const sides = 100;
+            const modifiedValue = charValue + modifierValue;
+            const response = await axios.post(`${getApiUrl()}/roll`, {
+                "sides": sides
+            }, {
+                withCredentials: true
+            });
+
+            const rollResult = response.data.result;
+            const successLevel = Math.floor(modifiedValue / 10) - Math.floor(rollResult / 10);
+            const success = rollResult <= modifiedValue;
+
+            if (addLogMessage) {
+                const successText = success
+                    ? t('combat.success', { level: successLevel })
+                    : t('combat.failure', { level: successLevel });
+                const modifierText = modifierValue !== 0 ? ` (${modifierValue > 0 ? '+' : ''}${modifierValue})` : '';
+                addLogMessage(
+                    `${editedCharacter.basicInfo?.name} - ${charName}${modifierText} Test: Rolled ${rollResult} vs ${modifiedValue} - ${successText}`,
+                    success ? 'success' : 'error'
+                );
+            }
+        } catch (error) {
+            console.error('Error rolling characteristic:', error);
+            if (addLogMessage) {
+                addLogMessage(t('combat.rollFailed'), 'error');
+            }
+        }
     };
 
     // Calculate current characteristics from initial + advances
@@ -926,16 +1083,76 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                     <thead>
                                         <tr>
                                             <th style={{ width: '80px' }}></th>
-                                            <th>{t('characteristicsShort.WEAPON_SKILL')}</th>
-                                            <th>{t('characteristicsShort.BALLISTIC_SKILL')}</th>
-                                            <th>{t('characteristicsShort.STRENGTH')}</th>
-                                            <th>{t('characteristicsShort.TOUGHNESS')}</th>
-                                            <th>{t('characteristicsShort.INITIATIVE')}</th>
-                                            <th>{t('characteristicsShort.AGILITY')}</th>
-                                            <th>{t('characteristicsShort.DEXTERITY')}</th>
-                                            <th>{t('characteristicsShort.INTELLIGENCE')}</th>
-                                            <th>{t('characteristicsShort.WILLPOWER')}</th>
-                                            <th>{t('characteristicsShort.FELLOWSHIP')}</th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('WS', editedCharacter.characteristics?.current?.WS, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.WEAPON_SKILL') })}
+                                            >
+                                                {t('characteristicsShort.WEAPON_SKILL')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('BS', editedCharacter.characteristics?.current?.BS, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.BALLISTIC_SKILL') })}
+                                            >
+                                                {t('characteristicsShort.BALLISTIC_SKILL')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('S', editedCharacter.characteristics?.current?.S, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.STRENGTH') })}
+                                            >
+                                                {t('characteristicsShort.STRENGTH')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('T', editedCharacter.characteristics?.current?.T, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.TOUGHNESS') })}
+                                            >
+                                                {t('characteristicsShort.TOUGHNESS')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('I', editedCharacter.characteristics?.current?.I, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.INITIATIVE') })}
+                                            >
+                                                {t('characteristicsShort.INITIATIVE')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('Ag', editedCharacter.characteristics?.current?.Ag, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.AGILITY') })}
+                                            >
+                                                {t('characteristicsShort.AGILITY')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('Dex', editedCharacter.characteristics?.current?.Dex, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.DEXTERITY') })}
+                                            >
+                                                {t('characteristicsShort.DEXTERITY')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('Int', editedCharacter.characteristics?.current?.Int, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.INTELLIGENCE') })}
+                                            >
+                                                {t('characteristicsShort.INTELLIGENCE')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('WP', editedCharacter.characteristics?.current?.WP, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.WILLPOWER') })}
+                                            >
+                                                {t('characteristicsShort.WILLPOWER')}
+                                            </th>
+                                            <th
+                                                onClick={(e) => handleCharacteristicClick('Fel', editedCharacter.characteristics?.current?.Fel, e)}
+                                                style={{ cursor: 'pointer' }}
+                                                title={t('combat.rollTest', { characteristic: t('characteristicsShort.FELLOWSHIP') })}
+                                            >
+                                                {t('characteristicsShort.FELLOWSHIP')}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1093,8 +1310,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {/* Melee Weapon Skills */}
-                                            {meleeSkill.specialisations.map((spec) => {
+                                            {/* Melee Weapon Skills - Always show basic ones (BASIC and BRAWLING) */}
+                                            {meleeSkill.basicMeleeSpecializations.map((spec) => {
                                                 const tooltipKey = `melee-${spec}`;
                                                 return (
                                                     <tr key={`${meleeSkill.key}_${spec}`}>
@@ -1126,6 +1343,57 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                                     </tr>
                                                 );
                                             })}
+                                            {/* Melee Weapon Skills - Show additional ones that have been added */}
+                                            {editedCharacter.basicSkills &&
+                                                Object.keys(editedCharacter.basicSkills)
+                                                    .filter(key => {
+                                                        if (!key.startsWith(`${meleeSkill.key}_`)) return false;
+                                                        const spec = key.replace(`${meleeSkill.key}_`, '');
+                                                        // Exclude basic melee specializations (they're always shown above)
+                                                        return !meleeSkill.basicMeleeSpecializations.includes(spec);
+                                                    })
+                                                    .map((compoundKey) => {
+                                                        const spec = compoundKey.replace(`${meleeSkill.key}_`, '');
+                                                        const tooltipKey = `melee-added-${spec}`;
+                                                        return (
+                                                            <tr key={compoundKey}>
+                                                                <td className="skill-name">
+                                                                    <span>{meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})</span>
+                                                                    <span
+                                                                        className="skill-info-icon"
+                                                                        onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                                    >
+                                                                        ⓘ
+                                                                    </span>
+                                                                    {activeTooltip === tooltipKey && (
+                                                                        <div className="skill-tooltip">
+                                                                            {t(`skills:${meleeSkill.key}.description`)}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td><input type="text" value={t(`characteristicsShort.${meleeSkill.characteristic}`)} readOnly /></td>
+                                                                <td>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={getGroupedSkillAdvances(meleeSkill.key, spec)}
+                                                                        onChange={(e) => handleGroupedSkillAdvancesChange(meleeSkill.key, spec, e.target.value)}
+                                                                        min="0"
+                                                                    />
+                                                                </td>
+                                                                <td><input type="text" value={calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic)} readOnly /></td>
+                                                                <td>
+                                                                    <button
+                                                                        className="skill-delete-btn"
+                                                                        onClick={() => handleRemoveMeleeSkill(meleeSkill.key, spec)}
+                                                                        title={t('common.delete')}
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                            }
                                             {/* Ranged Weapon Skills - only show added ones */}
                                             {rangedSkill && editedCharacter.basicSkills &&
                                                 Object.keys(editedCharacter.basicSkills)
@@ -1174,27 +1442,120 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                             }
                                         </tbody>
                                     </table>
-                                    {/* Ranged Weapon Skills Dropdown */}
-                                    {rangedSkill && (
-                                        <div style={{ marginTop: '10px' }}>
-                                            <select
-                                                onChange={(e) => {
-                                                    if (e.target.value) {
-                                                        handleGroupedSkillAdvancesChange(rangedSkill.key, e.target.value, '0');
-                                                    }
-                                                    e.target.value = '';
-                                                }}
-                                                style={{ width: '100%', padding: '5px' }}
-                                            >
-                                                <option value="">{t('characterSheet.addRangedSkill')}</option>
-                                                {rangedSkill.specialisations.map(spec => (
-                                                    <option key={spec} value={spec}>
+                                    {/* Weapon Skills Dropdown - Add Melee and Ranged specializations */}
+                                    <div style={{ marginTop: '10px' }}>
+                                        <select
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    const [skillKey, spec] = e.target.value.split('_');
+                                                    handleGroupedSkillAdvancesChange(skillKey, spec, '0');
+                                                }
+                                                e.target.value = '';
+                                            }}
+                                            style={{ width: '100%', padding: '5px' }}
+                                        >
+                                            <option value="">{t('characterSheet.addAdvancedSkill')}</option>
+                                            {/* Melee specializations (excluding BASIC and BRAWLING and already added ones) */}
+                                            {meleeSkill && meleeSkill.specialisations
+                                                .filter(spec => {
+                                                    // Exclude basic melee specializations (always shown)
+                                                    if (meleeSkill.basicMeleeSpecializations.includes(spec)) return false;
+                                                    // Exclude already added specializations
+                                                    const compoundKey = `${meleeSkill.key}_${spec}`;
+                                                    return !(compoundKey in (editedCharacter.basicSkills || {}));
+                                                })
+                                                .map(spec => (
+                                                    <option key={`${meleeSkill.key}_${spec}`} value={`${meleeSkill.key}_${spec}`}>
+                                                        {meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})
+                                                    </option>
+                                                ))
+                                            }
+                                            {/* Ranged specializations (excluding already added ones) */}
+                                            {rangedSkill && rangedSkill.specialisations
+                                                .filter(spec => {
+                                                    // Exclude already added specializations
+                                                    const compoundKey = `${rangedSkill.key}_${spec}`;
+                                                    return !(compoundKey in (editedCharacter.basicSkills || {}));
+                                                })
+                                                .map(spec => (
+                                                    <option key={`${rangedSkill.key}_${spec}`} value={`${rangedSkill.key}_${spec}`}>
                                                         {rangedSkill.name} ({t(`skills:${rangedSkill.key}.specialisations.${spec}`)})
                                                     </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
+                                                ))
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Magic Skills */}
+                            {magicSkills.length > 0 && (
+                                <div className="card-section">
+                                    <h3>{t('characterSheet.magicSkills')}</h3>
+                                    <table className="skills-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('characterSheet.name')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
+                                                <th style={{ width: '50px' }}>{t('characterSheet.skill')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {magicSkills.map((skill) => {
+                                                const tooltipKey = `magic-${skill.key}`;
+                                                const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
+
+                                                // For general skills like Channelling, use basicSkills storage
+                                                const advances = skill.isGeneral
+                                                    ? (parseInt(editedCharacter.basicSkills?.[skill.key]) || 0)
+                                                    : skill.isGrouped
+                                                        ? getGroupedSkillAdvances(skill.parentKey, skill.specializationKey)
+                                                        : (parseInt(editedCharacter.advancedSkills?.[skill.key]) || 0);
+
+                                                const skillValue = skill.isGeneral || skill.isGrouped
+                                                    ? (getCharacteristicValue(skill.characteristic) + advances)
+                                                    : calculateAdvancedSkillValue(skill.key, skill.characteristic);
+
+                                                return (
+                                                    <tr key={skill.key}>
+                                                        <td className="skill-name">
+                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={(e) => handleTooltipToggle(tooltipKey, e)}
+                                                            >
+                                                                ⓘ
+                                                            </span>
+                                                            {activeTooltip === tooltipKey && (
+                                                                <div className="skill-tooltip">
+                                                                    {t(`skills:${skillKey}.description`)}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                value={advances}
+                                                                onChange={(e) => {
+                                                                    if (skill.isGeneral) {
+                                                                        handleSkillAdvancesChange(skill.key, e.target.value);
+                                                                    } else if (skill.isGrouped) {
+                                                                        handleGroupedSkillAdvancesChange(skill.parentKey, skill.specializationKey, e.target.value);
+                                                                    } else {
+                                                                        handleAdvancedSkillAdvancesChange(skill.key, e.target.value);
+                                                                    }
+                                                                }}
+                                                                min="0"
+                                                            />
+                                                        </td>
+                                                        <td><input type="text" value={skillValue} readOnly /></td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
 
@@ -1272,11 +1633,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                                         style={{ width: '100%', padding: '5px' }}
                                     >
                                         <option value="">{t('characterSheet.addAdvancedSkill')}</option>
-                                        {advancedSkillsOptions.map(option => (
-                                            <option key={option.key} value={option.key}>
-                                                {option.name}
-                                            </option>
-                                        ))}
+                                        {advancedSkillsOptions
+                                            .filter(option => !(option.key in (editedCharacter.advancedSkills || {})))
+                                            .map(option => (
+                                                <option key={option.key} value={option.key}>
+                                                    {option.name}
+                                                </option>
+                                            ))
+                                        }
                                     </select>
                                 </div>
                             </div>
@@ -1353,6 +1717,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate }) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showModifierModal && (
+                <ModifierSelectionModal
+                    mousePosition={mousePosition}
+                    onConfirm={handleModifierConfirm}
+                    onCancel={handleModifierCancel}
+                />
             )}
         </div>
     );

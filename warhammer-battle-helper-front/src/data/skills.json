@@ -36,6 +36,8 @@
     "characteristic": "WILLPOWER",
     "type": "advanced",
     "grouped": true,
+    "magicSkill": true,
+    "showAsGeneral": true,
     "specialisations": ["AQSHY", "AZYR", "CHAMON", "DHAR", "GHUR", "GHYRAN", "HYSH", "SHYISH", "ULGU"]
   },
   {
@@ -140,6 +142,8 @@
     "characteristic": "INTELLIGENCE",
     "type": "advanced",
     "grouped": true,
+    "magicSkill": true,
+    "magicSpecialization": "MAGICK",
     "specialisations": ["BATTLE_TONGUE", "BRETONNIAN", "CLASSICAL", "GUILDER", "KHAZALID", "MAGICK", "THIEF", "TILEAN"]
   },
   {
@@ -161,6 +165,7 @@
     "type": "basic",
     "grouped": true,
     "weaponSkill": true,
+    "basicMeleeSpecializations": ["BASIC", "BRAWLING"],
     "specialisations": ["BASIC", "BRAWLING", "CAVALRY", "FENCING", "FLAIL", "PARRY", "POLE_ARM", "TWO_HANDED"]
   },
   {
@@ -205,7 +210,8 @@
     "key": "PRAY",
     "characteristic": "FELLOWSHIP",
     "type": "advanced",
-    "grouped": false
+    "grouped": false,
+    "magicSkill": true
   },
   {
     "key": "RANGED",
@@ -226,6 +232,7 @@
     "characteristic": "AGILITY",
     "type": "basic",
     "grouped": true,
+    "basicSpecialization": "HORSE",
     "specialisations": ["DEMIGRYPH", "GREAT_WOLF", "GRIFFON", "HORSE", "PEGASUS"]
   },
   {

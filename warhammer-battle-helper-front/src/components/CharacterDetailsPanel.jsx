@@ -337,6 +337,7 @@ function CharacterDetailsPanel({
                     character={character}
                     onClose={() => setShowDetails(false)}
                     onCharacterUpdate={onCharacterUpdate}
+                    addLogMessage={addLogMessage}
                 />
             )}
 
