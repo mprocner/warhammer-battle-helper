@@ -1454,7 +1454,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             }}
                                             style={{ width: '100%', padding: '5px' }}
                                         >
-                                            <option value="">{t('characterSheet.addAdvancedSkill')}</option>
+                                            <option value="">{t('characterSheet.addWeaponSkill')}</option>
                                             {/* Melee specializations (excluding BASIC and BRAWLING and already added ones) */}
                                             {meleeSkill && meleeSkill.specialisations
                                                 .filter(spec => {
