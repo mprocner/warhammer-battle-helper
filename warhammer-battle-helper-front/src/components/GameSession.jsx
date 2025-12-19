@@ -177,6 +177,38 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
         }
         break;
 
+      case 'SKILL_ROLLED':
+        {
+          const success = message.payload.success;
+          const SL = message.payload.SL;
+          const rollValue = message.payload.rollValue;
+          const targetValue = message.payload.targetValue;
+          const modifier = message.payload.modifier || 0;
+          const characterName = message.payload.characterName || 'Character';
+          const skillKey = message.payload.skillKey;
+
+          const successText = success 
+            ? `Success! (SL: ${SL})`
+            : `Failure! (SL: ${SL})`;
+
+          // Add modifier text if non-zero
+          const modifierText = modifier !== 0
+            ? ` (${modifier > 0 ? '+' : ''}${modifier})`
+            : '';
+
+          // Format skill name: replace underscores with spaces and title case
+          const skillName = skillKey
+            .split('_')
+            .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+            .join(' ');
+
+          addLogMessage(
+            `${characterName} - ${skillName}${modifierText} Test: Rolled ${rollValue} vs ${targetValue} - ${successText}`,
+            success ? 'success' : 'error'
+          );
+        }
+        break;
+
       case 'FIGHT_RESULT':
         addLogMessage(`${message.payload.username} initiated combat`, 'warning');
         // Display all fight messages

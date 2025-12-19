@@ -5,9 +5,9 @@ import axiosInstance from '../api/axios';
 import skillsData from '../data/skills.json';
 import ModifierSelectionModal from './ModifierSelectionModal';
 import axios from 'axios';
-import { getApiUrl } from '../api/axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 
-function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage }) {
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token }) {
     const { t } = useTranslation(['translation', 'skills']);
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -20,7 +20,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const [editedCharacter, setEditedCharacter] = useState({
         ...character,
         basicSkills: character.basicSkills || {},
-        advancedSkills: character.advancedSkills || {}
+        advancedSkills: character.advancedSkills || {}, 
+        favoriteSkills: character.favoriteSkills || []
     });
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -37,7 +38,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setEditedCharacter({
             ...character,
             basicSkills: character.basicSkills || {},
-            advancedSkills: character.advancedSkills || {}
+            advancedSkills: character.advancedSkills || {},
+            favoriteSkills: character.favoriteSkills || []
         });
         setHasChanges(false);
     }, [character]);
@@ -458,6 +460,40 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         }, 1000);
     };
 
+    // Toggle favorite skill
+    const handleToggleFavoriteSkill = async (skillKey) => {
+        const updatedCharacter = {
+            ...editedCharacter,
+            favoriteSkills: editedCharacter.favoriteSkills?.includes(skillKey)
+                ? editedCharacter.favoriteSkills.filter(key => key !== skillKey)
+                : [...(editedCharacter.favoriteSkills || []), skillKey]
+        };
+
+        setEditedCharacter(updatedCharacter);
+
+        // Save immediately without debounce
+        setIsSaving(true);
+        setSaveSuccess(false);
+        try {
+            await axiosInstance.put(
+                `/characters/${updatedCharacter.id}`,
+                updatedCharacter
+            );
+
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+
+            if (onCharacterUpdate) {
+                onCharacterUpdate(updatedCharacter);
+            }
+        } catch (error) {
+            console.error('Error saving character:', error);
+            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsSaving(false);
+        } 
+    };
+
     // Handle characteristic click for rolling
     const handleCharacteristicClick = (charName, charValue, event) => {
         if (!charValue || charValue === '-') {
@@ -468,7 +504,22 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         }
 
         // Store pending characteristic and show modifier modal
-        setPendingCharacteristic({ name: charName, value: charValue });
+        setPendingCharacteristic({ name: charName, value: charValue, isSkill: false });
+        setMousePosition({ x: event.clientX, y: event.clientY });
+        setShowModifierModal(true);
+    };
+
+    // Handle skill click for rolling
+    const handleSkillClick = (skillName, skillKey, skillValue, event) => {
+        if (!skillValue || skillValue === '-') {
+            if (addLogMessage) {
+                addLogMessage(t('combat.cannotRoll', { characteristic: skillName }), 'warning');
+            }
+            return;
+        }
+
+        // Store pending skill and show modifier modal
+        setPendingCharacteristic({ name: skillName, skillKey: skillKey, value: skillValue, isSkill: true });
         setMousePosition({ x: event.clientX, y: event.clientY });
         setShowModifierModal(true);
     };
@@ -477,11 +528,19 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const handleModifierConfirm = (selectedModifier) => {
         setShowModifierModal(false);
         if (pendingCharacteristic) {
-            rollCharacteristic(
-                pendingCharacteristic.name,
-                pendingCharacteristic.value,
-                selectedModifier
-            );
+            if (pendingCharacteristic.isSkill) {
+                rollSkill(
+                    pendingCharacteristic.skillKey,
+                    pendingCharacteristic.name,
+                    selectedModifier
+                );
+            } else {
+                rollCharacteristic(
+                    pendingCharacteristic.name,
+                    pendingCharacteristic.value,
+                    selectedModifier
+                );
+            }
         }
         setPendingCharacteristic(null);
     };
@@ -490,6 +549,43 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const handleModifierCancel = () => {
         setShowModifierModal(false);
         setPendingCharacteristic(null);
+    };
+
+    // Roll skill using backend endpoint
+    const rollSkill = async (skillKey, skillName, modifierValue) => {
+        if (!gameId || !token) {
+            if (addLogMessage) {
+                addLogMessage('Skill rolls are only available in game sessions', 'warning');
+            }
+            return;
+        }
+
+        try {
+            const response = await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
+                method: 'POST',
+                headers: getApiHeaders({
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }),
+                body: JSON.stringify({
+                    skill: skillKey,
+                    modifier: modifierValue,
+                    characterId: character.id
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to roll skill');
+            }
+
+            // WebSocket will broadcast the result to all players
+        } catch (error) {
+            console.error('Error rolling skill:', error);
+            if (addLogMessage) {
+                addLogMessage(t('combat.rollFailed'), 'error');
+            }
+        }
     };
 
     // Roll characteristic
@@ -1206,6 +1302,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
+                                                <th style={{ width: '30px' }}>⭐</th>
                                                 <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -1216,10 +1313,26 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             {basicSkills.slice(0, Math.ceil(basicSkills.length / 2)).map((skill) => {
                                                 const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
                                                 const tooltipKey = `basic-${skill.key}`;
+                                                const isFavorite = editedCharacter.favoriteSkills?.includes(skill.key);
+                                                const skillValue = calculateSkillValue(skill.key, skill.characteristic);
                                                 return (
                                                     <tr key={skill.key}>
+                                                        <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isFavorite}
+                                                                onChange={() => handleToggleFavoriteSkill(skill.key)}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                        </td>
                                                         <td className="skill-name">
-                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                onClick={(e) => handleSkillClick(skill.name, skill.key, skillValue, e)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('combat.rollTest', { characteristic: skill.name })}
+                                                            >
+                                                                {skill.name}
+                                                            </span>
                                                             <span
                                                                 className="skill-info-icon"
                                                                 onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1241,7 +1354,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                                 min="0"
                                                             />
                                                         </td>
-                                                        <td><input type="text" value={calculateSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                        <td><input type="text" value={skillValue} readOnly /></td>
                                                     </tr>
                                                 );
                                             })}
@@ -1251,6 +1364,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
+                                                <th style={{ width: '30px' }}>⭐</th>
                                                 <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -1261,10 +1375,25 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             {basicSkills.slice(Math.ceil(basicSkills.length / 2)).map((skill) => {
                                                 const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
                                                 const tooltipKey = `basic2-${skill.key}`;
+                                                const isFavorite = editedCharacter.favoriteSkills?.includes(skill.key);
                                                 return (
                                                     <tr key={skill.key}>
+                                                        <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isFavorite}
+                                                                onChange={() => handleToggleFavoriteSkill(skill.key)}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                        </td>
                                                         <td className="skill-name">
-                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                onClick={(e) => handleSkillClick(skill.name, skill.key, calculateSkillValue(skill.key, skill.characteristic), e)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('combat.rollTest', { characteristic: skill.name })}
+                                                            >
+                                                                {skill.name}
+                                                            </span>
                                                             <span
                                                                 className="skill-info-icon"
                                                                 onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1302,6 +1431,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
+                                                <th style={{ width: '30px' }}>⭐</th>
                                                 <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -1313,10 +1443,28 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             {/* Melee Weapon Skills - Always show basic ones (BASIC and BRAWLING) */}
                                             {meleeSkill.basicMeleeSpecializations.map((spec) => {
                                                 const tooltipKey = `melee-${spec}`;
+                                                const compoundKey = `${meleeSkill.key}_${spec}`;
+                                                const isFavorite = editedCharacter.favoriteSkills?.includes(compoundKey);
+                                                const skillValue = calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic);
+                                                const skillName = `${meleeSkill.name} (${t(`skills:${meleeSkill.key}.specialisations.${spec}`)})`;
                                                 return (
-                                                    <tr key={`${meleeSkill.key}_${spec}`}>
+                                                    <tr key={compoundKey}>
+                                                        <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isFavorite}
+                                                                onChange={() => handleToggleFavoriteSkill(compoundKey)}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                        </td>
                                                         <td className="skill-name">
-                                                            <span>{meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})</span>
+                                                            <span
+                                                                onClick={(e) => handleSkillClick(skillName, compoundKey, skillValue, e)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('combat.rollTest', { characteristic: skillName })}
+                                                            >
+                                                                {skillName}
+                                                            </span>
                                                             <span
                                                                 className="skill-info-icon"
                                                                 onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1355,10 +1503,27 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                     .map((compoundKey) => {
                                                         const spec = compoundKey.replace(`${meleeSkill.key}_`, '');
                                                         const tooltipKey = `melee-added-${spec}`;
+                                                        const isFavorite = editedCharacter.favoriteSkills?.includes(compoundKey);
+                                                        const skillValue = calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic);
+                                                        const skillName = `${meleeSkill.name} (${t(`skills:${meleeSkill.key}.specialisations.${spec}`)})`;
                                                         return (
                                                             <tr key={compoundKey}>
+                                                                <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isFavorite}
+                                                                        onChange={() => handleToggleFavoriteSkill(compoundKey)}
+                                                                        style={{ cursor: 'pointer' }}
+                                                                    />
+                                                                </td>
                                                                 <td className="skill-name">
-                                                                    <span>{meleeSkill.name} ({t(`skills:${meleeSkill.key}.specialisations.${spec}`)})</span>
+                                                                    <span
+                                                                        onClick={(e) => handleSkillClick(skillName, compoundKey, skillValue, e)}
+                                                                        style={{ cursor: 'pointer' }}
+                                                                        title={t('combat.rollTest', { characteristic: skillName })}
+                                                                    >
+                                                                        {skillName}
+                                                                    </span>
                                                                     <span
                                                                         className="skill-info-icon"
                                                                         onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1380,7 +1545,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                                         min="0"
                                                                     />
                                                                 </td>
-                                                                <td><input type="text" value={calculateGroupedSkillValue(meleeSkill.key, spec, meleeSkill.characteristic)} readOnly /></td>
+                                                                <td><input type="text" value={skillValue} readOnly /></td>
                                                                 <td>
                                                                     <button
                                                                         className="skill-delete-btn"
@@ -1401,10 +1566,27 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                     .map((compoundKey) => {
                                                         const spec = compoundKey.replace(`${rangedSkill.key}_`, '');
                                                         const tooltipKey = `ranged-${spec}`;
+                                                        const isFavorite = editedCharacter.favoriteSkills?.includes(compoundKey);
+                                                        const skillValue = calculateGroupedSkillValue(rangedSkill.key, spec, rangedSkill.characteristic);
+                                                        const skillName = `${rangedSkill.name} (${t(`skills:${rangedSkill.key}.specialisations.${spec}`)})`;
                                                         return (
                                                             <tr key={compoundKey}>
+                                                                <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isFavorite}
+                                                                        onChange={() => handleToggleFavoriteSkill(compoundKey)}
+                                                                        style={{ cursor: 'pointer' }}
+                                                                    />
+                                                                </td>
                                                                 <td className="skill-name">
-                                                                    <span>{rangedSkill.name} ({t(`skills:${rangedSkill.key}.specialisations.${spec}`)})</span>
+                                                                    <span
+                                                                        onClick={(e) => handleSkillClick(skillName, compoundKey, skillValue, e)}
+                                                                        style={{ cursor: 'pointer' }}
+                                                                        title={t('combat.rollTest', { characteristic: skillName })}
+                                                                    >
+                                                                        {skillName}
+                                                                    </span>
                                                                     <span
                                                                         className="skill-info-icon"
                                                                         onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1426,7 +1608,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                                         min="0"
                                                                     />
                                                                 </td>
-                                                                <td><input type="text" value={calculateGroupedSkillValue(rangedSkill.key, spec, rangedSkill.characteristic)} readOnly /></td>
+                                                                <td><input type="text" value={skillValue} readOnly /></td>
                                                                 <td>
                                                                     <button
                                                                         className="skill-delete-btn"
@@ -1495,6 +1677,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <table className="skills-table">
                                         <thead>
                                             <tr>
+                                                <th style={{ width: '30px' }}>⭐</th>
                                                 <th>{t('characterSheet.name')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -1505,6 +1688,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             {magicSkills.map((skill) => {
                                                 const tooltipKey = `magic-${skill.key}`;
                                                 const skillKey = skill.isGrouped ? skill.parentKey : skill.key;
+                                                const isFavorite = editedCharacter.favoriteSkills?.includes(skill.key);
 
                                                 // For general skills like Channelling, use basicSkills storage
                                                 const advances = skill.isGeneral
@@ -1519,8 +1703,22 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
 
                                                 return (
                                                     <tr key={skill.key}>
+                                                        <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isFavorite}
+                                                                onChange={() => handleToggleFavoriteSkill(skill.key)}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                        </td>
                                                         <td className="skill-name">
-                                                            <span>{skill.name}</span>
+                                                            <span
+                                                                onClick={(e) => handleSkillClick(skill.name, skill.key, skillValue, e)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('combat.rollTest', { characteristic: skill.name })}
+                                                            >
+                                                                {skill.name}
+                                                            </span>
                                                             <span
                                                                 className="skill-info-icon"
                                                                 onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1565,6 +1763,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
+                                            <th style={{ width: '30px' }}>⭐</th>
                                             <th>{t('characterSheet.name')}</th>
                                             <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                                             <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -1577,10 +1776,26 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             // Extract base skill key for description (e.g., LANGUAGE from LANGUAGE_CLASSICAL)
                                             const baseSkillKey = skill.key.includes('_') ? skill.key.split('_')[0] : skill.key;
                                             const tooltipKey = `advanced-${skill.key}`;
+                                            const isFavorite = editedCharacter.favoriteSkills?.includes(skill.key);
+                                            const skillValue = calculateAdvancedSkillValue(skill.key, skill.characteristic);
                                             return (
                                                 <tr key={skill.key}>
+                                                    <td style={{ textAlign: 'center', padding: '2px' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isFavorite}
+                                                            onChange={() => handleToggleFavoriteSkill(skill.key)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        />
+                                                    </td>
                                                     <td className="skill-name">
-                                                        <span>{skill.name}</span>
+                                                        <span
+                                                            onClick={(e) => handleSkillClick(skill.name, skill.key, skillValue, e)}
+                                                            style={{ cursor: 'pointer' }}
+                                                            title={t('combat.rollTest', { characteristic: skill.name })}
+                                                        >
+                                                            {skill.name}
+                                                        </span>
                                                         <span
                                                             className="skill-info-icon"
                                                             onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -1602,7 +1817,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                             min="0"
                                                         />
                                                     </td>
-                                                    <td><input type="text" value={calculateAdvancedSkillValue(skill.key, skill.characteristic)} readOnly /></td>
+                                                    <td><input type="text" value={skillValue} readOnly /></td>
                                                     <td>
                                                         <button
                                                             className="skill-delete-btn"

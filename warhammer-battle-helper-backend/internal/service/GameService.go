@@ -5,7 +5,10 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/websocket"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -425,4 +428,175 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", broadcastData)
 
 	return result, nil
+}
+
+// Skill represents a skill from skills.json
+type Skill struct {
+	Key             string   `json:"key"`
+	Characteristic  string   `json:"characteristic"`
+	Type            string   `json:"type"`
+	Grouped         bool     `json:"grouped"`
+	Specialisations []string `json:"specialisations"`
+}
+
+// loadSkills loads skills data from JSON file
+func loadSkills() ([]Skill, error) {
+	data, err := os.ReadFile("internal/data/skills.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read skills.json: %w", err)
+	}
+
+	var skills []Skill
+	if err := json.Unmarshal(data, &skills); err != nil {
+		return nil, fmt.Errorf("failed to parse skills.json: %w", err)
+	}
+
+	return skills, nil
+}
+
+// RollSkill rolls a skill check and broadcasts the result
+func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+	// Load skills data
+	skills, err := loadSkills()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get character from database
+	character, err := s.charRepo.GetByID(characterID)
+	if err != nil {
+		return nil, fmt.Errorf("character not found: %w", err)
+	}
+
+	// Handle compound skill keys (e.g., "MELEE_BASIC", "STEALTH_RURAL")
+	var parentKey string
+	if strings.Contains(skillKey, "_") {
+		parts := strings.SplitN(skillKey, "_", 2)
+		parentKey = parts[0]
+	} else {
+		parentKey = skillKey
+	}
+
+	// Find the skill definition
+	var skill *Skill
+	for i := range skills {
+		if skills[i].Key == parentKey {
+			skill = &skills[i]
+			break
+		}
+	}
+
+	if skill == nil {
+		return nil, fmt.Errorf("skill not found: %s", parentKey)
+	}
+
+	// Get skill advances from character
+	advances := 0
+	if skill.Type == "basic" || skill.Grouped {
+		if val, ok := character.BasicSkills[skillKey]; ok {
+			advances = val
+		}
+	} else {
+		if val, ok := character.AdvancedSkills[skillKey]; ok {
+			advances = val
+		}
+	}
+
+	// Get characteristic value based on skill's characteristic
+	var characteristicValue int
+	switch skill.Characteristic {
+	case "WEAPON_SKILL":
+		characteristicValue = character.Characteristics.Current.WS
+	case "BALLISTIC_SKILL":
+		characteristicValue = character.Characteristics.Current.BS
+	case "STRENGTH":
+		characteristicValue = character.Characteristics.Current.S
+	case "TOUGHNESS":
+		characteristicValue = character.Characteristics.Current.T
+	case "INITIATIVE":
+		characteristicValue = character.Characteristics.Current.I
+	case "AGILITY":
+		characteristicValue = character.Characteristics.Current.Ag
+	case "DEXTERITY":
+		characteristicValue = character.Characteristics.Current.Dex
+	case "INTELLIGENCE":
+		characteristicValue = character.Characteristics.Current.Int
+	case "WILLPOWER":
+		characteristicValue = character.Characteristics.Current.WP
+	case "FELLOWSHIP":
+		characteristicValue = character.Characteristics.Current.Fel
+	default:
+		return nil, fmt.Errorf("unknown characteristic: %s", skill.Characteristic)
+	}
+
+	if characteristicValue == 0 {
+		return nil, fmt.Errorf("characteristic %s not found or is zero", skill.Characteristic)
+	}
+
+	// Calculate skill value (characteristic + advances)
+	skillValue := characteristicValue + advances
+
+	// Calculate target value (skill value + modifier)
+	targetValue := skillValue + modifier
+
+	// Roll d100
+	dice := Dice{Sizes: 100}
+	rollValue := dice.Roll()
+
+	// Calculate success and SL
+	success := rollValue <= targetValue
+	SL := (targetValue / 10) - (rollValue / 10)
+
+	// Prepare response
+	response := map[string]interface{}{
+		"success":     success,
+		"SL":          SL,
+		"rollValue":   rollValue,
+		"targetValue": targetValue,
+		"skillValue":  skillValue,
+		"modifier":    modifier,
+	}
+
+	// Add event
+	eventData := map[string]interface{}{
+		"characterId":   characterID,
+		"characterName": character.BasicInfo.Name,
+		"skillKey":      skillKey,
+		"success":       success,
+		"SL":            SL,
+		"rollValue":     rollValue,
+		"targetValue":   targetValue,
+		"skillValue":    skillValue,
+		"modifier":      modifier,
+	}
+
+	event := models.GameEvent{
+		Type:      models.EventTypeDiceRoll,
+		CreatedBy: userID,
+		Username:  username,
+		Data:      eventData,
+	}
+
+	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
+		return nil, err
+	}
+
+	// Broadcast to all clients
+	broadcastData := map[string]interface{}{
+		"type":          "SKILL_ROLLED",
+		"characterId":   characterID,
+		"characterName": character.BasicInfo.Name,
+		"skillKey":      skillKey,
+		"success":       success,
+		"SL":            SL,
+		"rollValue":     rollValue,
+		"targetValue":   targetValue,
+		"skillValue":    skillValue,
+		"modifier":      modifier,
+		"username":      username,
+	}
+
+	s.hub.BroadcastToGame(gameID, "SKILL_ROLLED", broadcastData)
+
+	return response, nil
 }

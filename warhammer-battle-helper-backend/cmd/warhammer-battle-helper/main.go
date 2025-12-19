@@ -103,6 +103,7 @@ func main() {
 	r.DELETE("/games/:id/characters/:characterId", http.JWTAuthMiddleware(), gameHandler.RemoveCharacter)
 	r.POST("/games/:id/fight", http.JWTAuthMiddleware(), gameHandler.Fight)
 	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
+	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
 
 	// WebSocket route
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)

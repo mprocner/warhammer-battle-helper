@@ -25,6 +25,7 @@ type Character struct {
 	Characteristics CharacteristicsTable `bson:"characteristics" json:"characteristics"`
 	BasicSkills     map[string]int       `bson:"basicSkills" json:"basicSkills"`
 	AdvancedSkills  map[string]int       `bson:"advancedSkills" json:"advancedSkills"`
+	FavoriteSkills  []string             `bson:"favoriteSkills,omitempty" json:"favoriteSkills,omitempty"`
 	Spells          []Spell              `bson:"spells" json:"spells"`
 	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
 	Party           PartyInfo            `bson:"party" json:"party"`

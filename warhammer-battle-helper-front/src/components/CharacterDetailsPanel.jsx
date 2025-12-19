@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
 import axios from 'axios';
-import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
+import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios'; 
+import skillsData from '../data/skills.json';
 
 function CharacterDetailsPanel({
     character,
@@ -20,6 +21,92 @@ function CharacterDetailsPanel({
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
+
+    // Get favorite skills with their calculated values
+    const favoriteSkills = useMemo(() => {
+        if (!character || !character.favoriteSkills || character.favoriteSkills.length === 0) {
+            return [];
+        }
+
+        const stats = character.characteristics?.current || {};
+
+        return character.favoriteSkills.map(skillKey => {
+            // Check if it's a compound key (e.g., MELEE_BASIC, STEALTH_RURAL)
+            const isCompound = skillKey.includes('_');
+
+            if (isCompound) {
+                const [parentKey, spec] = skillKey.split('_');
+                const skill = skillsData.find(s => s.key === parentKey);
+                if (!skill) return null;
+
+                const advances = parseInt(character.basicSkills?.[skillKey]) || 0;
+                const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
+                    skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
+                    skill.characteristic === 'STRENGTH' ? 'S' :
+                    skill.characteristic === 'TOUGHNESS' ? 'T' :
+                    skill.characteristic === 'INITIATIVE' ? 'I' :
+                    skill.characteristic === 'AGILITY' ? 'Ag' :
+                    skill.characteristic === 'DEXTERITY' ? 'Dex' :
+                    skill.characteristic === 'INTELLIGENCE' ? 'Int' :
+                    skill.characteristic === 'WILLPOWER' ? 'WP' : 'Fel'] || 0;
+                const skillValue = characteristicValue + advances;
+
+                return {
+                    key: skillKey,
+                    skillKey: skillKey, // Store the actual skill key for API call
+                    name: `${t(`skills:${parentKey}.name`)} (${t(`skills:${parentKey}.specialisations.${spec}`)})`,
+                    value: skillValue,
+                    characteristic: skill.characteristic
+                };
+            } else {
+                // Basic or advanced skill
+                const skill = skillsData.find(s => s.key === skillKey);
+                if (!skill) return null;
+
+                const advances = skill.type === 'basic'
+                    ? (parseInt(character.basicSkills?.[skillKey]) || 0)
+                    : (parseInt(character.advancedSkills?.[skillKey]) || 0);
+
+                const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
+                    skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
+                    skill.characteristic === 'STRENGTH' ? 'S' :
+                    skill.characteristic === 'TOUGHNESS' ? 'T' :
+                    skill.characteristic === 'INITIATIVE' ? 'I' :
+                    skill.characteristic === 'AGILITY' ? 'Ag' :
+                    skill.characteristic === 'DEXTERITY' ? 'Dex' :
+                    skill.characteristic === 'INTELLIGENCE' ? 'Int' :
+                    skill.characteristic === 'WILLPOWER' ? 'WP' : 'Fel'] || 0;
+                const skillValue = characteristicValue + advances;
+
+                return {
+                    key: skillKey,
+                    skillKey: skillKey, // Store the actual skill key for API call
+                    name: t(`skills:${skillKey}.name`),
+                    value: skillValue,
+                    characteristic: skill.characteristic
+                };
+            }
+        }).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+    }, [character, t]);
+
+    const handleSkillClick = (skill, event) => {
+        if (!skill.value || skill.value === '-') {
+            if (addLogMessage) {
+                addLogMessage(t('combat.cannotRoll', { characteristic: skill.name }), 'warning');
+            }
+            return;
+        }
+
+        // Store pending skill (not characteristic) and show modifier modal
+        setPendingCharacteristic({
+            name: skill.name,
+            value: skill.value,
+            skillKey: skill.skillKey,
+            isSkill: true // Flag to indicate this is a skill, not a characteristic
+        });
+        setMousePosition({ x: event.clientX, y: event.clientY });
+        setShowModifierModal(true);
+    };
 
     if (!character) {
         return (
@@ -84,11 +171,21 @@ function CharacterDetailsPanel({
     const handleModifierConfirm = (selectedModifier) => {
         setShowModifierModal(false);
         if (pendingCharacteristic) {
-            rollCharacteristic(
-                pendingCharacteristic.name,
-                pendingCharacteristic.value,
-                selectedModifier
-            );
+            if (pendingCharacteristic.isSkill) {
+                // Roll skill
+                rollSkill(
+                    pendingCharacteristic.skillKey,
+                    pendingCharacteristic.name,
+                    selectedModifier
+                );
+            } else {
+                // Roll characteristic
+                rollCharacteristic(
+                    pendingCharacteristic.name,
+                    pendingCharacteristic.value,
+                    selectedModifier
+                );
+            }
         }
         setPendingCharacteristic(null);
     };
@@ -151,6 +248,43 @@ function CharacterDetailsPanel({
             }
         } catch (error) {
             console.error('Error rolling characteristic:', error);
+            if (addLogMessage) {
+                addLogMessage(t('combat.rollFailed'), 'error');
+            }
+        }
+    };
+
+    const rollSkill = async (skillKey, skillName, modifierValue) => {
+        try {
+            // Skill rolls are only supported in game sessions
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({
+                        skill: skillKey,
+                        modifier: modifierValue,
+                        characterId: character.id
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to roll skill');
+                }
+
+                // WebSocket will handle broadcasting the message with skill details
+                // Backend calculates skill value from database (server-authoritative)
+            } else {
+                // If not in a game session, show a warning
+                if (addLogMessage) {
+                    addLogMessage('Skill rolls are only available in game sessions', 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('Error rolling skill:', error);
             if (addLogMessage) {
                 addLogMessage(t('combat.rollFailed'), 'error');
             }
@@ -332,12 +466,35 @@ function CharacterDetailsPanel({
                 </button>
             </div>
 
+            {/* Favorite Skills */}
+            {favoriteSkills.length > 0 && (
+                <div className="favorite-skills">
+                    <div className="favorite-skills-label">⭐ Favorite Skills</div>
+                    <div className="favorite-skills-grid">
+                        {favoriteSkills.map((skill) => (
+                            <button
+                                key={skill.key}
+                                className="skill-box skill-box-button"
+                                onClick={(e) => handleSkillClick(skill, e)}
+                                title={t('combat.rollTest', { characteristic: skill.name })}
+                                disabled={!skill.value || skill.value === '-'}
+                            >
+                                <div className="skill-box-label">{skill.name}</div>
+                                <div className="skill-box-value">{skill.value || '-'}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {showDetails && (
                 <CharacterSheetPopup
                     character={character}
                     onClose={() => setShowDetails(false)}
                     onCharacterUpdate={onCharacterUpdate}
                     addLogMessage={addLogMessage}
+                    gameId={gameId}
+                    token={token}
                 />
             )}
 

@@ -311,6 +311,41 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 	})
 }
 
+// RollSkill rolls a skill check in the game context and broadcasts to all players
+func (h *GameHandler) RollSkill(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req struct {
+		Skill       string `json:"skill" binding:"required"`
+		Modifier    int    `json:"modifier"`
+		CharacterID string `json:"characterId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get user from JWT
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	username := claims["email"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.CharacterID, userID, username)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 // HandleWebSocket upgrades HTTP connection to WebSocket for real-time game updates
 func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	gameID := c.Param("id")
