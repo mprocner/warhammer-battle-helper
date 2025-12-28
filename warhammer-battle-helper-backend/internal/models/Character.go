@@ -82,9 +82,10 @@ type WoundsInfo struct {
 }
 
 type Talent struct {
-	Name        string `bson:"name" json:"name"`
-	TimesTaken  string `bson:"timesTaken" json:"timesTaken"`
-	Description string `bson:"description" json:"description"`
+	Key         string `bson:"key" json:"key"`
+	Name        string `bson:"name,omitempty" json:"name,omitempty"`
+	TimesTaken  int    `bson:"timesTaken" json:"timesTaken"`
+	Description string `bson:"description,omitempty" json:"description,omitempty"`
 }
 
 type ArmourPoints struct {

@@ -6,6 +6,8 @@ import enTranslation from './locales/en/translation.json';
 import plTranslation from './locales/pl/translation.json';
 import enSkills from './locales/en/skills.json';
 import plSkills from './locales/pl/skills.json';
+import enTalents from './locales/en/talents.json';
+import plTalents from './locales/pl/talents.json';
 
 i18n
   // Detect user language
@@ -18,11 +20,13 @@ i18n
     resources: {
       en: {
         translation: enTranslation,
-        skills: enSkills
+        skills: enSkills,
+        talents: enTalents
       },
       pl: {
         translation: plTranslation,
-        skills: plSkills
+        skills: plSkills,
+        talents: plTalents
       }
     },
     // Fallback language if detection fails

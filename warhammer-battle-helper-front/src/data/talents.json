@@ -1,0 +1,767 @@
+[ 
+  {
+    "key": "ACCURATE_SHOT",
+    "max": "BALLISTIC_SKILL"
+  },
+  {
+    "key": "ACUTE_SENSE",
+    "max": "INITIATIVE",
+    "tests": "PERCEPTION"
+  },
+  {
+    "key": "AETHYRIC_ATTUNEMENT",
+    "max": "INITIATIVE",
+    "tests": "CHANNELLING"
+  },
+  {
+    "key": "ALLEY_CAT",
+    "max": "INITIATIVE",
+    "tests": "STEALTH"
+  },
+  {
+    "key": "AMBIDEXTROUS",
+    "max": 2
+  },
+  {
+    "key": "ANIMAL_AFFINITY",
+    "max": "WILLPOWER",
+    "tests": "CHARM_ANIMAL"
+  },
+  {
+    "key": "ARCANE_MAGIC",
+    "max": 1
+  },
+  {
+    "key": "ARGUMENTATIVE",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "ARTISTIC",
+    "max": "DEXTERITY",
+    "tests": "TRADE"
+  },
+  {
+    "key": "ATTRACTIVE",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "BATTLE_RAGE",
+    "max": "WILLPOWER",
+    "tests": "MELEE"
+  },
+  {
+    "key": "BEAT_BLADE",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "BENEATH_NOTICE",
+    "max": "FELLOWSHIP",
+    "tests": "STEALTH"
+  },
+  {
+    "key": "BERSERK_CHARGE",
+    "max": "STRENGTH",
+    "tests": "MELEE"
+  },
+  {
+    "key": "BLATHER",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "BLESS",
+    "max": 1
+  },
+  {
+    "key": "BOOKISH",
+    "max": "INTELLIGENCE",
+    "tests": "RESEARCH"
+  },
+  {
+    "key": "BREAK_AND_ENTER",
+    "max": "STRENGTH",
+    "tests": "MELEE"
+  },
+  {
+    "key": "BRIBER",
+    "max": "FELLOWSHIP",
+    "tests": "BRIBERY"
+  },
+  {
+    "key": "CARDSHARP",
+    "max": "INTELLIGENCE",
+    "tests": "GAMBLE"
+  },
+  {
+    "key": "CAREFUL_STRIKE",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "CAROUSER",
+    "max": "TOUGHNESS",
+    "tests": "CHARM"
+  },
+  {
+    "key": "CATFALL",
+    "max": "AGILITY",
+    "tests": "ATHLETICS"
+  },
+  {
+    "key": "CAT_TONGUED",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "CHAOS_MAGIC",
+    "max": "Number of Spells available in chosen Chaos Magic Lore"
+  },
+  {
+    "key": "COMBAT_AWARE",
+    "max": "INITIATIVE",
+    "tests": "PERCEPTION"
+  },
+  {
+    "key": "COMBAT_MASTER",
+    "max": "AGILITY"
+  },
+  {
+    "key": "COMBAT_REFLEXES",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "COMMANDING_PRESENCE",
+    "max": "FELLOWSHIP",
+    "tests": "LEADERSHIP"
+  },
+  {
+    "key": "CONCOCT",
+    "max": "INTELLIGENCE",
+    "tests": "LORE"
+  },
+  {
+    "key": "CONTORTIONIST",
+    "max": "AGILITY",
+    "tests": "PERFORM"
+  },
+  {
+    "key": "COOLHEADED",
+    "max": 1
+  },
+  {
+    "key": "CRACK_THE_WHIP",
+    "max": "DEXTERITY",
+    "tests": "DRIVE"
+  },
+  {
+    "key": "CRAFTSMAN",
+    "max": "DEXTERITY",
+    "tests": "TRADE"
+  },
+  {
+    "key": "CRIMINAL",
+    "max": "None"
+  },
+  {
+    "key": "DEADEYE_SHOT",
+    "max": 1
+  },
+  {
+    "key": "DEALMAKER",
+    "max": "FELLOWSHIP",
+    "tests": "HAGGLE"
+  },
+  {
+    "key": "DETECT_ARTEFACT",
+    "max": "INITIATIVE",
+    "tests": "INTUITION"
+  },
+  {
+    "key": "DICEMAN",
+    "max": "INTELLIGENCE",
+    "tests": "GAMBLE"
+  },
+  {
+    "key": "DIRTY_FIGHTING",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "DISARM",
+    "max": "INITIATIVE",
+    "tests": "MELEE"
+  },
+  {
+    "key": "DISTRACT",
+    "max": "AGILITY",
+    "tests": "ATHLETICS"
+  },
+  {
+    "key": "DOOMED",
+    "max": 1
+  },
+  {
+    "key": "DRILLED",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "DUAL_WIELDER",
+    "max": "AGILITY",
+    "tests": "MELEE"
+  },
+  {
+    "key": "EMBEZZLE",
+    "max": "INTELLIGENCE",
+    "tests": "INTELLIGENCE"
+  },
+  {
+    "key": "ENCLOSED_FIGHTER",
+    "max": "AGILITY",
+    "tests": "DODGE"
+  },
+  {
+    "key": "ETIQUETTE",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "FAST_HANDS",
+    "max": "DEXTERITY",
+    "tests": "SLEIGHT_OF_HAND"
+  },
+  {
+    "key": "FAST_SHOT",
+    "max": "AGILITY",
+    "tests": "RANGED"
+  },
+  {
+    "key": "FEARLESS",
+    "max": "WILLPOWER",
+    "tests": "COOL"
+  },
+  {
+    "key": "FEINT",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "FIELD_DRESSING",
+    "max": "INTELLIGENCE",
+    "tests": "HEAL"
+  },
+  {
+    "key": "FISHERMAN",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "FLAGELLANT",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "FLEE",
+    "max": "AGILITY",
+    "tests": "ATHLETICS"
+  },
+  {
+    "key": "FLEET_FOOTED",
+    "max": 1
+  },
+  {
+    "key": "FRENZY",
+    "max": 1
+  },
+  {
+    "key": "FRIGHTENING",
+    "max": "STRENGTH"
+  },
+  {
+    "key": "FURIOUS_ASSAULT",
+    "max": "AGILITY",
+    "tests": "MELEE"
+  },
+  {
+    "key": "GREGARIOUS",
+    "max": "FELLOWSHIP",
+    "tests": "GOSSIP"
+  },
+  {
+    "key": "GUNNER",
+    "max": "DEXTERITY"
+  },
+  {
+    "key": "HARDY",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "HATRED",
+    "max": "WILLPOWER",
+    "tests": "WILLPOWER"
+  },
+  {
+    "key": "HOLY_HATRED",
+    "max": "FELLOWSHIP"
+  },
+  {
+    "key": "HOLY_VISIONS",
+    "max": "INITIATIVE",
+    "tests": "INTUITION"
+  },
+  {
+    "key": "HUNTERS_EYE",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "IMPASSIONED_ZEAL",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "IMPLACABLE",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "IN_FIGHTER",
+    "max": "DEXTERITY",
+    "tests": "MELEE"
+  },
+  {
+    "key": "INSPIRING",
+    "max": "FELLOWSHIP",
+    "tests": "LEADERSHIP"
+  },
+  {
+    "key": "INSTINCTIVE_DICTION",
+    "max": "INITIATIVE",
+    "tests": "LANGUAGE"
+  },
+  {
+    "key": "INVOKE",
+    "max": 1
+  },
+  {
+    "key": "IRON_JAW",
+    "max": "TOUGHNESS",
+    "tests": "ENDURANCE"
+  },
+  {
+    "key": "IRON_WILL",
+    "max": "WILLPOWER",
+    "tests": "COOL"
+  },
+  {
+    "key": "JUMP_UP",
+    "max": 1
+  },
+  {
+    "key": "KINGPIN",
+    "max": 1
+  },
+  {
+    "key": "LIGHTNING_REFLEXES",
+    "max": 1
+  },
+  {
+    "key": "LINGUISTICS",
+    "max": "INTELLIGENCE",
+    "tests": "LANGUAGE"
+  },
+  {
+    "key": "LIP_READING",
+    "max": "INITIATIVE",
+    "tests": "PERCEPTION"
+  },
+  {
+    "key": "LUCK",
+    "max": "FELLOWSHIP"
+  },
+  {
+    "key": "MAGICAL_SENSE",
+    "max": "INITIATIVE",
+    "tests": "INTUITION"
+  },
+  {
+    "key": "MAGIC_RESISTANCE",
+    "max": 1
+  },
+  {
+    "key": "MAGNUM_OPUS",
+    "max": "None"
+  },
+  {
+    "key": "MARKSMAN",
+    "max": 1
+  },
+  {
+    "key": "MASTER_OF_DISGUISE",
+    "max": "FELLOWSHIP",
+    "tests": "ENTERTAIN"
+  },
+  {
+    "key": "MASTER_ORATOR",
+    "max": "FELLOWSHIP"
+  },
+  {
+    "key": "MASTER_TRADESMAN",
+    "max": "DEXTERITY"
+  },
+  {
+    "key": "MENACING",
+    "max": "STRENGTH",
+    "tests": "INTIMIDATE"
+  },
+  {
+    "key": "MIMIC",
+    "max": "INITIATIVE",
+    "tests": "ENTERTAIN"
+  },
+  {
+    "key": "NIGHT_VISION",
+    "max": "INITIATIVE",
+    "tests": "PERCEPTION"
+  },
+  {
+    "key": "NIMBLE_FINGERED",
+    "max": 1
+  },
+  {
+    "key": "NOBLE_BLOOD",
+    "max": 1
+  },
+  {
+    "key": "NOSE_FOR_TROUBLE",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "NUMISMATICS",
+    "max": "INITIATIVE",
+    "tests": "EVALUATE"
+  },
+  {
+    "key": "OLD_SALT",
+    "max": "AGILITY",
+    "tests": "SAIL"
+  },
+  {
+    "key": "ORIENTATION",
+    "max": "INITIATIVE",
+    "tests": "NAVIGATION"
+  },
+  {
+    "key": "PANHANDLE",
+    "max": "FELLOWSHIP",
+    "tests": "CHARM"
+  },
+  {
+    "key": "PERFECT_PITCH",
+    "max": "INITIATIVE",
+    "tests": "ENTERTAIN"
+  },
+  {
+    "key": "PETTY_MAGIC",
+    "max": 1
+  },
+  {
+    "key": "PHARMACIST",
+    "max": "INTELLIGENCE",
+    "tests": "TRADE"
+  },
+  {
+    "key": "PILOT",
+    "max": "INITIATIVE",
+    "tests": "ROW"
+  },
+  {
+    "key": "PUBLIC_SPEAKER",
+    "max": "FELLOWSHIP"
+  },
+  {
+    "key": "PURE_SOUL",
+    "max": "WILLPOWER"
+  },
+  {
+    "key": "RAPID_RELOAD",
+    "max": "DEXTERITY"
+  },
+  {
+    "key": "REACTION_STRIKE",
+    "max": "INITIATIVE",
+    "tests": "INITIATIVE"
+  },
+  {
+    "key": "READ_WRITE",
+    "max": 1
+  },
+  {
+    "key": "RELENTLESS",
+    "max": "AGILITY"
+  },
+  {
+    "key": "RESISTANCE",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "RESOLUTE",
+    "max": "STRENGTH"
+  },
+  {
+    "key": "REVERSAL",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "RIPOSTE",
+    "max": "AGILITY",
+    "tests": "MELEE"
+  },
+  {
+    "key": "RIVER_GUIDE",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "ROBUST",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "ROUGHRIDER",
+    "max": "AGILITY",
+    "tests": "RIDE"
+  },
+  {
+    "key": "ROVER",
+    "max": "AGILITY",
+    "tests": "STEALTH"
+  },
+  {
+    "key": "SAVANT",
+    "max": "INTELLIGENCE",
+    "tests": "LORE"
+  },
+  {
+    "key": "SAVVY",
+    "max": 1
+  },
+  {
+    "key": "SCALE_SHEER_SURFACE",
+    "max": "STRENGTH",
+    "tests": "CLIMB"
+  },
+  {
+    "key": "SCHEMER",
+    "max": "INTELLIGENCE",
+    "tests": "INTELLIGENCE"
+  },
+  {
+    "key": "SEA_LEGS",
+    "max": "TOUGHNESS"
+  },
+  {
+    "key": "SEASONED_TRAVELLER",
+    "max": "INTELLIGENCE"
+  },
+  {
+    "key": "SECOND_SIGHT",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "SECRET_IDENTITY",
+    "max": "INTELLIGENCE",
+    "tests": "ENTERTAIN"
+  },
+  {
+    "key": "SHADOW",
+    "max": "AGILITY"
+  },
+  {
+    "key": "SHARP",
+    "max": 1
+  },
+  {
+    "key": "SHARPSHOOTER",
+    "max": 1
+  },
+  {
+    "key": "SHIELDSMAN",
+    "max": "STRENGTH"
+  },
+  {
+    "key": "SIXTH_SENSE",
+    "max": "INITIATIVE",
+    "tests": "INTUITION"
+  },
+  {
+    "key": "SLAYER",
+    "max": 1
+  },
+  {
+    "key": "SMALL",
+    "max": 1
+  },
+  {
+    "key": "SNIPER",
+    "max": 4,
+    "tests": "RANGED"
+  },
+  {
+    "key": "SPEEDREADER",
+    "max": "INTELLIGENCE",
+    "tests": "RESEARCH"
+  },
+  {
+    "key": "SPRINTER",
+    "max": "STRENGTH",
+    "tests": "ATHLETICS"
+  },
+  {
+    "key": "STEP_ASIDE",
+    "max": "AGILITY",
+    "tests": "DODGE"
+  },
+  {
+    "key": "STONE_SOUP",
+    "max": "TOUGHNESS",
+    "tests": "ENDURANCE"
+  },
+  {
+    "key": "STOUT_HEARTED",
+    "max": "WILLPOWER",
+    "tests": "COOL"
+  },
+  {
+    "key": "STRIDER",
+    "max": "AGILITY",
+    "tests": "ATHLETICS"
+  },
+  {
+    "key": "STRIKE_MIGHTY_BLOW",
+    "max": "STRENGTH"
+  },
+  {
+    "key": "STRIKE_TO_INJURE",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "STRIKE_TO_STUN",
+    "max": "WEAPON_SKILL",
+    "tests": "MELEE"
+  },
+  {
+    "key": "STRONG_BACK",
+    "max": "STRENGTH",
+    "tests": "ROW"
+  },
+  {
+    "key": "STRONG_LEGS",
+    "max": "STRENGTH"
+  },
+  {
+    "key": "STRONG_MINDED",
+    "max": "WILLPOWER"
+  },
+  {
+    "key": "STRONG_SWIMMER",
+    "max": "STRENGTH",
+    "tests": "SWIM"
+  },
+  {
+    "key": "STURDY",
+    "max": "STRENGTH",
+    "tests": "STRENGTH"
+  },
+  {
+    "key": "SUAVE",
+    "max": 1
+  },
+  {
+    "key": "SUPER_NUMERATE",
+    "max": "INTELLIGENCE",
+    "tests": "EVALUATE"
+  },
+  {
+    "key": "SUPPORTIVE",
+    "max": "FELLOWSHIP"
+  },
+  {
+    "key": "SURE_SHOT",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "SURGERY",
+    "max": "INTELLIGENCE",
+    "tests": "HEAL"
+  },
+  {
+    "key": "TENACIOUS",
+    "max": "TOUGHNESS",
+    "tests": "ENDURANCE"
+  },
+  {
+    "key": "TINKER",
+    "max": "DEXTERITY",
+    "tests": "TRADE"
+  },
+  {
+    "key": "TOWER_OF_MEMORIES",
+    "max": "INTELLIGENCE"
+  },
+  {
+    "key": "TRAPPER",
+    "max": "INITIATIVE",
+    "tests": "PERCEPTION"
+  },
+  {
+    "key": "TRICK_RIDING",
+    "max": "AGILITY",
+    "tests": "DODGE"
+  },
+  {
+    "key": "TUNNEL_RAT",
+    "max": "AGILITY",
+    "tests": "STEALTH"
+  },
+  {
+    "key": "UNSHAKABLE",
+    "max": "WILLPOWER",
+    "tests": "COOL"
+  },
+  {
+    "key": "VERY_RESILIENT",
+    "max": 1
+  },
+  {
+    "key": "VERY_STRONG",
+    "max": 1
+  },
+  {
+    "key": "WAR_LEADER",
+    "max": "FELLOWSHIP",
+    "tests": "LEADERSHIP"
+  },
+  {
+    "key": "WAR_WIZARD",
+    "max": 1
+  },
+  {
+    "key": "WARRIOR_BORN",
+    "max": 1
+  },
+  {
+    "key": "WATERMAN",
+    "max": "AGILITY",
+    "tests": "SAIL"
+  },
+  {
+    "key": "WEALTHY",
+    "max": "None"
+  },
+  {
+    "key": "WELL_PREPARED",
+    "max": "INITIATIVE"
+  },
+  {
+    "key": "WITCH",
+    "max": "WILLPOWER"
+  }
+]

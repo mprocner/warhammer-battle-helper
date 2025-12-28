@@ -21,7 +21,7 @@
     "minimize": "Minimize"
   },
   "navigation": {
-    "title": "WARHAMMER BATTLE HELPER",
+    "title": "RollHammer",
     "battleArena": "Battle Arena",
     "login": "Login",
     "logout": "Logout",
@@ -49,7 +49,8 @@
     "passwordTooShort": "Password must be at least 6 characters",
     "passwordsDoNotMatch": "Passwords do not match",
     "gameNameRequired": "Game name is required",
-    "skillAlreadyAdded": "This skill is already added"
+    "skillAlreadyAdded": "This skill is already added",
+    "talentAlreadyAdded": "This talent is already added"
   },
   "game": {
     "createGame": "Create Game",
@@ -147,6 +148,9 @@
     "resilienceTitle": "Resilience",
     "experienceTitle": "Experience",
     "timesTaken": "Times Taken",
+    "rozw": "Adv",
+    "addTalent": "-- Add Talent --",
+    "noTalents": "No talents",
     "rangeReach": "Range/Reach",
     "tn": "TN",
     "range": "Range",

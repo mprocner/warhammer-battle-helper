@@ -21,7 +21,7 @@
     "minimize": "Minimalizuj"
   },
   "navigation": {
-    "title": "WARHAMMER BATTLE HELPER",
+    "title": "RollHammer",
     "battleArena": "Arena Bitewna",
     "login": "Zaloguj",
     "logout": "Wyloguj",
@@ -49,7 +49,8 @@
     "passwordTooShort": "Hasło musi mieć co najmniej 6 znaków",
     "passwordsDoNotMatch": "Hasła nie są zgodne",
     "gameNameRequired": "Nazwa gry jest wymagana",
-    "skillAlreadyAdded": "Ta umiejętność została już dodana"
+    "skillAlreadyAdded": "Ta umiejętność została już dodana",
+    "talentAlreadyAdded": "Ten talent został już dodany"
   },
   "game": {
     "createGame": "Utwórz Grę",
@@ -148,6 +149,9 @@
     "resilienceTitle": "Bohater",
     "experienceTitle": "Doświadczenie",
     "timesTaken": "Powtórzenia",
+    "rozw": "Rozw",
+    "addTalent": "-- Dodaj Talent --",
+    "noTalents": "Brak talentów",
     "rangeReach": "Zasięg/Dystans",
     "tn": "ST",
     "range": "Zasięg",

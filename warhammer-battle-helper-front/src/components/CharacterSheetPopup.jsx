@@ -3,12 +3,13 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 import skillsData from '../data/skills.json';
-import ModifierSelectionModal from './ModifierSelectionModal';
+import talentsData from '../data/talents.json';  
+import ModifierSelectionModal from './ModifierSelectionModal'; 
 import axios from 'axios';
-import { getApiUrl, getApiHeaders } from '../api/axios';
+import { getApiUrl, getApiHeaders } from '../api/axios'; 
 
 function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token }) {
-    const { t } = useTranslation(['translation', 'skills']);
+    const { t } = useTranslation(['translation', 'skills', 'talents']); 
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [size, setSize] = useState({ width: 1400, height: 800 });
@@ -20,8 +21,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const [editedCharacter, setEditedCharacter] = useState({
         ...character,
         basicSkills: character.basicSkills || {},
-        advancedSkills: character.advancedSkills || {}, 
-        favoriteSkills: character.favoriteSkills || []
+        advancedSkills: character.advancedSkills || {},
+        favoriteSkills: character.favoriteSkills || [],
+        talents: character.talents || []
     });
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -39,7 +41,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             ...character,
             basicSkills: character.basicSkills || {},
             advancedSkills: character.advancedSkills || {},
-            favoriteSkills: character.favoriteSkills || []
+            favoriteSkills: character.favoriteSkills || [],
+            talents: character.talents || []
         });
         setHasChanges(false);
     }, [character]);
@@ -56,7 +59,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     // Close tooltip when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (activeTooltip && !e.target.closest('.skill-info-icon') && !e.target.closest('.skill-tooltip')) {
+            if (activeTooltip && !e.target.closest('.skill-info-icon') && !e.target.closest('.skill-tooltip') && !e.target.closest('.talent-tooltip')) {
                 setActiveTooltip(null);
             }
         };
@@ -226,6 +229,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         return options.sort((a, b) => a.name.localeCompare(b.name));
     }, [t]);
 
+    // Generate talent options from talents data
+    const talentOptions = useMemo(() => {
+        return talentsData.map(talent => ({
+            key: talent.key,
+            name: t(`talents:${talent.key}.name`),
+            max: talent.max
+        })).sort((a, b) => a.name.localeCompare(b.name));
+    }, [t]);
+
     // Convert advanced skills map to array for rendering (sorted alphabetically)
     const advancedSkillsList = useMemo(() => {
         if (!editedCharacter.advancedSkills) return [];
@@ -246,6 +258,17 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             .filter(s => s !== null)
             .sort((a, b) => a.name.localeCompare(b.name));
     }, [editedCharacter.advancedSkills, advancedSkillsOptions]);
+
+    // Sort talents alphabetically by name
+    const sortedTalents = useMemo(() => {
+        if (!editedCharacter.talents) return [];
+
+        return [...editedCharacter.talents].sort((a, b) => {
+            const nameA = t(`talents:${a.key}.name`);
+            const nameB = t(`talents:${b.key}.name`);
+            return nameA.localeCompare(nameB);
+        });
+    }, [editedCharacter.talents, t]);
 
     // Map characteristic key to short form used in character data
     const getCharacteristicShortKey = (characteristic) => {
@@ -449,6 +472,74 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 advancedSkills: newAdvancedSkills
             };
         });
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Add talent from dropdown
+    const handleAddTalent = (talentKey) => {
+        if (!talentKey) return;
+
+        // Check if talent already exists
+        if (editedCharacter.talents?.some(t => t.key === talentKey)) {
+            alert(t('validation.talentAlreadyAdded'));
+            return;
+        }
+
+        setEditedCharacter(prev => ({
+            ...prev,
+            talents: [
+                ...(prev.talents || []),
+                {
+                    key: talentKey,
+                    timesTaken: 1
+                }
+            ]
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove talent
+    const handleRemoveTalent = (index) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            talents: prev.talents.filter((_, idx) => idx !== index)
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update talent times taken
+    const handleTalentTimesTakenChange = (index, value) => {
+        const numValue = Math.max(1, parseInt(value) || 1);
+        setEditedCharacter(prev => ({
+            ...prev,
+            talents: prev.talents.map((talent, idx) =>
+                idx === index ? { ...talent, timesTaken: numValue } : talent
+            )
+        }));
         setHasChanges(true);
 
         // Auto-save
@@ -1055,26 +1146,79 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <thead>
                                         <tr>
                                             <th>{t('characterSheet.talentName')}</th>
-                                            <th style={{ width: '60px' }}>{t('characterSheet.timesTaken')}</th>
-                                            <th>{t('characterSheet.description')}</th>
+                                            <th style={{ width: '60px' }}>{t('characterSheet.rozw')}</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {character.talents?.map((talent, idx) => (
-                                            <tr key={idx}>
-                                                <td><input type="text" value={talent.name || ''} readOnly /></td>
-                                                <td><input type="text" value={talent.timesTaken || ''} readOnly /></td>
-                                                <td><input type="text" value={talent.description || ''} readOnly /></td>
-                                            </tr>
-                                        )) || (
+                                        {sortedTalents.map((talent) => {
+                                            const actualIndex = editedCharacter.talents?.findIndex(t => t.key === talent.key);
+                                            return (
+                                                <tr key={talent.key}>
+                                                    <td className="skill-name">
+                                                        <span>
+                                                            {t(`talents:${talent.key}.name`)}
+                                                        </span>
+                                                        <span
+                                                            className="skill-info-icon"
+                                                            onClick={(e) => handleTooltipToggle(`talent-${talent.key}`, e)}
+                                                        >
+                                                            ⓘ
+                                                        </span>
+                                                        {activeTooltip === `talent-${talent.key}` && (
+                                                            <div className="talent-tooltip">
+                                                                {t(`talents:${talent.key}.description`)}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={talent.timesTaken || 1}
+                                                            onChange={(e) => handleTalentTimesTakenChange(actualIndex, e.target.value)}
+                                                            min="1"
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            className="skill-delete-btn"
+                                                            onClick={() => handleRemoveTalent(actualIndex)}
+                                                            title={t('common.delete')}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {(!editedCharacter.talents || editedCharacter.talents.length === 0) && (
                                             <tr>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
+                                                <td colSpan="3" style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                                    {t('characterSheet.noTalents')}
+                                                </td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
+                                <div style={{ marginTop: '10px' }}>
+                                    <select
+                                        onChange={(e) => {
+                                            handleAddTalent(e.target.value);
+                                            e.target.value = '';
+                                        }}
+                                        style={{ width: '100%', padding: '5px' }}
+                                    >
+                                        <option value="">{t('characterSheet.addTalent')}</option>
+                                        {talentOptions
+                                            .filter(option => !editedCharacter.talents?.some(t => t.key === option.key))
+                                            .map(option => (
+                                                <option key={option.key} value={option.key}>
+                                                    {option.name}
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Weapons */}

@@ -1822,6 +1822,7 @@ align-items: center;
     font-size: 10px;
     padding: 2px;
     color: #f5e6d3;
+    margin: 0;
 }
 
 .character-sheet-popup .skills-table .skill-name {
@@ -1981,6 +1982,8 @@ align-items: center;
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    min-height: 26px;
+    padding: 2px !important;
 }
 
 /* Delete button in skills table */
@@ -1998,6 +2001,7 @@ align-items: center;
     align-items: center;
     justify-content: center;
     transition: all 0.3s;
+    margin: 0 auto;
 }
 
 .character-sheet-popup .skill-delete-btn:hover {
@@ -2057,4 +2061,59 @@ align-items: center;
     border: 5px solid transparent;
     border-left-color: #3a2920;
     margin-left: -1px;
+}
+ 
+/* ================== TALENT TOOLTIP (APPEARS ON RIGHT) ================== */
+.character-sheet-popup .talent-tooltip {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 8px;
+    background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+    color: #e8dcc4;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #5c4a3a;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.8),
+        0 0 10px rgba(122, 92, 66, 0.4);
+    font-size: 9px;
+    line-height: 1.4;
+    max-width: 300px;
+    width: max-content;
+    z-index: 10000;
+    animation: talentTooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes talentTooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+.character-sheet-popup .talent-tooltip::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-right-color: #5c4a3a;
+}
+
+.character-sheet-popup .talent-tooltip::after {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #3a2920;
+    margin-right: -1px;
 }
