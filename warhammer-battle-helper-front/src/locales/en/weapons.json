@@ -1,0 +1,198 @@
+{
+  "weapons": {
+    "HAND_WEAPON": {
+      "name": "Hand Weapon"
+    },
+    "IMPROVISED_WEAPON": {
+      "name": "Improvised Weapon"
+    },
+    "DAGGER": {
+      "name": "Dagger"
+    },
+    "KNIFE": {
+      "name": "Knife"
+    },
+    "SHIELD_BUCKLER": {
+      "name": "Shield (Buckler)"
+    },
+    "SHIELD": {
+      "name": "Shield"
+    },
+    "SHIELD_LARGE": {
+      "name": "Shield (Large)"
+    },
+    "CAVALRY_HAMMER": {
+      "name": "Cavalry Hammer"
+    },
+    "LANCE": {
+      "name": "Lance"
+    },
+    "FOIL": {
+      "name": "Foil"
+    },
+    "RAPIER": {
+      "name": "Rapier"
+    },
+    "UNARMED": {
+      "name": "Unarmed"
+    },
+    "KNUCKLEDUSTERS": {
+      "name": "Knuckledusters"
+    },
+    "GRAIN_FLAIL": {
+      "name": "Grain Flail"
+    },
+    "FLAIL": {
+      "name": "Flail"
+    },
+    "MILITARY_FLAIL": {
+      "name": "Military Flail"
+    },
+    "MAIN_GAUCHE": {
+      "name": "Main Gauche"
+    },
+    "SWORDBREAKER": {
+      "name": "Swordbreaker"
+    },
+    "HALBERD": {
+      "name": "Halberd"
+    },
+    "SPEAR": {
+      "name": "Spear"
+    },
+    "PIKE": {
+      "name": "Pike"
+    },
+    "QUARTER_STAFF": {
+      "name": "Quarter Staff"
+    },
+    "BASTARD_SWORD": {
+      "name": "Bastard Sword"
+    },
+    "GREAT_AXE": {
+      "name": "Great Axe"
+    },
+    "PICK": {
+      "name": "Pick"
+    },
+    "WARHAMMER": {
+      "name": "Warhammer"
+    },
+    "ZWEIHNDER": {
+      "name": "Zweihänder"
+    },
+    "BLUNDERBUSS": {
+      "name": "Blunderbuss"
+    },
+    "HOCHLAND_LONG_RIFLE": {
+      "name": "Hochland Long Rifle"
+    },
+    "HANDGUN": {
+      "name": "Handgun"
+    },
+    "PISTOL": {
+      "name": "Pistol"
+    },
+    "ELF_BOW": {
+      "name": "Elf Bow"
+    },
+    "LONGBOW": {
+      "name": "Longbow"
+    },
+    "BOW": {
+      "name": "Bow"
+    },
+    "SHORTBOW": {
+      "name": "Shortbow"
+    },
+    "CROSSBOW_PISTOL": {
+      "name": "Crossbow Pistol"
+    },
+    "HEAVY_CROSSBOW": {
+      "name": "Heavy Crossbow"
+    },
+    "CROSSBOW": {
+      "name": "Crossbow"
+    },
+    "REPEATER_HANDGUN": {
+      "name": "Repeater Handgun"
+    },
+    "REPEATER_PISTOL": {
+      "name": "Repeater Pistol"
+    },
+    "LASSO": {
+      "name": "Lasso"
+    },
+    "WHIP": {
+      "name": "Whip"
+    },
+    "BOMB": {
+      "name": "Bomb"
+    },
+    "INCENDIARY": {
+      "name": "Incendiary"
+    },
+    "SLING": {
+      "name": "Sling"
+    },
+    "STAFF_SLING": {
+      "name": "Staff Sling"
+    },
+    "BOLAS": {
+      "name": "Bolas"
+    },
+    "DART": {
+      "name": "Dart"
+    },
+    "JAVELIN": {
+      "name": "Javelin"
+    },
+    "ROCK": {
+      "name": "Rock"
+    },
+    "THROWING_AXE": {
+      "name": "Throwing Axe"
+    },
+    "THROWING_KNIFE": {
+      "name": "Throwing Knife"
+    }
+  },
+  "qualities": {
+    "UNDAMAGING": "Undamaging",
+    "SHIELD_1": "Shield 1",
+    "DEFENSIVE": "Defensive",
+    "SHIELD_2": "Shield 2",
+    "SHIELD_3": "Shield 3",
+    "PUMMEL": "Pummel",
+    "IMPACT": "Impact",
+    "IMPALE": "Impale",
+    "FAST": "Fast",
+    "PRECISE": "Precise",
+    "DISTRACT": "Distract",
+    "IMPRECISE": "Imprecise",
+    "WRAP": "Wrap",
+    "TIRING": "Tiring",
+    "TRAPBLADE": "Trap-blade",
+    "HACK": "Hack",
+    "DAMAGING": "Damaging",
+    "BLAST": "Blast",
+    "DANGEROUS": "Dangerous",
+    "RELOAD": "Reload",
+    "BLACKPOWDER": "Blackpowder",
+    "ACCURATE": "Accurate",
+    "PISTOL": "Pistol",
+    "REPEATER": "Repeater",
+    "ENTANGLE": "Entangle"
+  },
+  "reaches": {
+    "AVERAGE": "Average",
+    "VARIES": "Varies",
+    "VERY_SHORT": "Very Short",
+    "PERSONAL": "Personal",
+    "LONG": "Long",
+    "VERY_LONG": "Very Long",
+    "MEDIUM": "Medium",
+    "SHORT": "Short",
+    "MASSIVE": "Massive"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "armour": {
+    "LEATHER_JACK": {
+      "name": "Leather Jack"
+    },
+    "LEATHER_JERKIN": {
+      "name": "Leather Jerkin"
+    },
+    "LEATHER_LEGGINGS": {
+      "name": "Leather Leggings"
+    },
+    "LEATHER_SKULLCAP": {
+      "name": "Leather Skullcap"
+    },
+    "BOILED_LEATHER_BREASTPLATE": {
+      "name": "Breastplate (Boiled Leather)"
+    },
+    "MAIL_CHAUSSES": {
+      "name": "Mail Chausses"
+    },
+    "MAIL_COAT": {
+      "name": "Mail Coat"
+    },
+    "MAIL_COIF": {
+      "name": "Mail Coif"
+    },
+    "MAIL_SHIRT": {
+      "name": "Mail Shirt"
+    },
+    "PLATE_BREASTPLATE": {
+      "name": "Breastplate (Plate)"
+    },
+    "OPEN_HELM": {
+      "name": "Open Helm"
+    },
+    "BRACERS": {
+      "name": "Bracers"
+    },
+    "PLATE_LEGGINGS": {
+      "name": "Plate Leggings"
+    },
+    "HELM": {
+      "name": "Helm"
+    }
+  },
+  "types": {
+    "SOFT_LEATHER": "Soft Leather",
+    "BOILED_LEATHER": "Boiled Leather",
+    "MAIL": "Mail",
+    "PLATE": "Plate"
+  },
+  "locations": {
+    "HEAD": "Head",
+    "ARMS": "Arms",
+    "BODY": "Body",
+    "LEGS": "Legs"
+  },
+  "qualities": {
+    "FLEXIBLE": "Flexible",
+    "PARTIAL": "Partial",
+    "WEAKPOINTS": "Weakpoints",
+    "IMPENETRABLE": "Impenetrable"
+  },
+  "penalties": {
+    "PERCEPTION_10": "-10 Perception",
+    "PERCEPTION_20": "-20 Perception",
+    "STEALTH_10": "-10 Stealth"
+  },
+  "availability": {
+    "COMMON": "Common",
+    "SCARCE": "Scarce",
+    "RARE": "Rare"
+  },
+  "notes": {
+    "SOFT_LEATHER": "Soft Leather can be worn without penalty under any other Armour.",
+    "MAIL_PLATE": "Wearing any Mail or Plate confers a Penalty of -10 Stealth each."
+  }
+}

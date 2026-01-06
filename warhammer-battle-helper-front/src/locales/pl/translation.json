@@ -152,16 +152,19 @@
     "rozw": "Rozw",
     "addTalent": "-- Dodaj Talent --",
     "noTalents": "Brak talentów",
+    "weaponName": "Nazwa Broni",
+    "addWeapon": "-- Dodaj Broń --",
     "rangeReach": "Zasięg/Dystans",
     "tn": "ST",
     "range": "Zasięg",
     "target": "Cel",
     "duration": "Czas trwania",
     "group": "Grupa Broni",
-    "enc": "Ob.",
+    "enc": "Obc.",
     "damage": "Obrażenia",
     "location": "Lokalizacja",
-    "ap": "PA"
+    "ap": "PA",
+    "addArmour": "-- Dodaj Zbroję --"
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",

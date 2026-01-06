@@ -1,0 +1,837 @@
+[
+  {
+    "key": "HAND_WEAPON",
+    "type": "MELEE_BASIC",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [],
+    "reach": "AVERAGE"
+  },
+  {
+    "key": "IMPROVISED_WEAPON",
+    "type": "MELEE_BASIC",
+    "encumbrance": "Varies",
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 1
+    },
+    "qualities": [
+      "UNDAMAGING"
+    ],
+    "reach": "VARIES"
+  },
+  {
+    "key": "DAGGER",
+    "type": "MELEE_BASIC",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [],
+    "reach": "VERY_SHORT"
+  },
+  {
+    "key": "KNIFE",
+    "type": "MELEE_BASIC",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 1
+    },
+    "qualities": [
+      "UNDAMAGING"
+    ],
+    "reach": "VERY_SHORT"
+  },
+  {
+    "key": "SHIELD_BUCKLER",
+    "type": "MELEE_BASIC",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 1
+    },
+    "qualities": [
+      "SHIELD_1",
+      "DEFENSIVE",
+      "UNDAMAGING"
+    ],
+    "reach": "PERSONAL"
+  },
+  {
+    "key": "SHIELD",
+    "type": "MELEE_BASIC",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [
+      "SHIELD_2",
+      "DEFENSIVE",
+      "UNDAMAGING"
+    ],
+    "reach": "VERY_SHORT"
+  },
+  {
+    "key": "SHIELD_LARGE",
+    "type": "MELEE_BASIC",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "SHIELD_3",
+      "DEFENSIVE",
+      "UNDAMAGING"
+    ],
+    "reach": "VERY_SHORT"
+  },
+  {
+    "key": "CAVALRY_HAMMER",
+    "type": "MELEE_CAVALRY",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 5
+    },
+    "qualities": [
+      "PUMMEL"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "LANCE",
+    "type": "MELEE_CAVALRY",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 6
+    },
+    "qualities": [
+      "IMPACT",
+      "IMPALE"
+    ],
+    "reach": "VERY_LONG"
+  },
+  {
+    "key": "FOIL",
+    "type": "MELEE_FENCING",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "FAST",
+      "IMPALE",
+      "PRECISE",
+      "UNDAMAGING"
+    ],
+    "reach": "MEDIUM"
+  },
+  {
+    "key": "RAPIER",
+    "type": "MELEE_FENCING",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "FAST",
+      "IMPALE"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "UNARMED",
+    "type": "MELEE_BRAWLING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 0
+    },
+    "qualities": [
+      "UNDAMAGING"
+    ],
+    "reach": "PERSONAL"
+  },
+  {
+    "key": "KNUCKLEDUSTERS",
+    "type": "MELEE_BRAWLING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [],
+    "reach": "PERSONAL"
+  },
+  {
+    "key": "GRAIN_FLAIL",
+    "type": "MELEE_FLAIL",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "DISTRACT",
+      "IMPRECISE",
+      "WRAP"
+    ],
+    "reach": "AVERAGE"
+  },
+  {
+    "key": "FLAIL",
+    "type": "MELEE_FLAIL",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 5
+    },
+    "qualities": [
+      "DISTRACT",
+      "WRAP"
+    ],
+    "reach": "AVERAGE"
+  },
+  {
+    "key": "MILITARY_FLAIL",
+    "type": "MELEE_FLAIL",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 6
+    },
+    "qualities": [
+      "DISTRACT",
+      "IMPACT",
+      "TIRING",
+      "WRAP"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "MAIN_GAUCHE",
+    "type": "MELEE_PARRY",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [
+      "DEFENSIVE"
+    ],
+    "reach": "VERY_SHORT"
+  },
+  {
+    "key": "SWORDBREAKER",
+    "type": "MELEE_PARRY",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "DEFENSIVE",
+      "TRAPBLADE"
+    ],
+    "reach": "SHORT"
+  },
+  {
+    "key": "HALBERD",
+    "type": "MELEE_POLEARM",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "DEFENSIVE",
+      "HACK",
+      "IMPALE"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "SPEAR",
+    "type": "MELEE_POLEARM",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "IMPALE"
+    ],
+    "reach": "VERY_LONG"
+  },
+  {
+    "key": "PIKE",
+    "type": "MELEE_POLEARM",
+    "encumbrance": 4,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "IMPALE"
+    ],
+    "reach": "MASSIVE"
+  },
+  {
+    "key": "QUARTER_STAFF",
+    "type": "MELEE_POLEARM",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "DEFENSIVE",
+      "PUMMEL"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "BASTARD_SWORD",
+    "type": "MELEE_TWOHANDED",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 5
+    },
+    "qualities": [
+      "DAMAGING",
+      "DEFENSIVE"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "GREAT_AXE",
+    "type": "MELEE_TWOHANDED",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 6
+    },
+    "qualities": [
+      "HACK",
+      "IMPACT",
+      "TIRING"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "PICK",
+    "type": "MELEE_TWOHANDED",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 5
+    },
+    "qualities": [
+      "DAMAGING",
+      "IMPALE"
+    ],
+    "reach": "AVERAGE"
+  },
+  {
+    "key": "WARHAMMER",
+    "type": "MELEE_TWOHANDED",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 6
+    },
+    "qualities": [
+      "DAMAGING",
+      "PUMMEL"
+    ],
+    "reach": "AVERAGE"
+  },
+  {
+    "key": "ZWEIHNDER",
+    "type": "MELEE_TWOHANDED",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 5
+    },
+    "qualities": [
+      "DAMAGING",
+      "HACK"
+    ],
+    "reach": "LONG"
+  },
+  {
+    "key": "BLUNDERBUSS",
+    "type": "RANGED_BLACKPOWDER",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": null,
+      "bonus": 8
+    },
+    "qualities": [
+      "BLAST",
+      "DANGEROUS",
+      "RELOAD",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 20,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "HOCHLAND_LONG_RIFLE",
+    "type": "RANGED_BLACKPOWDER",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": null,
+      "bonus": 9
+    },
+    "qualities": [
+      "ACCURATE",
+      "PRECISE",
+      "RELOAD",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 100,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "HANDGUN",
+    "type": "RANGED_BLACKPOWDER",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": null,
+      "bonus": 9
+    },
+    "qualities": [
+      "DANGEROUS",
+      "RELOAD",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 50,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "PISTOL",
+    "type": "RANGED_BLACKPOWDER",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": null,
+      "bonus": 8
+    },
+    "qualities": [
+      "PISTOL",
+      "RELOAD",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 20,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "ELF_BOW",
+    "type": "RANGED_BOW",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "DAMAGING",
+      "PRECISE"
+    ],
+    "range": {
+      "value": 150,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "LONGBOW",
+    "type": "RANGED_BOW",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 4
+    },
+    "qualities": [
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 100,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "BOW",
+    "type": "RANGED_BOW",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [],
+    "range": {
+      "value": 50,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "SHORTBOW",
+    "type": "RANGED_BOW",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [],
+    "range": {
+      "value": 20,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "CROSSBOW_PISTOL",
+    "type": "RANGED_CROSSBOW",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": null,
+      "bonus": 7
+    },
+    "qualities": [
+      "PISTOL"
+    ],
+    "range": {
+      "value": 10,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "HEAVY_CROSSBOW",
+    "type": "RANGED_CROSSBOW",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": null,
+      "bonus": 9
+    },
+    "qualities": [
+      "DAMAGING",
+      "RELOAD"
+    ],
+    "range": {
+      "value": 100,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "CROSSBOW",
+    "type": "RANGED_CROSSBOW",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": null,
+      "bonus": 9
+    },
+    "qualities": [
+      "RELOAD"
+    ],
+    "range": {
+      "value": 60,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "REPEATER_HANDGUN",
+    "type": "RANGED_ENGINEERING",
+    "encumbrance": 3,
+    "damage": {
+      "attribute": null,
+      "bonus": 9
+    },
+    "qualities": [
+      "DANGEROUS",
+      "RELOAD",
+      "REPEATER",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 30,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "REPEATER_PISTOL",
+    "type": "RANGED_ENGINEERING",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": null,
+      "bonus": 8
+    },
+    "qualities": [
+      "DANGEROUS",
+      "REPEATER",
+      "RELOAD",
+      "REPEATER",
+      "BLACKPOWDER",
+      "DAMAGING"
+    ],
+    "range": {
+      "value": 10,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "LASSO",
+    "type": "RANGED_ENTANGLING",
+    "encumbrance": 0,
+    "damage": null,
+    "qualities": [
+      "ENTANGLE"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 2
+    }
+  },
+  {
+    "key": "WHIP",
+    "type": "RANGED_ENTANGLING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [
+      "ENTANGLE"
+    ],
+    "range": {
+      "value": 6,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "BOMB",
+    "type": "RANGED_EXPLOSIVES",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": null,
+      "bonus": 12
+    },
+    "qualities": [
+      "BLAST",
+      "DANGEROUS",
+      "IMPACT"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 1
+    }
+  },
+  {
+    "key": "INCENDIARY",
+    "type": "RANGED_EXPLOSIVES",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "S",
+      "bonus": 0
+    },
+    "qualities": [
+      "BLAST",
+      "DANGEROUS"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 1
+    }
+  },
+  {
+    "key": "SLING",
+    "type": "RANGED_SLING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": null,
+      "bonus": 6
+    },
+    "qualities": [],
+    "range": {
+      "value": 60,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "STAFF_SLING",
+    "type": "RANGED_SLING",
+    "encumbrance": 2,
+    "damage": {
+      "attribute": null,
+      "bonus": 7
+    },
+    "qualities": [],
+    "range": {
+      "value": 100,
+      "attribute": null,
+      "bonus": null,
+      "multiplier": null
+    }
+  },
+  {
+    "key": "BOLAS",
+    "type": "RANGED_THROWING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 0
+    },
+    "qualities": [
+      "ENTANGLE"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 3
+    }
+  },
+  {
+    "key": "DART",
+    "type": "RANGED_THROWING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 1
+    },
+    "qualities": [
+      "IMPALE"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 2
+    }
+  },
+  {
+    "key": "JAVELIN",
+    "type": "RANGED_THROWING",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "IMPALE"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 3
+    }
+  },
+  {
+    "key": "ROCK",
+    "type": "RANGED_THROWING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 0
+    },
+    "qualities": [],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 3
+    }
+  },
+  {
+    "key": "THROWING_AXE",
+    "type": "RANGED_THROWING",
+    "encumbrance": 1,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 3
+    },
+    "qualities": [
+      "HACK"
+    ],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 2
+    }
+  },
+  {
+    "key": "THROWING_KNIFE",
+    "type": "RANGED_THROWING",
+    "encumbrance": 0,
+    "damage": {
+      "attribute": "STRENGTH",
+      "bonus": 2
+    },
+    "qualities": [],
+    "range": {
+      "value": null,
+      "attribute": "STRENGTH",
+      "bonus": null,
+      "multiplier": 2
+    }
+  }
+]

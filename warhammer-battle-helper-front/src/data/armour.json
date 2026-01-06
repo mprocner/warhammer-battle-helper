@@ -1,0 +1,156 @@
+[
+  {
+    "key": "LEATHER_JACK",
+    "type": "SOFT_LEATHER",
+    "price": "12/-",
+    "encumbrance": 1,
+    "availability": "COMMON",
+    "penalty": null,
+    "locations": ["ARMS", "BODY"],
+    "armorPoints": 1,
+    "qualities": []
+  },
+  {
+    "key": "LEATHER_JERKIN",
+    "type": "SOFT_LEATHER",
+    "price": "10/-",
+    "encumbrance": 1,
+    "availability": "COMMON",
+    "penalty": null,
+    "locations": ["BODY"],
+    "armorPoints": 1,
+    "qualities": []
+  },
+  {
+    "key": "LEATHER_LEGGINGS",
+    "type": "SOFT_LEATHER",
+    "price": "14/-",
+    "encumbrance": 1,
+    "availability": "COMMON",
+    "penalty": null,
+    "locations": ["LEGS"],
+    "armorPoints": 1,
+    "qualities": []
+  },
+  {
+    "key": "LEATHER_SKULLCAP",
+    "type": "SOFT_LEATHER",
+    "price": "8/-",
+    "encumbrance": 0,
+    "availability": "COMMON",
+    "penalty": null,
+    "locations": ["HEAD"],
+    "armorPoints": 1,
+    "qualities": []
+  },
+  {
+    "key": "BOILED_LEATHER_BREASTPLATE",
+    "type": "BOILED_LEATHER",
+    "price": "18/-",
+    "encumbrance": 2,
+    "availability": "SCARCE",
+    "penalty": null,
+    "locations": ["BODY"],
+    "armorPoints": 2,
+    "qualities": ["WEAKPOINTS"]
+  },
+  {
+    "key": "MAIL_CHAUSSES",
+    "type": "MAIL",
+    "price": "2GC",
+    "encumbrance": 3,
+    "availability": "SCARCE",
+    "penalty": null,
+    "locations": ["LEGS"],
+    "armorPoints": 2,
+    "qualities": ["FLEXIBLE"]
+  },
+  {
+    "key": "MAIL_COAT",
+    "type": "MAIL",
+    "price": "3GC",
+    "encumbrance": 3,
+    "availability": "COMMON",
+    "penalty": null,
+    "locations": ["ARMS", "BODY"],
+    "armorPoints": 2,
+    "qualities": ["FLEXIBLE"]
+  },
+  {
+    "key": "MAIL_COIF",
+    "type": "MAIL",
+    "price": "1GC",
+    "encumbrance": 2,
+    "availability": "SCARCE",
+    "penalty": "PERCEPTION_10",
+    "locations": ["HEAD"],
+    "armorPoints": 2,
+    "qualities": ["FLEXIBLE", "PARTIAL"]
+  },
+  {
+    "key": "MAIL_SHIRT",
+    "type": "MAIL",
+    "price": "2GC",
+    "encumbrance": 2,
+    "availability": "SCARCE",
+    "penalty": null,
+    "locations": ["BODY"],
+    "armorPoints": 2,
+    "qualities": ["FLEXIBLE"]
+  },
+  {
+    "key": "PLATE_BREASTPLATE",
+    "type": "PLATE",
+    "price": "10GC",
+    "encumbrance": 3,
+    "availability": "SCARCE",
+    "penalty": null,
+    "locations": ["BODY"],
+    "armorPoints": 2,
+    "qualities": ["IMPENETRABLE", "WEAKPOINTS"]
+  },
+  {
+    "key": "OPEN_HELM",
+    "type": "PLATE",
+    "price": "2GC",
+    "encumbrance": 1,
+    "availability": "COMMON",
+    "penalty": "PERCEPTION_10",
+    "locations": ["HEAD"],
+    "armorPoints": 2,
+    "qualities": ["PARTIAL"]
+  },
+  {
+    "key": "BRACERS",
+    "type": "PLATE",
+    "price": "8GC",
+    "encumbrance": 3,
+    "availability": "RARE",
+    "penalty": null,
+    "locations": ["ARMS"],
+    "armorPoints": 2,
+    "qualities": ["IMPENETRABLE", "WEAKPOINTS"]
+  },
+  {
+    "key": "PLATE_LEGGINGS",
+    "type": "PLATE",
+    "price": "10GC",
+    "encumbrance": 3,
+    "availability": "RARE",
+    "penalty": "STEALTH_10",
+    "locations": ["LEGS"],
+    "armorPoints": 2,
+    "qualities": ["IMPENETRABLE", "WEAKPOINTS"]
+  },
+  {
+    "key": "HELM",
+    "type": "PLATE",
+    "price": "3GC",
+    "encumbrance": 2,
+    "availability": "RARE",
+    "penalty": "PERCEPTION_20",
+    "locations": ["HEAD"],
+    "armorPoints": 2,
+    "qualities": ["IMPENETRABLE", "WEAKPOINTS"]
+  }
+]

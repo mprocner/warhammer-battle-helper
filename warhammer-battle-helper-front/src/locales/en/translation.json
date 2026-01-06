@@ -151,6 +151,8 @@
     "rozw": "Adv",
     "addTalent": "-- Add Talent --",
     "noTalents": "No talents",
+    "weaponName": "Weapon Name",
+    "addWeapon": "-- Add Weapon --",
     "rangeReach": "Range/Reach",
     "tn": "TN",
     "range": "Range",
@@ -160,7 +162,8 @@
     "enc": "Enc",
     "damage": "Damage",
     "location": "Location",
-    "ap": "AP"
+    "ap": "AP",
+    "addArmour": "-- Add Armour --"
   },
   "characteristics": {
     "WEAPON_SKILL": "Weapon Skill",

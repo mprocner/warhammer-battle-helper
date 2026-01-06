@@ -163,8 +163,8 @@
       "FENCING": "Fencing",
       "FLAIL": "Flail",
       "PARRY": "Parry",
-      "POLE_ARM": "Pole-Arm",
-      "TWO_HANDED": "Two-Handed"
+      "POLEARM": "Pole-Arm",
+      "TWOHANDED": "Two-Handed"
     }
   },
   "NAVIGATION": {

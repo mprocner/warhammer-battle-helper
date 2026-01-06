@@ -8,6 +8,10 @@ import enSkills from './locales/en/skills.json';
 import plSkills from './locales/pl/skills.json';
 import enTalents from './locales/en/talents.json';
 import plTalents from './locales/pl/talents.json';
+import enWeapons from './locales/en/weapons.json';
+import plWeapons from './locales/pl/weapons.json';
+import enArmour from './locales/en/armour.json';
+import plArmour from './locales/pl/armour.json';
 
 i18n
   // Detect user language
@@ -21,12 +25,16 @@ i18n
       en: {
         translation: enTranslation,
         skills: enSkills,
-        talents: enTalents
+        talents: enTalents,
+        weapons: enWeapons,
+        armour: enArmour
       },
       pl: {
         translation: plTranslation,
         skills: plSkills,
-        talents: plTalents
+        talents: plTalents,
+        weapons: plWeapons,
+        armour: plArmour
       }
     },
     // Fallback language if detection fails

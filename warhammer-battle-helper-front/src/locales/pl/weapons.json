@@ -1,0 +1,198 @@
+{
+  "weapons": {
+    "HAND_WEAPON": {
+      "name": "Broń Ręczna"
+    },
+    "IMPROVISED_WEAPON": {
+      "name": "Broń Improwizowana"
+    },
+    "DAGGER": {
+      "name": "Sztylet"
+    },
+    "KNIFE": {
+      "name": "Nóż"
+    },
+    "SHIELD_BUCKLER": {
+      "name": "Tarcza (puklerz)"
+    },
+    "SHIELD": {
+      "name": "Tarcza"
+    },
+    "SHIELD_LARGE": {
+      "name": "Tarcza (duża)"
+    },
+    "CAVALRY_HAMMER": {
+      "name": "Młot kawaleryjski"
+    },
+    "LANCE": {
+      "name": "Kopia"
+    },
+    "FOIL": {
+      "name": "Floret"
+    },
+    "RAPIER": {
+      "name": "Rapier"
+    },
+    "UNARMED": {
+      "name": "Pięści i kopniaki"
+    },
+    "KNUCKLEDUSTERS": {
+      "name": "Kastet"
+    },
+    "GRAIN_FLAIL": {
+      "name": "Cep bojowy"
+    },
+    "FLAIL": {
+      "name": "Korbacz"
+    },
+    "MILITARY_FLAIL": {
+      "name": "Kiścień"
+    },
+    "MAIN_GAUCHE": {
+      "name": "Lewak"
+    },
+    "SWORDBREAKER": {
+      "name": "Łamacz mieczy"
+    },
+    "HALBERD": {
+      "name": "Halabarda"
+    },
+    "SPEAR": {
+      "name": "Włócznia"
+    },
+    "PIKE": {
+      "name": "Pika"
+    },
+    "QUARTER_STAFF": {
+      "name": "Kostur"
+    },
+    "BASTARD_SWORD": {
+      "name": "Półtorak"
+    },
+    "GREAT_AXE": {
+      "name": "Wielki topór"
+    },
+    "PICK": {
+      "name": "Nadziak"
+    },
+    "WARHAMMER": {
+      "name": "Młot bojowy"
+    },
+    "ZWEIHNDER": {
+      "name": "Miecz dwuręczny"
+    },
+    "BLUNDERBUSS": {
+      "name": "Garłacz"
+    },
+    "HOCHLAND_LONG_RIFLE": {
+      "name": "Muszkiet hochlandzki"
+    },
+    "HANDGUN": {
+      "name": "Rusznica"
+    },
+    "PISTOL": {
+      "name": "Pistolet"
+    },
+    "ELF_BOW": {
+      "name": "Łuk elfi"
+    },
+    "LONGBOW": {
+      "name": "Łuk długi"
+    },
+    "BOW": {
+      "name": "Łuk"
+    },
+    "SHORTBOW": {
+      "name": "Krótki łuk"
+    },
+    "CROSSBOW_PISTOL": {
+      "name": "Kusza pistoletowa"
+    },
+    "HEAVY_CROSSBOW": {
+      "name": "Ciężka kusza"
+    },
+    "CROSSBOW": {
+      "name": "Kusza"
+    },
+    "REPEATER_HANDGUN": {
+      "name": "Rusznica samopowtarzalna"
+    },
+    "REPEATER_PISTOL": {
+      "name": "Pistolet samopowtarzalny"
+    },
+    "LASSO": {
+      "name": "Arkan"
+    },
+    "WHIP": {
+      "name": "Bicz"
+    },
+    "BOMB": {
+      "name": "Bomba"
+    },
+    "INCENDIARY": {
+      "name": "Ładunek zapalający"
+    },
+    "SLING": {
+      "name": "Proca"
+    },
+    "STAFF_SLING": {
+      "name": "Proca drzewcowa"
+    },
+    "BOLAS": {
+      "name": "Bolas"
+    },
+    "DART": {
+      "name": "Strzałka"
+    },
+    "JAVELIN": {
+      "name": "Oszczep"
+    },
+    "ROCK": {
+      "name": "Kamień"
+    },
+    "THROWING_AXE": {
+      "name": "Topór do rzucania"
+    },
+    "THROWING_KNIFE": {
+      "name": "Nóż do rzucania"
+    }
+  },
+  "qualities": {
+    "UNDAMAGING": "Tępa",
+    "SHIELD_1": "Tarcza 1",
+    "DEFENSIVE": "Parująca",
+    "SHIELD_2": "Tarcza 2",
+    "SHIELD_3": "Tarcza 3",
+    "PUMMEL": "Ogłuszający",
+    "IMPACT": "Druzgocząca",
+    "IMPALE": "Nadziewająca",
+    "FAST": "Nadziewający",
+    "PRECISE": "Precyzyjny",
+    "DISTRACT": "Dekoncentrujący",
+    "IMPRECISE": "Nieprecyzyjny",
+    "WRAP": "Plączący",
+    "TIRING": "Druzgoczący",
+    "TRAPBLADE": "Parujący",
+    "HACK": "Parująca",
+    "DAMAGING": "Parujący",
+    "BLAST": "Niebezpieczny",
+    "DANGEROUS": "Przeładowanie",
+    "RELOAD": "Odłamkowy",
+    "BLACKPOWDER": "Prochowa",
+    "ACCURATE": "Celny",
+    "PISTOL": "Pistolet",
+    "REPEATER": "Wielostrzał",
+    "ENTANGLE": "Unieruchamiający"
+  },
+  "reaches": {
+    "AVERAGE": "Średnia",
+    "VARIES": "Różna",
+    "VERY_SHORT": "Bardzo krótka",
+    "PERSONAL": "Kontaktowa",
+    "LONG": "Długa",
+    "VERY_LONG": "Bardzo długa",
+    "MEDIUM": "Średnia",
+    "SHORT": "Krótka",
+    "MASSIVE": "Ogromna"
+  }
+}

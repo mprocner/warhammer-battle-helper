@@ -163,8 +163,8 @@
       "FENCING": "Szermiercza",
       "FLAIL": "Korbacze",
       "PARRY": "Parująca",
-      "POLE_ARM": "Drzewcowa",
-      "TWO_HANDED": "Dwuręczna"
+      "POLEARM": "Drzewcowa",
+      "TWOHANDED": "Dwuręczna"
     }
   },
   "NAVIGATION": {

@@ -1,0 +1,78 @@
+{
+  "armour": {
+    "LEATHER_JACK": {
+      "name": "Skórzana kurta"
+    },
+    "LEATHER_JERKIN": {
+      "name": "Skórzany kaftan"
+    },
+    "LEATHER_LEGGINGS": {
+      "name": "Skórzane nogawice"
+    },
+    "LEATHER_SKULLCAP": {
+      "name": "Skórzany hełm"
+    },
+    "BOILED_LEATHER_BREASTPLATE": {
+      "name": "Kolet"
+    },
+    "MAIL_CHAUSSES": {
+      "name": "Nogawice kolcze"
+    },
+    "MAIL_COAT": {
+      "name": "Kolczuga"
+    },
+    "MAIL_COIF": {
+      "name": "Czepiec kolczy"
+    },
+    "MAIL_SHIRT": {
+      "name": "Kaftan kolczy"
+    },
+    "PLATE_BREASTPLATE": {
+      "name": "Napierśnik"
+    },
+    "OPEN_HELM": {
+      "name": "Hełm otwarty"
+    },
+    "BRACERS": {
+      "name": "Naramienniki"
+    },
+    "PLATE_LEGGINGS": {
+      "name": "Nagolenniki płytowe"
+    },
+    "HELM": {
+      "name": "Hełm"
+    }
+  },
+  "types": {
+    "SOFT_LEATHER": "Miękka skóra",
+    "BOILED_LEATHER": "Skóra utwardzana",
+    "MAIL": "Kolczy",
+    "PLATE": "Płytowy"
+  },
+  "locations": {
+    "HEAD": "Głowa",
+    "ARMS": "Ręce",
+    "BODY": "Korpus",
+    "LEGS": "Nogi"
+  },
+  "qualities": {
+    "FLEXIBLE": "Elastyczny",
+    "PARTIAL": "Częściowy",
+    "WEAKPOINTS": "Słabe punkty",
+    "IMPENETRABLE": "Nieprzebijalna"
+  },
+  "penalties": {
+    "PERCEPTION_10": "-10 do Percepcji",
+    "PERCEPTION_20": "-20 do Percepcji",
+    "STEALTH_10": "-10 do Skradania"
+  },
+  "availability": {
+    "COMMON": "Powszechny",
+    "SCARCE": "Rzadki",
+    "RARE": "Bardzo rzadki"
+  },
+  "notes": {
+    "SOFT_LEATHER": "Miękka Skóra może być noszona bez kary pod dowolnym innym pancerzem.",
+    "MAIL_PLATE": "Noszenie dowolnych elementów pancerza kolczego lub płytowego obarczone jest karą -10 do Skradania dla obu typów pancerza."
+  }
+}

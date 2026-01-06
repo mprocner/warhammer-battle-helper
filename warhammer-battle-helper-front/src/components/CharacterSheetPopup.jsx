@@ -3,13 +3,15 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 import skillsData from '../data/skills.json';
-import talentsData from '../data/talents.json';  
+import talentsData from '../data/talents.json';
+import weaponsData from '../data/weapons.json';
+import armourData from '../data/armour.json';
 import ModifierSelectionModal from './ModifierSelectionModal'; 
 import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../api/axios'; 
 
 function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token }) {
-    const { t } = useTranslation(['translation', 'skills', 'talents']); 
+    const { t } = useTranslation(['translation', 'skills', 'talents', 'weapons', 'armour']); 
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [size, setSize] = useState({ width: 1400, height: 800 });
@@ -23,7 +25,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         basicSkills: character.basicSkills || {},
         advancedSkills: character.advancedSkills || {},
         favoriteSkills: character.favoriteSkills || [],
-        talents: character.talents || []
+        talents: character.talents || [],
+        weapons: character.weapons || [],
+        armour: character.armour || []
     });
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -42,7 +46,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             basicSkills: character.basicSkills || {},
             advancedSkills: character.advancedSkills || {},
             favoriteSkills: character.favoriteSkills || [],
-            talents: character.talents || []
+            talents: character.talents || [],
+            weapons: character.weapons || [],
+            armour: character.armour || []
         });
         setHasChanges(false);
     }, [character]);
@@ -236,6 +242,46 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             name: t(`talents:${talent.key}.name`),
             max: talent.max
         })).sort((a, b) => a.name.localeCompare(b.name));
+    }, [t]);
+
+    // Generate weapon options from weapons data with translated types
+    const weaponOptions = useMemo(() => {
+        console.log(weaponsData);
+        return weaponsData.map(weapon => {
+            // Parse weapon type like "MELEE_BASIC" or "RANGED_BOW"
+            const [weaponCategory, weaponType] = weapon.type.split('_');
+
+            // Get translation from skills specializations
+            let typeTranslation = '';
+            if (weaponCategory === 'MELEE') {
+                typeTranslation = t(`skills:MELEE.specialisations.${weaponType}`);
+            } else if (weaponCategory === 'RANGED') {
+                typeTranslation = t(`skills:RANGED.specialisations.${weaponType}`);
+            }
+
+            const weaponName = t(`weapons:weapons.${weapon.key}.name`);
+            console.log(`weapons:weapons.${weapon.key}.name`)
+            return {
+                key: weapon.key,
+                name: weaponName,
+                displayName: `${weaponName} (${typeTranslation})`,
+                type: weapon.type
+            };
+        });
+    }, [t]);
+
+    // Generate armour options from armour data with translated types
+    const armourOptions = useMemo(() => {
+        return armourData.map(armour => {
+            const armourName = t(`armour:armour.${armour.key}.name`);
+            const typeTranslation = t(`armour:types.${armour.type}`);
+            return {
+                key: armour.key,
+                name: armourName,
+                displayName: `${armourName} (${typeTranslation})`,
+                type: armour.type
+            };
+        });
     }, [t]);
 
     // Convert advanced skills map to array for rendering (sorted alphabetically)
@@ -538,6 +584,200 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             ...prev,
             talents: prev.talents.map((talent, idx) =>
                 idx === index ? { ...talent, timesTaken: numValue } : talent
+            )
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Add weapon from dropdown
+    const handleAddWeapon = (weaponKey) => {
+        if (!weaponKey) return;
+
+        const weaponData = weaponsData.find(w => w.key === weaponKey);
+        if (!weaponData) return;
+
+        // Get weapon name
+        const weaponName = t(`weapons:weapons.${weaponData.key}.name`);
+
+        // Get weapon type (group)
+        const [weaponCategory, weaponType] = weaponData.type.split('_');
+        let typeTranslation = '';
+        if (weaponCategory === 'MELEE') {
+            typeTranslation = t(`skills:MELEE.specialisations.${weaponType}`);
+        } else if (weaponCategory === 'RANGED') {
+            typeTranslation = t(`skills:RANGED.specialisations.${weaponType}`);
+        }
+
+        // Format damage
+        let damageText = '';
+        if (weaponData.damage) {
+            if (weaponData.damage.attribute) {
+                damageText = weaponData.damage.attribute === 'STRENGTH' ? 'SB' : 'BB';
+                if (weaponData.damage.bonus > 0) {
+                    damageText += `+${weaponData.damage.bonus}`;
+                } else if (weaponData.damage.bonus < 0) {
+                    damageText += weaponData.damage.bonus;
+                }
+            } else if (weaponData.damage.bonus) {
+                damageText = weaponData.damage.bonus.toString();
+            }
+        }
+
+        // Format range/reach
+        let rangeReachText = '';
+        if (weaponData.reach) {
+            rangeReachText = t(`weapons:reaches.${weaponData.reach}`);
+        } else if (weaponData.range) {
+            if (weaponData.range.value !== null) {
+                rangeReachText = weaponData.range.value.toString();
+            } else if (weaponData.range.attribute) {
+                const attr = weaponData.range.attribute === 'STRENGTH' ? 'SB' : 'BB';
+                const mult = weaponData.range.multiplier || 1;
+                rangeReachText = mult > 1 ? `${attr}x${mult}` : attr;
+            }
+        }
+
+        // Format qualities
+        const qualitiesText = weaponData.qualities
+            ? weaponData.qualities.map(q => t(`weapons:qualities.${q}`)).join(', ')
+            : '';
+
+        setEditedCharacter(prev => ({
+            ...prev,
+            weapons: [
+                ...(prev.weapons || []),
+                {
+                    name: weaponName,
+                    group: typeTranslation,
+                    enc: weaponData.encumbrance.toString(),
+                    range: rangeReachText,
+                    damage: damageText,
+                    qualities: qualitiesText
+                }
+            ]
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove weapon
+    const handleRemoveWeapon = (index) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            weapons: prev.weapons.filter((_, idx) => idx !== index)
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update weapon field
+    const handleWeaponFieldChange = (index, field, value) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            weapons: prev.weapons.map((weapon, idx) =>
+                idx === index ? { ...weapon, [field]: value } : weapon
+            )
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Add armour from dropdown
+    const handleAddArmour = (armourKey) => {
+        if (!armourKey) return;
+
+        const armourItem = armourData.find(a => a.key === armourKey);
+        if (!armourItem) return;
+
+        // Get armour name
+        const armourName = t(`armour:armour.${armourItem.key}.name`);
+
+        // Format locations
+        const locationsText = armourItem.locations
+            .map(loc => t(`armour:locations.${loc}`))
+            .join(', ');
+
+        // Format qualities
+        const qualitiesText = armourItem.qualities.length > 0
+            ? armourItem.qualities.map(q => t(`armour:qualities.${q}`)).join(', ')
+            : '';
+
+        setEditedCharacter(prev => ({
+            ...prev,
+            armour: [
+                ...(prev.armour || []),
+                {
+                    name: armourName,
+                    locations: locationsText,
+                    enc: armourItem.encumbrance.toString(),
+                    ap: armourItem.armorPoints.toString(),
+                    qualities: qualitiesText
+                }
+            ]
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove armour
+    const handleRemoveArmour = (index) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            armour: prev.armour.filter((_, idx) => idx !== index)
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update armour field
+    const handleArmourFieldChange = (index, field, value) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            armour: prev.armour.map((armour, idx) =>
+                idx === index ? { ...armour, [field]: value } : armour
             )
         }));
         setHasChanges(true);
@@ -1233,30 +1473,46 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             <th style={{ width: '80px' }}>{t('characterSheet.rangeReach')}</th>
                                             <th style={{ width: '70px' }}>{t('characterSheet.damage')}</th>
                                             <th>{t('characterSheet.qualities')}</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {character.weapons?.map((weapon, idx) => (
+                                        {editedCharacter.weapons?.map((weapon, idx) => (
                                             <tr key={idx}>
-                                                <td><input type="text" value={weapon.name || ''} readOnly /></td>
-                                                <td><input type="text" value={weapon.group || ''} readOnly /></td>
-                                                <td><input type="text" value={weapon.enc || ''} readOnly /></td>
-                                                <td><input type="text" value={weapon.range || ''} readOnly /></td>
-                                                <td><input type="text" value={weapon.damage || ''} readOnly /></td>
-                                                <td><input type="text" value={weapon.qualities || ''} readOnly /></td>
+                                                <td><input type="text" value={weapon.name || ''} onChange={(e) => handleWeaponFieldChange(idx, 'name', e.target.value)} /></td>
+                                                <td><input type="text" value={weapon.group || ''} onChange={(e) => handleWeaponFieldChange(idx, 'group', e.target.value)} /></td>
+                                                <td><input type="text" value={weapon.enc || ''} onChange={(e) => handleWeaponFieldChange(idx, 'enc', e.target.value)} /></td>
+                                                <td><input type="text" value={weapon.range || ''} onChange={(e) => handleWeaponFieldChange(idx, 'range', e.target.value)} /></td>
+                                                <td><input type="text" value={weapon.damage || ''} onChange={(e) => handleWeaponFieldChange(idx, 'damage', e.target.value)} /></td>
+                                                <td><input type="text" value={weapon.qualities || ''} onChange={(e) => handleWeaponFieldChange(idx, 'qualities', e.target.value)} /></td>
+                                                <td>
+                                                    <button
+                                                        className="skill-delete-btn"
+                                                        onClick={() => handleRemoveWeapon(idx)}
+                                                        title={t('common.delete')}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        )) || (
-                                            <tr>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                            </tr>
-                                        )}
+                                        ))}
                                     </tbody>
                                 </table>
+                                <div style={{ marginTop: '10px' }}>
+                                    <select
+                                        onChange={(e) => {
+                                            handleAddWeapon(e.target.value);
+                                            e.target.value = '';
+                                        }}
+                                    >
+                                        <option value="">{t('characterSheet.addWeapon')}</option>
+                                        {weaponOptions.map(option => (
+                                            <option key={option.key} value={option.key}>
+                                                {option.displayName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Armour */}
@@ -1270,28 +1526,45 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
                                             <th style={{ width: '50px' }}>{t('characterSheet.ap')}</th>
                                             <th>{t('characterSheet.qualities')}</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {character.armour?.map((armour, idx) => (
+                                        {editedCharacter.armour?.map((armour, idx) => (
                                             <tr key={idx}>
-                                                <td><input type="text" value={armour.name || ''} readOnly /></td>
-                                                <td><input type="text" value={armour.locations || ''} readOnly /></td>
-                                                <td><input type="text" value={armour.enc || ''} readOnly /></td>
-                                                <td><input type="text" value={armour.ap || ''} readOnly /></td>
-                                                <td><input type="text" value={armour.qualities || ''} readOnly /></td>
+                                                <td><input type="text" value={armour.name || ''} onChange={(e) => handleArmourFieldChange(idx, 'name', e.target.value)} /></td>
+                                                <td><input type="text" value={armour.locations || ''} onChange={(e) => handleArmourFieldChange(idx, 'locations', e.target.value)} /></td>
+                                                <td><input type="text" value={armour.enc || ''} onChange={(e) => handleArmourFieldChange(idx, 'enc', e.target.value)} /></td>
+                                                <td><input type="text" value={armour.ap || ''} onChange={(e) => handleArmourFieldChange(idx, 'ap', e.target.value)} /></td>
+                                                <td><input type="text" value={armour.qualities || ''} onChange={(e) => handleArmourFieldChange(idx, 'qualities', e.target.value)} /></td>
+                                                <td>
+                                                    <button
+                                                        className="skill-delete-btn"
+                                                        onClick={() => handleRemoveArmour(idx)}
+                                                        title={t('common.delete')}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        )) || (
-                                            <tr>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                            </tr>
-                                        )}
+                                        ))}
                                     </tbody>
                                 </table>
+                                <div style={{ marginTop: '10px' }}>
+                                    <select
+                                        onChange={(e) => {
+                                            handleAddArmour(e.target.value);
+                                            e.target.value = '';
+                                        }}
+                                    >
+                                        <option value="">{t('characterSheet.addArmour')}</option>
+                                        {armourOptions.map(option => (
+                                            <option key={option.key} value={option.key}>
+                                                {option.displayName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Wealth */}

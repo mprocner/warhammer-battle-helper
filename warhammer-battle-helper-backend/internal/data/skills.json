@@ -166,7 +166,7 @@
     "grouped": true,
     "weaponSkill": true,
     "basicMeleeSpecializations": ["BASIC", "BRAWLING"],
-    "specialisations": ["BASIC", "BRAWLING", "CAVALRY", "FENCING", "FLAIL", "PARRY", "POLE_ARM", "TWO_HANDED"]
+    "specialisations": ["BASIC", "BRAWLING", "CAVALRY", "FENCING", "FLAIL", "PARRY", "POLEARM", "TWOHANDED"]
   },
   {
     "key": "NAVIGATION",
