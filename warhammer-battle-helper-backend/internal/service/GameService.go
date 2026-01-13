@@ -312,7 +312,7 @@ func (s *GameService) Fight(gameID string, attackerID, defenderID string, attack
 		Data: map[string]interface{}{
 			"attackerId": attackerID,
 			"defenderId": defenderID,
-			"messages":   result.Messages,
+			"result":     result.Result,
 		},
 	}
 	s.gameRepo.AddEvent(gameID, event)
@@ -320,19 +320,19 @@ func (s *GameService) Fight(gameID string, attackerID, defenderID string, attack
 	// Broadcast fight result to all clients
 	s.hub.BroadcastToGame(gameID, "FIGHT_RESULT", map[string]interface{}{
 		"username": username,
-		"messages": result.Messages,
+		"result":   result.Result,
 	})
 
 	// Convert response to map for API response
 	resultMap := map[string]interface{}{
-		"messages": result.Messages,
+		"result": result.Result,
 	}
 
 	return resultMap, nil
 }
 
 // RollDice rolls dice and logs the result
-func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, characterID string, attributeName string, attributeModifier int) (int, error) {
+func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, characterID string, attributeName string, attributeModifier int) (int, string, int, error) {
 	// Use the Dice service for proper random rolls
 	dice := Dice{Sizes: sides}
 	result := dice.Roll()
@@ -350,7 +350,7 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 		// Fetch character from database to get actual characteristic value
 		character, err := s.charRepo.GetByID(characterID)
 		if err != nil {
-			return 0, fmt.Errorf("character not found: %w", err)
+			return 0, "", 0, fmt.Errorf("character not found: %w", err)
 		}
 
 		characterName = character.BasicInfo.Name
@@ -379,11 +379,11 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 		case "Fel":
 			baseValue = character.Characteristics.Current.Fel
 		default:
-			return 0, fmt.Errorf("unknown attribute: %s", attributeName)
+			return 0, "", 0, fmt.Errorf("unknown attribute: %s", attributeName)
 		}
 
 		if baseValue == 0 {
-			return 0, fmt.Errorf("characteristic %s not found or is zero", attributeName)
+			return 0, "", 0, fmt.Errorf("characteristic %s not found or is zero", attributeName)
 		}
 
 		// Apply modifier on backend (server-authoritative)
@@ -405,7 +405,7 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	}
 
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
-		return 0, err
+		return 0, "", 0, err
 	}
 
 	// Prepare broadcast data
@@ -427,7 +427,7 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	// Broadcast to all clients
 	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", broadcastData)
 
-	return result, nil
+	return result, characterName, attributeValue, nil
 }
 
 // Skill represents a skill from skills.json

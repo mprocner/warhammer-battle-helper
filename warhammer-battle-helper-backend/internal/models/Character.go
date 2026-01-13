@@ -163,7 +163,7 @@ type Skill struct {
 
 type Spell struct {
 	Name     string `bson:"name" json:"name"`
-	TN       string `bson:"tn" json:"tn"`
+	CN       string `bson:"cn" json:"cn"`
 	Range    string `bson:"range" json:"range"`
 	Target   string `bson:"target" json:"target"`
 	Duration string `bson:"duration" json:"duration"`

@@ -791,6 +791,69 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         }, 1000);
     };
 
+    // Add spell
+    const handleAddSpell = () => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            spells: [
+                ...(prev.spells || []),
+                {
+                    name: '',
+                    cn: '',
+                    range: '',
+                    target: '',
+                    duration: '',
+                    effect: ''
+                }
+            ]
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Remove spell
+    const handleRemoveSpell = (index) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            spells: prev.spells.filter((_, idx) => idx !== index)
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update spell field
+    const handleSpellFieldChange = (index, field, value) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            spells: prev.spells.map((spell, idx) =>
+                idx === index ? { ...spell, [field]: value } : spell
+            )
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
     // Toggle favorite skill
     const handleToggleFavoriteSkill = async (skillKey) => {
         const updatedCharacter = {
@@ -2284,35 +2347,44 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <thead>
                                         <tr>
                                             <th>{t('characterSheet.name')}</th>
-                                            <th style={{ width: '50px' }}>{t('characterSheet.tn')}</th>
+                                            <th style={{ width: '50px' }}>{t('characterSheet.cn')}</th>
                                             <th style={{ width: '70px' }}>{t('characterSheet.range')}</th>
                                             <th style={{ width: '70px' }}>{t('characterSheet.target')}</th>
                                             <th style={{ width: '70px' }}>{t('characterSheet.duration')}</th>
                                             <th>{t('characterSheet.effect')}</th>
+                                            <th style={{ width: '40px' }}></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {character.spells?.map((spell, idx) => (
+                                        {editedCharacter.spells?.map((spell, idx) => (
                                             <tr key={idx}>
-                                                <td><input type="text" value={spell.name || ''} readOnly /></td>
-                                                <td><input type="text" value={spell.tn || ''} readOnly /></td>
-                                                <td><input type="text" value={spell.range || ''} readOnly /></td>
-                                                <td><input type="text" value={spell.target || ''} readOnly /></td>
-                                                <td><input type="text" value={spell.duration || ''} readOnly /></td>
-                                                <td><input type="text" value={spell.effect || ''} readOnly /></td>
+                                                <td><input type="text" value={spell.name || ''} onChange={(e) => handleSpellFieldChange(idx, 'name', e.target.value)} /></td>
+                                                <td><input type="number" value={spell.cn || ''} onChange={(e) => handleSpellFieldChange(idx, 'cn', e.target.value)} /></td>
+                                                <td><input type="text" value={spell.range || ''} onChange={(e) => handleSpellFieldChange(idx, 'range', e.target.value)} /></td>
+                                                <td><input type="text" value={spell.target || ''} onChange={(e) => handleSpellFieldChange(idx, 'target', e.target.value)} /></td>
+                                                <td><input type="text" value={spell.duration || ''} onChange={(e) => handleSpellFieldChange(idx, 'duration', e.target.value)} /></td>
+                                                <td><input type="text" value={spell.effect || ''} onChange={(e) => handleSpellFieldChange(idx, 'effect', e.target.value)} /></td>
+                                                <td>
+                                                    <button
+                                                        className="skill-delete-btn"
+                                                        onClick={() => handleRemoveSpell(idx)}
+                                                        title={t('common.delete')}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        )) || (
-                                            <tr>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                                <td><input type="text" readOnly /></td>
-                                            </tr>
-                                        )}
+                                        ))}
                                     </tbody>
                                 </table>
+                                <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                                    <button
+                                        className="add-item-btn"
+                                        onClick={handleAddSpell}
+                                    >
+                                        + {t('characterSheet.addSpell')}
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Ambitions */}

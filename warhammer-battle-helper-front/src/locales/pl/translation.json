@@ -156,6 +156,7 @@
     "addWeapon": "-- Dodaj Broń --",
     "rangeReach": "Zasięg/Dystans",
     "tn": "ST",
+    "cn": "PZ",
     "range": "Zasięg",
     "target": "Cel",
     "duration": "Czas trwania",
@@ -164,7 +165,8 @@
     "damage": "Obrażenia",
     "location": "Lokalizacja",
     "ap": "PA",
-    "addArmour": "-- Dodaj Zbroję --"
+    "addArmour": "-- Dodaj Zbroję --",
+    "addSpell": "Dodaj Zaklęcie"
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",
@@ -250,5 +252,28 @@
     "CHARACTER_LEFT_GAME": "{{name}} opuścił grę",
     "GAME_STARTED": "Gra rozpoczęta",
     "GAME_ENDED": "Gra zakończona"
+  },
+  "log": {
+    "rolledDice": "Rzucono k{{sides}}: {{result}}",
+    "character": "Postać",
+    "test": "Test",
+    "rolled": "rzucono",
+    "vs": "vs",
+    "modifier": "Modyfikator",
+    "criticalSuccess": "Krytyczny Sukces!",
+    "fumble": "Fiasko!",
+    "success": "Sukces",
+    "failure": "Porażka",
+    "skill": "Umiejętność",
+    "attacker": "Atakujący",
+    "defender": "Obrońca",
+    "wins": "Wygrywa!",
+    "hitsWith": "Trafia z",
+    "for": "za",
+    "damage": "obrażeń",
+    "successfullyDefends": "Pomyślnie broni",
+    "sl": "PS",
+    "sb": "Bonus Siły",
+    "weapon": "Broń"
   }
 }

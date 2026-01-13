@@ -299,16 +299,27 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.CharacterId, req.Attribute, req.AttributeModifier)
+	result, characterName, attributeValue, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.CharacterId, req.Attribute, req.AttributeModifier)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"result": result,
 		"sides":  req.Sides,
-	})
+	}
+
+	// Add character and attribute data if available
+	if req.CharacterId != "" && req.Attribute != "" {
+		response["characterId"] = req.CharacterId
+		response["characterName"] = characterName
+		response["attribute"] = req.Attribute
+		response["attributeValue"] = attributeValue
+		response["modifier"] = req.AttributeModifier
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // RollSkill rolls a skill check in the game context and broadcasts to all players

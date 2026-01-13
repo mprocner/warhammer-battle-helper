@@ -18,9 +18,9 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
   const [characterUpdateTrigger, setCharacterUpdateTrigger] = useState(0);
 
   // Add log message - Define early so it can be used in callbacks
-  const addLogMessage = useCallback((message, type = 'info') => {
+  const addLogMessage = useCallback((message, type = 'info', data = null) => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs((prev) => [...prev, { message, type, timestamp }]);
+    setLogs((prev) => [...prev, { message, type, timestamp, data }]);
   }, []);
 
   // Fetch initial game state via REST API
@@ -57,10 +57,67 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
               // Don't show movement events in chat
               return null;
             case 'dice_roll':
-              message = `${event.username} rolled d${event.data.sides}: ${event.data.result}`;
-              return { message, type: 'success', timestamp };
+              // Check if it's a skill roll (has skillKey)
+              if (event.data.skillKey && event.data.characterId) {
+                return {
+                  message: null,
+                  type: 'skill_roll',
+                  timestamp,
+                  data: {
+                    rollType: 'skill',
+                    ...event.data
+                  }
+                };
+              }
+              // Check if it's an attribute roll
+              else if (event.data.attribute && event.data.characterId) {
+                return {
+                  message: null,
+                  type: 'dice_roll',
+                  timestamp,
+                  data: {
+                    rollType: 'attribute',
+                    ...event.data
+                  }
+                };
+              }
+              // Simple dice roll
+              else {
+                return {
+                  message: null,
+                  type: 'dice_roll',
+                  timestamp,
+                  data: {
+                    rollType: 'simple',
+                    result: event.data.result,
+                    sides: event.data.sides
+                  }
+                };
+              }
+            case 'skill_roll':
+              return {
+                message: null,
+                type: 'skill_roll',
+                timestamp,
+                data: {
+                  rollType: 'skill',
+                  ...event.data
+                }
+              };
             case 'attack':
-              // For fights, we need to process messages array
+              // Check if we have structured fight data
+              if (event.data.result) {
+                return {
+                  message: null,
+                  type: 'fight',
+                  timestamp,
+                  data: {
+                    rollType: 'fight',
+                    ...event.data
+                  }
+                };
+              }
+              // Fallback for old format
               if (event.data.messages && Array.isArray(event.data.messages)) {
                 return event.data.messages.map(msg => ({
                   message: msg,
@@ -148,75 +205,29 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
         break;
 
       case 'DICE_ROLLED':
-        // Check if this is a characteristic test
-        if (message.payload.attribute && message.payload.attributeValue) {
-          const rollResult = message.payload.result;
-          const attributeValue = message.payload.attributeValue;
-          const attributeModifier = message.payload.attributeModifier || 0;
-          const successLevel = Math.floor(attributeValue / 10) - Math.floor(rollResult / 10);
-          const success = rollResult <= attributeValue;
-          const successText = success
-            ? `Success! (SL: ${successLevel})`
-            : `Failure! (SL: ${successLevel})`;
-
-          // Add modifier text if non-zero
-          const modifierText = attributeModifier !== 0
-            ? ` (${attributeModifier > 0 ? '+' : ''}${attributeModifier})`
-            : '';
-
-          addLogMessage(
-            `${message.payload.characterName || 'Character'} - ${message.payload.attribute}${modifierText} Test: Rolled ${rollResult} vs ${attributeValue} - ${successText}`,
-            success ? 'success' : 'error'
-          );
-        } else {
-          // Regular dice roll
-          addLogMessage(
-            `${message.payload.username} rolled d${message.payload.sides}: ${message.payload.result}`,
-            'success'
-          );
-        }
+        // Pass structured data to log
+        addLogMessage(null, 'dice_roll', {
+          rollType: message.payload.attribute ? 'attribute' : 'simple',
+          ...message.payload
+        });
         break;
 
       case 'SKILL_ROLLED':
-        {
-          const success = message.payload.success;
-          const SL = message.payload.SL;
-          const rollValue = message.payload.rollValue;
-          const targetValue = message.payload.targetValue;
-          const modifier = message.payload.modifier || 0;
-          const characterName = message.payload.characterName || 'Character';
-          const skillKey = message.payload.skillKey;
-
-          const successText = success 
-            ? `Success! (SL: ${SL})`
-            : `Failure! (SL: ${SL})`;
-
-          // Add modifier text if non-zero
-          const modifierText = modifier !== 0
-            ? ` (${modifier > 0 ? '+' : ''}${modifier})`
-            : '';
-
-          // Format skill name: replace underscores with spaces and title case
-          const skillName = skillKey
-            .split('_')
-            .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-            .join(' ');
-
-          addLogMessage(
-            `${characterName} - ${skillName}${modifierText} Test: Rolled ${rollValue} vs ${targetValue} - ${successText}`,
-            success ? 'success' : 'error'
-          );
-        }
+        // Pass structured data to log
+        addLogMessage(null, 'skill_roll', {
+          rollType: 'skill',
+          ...message.payload
+        });
         break;
 
       case 'FIGHT_RESULT':
-        addLogMessage(`${message.payload.username} initiated combat`, 'warning');
-        // Display all fight messages
-        if (message.payload.messages && Array.isArray(message.payload.messages)) {
-          message.payload.messages.forEach(msg => {
-            addLogMessage(msg, 'info');
-          });
-        }
+        // Pass structured fight data to log
+        console.log('FIGHT_RESULT received:', message.payload);
+        console.log('FIGHT_RESULT result:', message.payload.result);
+        addLogMessage(null, 'fight', {
+          rollType: 'fight',
+          ...message.payload
+        });
         break;
 
       default:

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"battle-helper/internal/http/responses"
 	"battle-helper/internal/models"
 	"fmt"
 	"math"
@@ -25,9 +26,7 @@ func parseInt(s string) int {
 	return val
 }
 
-func (d Dice) Fight(attacker *models.Character, defender *models.Character, modifier int, defenderModifier int) []string {
-	var messages []string
-
+func (d Dice) Fight(attacker *models.Character, defender *models.Character, modifier int, defenderModifier int) responses.FightResult {
 	attackerResult := d.Roll()
 	defenderResult := d.Roll()
 
@@ -45,26 +44,90 @@ func (d Dice) Fight(attacker *models.Character, defender *models.Character, modi
 	defenderWSWithModifier := defenderWS + defenderModifier
 
 	attackerSuccessLevel := d.calculateSuccessLevel(attackerResult, attackerWSWithModifier)
-	messages = append(messages, fmt.Sprintf("%s attack and rolls: %d, success level: %d, WS(%d): %d", attacker.BasicInfo.Name, attackerResult, attackerSuccessLevel, modifier, attackerWSWithModifier))
 	defenderSuccessLevel := d.calculateSuccessLevel(defenderResult, defenderWSWithModifier)
-	messages = append(messages, fmt.Sprintf("%s rolls: %d, success level: %d, WS(%d): %d", defender.BasicInfo.Name, defenderResult, defenderSuccessLevel, defenderModifier, defenderWSWithModifier))
 
+	// Create attacker result
+	attackerFightResult := responses.FightCharacterResult{
+		CharacterID:   attacker.ID.Hex(),
+		CharacterName: attacker.BasicInfo.Name,
+		Roll:          attackerResult,
+		SuccessLevel:  attackerSuccessLevel,
+		TargetValue:   attackerWSWithModifier,
+		Modifier:      modifier,
+		BaseValue:     attackerWS,
+		IsCritSuccess: attackerResult <= 5 && attackerSuccessLevel > 0,
+		IsCritFailure: attackerResult >= 96 && attackerSuccessLevel < 0,
+	}
+
+	// Create defender result
+	defenderFightResult := responses.FightCharacterResult{
+		CharacterID:   defender.ID.Hex(),
+		CharacterName: defender.BasicInfo.Name,
+		Roll:          defenderResult,
+		SuccessLevel:  defenderSuccessLevel,
+		TargetValue:   defenderWSWithModifier,
+		Modifier:      defenderModifier,
+		BaseValue:     defenderWS,
+		IsCritSuccess: defenderResult <= 5 && defenderSuccessLevel > 0,
+		IsCritFailure: defenderResult >= 96 && defenderSuccessLevel < 0,
+	}
+
+	// Determine winner
 	absSuccessLevels := int(math.Round(math.Abs(float64(attackerSuccessLevel) - float64(defenderSuccessLevel))))
+	var winner *models.Character
+	var attackerWins bool
 
 	if attackerSuccessLevel > defenderSuccessLevel {
-		messages = append(messages, d.prepareFightOutput(attacker, absSuccessLevels, true))
+		winner = attacker
+		attackerWins = true
 	} else if defenderSuccessLevel > attackerSuccessLevel {
-		messages = append(messages, d.prepareFightOutput(defender, absSuccessLevels, false))
+		winner = defender
+		attackerWins = false
 	} else {
 		if attackerWS > defenderWS {
-			messages = append(messages, d.prepareFightOutput(attacker, absSuccessLevels, true))
+			winner = attacker
+			attackerWins = true
 		} else {
-			messages = append(messages, d.prepareFightOutput(defender, absSuccessLevels, false))
+			winner = defender
+			attackerWins = false
 		}
 	}
 
-	return messages
+	// Calculate damage if attacker wins
+	var damage, strengthBonus, weaponDamage int
+	weaponName := "Unarmed"
 
+	if attackerWins {
+		strength := winner.Characteristics.Current.S
+		if strength == 0 {
+			strength = 30
+		}
+		strengthBonus = int(math.Floor(float64(strength / 10)))
+
+		if len(winner.Weapons) > 0 {
+			weaponName = winner.Weapons[0].Name
+			weaponDamage = parseInt(winner.Weapons[0].Damage)
+		}
+
+		damage = absSuccessLevels + weaponDamage + strengthBonus
+	}
+
+	winnerResult := responses.FightWinner{
+		CharacterID:     winner.ID.Hex(),
+		CharacterName:   winner.BasicInfo.Name,
+		AttackerWins:    attackerWins,
+		NetSuccessLevel: absSuccessLevels,
+		Damage:          damage,
+		WeaponName:      weaponName,
+		WeaponDamage:    weaponDamage,
+		StrengthBonus:   strengthBonus,
+	}
+
+	return responses.FightResult{
+		Attacker: attackerFightResult,
+		Defender: defenderFightResult,
+		Winner:   winnerResult,
+	}
 }
 
 func (Dice) calculateSuccessLevel(rollResult int, attribute int) int {

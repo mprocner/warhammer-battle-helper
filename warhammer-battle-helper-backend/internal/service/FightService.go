@@ -35,5 +35,7 @@ func (fs *FightService) Fight(request requests.FightRequest) responses.FightResp
 
 	rolls := Dice{Sizes: 100}
 
-	return responses.FightResponse{Messages: rolls.Fight(attackerChar, defenderChar, request.Attacker.Modifier, request.Defender.Modifier)}
+	result := rolls.Fight(attackerChar, defenderChar, request.Attacker.Modifier, request.Defender.Modifier)
+
+	return responses.FightResponse{Result: result}
 }

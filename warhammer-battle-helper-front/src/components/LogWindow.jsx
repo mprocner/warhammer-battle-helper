@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { useTranslation } from 'react-i18next';
 import {
     Paper,
     Box,
@@ -10,16 +10,374 @@ import {
     ListItemText,
     Button,
     TextField,
-    Stack,
-    Divider
+    Stack
 } from '@mui/material';
 import {
     Info as InfoIcon,
     CheckCircle as SuccessIcon,
     Warning as WarningIcon,
-    Error as ErrorIcon,
-    Casino as DiceIcon
+    Error as ErrorIcon
 } from '@mui/icons-material';
+
+// Component for rendering Wax Seal Token
+const WaxSealToken = ({ successLevel, isCritSuccess, isCritFailure, isSuccess }) => {
+    return (
+        <Box
+            className="seal"
+            sx={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: '"Cinzel", serif',
+                fontWeight: 700,
+                fontSize: '18px',
+                flexShrink: 0,
+                color: '#fff',
+                ...(isCritSuccess && {
+                    background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), transparent 60%), radial-gradient(circle at 50% 50%, #d4af37, #b8941f)',
+                    border: '3px solid #8b6914',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4), 0 0 15px rgba(212, 175, 55, 0.5)'
+                }),
+                ...(isCritFailure && {
+                    background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%), radial-gradient(circle at 50% 50%, #8b2424, #6b1818)',
+                    border: '3px solid #4a0f0f',
+                    color: '#ffcccc',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 10px rgba(139, 36, 36, 0.4)'
+                }),
+                ...(isSuccess && !isCritSuccess && {
+                    background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%), radial-gradient(circle at 50% 50%, #7a9a6a, #5a7a4a)',
+                    border: '3px solid #4a5a3a',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)'
+                }),
+                ...(!isSuccess && !isCritFailure && {
+                    background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%), radial-gradient(circle at 50% 50%, #c94444, #a93434)',
+                    border: '3px solid #8b2424',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)'
+                })
+            }}
+        >
+            {successLevel >= 0 ? '+' : ''}{successLevel}
+        </Box>
+    );
+};
+
+// Render simple dice roll (d6, d10, d100, etc.)
+const RenderSimpleDiceRoll = ({ data, timestamp }) => {
+    const { t } = useTranslation();
+    const result = data.result;
+    const sides = data.sides;
+
+    return (
+        <ListItem
+            sx={{
+                borderLeft: '4px solid #5a7a4a',
+                mb: 1,
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(253, 248, 236, 0.8) 100%)',
+                borderRadius: 0,
+                padding: '10px 12px',
+                boxShadow: '0 2px 6px rgba(107, 68, 35, 0.12)',
+                border: '1px solid #d4a574',
+                borderLeftWidth: '4px'
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', gap: 1 }}>
+                <SuccessIcon sx={{ color: '#5a7a4a', fontSize: '1.2rem' }} />
+                <Box sx={{ flex: 1 }}>
+                    <Typography sx={{
+                        fontFamily: '"Crimson Text", serif',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.5,
+                        color: '#3a2f1f'
+                    }}>
+                        {t('log.rolledDice', { sides, result })}
+                    </Typography>
+                    {timestamp && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: '#8a7d6a',
+                                fontFamily: '"Crimson Text", serif',
+                                fontSize: '0.75rem',
+                                fontStyle: 'italic'
+                            }}
+                        >
+                            {timestamp}
+                        </Typography>
+                    )}
+                </Box>
+            </Box>
+        </ListItem>
+    );
+};
+
+// Render attribute/characteristic roll
+const RenderAttributeRoll = ({ data, timestamp }) => {
+    const { t } = useTranslation();
+    console.log('RenderAttributeRoll data:', data);
+    const rollValue = data.result;
+    const targetValue = data.attributeValue;
+    const successLevel = Math.floor(targetValue / 10) - Math.floor(rollValue / 10);
+    const isSuccess = rollValue <= targetValue;
+    const isCritSuccess = rollValue <= 5 && isSuccess;
+    const isCritFailure = rollValue >= 96 && !isSuccess;
+
+    const getColor = () => {
+        if (isCritSuccess) return '#b8941f';
+        if (isCritFailure) return '#8b2424';
+        return isSuccess ? '#4a7c59' : '#c94444';
+    };
+
+    return (
+        <ListItem
+            sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '10px',
+                mb: '10px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid #c9975b',
+                borderRadius: 0
+            }}
+        >
+            <WaxSealToken
+                successLevel={successLevel}
+                isCritSuccess={isCritSuccess}
+                isCritFailure={isCritFailure}
+                isSuccess={isSuccess}
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '4px' }}>
+                    <Typography sx={{ fontFamily: '"Cinzel", serif', fontWeight: 600, color: '#6b4423', fontSize: '13px' }}>
+                        {data.characterName || t('log.character')}
+                    </Typography>
+                    {timestamp && (
+                        <Typography sx={{ fontSize: '10px', color: '#7a5c42' }}>
+                            {timestamp}
+                        </Typography>
+                    )}
+                </Box>
+                <Typography sx={{ fontSize: '12px', color: '#7a5c42', mb: '6px' }}>
+                    <strong style={{ fontFamily: '"Cinzel", serif', color: '#6b4423' }}>{data.attribute}</strong> {t('log.test')}: {t('log.rolled')}{' '}
+                    <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{rollValue}</strong> {t('log.vs')}{' '}
+                    <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{targetValue}</strong>
+                    {data.attributeModifier !== 0 && (
+                        <span style={{ fontSize: '11px', color: '#8a7355' }}>
+                            {' '}({t('log.modifier')}: {data.attributeModifier >= 0 ? '+' : ''}{data.attributeModifier})
+                        </span>
+                    )}
+                </Typography>
+                <Typography sx={{
+                    mt: '6px',
+                    pt: '6px',
+                    borderTop: '1px dashed #c9975b',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    color: getColor()
+                }}>
+                    {isCritSuccess ? t('log.criticalSuccess') :
+                     isCritFailure ? t('log.fumble') :
+                     isSuccess ? t('log.success') : t('log.failure')}
+                </Typography>
+            </Box>
+        </ListItem>
+    );
+};
+
+// Render skill roll
+const RenderSkillRoll = ({ data, timestamp }) => {
+    const { t } = useTranslation();
+    const { success, SL, rollValue, targetValue, modifier, characterName, skillKey } = data;
+    const isCritSuccess = rollValue <= 5 && success;
+    const isCritFailure = rollValue >= 96 && !success;
+
+    // Format skill name
+    const skillName = skillKey
+        ?.split('_')
+        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(' ') || t('log.skill');
+
+    const getColor = () => {
+        if (isCritSuccess) return '#b8941f';
+        if (isCritFailure) return '#8b2424';
+        return success ? '#4a7c59' : '#c94444';
+    };
+
+    return (
+        <ListItem
+            sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '10px',
+                mb: '10px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid #c9975b',
+                borderRadius: 0
+            }}
+        >
+            <WaxSealToken
+                successLevel={SL}
+                isCritSuccess={isCritSuccess}
+                isCritFailure={isCritFailure}
+                isSuccess={success}
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '4px' }}>
+                    <Typography sx={{ fontFamily: '"Cinzel", serif', fontWeight: 600, color: '#6b4423', fontSize: '13px' }}>
+                        {characterName || t('log.character')}
+                    </Typography>
+                    {timestamp && (
+                        <Typography sx={{ fontSize: '10px', color: '#7a5c42' }}>
+                            {timestamp}
+                        </Typography>
+                    )}
+                </Box>
+                <Typography sx={{ fontSize: '12px', color: '#7a5c42', mb: '6px' }}>
+                    <strong style={{ fontFamily: '"Cinzel", serif', color: '#6b4423' }}>{skillName}</strong> {t('log.test')}: {t('log.rolled')}{' '}
+                    <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{rollValue}</strong> {t('log.vs')}{' '}
+                    <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{targetValue}</strong>
+                    {modifier !== 0 && (
+                        <span style={{ fontSize: '11px', color: '#8a7355' }}>
+                            {' '}({t('log.modifier')}: {modifier >= 0 ? '+' : ''}{modifier})
+                        </span>
+                    )}
+                </Typography>
+                <Typography sx={{
+                    mt: '6px',
+                    pt: '6px',
+                    borderTop: '1px dashed #c9975b',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    color: getColor()
+                }}>
+                    {isCritSuccess ? t('log.criticalSuccess') :
+                     isCritFailure ? t('log.fumble') :
+                     success ? t('log.success') : t('log.failure')}
+                </Typography>
+            </Box>
+        </ListItem>
+    );
+};
+
+// Render fight result
+const RenderFightResult = ({ data, timestamp }) => {
+    const { t } = useTranslation();
+    console.log('RenderFightResult data:', data);
+    const { result } = data;
+    console.log('RenderFightResult result:', result);
+
+    if (!result || !result.attacker || !result.defender || !result.winner) {
+        console.log('RenderFightResult: Missing data', { result, hasAttacker: !!result?.attacker, hasDefender: !!result?.defender, hasWinner: !!result?.winner });
+        return null;
+    }
+
+    const { attacker, defender, winner } = result;
+    console.log('RenderFightResult attacker:', attacker);
+
+    return (
+        <Box sx={{ mb: '10px' }}>
+            {/* Attacker Roll */}
+            <ListItem sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '10px',
+                mb: '5px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid #c9975b',
+                borderRadius: 0
+            }}>
+                <WaxSealToken
+                    successLevel={attacker.successLevel}
+                    isCritSuccess={attacker.isCritSuccess}
+                    isCritFailure={attacker.isCritFailure}
+                    isSuccess={attacker.successLevel >= 0}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontFamily: '"Cinzel", serif', fontWeight: 600, color: '#6b4423', fontSize: '13px' }}>
+                        {attacker.characterName} ({t('log.attacker')})
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#7a5c42' }}>
+                        {t('log.rolled')} <strong>{attacker.roll}</strong> {t('log.vs')} <strong>{attacker.targetValue}</strong>
+                        {attacker.modifier !== 0 && ` (${t('log.modifier')}: ${attacker.modifier >= 0 ? '+' : ''}${attacker.modifier})`}
+                    </Typography>
+                </Box>
+            </ListItem>
+
+            {/* Defender Roll */}
+            <ListItem sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '10px',
+                mb: '5px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid #c9975b',
+                borderRadius: 0
+            }}>
+                <WaxSealToken
+                    successLevel={defender.successLevel}
+                    isCritSuccess={defender.isCritSuccess}
+                    isCritFailure={defender.isCritFailure}
+                    isSuccess={defender.successLevel >= 0}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontFamily: '"Cinzel", serif', fontWeight: 600, color: '#6b4423', fontSize: '13px' }}>
+                        {defender.characterName} ({t('log.defender')})
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#7a5c42' }}>
+                        {t('log.rolled')} <strong>{defender.roll}</strong> {t('log.vs')} <strong>{defender.targetValue}</strong>
+                        {defender.modifier !== 0 && ` (${t('log.modifier')}: ${defender.modifier >= 0 ? '+' : ''}${defender.modifier})`}
+                    </Typography>
+                </Box>
+            </ListItem>
+
+            {/* Winner Result */}
+            <Box sx={{
+                padding: '10px',
+                background: winner.attackerWins
+                    ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(184, 148, 31, 0.1))'
+                    : 'linear-gradient(135deg, rgba(122, 154, 106, 0.2), rgba(90, 122, 74, 0.1))',
+                border: '2px solid #c9975b',
+                borderRadius: 0,
+                textAlign: 'center'
+            }}>
+                <Typography sx={{
+                    fontFamily: '"Cinzel", serif',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    color: '#6b4423',
+                    mb: '6px'
+                }}>
+                    {winner.characterName} {t('log.wins')}
+                </Typography>
+                {winner.attackerWins && (
+                    <Typography sx={{ fontSize: '12px', color: '#7a5c42' }}>
+                        {t('log.hitsWith')} <strong>{winner.weaponName}</strong> {t('log.for')}{' '}
+                        <strong style={{ color: '#c94444' }}>{winner.damage}</strong> {t('log.damage')}
+                        <br/>
+                        <span style={{ fontSize: '10px' }}>
+                            ({t('log.sl')}: {winner.netSuccessLevel}, {t('log.sb')}: {winner.strengthBonus}, {t('log.weapon')}: {winner.weaponDamage})
+                        </span>
+                    </Typography>
+                )}
+                {!winner.attackerWins && (
+                    <Typography sx={{ fontSize: '12px', color: '#7a5c42' }}>
+                        {t('log.successfullyDefends')}
+                    </Typography>
+                )}
+            </Box>
+        </Box>
+    );
+};
 
 const LogWindow = ({
     messages = [],
@@ -38,7 +396,8 @@ const LogWindow = ({
         ? logs.map(log => ({
             text: log.message,
             type: log.type || 'info',
-            timestamp: log.timestamp
+            timestamp: log.timestamp,
+            data: log.data
           }))
         : messages;
 
@@ -52,7 +411,6 @@ const LogWindow = ({
 
     const rollDice = async (sides) => {
         try {
-            // If in a game session, use the game-specific endpoint
             if (gameId && token) {
                 const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
                     method: 'POST',
@@ -66,107 +424,71 @@ const LogWindow = ({
                 if (!response.ok) {
                     throw new Error('Failed to roll dice');
                 }
-
-                // Don't add local message - result will come via WebSocket
             } else {
-                // Fallback to single-player mode
-                const response = await axios.post(`${getApiUrl()}/roll`, {
-                    "sides": sides
-                }, {
-                    withCredentials: true
-                });
-                if (addLogMessage) {
-                    addLogMessage(`Rolled d${sides}: ${response.data.result}`, 'info');
-                }
+                const result = Math.floor(Math.random() * sides) + 1;
+                addLogMessage(`Rolled d${sides}: ${result}`, 'success');
             }
         } catch (error) {
             console.error('Error rolling dice:', error);
-            if (addLogMessage) {
-                addLogMessage('Failed to roll dice', 'error');
-            }
-        }
-    };
-
-    const handleCustomRoll = () => {
-        const sides = parseInt(customSides, 10);
-        if (!isNaN(sides) && sides > 0) {
-            rollDice(sides);
-            setCustomSides('');
+            addLogMessage('Failed to roll dice', 'error');
         }
     };
 
     const getMessageIcon = (type) => {
-        switch (type) {
+        switch(type) {
             case 'success':
-                return <SuccessIcon fontSize="small" color="success" />;
-            case 'warning':
-                return <WarningIcon fontSize="small" color="warning" />;
+                return <SuccessIcon sx={{ color: '#5a7a4a', fontSize: '1.2rem' }} />;
             case 'error':
-                return <ErrorIcon fontSize="small" color="error" />;
+                return <ErrorIcon sx={{ color: '#a93434', fontSize: '1.2rem' }} />;
+            case 'warning':
+                return <WarningIcon sx={{ color: '#c9975b', fontSize: '1.2rem' }} />;
             default:
-                return <InfoIcon fontSize="small" color="info" />;
+                return <InfoIcon sx={{ color: '#7a8a9a', fontSize: '1.2rem' }} />;
         }
     };
 
     return (
-        <Paper
-            elevation={3}
-            sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: 0,
-                background: 'linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%)',
-                border: '4px solid #7a5c42',
-                boxShadow: '0 8px 24px rgba(107, 68, 35, 0.2)',
-                position: 'relative',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    inset: '10px',
-                    border: '2px solid rgba(201, 151, 91, 0.3)',
-                    pointerEvents: 'none',
-                    zIndex: 1
-                }
-            }}
-        >
+        <Paper sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(135deg, #f9f3e8 0%, #ece3d4 100%)',
+            boxShadow: 'inset 0 0 20px rgba(107, 68, 35, 0.08)'
+        }}>
+            {/* Header */}
             <Box sx={{
                 p: 2,
-                background: 'linear-gradient(180deg, #fff9f0 0%, #f9f3e8 100%)',
-                borderBottom: '3px solid #c9975b',
-                boxShadow: '0 2px 8px rgba(107, 68, 35, 0.1)',
-                position: 'relative',
-                zIndex: 2
+                borderBottom: '3px solid',
+                borderColor: 'primary.main',
+                background: 'linear-gradient(135deg, #c9975b 0%, #a67c52 100%)',
+                boxShadow: '0 2px 8px rgba(107, 68, 35, 0.2)'
             }}>
                 <Typography
                     variant="h6"
-                    fontWeight="bold"
                     sx={{
                         fontFamily: '"Cinzel", serif',
-                        fontSize: '1.3rem',
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        color: '#8b2f2f',
-                        textShadow: '1px 1px 2px rgba(201, 151, 91, 0.3)'
+                        fontWeight: 700,
+                        color: '#f9f3e8',
+                        textAlign: 'center',
+                        letterSpacing: '1px',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
                     }}
                 >
                     Battle Chronicle
                 </Typography>
             </Box>
 
-            <Box
-                sx={{
-                    flexGrow: 1,
-                    overflow: 'auto',
-                    background: 'linear-gradient(135deg, rgba(255, 249, 240, 0.8) 0%, rgba(249, 243, 232, 0.8) 100%)',
-                    position: 'relative',
-                    zIndex: 2
-                }}
-            >
+            {/* Messages */}
+            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                 {trimmedMessages.length === 0 ? (
-                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        p: 4
+                    }}>
                         <Typography
-                            variant="body2"
                             sx={{
                                 color: '#8a7d6a',
                                 fontFamily: '"Crimson Text", serif',
@@ -179,142 +501,150 @@ const LogWindow = ({
                     </Box>
                 ) : (
                     <List dense sx={{ p: 2 }}>
-                        {trimmedMessages.map((msg, index) => (
-                            <ListItem
-                                key={index}
-                                sx={{
-                                    borderLeft: '4px solid',
-                                    borderColor: msg.type === 'error' ? '#a93434' :
-                                                 msg.type === 'success' ? '#5a7a4a' :
-                                                 msg.type === 'warning' ? '#c9975b' :
-                                                 '#7a8a9a',
-                                    mb: 1,
-                                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(253, 248, 236, 0.8) 100%)',
-                                    borderRadius: 0,
-                                    padding: '10px 12px',
-                                    boxShadow: '0 2px 6px rgba(107, 68, 35, 0.12)',
-                                    border: '1px solid #d4a574',
-                                    borderLeftWidth: '4px'
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', gap: 1 }}>
-                                    {getMessageIcon(msg.type)}
-                                    <ListItemText
-                                        primary={msg.text}
-                                        secondary={
-                                            msg.timestamp && (
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: '#8a7d6a',
-                                                        fontFamily: '"Crimson Text", serif',
-                                                        fontSize: '0.75rem',
-                                                        fontStyle: 'italic'
-                                                    }}
-                                                >
-                                                    {typeof msg.timestamp === 'object'
-                                                        ? msg.timestamp.toLocaleTimeString()
-                                                        : msg.timestamp}
-                                                </Typography>
-                                            )
-                                        }
-                                        primaryTypographyProps={{
-                                            sx: {
-                                                fontFamily: '"Crimson Text", serif',
-                                                fontSize: '0.95rem',
-                                                lineHeight: 1.5,
-                                                color: '#3a2f1f'
+                        {trimmedMessages.map((msg, index) => {
+                            // Check if message has structured data
+                            if (msg.data && msg.data.rollType) {
+                                if (msg.data.rollType === 'simple') {
+                                    return <RenderSimpleDiceRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
+                                } else if (msg.data.rollType === 'attribute') {
+                                    return <RenderAttributeRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
+                                } else if (msg.data.rollType === 'skill') {
+                                    return <RenderSkillRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
+                                } else if (msg.data.rollType === 'fight') {
+                                    return <RenderFightResult key={index} data={msg.data} timestamp={msg.timestamp} />;
+                                }
+                            }
+
+                            // Fallback for simple text messages
+                            return (
+                                <ListItem
+                                    key={index}
+                                    sx={{
+                                        borderLeft: '4px solid',
+                                        borderColor: msg.type === 'error' ? '#a93434' :
+                                                     msg.type === 'success' ? '#5a7a4a' :
+                                                     msg.type === 'warning' ? '#c9975b' :
+                                                     '#7a8a9a',
+                                        mb: 1,
+                                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(253, 248, 236, 0.8) 100%)',
+                                        borderRadius: 0,
+                                        padding: '10px 12px',
+                                        boxShadow: '0 2px 6px rgba(107, 68, 35, 0.12)',
+                                        border: '1px solid #d4a574',
+                                        borderLeftWidth: '4px'
+                                    }}
+                                >
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', gap: 1 }}>
+                                        {getMessageIcon(msg.type)}
+                                        <ListItemText
+                                            primary={msg.text}
+                                            secondary={
+                                                msg.timestamp && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{
+                                                            color: '#8a7d6a',
+                                                            fontFamily: '"Crimson Text", serif',
+                                                            fontSize: '0.75rem',
+                                                            fontStyle: 'italic'
+                                                        }}
+                                                    >
+                                                        {msg.timestamp}
+                                                    </Typography>
+                                                )
                                             }
-                                        }}
-                                    />
-                                </Box>
-                            </ListItem>
-                        ))}
+                                            primaryTypographyProps={{
+                                                sx: {
+                                                    fontFamily: '"Crimson Text", serif',
+                                                    fontSize: '0.95rem',
+                                                    lineHeight: 1.5,
+                                                    color: '#3a2f1f'
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+                                </ListItem>
+                            );
+                        })}
                         <div ref={logEndRef} />
                     </List>
                 )}
             </Box>
 
-            <Divider sx={{ borderColor: '#c9975b', borderWidth: 2 }} />
-
-            <Box sx={{
-                p: 2,
-                background: 'linear-gradient(180deg, #fdf8ec 0%, #f9f3e8 100%)',
-                borderTop: '3px solid #c9975b',
-                position: 'relative',
-                zIndex: 2
-            }}>
-                <Typography
-                    variant="subtitle2"
-                    gutterBottom
-                    fontWeight="bold"
-                    sx={{
-                        fontFamily: '"Cinzel", serif',
-                        fontSize: '1rem',
-                        letterSpacing: '0.05em',
-                        textTransform: 'uppercase',
-                        color: '#6b4423',
-                        textShadow: '0 1px 1px rgba(255,255,255,0.5)',
-                        mb: 1.5
-                    }}
-                >
-                    Cast the Bones
-                </Typography>
-                <Stack spacing={1.5}>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-                        {[4, 6, 10, 20, 100].map(sides => (
-                            <Button
-                                key={sides}
-                                variant="contained"
-                                size="small"
-                                onClick={() => rollDice(sides)}
-                                startIcon={<DiceIcon />}
-                                sx={{
-                                    minWidth: '70px',
-                                    borderRadius: 2,
-                                    fontFamily: '"Cinzel", serif',
-                                    fontWeight: 700,
-                                    fontSize: '0.85rem'
-                                }}
-                            >
-                                d{sides}
-                            </Button>
-                        ))}
-                    </Stack>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            size="small"
-                            type="number"
-                            placeholder="Custom"
-                            value={customSides}
-                            onChange={e => setCustomSides(e.target.value)}
-                            inputProps={{ min: 1 }}
-                            sx={{
-                                flexGrow: 1,
-                                '& .MuiInputBase-input': {
-                                    fontFamily: '"Crimson Text", serif',
-                                    color: '#3a2f1f'
-                                },
-                                '& .MuiInputBase-input::placeholder': {
-                                    color: '#8a7d6a',
-                                    opacity: 1
-                                }
-                            }}
-                        />
-                        <Button
-                            variant="outlined"
-                            onClick={handleCustomRoll}
-                            disabled={!customSides || isNaN(parseInt(customSides, 10)) || parseInt(customSides, 10) < 1}
-                            startIcon={<DiceIcon />}
-                            sx={{
-                                borderRadius: 2,
-                                fontFamily: '"Cinzel", serif',
-                                fontWeight: 700
-                            }}
-                        >
-                            Roll
-                        </Button>
-                    </Stack>
+            {/* Dice Roll Controls */}
+            <Box sx={{ p: 2, borderTop: '2px solid #d4a574' }}>
+                <Stack direction="row" spacing={1}>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => rollDice(6)}
+                        sx={{
+                            minWidth: '50px',
+                            borderColor: '#c9975b',
+                            color: '#6b4423',
+                            '&:hover': { borderColor: '#a67c52', background: 'rgba(201, 151, 91, 0.1)' }
+                        }}
+                    >
+                        d6
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => rollDice(10)}
+                        sx={{
+                            minWidth: '50px',
+                            borderColor: '#c9975b',
+                            color: '#6b4423',
+                            '&:hover': { borderColor: '#a67c52', background: 'rgba(201, 151, 91, 0.1)' }
+                        }}
+                    >
+                        d10
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => rollDice(100)}
+                        sx={{
+                            minWidth: '50px',
+                            borderColor: '#c9975b',
+                            color: '#6b4423',
+                            '&:hover': { borderColor: '#a67c52', background: 'rgba(201, 151, 91, 0.1)' }
+                        }}
+                    >
+                        d100
+                    </Button>
+                    <TextField
+                        size="small"
+                        value={customSides}
+                        onChange={(e) => setCustomSides(e.target.value)}
+                        placeholder="Custom"
+                        sx={{
+                            flexGrow: 1,
+                            '& .MuiOutlinedInput-root': {
+                                '& fieldset': { borderColor: '#c9975b' },
+                                '&:hover fieldset': { borderColor: '#a67c52' }
+                            }
+                        }}
+                    />
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                            const sides = parseInt(customSides);
+                            if (sides > 0) {
+                                rollDice(sides);
+                                setCustomSides('');
+                            }
+                        }}
+                        disabled={!customSides || parseInt(customSides) <= 0}
+                        sx={{
+                            borderColor: '#c9975b',
+                            color: '#6b4423',
+                            '&:hover': { borderColor: '#a67c52', background: 'rgba(201, 151, 91, 0.1)' }
+                        }}
+                    >
+                        Roll
+                    </Button>
                 </Stack>
             </Box>
         </Paper>
