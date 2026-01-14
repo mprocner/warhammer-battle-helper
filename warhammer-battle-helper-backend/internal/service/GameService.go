@@ -338,8 +338,9 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	result := dice.Roll()
 
 	eventData := map[string]interface{}{
-		"sides":  sides,
-		"result": result,
+		"sides":    sides,
+		"result":   result,
+		"username": username,
 	}
 
 	var characterName string

@@ -275,5 +275,17 @@
     "sl": "PS",
     "sb": "Bonus Siły",
     "weapon": "Broń"
+  },
+  "attributeShort": {
+    "WS": "WW",
+    "BS": "US",
+    "S": "S",
+    "T": "Wt",
+    "I": "I",
+    "Ag": "Zw",
+    "Dex": "Zr",
+    "Int": "Int",
+    "WP": "SW",
+    "Fel": "Ogd"
   }
 }

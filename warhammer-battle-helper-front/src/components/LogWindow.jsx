@@ -69,45 +69,108 @@ const RenderSimpleDiceRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
     const result = data.result;
     const sides = data.sides;
+    const username = data.username;
+
+    // Determine special roll status (for d100 or any dice)
+    const isNatural1 = result === 1;
+    const isNatural100 = result === sides && sides >= 100;
+    const isLowSpecial = result >= 2 && result <= 5;
+    const isHighSpecial = result >= 96 && result <= (sides - 1) && sides >= 100;
+
+    // Get seal styling based on roll result
+    const getSealStyle = () => {
+        if (isNatural1) {
+            // Natural 1 - Gold (best possible)
+            return {
+                background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), transparent 60%), radial-gradient(circle at 50% 50%, #d4af37, #b8941f)',
+                border: '3px solid #8b6914',
+                boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4), 0 0 15px rgba(212, 175, 55, 0.5)',
+                color: '#fff'
+            };
+        }
+        if (isNatural100) {
+            // Natural 100 - Dark red (worst possible)
+            return {
+                background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%), radial-gradient(circle at 50% 50%, #8b2424, #6b1818)',
+                border: '3px solid #4a0f0f',
+                boxShadow: '0 3px 6px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2), 0 0 10px rgba(139, 36, 36, 0.4)',
+                color: '#ffcccc'
+            };
+        }
+        if (isLowSpecial) {
+            // Rolls 2-5 - Green (very good)
+            return {
+                background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%), radial-gradient(circle at 50% 50%, #7a9a6a, #5a7a4a)',
+                border: '3px solid #4a5a3a',
+                boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)',
+                color: '#fff'
+            };
+        }
+        if (isHighSpecial) {
+            // Rolls 96-99 - Red (bad)
+            return {
+                background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%), radial-gradient(circle at 50% 50%, #c94444, #a93434)',
+                border: '3px solid #8b2424',
+                boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)',
+                color: '#fff'
+            };
+        }
+        // Normal rolls - Neutral gray/brown
+        return {
+            background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%), radial-gradient(circle at 50% 50%, #8a7d6a, #6a5d4a)',
+            border: '3px solid #5a4d3a',
+            boxShadow: '0 3px 6px rgba(0,0,0,0.2), inset 0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)',
+            color: '#fff'
+        };
+    };
+
+    const sealStyle = getSealStyle();
 
     return (
         <ListItem
             sx={{
-                borderLeft: '4px solid #5a7a4a',
-                mb: 1,
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(253, 248, 236, 0.8) 100%)',
-                borderRadius: 0,
-                padding: '10px 12px',
-                boxShadow: '0 2px 6px rgba(107, 68, 35, 0.12)',
-                border: '1px solid #d4a574',
-                borderLeftWidth: '4px'
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                padding: '10px',
+                mb: '10px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid #c9975b',
+                borderRadius: 0
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%', gap: 1 }}>
-                <SuccessIcon sx={{ color: '#5a7a4a', fontSize: '1.2rem' }} />
-                <Box sx={{ flex: 1 }}>
-                    <Typography sx={{
-                        fontFamily: '"Crimson Text", serif',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.5,
-                        color: '#3a2f1f'
-                    }}>
-                        {t('log.rolledDice', { sides, result })}
+            {/* Dice result display - circular like Wax Seal Token */}
+            <Box
+                sx={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: '"Cinzel", serif',
+                    fontWeight: 700,
+                    fontSize: result >= 100 ? '14px' : '16px',
+                    flexShrink: 0,
+                    ...sealStyle
+                }}
+            >
+                {result}
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '4px' }}>
+                    <Typography sx={{ fontFamily: '"Cinzel", serif', fontWeight: 600, color: '#6b4423', fontSize: '13px' }}>
+                        {username || t('log.character')}
                     </Typography>
                     {timestamp && (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: '#8a7d6a',
-                                fontFamily: '"Crimson Text", serif',
-                                fontSize: '0.75rem',
-                                fontStyle: 'italic'
-                            }}
-                        >
+                        <Typography sx={{ fontSize: '10px', color: '#7a5c42' }}>
                             {timestamp}
                         </Typography>
                     )}
                 </Box>
+                <Typography sx={{ fontSize: '12px', color: '#7a5c42' }}>
+                    {t('log.rolledDice', { sides, result })}
+                </Typography>
             </Box>
         </ListItem>
     );
@@ -123,6 +186,9 @@ const RenderAttributeRoll = ({ data, timestamp }) => {
     const isSuccess = rollValue <= targetValue;
     const isCritSuccess = rollValue <= 5 && isSuccess;
     const isCritFailure = rollValue >= 96 && !isSuccess;
+
+    // Translate attribute short name (WS -> WW in Polish, etc.)
+    const attributeName = t(`attributeShort.${data.attribute}`, { defaultValue: data.attribute });
 
     const getColor = () => {
         if (isCritSuccess) return '#b8941f';
@@ -161,7 +227,7 @@ const RenderAttributeRoll = ({ data, timestamp }) => {
                     )}
                 </Box>
                 <Typography sx={{ fontSize: '12px', color: '#7a5c42', mb: '6px' }}>
-                    <strong style={{ fontFamily: '"Cinzel", serif', color: '#6b4423' }}>{data.attribute}</strong> {t('log.test')}: {t('log.rolled')}{' '}
+                    <strong style={{ fontFamily: '"Cinzel", serif', color: '#6b4423' }}>{attributeName}</strong> {t('log.test')}: {t('log.rolled')}{' '}
                     <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{rollValue}</strong> {t('log.vs')}{' '}
                     <strong style={{ fontFamily: '"Cinzel", serif', fontSize: '14px', color: getColor() }}>{targetValue}</strong>
                     {data.attributeModifier !== 0 && (
@@ -196,11 +262,32 @@ const RenderSkillRoll = ({ data, timestamp }) => {
     const isCritSuccess = rollValue <= 5 && success;
     const isCritFailure = rollValue >= 96 && !success;
 
-    // Format skill name
-    const skillName = skillKey
-        ?.split('_')
-        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-        .join(' ') || t('log.skill');
+    // Translate skill name - handle compound keys like MELEE_BASIC
+    const getSkillName = () => {
+        if (!skillKey) return t('log.skill');
+
+        // Try full key first (e.g., MELEE_BASIC)
+        const fullTranslation = t(`skills.${skillKey}`, { defaultValue: '' });
+        if (fullTranslation) return fullTranslation;
+
+        // Try parent key (e.g., MELEE from MELEE_BASIC)
+        const parts = skillKey.split('_');
+        const parentKey = parts[0];
+        const parentTranslation = t(`skills.${parentKey}`, { defaultValue: '' });
+
+        if (parentTranslation && parts.length > 1) {
+            // Format suffix (e.g., BASIC -> Basic)
+            const suffix = parts.slice(1).map(p => p.charAt(0) + p.slice(1).toLowerCase()).join(' ');
+            return `${parentTranslation} (${suffix})`;
+        }
+
+        if (parentTranslation) return parentTranslation;
+
+        // Fallback: format the key nicely
+        return skillKey.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
+    };
+
+    const skillName = getSkillName();
 
     const getColor = () => {
         if (isCritSuccess) return '#b8941f';

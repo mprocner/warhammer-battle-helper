@@ -274,5 +274,17 @@
     "sl": "SL",
     "sb": "SB",
     "weapon": "Weapon"
+  },
+  "attributeShort": {
+    "WS": "WS",
+    "BS": "BS",
+    "S": "S",
+    "T": "T",
+    "I": "I",
+    "Ag": "Ag",
+    "Dex": "Dex",
+    "Int": "Int",
+    "WP": "WP",
+    "Fel": "Fel"
   }
 }
