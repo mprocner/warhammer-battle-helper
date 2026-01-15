@@ -1,0 +1,413 @@
+/* ================== LOG WINDOW STYLES ================== */
+
+/* CSS Custom Properties - Shared color palette */
+:root {
+  /* Primary browns */
+  --log-brown-dark: #6b4423;
+  --log-brown-medium: #7a5c42;
+  --log-brown-light: #c9975b;
+  --log-brown-text: #3a2f1f;
+  --log-brown-muted: #8a7d6a;
+  --log-brown-accent: #d4a574;
+
+  /* Success/Greens */
+  --log-green-dark: #4a5a3a;
+  --log-green-medium: #5a7a4a;
+  --log-green-light: #7a9a6a;
+  --log-success: #4a7c59;
+
+  /* Error/Reds */
+  --log-red-dark: #8b2424;
+  --log-red-medium: #a93434;
+  --log-red-light: #c94444;
+  --log-crit-failure: #4a0f0f;
+
+  /* Gold/Critical Success */
+  --log-gold-dark: #8b6914;
+  --log-gold-medium: #b8941f;
+  --log-gold-light: #d4af37;
+
+  /* Backgrounds */
+  --log-bg-parchment: #f9f3e8;
+  --log-bg-parchment-dark: #ece3d4;
+  --log-bg-item: rgba(255, 255, 255, 0.4);
+  --log-bg-item-hover: rgba(255, 255, 255, 0.8);
+
+  /* Info/Neutral */
+  --log-info: #7a8a9a;
+
+  /* Fonts */
+  --log-font-display: "Cinzel", serif;
+  --log-font-body: "Crimson Text", serif;
+}
+
+/* ================== WAX SEAL TOKEN ================== */
+.wax-seal-token {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.wax-seal-token--crit-success {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-gold-light), var(--log-gold-medium));
+  border: 3px solid var(--log-gold-dark);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
+              inset 0 -2px 4px rgba(0,0,0,0.2),
+              inset 0 2px 4px rgba(255,255,255,0.4),
+              0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+.wax-seal-token--crit-failure {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-red-dark), #6b1818);
+  border: 3px solid var(--log-crit-failure);
+  color: #ffcccc;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              inset 0 2px 4px rgba(255,255,255,0.2),
+              0 0 10px rgba(139, 36, 36, 0.4);
+}
+
+.wax-seal-token--success {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-green-light), var(--log-green-medium));
+  border: 3px solid var(--log-green-dark);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
+              inset 0 -2px 4px rgba(0,0,0,0.2),
+              inset 0 2px 4px rgba(255,255,255,0.4);
+}
+
+.wax-seal-token--failure {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-red-light), var(--log-red-medium));
+  border: 3px solid var(--log-red-dark);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
+              inset 0 -2px 4px rgba(0,0,0,0.2),
+              inset 0 2px 4px rgba(255,255,255,0.4);
+}
+
+.wax-seal-token--neutral {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
+              radial-gradient(circle at 50% 50%, #8a7d6a, #6a5d4a);
+  border: 3px solid #5a4d3a;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
+              inset 0 -2px 4px rgba(0,0,0,0.2),
+              inset 0 2px 4px rgba(255,255,255,0.4);
+}
+
+.wax-seal-token--small-text {
+  font-size: 14px;
+}
+
+.wax-seal-token--medium-text {
+  font-size: 16px;
+}
+
+/* ================== LOG LIST ITEM (shared base) ================== */
+.log-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: var(--log-bg-item);
+  border: 1px solid var(--log-brown-light);
+  border-radius: 0;
+}
+
+.log-list-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-list-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.log-list-item__character-name {
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  color: var(--log-brown-dark);
+  font-size: 13px;
+}
+
+.log-list-item__timestamp {
+  font-size: 10px;
+  color: var(--log-brown-medium);
+}
+
+.log-list-item__description {
+  font-size: 12px;
+  color: var(--log-brown-medium);
+  margin-bottom: 6px;
+}
+
+.log-list-item__result {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--log-brown-light);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ================== ROLL RESULT COLORS ================== */
+.log-text--crit-success {
+  color: var(--log-gold-medium);
+}
+
+.log-text--crit-failure {
+  color: var(--log-red-dark);
+}
+
+.log-text--success {
+  color: var(--log-success);
+}
+
+.log-text--failure {
+  color: var(--log-red-light);
+}
+
+/* ================== FIGHT RESULT ================== */
+.log-fight-result {
+  margin-bottom: 10px;
+}
+
+.log-fight-result__winner {
+  padding: 10px;
+  border: 2px solid var(--log-brown-light);
+  border-radius: 0;
+  text-align: center;
+}
+
+.log-fight-result__winner--attacker {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(184, 148, 31, 0.1));
+}
+
+.log-fight-result__winner--defender {
+  background: linear-gradient(135deg, rgba(122, 154, 106, 0.2), rgba(90, 122, 74, 0.1));
+}
+
+.log-fight-result__winner-name {
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--log-brown-dark);
+  margin-bottom: 6px;
+}
+
+.log-fight-result__damage {
+  font-size: 12px;
+  color: var(--log-brown-medium);
+}
+
+.log-fight-result__damage-value {
+  color: var(--log-red-light);
+}
+
+.log-fight-result__details {
+  font-size: 10px;
+}
+
+/* ================== SIMPLE MESSAGE ================== */
+.log-simple-message {
+  border-left: 4px solid;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--log-bg-item-hover) 0%, rgba(253, 248, 236, 0.8) 100%);
+  border-radius: 0;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.12);
+  border: 1px solid var(--log-brown-accent);
+  border-left-width: 4px;
+}
+
+.log-simple-message--error {
+  border-left-color: var(--log-red-medium);
+}
+
+.log-simple-message--success {
+  border-left-color: var(--log-green-medium);
+}
+
+.log-simple-message--warning {
+  border-left-color: var(--log-brown-light);
+}
+
+.log-simple-message--info {
+  border-left-color: var(--log-info);
+}
+
+.log-simple-message__content {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
+.log-simple-message__text {
+  font-family: var(--log-font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--log-brown-text);
+}
+
+.log-simple-message__timestamp {
+  color: var(--log-brown-muted);
+  font-family: var(--log-font-body);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* ================== LOG WINDOW CONTAINER ================== */
+.log-window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--log-bg-parchment) 0%, var(--log-bg-parchment-dark) 100%);
+  box-shadow: inset 0 0 20px rgba(107, 68, 35, 0.08);
+}
+
+.log-window__header {
+  padding: 16px;
+  border-bottom: 3px solid var(--log-brown-light);
+  background: linear-gradient(135deg, var(--log-brown-light) 0%, #a67c52 100%);
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.2);
+}
+
+.log-window__title {
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  color: var(--log-bg-parchment);
+  text-align: center;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.log-window__messages {
+  flex-grow: 1;
+  overflow: auto;
+}
+
+.log-window__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+}
+
+.log-window__empty-text {
+  color: var(--log-brown-muted);
+  font-family: var(--log-font-body);
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.log-window__list {
+  padding: 16px;
+  list-style: none;
+  margin: 0;
+}
+
+/* ================== DICE ROLL CONTROLS ================== */
+.dice-controls {
+  padding: 16px;
+  border-top: 2px solid var(--log-brown-accent);
+}
+
+.dice-controls__row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.dice-controls__button {
+  min-width: 50px;
+  border: 1px solid var(--log-brown-light);
+  color: var(--log-brown-dark);
+  background: transparent;
+  padding: 6px 12px;
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.dice-controls__button:hover {
+  border-color: #a67c52;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.dice-controls__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dice-controls__input {
+  flex-grow: 1;
+  border: 1px solid var(--log-brown-light);
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--log-brown-text);
+}
+
+.dice-controls__input:hover,
+.dice-controls__input:focus {
+  border-color: #a67c52;
+  outline: none;
+}
+
+/* ================== MODIFIER TEXT ================== */
+.log-modifier {
+  font-size: 11px;
+  color: #8a7355;
+}
+
+/* ================== ROLL VALUE DISPLAY ================== */
+.log-roll-value {
+  font-family: var(--log-font-display);
+  font-size: 14px;
+}
+
+.log-roll-value--inline {
+  font-weight: 600;
+}
+
+/* ================== MESSAGE ICONS ================== */
+.log-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.log-icon--success {
+  color: var(--log-green-medium);
+}
+
+.log-icon--error {
+  color: var(--log-red-medium);
+}
+
+.log-icon--warning {
+  color: var(--log-brown-light);
+}
+
+.log-icon--info {
+  color: var(--log-info);
+}
