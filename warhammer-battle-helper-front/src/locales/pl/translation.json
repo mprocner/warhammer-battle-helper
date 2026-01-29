@@ -166,7 +166,11 @@
     "location": "Lokalizacja",
     "ap": "PA",
     "addArmour": "-- Dodaj Zbroję --",
-    "addSpell": "Dodaj Zaklęcie"
+    "addSpell": "Dodaj Zaklęcie",
+    "clickToChangeAvatar": "Kliknij, aby zmienić",
+    "avatarUploadFailed": "Nie udało się przesłać awatara",
+    "invalidFileType": "Nieprawidłowy typ pliku. Prześlij obraz (JPEG, PNG, GIF lub WebP).",
+    "fileTooLarge": "Plik jest za duży. Maksymalny rozmiar to 5MB."
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",

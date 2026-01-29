@@ -15,7 +15,9 @@ function FightArea({
     setCurrentDefender,
     onCharacterUpdate,
     onSelectCharacter,
-    selectedCharacterId
+    selectedCharacterId,
+    isOwnCharacter = true,
+    isMultiplayer = false
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
 
@@ -29,7 +31,11 @@ function FightArea({
     ].filter(Boolean).join(' ');
 
     const handleZoneClick = () => {
+        // In multiplayer mode, only allow selecting own characters
         if (currentZone.character && onSelectCharacter) {
+            if (isMultiplayer && !isOwnCharacter) {
+                return; // Don't select other players' characters
+            }
             onSelectCharacter(currentZone.character);
         }
     };
@@ -51,6 +57,8 @@ function FightArea({
                         setCurrentAttacker={setCurrentAttacker}
                         setCurrentDefender={setCurrentDefender}
                         onCharacterUpdate={onCharacterUpdate}
+                        isOwnCharacter={isOwnCharacter}
+                        isMultiplayer={isMultiplayer}
                     />
                 </div>
             )}

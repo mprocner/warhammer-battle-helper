@@ -6,7 +6,8 @@ import skillsData from '../data/skills.json';
 import talentsData from '../data/talents.json';
 import weaponsData from '../data/weapons.json';
 import armourData from '../data/armour.json';
-import ModifierSelectionModal from './ModifierSelectionModal'; 
+import ModifierSelectionModal from './ModifierSelectionModal';
+import AvatarUpload from './AvatarUpload';
 import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../api/axios'; 
 
@@ -1299,55 +1300,63 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                             {/* Character Information */}
                             <div className="card-section">
                                 <h3>{t('characterSheet.characterInformation')}</h3>
-                                <div className="form-grid">
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.name')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.name || ''} onChange={(e) => handleFieldChange('basicInfo.name', e.target.value)} />
+                                <div className="character-info-with-avatar">
+                                    <AvatarUpload
+                                        currentAvatar={editedCharacter.basicInfo?.avatar}
+                                        onAvatarChange={(url) => handleFieldChange('basicInfo.avatar', url)}
+                                    />
+                                    <div className="character-info-fields">
+                                        <div className="form-grid">
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.name')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.name || ''} onChange={(e) => handleFieldChange('basicInfo.name', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.species')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.species || ''} onChange={(e) => handleFieldChange('basicInfo.species', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.class')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.class || ''} onChange={(e) => handleFieldChange('basicInfo.class', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-grid" style={{ marginTop: '10px' }}>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.career')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.career || ''} onChange={(e) => handleFieldChange('basicInfo.career', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.careerLevel')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.careerLevel || ''} onChange={(e) => handleFieldChange('basicInfo.careerLevel', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.status')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.status || ''} onChange={(e) => handleFieldChange('basicInfo.status', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-group" style={{ marginTop: '10px' }}>
+                                            <label>{t('characterSheet.careerPath')}</label>
+                                            <input type="text" value={editedCharacter.basicInfo?.careerPath || ''} onChange={(e) => handleFieldChange('basicInfo.careerPath', e.target.value)} />
+                                        </div>
+                                        <div className="form-grid" style={{ marginTop: '10px' }}>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.age')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.age || ''} onChange={(e) => handleFieldChange('basicInfo.age', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.height')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.height || ''} onChange={(e) => handleFieldChange('basicInfo.height', e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>{t('characterSheet.hair')}</label>
+                                                <input type="text" value={editedCharacter.basicInfo?.hair || ''} onChange={(e) => handleFieldChange('basicInfo.hair', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-group" style={{ marginTop: '10px' }}>
+                                            <label>{t('characterSheet.eyes')}</label>
+                                            <input type="text" value={editedCharacter.basicInfo?.eyes || ''} onChange={(e) => handleFieldChange('basicInfo.eyes', e.target.value)} />
+                                        </div>
                                     </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.species')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.species || ''} onChange={(e) => handleFieldChange('basicInfo.species', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.class')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.class || ''} onChange={(e) => handleFieldChange('basicInfo.class', e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="form-grid" style={{ marginTop: '10px' }}>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.career')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.career || ''} onChange={(e) => handleFieldChange('basicInfo.career', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.careerLevel')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.careerLevel || ''} onChange={(e) => handleFieldChange('basicInfo.careerLevel', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.status')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.status || ''} onChange={(e) => handleFieldChange('basicInfo.status', e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="form-group" style={{ marginTop: '10px' }}>
-                                    <label>{t('characterSheet.careerPath')}</label>
-                                    <input type="text" value={editedCharacter.basicInfo?.careerPath || ''} onChange={(e) => handleFieldChange('basicInfo.careerPath', e.target.value)} />
-                                </div>
-                                <div className="form-grid" style={{ marginTop: '10px' }}>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.age')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.age || ''} onChange={(e) => handleFieldChange('basicInfo.age', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.height')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.height || ''} onChange={(e) => handleFieldChange('basicInfo.height', e.target.value)} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>{t('characterSheet.hair')}</label>
-                                        <input type="text" value={editedCharacter.basicInfo?.hair || ''} onChange={(e) => handleFieldChange('basicInfo.hair', e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="form-group" style={{ marginTop: '10px' }}>
-                                    <label>{t('characterSheet.eyes')}</label>
-                                    <input type="text" value={editedCharacter.basicInfo?.eyes || ''} onChange={(e) => handleFieldChange('basicInfo.eyes', e.target.value)} />
                                 </div>
                             </div>
 

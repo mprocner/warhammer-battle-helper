@@ -45,8 +45,23 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     fightZonesRef.current = fightZones;
   }, [fightZones]);
 
+  // Get set of user's own character IDs
+  const ownCharacterIds = useMemo(() => {
+    return new Set((initialCharacters || []).map(c => c.id));
+  }, [initialCharacters]);
+
+  // Check if a character belongs to the current user
+  const isOwnCharacter = useCallback((characterId) => {
+    return ownCharacterIds.has(characterId);
+  }, [ownCharacterIds]);
+
   // Select character and highlight nearby targets
   const handleSelectCharacter = (character) => {
+    // Only allow selecting own characters in multiplayer mode
+    if (gameId && token && !isOwnCharacter(character.id)) {
+      return; // Don't select other players' characters
+    }
+
     setSelectedCharacter(character);
     setAttackModifier(0);
 
@@ -448,6 +463,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
     if (!draggedChar) { setActiveId(null); setOverId(null); return; }
 
+    // In multiplayer mode, only allow moving own characters
+    if (gameId && token && !isOwnCharacter(draggedChar.id)) {
+      setActiveId(null); setOverId(null); return;
+    }
+
     // Znajdź obecną strefę postaci
     const currentZoneIndex = fightZones.findIndex(z => z.character?.id === draggedId);
     
@@ -667,6 +687,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                 onCharacterUpdate={handleCharacterUpdate}
                 onSelectCharacter={handleSelectCharacter}
                 selectedCharacterId={selectedCharacter?.id}
+                isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
+                isMultiplayer={!!(gameId && token)}
             />
           ))}
         </div>

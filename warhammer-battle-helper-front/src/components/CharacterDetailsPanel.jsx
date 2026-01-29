@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
+import Avatar from './Avatar';
 import axios from 'axios';
-import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios'; 
+import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import skillsData from '../data/skills.json';
 
 function CharacterDetailsPanel({
@@ -293,7 +294,10 @@ function CharacterDetailsPanel({
 
     return (
         <div className="character-details">
-            <h2>{character.basicInfo?.name || 'Unknown'}</h2>
+            <div className="character-details-header">
+                <Avatar key={`${character.id}-${character.basicInfo?.avatar || 'default'}`} src={character.basicInfo?.avatar} />
+                <h2>{character.basicInfo?.name || 'Unknown'}</h2>
+            </div>
 
             {/* Action Buttons */}
             <div className="action-buttons">

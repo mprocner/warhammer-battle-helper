@@ -8,6 +8,7 @@ import (
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
+	"battle-helper/internal/storage"
 	"battle-helper/internal/websocket"
 	"fmt"
 	nethttp "net/http"
@@ -27,6 +28,17 @@ func main() {
 	// --- JWT KEYS ---
 	helpers.LoadJWTKeys("./keys/private.pem", "./keys/public.pem")
 	// --- END JWT KEYS ---
+
+	// --- AVATAR STORAGE ---
+	avatarsPath := os.Getenv("AVATARS_PATH")
+	if avatarsPath == "" {
+		avatarsPath = "./avatars"
+	}
+	avatarStorage, err := storage.NewLocalStorage(avatarsPath, "/avatars")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize avatar storage: %v", err))
+	}
+	// --- END AVATAR STORAGE ---
 
 	// Connect to MongoDB
 	db, err := config.ConnectDatabase()
@@ -108,6 +120,12 @@ func main() {
 	// WebSocket route
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
 	// --- END GAME ROUTES ---
+
+	// --- AVATAR ROUTES ---
+	avatarHandler := http.AvatarHandler{Storage: avatarStorage}
+	r.POST("/avatars", http.JWTAuthMiddleware(), avatarHandler.UploadAvatar)
+	r.GET("/avatars/:filename", avatarHandler.GetAvatar)
+	// --- END AVATAR ROUTES ---
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

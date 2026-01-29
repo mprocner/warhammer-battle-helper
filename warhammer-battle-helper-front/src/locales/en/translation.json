@@ -165,7 +165,11 @@
     "location": "Location",
     "ap": "AP",
     "addArmour": "-- Add Armour --",
-    "addSpell": "Add Spell"
+    "addSpell": "Add Spell",
+    "clickToChangeAvatar": "Click to change",
+    "avatarUploadFailed": "Failed to upload avatar",
+    "invalidFileType": "Invalid file type. Please upload an image (JPEG, PNG, GIF, or WebP).",
+    "fileTooLarge": "File too large. Maximum size is 5MB."
   },
   "characteristics": {
     "WEAPON_SKILL": "Weapon Skill",

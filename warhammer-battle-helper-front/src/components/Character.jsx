@@ -8,10 +8,18 @@ function Character({
         activeId, isOverlay = false,
         isHighlighted = false,
         setCurrentDefender,
+        isOwnCharacter = true,
+        isMultiplayer = false,
     }) {
-    
+
     console.log('Rendering Character:', character?.basicInfo?.name, 'in zone:', currentZone);
-    const {attributes, listeners, setNodeRef, transform} = useDraggable({ id: character.id });
+
+    // Disable dragging for non-owned characters in multiplayer mode
+    const canDrag = !isMultiplayer || isOwnCharacter;
+    const {attributes, listeners, setNodeRef, transform} = useDraggable({
+        id: character.id,
+        disabled: !canDrag
+    });
     const buttonRef = useRef(null);
 
 
@@ -21,7 +29,9 @@ function Character({
 
     const isEnemy = character.basicInfo?.type === 'enemy';
     const isDragging = character.id === activeId && !isOverlay;
-    const characterEntryClass = `character-entry${isEnemy ? " enemy" : ""} ${isDragging ? 'dragging' : ''}`;
+    const isOtherPlayer = isMultiplayer && !isOwnCharacter;
+    const hasCustomAvatar = character.basicInfo?.avatar && character.basicInfo.avatar.startsWith('/avatars/');
+    const characterEntryClass = `character-entry${isEnemy ? " enemy" : ""} ${isDragging ? 'dragging' : ''} ${isOtherPlayer ? 'other-player' : ''} ${hasCustomAvatar ? 'has-custom-avatar' : ''}`;
 
     // attack button
     const targetButton = isHighlighted ? (
@@ -48,8 +58,8 @@ function Character({
                 style={style}
                 
             >
-                <div className="drag-handle" {...attributes} {...listeners}>
-                    <Avatar src={character.basicInfo?.avatar} />
+                <div className="drag-handle" {...(canDrag ? { ...attributes, ...listeners } : {})}>
+                    <Avatar key={character.basicInfo?.avatar || 'default'} src={character.basicInfo?.avatar} />
                 </div>
                 <span className="character-name">{character.basicInfo?.name}</span>
             </div>
