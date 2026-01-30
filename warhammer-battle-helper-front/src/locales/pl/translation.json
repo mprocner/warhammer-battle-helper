@@ -291,5 +291,20 @@
     "Int": "Int",
     "WP": "SW",
     "Fel": "Ogd"
+  },
+  "settings": {
+    "general": "Ustawienia Ogolne",
+    "gameInfo": "Informacje o Grze",
+    "gameName": "Nazwa Gry",
+    "connectionStatus": "Status Polaczenia",
+    "connected": "Polaczony",
+    "disconnected": "Rozlaczony",
+    "players": "Gracze",
+    "language": "Jezyk",
+    "english": "English",
+    "polish": "Polski",
+    "actions": "Akcje",
+    "leaveGame": "Opusc Gre",
+    "logout": "Wyloguj"
   }
 }

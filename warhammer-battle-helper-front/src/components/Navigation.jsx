@@ -19,7 +19,7 @@ import {
     Language as LanguageIcon
 } from '@mui/icons-material';
 
-const Navigation = ({ user, onLogout }) => {
+const Navigation = ({ user, onLogout, inGame }) => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
 
@@ -33,6 +33,11 @@ const Navigation = ({ user, onLogout }) => {
         const newLang = i18n.language === 'en' ? 'pl' : 'en';
         i18n.changeLanguage(newLang);
     };
+
+    // Hide navigation when in game view
+    if (inGame) {
+        return null;
+    }
 
     return (
         <AppBar position="static" elevation={4}>

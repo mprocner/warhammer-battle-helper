@@ -91,9 +91,8 @@ header nav a:hover::after {
 
 .dnd-context {
   display: flex;
-  gap: 20px;
-  padding: 20px;
   position: relative;
+  height: 100%;
 }
 
 .available-characters {
@@ -126,6 +125,13 @@ header nav a:hover::after {
 }
 
 /* ================== LEFT SIDEBAR ================== */
+.left-sidebar-wrapper {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  height: 100%;
+}
+
 .left-sidebar {
   width: 320px;
   min-width: 320px;
@@ -135,6 +141,68 @@ header nav a:hover::after {
   flex-direction: column;
   overflow: hidden;
   box-shadow: 4px 0 12px rgba(107, 68, 35, 0.15);
+  transition: all 0.3s ease;
+}
+
+.left-sidebar--hidden {
+  width: 0;
+  min-width: 0;
+  border-right-width: 0;
+  opacity: 0;
+}
+
+/* Left Panel Toggle - positioned relative to wrapper */
+.left-sidebar-wrapper .panel-toggle--left {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: -24px;
+  width: 24px;
+  height: 60px;
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border: 2px solid #7a5c42;
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: #f4e8d8;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.left-sidebar-wrapper .panel-toggle--left:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.4);
+}
+
+.left-sidebar-wrapper .panel-toggle--left.panel-toggle--hidden {
+  right: -24px;
+  border-left: 2px solid #7a5c42;
+}
+
+/* Sidebar Header */
+.panel-header {
+  padding: 16px;
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-bottom: 2px solid #6b4423;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f4e8d8;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  flex: 1;
+  text-align: center;
+  margin: 0;
 }
 
 /* ================== CHARACTER DETAILS PANEL ================== */
@@ -795,7 +863,7 @@ header nav a:hover::after {
   grid-template-columns: repeat(20, 1fr);
   padding: 20px;
   max-width: 100%;
-  width: 80%;
+  width: 100%;
   box-sizing: border-box;
   align-content: start;
   background: #c9975b;
@@ -804,6 +872,8 @@ header nav a:hover::after {
     0 8px 24px rgba(107, 68, 35, 0.3),
     inset 0 0 40px rgba(122, 92, 66, 0.15);
   position: relative;
+  height: 100vh;
+  overflow: scroll;
 }
 
 /* Decorative corner ornaments */

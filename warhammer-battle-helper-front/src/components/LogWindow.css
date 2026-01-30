@@ -2,6 +2,10 @@
 
 /* CSS Custom Properties - Shared color palette */
 :root {
+  /* Panel dimensions */
+  --panel-right-width: 420px;
+  --vertical-tabs-width: 70px;
+  --panel-transition: 0.3s ease;
   /* Primary browns */
   --log-brown-dark: #6b4423;
   --log-brown-medium: #7a5c42;
@@ -334,6 +338,7 @@
   display: flex;
   flex-direction: row;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .dice-controls__button {

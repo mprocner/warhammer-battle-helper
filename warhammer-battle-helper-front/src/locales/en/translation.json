@@ -290,5 +290,20 @@
     "Int": "Int",
     "WP": "WP",
     "Fel": "Fel"
+  },
+  "settings": {
+    "general": "General Settings",
+    "gameInfo": "Game Info",
+    "gameName": "Game Name",
+    "connectionStatus": "Connection Status",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "players": "Players",
+    "language": "Language",
+    "english": "English",
+    "polish": "Polski",
+    "actions": "Actions",
+    "leaveGame": "Leave Game",
+    "logout": "Logout"
   }
 }

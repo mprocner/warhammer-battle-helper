@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Button, Typography, Alert, CircularProgress, Chip } from '@mui/material';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import DragAndDropContext from './DndContext';
-import LogWindow from './LogWindow';
+import RightPanel from './panels/RightPanel';
+import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
  */
-const GameSession = ({ gameId, token, onLeaveGame }) => {
+const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [gameState, setGameState] = useState(null);
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [characterUpdateTrigger, setCharacterUpdateTrigger] = useState(0);
+  const [leftPanelHidden, setLeftPanelHidden] = useState(false);
+  const [rightPanelHidden, setRightPanelHidden] = useState(false);
 
   // Add log message - Define early so it can be used in callbacks
   const addLogMessage = useCallback((message, type = 'info', data = null) => {
@@ -303,55 +305,6 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Game Header */}
-      <Box sx={{
-        p: 2,
-        borderBottom: '3px solid',
-        borderColor: 'primary.main',
-        background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{
-              fontFamily: 'Cinzel, serif',
-              fontWeight: 700,
-              color: 'primary.main'
-            }}
-          >
-            {gameState?.name || 'Game Session'}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-            <Chip
-              label={isConnected ? 'Connected' : 'Disconnected'}
-              color={isConnected ? 'success' : 'error'}
-              size="small"
-              sx={{ fontFamily: 'Crimson Text, serif' }}
-            />
-            <Chip
-              label={`${gameState?.participants?.length || 0} Players`}
-              size="small"
-              sx={{ fontFamily: 'Crimson Text, serif' }}
-            />
-          </Box>
-        </Box>
-
-        <Button
-          variant="outlined"
-          startIcon={<ExitToAppIcon />}
-          onClick={handleLeaveGame}
-          sx={{
-            fontFamily: 'Crimson Text, serif',
-            fontWeight: 600
-          }}
-        >
-          Leave Game
-        </Button>
-      </Box>
-
       {wsError && (
         <Alert severity="warning" sx={{ m: 2 }}>
           WebSocket error: {wsError}
@@ -368,36 +321,43 @@ const GameSession = ({ gameId, token, onLeaveGame }) => {
       <Box sx={{
         flexGrow: 1,
         display: 'flex',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        position: 'relative'
       }}>
+        {/* Right Panel Toggle */}
+        <PanelToggle
+          position="right"
+          isHidden={rightPanelHidden}
+          onClick={() => setRightPanelHidden(!rightPanelHidden)}
+        />
+
         {/* Battle Grid */}
         <Box sx={{
           flexGrow: 1,
-          overflow: 'auto',
-          p: 2
+          overflow: 'auto'
         }}>
           <DragAndDropContext
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
             characterUpdateTrigger={characterUpdateTrigger}
+            isHidden={leftPanelHidden}
+            onTogglePanel={() => setLeftPanelHidden(!leftPanelHidden)}
           />
         </Box>
 
-        {/* Log Window */}
-        <Box sx={{
-          width: '350px',
-          borderLeft: '3px solid',
-          borderColor: 'primary.main',
-          background: 'background.paper'
-        }}>
-          <LogWindow
-            logs={logs}
-            addLogMessage={addLogMessage}
-            gameId={gameId}
-            token={token}
-          />
-        </Box>
+        {/* Right Panel */}
+        <RightPanel
+          isHidden={rightPanelHidden}
+          logs={logs}
+          addLogMessage={addLogMessage}
+          gameId={gameId}
+          token={token}
+          onLogout={onLogout}
+          onLeaveGame={handleLeaveGame}
+          gameState={gameState}
+          isConnected={isConnected}
+        />
       </Box>
     </Box>
   );

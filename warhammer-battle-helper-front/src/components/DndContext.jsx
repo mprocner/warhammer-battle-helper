@@ -17,7 +17,7 @@ const generateFightZones = () => {
   return zones;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0 }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel }) {
   const [initialCharacters, setInitialCharacters] = useState([]);
   const fightZonesRef = useRef(generateFightZones());
   const [fightZones, setFightZones] = useState(fightZonesRef.current);
@@ -575,9 +575,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       onDragEnd={handleDragEnd}
     >
       <div className="dnd-context">
-        {/* Left Sidebar */}
-        <div className="left-sidebar">
-          <CharacterDetailsPanel
+        {/* Left Sidebar with Toggle */}
+        <div className="left-sidebar-wrapper">
+          <div className={`left-sidebar ${isHidden ? 'left-sidebar--hidden' : ''}`}>
+            {/* Sidebar Header */}
+            <header className="panel-header">
+              <h2 className="panel-header__title">Character Details</h2>
+            </header>
+            <CharacterDetailsPanel
             character={selectedCharacter}
             onAttack={handlePanelAttack}
             onCharacterUpdate={handleCharacterUpdate}
@@ -667,6 +672,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
               })}
             </div>
           </div>
+          </div>
+          {/* Left Panel Toggle */}
+          <button
+            className={`panel-toggle panel-toggle--left ${isHidden ? 'panel-toggle--hidden' : ''}`}
+            onClick={onTogglePanel}
+            title={isHidden ? 'Show Panel' : 'Hide Panel'}
+          >
+            <span className="panel-toggle__arrow">{isHidden ? '▶' : '◀'}</span>
+          </button>
         </div>
 
         {/* Fight Grid */}

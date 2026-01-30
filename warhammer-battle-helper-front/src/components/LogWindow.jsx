@@ -85,10 +85,6 @@ const LogWindow = ({
 
     return (
         <div className="log-window">
-            <header className="log-window__header">
-                <h2 className="log-window__title">Battle Chronicle</h2>
-            </header>
-
             <div className="log-window__messages">
                 {trimmedMessages.length === 0 ? (
                     <div className="log-window__empty">

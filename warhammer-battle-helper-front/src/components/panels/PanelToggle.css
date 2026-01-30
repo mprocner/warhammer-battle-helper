@@ -1,0 +1,41 @@
+/* Panel Toggle Button - Base styles */
+.panel-toggle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 60px;
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border: 2px solid #7a5c42;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: #f4e8d8;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.panel-toggle:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.4);
+}
+
+/* Right toggle positioning */
+.panel-toggle--right {
+  right: 420px;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+}
+
+.panel-toggle--right.panel-toggle--hidden {
+  right: 0;
+  border-right: 2px solid #7a5c42;
+  border-radius: 6px 0 0 6px;
+}
+
+.panel-toggle__arrow {
+  line-height: 1;
+}

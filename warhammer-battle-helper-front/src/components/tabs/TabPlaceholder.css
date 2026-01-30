@@ -1,0 +1,41 @@
+/* Tab Placeholder Styles */
+.tab-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  height: 100%;
+  min-height: 300px;
+}
+
+.tab-placeholder__icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.tab-placeholder__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin-bottom: 8px;
+}
+
+.tab-placeholder__message {
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  color: #7a5c42;
+  font-style: italic;
+  margin-bottom: 16px;
+}
+
+.tab-placeholder__description {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #8a7d6a;
+  max-width: 250px;
+  line-height: 1.5;
+}

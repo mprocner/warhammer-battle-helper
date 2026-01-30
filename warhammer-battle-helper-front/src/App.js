@@ -5,8 +5,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import axiosInstance from './api/axios';
 import theme from './theme';
 
-import DragAndDropContext from './components/DndContext';
-import LogWindow from "./components/LogWindow";
 import Login from './components/Login';
 import Register from './components/Register';
 import Navigation from './components/Navigation';
@@ -15,7 +13,7 @@ import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
 
 function App() {
-    const [logs, setLogs] = useState([
+    const [, setLogs] = useState([
         {
             text: 'Application initialized',
             timestamp: new Date(),
@@ -105,7 +103,7 @@ function App() {
             <CssBaseline />
             <Router>
                 <div className="App">
-                    <Navigation user={user} onLogout={handleLogout} />
+                    <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
 
                     <Routes>
                     <Route
@@ -136,6 +134,7 @@ function App() {
                                             gameId={currentGameId}
                                             token={user.token}
                                             onLeaveGame={handleLeaveGame}
+                                            onLogout={handleLogout}
                                         />
                                     ) : (
                                         <GameLobby
@@ -147,30 +146,6 @@ function App() {
                             ) : (
                                 <Navigate to="/login" replace />
                             )
-                        }
-                    />
-
-                    {/* Legacy single-player battle mode */}
-                    <Route
-                        path="/solo"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
-                                    {/* Main battle content area */}
-                                    <div className="main" style={{ flex: 1, overflow: 'auto' }}>
-                                        <DragAndDropContext addLogMessage={addLogMessage}/>
-                                    </div>
-                                    {/* Log window component - fixed on right */}
-                                    <div style={{ width: '400px', height: '100%', borderLeft: '1px solid #ccc' }}>
-                                        <LogWindow
-                                            messages={logs}
-                                            maxMessages={50}
-                                            autoScroll={true}
-                                            addLogMessage={addLogMessage}
-                                        />
-                                    </div>
-                                </div>
-                            </ProtectedRoute>
                         }
                     />
                     </Routes>
