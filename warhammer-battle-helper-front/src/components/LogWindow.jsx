@@ -33,7 +33,7 @@ const LogWindow = ({
 
     useEffect(() => {
         if (autoScroll && logEndRef.current) {
-            logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            logEndRef.current.scrollIntoView({ behavior: 'instant' });
         }
     }, [trimmedMessages, autoScroll]);
 
