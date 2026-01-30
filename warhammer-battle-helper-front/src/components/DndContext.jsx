@@ -275,7 +275,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       addLogMessage('Failed to initiate fight', 'error');
     }
   };
-
   const handleModifierConfirm = (modifier) => {
     setShowModifierModal(false);
     handleAttack(attacker, pendingDefender, modifier);
@@ -685,26 +684,28 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
         {/* Fight Grid */}
         <div className="fight-grid">
-          {fightZones.map(zone => (
-            <FightArea
-                key={zone.id}
-                currentZone={zone}
-                fightZones={fightZones}
-                addLogMessage={addLogMessage}
-                isActiveDrop={overId === zone.id}
-                activeId={activeId}
-                highlightedTargets={highlightedTargets}
-                highlightPossibleTargets={highlightPossibleTargets}
-                clearHighlightedTargets={clearHighlightedTargets}
-                setCurrentAttacker={setCurrentAttacker}
-                setCurrentDefender={setCurrentDefender}
-                onCharacterUpdate={handleCharacterUpdate}
-                onSelectCharacter={handleSelectCharacter}
-                selectedCharacterId={selectedCharacter?.id}
-                isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
-                isMultiplayer={!!(gameId && token)}
-            />
-          ))}
+          <div className="fight-grid-inner">
+            {fightZones.map(zone => (
+              <FightArea
+                  key={zone.id}
+                  currentZone={zone}
+                  fightZones={fightZones}
+                  addLogMessage={addLogMessage}
+                  isActiveDrop={overId === zone.id}
+                  activeId={activeId}
+                  highlightedTargets={highlightedTargets}
+                  highlightPossibleTargets={highlightPossibleTargets}
+                  clearHighlightedTargets={clearHighlightedTargets}
+                  setCurrentAttacker={setCurrentAttacker}
+                  setCurrentDefender={setCurrentDefender}
+                  onCharacterUpdate={handleCharacterUpdate}
+                  onSelectCharacter={handleSelectCharacter}
+                  selectedCharacterId={selectedCharacter?.id}
+                  isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
+                  isMultiplayer={!!(gameId && token)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

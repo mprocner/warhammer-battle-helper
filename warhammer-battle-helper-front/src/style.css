@@ -859,11 +859,18 @@ header nav a:hover::after {
 
 /* ================== FIGHT GRID (10x10) - Light Tactical Map ================== */
 .fight-grid {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: scroll;
+}
+
+.fight-grid-inner {
   display: grid;
   grid-template-columns: repeat(20, 1fr);
   padding: 20px;
-  max-width: 100%;
-  width: 100%;
+  min-height: 100%;
   box-sizing: border-box;
   align-content: start;
   background: #c9975b;
@@ -872,13 +879,11 @@ header nav a:hover::after {
     0 8px 24px rgba(107, 68, 35, 0.3),
     inset 0 0 40px rgba(122, 92, 66, 0.15);
   position: relative;
-  height: 100vh;
-  overflow: scroll;
 }
 
 /* Decorative corner ornaments */
-.fight-grid::before,
-.fight-grid::after {
+.fight-grid-inner::before,
+.fight-grid-inner::after {
   content: '';
   position: absolute;
   width: 30px;
@@ -887,14 +892,14 @@ header nav a:hover::after {
   z-index: 1;
 }
 
-.fight-grid::before {
+.fight-grid-inner::before {
   top: 10px;
   left: 10px;
   border-right: none;
   border-bottom: none;
 }
 
-.fight-grid::after {
+.fight-grid-inner::after {
   bottom: 10px;
   right: 10px;
   border-left: none;
