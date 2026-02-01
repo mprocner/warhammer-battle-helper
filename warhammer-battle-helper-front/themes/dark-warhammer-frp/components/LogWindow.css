@@ -1,0 +1,441 @@
+/* ================== LOG WINDOW STYLES ================== */
+
+/* CSS Custom Properties - Dark Warhammer FRP Theme */
+:root {
+  /* Panel dimensions */
+  --panel-right-width: 420px;
+  --vertical-tabs-width: 70px;
+  --panel-transition: 0.3s ease;
+
+  /* Primary Dark Backgrounds */
+  --log-bg-darkest: #0d0b09;
+  --log-bg-dark: #1a1612;
+  --log-bg-medium: #2a2420;
+  --log-bg-lighter: #3a322c;
+
+  /* Tarnished Metals */
+  --log-brass-dark: #6b5a2a;
+  --log-brass-medium: #8b7a3a;
+  --log-brass-bright: #b09a4a;
+
+  /* Blood & Danger */
+  --log-blood-dark: #4a0f0f;
+  --log-blood-medium: #6b1a1a;
+  --log-blood-bright: #8b2424;
+
+  /* Success Greens */
+  --log-success-dark: #2a4a2a;
+  --log-success-medium: #3a6a3a;
+
+  /* Text Colors */
+  --log-text-primary: #e8dcc4;
+  --log-text-secondary: #a89878;
+  --log-text-muted: #6a5a4a;
+
+  /* Legacy aliases for compatibility */
+  --log-brown-dark: var(--log-brass-dark);
+  --log-brown-medium: var(--log-brass-medium);
+  --log-brown-light: var(--log-brass-bright);
+  --log-brown-text: var(--log-text-primary);
+  --log-brown-muted: var(--log-text-muted);
+  --log-brown-accent: var(--log-brass-medium);
+
+  --log-green-dark: #1a2a1a;
+  --log-green-medium: var(--log-success-medium);
+  --log-green-light: #4a8a4a;
+  --log-success: var(--log-success-medium);
+
+  --log-red-dark: var(--log-blood-dark);
+  --log-red-medium: var(--log-blood-medium);
+  --log-red-light: var(--log-blood-bright);
+  --log-crit-failure: #2a0808;
+
+  --log-gold-dark: var(--log-brass-dark);
+  --log-gold-medium: var(--log-brass-medium);
+  --log-gold-light: var(--log-brass-bright);
+
+  --log-bg-parchment: var(--log-bg-medium);
+  --log-bg-parchment-dark: var(--log-bg-dark);
+  --log-bg-item: rgba(0, 0, 0, 0.3);
+  --log-bg-item-hover: rgba(0, 0, 0, 0.4);
+
+  --log-info: var(--log-text-secondary);
+
+  --log-font-display: "Cinzel", "IM Fell English SC", serif;
+  --log-font-body: "Crimson Text", "IM Fell DW Pica", Georgia, serif;
+}
+
+/* ================== WAX SEAL TOKEN ================== */
+.wax-seal-token {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  color: var(--log-text-primary);
+}
+
+.wax-seal-token--crit-success {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-brass-bright), var(--log-brass-dark));
+  border: 3px solid #4a3a1a;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              inset 0 2px 4px rgba(255,255,255,0.2),
+              0 0 15px rgba(176, 154, 74, 0.4);
+}
+
+.wax-seal-token--crit-failure {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-blood-dark), #1a0404);
+  border: 3px solid var(--log-crit-failure);
+  color: #ffaaaa;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.6),
+              inset 0 -2px 4px rgba(0,0,0,0.4),
+              inset 0 2px 4px rgba(255,255,255,0.1),
+              0 0 10px rgba(107, 26, 26, 0.4);
+}
+
+.wax-seal-token--success {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.2), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-success-medium), var(--log-success-dark));
+  border: 3px solid #1a2a1a;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              inset 0 2px 4px rgba(255,255,255,0.15);
+}
+
+.wax-seal-token--failure {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-blood-bright), var(--log-blood-medium));
+  border: 3px solid var(--log-blood-dark);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.wax-seal-token--neutral {
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--log-bg-lighter), var(--log-bg-medium));
+  border: 3px solid var(--log-bg-dark);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.5),
+              inset 0 -2px 4px rgba(0,0,0,0.3),
+              inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.wax-seal-token--small-text {
+  font-size: 14px;
+}
+
+.wax-seal-token--medium-text {
+  font-size: 16px;
+}
+
+/* ================== LOG LIST ITEM (shared base) ================== */
+.log-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: var(--log-bg-item);
+  border: 1px solid var(--log-brass-dark);
+  border-radius: 0;
+}
+
+.log-list-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-list-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.log-list-item__character-name {
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  color: var(--log-brass-bright);
+  font-size: 13px;
+}
+
+.log-list-item__timestamp {
+  font-size: 10px;
+  color: var(--log-text-muted);
+}
+
+.log-list-item__description {
+  font-size: 12px;
+  color: var(--log-text-secondary);
+  margin-bottom: 6px;
+}
+
+.log-list-item__result {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--log-brass-dark);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ================== ROLL RESULT COLORS ================== */
+.log-text--crit-success {
+  color: var(--log-brass-bright);
+}
+
+.log-text--crit-failure {
+  color: #ff6666;
+}
+
+.log-text--success {
+  color: var(--log-green-light);
+}
+
+.log-text--failure {
+  color: var(--log-blood-bright);
+}
+
+/* ================== FIGHT RESULT ================== */
+.log-fight-result {
+  margin-bottom: 10px;
+}
+
+.log-fight-result__winner {
+  padding: 10px;
+  border: 2px solid var(--log-brass-dark);
+  border-radius: 0;
+  text-align: center;
+}
+
+.log-fight-result__winner--attacker {
+  background: linear-gradient(135deg, rgba(176, 154, 74, 0.15), rgba(107, 90, 42, 0.1));
+}
+
+.log-fight-result__winner--defender {
+  background: linear-gradient(135deg, rgba(58, 106, 58, 0.15), rgba(42, 74, 42, 0.1));
+}
+
+.log-fight-result__winner-name {
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--log-brass-bright);
+  margin-bottom: 6px;
+}
+
+.log-fight-result__damage {
+  font-size: 12px;
+  color: var(--log-text-secondary);
+}
+
+.log-fight-result__damage-value {
+  color: var(--log-blood-bright);
+}
+
+.log-fight-result__details {
+  font-size: 10px;
+}
+
+/* ================== SIMPLE MESSAGE ================== */
+.log-simple-message {
+  border-left: 4px solid;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--log-bg-item-hover) 0%, var(--log-bg-item) 100%);
+  border-radius: 0;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--log-brass-dark);
+  border-left-width: 4px;
+}
+
+.log-simple-message--error {
+  border-left-color: var(--log-blood-medium);
+}
+
+.log-simple-message--success {
+  border-left-color: var(--log-success-medium);
+}
+
+.log-simple-message--warning {
+  border-left-color: var(--log-brass-medium);
+}
+
+.log-simple-message--info {
+  border-left-color: var(--log-text-secondary);
+}
+
+.log-simple-message__content {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
+.log-simple-message__text {
+  font-family: var(--log-font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--log-text-primary);
+}
+
+.log-simple-message__timestamp {
+  color: var(--log-text-muted);
+  font-family: var(--log-font-body);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* ================== LOG WINDOW CONTAINER ================== */
+.log-window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--log-bg-medium) 0%, var(--log-bg-dark) 100%);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.log-window__header {
+  padding: 16px;
+  border-bottom: 3px solid var(--log-brass-dark);
+  background: linear-gradient(135deg, var(--log-bg-lighter) 0%, var(--log-bg-medium) 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.log-window__title {
+  font-family: var(--log-font-display);
+  font-weight: 700;
+  color: var(--log-brass-bright);
+  text-align: center;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.log-window__messages {
+  flex-grow: 1;
+  overflow: auto;
+}
+
+.log-window__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+}
+
+.log-window__empty-text {
+  color: var(--log-text-muted);
+  font-family: var(--log-font-body);
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.log-window__list {
+  padding: 16px;
+  list-style: none;
+  margin: 0;
+}
+
+/* ================== DICE ROLL CONTROLS ================== */
+.dice-controls {
+  padding: 16px;
+  border-top: 2px solid var(--log-brass-dark);
+  background: linear-gradient(135deg, var(--log-bg-medium) 0%, var(--log-bg-dark) 100%);
+}
+
+.dice-controls__row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dice-controls__button {
+  min-width: 50px;
+  border: 1px solid var(--log-brass-dark);
+  color: var(--log-text-primary);
+  background: linear-gradient(135deg, var(--log-bg-lighter) 0%, var(--log-bg-medium) 100%);
+  padding: 6px 12px;
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.dice-controls__button:hover {
+  border-color: var(--log-brass-medium);
+  background: linear-gradient(135deg, var(--log-bg-lighter) 0%, var(--log-bg-lighter) 100%);
+  box-shadow: 0 0 8px rgba(176, 154, 74, 0.3);
+}
+
+.dice-controls__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dice-controls__input {
+  flex-grow: 1;
+  border: 1px solid var(--log-brass-dark);
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--log-text-primary);
+}
+
+.dice-controls__input:hover,
+.dice-controls__input:focus {
+  border-color: var(--log-brass-medium);
+  outline: none;
+  box-shadow: 0 0 8px rgba(176, 154, 74, 0.2);
+}
+
+/* ================== MODIFIER TEXT ================== */
+.log-modifier {
+  font-size: 11px;
+  color: var(--log-text-muted);
+}
+
+/* ================== ROLL VALUE DISPLAY ================== */
+.log-roll-value {
+  font-family: var(--log-font-display);
+  font-size: 14px;
+}
+
+.log-roll-value--inline {
+  font-weight: 600;
+}
+
+/* ================== MESSAGE ICONS ================== */
+.log-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.log-icon--success {
+  color: var(--log-success-medium);
+}
+
+.log-icon--error {
+  color: var(--log-blood-medium);
+}
+
+.log-icon--warning {
+  color: var(--log-brass-medium);
+}
+
+.log-icon--info {
+  color: var(--log-text-secondary);
+}

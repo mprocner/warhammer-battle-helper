@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Panel - Design 2: Vertical Tabs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background: linear-gradient(135deg, #2a1f1a 0%, #1a1410 100%);
+            color: #3a2f1f;
+            min-height: 100vh;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar - Character Details */
+        .left-sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border-right: 4px solid #7a5c42;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border-bottom: 2px solid #6b4423;
+        }
+
+        .sidebar-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: #f4e8d8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .character-info {
+            padding: 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .character-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(107, 68, 35, 0.3);
+        }
+
+        .character-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #3a2f1f;
+        }
+
+        .character-class {
+            font-size: 0.9rem;
+            color: #6b4423;
+            margin-top: 4px;
+        }
+
+        .sidebar-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b4423;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+            border: 1px solid #c9975b;
+            padding: 6px 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: #7a5c42;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #3a2f1f;
+        }
+
+        .characters-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .character-tile {
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border: 2px solid #c9975b;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .character-tile:hover {
+            border-color: #7a5c42;
+            transform: translateX(2px);
+        }
+
+        .character-tile.selected {
+            border-color: #6b4423;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
+        }
+
+        .tile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .tile-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #3a2f1f;
+            vertical-align: middle;
+        }
+
+        /* Main Content - Fight Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .fight-area {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(15, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 2px;
+            background: rgba(107, 68, 35, 0.3);
+            padding: 4px;
+            border: 2px solid #5c4a3a;
+        }
+
+        .grid-cell {
+            background: linear-gradient(135deg, #fdfbf7 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .grid-cell:hover {
+            background: linear-gradient(135deg, #fff 0%, #fdfbf7 100%);
+            box-shadow: inset 0 0 8px rgba(212, 175, 116, 0.5);
+        }
+
+        .grid-cell.has-character {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+
+        .cell-token {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: grab;
+        }
+
+        .cell-token.enemy {
+            background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);
+        }
+
+        /* Right Panel - Settings Panel (Design 2: Vertical Tabs) */
+        .right-panel {
+            width: 420px;
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border-left: 4px solid #7a5c42;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border-bottom: 2px solid #6b4423;
+        }
+
+        .panel-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f4e8d8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* Tab Layout - Vertical Tabs Design */
+        .tabs-wrapper {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .tabs-nav-vertical {
+            width: 70px;
+            background: linear-gradient(180deg, #4a3930 0%, #3a2920 100%);
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #5c4a3a;
+        }
+
+        .tab-btn-vertical {
+            padding: 16px 8px;
+            background: transparent;
+            border: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #c9975b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            border-left: 3px solid transparent;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .tab-btn-vertical:hover {
+            background: rgba(201, 151, 91, 0.15);
+            color: #f4e8d8;
+        }
+
+        .tab-btn-vertical.active {
+            background: linear-gradient(90deg, rgba(249, 243, 232, 0.1) 0%, transparent 100%);
+            color: #d4af37;
+            border-left-color: #d4af37;
+        }
+
+        .tab-icon-vertical {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+
+        .tab-label-vertical {
+            writing-mode: horizontal-tb;
+            white-space: nowrap;
+        }
+
+        .tabs-nav-vertical .spacer {
+            flex: 1;
+        }
+
+        .tab-btn-vertical.bottom {
+            border-top: 1px solid rgba(201, 151, 91, 0.3);
+        }
+
+        /* Tab Content Area */
+        .tab-content-area {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .tab-content-area.active {
+            display: block;
+        }
+
+        .content-section {
+            padding: 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .content-section:last-child {
+            border-bottom: none;
+        }
+
+        .content-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6b4423;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #c9975b;
+        }
+
+        /* Chat Tab Content */
+        .chat-messages {
+            max-height: 350px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            border-left: 3px solid #c9975b;
+        }
+
+        .chat-message.gm {
+            border-left-color: #d4af37;
+            background: linear-gradient(135deg, #fffbf0 0%, #f9f3e8 100%);
+        }
+
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .chat-content {
+            flex: 1;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .chat-author {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #3a2f1f;
+        }
+
+        .chat-time {
+            font-size: 0.7rem;
+            color: #7a5c42;
+        }
+
+        .chat-text {
+            font-size: 0.9rem;
+            color: #3a2f1f;
+            line-height: 1.5;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
+            border-top: 2px solid #c9975b;
+            margin: -16px;
+            margin-top: 0;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 2px solid #c9975b;
+            font-family: 'Crimson Text', serif;
+            font-size: 0.95rem;
+            color: #3a2f1f;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+        }
+
+        .chat-send-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+            border: 2px solid #3a5c3a;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #f4e8d8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-send-btn:hover {
+            background: linear-gradient(135deg, #5a8c69 0%, #6a8a5a 100%);
+            box-shadow: 0 2px 8px rgba(74, 124, 89, 0.4);
+        }
+
+        /* Scenes Tab Content */
+        .scenes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .scene-selector {
+            flex: 1;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 2px solid #c9975b;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            color: #3a2f1f;
+            cursor: pointer;
+        }
+
+        .scene-selector:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .layer-item:hover {
+            border-color: #7a5c42;
+            transform: translateX(2px);
+        }
+
+        .layer-item.active {
+            border-color: #d4af37;
+            border-width: 2px;
+            background: linear-gradient(135deg, #fffbf0 0%, #f9f3e8 100%);
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+        }
+
+        .layer-drag-handle {
+            color: #c9975b;
+            cursor: grab;
+            font-size: 1rem;
+        }
+
+        .layer-visibility {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #7a5c42;
+            font-size: 1rem;
+            background: rgba(201, 151, 91, 0.1);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .layer-visibility:hover {
+            background: rgba(201, 151, 91, 0.25);
+        }
+
+        .layer-visibility.hidden {
+            opacity: 0.4;
+        }
+
+        .layer-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
+            border: 1px solid #c9975b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .layer-info {
+            flex: 1;
+        }
+
+        .layer-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #3a2f1f;
+        }
+
+        .layer-count {
+            font-size: 0.7rem;
+            color: #7a5c42;
+            margin-top: 2px;
+        }
+
+        .layer-lock {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #c9975b;
+            font-size: 0.85rem;
+        }
+
+        .layer-lock.locked {
+            color: #a93434;
+        }
+
+        .add-layer-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px dashed #c9975b;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #7a5c42;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .add-layer-btn:hover {
+            background: rgba(201, 151, 91, 0.1);
+            border-color: #7a5c42;
+            color: #3a2f1f;
+        }
+
+        /* Settings Tab Content */
+        .settings-category {
+            margin-bottom: 20px;
+        }
+
+        .category-header {
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #7a5c42;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .setting-row:hover {
+            border-color: #c9975b;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #3a2f1f;
+        }
+
+        .setting-desc {
+            font-size: 0.75rem;
+            color: #7a5c42;
+            margin-top: 2px;
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 22px;
+            background: #d4a574;
+            border-radius: 11px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            left: 24px;
+        }
+
+        .setting-select-row {
+            display: flex;
+            flex-direction: column;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 6px;
+        }
+
+        .setting-select-row .setting-label {
+            margin-bottom: 8px;
+        }
+
+        .setting-select {
+            width: 100%;
+            padding: 8px 10px;
+            background: #f9f3e8;
+            border: 1px solid #c9975b;
+            font-family: 'Crimson Text', serif;
+            font-size: 0.9rem;
+            color: #3a2f1f;
+            cursor: pointer;
+        }
+
+        .setting-select:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+
+        .setting-range-row {
+            display: flex;
+            flex-direction: column;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 6px;
+        }
+
+        .range-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .range-value {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b4423;
+            background: #e8dcc4;
+            padding: 2px 8px;
+        }
+
+        .setting-range {
+            width: 100%;
+            height: 6px;
+            background: #d4a574;
+            border-radius: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .setting-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border: 2px solid #6b4423;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Panel Footer */
+        .panel-footer {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #4a3930 0%, #3a2920 100%);
+            border-top: 2px solid #5c4a3a;
+            display: flex;
+            gap: 10px;
+        }
+
+        .footer-btn {
+            flex: 1;
+            padding: 10px 12px;
+            background: transparent;
+            border: 2px solid #7a5c42;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #c9975b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .footer-btn:hover {
+            background: rgba(201, 151, 91, 0.15);
+            border-color: #c9975b;
+            color: #f4e8d8;
+        }
+
+        .footer-btn.primary {
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+            border-color: #3a5c3a;
+            color: #f4e8d8;
+        }
+
+        .footer-btn.primary:hover {
+            background: linear-gradient(135deg, #5a8c69 0%, #6a8a5a 100%);
+            box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e8dcc4;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c9975b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a67c52;
+        }
+
+        /* Dark scrollbar for vertical tabs */
+        .tabs-nav-vertical::-webkit-scrollbar-track {
+            background: #3a2920;
+        }
+
+        .tabs-nav-vertical::-webkit-scrollbar-thumb {
+            background: #5c4a3a;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <div class="sidebar-header">
+                <h2>Character Details</h2>
+            </div>
+
+            <div class="character-info">
+                <div class="character-avatar">GH</div>
+                <div class="character-name">Grimbald Hammerforge</div>
+                <div class="character-class">Dwarf Warrior - Level 3</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Characteristics</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">WS</div>
+                        <div class="stat-value">45</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">BS</div>
+                        <div class="stat-value">32</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">S</div>
+                        <div class="stat-value">42</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">T</div>
+                        <div class="stat-value">48</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">AG</div>
+                        <div class="stat-value">28</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Characters</div>
+            </div>
+
+            <div class="characters-list">
+                <div class="character-tile selected">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);">GH</span>
+                    <span class="tile-name">Grimbald Hammerforge</span>
+                </div>
+                <div class="character-tile">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</span>
+                    <span class="tile-name">Elara Swiftwind</span>
+                </div>
+                <div class="character-tile">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);">OW</span>
+                    <span class="tile-name">Orc Warboss</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="fight-area">
+                <div class="grid-container">
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const grid = document.querySelector('.grid-container');
+                            for (let i = 0; i < 120; i++) {
+                                const cell = document.createElement('div');
+                                cell.className = 'grid-cell';
+
+                                if (i === 23) {
+                                    cell.className += ' has-character';
+                                    cell.innerHTML = '<div class="cell-token">GH</div>';
+                                } else if (i === 45) {
+                                    cell.className += ' has-character';
+                                    cell.innerHTML = '<div class="cell-token" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</div>';
+                                } else if (i === 67) {
+                                    cell.innerHTML = '<div class="cell-token enemy">OW</div>';
+                                }
+
+                                grid.appendChild(cell);
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel - Settings (Design 2: Vertical Tabs) -->
+        <aside class="right-panel">
+            <div class="panel-header">
+                <h2>Settings</h2>
+            </div>
+
+            <div class="tabs-wrapper">
+                <!-- Vertical Tab Navigation -->
+                <div class="tabs-nav-vertical">
+                    <button class="tab-btn-vertical active" data-tab="chat">
+                        <span class="tab-icon-vertical">💬</span>
+                        <span class="tab-label-vertical">Chat</span>
+                    </button>
+                    <button class="tab-btn-vertical" data-tab="scenes">
+                        <span class="tab-icon-vertical">🗺️</span>
+                        <span class="tab-label-vertical">Scenes</span>
+                    </button>
+                    <button class="tab-btn-vertical" data-tab="settings">
+                        <span class="tab-icon-vertical">⚙️</span>
+                        <span class="tab-label-vertical">General</span>
+                    </button>
+                    <div class="spacer"></div>
+                    <button class="tab-btn-vertical bottom" data-tab="help">
+                        <span class="tab-icon-vertical">❓</span>
+                        <span class="tab-label-vertical">Help</span>
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-content-area active" id="chat">
+                    <div class="content-section" style="display: flex; flex-direction: column; height: 100%;">
+                        <div class="content-title">Party Chat</div>
+                        <div class="chat-messages" style="flex: 1;">
+                            <div class="chat-message">
+                                <div class="chat-avatar" style="background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);">GH</div>
+                                <div class="chat-content">
+                                    <div class="chat-header">
+                                        <span class="chat-author">Grimbald</span>
+                                        <span class="chat-time">14:32</span>
+                                    </div>
+                                    <div class="chat-text">I'll take the left flank. Watch out for those orcs!</div>
+                                </div>
+                            </div>
+                            <div class="chat-message">
+                                <div class="chat-avatar" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</div>
+                                <div class="chat-content">
+                                    <div class="chat-header">
+                                        <span class="chat-author">Elara</span>
+                                        <span class="chat-time">14:33</span>
+                                    </div>
+                                    <div class="chat-text">Understood. I'll provide cover fire from the ruins.</div>
+                                </div>
+                            </div>
+                            <div class="chat-message gm">
+                                <div class="chat-avatar">GM</div>
+                                <div class="chat-content">
+                                    <div class="chat-header">
+                                        <span class="chat-author">Game Master</span>
+                                        <span class="chat-time">14:35</span>
+                                    </div>
+                                    <div class="chat-text">The orc warboss notices your approach and lets out a thunderous war cry! Roll for Initiative.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" class="chat-input" placeholder="Type your message...">
+                            <button class="chat-send-btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content-area" id="scenes">
+                    <div class="content-section">
+                        <div class="content-title">Current Scene</div>
+                        <div class="scenes-header">
+                            <select class="scene-selector">
+                                <option>Tavern Battle</option>
+                                <option>Forest Ambush</option>
+                                <option>Castle Siege</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="content-title">Layers</div>
+                        <div class="layers-list">
+                            <div class="layer-item active">
+                                <div class="layer-drag-handle">⋮⋮</div>
+                                <div class="layer-visibility">👁️</div>
+                                <div class="layer-icon">🏔️</div>
+                                <div class="layer-info">
+                                    <div class="layer-name">Background</div>
+                                    <div class="layer-count">1 element</div>
+                                </div>
+                                <div class="layer-lock locked">🔒</div>
+                            </div>
+                            <div class="layer-item">
+                                <div class="layer-drag-handle">⋮⋮</div>
+                                <div class="layer-visibility">👁️</div>
+                                <div class="layer-icon">🏠</div>
+                                <div class="layer-info">
+                                    <div class="layer-name">Buildings</div>
+                                    <div class="layer-count">4 elements</div>
+                                </div>
+                                <div class="layer-lock">🔓</div>
+                            </div>
+                            <div class="layer-item">
+                                <div class="layer-drag-handle">⋮⋮</div>
+                                <div class="layer-visibility">👁️</div>
+                                <div class="layer-icon">🌲</div>
+                                <div class="layer-info">
+                                    <div class="layer-name">Terrain</div>
+                                    <div class="layer-count">12 elements</div>
+                                </div>
+                                <div class="layer-lock">🔓</div>
+                            </div>
+                            <div class="layer-item">
+                                <div class="layer-drag-handle">⋮⋮</div>
+                                <div class="layer-visibility hidden">👁️</div>
+                                <div class="layer-icon">💀</div>
+                                <div class="layer-info">
+                                    <div class="layer-name">GM Only</div>
+                                    <div class="layer-count">3 elements</div>
+                                </div>
+                                <div class="layer-lock">🔓</div>
+                            </div>
+                        </div>
+                        <button class="add-layer-btn">+ Add New Layer</button>
+                    </div>
+                </div>
+
+                <div class="tab-content-area" id="settings">
+                    <div class="content-section">
+                        <div class="settings-category">
+                            <div class="category-header">Display</div>
+
+                            <div class="setting-select-row">
+                                <label class="setting-label">Language</label>
+                                <select class="setting-select">
+                                    <option>English</option>
+                                    <option>Polski</option>
+                                    <option>Deutsch</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-select-row">
+                                <label class="setting-label">Theme</label>
+                                <select class="setting-select">
+                                    <option>Parchment (Light)</option>
+                                    <option>Dark Realm</option>
+                                    <option>Classic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-category">
+                            <div class="category-header">Interface</div>
+
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Show Grid Lines</div>
+                                    <div class="setting-desc">Display grid overlay on battle map</div>
+                                </div>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Enable Animations</div>
+                                    <div class="setting-desc">Animate token movements and effects</div>
+                                </div>
+                                <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                            </div>
+
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <div class="setting-label">Sound Effects</div>
+                                    <div class="setting-desc">Play sounds for dice rolls and actions</div>
+                                </div>
+                                <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                            </div>
+                        </div>
+
+                        <div class="settings-category">
+                            <div class="category-header">Grid</div>
+
+                            <div class="setting-range-row">
+                                <div class="range-header">
+                                    <label class="setting-label">Grid Size</label>
+                                    <span class="range-value">50px</span>
+                                </div>
+                                <input type="range" class="setting-range" min="30" max="80" value="50">
+                            </div>
+
+                            <div class="setting-range-row">
+                                <div class="range-header">
+                                    <label class="setting-label">Grid Opacity</label>
+                                    <span class="range-value">100%</span>
+                                </div>
+                                <input type="range" class="setting-range" min="0" max="100" value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content-area" id="help">
+                    <div class="content-section">
+                        <div class="content-title">Help & Support</div>
+                        <p style="color: #6b4423; font-size: 0.9rem; line-height: 1.6;">
+                            Welcome to the Warhammer Battle Helper! This panel allows you to manage your game settings, chat with other players, and control scene layers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="panel-footer">
+                <button class="footer-btn">Reset</button>
+                <button class="footer-btn primary">Save Changes</button>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn-vertical').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn-vertical').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content-area').forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

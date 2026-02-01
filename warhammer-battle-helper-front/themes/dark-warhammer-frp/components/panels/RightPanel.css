@@ -1,0 +1,114 @@
+/* Right Panel - Settings Panel with Vertical Tabs - Dark Warhammer FRP Theme */
+:root {
+  --panel-right-width: 420px;
+  --vertical-tabs-width: 70px;
+  --panel-transition: 0.3s ease;
+}
+
+.right-panel {
+  width: var(--panel-right-width);
+  min-width: var(--panel-right-width);
+  background: linear-gradient(135deg, var(--bg-medium, #2a2420) 0%, var(--bg-dark, #1a1612) 100%);
+  border-left: 4px solid var(--iron-dark, #3a3a3c);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all var(--panel-transition);
+  position: relative;
+  box-shadow:
+    -4px 0 16px rgba(0, 0, 0, 0.5),
+    inset 1px 0 0 rgba(176, 154, 74, 0.1);
+}
+
+.right-panel--hidden {
+  width: 0;
+  min-width: 0;
+  border-left-width: 0;
+  opacity: 0;
+}
+
+/* Tabs Wrapper */
+.right-panel__tabs-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Vertical Tab Navigation */
+.right-panel__tabs-nav {
+  width: var(--vertical-tabs-width);
+  background: linear-gradient(180deg, var(--bg-medium, #2a2420) 0%, var(--bg-darkest, #0d0b09) 100%);
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid var(--brass-dark, #6b5a2a);
+}
+
+.right-panel__tab-btn {
+  padding: 16px 8px;
+  background: transparent;
+  border: none;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary, #a89878);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border-left: 3px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.right-panel__tab-btn:hover {
+  background: rgba(176, 154, 74, 0.1);
+  color: var(--text-primary, #e8dcc4);
+}
+
+.right-panel__tab-btn--active {
+  background: linear-gradient(90deg, rgba(176, 154, 74, 0.15) 0%, transparent 100%);
+  color: var(--brass-bright, #b09a4a);
+  border-left-color: var(--brass-bright, #b09a4a);
+}
+
+.right-panel__tab-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.right-panel__tab-label {
+  writing-mode: horizontal-tb;
+  white-space: nowrap;
+}
+
+/* Tab Content Area */
+.right-panel__tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Override LogWindow styles when inside RightPanel */
+.right-panel__tab-content .log-window {
+  border: none;
+}
+
+.right-panel__tab-content .log-window__header {
+  border-radius: 0;
+}
+
+/* Dark scrollbar for vertical tabs */
+.right-panel__tabs-nav::-webkit-scrollbar-track {
+  background: var(--bg-darkest, #0d0b09);
+}
+
+.right-panel__tabs-nav::-webkit-scrollbar-thumb {
+  background: var(--brass-dark, #6b5a2a);
+}
+
+.right-panel__tabs-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--brass-medium, #8b7a3a);
+}

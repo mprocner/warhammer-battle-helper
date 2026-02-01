@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Panel - Design 1: Top Tabs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background: linear-gradient(135deg, #2a1f1a 0%, #1a1410 100%);
+            color: #3a2f1f;
+            min-height: 100vh;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar - Character Details */
+        .left-sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border-right: 4px solid #7a5c42;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border-bottom: 2px solid #6b4423;
+        }
+
+        .sidebar-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: #f4e8d8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .character-info {
+            padding: 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .character-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(107, 68, 35, 0.3);
+        }
+
+        .character-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #3a2f1f;
+        }
+
+        .character-class {
+            font-size: 0.9rem;
+            color: #6b4423;
+            margin-top: 4px;
+        }
+
+        .sidebar-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6b4423;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+            border: 1px solid #c9975b;
+            padding: 6px 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.65rem;
+            color: #7a5c42;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #3a2f1f;
+        }
+
+        .characters-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .character-tile {
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border: 2px solid #c9975b;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .character-tile:hover {
+            border-color: #7a5c42;
+            transform: translateX(2px);
+        }
+
+        .character-tile.selected {
+            border-color: #6b4423;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
+        }
+
+        .tile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .tile-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #3a2f1f;
+            vertical-align: middle;
+        }
+
+        /* Main Content - Fight Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .fight-area {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(15, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 2px;
+            background: rgba(107, 68, 35, 0.3);
+            padding: 4px;
+            border: 2px solid #5c4a3a;
+        }
+
+        .grid-cell {
+            background: linear-gradient(135deg, #fdfbf7 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .grid-cell:hover {
+            background: linear-gradient(135deg, #fff 0%, #fdfbf7 100%);
+            box-shadow: inset 0 0 8px rgba(212, 175, 116, 0.5);
+        }
+
+        .grid-cell.has-character {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+
+        .cell-token {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #f4e8d8;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: grab;
+        }
+
+        .cell-token.enemy {
+            background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);
+        }
+
+        /* Right Panel - Settings Panel (Design 1: Top Tabs) */
+        .right-panel {
+            width: 380px;
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            border-left: 4px solid #7a5c42;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border-bottom: 2px solid #6b4423;
+        }
+
+        .panel-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f4e8d8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* Tab Navigation - Top Tabs Design */
+        .tabs-container {
+            background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
+            border-bottom: 2px solid #c9975b;
+        }
+
+        .tabs-nav {
+            display: flex;
+            padding: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 12px;
+            background: transparent;
+            border: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b4423;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn:hover {
+            background: rgba(201, 151, 91, 0.2);
+            color: #3a2f1f;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+            color: #3a2f1f;
+            border-bottom: 3px solid #d4af37;
+        }
+
+        .tab-btn.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #d4af37 0%, #b8941f 100%);
+        }
+
+        .tab-icon {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-section {
+            padding: 16px;
+            border-bottom: 1px solid #d4a574;
+        }
+
+        .content-section:last-child {
+            border-bottom: none;
+        }
+
+        .content-title {
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #6b4423;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Chat Tab Content */
+        .chat-messages {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 12px;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+        }
+
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel', serif;
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .chat-content {
+            flex: 1;
+        }
+
+        .chat-author {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #3a2f1f;
+        }
+
+        .chat-time {
+            font-size: 0.7rem;
+            color: #7a5c42;
+            margin-left: 8px;
+        }
+
+        .chat-text {
+            font-size: 0.85rem;
+            color: #3a2f1f;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 2px solid #c9975b;
+            font-family: 'Crimson Text', serif;
+            font-size: 0.9rem;
+            color: #3a2f1f;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+
+        .chat-send-btn {
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border: 2px solid #7a5c42;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #f4e8d8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-send-btn:hover {
+            background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
+            box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+        }
+
+        /* Scenes Tab Content */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .layer-item:hover {
+            border-color: #7a5c42;
+            box-shadow: 0 2px 6px rgba(107, 68, 35, 0.15);
+        }
+
+        .layer-item.active {
+            border-color: #d4af37;
+            border-width: 2px;
+            background: linear-gradient(135deg, #fffbf0 0%, #f9f3e8 100%);
+        }
+
+        .layer-visibility {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #7a5c42;
+            font-size: 1rem;
+        }
+
+        .layer-visibility.hidden {
+            opacity: 0.4;
+        }
+
+        .layer-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
+            border: 1px solid #c9975b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .layer-info {
+            flex: 1;
+        }
+
+        .layer-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #3a2f1f;
+        }
+
+        .layer-count {
+            font-size: 0.75rem;
+            color: #7a5c42;
+            margin-top: 2px;
+        }
+
+        .layer-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .layer-action-btn {
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: 1px solid #c9975b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #6b4423;
+            transition: all 0.2s ease;
+        }
+
+        .layer-action-btn:hover {
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            color: #f4e8d8;
+        }
+
+        .add-layer-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+            border: 2px solid #3a5c3a;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #f4e8d8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 12px;
+        }
+
+        .add-layer-btn:hover {
+            background: linear-gradient(135deg, #5a8c69 0%, #6a8a5a 100%);
+            box-shadow: 0 2px 6px rgba(74, 124, 89, 0.3);
+        }
+
+        /* Settings Tab Content */
+        .setting-group {
+            margin-bottom: 16px;
+        }
+
+        .setting-label {
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b4423;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .setting-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 2px solid #c9975b;
+            font-family: 'Crimson Text', serif;
+            font-size: 0.9rem;
+            color: #3a2f1f;
+            cursor: pointer;
+        }
+
+        .setting-select:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+
+        .setting-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+            border: 1px solid #d4a574;
+            margin-bottom: 8px;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            color: #3a2f1f;
+        }
+
+        .toggle-switch {
+            width: 48px;
+            height: 24px;
+            background: #d4a574;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active::after {
+            left: 26px;
+        }
+
+        .setting-range {
+            width: 100%;
+            height: 6px;
+            background: #d4a574;
+            border-radius: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .setting-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border: 2px solid #6b4423;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-value {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #6b4423;
+            margin-top: 4px;
+        }
+
+        /* Panel Footer */
+        .panel-footer {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
+            border-top: 2px solid #c9975b;
+            display: flex;
+            gap: 8px;
+        }
+
+        .footer-btn {
+            flex: 1;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+            border: 2px solid #7a5c42;
+            font-family: 'Cinzel', serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #f4e8d8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .footer-btn:hover {
+            background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
+            box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+        }
+
+        .footer-btn.primary {
+            background: linear-gradient(135deg, #4a7c59 0%, #5a7a4a 100%);
+            border-color: #3a5c3a;
+        }
+
+        .footer-btn.primary:hover {
+            background: linear-gradient(135deg, #5a8c69 0%, #6a8a5a 100%);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e8dcc4;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c9975b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a67c52;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <div class="sidebar-header">
+                <h2>Character Details</h2>
+            </div>
+
+            <div class="character-info">
+                <div class="character-avatar">GH</div>
+                <div class="character-name">Grimbald Hammerforge</div>
+                <div class="character-class">Dwarf Warrior - Level 3</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Characteristics</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">WS</div>
+                        <div class="stat-value">45</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">BS</div>
+                        <div class="stat-value">32</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">S</div>
+                        <div class="stat-value">42</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">T</div>
+                        <div class="stat-value">48</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">AG</div>
+                        <div class="stat-value">28</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-title">Characters</div>
+            </div>
+
+            <div class="characters-list">
+                <div class="character-tile selected">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #7a9a6a 0%, #5a7a4a 50%, #4a6a3a 100%);">GH</span>
+                    <span class="tile-name">Grimbald Hammerforge</span>
+                </div>
+                <div class="character-tile">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</span>
+                    <span class="tile-name">Elara Swiftwind</span>
+                </div>
+                <div class="character-tile">
+                    <span class="tile-avatar" style="background: radial-gradient(circle at 30% 30%, #c94444 0%, #a93434 50%, #8b2424 100%);">OW</span>
+                    <span class="tile-name">Orc Warboss</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="fight-area">
+                <div class="grid-container">
+                    <!-- Generate grid cells -->
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const grid = document.querySelector('.grid-container');
+                            for (let i = 0; i < 120; i++) {
+                                const cell = document.createElement('div');
+                                cell.className = 'grid-cell';
+
+                                // Add some tokens for demonstration
+                                if (i === 23) {
+                                    cell.className += ' has-character';
+                                    cell.innerHTML = '<div class="cell-token">GH</div>';
+                                } else if (i === 45) {
+                                    cell.className += ' has-character';
+                                    cell.innerHTML = '<div class="cell-token" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</div>';
+                                } else if (i === 67) {
+                                    cell.innerHTML = '<div class="cell-token enemy">OW</div>';
+                                }
+
+                                grid.appendChild(cell);
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel - Settings (Design 1: Top Tabs) -->
+        <aside class="right-panel">
+            <div class="panel-header">
+                <h2>Settings</h2>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" data-tab="chat">
+                        <span class="tab-icon">💬</span>
+                        Chat
+                    </button>
+                    <button class="tab-btn" data-tab="scenes">
+                        <span class="tab-icon">🗺️</span>
+                        Scenes
+                    </button>
+                    <button class="tab-btn" data-tab="settings">
+                        <span class="tab-icon">⚙️</span>
+                        General
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Contents -->
+            <div class="tab-content active" id="chat">
+                <div class="content-section">
+                    <div class="content-title">Party Chat</div>
+                    <div class="chat-messages">
+                        <div class="chat-message">
+                            <div class="chat-avatar">GH</div>
+                            <div class="chat-content">
+                                <span class="chat-author">Grimbald</span>
+                                <span class="chat-time">14:32</span>
+                                <div class="chat-text">I'll take the left flank. Watch out for those orcs!</div>
+                            </div>
+                        </div>
+                        <div class="chat-message">
+                            <div class="chat-avatar" style="background: radial-gradient(circle at 30% 30%, #d4af37 0%, #b8941f 50%, #8b6914 100%);">ES</div>
+                            <div class="chat-content">
+                                <span class="chat-author">Elara</span>
+                                <span class="chat-time">14:33</span>
+                                <div class="chat-text">Understood. I'll provide cover fire from the ruins.</div>
+                            </div>
+                        </div>
+                        <div class="chat-message">
+                            <div class="chat-avatar">GM</div>
+                            <div class="chat-content">
+                                <span class="chat-author">Game Master</span>
+                                <span class="chat-time">14:35</span>
+                                <div class="chat-text">The orc warboss notices your approach and lets out a thunderous war cry!</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" placeholder="Type your message...">
+                        <button class="chat-send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="scenes">
+                <div class="content-section">
+                    <div class="content-title">Scene Layers</div>
+                    <div class="layers-list">
+                        <div class="layer-item active">
+                            <div class="layer-visibility">👁️</div>
+                            <div class="layer-icon">🏔️</div>
+                            <div class="layer-info">
+                                <div class="layer-name">Background</div>
+                                <div class="layer-count">1 element</div>
+                            </div>
+                            <div class="layer-actions">
+                                <button class="layer-action-btn">🔒</button>
+                            </div>
+                        </div>
+                        <div class="layer-item">
+                            <div class="layer-visibility">👁️</div>
+                            <div class="layer-icon">🏠</div>
+                            <div class="layer-info">
+                                <div class="layer-name">Buildings</div>
+                                <div class="layer-count">4 elements</div>
+                            </div>
+                            <div class="layer-actions">
+                                <button class="layer-action-btn">✏️</button>
+                                <button class="layer-action-btn">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="layer-item">
+                            <div class="layer-visibility">👁️</div>
+                            <div class="layer-icon">🌲</div>
+                            <div class="layer-info">
+                                <div class="layer-name">Terrain</div>
+                                <div class="layer-count">12 elements</div>
+                            </div>
+                            <div class="layer-actions">
+                                <button class="layer-action-btn">✏️</button>
+                                <button class="layer-action-btn">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="layer-item">
+                            <div class="layer-visibility hidden">👁️</div>
+                            <div class="layer-icon">💀</div>
+                            <div class="layer-info">
+                                <div class="layer-name">GM Only</div>
+                                <div class="layer-count">3 elements</div>
+                            </div>
+                            <div class="layer-actions">
+                                <button class="layer-action-btn">✏️</button>
+                                <button class="layer-action-btn">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="add-layer-btn">+ Add New Layer</button>
+                </div>
+            </div>
+
+            <div class="tab-content" id="settings">
+                <div class="content-section">
+                    <div class="content-title">Display Settings</div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Language</label>
+                        <select class="setting-select">
+                            <option>English</option>
+                            <option>Polski</option>
+                            <option>Deutsch</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Theme</label>
+                        <select class="setting-select">
+                            <option>Parchment (Light)</option>
+                            <option>Dark Realm</option>
+                            <option>Classic</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-toggle">
+                        <span class="toggle-label">Show Grid Lines</span>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+
+                    <div class="setting-toggle">
+                        <span class="toggle-label">Enable Animations</span>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+
+                    <div class="setting-toggle">
+                        <span class="toggle-label">Sound Effects</span>
+                        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <div class="content-title">Grid Settings</div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Grid Size</label>
+                        <input type="range" class="setting-range" min="30" max="80" value="50">
+                        <div class="range-value">50px</div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Grid Opacity</label>
+                        <input type="range" class="setting-range" min="0" max="100" value="100">
+                        <div class="range-value">100%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="panel-footer">
+                <button class="footer-btn">Reset</button>
+                <button class="footer-btn primary">Save Changes</button>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all tabs and contents
+                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                // Add active to clicked tab and corresponding content
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
