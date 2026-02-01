@@ -3,9 +3,11 @@ package repository
 import (
 	"battle-helper/internal/models"
 	"context"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserRepository struct {
@@ -32,4 +34,15 @@ func (r *UserRepository) Create(user *models.User) error {
 	defer cancel()
 	_, err := r.Collection.InsertOne(ctx, user)
 	return err
+}
+
+func (r *UserRepository) FindByID(id primitive.ObjectID) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

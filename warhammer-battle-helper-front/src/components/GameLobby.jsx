@@ -229,7 +229,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                         fontSize: '1rem'
                       }}
                     >
-                      <strong>{t('game.gameMaster')}:</strong> {game.participants?.find(p => p.role === 'gm')?.username || t('common.unknown')}
+                      <strong>{t('game.gameMaster')}:</strong> {game.gameMasterEmail || t('common.unknown')}
                     </Typography>
                   </Box>
 

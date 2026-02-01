@@ -25,15 +25,16 @@ const (
 
 // Game represents a game session
 type Game struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name         string             `bson:"name" json:"name"`
-	GameMasterID primitive.ObjectID `bson:"gameMasterId" json:"gameMasterId"`
-	Status       GameStatus         `bson:"status" json:"status"`
-	Participants []GameParticipant  `bson:"participants" json:"participants"`
-	Characters   []GameCharacter    `bson:"characters" json:"characters"`
-	Events       []GameEvent        `bson:"events" json:"events"`
-	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name            string             `bson:"name" json:"name"`
+	GameMasterID    primitive.ObjectID `bson:"gameMasterId" json:"gameMasterId"`
+	GameMasterEmail string             `bson:"-" json:"gameMasterEmail,omitempty"`
+	Status          GameStatus         `bson:"status" json:"status"`
+	Participants    []GameParticipant  `bson:"participants" json:"participants"`
+	Characters      []GameCharacter    `bson:"characters" json:"characters"`
+	Events          []GameEvent        `bson:"events" json:"events"`
+	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
 // GameParticipant represents a user participating in a game

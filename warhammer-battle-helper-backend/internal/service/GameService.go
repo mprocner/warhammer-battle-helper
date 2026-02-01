@@ -73,12 +73,40 @@ func (s *GameService) CreateGame(name string, gameMasterID primitive.ObjectID, u
 
 // GetGame retrieves a game by ID
 func (s *GameService) GetGame(gameID string) (*models.Game, error) {
-	return s.gameRepo.GetByID(gameID)
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate Game Master email
+	if !game.GameMasterID.IsZero() {
+		gmUser, err := s.userRepo.FindByID(game.GameMasterID)
+		if err == nil && gmUser != nil {
+			game.GameMasterEmail = gmUser.Email
+		}
+	}
+
+	return game, nil
 }
 
 // GetAllGames retrieves all active games
 func (s *GameService) GetAllGames() ([]models.Game, error) {
-	return s.gameRepo.GetAll()
+	games, err := s.gameRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate Game Master email for each game
+	for i := range games {
+		if !games[i].GameMasterID.IsZero() {
+			gmUser, err := s.userRepo.FindByID(games[i].GameMasterID)
+			if err == nil && gmUser != nil {
+				games[i].GameMasterEmail = gmUser.Email
+			}
+		}
+	}
+
+	return games, nil
 }
 
 // JoinGame adds a user to a game

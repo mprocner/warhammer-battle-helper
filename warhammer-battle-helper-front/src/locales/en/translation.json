@@ -295,6 +295,7 @@
     "general": "General Settings",
     "gameInfo": "Game Info",
     "gameName": "Game Name",
+    "gameMaster": "Game Master",
     "connectionStatus": "Connection Status",
     "connected": "Connected",
     "disconnected": "Disconnected",

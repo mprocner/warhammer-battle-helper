@@ -32,6 +32,12 @@ const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected }) => {
             <span className="general-tab__value">{gameState?.name || 'Game Session'}</span>
           </div>
           <div className="general-tab__info-row">
+            <span className="general-tab__label">{t('settings.gameMaster')}:</span>
+            <span className="general-tab__value">
+              {gameState?.gameMasterEmail || t('common.unknown')}
+            </span>
+          </div>
+          <div className="general-tab__info-row">
             <span className="general-tab__label">{t('settings.connectionStatus')}:</span>
             <span className={`general-tab__status ${isConnected ? 'general-tab__status--connected' : 'general-tab__status--disconnected'}`}>
               {isConnected ? t('settings.connected') : t('settings.disconnected')}
