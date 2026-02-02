@@ -126,6 +126,17 @@ func main() {
 	r.POST("/avatars", http.JWTAuthMiddleware(), avatarHandler.UploadAvatar)
 	r.GET("/avatars/:filename", avatarHandler.GetAvatar)
 	// --- END AVATAR ROUTES ---
+
+	// --- HANDOUT ROUTES ---
+	handoutHandler := http.HandoutHandler{GameService: gameService, Storage: avatarStorage}
+	r.POST("/games/:id/handouts/upload", http.JWTAuthMiddleware(), handoutHandler.UploadHandoutFile)
+	r.POST("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.CreateHandout)
+	r.GET("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.GetHandouts)
+	r.PUT("/games/:id/handouts/reorder", http.JWTAuthMiddleware(), handoutHandler.ReorderHandouts)
+	r.PUT("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.UpdateHandout)
+	r.DELETE("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandout)
+	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
+	// --- END HANDOUT ROUTES ---
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

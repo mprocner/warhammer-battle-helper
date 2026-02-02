@@ -1,0 +1,435 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { uploadHandoutFile } from '../../../api/handouts';
+import { getApiUrl } from '../../../api/axios';
+import HandoutTypeIcon from './HandoutTypeIcon';
+import './HandoutCreateModal.css';
+
+const HANDOUT_TYPES = ['image', 'pdf', 'text', 'map', 'letter'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+const ALLOWED_FILE_TYPES = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+  'application/pdf': '.pdf',
+  'text/plain': '.txt'
+};
+
+/**
+ * Modal for creating or editing a handout (draggable, minimizable, no overlay)
+ */
+const HandoutCreateModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  gameId,
+  participants = [],
+  editHandout = null // If provided, we're in edit mode
+}) => {
+  const { t } = useTranslation();
+  const fileInputRef = useRef(null);
+  const popupRef = useRef(null);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    type: 'image',
+    visibility: ['all'],
+    fileUrl: ''
+  });
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [position, setPosition] = useState({ x: 150, y: 50 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Reset form when modal opens or edit handout changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editHandout) {
+        setFormData({
+          title: editHandout.title || '',
+          description: editHandout.description || '',
+          type: editHandout.type || 'image',
+          visibility: editHandout.visibility || ['all'],
+          fileUrl: editHandout.fileUrl || ''
+        });
+        setPreviewUrl(editHandout.fileUrl || '');
+      } else {
+        setFormData({
+          title: '',
+          description: '',
+          type: 'image',
+          visibility: ['all'],
+          fileUrl: ''
+        });
+        setPreviewUrl('');
+      }
+      setUploadError('');
+      setIsMinimized(false);
+      setPosition({ x: 150, y: 50 });
+    }
+  }, [isOpen, editHandout]);
+
+  // Drag handlers
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.handout-modal__header') && !e.target.closest('.handout-modal__header-buttons')) {
+      setIsDragging(true);
+      const rect = popupRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  if (!isOpen) return null;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleVisibilityChange = (value) => {
+    if (value === 'all' || value === 'gm-only') {
+      setFormData(prev => ({ ...prev, visibility: [value] }));
+    } else {
+      // Toggle player selection
+      setFormData(prev => {
+        const currentVis = prev.visibility.filter(v => v !== 'all' && v !== 'gm-only');
+        if (currentVis.includes(value)) {
+          const newVis = currentVis.filter(v => v !== value);
+          return { ...prev, visibility: newVis.length > 0 ? newVis : ['gm-only'] };
+        } else {
+          return { ...prev, visibility: [...currentVis, value] };
+        }
+      });
+    }
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!ALLOWED_FILE_TYPES[file.type]) {
+      setUploadError(t('handouts.invalidFileType'));
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError(t('handouts.fileTooLarge'));
+      return;
+    }
+
+    setUploadError('');
+    setIsUploading(true);
+
+    try {
+      const result = await uploadHandoutFile(gameId, file);
+      setFormData(prev => ({ ...prev, fileUrl: result.url }));
+      setPreviewUrl(result.url);
+
+      // Auto-detect type from file (only if current type is incompatible)
+      if (file.type.startsWith('image/')) {
+        // Don't change if already set to image or map (both valid for images)
+        setFormData(prev => {
+          if (prev.type === 'image' || prev.type === 'map') return prev;
+          return { ...prev, type: 'image' };
+        });
+      } else if (file.type === 'application/pdf') {
+        setFormData(prev => ({ ...prev, type: 'pdf' }));
+      } else if (file.type === 'text/plain') {
+        // Don't change if already set to text or letter (both valid for text files)
+        setFormData(prev => {
+          if (prev.type === 'text' || prev.type === 'letter') return prev;
+          return { ...prev, type: 'text' };
+        });
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      setUploadError(t('handouts.uploadFailed'));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!formData.title.trim()) {
+      setUploadError(t('validation.required'));
+      return;
+    }
+
+    if (!formData.fileUrl) {
+      setUploadError(t('handouts.fileRequired'));
+      return;
+    }
+
+    onSave(formData);
+  };
+
+  const isVisibilityAll = formData.visibility.includes('all');
+  const isVisibilityGMOnly = formData.visibility.includes('gm-only');
+  const isVisibilityPlayers = !isVisibilityAll && !isVisibilityGMOnly;
+
+  // Filter out GM from participants for player selection
+  const players = participants.filter(p => p.role !== 'gm');
+
+  // Get full URL for preview (handle relative paths)
+  const getPreviewUrl = () => {
+    if (!previewUrl) return '';
+    return previewUrl.startsWith('http')
+      ? previewUrl
+      : `${getApiUrl()}${previewUrl}`;
+  };
+
+  return (
+    <div
+      ref={popupRef}
+      className={`handout-modal ${isMinimized ? 'handout-modal--minimized' : ''}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      <div
+        className="handout-modal__header"
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
+        <h2>{editHandout ? t('handouts.editHandout') : t('handouts.createHandout')}</h2>
+        <div className="handout-modal__header-buttons">
+          <button
+            className="handout-modal__minimize-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(!isMinimized);
+            }}
+            title={isMinimized ? t('common.expand') : t('common.minimize')}
+          >
+            {isMinimized ? '▢' : '─'}
+          </button>
+          <button
+            className="handout-modal__close"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </div>
+
+      {!isMinimized && (
+        <form onSubmit={handleSubmit} className="handout-modal__form">
+          {/* Title */}
+          <div className="handout-modal__field">
+            <label htmlFor="title">{t('handouts.titleField')} *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder={t('handouts.titlePlaceholder')}
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div className="handout-modal__field">
+            <label htmlFor="description">{t('handouts.description')}</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder={t('handouts.descriptionPlaceholder')}
+              rows={3}
+            />
+          </div>
+
+          {/* Type */}
+          <div className="handout-modal__field">
+            <label>{t('handouts.type')}</label>
+            <div className="handout-type-selector">
+              {HANDOUT_TYPES.map(type => (
+                <button
+                  key={type}
+                  type="button"
+                  className={`type-btn ${formData.type === type ? 'type-btn--selected' : ''}`}
+                  onClick={() => setFormData(prev => ({ ...prev, type }))}
+                >
+                  <HandoutTypeIcon type={type} />
+                  <span>{t(`handouts.types.${type}`)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Visibility */}
+          <div className="handout-modal__field">
+            <label>{t('handouts.visibility')}</label>
+            <div className="visibility-selector">
+              <button
+                type="button"
+                className={`visibility-btn ${isVisibilityAll ? 'visibility-btn--selected' : ''}`}
+                onClick={() => handleVisibilityChange('all')}
+              >
+                {t('handouts.visibleToAll')}
+              </button>
+              <button
+                type="button"
+                className={`visibility-btn ${isVisibilityGMOnly ? 'visibility-btn--selected' : ''}`}
+                onClick={() => handleVisibilityChange('gm-only')}
+              >
+                {t('handouts.gmOnly')}
+              </button>
+              {players.length > 0 && (
+                <button
+                  type="button"
+                  className={`visibility-btn ${isVisibilityPlayers ? 'visibility-btn--selected' : ''}`}
+                  onClick={() => {
+                    // Switch to player selection mode
+                    if (!isVisibilityPlayers) {
+                      setFormData(prev => ({ ...prev, visibility: [] }));
+                    }
+                  }}
+                >
+                  {t('handouts.selectPlayers')}
+                </button>
+              )}
+            </div>
+
+            {/* Player selection */}
+            {isVisibilityPlayers && players.length > 0 && (
+              <div className="player-selector">
+                {players.map(player => (
+                  <label key={player.userId} className="player-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={formData.visibility.includes(player.userId)}
+                      onChange={() => handleVisibilityChange(player.userId)}
+                    />
+                    <span>{player.username}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* File Upload */}
+          <div className="handout-modal__field">
+            <label>{t('handouts.file')} *</label>
+            <div className="file-upload-area">
+              {previewUrl ? (
+                <div className="file-preview">
+                  {formData.type === 'image' || formData.type === 'map' ? (
+                    <img src={getPreviewUrl()} alt="Preview" className="file-preview__image" />
+                  ) : formData.type === 'pdf' ? (
+                    <div className="file-preview__pdf">
+                      <HandoutTypeIcon type="pdf" />
+                      <span>{t('handouts.pdfUploaded')}</span>
+                    </div>
+                  ) : (
+                    <div className="file-preview__text">
+                      <HandoutTypeIcon type="text" />
+                      <span>{t('handouts.textUploaded')}</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="file-preview__change"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {t('handouts.changeFile')}
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="file-upload-dropzone"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isUploading ? (
+                    <div className="upload-spinner" />
+                  ) : (
+                    <>
+                      <span className="upload-icon">📁</span>
+                      <span>{t('handouts.clickToUpload')}</span>
+                      <span className="upload-hint">{t('handouts.allowedFormats')}</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {uploadError && (
+            <div className="handout-modal__error">{uploadError}</div>
+          )}
+
+          {/* Actions */}
+          <div className="handout-modal__actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={isUploading || !formData.title || !formData.fileUrl}
+            >
+              {editHandout ? t('common.save') : t('common.create')}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+};
+
+export default HandoutCreateModal;

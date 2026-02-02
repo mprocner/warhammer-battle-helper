@@ -30,6 +30,7 @@ func (r *GameRepository) Create(game *models.Game) error {
 	game.Participants = []models.GameParticipant{}
 	game.Characters = []models.GameCharacter{}
 	game.Events = []models.GameEvent{}
+	game.Handouts = []models.Handout{}
 
 	result, err := r.Collection.InsertOne(ctx, game)
 	if err != nil {
@@ -323,4 +324,193 @@ func (r *GameRepository) AddEvent(gameID string, event models.GameEvent) error {
 	}
 
 	return nil
+}
+
+// AddHandout adds a handout to the game
+func (r *GameRepository) AddHandout(gameID string, handout models.Handout) (*models.Handout, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	handout.ID = primitive.NewObjectID()
+	handout.CreatedAt = time.Now()
+	handout.UpdatedAt = time.Now()
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$push": bson.M{"handouts": handout},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add handout: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("game not found")
+	}
+
+	return &handout, nil
+}
+
+// UpdateHandout updates a handout in the game
+func (r *GameRepository) UpdateHandout(gameID string, handoutID primitive.ObjectID, update models.UpdateHandoutRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	// Build the update document dynamically
+	setFields := bson.M{
+		"handouts.$.updatedAt": time.Now(),
+		"updatedAt":            time.Now(),
+	}
+
+	if update.Title != "" {
+		setFields["handouts.$.title"] = update.Title
+	}
+	if update.Description != "" {
+		setFields["handouts.$.description"] = update.Description
+	}
+	if update.Type != "" {
+		setFields["handouts.$.type"] = update.Type
+	}
+	if update.Visibility != nil {
+		setFields["handouts.$.visibility"] = update.Visibility
+	}
+	if update.FileURL != "" {
+		setFields["handouts.$.fileUrl"] = update.FileURL
+	}
+
+	filter := bson.M{
+		"_id":          objectID,
+		"handouts._id": handoutID,
+	}
+	updateDoc := bson.M{"$set": setFields}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, updateDoc)
+	if err != nil {
+		return fmt.Errorf("failed to update handout: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or handout not found")
+	}
+
+	return nil
+}
+
+// DeleteHandout removes a handout from the game
+func (r *GameRepository) DeleteHandout(gameID string, handoutID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$pull": bson.M{"handouts": bson.M{"_id": handoutID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to delete handout: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// ReorderHandouts updates the order of handouts in the game
+func (r *GameRepository) ReorderHandouts(gameID string, handoutIDs []primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	// Get the current game to access handouts
+	var game models.Game
+	err = r.Collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&game)
+	if err != nil {
+		return fmt.Errorf("failed to get game: %w", err)
+	}
+
+	// Create a map of handout ID to handout for quick lookup
+	handoutMap := make(map[primitive.ObjectID]models.Handout)
+	for _, h := range game.Handouts {
+		handoutMap[h.ID] = h
+	}
+
+	// Reorder handouts based on the provided order
+	reorderedHandouts := make([]models.Handout, 0, len(handoutIDs))
+	for i, id := range handoutIDs {
+		if handout, ok := handoutMap[id]; ok {
+			handout.Order = i
+			handout.UpdatedAt = time.Now()
+			reorderedHandouts = append(reorderedHandouts, handout)
+		}
+	}
+
+	// Update the game with reordered handouts
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$set": bson.M{
+			"handouts":  reorderedHandouts,
+			"updatedAt": time.Now(),
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to reorder handouts: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// GetHandout retrieves a specific handout from the game
+func (r *GameRepository) GetHandout(gameID string, handoutID primitive.ObjectID) (*models.Handout, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	var game models.Game
+	err = r.Collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&game)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get game: %w", err)
+	}
+
+	for _, h := range game.Handouts {
+		if h.ID == handoutID {
+			return &h, nil
+		}
+	}
+
+	return nil, fmt.Errorf("handout not found")
 }

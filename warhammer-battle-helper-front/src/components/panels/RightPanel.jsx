@@ -42,7 +42,14 @@ const RightPanel = ({
       case 'scenes':
         return <ScenesTab />;
       case 'handouts':
-        return <HandoutsTab />;
+        return (
+          <HandoutsTab
+            gameId={gameId}
+            token={token}
+            gameState={gameState}
+            isConnected={isConnected}
+          />
+        );
       case 'general':
         return (
           <GeneralTab

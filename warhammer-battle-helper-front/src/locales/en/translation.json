@@ -1,5 +1,5 @@
 {
-  "common": { 
+  "common": {
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -18,7 +18,8 @@
     "saved": "Saved!",
     "saveCharacter": "Save Character",
     "expand": "Expand",
-    "minimize": "Minimize"
+    "minimize": "Minimize",
+    "retry": "Retry"
   },
   "navigation": {
     "title": "RollHammer",
@@ -306,5 +307,48 @@
     "actions": "Actions",
     "leaveGame": "Leave Game",
     "logout": "Logout"
+  },
+  "handouts": {
+    "title": "Handouts",
+    "addHandout": "Add Handout",
+    "createHandout": "Create Handout",
+    "editHandout": "Edit Handout",
+    "noHandouts": "No handouts yet",
+    "noHandoutsHint": "Click the button above to create your first handout",
+    "loadError": "Failed to load handouts",
+    "createError": "Failed to create handout",
+    "updateError": "Failed to update handout",
+    "deleteError": "Failed to delete handout",
+    "confirmDelete": "Are you sure you want to delete \"{{title}}\"?",
+    "titleField": "Title",
+    "titlePlaceholder": "Enter handout title...",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter a brief description...",
+    "type": "Type",
+    "types": {
+      "image": "Image",
+      "pdf": "PDF",
+      "text": "Text",
+      "map": "Map",
+      "letter": "Letter"
+    },
+    "visibility": "Visibility",
+    "visibleToAll": "All Players",
+    "gmOnly": "GM Only",
+    "selectPlayers": "Select Players",
+    "selectedPlayers": "{{count}} player(s)",
+    "file": "File",
+    "fileRequired": "Please upload a file",
+    "invalidFileType": "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF, TXT",
+    "fileTooLarge": "File too large. Maximum size is 5MB",
+    "uploadFailed": "Failed to upload file",
+    "clickToUpload": "Click to upload file",
+    "allowedFormats": "JPEG, PNG, GIF, WebP, PDF, TXT (max 5MB)",
+    "changeFile": "Change File",
+    "pdfUploaded": "PDF file uploaded",
+    "textUploaded": "Text file uploaded",
+    "download": "Download",
+    "unsupportedType": "This file type cannot be previewed",
+    "loadContentError": "Failed to load content"
   }
 }

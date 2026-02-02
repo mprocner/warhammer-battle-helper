@@ -38,6 +38,16 @@ var AllowedImageTypes = map[string]string{
 	"image/webp": ".webp",
 }
 
+// AllowedHandoutTypes contains the allowed MIME types for handout uploads
+var AllowedHandoutTypes = map[string]string{
+	"image/jpeg":      ".jpg",
+	"image/png":       ".png",
+	"image/gif":       ".gif",
+	"image/webp":      ".webp",
+	"application/pdf": ".pdf",
+	"text/plain":      ".txt",
+}
+
 // MaxFileSize is the maximum allowed file size (5MB)
 const MaxFileSize = 5 * 1024 * 1024
 
@@ -121,10 +131,22 @@ func (s *LocalStorage) Get(filename string) (io.ReadCloser, string, error) {
 	// Determine content type from extension
 	ext := strings.ToLower(filepath.Ext(filename))
 	contentType := "application/octet-stream"
+
+	// Check image types first
 	for ct, e := range AllowedImageTypes {
 		if e == ext || (ext == ".jpeg" && e == ".jpg") {
 			contentType = ct
 			break
+		}
+	}
+
+	// Check handout types (PDF, text)
+	if contentType == "application/octet-stream" {
+		for ct, e := range AllowedHandoutTypes {
+			if e == ext {
+				contentType = ct
+				break
+			}
 		}
 	}
 

@@ -33,6 +33,7 @@ type Game struct {
 	Participants    []GameParticipant  `bson:"participants" json:"participants"`
 	Characters      []GameCharacter    `bson:"characters" json:"characters"`
 	Events          []GameEvent        `bson:"events" json:"events"`
+	Handouts        []Handout          `bson:"handouts" json:"handouts"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
@@ -108,4 +109,40 @@ type AddCharacterRequest struct {
 	PositionX   int    `json:"positionX"`
 	PositionY   int    `json:"positionY"`
 	IsEnemy     bool   `json:"isEnemy"`
+}
+
+// Handout represents a document/image shared in the game
+type Handout struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title       string             `bson:"title" json:"title"`
+	Description string             `bson:"description" json:"description"`
+	Type        string             `bson:"type" json:"type"` // image, pdf, text, map, letter
+	Visibility  []string           `bson:"visibility" json:"visibility"`
+	FileURL     string             `bson:"fileUrl" json:"fileUrl"`
+	Order       int                `bson:"order" json:"order"`
+	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+}
+
+// CreateHandoutRequest is the request body for creating a new handout
+type CreateHandoutRequest struct {
+	Title       string   `json:"title" binding:"required"`
+	Description string   `json:"description"`
+	Type        string   `json:"type" binding:"required"`
+	Visibility  []string `json:"visibility" binding:"required"`
+	FileURL     string   `json:"fileUrl" binding:"required"`
+}
+
+// UpdateHandoutRequest is the request body for updating a handout
+type UpdateHandoutRequest struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Type        string   `json:"type"`
+	Visibility  []string `json:"visibility"`
+	FileURL     string   `json:"fileUrl"`
+}
+
+// ReorderHandoutsRequest is the request body for reordering handouts
+type ReorderHandoutsRequest struct {
+	HandoutIDs []string `json:"handoutIds" binding:"required"`
 }

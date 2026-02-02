@@ -629,3 +629,172 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 
 	return response, nil
 }
+
+// CreateHandout creates a new handout in a game (GM only)
+func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, req models.CreateHandoutRequest) (*models.Handout, error) {
+	// Verify user is the GM
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if game.GameMasterID != userID {
+		return nil, fmt.Errorf("only the game master can create handouts")
+	}
+
+	// Determine the order (append to end)
+	order := len(game.Handouts)
+
+	handout := models.Handout{
+		Title:       req.Title,
+		Description: req.Description,
+		Type:        req.Type,
+		Visibility:  req.Visibility,
+		FileURL:     req.FileURL,
+		Order:       order,
+	}
+
+	createdHandout, err := s.gameRepo.AddHandout(gameID, handout)
+	if err != nil {
+		return nil, err
+	}
+
+	// Broadcast to clients
+	s.hub.BroadcastToGame(gameID, "HANDOUT_CREATED", map[string]interface{}{
+		"handout": createdHandout,
+	})
+
+	return createdHandout, nil
+}
+
+// UpdateHandout updates an existing handout (GM only)
+func (s *GameService) UpdateHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateHandoutRequest) error {
+	// Verify user is the GM
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can update handouts")
+	}
+
+	if err := s.gameRepo.UpdateHandout(gameID, handoutID, req); err != nil {
+		return err
+	}
+
+	// Get updated handout
+	updatedHandout, err := s.gameRepo.GetHandout(gameID, handoutID)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to clients
+	s.hub.BroadcastToGame(gameID, "HANDOUT_UPDATED", map[string]interface{}{
+		"handout": updatedHandout,
+	})
+
+	return nil
+}
+
+// DeleteHandout deletes a handout (GM only)
+func (s *GameService) DeleteHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID) (string, error) {
+	// Verify user is the GM
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return "", err
+	}
+
+	if game.GameMasterID != userID {
+		return "", fmt.Errorf("only the game master can delete handouts")
+	}
+
+	// Get the handout to return the file URL for cleanup
+	handout, err := s.gameRepo.GetHandout(gameID, handoutID)
+	if err != nil {
+		return "", err
+	}
+
+	fileURL := handout.FileURL
+
+	if err := s.gameRepo.DeleteHandout(gameID, handoutID); err != nil {
+		return "", err
+	}
+
+	// Broadcast to clients
+	s.hub.BroadcastToGame(gameID, "HANDOUT_DELETED", map[string]interface{}{
+		"handoutId": handoutID.Hex(),
+	})
+
+	return fileURL, nil
+}
+
+// ReorderHandouts reorders handouts in a game (GM only)
+func (s *GameService) ReorderHandouts(gameID string, userID primitive.ObjectID, handoutIDs []string) error {
+	// Verify user is the GM
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can reorder handouts")
+	}
+
+	// Convert string IDs to ObjectIDs
+	objectIDs := make([]primitive.ObjectID, len(handoutIDs))
+	for i, id := range handoutIDs {
+		objectID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return fmt.Errorf("invalid handout ID: %s", id)
+		}
+		objectIDs[i] = objectID
+	}
+
+	if err := s.gameRepo.ReorderHandouts(gameID, objectIDs); err != nil {
+		return err
+	}
+
+	// Get updated handouts
+	updatedGame, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to clients
+	s.hub.BroadcastToGame(gameID, "HANDOUTS_REORDERED", map[string]interface{}{
+		"handouts": updatedGame.Handouts,
+	})
+
+	return nil
+}
+
+// GetVisibleHandouts returns handouts visible to a specific user
+func (s *GameService) GetVisibleHandouts(gameID string, userID primitive.ObjectID) ([]models.Handout, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if user is the GM
+	isGM := game.GameMasterID == userID
+
+	// Filter handouts based on visibility
+	visibleHandouts := make([]models.Handout, 0)
+	for _, handout := range game.Handouts {
+		if isGM {
+			// GM sees all handouts
+			visibleHandouts = append(visibleHandouts, handout)
+		} else {
+			// Check visibility
+			for _, v := range handout.Visibility {
+				if v == "all" || v == userID.Hex() {
+					visibleHandouts = append(visibleHandouts, handout)
+					break
+				}
+			}
+		}
+	}
+
+	return visibleHandouts, nil
+}

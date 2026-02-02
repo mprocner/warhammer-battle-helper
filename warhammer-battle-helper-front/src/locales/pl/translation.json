@@ -18,7 +18,8 @@
     "saved": "Zapisano!",
     "saveCharacter": "Zapisz Postać",
     "expand": "Rozwiń",
-    "minimize": "Minimalizuj"
+    "minimize": "Minimalizuj",
+    "retry": "Ponów"
   },
   "navigation": {
     "title": "RollHammer",
@@ -307,5 +308,48 @@
     "actions": "Akcje",
     "leaveGame": "Opusc Gre",
     "logout": "Wyloguj"
+  },
+  "handouts": {
+    "title": "Handouty",
+    "addHandout": "Dodaj Handout",
+    "createHandout": "Utwórz Handout",
+    "editHandout": "Edytuj Handout",
+    "noHandouts": "Brak handoutów",
+    "noHandoutsHint": "Kliknij przycisk powyżej, aby utworzyć pierwszy handout",
+    "loadError": "Nie udało się załadować handoutów",
+    "createError": "Nie udało się utworzyć handouta",
+    "updateError": "Nie udało się zaktualizować handouta",
+    "deleteError": "Nie udało się usunąć handouta",
+    "confirmDelete": "Czy na pewno chcesz usunąć \"{{title}}\"?",
+    "titleField": "Tytuł",
+    "titlePlaceholder": "Wprowadź tytuł handouta...",
+    "description": "Opis",
+    "descriptionPlaceholder": "Wprowadź krótki opis...",
+    "type": "Typ",
+    "types": {
+      "image": "Obraz",
+      "pdf": "PDF",
+      "text": "Tekst",
+      "map": "Mapa",
+      "letter": "List"
+    },
+    "visibility": "Widoczność",
+    "visibleToAll": "Wszyscy Gracze",
+    "gmOnly": "Tylko MG",
+    "selectPlayers": "Wybierz Graczy",
+    "selectedPlayers": "{{count}} gracz(y)",
+    "file": "Plik",
+    "fileRequired": "Proszę wgrać plik",
+    "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone: JPEG, PNG, GIF, WebP, PDF, TXT",
+    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
+    "uploadFailed": "Nie udało się wgrać pliku",
+    "clickToUpload": "Kliknij, aby wgrać plik",
+    "allowedFormats": "JPEG, PNG, GIF, WebP, PDF, TXT (max 5MB)",
+    "changeFile": "Zmień Plik",
+    "pdfUploaded": "Plik PDF wgrany",
+    "textUploaded": "Plik tekstowy wgrany",
+    "download": "Pobierz",
+    "unsupportedType": "Ten typ pliku nie może być podglądany",
+    "loadContentError": "Nie udało się załadować treści"
   }
 }
