@@ -214,6 +214,28 @@ header nav a:hover::after {
   overflow-y: auto;
   transition: all 0.3s ease;
   color: #3a2f1f;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.character-details::-webkit-scrollbar {
+  width: 8px;
+}
+
+.character-details::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.character-details::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.character-details::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 .character-details.empty {
@@ -604,6 +626,28 @@ header nav a:hover::after {
   padding: 15px;
   background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
   border-top: 2px solid #c9975b;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.characters-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.characters-list::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.characters-list::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.characters-list::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 .characters-list h3 {
@@ -864,6 +908,29 @@ header nav a:hover::after {
   box-sizing: border-box;
   height: 100vh;
   overflow: scroll;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.fight-grid::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.fight-grid::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.fight-grid::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.fight-grid::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 .fight-grid-inner {

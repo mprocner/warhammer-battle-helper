@@ -237,7 +237,7 @@
     "saveFortuneFailed": "Failed to save fortune change"
   },
   "conditions": {
-    "label": "Conditions",
+    "label": "Conditions (not implemented)",
     "prone": "Prone",
     "stunned": "Stunned",
     "unconscious": "Unconscious",
@@ -350,5 +350,64 @@
     "download": "Download",
     "unsupportedType": "This file type cannot be previewed",
     "loadContentError": "Failed to load content"
+  },
+  "rightPanel": {
+    "title": "Settings",
+    "tabs": {
+      "chat": "Chat",
+      "scenes": "Scenes",
+      "handouts": "Handouts",
+      "files": "Files",
+      "general": "General"
+    }
+  },
+  "leftPanel": {
+    "title": "Character Details",
+    "yourCharacters": "Your Characters",
+    "onGrid": "On Grid",
+    "available": "Available",
+    "addToGrid": "Add to grid",
+    "removeFromGrid": "Remove from grid",
+    "showPanel": "Show Panel",
+    "hidePanel": "Hide Panel"
+  },
+  "grid": {
+    "loading": "Loading characters...",
+    "refresh": "Refresh",
+    "fetchError": "Failed to fetch characters.",
+    "zoneOccupied": "Zone {{zone}} is already occupied by {{name}}",
+    "noEmptySpaces": "No empty spaces on grid",
+    "addCharacterError": "Failed to add character to grid",
+    "moveCharacterError": "Failed to move character",
+    "removeCharacterError": "Failed to remove character from grid",
+    "fightInitiated": "Fight initiated:",
+    "fightError": "Failed to initiate fight"
+  },
+  "files": {
+    "title": "Files",
+    "createFolder": "New Folder",
+    "noFiles": "No files yet",
+    "noFilesHint": "Upload images to build your file library",
+    "loadError": "Failed to load files",
+    "uploadError": "Failed to upload files",
+    "deleteError": "Failed to delete file",
+    "folderCreateError": "Failed to create folder",
+    "folderRenameError": "Failed to rename folder",
+    "folderDeleteError": "Failed to delete folder",
+    "confirmDeleteFile": "Are you sure you want to delete \"{{name}}\"?",
+    "confirmDeleteFolder": "Are you sure you want to delete folder \"{{name}}\"?",
+    "confirmDeleteFolderWithContents": "Folder \"{{name}}\" contains files. Delete folder and all contents?",
+    "dropOrClick": "Drop files here or click to upload",
+    "allowedFormats": "JPEG, PNG, GIF, WebP (max 5MB each)",
+    "uploading": "Uploading...",
+    "uploadSuccess": "{{count}} file(s) uploaded successfully",
+    "uploadPartial": "{{success}} file(s) uploaded, {{failed}} failed",
+    "folderName": "Folder Name",
+    "folderNamePlaceholder": "Enter folder name...",
+    "renameFolder": "Rename",
+    "invalidFileType": "Invalid file type. Only images allowed.",
+    "fileTooLarge": "File too large. Maximum size is 5MB",
+    "fileMoveError": "Failed to move file",
+    "root": "Root"
   }
 }

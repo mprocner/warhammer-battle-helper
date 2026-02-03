@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
@@ -18,6 +19,7 @@ const generateFightZones = () => {
 };
 
 function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel }) {
+  const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const fightZonesRef = useRef(generateFightZones());
   const [fightZones, setFightZones] = useState(fightZonesRef.current);
@@ -579,7 +581,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           <div className={`left-sidebar ${isHidden ? 'left-sidebar--hidden' : ''}`}>
             {/* Sidebar Header */}
             <header className="panel-header">
-              <h2 className="panel-header__title">Character Details</h2>
+              <h2 className="panel-header__title">{t('leftPanel.title')}</h2>
             </header>
             <CharacterDetailsPanel
             character={selectedCharacter}
@@ -594,7 +596,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
           {/* Characters List - always show all characters */}
           <div className="characters-list">
-            <h3>Your Characters</h3>
+            <h3>{t('leftPanel.yourCharacters')}</h3>
             <div className="characters-list-content">
               {(initialCharacters || []).map(char => {
                 const onGrid = isCharacterOnGrid(char.id);

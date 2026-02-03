@@ -17,9 +17,3 @@ Each scene should have:
 Players should be able to see only the current scene set by GM.
 
 
-# Files
-I want to implement files management feature in application. 
-It should be located in Options panel as a separate tab called "Files". Create new file FilesTab.jsx for it.
-GameMaster (GM) should be able to upload files/images to the files repository and delete them. 
-Files should be stored in the backend and associated with the user account. 
-GM could create file folders to organize files.

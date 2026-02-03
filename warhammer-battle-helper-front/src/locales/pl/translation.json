@@ -238,7 +238,7 @@
     "saveFortuneFailed": "Nie udało się zapisać zmiany fortuny"
   },
   "conditions": {
-    "label": "Stany",
+    "label": "Stany (not implemented)",
     "prone": "Leżący",
     "stunned": "Oszołomiony",
     "unconscious": "Nieprzytomny",
@@ -351,5 +351,64 @@
     "download": "Pobierz",
     "unsupportedType": "Ten typ pliku nie może być podglądany",
     "loadContentError": "Nie udało się załadować treści"
+  },
+  "rightPanel": {
+    "title": "Ustawienia",
+    "tabs": {
+      "chat": "Czat",
+      "scenes": "Sceny",
+      "handouts": "Handouty",
+      "files": "Pliki",
+      "general": "Ogólne"
+    }
+  },
+  "leftPanel": {
+    "title": "Postacie",
+    "yourCharacters": "Lista postaci",
+    "onGrid": "Na Siatce",
+    "available": "Dostępna",
+    "addToGrid": "Dodaj do siatki",
+    "removeFromGrid": "Usuń z siatki",
+    "showPanel": "Pokaż Panel",
+    "hidePanel": "Ukryj Panel"
+  },
+  "grid": {
+    "loading": "Ładowanie postaci...",
+    "refresh": "Odśwież",
+    "fetchError": "Nie udało się pobrać postaci.",
+    "zoneOccupied": "Strefa {{zone}} jest już zajęta przez {{name}}",
+    "noEmptySpaces": "Brak wolnych miejsc na siatce",
+    "addCharacterError": "Nie udało się dodać postaci do siatki",
+    "moveCharacterError": "Nie udało się przesunąć postaci",
+    "removeCharacterError": "Nie udało się usunąć postaci z siatki",
+    "fightInitiated": "Walka rozpoczęta:",
+    "fightError": "Nie udało się rozpocząć walki"
+  },
+  "files": {
+    "title": "Pliki",
+    "createFolder": "Nowy Folder",
+    "noFiles": "Brak plików",
+    "noFilesHint": "Wgraj obrazy, aby zbudować swoją bibliotekę plików",
+    "loadError": "Nie udało się załadować plików",
+    "uploadError": "Nie udało się wgrać plików",
+    "deleteError": "Nie udało się usunąć pliku",
+    "folderCreateError": "Nie udało się utworzyć folderu",
+    "folderRenameError": "Nie udało się zmienić nazwy folderu",
+    "folderDeleteError": "Nie udało się usunąć folderu",
+    "confirmDeleteFile": "Czy na pewno chcesz usunąć \"{{name}}\"?",
+    "confirmDeleteFolder": "Czy na pewno chcesz usunąć folder \"{{name}}\"?",
+    "confirmDeleteFolderWithContents": "Folder \"{{name}}\" zawiera pliki. Usunąć folder i całą zawartość?",
+    "dropOrClick": "Upuść pliki tutaj lub kliknij, aby wgrać",
+    "allowedFormats": "JPEG, PNG, GIF, WebP (max 5MB każdy)",
+    "uploading": "Wgrywanie...",
+    "uploadSuccess": "Wgrano {{count}} plik(ów)",
+    "uploadPartial": "Wgrano {{success}} plik(ów), {{failed}} nie udało się",
+    "folderName": "Nazwa Folderu",
+    "folderNamePlaceholder": "Wprowadź nazwę folderu...",
+    "renameFolder": "Zmień nazwę",
+    "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone tylko obrazy.",
+    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
+    "fileMoveError": "Nie udało się przenieść pliku",
+    "root": "Główny"
   }
 }

@@ -40,6 +40,17 @@ func main() {
 	}
 	// --- END AVATAR STORAGE ---
 
+	// --- USER FILES STORAGE ---
+	userFilesPath := os.Getenv("USER_FILES_PATH")
+	if userFilesPath == "" {
+		userFilesPath = "./user-files"
+	}
+	userFilesStorage, err := storage.NewLocalStorage(userFilesPath, "/user-files")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize user files storage: %v", err))
+	}
+	// --- END USER FILES STORAGE ---
+
 	// Connect to MongoDB
 	db, err := config.ConnectDatabase()
 	if err != nil {
@@ -137,6 +148,18 @@ func main() {
 	r.DELETE("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandout)
 	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
 	// --- END HANDOUT ROUTES ---
+
+	// --- USER FILES ROUTES ---
+	fileHandler := http.FileHandler{UserRepo: userRepo, Storage: userFilesStorage}
+	r.GET("/files", http.JWTAuthMiddleware(), fileHandler.GetFiles)
+	r.POST("/files/upload", http.JWTAuthMiddleware(), fileHandler.UploadFiles)
+	r.DELETE("/files/:fileId", http.JWTAuthMiddleware(), fileHandler.DeleteFile)
+	r.PUT("/files/:fileId/move", http.JWTAuthMiddleware(), fileHandler.MoveFile)
+	r.POST("/folders", http.JWTAuthMiddleware(), fileHandler.CreateFolder)
+	r.PUT("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.RenameFolder)
+	r.DELETE("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.DeleteFolder)
+	r.GET("/user-files/:filename", fileHandler.GetFile)
+	// --- END USER FILES ROUTES ---
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

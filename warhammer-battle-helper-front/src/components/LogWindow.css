@@ -305,6 +305,28 @@
 .log-window__messages {
   flex-grow: 1;
   overflow: auto;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.log-window__messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-window__messages::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.log-window__messages::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.log-window__messages::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 .log-window__empty {

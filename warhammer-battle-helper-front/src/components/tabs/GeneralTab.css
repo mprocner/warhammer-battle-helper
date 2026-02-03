@@ -6,6 +6,28 @@
   padding: 16px;
   height: 100%;
   overflow-y: auto;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.general-tab::-webkit-scrollbar {
+  width: 8px;
+}
+
+.general-tab::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.general-tab::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.general-tab::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 /* Section Styles */

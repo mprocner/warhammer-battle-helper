@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import LogWindow from '../LogWindow';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
+import FilesTab from '../tabs/FilesTab';
 import GeneralTab from '../tabs/GeneralTab';
 import './RightPanel.css';
 
@@ -19,14 +21,39 @@ const RightPanel = ({
   gameState,
   isConnected
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
 
-  const tabs = [
-    { id: 'chat', icon: '💬', label: 'Chat' },
-    { id: 'scenes', icon: '🗺️', label: 'Scenes' },
-    { id: 'handouts', icon: '📜', label: 'Handouts' },
-    { id: 'general', icon: '⚙️', label: 'General' },
-  ];
+  // Get current user ID from token
+  const getUserId = useCallback(() => {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.user_id;
+    } catch {
+      return null;
+    }
+  }, [token]);
+
+  const userId = getUserId();
+  const isGM = gameState?.gameMasterId === userId;
+
+  // Build tabs array - Files tab only visible to GM
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { id: 'chat', icon: '💬', label: t('rightPanel.tabs.chat') },
+      { id: 'scenes', icon: '🗺️', label: t('rightPanel.tabs.scenes') },
+      { id: 'handouts', icon: '📜', label: t('rightPanel.tabs.handouts') },
+    ];
+
+    if (isGM) {
+      baseTabs.push({ id: 'files', icon: '📁', label: t('rightPanel.tabs.files') });
+    }
+
+    baseTabs.push({ id: 'general', icon: '⚙️', label: t('rightPanel.tabs.general') });
+
+    return baseTabs;
+  }, [isGM, t]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -50,6 +77,12 @@ const RightPanel = ({
             isConnected={isConnected}
           />
         );
+      case 'files':
+        return (
+          <FilesTab
+            token={token}
+          />
+        );
       case 'general':
         return (
           <GeneralTab
@@ -68,7 +101,7 @@ const RightPanel = ({
     <aside className={`right-panel ${isHidden ? 'right-panel--hidden' : ''}`}>
       {/* Panel Header */}
       <header className="panel-header">
-        <h2 className="panel-header__title">Settings</h2>
+        <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
       </header>
 
       {/* Tabs Wrapper */}

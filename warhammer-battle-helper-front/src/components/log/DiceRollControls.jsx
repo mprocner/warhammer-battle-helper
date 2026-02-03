@@ -23,6 +23,12 @@ const DiceRollControls = ({ onRoll }) => {
             <div className="dice-controls__row">
                 <button
                     className="dice-controls__button"
+                    onClick={() => onRoll(4)}
+                >
+                    d4
+                </button>
+                <button
+                    className="dice-controls__button"
                     onClick={() => onRoll(6)}
                 >
                     d6
@@ -32,6 +38,12 @@ const DiceRollControls = ({ onRoll }) => {
                     onClick={() => onRoll(10)}
                 >
                     d10
+                </button>
+                <button
+                    className="dice-controls__button"
+                    onClick={() => onRoll(20)}
+                >
+                    d20
                 </button>
                 <button
                     className="dice-controls__button"
