@@ -42,6 +42,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const [pendingDefender, setPendingDefender] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
 
+  // Auto-open character sheet after creating new character
+  const [autoOpenCharacterSheet, setAutoOpenCharacterSheet] = useState(false);
+
   // Keep fightZonesRef in sync with fightZones state
   useEffect(() => {
     fightZonesRef.current = fightZones;
@@ -323,6 +326,52 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   }, []);
 
+  // Handle adding a new character - creates minimal character and opens sheet for editing
+  const handleAddCharacter = useCallback(async () => {
+    try {
+      // Create minimal character with required structure
+      const newCharacter = {
+        basicInfo: {
+          name: t('character.newCharacter'),
+          type: 'ally',
+          species: '',
+          career: '',
+          careerLevel: '',
+          status: '',
+          careerPath: '',
+          class: '',
+          age: '',
+          height: '',
+          hair: '',
+          eyes: '',
+          avatar: ''
+        },
+        characteristics: {
+          initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+          advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+          current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
+        },
+        basicSkills: {},
+        advancedSkills: {},
+        weapons: [],
+        talents: []
+      };
+
+      const response = await axiosInstance.post('/my-characters', newCharacter);
+      const createdCharacter = response.data;
+
+      // Refresh the character list
+      await fetchCharacters();
+      // Select the newly created character
+      setSelectedCharacter(createdCharacter);
+      // Trigger auto-open of character sheet
+      setAutoOpenCharacterSheet(true);
+    } catch (err) {
+      console.error('Failed to create character:', err);
+      addLogMessage(t('character.createError'), 'error');
+    }
+  }, [fetchCharacters, addLogMessage, t]);
+
   const handleCharacterUpdate = (updatedCharacter) => {
     // Update local state only - saving is handled by the component making the changes
 
@@ -592,11 +641,21 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
+            autoOpenSheet={autoOpenCharacterSheet}
+            onSheetOpened={() => setAutoOpenCharacterSheet(false)}
           />
 
           {/* Characters List - always show all characters */}
           <div className="characters-list">
-            <h3>{t('leftPanel.yourCharacters')}</h3>
+            <div className="characters-list-header">
+              <h3>{t('leftPanel.yourCharacters')}</h3>
+              <button
+                className="add-character-btn"
+                onClick={handleAddCharacter}
+              >
+                + {t('character.addCharacter')}
+              </button>
+            </div>
             <div className="characters-list-content">
               {(initialCharacters || []).map(char => {
                 const onGrid = isCharacterOnGrid(char.id);

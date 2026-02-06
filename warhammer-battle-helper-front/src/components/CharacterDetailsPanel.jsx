@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
@@ -15,13 +15,25 @@ function CharacterDetailsPanel({
     onFortuneChange,
     addLogMessage,
     gameId = null,
-    token = null
+    token = null,
+    autoOpenSheet = false,
+    onSheetOpened = null
 }) {
     const { t } = useTranslation();
     const [showDetails, setShowDetails] = useState(false);
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
+
+    // Auto-open character sheet when requested (e.g., after creating new character)
+    useEffect(() => {
+        if (autoOpenSheet && character) {
+            setShowDetails(true);
+            if (onSheetOpened) {
+                onSheetOpened();
+            }
+        }
+    }, [autoOpenSheet, character, onSheetOpened]);
 
     // Get favorite weapons with their calculated skill values
     const favoriteWeapons = useMemo(() => {

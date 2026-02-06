@@ -78,7 +78,19 @@
     "characterSheet": "Karta Postaci",
     "selectCharacter": "Wybierz postać",
     "selectCharacterHint": "Kliknij na postać w siatce lub liście, aby zobaczyć szczegóły",
-    "characterCard": "Karta Postaci"
+    "characterCard": "Karta Postaci",
+    "type": "Typ",
+    "ally": "Sojusznik",
+    "enemy": "Wróg",
+    "species": "Rasa",
+    "career": "Profesja",
+    "namePlaceholder": "Wprowadź imię postaci",
+    "speciesPlaceholder": "np. Człowiek, Krasnolud, Elf",
+    "careerPlaceholder": "np. Żołnierz, Kupiec",
+    "nameRequired": "Imię postaci jest wymagane",
+    "createError": "Nie udało się utworzyć postaci",
+    "characterCreated": "Postać \"{{name}}\" została utworzona",
+    "newCharacter": "Nowa Postać"
   },
   "characterSheet": {
     "title": "Karta Postaci",

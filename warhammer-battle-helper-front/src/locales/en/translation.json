@@ -78,7 +78,19 @@
     "characterSheet": "Character Sheet",
     "selectCharacter": "Select a character",
     "selectCharacterHint": "Click on a character in the grid or list to view details",
-    "characterCard": "Character Card"
+    "characterCard": "Character Card",
+    "type": "Type",
+    "ally": "Ally",
+    "enemy": "Enemy",
+    "species": "Species",
+    "career": "Career",
+    "namePlaceholder": "Enter character name",
+    "speciesPlaceholder": "e.g., Human, Dwarf, Elf",
+    "careerPlaceholder": "e.g., Soldier, Merchant",
+    "nameRequired": "Character name is required",
+    "createError": "Failed to create character",
+    "characterCreated": "Character \"{{name}}\" created",
+    "newCharacter": "New Character"
   },
   "characterSheet": {
     "title": "Character Sheet",
