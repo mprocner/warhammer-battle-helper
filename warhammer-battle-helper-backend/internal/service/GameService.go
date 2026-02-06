@@ -630,6 +630,189 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 	return response, nil
 }
 
+// RollWeapon rolls a weapon attack and broadcasts the result with damage info
+func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+	// Load skills data to find weapon skill characteristic
+	skills, err := loadSkills()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get character from database
+	character, err := s.charRepo.GetByID(characterID)
+	if err != nil {
+		return nil, fmt.Errorf("character not found: %w", err)
+	}
+
+	// Handle compound skill keys (e.g., "MELEE_BASIC", "RANGED_BOW")
+	var parentKey string
+	if strings.Contains(weaponSkill, "_") {
+		parts := strings.SplitN(weaponSkill, "_", 2)
+		parentKey = parts[0]
+	} else {
+		parentKey = weaponSkill
+	}
+
+	// Find the skill definition
+	var skill *Skill
+	for i := range skills {
+		if skills[i].Key == parentKey {
+			skill = &skills[i]
+			break
+		}
+	}
+
+	if skill == nil {
+		return nil, fmt.Errorf("skill not found: %s", parentKey)
+	}
+
+	// Get skill advances from character
+	advances := 0
+	if val, ok := character.BasicSkills[weaponSkill]; ok {
+		advances = val
+	}
+
+	// Get characteristic value based on skill's characteristic
+	var characteristicValue int
+	switch skill.Characteristic {
+	case "WEAPON_SKILL":
+		characteristicValue = character.Characteristics.Current.WS
+	case "BALLISTIC_SKILL":
+		characteristicValue = character.Characteristics.Current.BS
+	default:
+		return nil, fmt.Errorf("unknown characteristic: %s", skill.Characteristic)
+	}
+
+	if characteristicValue == 0 {
+		return nil, fmt.Errorf("characteristic %s not found or is zero", skill.Characteristic)
+	}
+
+	// Calculate skill value (characteristic + advances)
+	skillValue := characteristicValue + advances
+
+	// Calculate target value (skill value + modifier)
+	targetValue := skillValue + modifier
+
+	// Roll d100
+	dice := Dice{Sizes: 100}
+	rollValue := dice.Roll()
+
+	// Calculate success and SL
+	success := rollValue <= targetValue
+	SL := (targetValue / 10) - (rollValue / 10)
+
+	// Calculate damage based on damage formula
+	damageFormula := damage
+	damageValue := 0
+
+	// Parse damage formula (e.g., "SB+4", "BB+3", "8")
+	if strings.Contains(damage, "SB") {
+		// Strength Bonus based damage
+		sb := character.Characteristics.Current.S / 10
+		bonus := 0
+		if strings.Contains(damage, "+") {
+			parts := strings.Split(damage, "+")
+			if len(parts) == 2 {
+				fmt.Sscanf(parts[1], "%d", &bonus)
+			}
+		} else if strings.Contains(damage, "-") {
+			parts := strings.Split(damage, "-")
+			if len(parts) == 2 {
+				fmt.Sscanf(parts[1], "%d", &bonus)
+				bonus = -bonus
+			}
+		}
+		damageValue = sb + bonus
+	} else if strings.Contains(damage, "BB") {
+		// Ballistic Bonus based damage (rare, but possible)
+		bb := character.Characteristics.Current.BS / 10
+		bonus := 0
+		if strings.Contains(damage, "+") {
+			parts := strings.Split(damage, "+")
+			if len(parts) == 2 {
+				fmt.Sscanf(parts[1], "%d", &bonus)
+			}
+		} else if strings.Contains(damage, "-") {
+			parts := strings.Split(damage, "-")
+			if len(parts) == 2 {
+				fmt.Sscanf(parts[1], "%d", &bonus)
+				bonus = -bonus
+			}
+		}
+		damageValue = bb + bonus
+	} else {
+		// Fixed damage value
+		fmt.Sscanf(damage, "%d", &damageValue)
+	}
+
+	// Add SL to damage on successful hit
+	if success && SL > 0 {
+		damageValue += SL
+	}
+
+	// Prepare response
+	response := map[string]interface{}{
+		"success":       success,
+		"SL":            SL,
+		"rollValue":     rollValue,
+		"targetValue":   targetValue,
+		"skillValue":    skillValue,
+		"modifier":      modifier,
+		"damageFormula": damageFormula,
+		"damageValue":   damageValue,
+		"weaponName":    weaponName,
+	}
+
+	// Add event
+	eventData := map[string]interface{}{
+		"characterId":   characterID,
+		"characterName": character.BasicInfo.Name,
+		"weaponName":    weaponName,
+		"weaponSkill":   weaponSkill,
+		"success":       success,
+		"SL":            SL,
+		"rollValue":     rollValue,
+		"targetValue":   targetValue,
+		"skillValue":    skillValue,
+		"modifier":      modifier,
+		"damageFormula": damageFormula,
+		"damageValue":   damageValue,
+	}
+
+	event := models.GameEvent{
+		Type:      models.EventTypeDiceRoll,
+		CreatedBy: userID,
+		Username:  username,
+		Data:      eventData,
+	}
+
+	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
+		return nil, err
+	}
+
+	// Broadcast to all clients
+	broadcastData := map[string]interface{}{
+		"type":          "WEAPON_ROLLED",
+		"characterId":   characterID,
+		"characterName": character.BasicInfo.Name,
+		"weaponName":    weaponName,
+		"weaponSkill":   weaponSkill,
+		"success":       success,
+		"SL":            SL,
+		"rollValue":     rollValue,
+		"targetValue":   targetValue,
+		"skillValue":    skillValue,
+		"modifier":      modifier,
+		"damageFormula": damageFormula,
+		"damageValue":   damageValue,
+		"username":      username,
+	}
+
+	s.hub.BroadcastToGame(gameID, "WEAPON_ROLLED", broadcastData)
+
+	return response, nil
+}
+
 // CreateHandout creates a new handout in a game (GM only)
 func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, req models.CreateHandoutRequest) (*models.Handout, error) {
 	// Verify user is the GM

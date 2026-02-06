@@ -99,12 +99,14 @@ type ArmourPoints struct {
 }
 
 type Weapon struct {
-	Name      string `bson:"name" json:"name"`
-	Group     string `bson:"group" json:"group"`
-	Enc       string `bson:"enc" json:"enc"`
-	Range     string `bson:"range" json:"range"`
-	Damage    string `bson:"damage" json:"damage"`
-	Qualities string `bson:"qualities" json:"qualities"`
+	Name        string `bson:"name" json:"name"`
+	Group       string `bson:"group" json:"group"`
+	Enc         string `bson:"enc" json:"enc"`
+	Range       string `bson:"range" json:"range"`
+	Damage      string `bson:"damage" json:"damage"`
+	Qualities   string `bson:"qualities" json:"qualities"`
+	Skill       string `bson:"skill,omitempty" json:"skill,omitempty"`
+	IsFavourite bool   `bson:"isFavourite,omitempty" json:"isFavourite,omitempty"`
 }
 
 type ArmourItem struct {

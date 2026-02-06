@@ -171,7 +171,8 @@
     "clickToChangeAvatar": "Kliknij, aby zmienić",
     "avatarUploadFailed": "Nie udało się przesłać awatara",
     "invalidFileType": "Nieprawidłowy typ pliku. Prześlij obraz (JPEG, PNG, GIF lub WebP).",
-    "fileTooLarge": "Plik jest za duży. Maksymalny rozmiar to 5MB."
+    "fileTooLarge": "Plik jest za duży. Maksymalny rozmiar to 5MB.",
+    "favoriteWeapon": "Przełącz ulubioną broń"
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",
@@ -384,6 +385,8 @@
     "fightInitiated": "Walka rozpoczęta:",
     "fightError": "Nie udało się rozpocząć walki"
   },
+  "favoriteWeapons": "Ulubiona Bron",
+  "favoriteSkills": "Ulubione Umiejetnosci",
   "files": {
     "title": "Pliki",
     "createFolder": "Nowy Folder",

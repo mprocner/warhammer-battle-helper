@@ -661,7 +661,9 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                     enc: weaponData.encumbrance.toString(),
                     range: rangeReachText,
                     damage: damageText,
-                    qualities: qualitiesText
+                    qualities: qualitiesText,
+                    skill: weaponData.type,
+                    isFavourite: false
                 }
             ]
         }));
@@ -674,6 +676,42 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         saveTimeoutRef.current = setTimeout(() => {
             handleSave();
         }, 1000);
+    };
+
+    // Toggle favorite weapon
+    const handleToggleFavoriteWeapon = async (index) => {
+        const updatedWeapons = editedCharacter.weapons.map((weapon, idx) =>
+            idx === index ? { ...weapon, isFavourite: !weapon.isFavourite } : weapon
+        );
+
+        const updatedCharacter = {
+            ...editedCharacter,
+            weapons: updatedWeapons
+        };
+
+        setEditedCharacter(updatedCharacter);
+
+        // Save immediately without debounce
+        setIsSaving(true);
+        setSaveSuccess(false);
+        try {
+            await axiosInstance.put(
+                `/characters/${updatedCharacter.id}`,
+                updatedCharacter
+            );
+
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 2000);
+
+            if (onCharacterUpdate) {
+                onCharacterUpdate(updatedCharacter);
+            }
+        } catch (error) {
+            console.error('Error saving character:', error);
+            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // Remove weapon
@@ -1539,6 +1577,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                 <table className="skills-table">
                                     <thead>
                                         <tr>
+                                            <th style={{ width: '30px' }}>⭐</th>
                                             <th>{t('characterSheet.name')}</th>
                                             <th style={{ width: '70px' }}>{t('characterSheet.group')}</th>
                                             <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
@@ -1551,6 +1590,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <tbody>
                                         {editedCharacter.weapons?.map((weapon, idx) => (
                                             <tr key={idx}>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={weapon.isFavourite || false}
+                                                        onChange={() => handleToggleFavoriteWeapon(idx)}
+                                                        title={t('characterSheet.favoriteWeapon')}
+                                                    />
+                                                </td>
                                                 <td><input type="text" value={weapon.name || ''} onChange={(e) => handleWeaponFieldChange(idx, 'name', e.target.value)} /></td>
                                                 <td><input type="text" value={weapon.group || ''} onChange={(e) => handleWeaponFieldChange(idx, 'group', e.target.value)} /></td>
                                                 <td><input type="text" value={weapon.enc || ''} onChange={(e) => handleWeaponFieldChange(idx, 'enc', e.target.value)} /></td>

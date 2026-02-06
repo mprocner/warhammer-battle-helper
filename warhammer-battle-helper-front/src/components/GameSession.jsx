@@ -222,6 +222,14 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
+      case 'WEAPON_ROLLED':
+        // Pass structured data to log
+        addLogMessage(null, 'weapon_roll', {
+          rollType: 'weapon',
+          ...message.payload
+        });
+        break;
+
       case 'FIGHT_RESULT':
         // Pass structured fight data to log
         console.log('FIGHT_RESULT received:', message.payload);

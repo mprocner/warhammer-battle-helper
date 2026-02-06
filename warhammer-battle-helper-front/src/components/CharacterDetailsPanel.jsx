@@ -23,6 +23,45 @@ function CharacterDetailsPanel({
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
 
+    // Get favorite weapons with their calculated skill values
+    const favoriteWeapons = useMemo(() => {
+        if (!character || !character.weapons || character.weapons.length === 0) {
+            return [];
+        }
+
+        const stats = character.characteristics?.current || {};
+
+        return character.weapons
+            .filter(weapon => weapon.isFavourite)
+            .map(weapon => {
+                // Get skill from weapon (e.g., "MELEE_BASIC", "RANGED_BOW")
+                const weaponSkill = weapon.skill;
+                if (!weaponSkill) return null;
+
+                // Check if it's a melee or ranged weapon
+                const isMelee = weaponSkill.startsWith('MELEE');
+                const isRanged = weaponSkill.startsWith('RANGED');
+
+                // Get characteristic value (WS for melee, BS for ranged)
+                const characteristicValue = isMelee ? (stats.WS || 0) : isRanged ? (stats.BS || 0) : 0;
+
+                // Get skill advances from basicSkills
+                const advances = parseInt(character.basicSkills?.[weaponSkill]) || 0;
+                const skillValue = characteristicValue + advances;
+
+                return {
+                    name: weapon.name,
+                    skill: weaponSkill,
+                    damage: weapon.damage,
+                    value: skillValue,
+                    isMelee,
+                    isRanged
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [character]);
+
     // Get favorite skills with their calculated values
     const favoriteSkills = useMemo(() => {
         if (!character || !character.favoriteSkills || character.favoriteSkills.length === 0) {
@@ -89,6 +128,26 @@ function CharacterDetailsPanel({
             }
         }).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
     }, [character, t]);
+
+    const handleWeaponClick = (weapon, event) => {
+        if (!weapon.value || weapon.value === '-') {
+            if (addLogMessage) {
+                addLogMessage(t('combat.cannotRoll', { characteristic: weapon.name }), 'warning');
+            }
+            return;
+        }
+
+        // Store pending weapon and show modifier modal
+        setPendingCharacteristic({
+            name: weapon.name,
+            value: weapon.value,
+            weaponSkill: weapon.skill,
+            weaponDamage: weapon.damage,
+            isWeapon: true // Flag to indicate this is a weapon roll
+        });
+        setMousePosition({ x: event.clientX, y: event.clientY });
+        setShowModifierModal(true);
+    };
 
     const handleSkillClick = (skill, event) => {
         if (!skill.value || skill.value === '-') {
@@ -172,7 +231,15 @@ function CharacterDetailsPanel({
     const handleModifierConfirm = (selectedModifier) => {
         setShowModifierModal(false);
         if (pendingCharacteristic) {
-            if (pendingCharacteristic.isSkill) {
+            if (pendingCharacteristic.isWeapon) {
+                // Roll weapon
+                rollWeapon(
+                    pendingCharacteristic.name,
+                    pendingCharacteristic.weaponSkill,
+                    pendingCharacteristic.weaponDamage,
+                    selectedModifier
+                );
+            } else if (pendingCharacteristic.isSkill) {
                 // Roll skill
                 rollSkill(
                     pendingCharacteristic.skillKey,
@@ -286,6 +353,45 @@ function CharacterDetailsPanel({
             }
         } catch (error) {
             console.error('Error rolling skill:', error);
+            if (addLogMessage) {
+                addLogMessage(t('combat.rollFailed'), 'error');
+            }
+        }
+    };
+
+    const rollWeapon = async (weaponName, weaponSkill, weaponDamage, modifierValue) => {
+        try {
+            // Weapon rolls are only supported in game sessions
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({
+                        weaponName: weaponName,
+                        weaponSkill: weaponSkill,
+                        damage: weaponDamage || '',
+                        modifier: modifierValue,
+                        characterId: character.id
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to roll weapon');
+                }
+
+                // WebSocket will handle broadcasting the message with weapon details
+                // Backend calculates skill value and damage from database (server-authoritative)
+            } else {
+                // If not in a game session, show a warning
+                if (addLogMessage) {
+                    addLogMessage('Weapon rolls are only available in game sessions', 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('Error rolling weapon:', error);
             if (addLogMessage) {
                 addLogMessage(t('combat.rollFailed'), 'error');
             }
@@ -470,10 +576,31 @@ function CharacterDetailsPanel({
                 </button>
             </div>
 
+            {/* Favorite Weapons */}
+            {favoriteWeapons.length > 0 && (
+                <div className="favorite-skills">
+                    <div className="favorite-skills-label">⚔️ {t('favoriteWeapons')}</div>
+                    <div className="favorite-skills-grid">
+                        {favoriteWeapons.map((weapon, idx) => (
+                            <button
+                                key={`weapon-${idx}`}
+                                className="skill-box skill-box-button"
+                                onClick={(e) => handleWeaponClick(weapon, e)}
+                                title={t('combat.rollTest', { characteristic: weapon.name })}
+                                disabled={!weapon.value || weapon.value === '-'}
+                            >
+                                <div className="skill-box-label">{weapon.name}</div>
+                                <div className="skill-box-value">{weapon.value || '-'}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Favorite Skills */}
             {favoriteSkills.length > 0 && (
                 <div className="favorite-skills">
-                    <div className="favorite-skills-label">⭐ Favorite Skills</div>
+                    <div className="favorite-skills-label">⭐ {t('favoriteSkills')}</div>
                     <div className="favorite-skills-grid">
                         {favoriteSkills.map((skill) => (
                             <button

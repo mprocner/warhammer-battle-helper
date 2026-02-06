@@ -3,6 +3,7 @@ import { getApiUrl, getApiHeaders } from '../api/axios';
 import SimpleDiceRoll from './log/SimpleDiceRoll';
 import AttributeRoll from './log/AttributeRoll';
 import SkillRoll from './log/SkillRoll';
+import WeaponRoll from './log/WeaponRoll';
 import FightResult from './log/FightResult';
 import DiceRollControls from './log/DiceRollControls';
 import SimpleMessage from './log/SimpleMessage';
@@ -72,6 +73,8 @@ const LogWindow = ({
                     return <AttributeRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
                 case 'skill':
                     return <SkillRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
+                case 'weapon':
+                    return <WeaponRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
                 case 'fight':
                     return <FightResult key={index} data={msg.data} />;
                 default:

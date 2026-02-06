@@ -127,6 +127,7 @@ func main() {
 	r.POST("/games/:id/fight", http.JWTAuthMiddleware(), gameHandler.Fight)
 	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
 	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
+	r.POST("/games/:id/rollWeapon", http.JWTAuthMiddleware(), gameHandler.RollWeapon)
 
 	// WebSocket route
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
