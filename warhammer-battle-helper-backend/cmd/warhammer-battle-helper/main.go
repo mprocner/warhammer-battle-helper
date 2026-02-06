@@ -13,6 +13,7 @@ import (
 	"fmt"
 	nethttp "net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -60,8 +61,19 @@ func main() {
 
 	r := gin.Default()
 
+	// Build allowed origins from environment + defaults
+	allowedOrigins := []string{"http://localhost:3000", "https://*.ngrok-free.dev", "https://*.loca.lt"}
+	if extraOrigins := os.Getenv("ALLOWED_ORIGINS"); extraOrigins != "" {
+		for _, origin := range strings.Split(extraOrigins, ",") {
+			origin = strings.TrimSpace(origin)
+			if origin != "" {
+				allowedOrigins = append(allowedOrigins, origin)
+			}
+		}
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "https://*.ngrok-free.dev", "https://*.loca.lt"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "ngrok-skip-browser-warning"},
 		AllowCredentials: true,

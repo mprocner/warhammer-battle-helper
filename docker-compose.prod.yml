@@ -1,0 +1,51 @@
+services:
+  frontend:
+    build:
+      context: ./warhammer-battle-helper-front
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./warhammer-battle-helper-backend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - GIN_MODE=release
+      - MONGO_URI=mongodb://${MONGO_USER:-root}:${MONGO_PASSWORD:-example}@mongo:27017
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-battle_helper}
+      - AVATARS_PATH=/app/avatars
+      - USER_FILES_PATH=/app/user-files
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
+    volumes:
+      - ./warhammer-battle-helper-backend/keys:/app/keys:ro
+      - backend-avatars:/app/avatars
+      - backend-user-files:/app/user-files
+      - backend-handouts:/app/handouts
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-example}
+    volumes:
+      - mongo-data:/data/db
+    # Not exposing port externally in production
+
+volumes:
+  mongo-data:
+  backend-avatars:
+  backend-user-files:
+  backend-handouts:
