@@ -74,13 +74,23 @@ func (r *UserRepository) AddFiles(userID primitive.ObjectID, files []models.User
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// First, ensure files field is an array (not null)
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": userID, "files": nil},
+		bson.M{"$set": bson.M{"files": bson.A{}}},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Now push the files
 	update := bson.M{
 		"$push": bson.M{
 			"files": bson.M{"$each": files},
 		},
 	}
 
-	_, err := r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
 	return err
 }
 
@@ -132,13 +142,23 @@ func (r *UserRepository) AddFolder(userID primitive.ObjectID, folder models.User
 	folder.CreatedAt = time.Now()
 	folder.UpdatedAt = time.Now()
 
+	// First, ensure folders field is an array (not null)
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": userID, "folders": nil},
+		bson.M{"$set": bson.M{"folders": bson.A{}}},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Now push the folder
 	update := bson.M{
 		"$push": bson.M{
 			"folders": folder,
 		},
 	}
 
-	_, err := r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
 	if err != nil {
 		return nil, err
 	}
