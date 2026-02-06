@@ -1,13 +1,13 @@
 package service
 
 import (
+	"battle-helper/internal/data"
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/websocket"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -468,15 +468,10 @@ type Skill struct {
 	Specialisations []string `json:"specialisations"`
 }
 
-// loadSkills loads skills data from JSON file
+// loadSkills loads skills data from embedded JSON
 func loadSkills() ([]Skill, error) {
-	data, err := os.ReadFile("internal/data/skills.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read skills.json: %w", err)
-	}
-
 	var skills []Skill
-	if err := json.Unmarshal(data, &skills); err != nil {
+	if err := json.Unmarshal(data.SkillsJSON, &skills); err != nil {
 		return nil, fmt.Errorf("failed to parse skills.json: %w", err)
 	}
 
