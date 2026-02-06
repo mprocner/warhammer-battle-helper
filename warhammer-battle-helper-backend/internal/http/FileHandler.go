@@ -5,6 +5,7 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/storage"
 	"io"
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -175,6 +176,7 @@ func (h *FileHandler) UploadFiles(c *gin.Context) {
 	// Save files to database
 	if len(uploadedFiles) > 0 {
 		if err := h.UserRepo.AddFiles(userID, uploadedFiles); err != nil {
+			log.Printf("ERROR: Failed to save files to database for user %s: %v", userID.Hex(), err)
 			// Try to clean up uploaded files
 			for _, f := range uploadedFiles {
 				filename := filepath.Base(f.FileURL)

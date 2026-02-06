@@ -8,6 +8,9 @@ server {
     # Redirect HTTP to HTTPS (uncomment after setting up SSL)
     # return 301 https://$server_name$request_uri;
 
+    # Allow larger file uploads (adjust as needed)
+    client_max_body_size 50M;
+
     # Frontend (served from Docker container on port 3000)
     location / {
         proxy_pass http://127.0.0.1:3000;
