@@ -8,16 +8,16 @@ server {
     # Redirect HTTP to HTTPS (uncomment after setting up SSL)
     # return 301 https://$server_name$request_uri;
 
-    # HTTP Basic Authentication
-    # Generate password file: htpasswd -c /etc/nginx/.htpasswd <username>
-    auth_basic "Restricted Access";
-    auth_basic_user_file /etc/nginx/.htpasswd;
-
     # Allow larger file uploads (adjust as needed)
     client_max_body_size 50M;
 
     # Frontend (served from Docker container on port 3000)
+    # HTTP Basic Authentication - only for frontend
+    # Generate password file: htpasswd -c /etc/nginx/.htpasswd <username>
     location / {
+        auth_basic "Restricted Access";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
