@@ -7,6 +7,9 @@ import './HandoutViewerModal.css';
 /**
  * Modal for viewing handout content (draggable, minimizable, no overlay)
  */
+const MIN_WIDTH = 300;
+const MIN_HEIGHT = 200;
+
 const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
   const { t } = useTranslation();
   const [textContent, setTextContent] = useState('');
@@ -14,8 +17,12 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
   const [error, setError] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [size, setSize] = useState({ width: 900, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDir, setResizeDir] = useState(null);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, posX: 0, posY: 0 });
   const popupRef = useRef(null);
 
   const fetchTextContent = useCallback(async () => {
@@ -49,13 +56,31 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     }
   }, [isOpen, handout, fetchTextContent]);
 
-  // Reset position when opening
+  // Reset position and size when opening
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 100, y: 100 });
+      setSize({ width: 900, height: 0 });
       setIsMinimized(false);
     }
   }, [isOpen]);
+
+  // Clamp position so the header bar always stays on screen
+  const clampPosition = useCallback((x, y) => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const el = popupRef.current;
+    const elWidth = el ? el.offsetWidth : 300;
+    const headerHeight = 46; // approximate header height
+
+    // At least 80px of the window must remain visible horizontally
+    const minVisibleX = 80;
+    const clampedX = Math.max(-elWidth + minVisibleX, Math.min(x, vw - minVisibleX));
+    // Top: cannot go above 0; Bottom: header must stay visible
+    const clampedY = Math.max(0, Math.min(y, vh - headerHeight));
+
+    return { x: clampedX, y: clampedY };
+  }, []);
 
   // Drag handlers
   const handleMouseDown = (e) => {
@@ -69,21 +94,63 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     }
   };
 
+  // Resize handlers
+  const handleResizeMouseDown = (e, direction) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeDir(direction);
+    const rect = popupRef.current.getBoundingClientRect();
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: rect.width,
+      height: rect.height,
+      posX: position.x,
+      posY: position.y,
+    });
+  };
+
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (isDragging) {
-        setPosition({
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y
-        });
+        const clamped = clampPosition(e.clientX - dragOffset.x, e.clientY - dragOffset.y);
+        setPosition(clamped);
+      }
+      if (isResizing && resizeDir) {
+        const dx = e.clientX - resizeStart.x;
+        const dy = e.clientY - resizeStart.y;
+        const dir = resizeDir;
+
+        let newWidth = resizeStart.width;
+        let newHeight = resizeStart.height;
+        let newX = resizeStart.posX;
+        let newY = resizeStart.posY;
+
+        if (dir.includes('e')) newWidth = Math.max(MIN_WIDTH, resizeStart.width + dx);
+        if (dir.includes('s')) newHeight = Math.max(MIN_HEIGHT, resizeStart.height + dy);
+        if (dir.includes('w')) {
+          newWidth = Math.max(MIN_WIDTH, resizeStart.width - dx);
+          if (newWidth > MIN_WIDTH) newX = resizeStart.posX + dx;
+        }
+        if (dir.includes('n')) {
+          newHeight = Math.max(MIN_HEIGHT, resizeStart.height - dy);
+          if (newHeight > MIN_HEIGHT) newY = resizeStart.posY + dy;
+        }
+
+        setSize({ width: newWidth, height: newHeight });
+        const clamped = clampPosition(newX, newY);
+        setPosition(clamped);
       }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      setIsResizing(false);
+      setResizeDir(null);
     };
 
-    if (isDragging) {
+    if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -92,7 +159,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, clampPosition]);
 
   if (!isOpen || !handout) return null;
 
@@ -173,13 +240,19 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     }
   };
 
+  const sizeStyle = isMinimized ? {} : {
+    width: `${size.width}px`,
+    ...(size.height > 0 ? { height: `${size.height}px` } : {}),
+  };
+
   return (
     <div
       ref={popupRef}
-      className={`handout-viewer ${isMinimized ? 'handout-viewer--minimized' : ''}`}
+      className={`handout-viewer ${isMinimized ? 'handout-viewer--minimized' : ''} ${isResizing ? 'handout-viewer--resizing' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        ...sizeStyle,
       }}
       onMouseDown={handleMouseDown}
     >
@@ -225,6 +298,16 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
           <div className="handout-viewer__content">
             {renderContent()}
           </div>
+
+          {/* Resize handles */}
+          <div className="handout-viewer__resize handout-viewer__resize--n" onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
+          <div className="handout-viewer__resize handout-viewer__resize--s" onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
+          <div className="handout-viewer__resize handout-viewer__resize--e" onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+          <div className="handout-viewer__resize handout-viewer__resize--w" onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
+          <div className="handout-viewer__resize handout-viewer__resize--ne" onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
+          <div className="handout-viewer__resize handout-viewer__resize--nw" onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
+          <div className="handout-viewer__resize handout-viewer__resize--se" onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+          <div className="handout-viewer__resize handout-viewer__resize--sw" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
         </>
       )}
     </div>

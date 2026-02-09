@@ -1169,6 +1169,21 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setHasChanges(true);
     };
 
+    // Clamp position so the header bar always stays on screen
+    const clampPosition = useCallback((x, y) => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const el = popupRef.current;
+        const elWidth = el ? el.offsetWidth : 600;
+        const headerHeight = 46;
+
+        const minVisibleX = 80;
+        const clampedX = Math.max(-elWidth + minVisibleX, Math.min(x, vw - minVisibleX));
+        const clampedY = Math.max(0, Math.min(y, vh - headerHeight));
+
+        return { x: clampedX, y: clampedY };
+    }, []);
+
     // Drag handlers
     const handleMouseDown = (e) => {
         if (e.target.closest('.sheet-header') && !e.target.closest('.sheet-header-buttons')) {
@@ -1200,10 +1215,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (isDragging) {
-                setPosition({
-                    x: e.clientX - dragOffset.x,
-                    y: e.clientY - dragOffset.y
-                });
+                const clamped = clampPosition(e.clientX - dragOffset.x, e.clientY - dragOffset.y);
+                setPosition(clamped);
             }
 
             if (isResizing && resizeDirection) {
@@ -1241,9 +1254,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 }
 
                 setSize({ width: newWidth, height: newHeight });
-                if (newX !== resizeStart.posX || newY !== resizeStart.posY) {
-                    setPosition({ x: newX, y: newY });
-                }
+                const clamped = clampPosition(newX, newY);
+                setPosition(clamped);
             }
         };
 
@@ -1262,7 +1274,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStart, size, position]);
+    }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStart, size, position, clampPosition]);
 
     const popupContent = (
         <div
