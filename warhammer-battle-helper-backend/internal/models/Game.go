@@ -34,6 +34,7 @@ type Game struct {
 	Characters      []GameCharacter    `bson:"characters" json:"characters"`
 	Events          []GameEvent        `bson:"events" json:"events"`
 	Handouts        []Handout          `bson:"handouts" json:"handouts"`
+	Scenes          []Scene            `bson:"scenes" json:"scenes"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
@@ -111,6 +112,37 @@ type AddCharacterRequest struct {
 	IsEnemy     bool   `json:"isEnemy"`
 }
 
+// SceneImage represents an image placed on a scene layer
+type SceneImage struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	FileURL   string             `bson:"fileUrl" json:"fileUrl"`
+	FileName  string             `bson:"fileName" json:"fileName"`
+	Layer     string             `bson:"layer" json:"layer"` // "background" or "gm"
+	X         float64            `bson:"x" json:"x"`
+	Y         float64            `bson:"y" json:"y"`
+	Width     float64            `bson:"width" json:"width"`
+	Height    float64            `bson:"height" json:"height"`
+	ZIndex    int                `bson:"zIndex" json:"zIndex"`
+	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+}
+
+// Scene represents a battle scene with its own grid and characters
+type Scene struct {
+	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
+	Name            string               `bson:"name" json:"name"`
+	GridVisible     bool                 `bson:"gridVisible" json:"gridVisible"`
+	GridBgVisible   bool                 `bson:"gridBgVisible" json:"gridBgVisible"`
+	GridWidth       int                  `bson:"gridWidth" json:"gridWidth"`
+	GridHeight      int                  `bson:"gridHeight" json:"gridHeight"`
+	Characters      []GameCharacter      `bson:"characters" json:"characters"`
+	Images          []SceneImage         `bson:"images" json:"images"`
+	AssignedPlayers []primitive.ObjectID `bson:"assignedPlayers" json:"assignedPlayers"`
+	IsDefault       bool                 `bson:"isDefault" json:"isDefault"`
+	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
+	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
+}
+
 // Handout represents a document/image shared in the game
 type Handout struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
@@ -145,4 +177,46 @@ type UpdateHandoutRequest struct {
 // ReorderHandoutsRequest is the request body for reordering handouts
 type ReorderHandoutsRequest struct {
 	HandoutIDs []string `json:"handoutIds" binding:"required"`
+}
+
+// CreateSceneRequest is the request body for creating a new scene
+type CreateSceneRequest struct {
+	Name       string `json:"name" binding:"required"`
+	GridWidth  int    `json:"gridWidth"`
+	GridHeight int    `json:"gridHeight"`
+}
+
+// UpdateSceneRequest is the request body for updating a scene
+type UpdateSceneRequest struct {
+	Name          *string `json:"name"`
+	GridVisible   *bool   `json:"gridVisible"`
+	GridBgVisible *bool   `json:"gridBgVisible"`
+	GridWidth     *int    `json:"gridWidth"`
+	GridHeight    *int    `json:"gridHeight"`
+}
+
+// AssignPlayerToSceneRequest is the request body for assigning a player to a scene
+type AssignPlayerToSceneRequest struct {
+	PlayerID string `json:"playerId" binding:"required"`
+}
+
+// AddSceneImageRequest is the request body for adding an image to a scene
+type AddSceneImageRequest struct {
+	FileURL  string  `json:"fileUrl" binding:"required"`
+	FileName string  `json:"fileName" binding:"required"`
+	Layer    string  `json:"layer" binding:"required"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Width    float64 `json:"width"`
+	Height   float64 `json:"height"`
+}
+
+// UpdateSceneImageRequest is the request body for updating a scene image
+type UpdateSceneImageRequest struct {
+	X      *float64 `json:"x"`
+	Y      *float64 `json:"y"`
+	Width  *float64 `json:"width"`
+	Height *float64 `json:"height"`
+	ZIndex *int     `json:"zIndex"`
+	Layer  *string  `json:"layer"`
 }

@@ -10,6 +10,7 @@ import {
   useDroppable,
 } from '@dnd-kit/core';
 import { getFiles, uploadFiles, deleteFile, moveFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
+import { addSceneImage } from '../../api/scenes';
 import { getApiUrl } from '../../api/axios';
 import './FilesTab.css';
 
@@ -20,7 +21,7 @@ const getFileUrl = (fileUrl) => {
 };
 
 // Draggable file item component
-const DraggableFileItem = ({ file, onPreview, onDelete, onHover, t }) => {
+const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `file-${file.id}`,
     data: { type: 'file', file },
@@ -67,6 +68,15 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, t }) => {
         {file.name}
       </span>
       <div className="files-tab__item-actions">
+        {onAddToScene && (
+          <button
+            className="files-tab__item-action"
+            onClick={(e) => { e.stopPropagation(); onHover(null); onAddToScene(file); }}
+            title={t('scenes.addToScene')}
+          >
+            🗺️
+          </button>
+        )}
         <button
           className="files-tab__item-action"
           onClick={handleDelete}
@@ -150,7 +160,7 @@ const DroppableBackButton = ({ parentFolderId, onNavigateUp }) => {
 /**
  * Files tab - manages user's image files repository (GM only)
  */
-const FilesTab = ({ token }) => {
+const FilesTab = ({ token, gameId, currentSceneId }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
 
@@ -170,6 +180,29 @@ const FilesTab = ({ token }) => {
   const [renameValue, setRenameValue] = useState('');
   const [draggingFile, setDraggingFile] = useState(null);
   const [hoveredFile, setHoveredFile] = useState(null);
+  const [addToSceneFile, setAddToSceneFile] = useState(null);
+  const [addToSceneLayer, setAddToSceneLayer] = useState('background');
+
+  const handleAddToScene = async () => {
+    if (!addToSceneFile || !gameId || !currentSceneId) return;
+
+    try {
+      await addSceneImage(gameId, currentSceneId, {
+        fileUrl: addToSceneFile.fileUrl,
+        fileName: addToSceneFile.name,
+        layer: addToSceneLayer,
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 200,
+      });
+      setAddToSceneFile(null);
+      setAddToSceneLayer('background');
+    } catch (err) {
+      console.error('Failed to add image to scene:', err);
+      setError(t('scenes.addImageError'));
+    }
+  };
 
   // DnD sensors
   const sensors = useSensors(
@@ -571,6 +604,7 @@ const FilesTab = ({ token }) => {
               onPreview={setPreviewFile}
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
+              onAddToScene={gameId && currentSceneId ? setAddToSceneFile : null}
               t={t}
             />
           ))}
@@ -637,6 +671,42 @@ const FilesTab = ({ token }) => {
               alt={hoveredFile.name}
             />
             <span className="files-tab__hover-preview-name">{hoveredFile.name}</span>
+          </div>
+        )}
+
+        {/* Add to Scene dialog */}
+        {addToSceneFile && (
+          <div className="files-tab__modal-overlay" onClick={() => setAddToSceneFile(null)}>
+            <div className="files-tab__modal" onClick={(e) => e.stopPropagation()}>
+              <h4>{t('scenes.addToScene')}</h4>
+              <p style={{ fontSize: 12, color: '#7a5c42', margin: '4px 0 8px' }}>
+                {addToSceneFile.name}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#7a5c42' }}>
+                  {t('scenes.layer')}
+                </label>
+                <select
+                  value={addToSceneLayer}
+                  onChange={(e) => setAddToSceneLayer(e.target.value)}
+                  style={{
+                    padding: '4px 8px', border: '1px solid #d4a574',
+                    borderRadius: 3, background: '#faf3e8', fontSize: 12
+                  }}
+                >
+                  <option value="background">{t('scenes.backgroundLayer')}</option>
+                  <option value="gm">{t('scenes.gmLayer')}</option>
+                </select>
+              </div>
+              <div className="files-tab__modal-actions">
+                <button type="button" onClick={() => setAddToSceneFile(null)}>
+                  {t('common.cancel')}
+                </button>
+                <button type="button" onClick={handleAddToScene}>
+                  {t('scenes.addToScene')}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

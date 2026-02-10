@@ -1,18 +1,365 @@
-import React from 'react';
-import './TabPlaceholder.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene } from '../../api/scenes';
+import './ScenesTab.css';
 
-/**
- * Scenes tab - placeholder component
- */
-const ScenesTab = () => {
+const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
+  const { t } = useTranslation();
+  const [scenes, setScenes] = useState([]);
+  const selectedSceneId = currentSceneId || null;
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Create scene form
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newSceneName, setNewSceneName] = useState('');
+  const [newSceneWidth, setNewSceneWidth] = useState(20);
+  const [newSceneHeight, setNewSceneHeight] = useState(20);
+
+  const fetchScenes = useCallback(async () => {
+    if (!gameId) return;
+    try {
+      setIsLoading(true);
+      const data = await getScenes(gameId);
+      setScenes(data || []);
+      setError('');
+    } catch (err) {
+      console.error('Failed to fetch scenes:', err);
+      setError(t('scenes.loadError'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gameId, t]);
+
+  useEffect(() => {
+    fetchScenes();
+  }, [fetchScenes]);
+
+  // Refresh when game state changes (WS updates)
+  useEffect(() => {
+    if (gameState?.scenes) {
+      setScenes(gameState.scenes);
+    }
+  }, [gameState?.scenes]);
+
+  const selectedScene = scenes.find(s => s.id === selectedSceneId);
+
+  const participants = gameState?.participants?.filter(p => p.isActive && p.role === 'player') || [];
+
+  const handleCreateScene = async (e) => {
+    e.preventDefault();
+    if (!newSceneName.trim()) return;
+
+    try {
+      const created = await createScene(gameId, {
+        name: newSceneName.trim(),
+        gridWidth: newSceneWidth,
+        gridHeight: newSceneHeight,
+      });
+      setScenes(prev => [...prev, created]);
+      setNewSceneName('');
+      setNewSceneWidth(20);
+      setNewSceneHeight(20);
+      setIsCreateOpen(false);
+      if (onSceneChange) onSceneChange(created.id);
+    } catch (err) {
+      console.error('Failed to create scene:', err);
+      setError(t('scenes.createError'));
+    }
+  };
+
+  const handleDeleteScene = async (sceneId) => {
+    const scene = scenes.find(s => s.id === sceneId);
+    if (!window.confirm(t('scenes.confirmDelete', { name: scene?.name }))) return;
+
+    try {
+      await deleteScene(gameId, sceneId);
+      setScenes(prev => prev.filter(s => s.id !== sceneId));
+      if (selectedSceneId === sceneId && onSceneChange) {
+        onSceneChange(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete scene:', err);
+      setError(t('scenes.deleteError'));
+    }
+  };
+
+  const handleUpdateScene = async (field, value) => {
+    if (!selectedSceneId) return;
+    try {
+      await updateScene(gameId, selectedSceneId, { [field]: value });
+      setScenes(prev => prev.map(s =>
+        s.id === selectedSceneId ? { ...s, [field]: value } : s
+      ));
+    } catch (err) {
+      console.error('Failed to update scene:', err);
+      setError(t('scenes.updateError'));
+    }
+  };
+
+  const handleTogglePlayer = async (playerId) => {
+    if (!selectedScene) return;
+    const isAssigned = selectedScene.assignedPlayers?.includes(playerId);
+
+    try {
+      await assignPlayerToScene(gameId, selectedSceneId, playerId, !isAssigned);
+      // Update local state
+      setScenes(prev => prev.map(s => {
+        if (s.id !== selectedSceneId) {
+          // Remove player from other scenes
+          if (!isAssigned) {
+            return {
+              ...s,
+              assignedPlayers: (s.assignedPlayers || []).filter(id => id !== playerId)
+            };
+          }
+          return s;
+        }
+        // Toggle in selected scene
+        const players = s.assignedPlayers || [];
+        return {
+          ...s,
+          assignedPlayers: isAssigned
+            ? players.filter(id => id !== playerId)
+            : [...players, playerId]
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to toggle player assignment:', err);
+      setError(t('scenes.assignError'));
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="scenes-tab scenes-tab--loading">
+        <div className="loading-spinner" />
+        <span>{t('common.loading')}</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="tab-placeholder">
-      <div className="tab-placeholder__icon">🗺️</div>
-      <h3 className="tab-placeholder__title">Scenes</h3>
-      <p className="tab-placeholder__message">Coming soon...</p>
-      <p className="tab-placeholder__description">
-        Manage battle maps, scene layers, and terrain elements.
-      </p>
+    <div className="scenes-tab">
+      {/* Header */}
+      <div className="scenes-tab__header">
+        <h3 className="scenes-tab__title">{t('scenes.title')}</h3>
+        <button
+          className="scenes-tab__btn"
+          onClick={() => setIsCreateOpen(true)}
+        >
+          + {t('scenes.createScene')}
+        </button>
+      </div>
+
+      {error && (
+        <div className="scenes-tab__error">
+          <span>{error}</span>
+          <button onClick={() => setError('')}>&times;</button>
+        </div>
+      )}
+
+      {/* Scene list */}
+      <div className="scenes-tab__list">
+        {scenes.length === 0 ? (
+          <div className="scenes-tab__empty">
+            <p>{t('scenes.noScenes')}</p>
+          </div>
+        ) : (
+          scenes.map(scene => (
+            <div
+              key={scene.id}
+              className={`scenes-tab__card ${selectedSceneId === scene.id ? 'scenes-tab__card--selected' : ''}`}
+              onClick={() => onSceneChange && onSceneChange(scene.id === selectedSceneId ? null : scene.id)}
+            >
+              <div className="scenes-tab__card-header">
+                <span className="scenes-tab__card-name">
+                  {scene.name}
+                  {scene.isDefault && <span className="scenes-tab__badge">{t('scenes.default')}</span>}
+                </span>
+                <span className="scenes-tab__card-info">
+                  {scene.gridWidth}x{scene.gridHeight} · {(scene.assignedPlayers || []).length} {t('scenes.players')}
+                </span>
+              </div>
+              {!scene.isDefault && (
+                <button
+                  className="scenes-tab__card-delete"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteScene(scene.id); }}
+                  title={t('common.delete')}
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Selected scene settings */}
+      {selectedScene && (
+        <div className="scenes-tab__settings">
+          <h4 className="scenes-tab__settings-title">{t('scenes.sceneSettings')}</h4>
+
+          {/* Editing layer toggle */}
+          <div className="scenes-tab__field">
+            <label>{t('scenes.editingLayer')}</label>
+            <div className="scenes-tab__layer-toggle">
+              {[
+                { value: 'background', label: t('scenes.backgroundLayer') },
+                { value: 'grid', label: t('scenes.gridLayer') },
+                { value: 'gm', label: t('scenes.gmLayer') },
+              ].map(layer => (
+                <button
+                  key={layer.value}
+                  className={`scenes-tab__layer-btn ${editingLayer === layer.value ? 'scenes-tab__layer-btn--active' : ''}`}
+                  onClick={() => onEditingLayerChange(layer.value)}
+                >
+                  {layer.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Name */}
+          <div className="scenes-tab__field">
+            <label>{t('scenes.name')}</label>
+            <input
+              type="text"
+              value={selectedScene.name}
+              onChange={(e) => handleUpdateScene('name', e.target.value)}
+            />
+          </div>
+
+          {/* Grid dimensions */}
+          <div className="scenes-tab__field-row">
+            <div className="scenes-tab__field">
+              <label>{t('scenes.gridWidth')}</label>
+              <input
+                type="number"
+                min="5"
+                max="50"
+                value={selectedScene.gridWidth}
+                onChange={(e) => handleUpdateScene('gridWidth', parseInt(e.target.value) || 20)}
+              />
+            </div>
+            <div className="scenes-tab__field">
+              <label>{t('scenes.gridHeight')}</label>
+              <input
+                type="number"
+                min="5"
+                max="50"
+                value={selectedScene.gridHeight}
+                onChange={(e) => handleUpdateScene('gridHeight', parseInt(e.target.value) || 20)}
+              />
+            </div>
+          </div>
+
+          {/* Grid visibility */}
+          <div className="scenes-tab__field scenes-tab__field--checkbox">
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedScene.gridVisible}
+                onChange={(e) => handleUpdateScene('gridVisible', e.target.checked)}
+              />
+              {t('scenes.showGrid')}
+            </label>
+          </div>
+
+          {/* Grid background visibility */}
+          <div className="scenes-tab__field scenes-tab__field--checkbox">
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedScene.gridBgVisible !== false}
+                onChange={(e) => handleUpdateScene('gridBgVisible', e.target.checked)}
+              />
+              {t('scenes.showGridBackground')}
+            </label>
+          </div>
+
+          {/* Player assignment */}
+          <div className="scenes-tab__field">
+            <label>{t('scenes.assignedPlayers')}</label>
+            <div className="scenes-tab__players">
+              {participants.length === 0 ? (
+                <span className="scenes-tab__no-players">{t('scenes.noPlayers')}</span>
+              ) : (
+                participants.map(p => {
+                  const isAssigned = selectedScene.assignedPlayers?.includes(p.userId);
+                  return (
+                    <label key={p.userId} className="scenes-tab__player-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={isAssigned}
+                        onChange={() => handleTogglePlayer(p.userId)}
+                      />
+                      <span>{p.username}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Scene stats */}
+          <div className="scenes-tab__stats">
+            <span>{t('scenes.characters')}: {(selectedScene.characters || []).length}</span>
+            <span>{t('scenes.images')}: {(selectedScene.images || []).length}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Create scene modal */}
+      {isCreateOpen && (
+        <div className="scenes-tab__modal-overlay" onClick={() => setIsCreateOpen(false)}>
+          <div className="scenes-tab__modal" onClick={(e) => e.stopPropagation()}>
+            <h4>{t('scenes.createScene')}</h4>
+            <form onSubmit={handleCreateScene}>
+              <div className="scenes-tab__field">
+                <label>{t('scenes.name')}</label>
+                <input
+                  type="text"
+                  value={newSceneName}
+                  onChange={(e) => setNewSceneName(e.target.value)}
+                  placeholder={t('scenes.namePlaceholder')}
+                  autoFocus
+                />
+              </div>
+              <div className="scenes-tab__field-row">
+                <div className="scenes-tab__field">
+                  <label>{t('scenes.gridWidth')}</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="50"
+                    value={newSceneWidth}
+                    onChange={(e) => setNewSceneWidth(parseInt(e.target.value) || 20)}
+                  />
+                </div>
+                <div className="scenes-tab__field">
+                  <label>{t('scenes.gridHeight')}</label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="50"
+                    value={newSceneHeight}
+                    onChange={(e) => setNewSceneHeight(parseInt(e.target.value) || 20)}
+                  />
+                </div>
+              </div>
+              <div className="scenes-tab__modal-actions">
+                <button type="button" onClick={() => setIsCreateOpen(false)}>
+                  {t('common.cancel')}
+                </button>
+                <button type="submit" disabled={!newSceneName.trim()}>
+                  {t('common.create')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

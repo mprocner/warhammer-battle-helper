@@ -929,43 +929,23 @@ header nav a:hover::after {
   display: block;
 }
 
+/* Fight grid wrapper for scene selector + grid */
+.fight-grid-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
 /* ================== FIGHT GRID (10x10) - Light Tactical Map ================== */
 .fight-grid {
-  max-width: 100%;
-  width: 100%;
   box-sizing: border-box;
-  height: 100vh;
-  overflow: scroll;
-  /* Scrollbar styling - Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: #c9975b #e8dcc4;
-}
-
-/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
-.fight-grid::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.fight-grid::-webkit-scrollbar-track {
-  background: #e8dcc4;
-  border-radius: 4px;
-}
-
-.fight-grid::-webkit-scrollbar-thumb {
-  background: #c9975b;
-  border-radius: 4px;
-}
-
-.fight-grid::-webkit-scrollbar-thumb:hover {
-  background: #a67c52;
 }
 
 .fight-grid-inner {
   display: grid;
-  grid-template-columns: repeat(20, 1fr);
+  grid-template-columns: repeat(20, 50px); /* fallback, overridden by inline style */
   padding: 20px;
-  min-height: 100%;
   box-sizing: border-box;
   align-content: start;
   background: #c9975b;
@@ -974,6 +954,27 @@ header nav a:hover::after {
     0 8px 24px rgba(107, 68, 35, 0.3),
     inset 0 0 40px rgba(122, 92, 66, 0.15);
   position: relative;
+}
+
+/* Grid hidden mode - transparent borders */
+.fight-grid-inner.grid-hidden .fight-zone {
+  border-color: transparent;
+}
+
+/* Background hidden mode - transparent grid and cells */
+.fight-grid-inner.bg-hidden {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.fight-grid-inner.bg-hidden::before,
+.fight-grid-inner.bg-hidden::after {
+  display: none;
+}
+
+.fight-grid-inner.bg-hidden .fight-zone {
+  background: transparent;
 }
 
 /* Decorative corner ornaments */

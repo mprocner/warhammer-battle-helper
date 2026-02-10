@@ -15,10 +15,10 @@
 - Width: number of cells horizontally
 - Height: number of cells vertically
 - Default settings: 20x20
-- width and height settings defines fight-map grid size for new scenes.
+- width and height settings defines fight-grid grid size for new scenes (single element is .fight-zone).
 
 ## Layers
-- Each scene consists of 3 layers:
+- Each scene consists of 2 layers:
 ### Layer 1: Background (Background/Map Layer)
 - Purpose: Maps, location images, static scenery elements
 - Functionality:
@@ -27,18 +27,12 @@
   - Support for multiple images simultaneously
   - it should be possible to set settings for each image on right click (in popup)
     - Z-index system for determining stacking order of objects
+  - GM can move images between GM layer and Background layer (right click on image and choose "Move to GM layer" or "Move to Background layer")
 
-### Layer 2: Tokens
-- That is current fight-grid element. 
-- number of cells is defined by scene settings (width and height)
-- if layer is visible to players tokens should be shown on the top of background layer.
-- if background layer is visible, background should be transparent
-
-
-### Layer 3: GM (Game Master Layer)
+### Layer 2: GM (Game Master Layer)
 - Only visible to GM
 - GM can't make it visible to players
 - the same purpose and functionality as Background layer
-- GM can move images between GM layer and Background layer
+- GM can move images between GM layer and Background layer (right click on image and choose "Move to GM layer" or "Move to Background layer")
 
 

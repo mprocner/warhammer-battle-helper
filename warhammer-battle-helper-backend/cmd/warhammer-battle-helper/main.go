@@ -143,6 +143,21 @@ func main() {
 
 	// WebSocket route
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
+
+	// --- SCENE ROUTES ---
+	sceneHandler := http.SceneHandler{GameService: gameService}
+	r.GET("/games/:id/scenes", http.JWTAuthMiddleware(), sceneHandler.GetScenes)
+	r.POST("/games/:id/scenes", http.JWTAuthMiddleware(), sceneHandler.CreateScene)
+	r.PUT("/games/:id/scenes/:sceneId", http.JWTAuthMiddleware(), sceneHandler.UpdateScene)
+	r.DELETE("/games/:id/scenes/:sceneId", http.JWTAuthMiddleware(), sceneHandler.DeleteScene)
+	r.PUT("/games/:id/scenes/:sceneId/assign", http.JWTAuthMiddleware(), sceneHandler.AssignPlayerToScene)
+	r.POST("/games/:id/scenes/:sceneId/characters", http.JWTAuthMiddleware(), sceneHandler.AddSceneCharacter)
+	r.PUT("/games/:id/scenes/:sceneId/characters/move", http.JWTAuthMiddleware(), sceneHandler.MoveSceneCharacter)
+	r.DELETE("/games/:id/scenes/:sceneId/characters/:charId", http.JWTAuthMiddleware(), sceneHandler.RemoveSceneCharacter)
+	r.POST("/games/:id/scenes/:sceneId/images", http.JWTAuthMiddleware(), sceneHandler.AddSceneImage)
+	r.PUT("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.UpdateSceneImage)
+	r.DELETE("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.DeleteSceneImage)
+	// --- END SCENE ROUTES ---
 	// --- END GAME ROUTES ---
 
 	// --- AVATAR ROUTES ---

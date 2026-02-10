@@ -78,6 +78,9 @@ func (s *GameService) GetGame(gameID string) (*models.Game, error) {
 		return nil, err
 	}
 
+	// Ensure backward compatibility - create default scene if none exist
+	s.EnsureDefaultScene(game)
+
 	// Populate Game Master email
 	if !game.GameMasterID.IsZero() {
 		gmUser, err := s.userRepo.FindByID(game.GameMasterID)
@@ -975,4 +978,313 @@ func (s *GameService) GetVisibleHandouts(gameID string, userID primitive.ObjectI
 	}
 
 	return visibleHandouts, nil
+}
+
+// --- Scene Service Methods ---
+
+// EnsureDefaultScene creates a default scene for games without scenes (backward compatibility)
+func (s *GameService) EnsureDefaultScene(game *models.Game) {
+	if len(game.Scenes) == 0 {
+		scene := models.Scene{
+			Name:            "Default",
+			GridVisible:     true,
+			GridBgVisible:   true,
+			GridWidth:       20,
+			GridHeight:      20,
+			Characters:      game.Characters,
+			Images:          []models.SceneImage{},
+			AssignedPlayers: []primitive.ObjectID{},
+			IsDefault:       true,
+		}
+		createdScene, err := s.gameRepo.AddScene(game.ID.Hex(), scene)
+		if err == nil {
+			game.Scenes = []models.Scene{*createdScene}
+		}
+	}
+}
+
+// CreateScene creates a new scene in a game (GM only)
+func (s *GameService) CreateScene(gameID string, userID primitive.ObjectID, req models.CreateSceneRequest) (*models.Scene, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if game.GameMasterID != userID {
+		return nil, fmt.Errorf("only the game master can create scenes")
+	}
+
+	gridWidth := req.GridWidth
+	if gridWidth <= 0 {
+		gridWidth = 20
+	}
+	gridHeight := req.GridHeight
+	if gridHeight <= 0 {
+		gridHeight = 20
+	}
+
+	scene := models.Scene{
+		Name:            req.Name,
+		GridVisible:     true,
+		GridBgVisible:   true,
+		GridWidth:       gridWidth,
+		GridHeight:      gridHeight,
+		Characters:      []models.GameCharacter{},
+		Images:          []models.SceneImage{},
+		AssignedPlayers: []primitive.ObjectID{},
+		IsDefault:       false,
+	}
+
+	createdScene, err := s.gameRepo.AddScene(gameID, scene)
+	if err != nil {
+		return nil, err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_CREATED", map[string]interface{}{
+		"scene": createdScene,
+	})
+
+	return createdScene, nil
+}
+
+// UpdateScene updates a scene's properties (GM only)
+func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can update scenes")
+	}
+
+	if err := s.gameRepo.UpdateScene(gameID, sceneID, req); err != nil {
+		return err
+	}
+
+	updatedScene, err := s.gameRepo.GetScene(gameID, sceneID)
+	if err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_UPDATED", map[string]interface{}{
+		"scene": updatedScene,
+	})
+
+	return nil
+}
+
+// DeleteScene deletes a scene (GM only)
+func (s *GameService) DeleteScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can delete scenes")
+	}
+
+	if err := s.gameRepo.DeleteScene(gameID, sceneID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_DELETED", map[string]interface{}{
+		"sceneId": sceneID.Hex(),
+	})
+
+	return nil
+}
+
+// AssignPlayerToScene assigns or removes a player from a scene (GM only)
+func (s *GameService) AssignPlayerToScene(gameID string, sceneID primitive.ObjectID, playerID primitive.ObjectID, userID primitive.ObjectID, assign bool) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can assign players to scenes")
+	}
+
+	if assign {
+		// Remove player from all other scenes first
+		for _, scene := range game.Scenes {
+			for _, pid := range scene.AssignedPlayers {
+				if pid == playerID {
+					s.gameRepo.RemovePlayerFromScene(gameID, scene.ID, playerID)
+				}
+			}
+		}
+		if err := s.gameRepo.AssignPlayerToScene(gameID, sceneID, playerID); err != nil {
+			return err
+		}
+	} else {
+		if err := s.gameRepo.RemovePlayerFromScene(gameID, sceneID, playerID); err != nil {
+			return err
+		}
+	}
+
+	s.hub.BroadcastToGame(gameID, "PLAYER_SCENE_CHANGED", map[string]interface{}{
+		"playerId": playerID.Hex(),
+		"sceneId":  sceneID.Hex(),
+		"assigned": assign,
+	})
+
+	return nil
+}
+
+// AddCharacterToScene adds a character to a scene
+func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.ObjectID, characterID string, x, y int, isEnemy bool, placedBy primitive.ObjectID) error {
+	character, err := s.charRepo.GetByID(characterID)
+	if err != nil {
+		return fmt.Errorf("character not found: %w", err)
+	}
+
+	charObjectID, _ := primitive.ObjectIDFromHex(characterID)
+
+	gameChar := models.GameCharacter{
+		CharacterID: charObjectID,
+		Name:        character.BasicInfo.Name,
+		Avatar:      character.BasicInfo.Avatar,
+		PositionX:   x,
+		PositionY:   y,
+		IsEnemy:     isEnemy,
+		PlacedBy:    placedBy,
+	}
+
+	if err := s.gameRepo.AddSceneCharacter(gameID, sceneID, gameChar); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_ADDED", map[string]interface{}{
+		"sceneId":   sceneID.Hex(),
+		"character": gameChar,
+	})
+
+	return nil
+}
+
+// MoveCharacterInScene updates a character's position within a scene
+func (s *GameService) MoveCharacterInScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, x, y int) error {
+	if err := s.gameRepo.UpdateSceneCharacterPosition(gameID, sceneID, characterID, x, y); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_MOVED", map[string]interface{}{
+		"sceneId":     sceneID.Hex(),
+		"characterId": characterID.Hex(),
+		"x":           x,
+		"y":           y,
+	})
+
+	return nil
+}
+
+// RemoveCharacterFromScene removes a character from a scene
+func (s *GameService) RemoveCharacterFromScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID) error {
+	if err := s.gameRepo.RemoveSceneCharacter(gameID, sceneID, characterID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_REMOVED", map[string]interface{}{
+		"sceneId":     sceneID.Hex(),
+		"characterId": characterID.Hex(),
+	})
+
+	return nil
+}
+
+// AddImageToScene adds an image to a scene (GM only)
+func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.AddSceneImageRequest) (*models.SceneImage, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if game.GameMasterID != userID {
+		return nil, fmt.Errorf("only the game master can add images to scenes")
+	}
+
+	image := models.SceneImage{
+		FileURL:  req.FileURL,
+		FileName: req.FileName,
+		Layer:    req.Layer,
+		X:        req.X,
+		Y:        req.Y,
+		Width:    req.Width,
+		Height:   req.Height,
+		ZIndex:   0,
+	}
+
+	createdImage, err := s.gameRepo.AddSceneImage(gameID, sceneID, image)
+	if err != nil {
+		return nil, err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_ADDED", map[string]interface{}{
+		"sceneId": sceneID.Hex(),
+		"image":   createdImage,
+	})
+
+	return createdImage, nil
+}
+
+// UpdateSceneImage updates an image within a scene (GM only)
+func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneImageRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can update scene images")
+	}
+
+	if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, imageID, req); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_UPDATED", map[string]interface{}{
+		"sceneId": sceneID.Hex(),
+		"imageId": imageID.Hex(),
+		"update":  req,
+	})
+
+	return nil
+}
+
+// DeleteSceneImage deletes an image from a scene (GM only)
+func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can delete scene images")
+	}
+
+	if err := s.gameRepo.DeleteSceneImage(gameID, sceneID, imageID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_DELETED", map[string]interface{}{
+		"sceneId": sceneID.Hex(),
+		"imageId": imageID.Hex(),
+	})
+
+	return nil
+}
+
+// GetScenes returns all scenes for a game
+func (s *GameService) GetScenes(gameID string) ([]models.Scene, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.EnsureDefaultScene(game)
+
+	return game.Scenes, nil
 }

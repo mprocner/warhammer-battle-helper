@@ -1,0 +1,331 @@
+/* Scene Viewport wrapper — positioning context for the toolbar */
+.scene-viewport-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Scene Viewport - scroll container */
+.scene-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  /* Scrollbar styling - Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
+.scene-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scene-viewport::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.scene-viewport::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.scene-viewport::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
+}
+
+/* Sizer — creates proper scrollbar dimensions (width/height = canvas × zoom) */
+.scene-viewport__sizer {
+  position: relative;
+}
+
+/* Transform — visually scales the content */
+.scene-viewport__transform {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Content wrapper — fixed canvas size, positioning context for scene layers */
+.scene-viewport__content {
+  position: relative;
+}
+
+.scene-viewport__grid-layer {
+  position: relative;
+  z-index: 5;
+}
+
+/* Zoom toolbar — fixed to top-right of viewport wrapper */
+.scene-viewport__zoom-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: linear-gradient(135deg, rgba(58, 41, 32, 0.92) 0%, rgba(42, 34, 24, 0.92) 100%);
+  border: 2px solid #5c4a3a;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.scene-viewport__zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #7a5c42;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #5c4a3a 0%, #4a3930 100%);
+  color: #e8dcc4;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+  font-family: 'Cinzel', serif;
+}
+
+.scene-viewport__zoom-btn:hover {
+  background: linear-gradient(135deg, #7a5c42 0%, #654321 100%);
+  border-color: #c9975b;
+}
+
+.scene-viewport__zoom-btn--fit {
+  width: auto;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.scene-viewport__zoom-level {
+  color: #e8dcc4;
+  font-size: 12px;
+  font-family: 'Cinzel', serif;
+  min-width: 42px;
+  text-align: center;
+  user-select: none;
+}
+
+/* Scene layers */
+.scene-layer {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.scene-layer--gm {
+  outline: 2px dashed rgba(255, 100, 100, 0.3);
+}
+
+/* Scene Image */
+.scene-image {
+  user-select: none;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.scene-image:hover {
+  border-color: rgba(201, 151, 91, 0.6);
+}
+
+.scene-image--dragging {
+  opacity: 0.8;
+  border-color: #c9975b;
+}
+
+.scene-image--gm {
+  outline: 1px dashed rgba(255, 100, 100, 0.4);
+}
+
+/* Resize handles */
+.scene-image__handle {
+  position: absolute;
+  background: rgba(201, 151, 91, 0.8);
+  border: 1px solid #7a5c42;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1;
+}
+
+.scene-image:hover .scene-image__handle {
+  opacity: 1;
+}
+
+.scene-image__handle--n {
+  top: -4px; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 8px;
+}
+.scene-image__handle--s {
+  bottom: -4px; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 8px;
+}
+.scene-image__handle--e {
+  right: -4px; top: 50%; transform: translateY(-50%);
+  width: 8px; height: 12px;
+}
+.scene-image__handle--w {
+  left: -4px; top: 50%; transform: translateY(-50%);
+  width: 8px; height: 12px;
+}
+.scene-image__handle--ne {
+  top: -4px; right: -4px;
+  width: 8px; height: 8px;
+}
+.scene-image__handle--nw {
+  top: -4px; left: -4px;
+  width: 8px; height: 8px;
+}
+.scene-image__handle--se {
+  bottom: -4px; right: -4px;
+  width: 8px; height: 8px;
+}
+.scene-image__handle--sw {
+  bottom: -4px; left: -4px;
+  width: 8px; height: 8px;
+}
+
+/* Context Menu */
+.scene-context-menu {
+  background: #faf3e8;
+  border: 2px solid #d4a574;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 4px 0;
+  min-width: 180px;
+  font-size: 13px;
+}
+
+.scene-context-menu__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: #4a3520;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.scene-context-menu__item:hover {
+  background: #e8d4b8;
+}
+
+.scene-context-menu__item--danger {
+  color: #c0392b;
+}
+
+.scene-context-menu__item--danger:hover {
+  background: #f8d7da;
+}
+
+.scene-context-menu__item--zindex {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  cursor: default;
+}
+
+.scene-context-menu__item--zindex:hover {
+  background: transparent;
+}
+
+.scene-context-menu__item--zindex label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7a5c42;
+}
+
+.scene-context-menu__zindex-row {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.scene-context-menu__input {
+  flex: 1;
+  padding: 3px 6px;
+  border: 1px solid #d4a574;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  width: 50px;
+}
+
+.scene-context-menu__ok-btn {
+  padding: 3px 10px;
+  background: #c9975b;
+  color: #fff;
+  border: 1px solid #a67c52;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.scene-context-menu__ok-btn:hover {
+  background: #a67c52;
+}
+
+.scene-context-menu__divider {
+  height: 1px;
+  background: #d4a574;
+  margin: 2px 0;
+}
+
+/* Scene Selector */
+.scene-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #e8dcc4;
+  border-bottom: 2px solid #d4a574;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.scene-selector__tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid #d4a574;
+  border-radius: 4px 4px 0 0;
+  background: #f5e6d0;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Cinzel', serif;
+  color: #7a5c42;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.scene-selector__tab:hover {
+  background: #eedcc0;
+}
+
+.scene-selector__tab--active {
+  background: #c9975b;
+  color: #fff;
+  border-color: #a67c52;
+}
+
+.scene-selector__badge {
+  font-size: 10px;
+  padding: 0 5px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  line-height: 16px;
+}
+
+.scene-selector__tab--active .scene-selector__badge {
+  background: rgba(255, 255, 255, 0.25);
+}

@@ -31,6 +31,7 @@ func (r *GameRepository) Create(game *models.Game) error {
 	game.Characters = []models.GameCharacter{}
 	game.Events = []models.GameEvent{}
 	game.Handouts = []models.Handout{}
+	game.Scenes = []models.Scene{}
 
 	result, err := r.Collection.InsertOne(ctx, game)
 	if err != nil {
@@ -513,4 +514,427 @@ func (r *GameRepository) GetHandout(gameID string, handoutID primitive.ObjectID)
 	}
 
 	return nil, fmt.Errorf("handout not found")
+}
+
+// --- Scene Repository Methods ---
+
+// AddScene adds a scene to the game
+func (r *GameRepository) AddScene(gameID string, scene models.Scene) (*models.Scene, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	scene.ID = primitive.NewObjectID()
+	scene.CreatedAt = time.Now()
+	scene.UpdatedAt = time.Now()
+	if scene.Characters == nil {
+		scene.Characters = []models.GameCharacter{}
+	}
+	if scene.Images == nil {
+		scene.Images = []models.SceneImage{}
+	}
+	if scene.AssignedPlayers == nil {
+		scene.AssignedPlayers = []primitive.ObjectID{}
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$push": bson.M{"scenes": scene},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("game not found")
+	}
+
+	return &scene, nil
+}
+
+// UpdateScene updates a scene's properties
+func (r *GameRepository) UpdateScene(gameID string, sceneID primitive.ObjectID, req models.UpdateSceneRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	setFields := bson.M{
+		"scenes.$.updatedAt": time.Now(),
+		"updatedAt":          time.Now(),
+	}
+
+	if req.Name != nil {
+		setFields["scenes.$.name"] = *req.Name
+	}
+	if req.GridVisible != nil {
+		setFields["scenes.$.gridVisible"] = *req.GridVisible
+	}
+	if req.GridBgVisible != nil {
+		setFields["scenes.$.gridBgVisible"] = *req.GridBgVisible
+	}
+	if req.GridWidth != nil {
+		setFields["scenes.$.gridWidth"] = *req.GridWidth
+	}
+	if req.GridHeight != nil {
+		setFields["scenes.$.gridHeight"] = *req.GridHeight
+	}
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	updateDoc := bson.M{"$set": setFields}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, updateDoc)
+	if err != nil {
+		return fmt.Errorf("failed to update scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// DeleteScene removes a scene from the game
+func (r *GameRepository) DeleteScene(gameID string, sceneID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$pull": bson.M{"scenes": bson.M{"_id": sceneID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to delete scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// AssignPlayerToScene adds a player ID to a scene's assignedPlayers
+func (r *GameRepository) AssignPlayerToScene(gameID string, sceneID primitive.ObjectID, playerID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$addToSet": bson.M{"scenes.$.assignedPlayers": playerID},
+		"$set":      bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to assign player to scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// RemovePlayerFromScene removes a player ID from a scene's assignedPlayers
+func (r *GameRepository) RemovePlayerFromScene(gameID string, sceneID primitive.ObjectID, playerID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$pull": bson.M{"scenes.$.assignedPlayers": playerID},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to remove player from scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// AddSceneCharacter adds a character to a scene
+func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.ObjectID, character models.GameCharacter) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	character.ID = primitive.NewObjectID()
+	character.PlacedAt = time.Now()
+	character.UpdatedAt = time.Now()
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$push": bson.M{"scenes.$.characters": character},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to add character to scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// UpdateSceneCharacterPosition updates a character's position within a scene
+func (r *GameRepository) UpdateSceneCharacterPosition(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, x, y int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$set": bson.M{
+			"scenes.$[scene].characters.$[char].positionX": x,
+			"scenes.$[scene].characters.$[char].positionY": y,
+			"scenes.$[scene].characters.$[char].updatedAt": time.Now(),
+			"updatedAt": time.Now(),
+		},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{
+			bson.M{"scene._id": sceneID},
+			bson.M{"char.characterId": characterID},
+		},
+	})
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to update scene character position: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// RemoveSceneCharacter removes a character from a scene
+func (r *GameRepository) RemoveSceneCharacter(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$pull": bson.M{"scenes.$.characters": bson.M{"characterId": characterID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to remove character from scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// AddSceneImage adds an image to a scene
+func (r *GameRepository) AddSceneImage(gameID string, sceneID primitive.ObjectID, image models.SceneImage) (*models.SceneImage, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	image.ID = primitive.NewObjectID()
+	image.CreatedAt = time.Now()
+	image.UpdatedAt = time.Now()
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$push": bson.M{"scenes.$.images": image},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add image to scene: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("game or scene not found")
+	}
+
+	return &image, nil
+}
+
+// UpdateSceneImage updates an image within a scene
+func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, req models.UpdateSceneImageRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	setFields := bson.M{
+		"scenes.$[scene].images.$[img].updatedAt": time.Now(),
+		"updatedAt": time.Now(),
+	}
+
+	if req.X != nil {
+		setFields["scenes.$[scene].images.$[img].x"] = *req.X
+	}
+	if req.Y != nil {
+		setFields["scenes.$[scene].images.$[img].y"] = *req.Y
+	}
+	if req.Width != nil {
+		setFields["scenes.$[scene].images.$[img].width"] = *req.Width
+	}
+	if req.Height != nil {
+		setFields["scenes.$[scene].images.$[img].height"] = *req.Height
+	}
+	if req.ZIndex != nil {
+		setFields["scenes.$[scene].images.$[img].zIndex"] = *req.ZIndex
+	}
+	if req.Layer != nil {
+		setFields["scenes.$[scene].images.$[img].layer"] = *req.Layer
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{"$set": setFields}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{
+			bson.M{"scene._id": sceneID},
+			bson.M{"img._id": imageID},
+		},
+	})
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to update scene image: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// DeleteSceneImage removes an image from a scene
+func (r *GameRepository) DeleteSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":        objectID,
+		"scenes._id": sceneID,
+	}
+	update := bson.M{
+		"$pull": bson.M{"scenes.$.images": bson.M{"_id": imageID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to delete scene image: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or scene not found")
+	}
+
+	return nil
+}
+
+// GetScene retrieves a specific scene from the game
+func (r *GameRepository) GetScene(gameID string, sceneID primitive.ObjectID) (*models.Scene, error) {
+	game, err := r.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range game.Scenes {
+		if s.ID == sceneID {
+			return &s, nil
+		}
+	}
+
+	return nil, fmt.Errorf("scene not found")
 }

@@ -5,23 +5,34 @@ import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
 import ModifierSelectionModal from './ModifierSelectionModal';
+import SceneViewport from './scene/SceneViewport';
+import { CELL_SIZE } from '../constants/scene';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 
-const GRID_SIZE = 20;
-const generateFightZones = () => {
+const DEFAULT_GRID_WIDTH = 20;
+const DEFAULT_GRID_HEIGHT = 20;
+const generateFightZones = (width, height) => {
+  const w = width || DEFAULT_GRID_WIDTH;
+  const h = height || DEFAULT_GRID_HEIGHT;
   const zones = [];
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      zones.push({ id: `zone-${r}-${c}`, row: r, col: c, character: null }); // character zamiast characters
+  for (let r = 0; r < h; r++) {
+    for (let c = 0; c < w; c++) {
+      zones.push({ id: `zone-${r}-${c}`, row: r, col: c, character: null });
     }
   }
   return zones;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, editingLayer = 'grid' }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
-  const fightZonesRef = useRef(generateFightZones());
+  const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
+  const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
+  const gridVisible = currentScene?.gridVisible !== false;
+  const gridBgVisible = currentScene?.gridBgVisible !== false;
+  const sceneId = currentScene?.id || null;
+
+  const fightZonesRef = useRef(generateFightZones(gridWidth, gridHeight));
   const [fightZones, setFightZones] = useState(fightZonesRef.current);
   const [characters, setCharacters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +60,22 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   useEffect(() => {
     fightZonesRef.current = fightZones;
   }, [fightZones]);
+
+  // Regenerate zones when scene changes (dimensions or scene id)
+  const prevSceneRef = useRef(null);
+  useEffect(() => {
+    const sceneKey = `${sceneId}-${gridWidth}-${gridHeight}`;
+    if (prevSceneRef.current !== sceneKey) {
+      prevSceneRef.current = sceneKey;
+      const newZones = generateFightZones(gridWidth, gridHeight);
+      fightZonesRef.current = newZones;
+      setFightZones(newZones);
+      // Re-fetch game characters after zone reset
+      if (gameId && token) {
+        fetchGameCharacters();
+      }
+    }
+  }, [sceneId, gridWidth, gridHeight, gameId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get set of user's own character IDs
   const ownCharacterIds = useMemo(() => {
@@ -138,12 +165,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       setShowModifierModal(true);
   };
 
-  // Multiplayer: Add character to grid
+  // Multiplayer: Add character to grid (scene-aware)
   const handleAddCharacterToGrid = async (characterId, positionX, positionY, isEnemy) => {
     if (!gameId || !token) return;
 
+    const url = sceneId
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters`
+      : `${getApiUrl()}/games/${gameId}/characters`;
+
     try {
-      const response = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: getApiHeaders({
           'Content-Type': 'application/json',
@@ -169,12 +200,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
-  // Multiplayer: Move character on grid
+  // Multiplayer: Move character on grid (scene-aware)
   const handleMoveCharacter = async (characterId, positionX, positionY) => {
     if (!gameId || !token) return;
 
+    const url = sceneId
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters/move`
+      : `${getApiUrl()}/games/${gameId}/characters/move`;
+
     try {
-      const response = await fetch(`${getApiUrl()}/games/${gameId}/characters/move`, {
+      const response = await fetch(url, {
         method: 'PUT',
         headers: getApiHeaders({
           'Content-Type': 'application/json',
@@ -199,12 +234,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
-  // Multiplayer: Remove character from grid
+  // Multiplayer: Remove character from grid (scene-aware)
   const handleRemoveCharacter = async (characterId) => {
     if (!gameId || !token) return;
 
+    const url = sceneId
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters/${characterId}`
+      : `${getApiUrl()}/games/${gameId}/characters/${characterId}`;
+
     try {
-      const response = await fetch(`${getApiUrl()}/games/${gameId}/characters/${characterId}`, {
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: getApiHeaders({
           'Authorization': `Bearer ${token}`
@@ -406,7 +445,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     });
   };
 
-  // Fetch game state and populate characters on grid (multiplayer mode)
+  // Fetch game state and populate characters on grid (multiplayer mode, scene-aware)
   const fetchGameCharacters = useCallback(async () => {
     if (!gameId || !token) return;
 
@@ -422,13 +461,23 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       }
 
       const game = await response.json();
-      console.log('Game characters loaded:', game.characters);
 
-      // Reset fight zones first
-      const clearedZones = generateFightZones();
+      // Find the current scene's characters
+      let sceneCharacters = game.characters || [];
+      if (game.scenes && game.scenes.length > 0 && sceneId) {
+        const scene = game.scenes.find(s => s.id === sceneId);
+        if (scene) {
+          sceneCharacters = scene.characters || [];
+        }
+      }
 
-      // Populate fight zones with characters from the game
-      if (game.characters && game.characters.length > 0) {
+      console.log('Scene characters loaded:', sceneCharacters);
+
+      // Reset fight zones first with current dimensions
+      const clearedZones = generateFightZones(gridWidth, gridHeight);
+
+      // Populate fight zones with characters from the scene
+      if (sceneCharacters.length > 0) {
         // Get all full character data first
         const allCharsResponse = await axiosInstance.get('/characters');
         const allCharacters = allCharsResponse.data || [];
@@ -436,7 +485,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         // Track which character IDs are on the grid
         const characterIdsOnGrid = new Set();
 
-        game.characters.forEach(gameChar => {
+        sceneCharacters.forEach(gameChar => {
           // positionX is col, positionY is row
           const zoneIndex = clearedZones.findIndex(
             z => z.col === gameChar.positionX && z.row === gameChar.positionY
@@ -465,7 +514,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     } catch (error) {
       console.error('Error fetching game characters:', error);
     }
-  }, [gameId, token]);
+  }, [gameId, token, sceneId, gridWidth, gridHeight]);
 
   useEffect(() => {
     // Only run initial load once
@@ -743,30 +792,37 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           </button>
         </div>
 
-        {/* Fight Grid */}
-        <div className="fight-grid">
-          <div className="fight-grid-inner">
-            {fightZones.map(zone => (
-              <FightArea
-                  key={zone.id}
-                  currentZone={zone}
-                  fightZones={fightZones}
-                  addLogMessage={addLogMessage}
-                  isActiveDrop={overId === zone.id}
-                  activeId={activeId}
-                  highlightedTargets={highlightedTargets}
-                  highlightPossibleTargets={highlightPossibleTargets}
-                  clearHighlightedTargets={clearHighlightedTargets}
-                  setCurrentAttacker={setCurrentAttacker}
-                  setCurrentDefender={setCurrentDefender}
-                  onCharacterUpdate={handleCharacterUpdate}
-                  onSelectCharacter={handleSelectCharacter}
-                  selectedCharacterId={selectedCharacter?.id}
-                  isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
-                  isMultiplayer={!!(gameId && token)}
-              />
-            ))}
-          </div>
+        <div className="fight-grid-wrapper">
+          {/* Fight Grid with Scene Layers */}
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight}>
+            <div className="fight-grid">
+              <div
+                className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''} ${!gridBgVisible ? 'bg-hidden' : ''}`}
+                style={{ gridTemplateColumns: `repeat(${gridWidth}, ${CELL_SIZE}px)` }}
+              >
+                {fightZones.map(zone => (
+                  <FightArea
+                      key={zone.id}
+                      currentZone={zone}
+                      fightZones={fightZones}
+                      addLogMessage={addLogMessage}
+                      isActiveDrop={overId === zone.id}
+                      activeId={activeId}
+                      highlightedTargets={highlightedTargets}
+                      highlightPossibleTargets={highlightPossibleTargets}
+                      clearHighlightedTargets={clearHighlightedTargets}
+                      setCurrentAttacker={setCurrentAttacker}
+                      setCurrentDefender={setCurrentDefender}
+                      onCharacterUpdate={handleCharacterUpdate}
+                      onSelectCharacter={handleSelectCharacter}
+                      selectedCharacterId={selectedCharacter?.id}
+                      isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
+                      isMultiplayer={!!(gameId && token)}
+                  />
+                ))}
+              </div>
+            </div>
+          </SceneViewport>
         </div>
       </div>
 

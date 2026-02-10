@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
@@ -18,6 +18,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [characterUpdateTrigger, setCharacterUpdateTrigger] = useState(0);
   const [leftPanelHidden, setLeftPanelHidden] = useState(false);
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
+  const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
+  const [editingLayer, setEditingLayer] = useState('grid');
 
   // Add log message - Define early so it can be used in callbacks
   const addLogMessage = useCallback((message, type = 'info', data = null) => {
@@ -249,6 +251,27 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         fetchGameState();
         break;
 
+      // Scene-related messages
+      case 'SCENE_CREATED':
+      case 'SCENE_UPDATED':
+      case 'SCENE_DELETED':
+      case 'PLAYER_SCENE_CHANGED':
+        fetchGameState();
+        break;
+
+      case 'SCENE_CHARACTER_ADDED':
+      case 'SCENE_CHARACTER_MOVED':
+      case 'SCENE_CHARACTER_REMOVED':
+        fetchGameState();
+        setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+
+      case 'SCENE_IMAGE_ADDED':
+      case 'SCENE_IMAGE_UPDATED':
+      case 'SCENE_IMAGE_DELETED':
+        fetchGameState();
+        break;
+
       default:
         console.warn('Unknown message type:', message.type);
     }
@@ -282,6 +305,40 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       setError(err.message);
     }
   };
+
+  // Compute isGM and displayScene
+  const getUserId = useCallback(() => {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.user_id;
+    } catch {
+      return null;
+    }
+  }, [token]);
+
+  const userId = getUserId();
+  const isGM = gameState?.gameMasterId === userId;
+
+  const displayScene = useMemo(() => {
+    const scenes = gameState?.scenes || [];
+    if (scenes.length === 0) return null;
+
+    if (isGM) {
+      // GM: use selected scene, fallback to first
+      if (gmViewingSceneId) {
+        const found = scenes.find(s => s.id === gmViewingSceneId);
+        if (found) return found;
+      }
+      return scenes[0];
+    } else {
+      // Player: use assigned scene
+      const assignedScene = scenes.find(s =>
+        (s.assignedPlayers || []).includes(userId)
+      );
+      return assignedScene || scenes.find(s => s.isDefault) || scenes[0];
+    }
+  }, [gameState?.scenes, isGM, gmViewingSceneId, userId]);
 
   if (loading) {
     return (
@@ -360,6 +417,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             characterUpdateTrigger={characterUpdateTrigger}
             isHidden={leftPanelHidden}
             onTogglePanel={() => setLeftPanelHidden(!leftPanelHidden)}
+            currentScene={displayScene}
+            isGM={isGM}
+            editingLayer={editingLayer}
           />
         </Box>
 
@@ -374,6 +434,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onLeaveGame={handleLeaveGame}
           gameState={gameState}
           isConnected={isConnected}
+          currentSceneId={displayScene?.id}
+          onSceneChange={setGmViewingSceneId}
+          editingLayer={editingLayer}
+          onEditingLayerChange={setEditingLayer}
         />
       </Box>
     </Box>

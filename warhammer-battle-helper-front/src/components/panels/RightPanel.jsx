@@ -19,7 +19,11 @@ const RightPanel = ({
   onLogout,
   onLeaveGame,
   gameState,
-  isConnected
+  isConnected,
+  currentSceneId,
+  onSceneChange,
+  editingLayer,
+  onEditingLayerChange
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -38,13 +42,17 @@ const RightPanel = ({
   const userId = getUserId();
   const isGM = gameState?.gameMasterId === userId;
 
-  // Build tabs array - Files tab only visible to GM
+  // Build tabs array - Files and Scenes tabs only visible to GM
   const tabs = useMemo(() => {
     const baseTabs = [
       { id: 'chat', icon: '💬', label: t('rightPanel.tabs.chat') },
-      { id: 'scenes', icon: '🗺️', label: t('rightPanel.tabs.scenes') },
-      { id: 'handouts', icon: '📜', label: t('rightPanel.tabs.handouts') },
     ];
+
+    if (isGM) {
+      baseTabs.push({ id: 'scenes', icon: '🗺️', label: t('rightPanel.tabs.scenes') });
+    }
+
+    baseTabs.push({ id: 'handouts', icon: '📜', label: t('rightPanel.tabs.handouts') });
 
     if (isGM) {
       baseTabs.push({ id: 'files', icon: '📁', label: t('rightPanel.tabs.files') });
@@ -67,7 +75,18 @@ const RightPanel = ({
           />
         );
       case 'scenes':
-        return <ScenesTab />;
+        return (
+          <ScenesTab
+            gameId={gameId}
+            token={token}
+            gameState={gameState}
+            isConnected={isConnected}
+            currentSceneId={currentSceneId}
+            onSceneChange={onSceneChange}
+            editingLayer={editingLayer}
+            onEditingLayerChange={onEditingLayerChange}
+          />
+        );
       case 'handouts':
         return (
           <HandoutsTab
@@ -81,6 +100,8 @@ const RightPanel = ({
         return (
           <FilesTab
             token={token}
+            gameId={gameId}
+            currentSceneId={currentSceneId}
           />
         );
       case 'general':
