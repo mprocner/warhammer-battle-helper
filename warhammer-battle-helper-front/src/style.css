@@ -940,16 +940,17 @@ header nav a:hover::after {
 /* ================== FIGHT GRID (10x10) - Light Tactical Map ================== */
 .fight-grid {
   box-sizing: border-box;
+  border: 6px solid #7a5c42;
 }
 
 .fight-grid-inner {
   display: grid;
   grid-template-columns: repeat(20, 50px); /* fallback, overridden by inline style */
-  padding: 20px;
+  border: 20px solid #c9975b;
   box-sizing: border-box;
   align-content: start;
   background: #c9975b;
-  border: 6px solid #7a5c42;
+  /*border: 6px solid #7a5c42;*/
   box-shadow:
     0 8px 24px rgba(107, 68, 35, 0.3),
     inset 0 0 40px rgba(122, 92, 66, 0.15);
@@ -964,13 +965,7 @@ header nav a:hover::after {
 /* Background hidden mode - transparent grid and cells */
 .fight-grid-inner.bg-hidden {
   background: transparent;
-  border-color: transparent;
   box-shadow: none;
-}
-
-.fight-grid-inner.bg-hidden::before,
-.fight-grid-inner.bg-hidden::after {
-  display: none;
 }
 
 .fight-grid-inner.bg-hidden .fight-zone {
@@ -978,8 +973,8 @@ header nav a:hover::after {
 }
 
 /* Decorative corner ornaments */
-.fight-grid-inner::before,
-.fight-grid-inner::after {
+.fight-grid::before,
+.fight-grid::after {
   content: '';
   position: absolute;
   width: 30px;
@@ -988,14 +983,14 @@ header nav a:hover::after {
   z-index: 1;
 }
 
-.fight-grid-inner::before {
+.fight-grid::before {
   top: 10px;
   left: 10px;
   border-right: none;
   border-bottom: none;
 }
 
-.fight-grid-inner::after {
+.fight-grid::after {
   bottom: 10px;
   right: 10px;
   border-left: none;

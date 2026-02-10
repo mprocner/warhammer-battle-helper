@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onDelete, onClose }) => {
@@ -18,7 +19,7 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
 
   const targetLayer = image.layer === 'background' ? 'gm' : 'background';
 
-  return (
+  return createPortal(
     <div
       ref={menuRef}
       className="scene-context-menu"
@@ -80,7 +81,8 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
       >
         {t('scenes.deleteImage')}
       </button>
-    </div>
+    </div>,
+    document.body
   );
 };
 
