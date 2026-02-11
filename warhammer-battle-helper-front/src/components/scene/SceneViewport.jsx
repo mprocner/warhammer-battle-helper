@@ -8,11 +8,15 @@ import './SceneViewport.css';
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 
-const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children }) => {
+const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children, onZoomChange }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
   const viewportRef = useRef(null);
   const prevSceneKeyRef = useRef(null);
+
+  useEffect(() => {
+    onZoomChange?.(zoom);
+  }, [zoom, onZoomChange]);
 
   const canvasSize = useMemo(
     () => getCanvasSize(gridWidth, gridHeight),

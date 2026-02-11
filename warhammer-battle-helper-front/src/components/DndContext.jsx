@@ -23,6 +23,19 @@ const generateFightZones = (width, height) => {
   return zones;
 };
 
+const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => {
+  if (draggingNodeRect && activatorEvent) {
+    const offsetX = activatorEvent.clientX - draggingNodeRect.left;
+    const offsetY = activatorEvent.clientY - draggingNodeRect.top;
+    return {
+      ...transform,
+      x: transform.x + offsetX - draggingNodeRect.width / 2,
+      y: transform.y + offsetY - draggingNodeRect.height / 2,
+    };
+  }
+  return transform;
+};
+
 function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, editingLayer = 'grid' }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -39,6 +52,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const [error, setError] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [overId, setOverId] = useState(null);
+  const [viewportZoom, setViewportZoom] = useState(1);
   const [attacker, setAttacker] = useState(null);
   const hasInitializedRef = useRef(false);
 
@@ -794,7 +808,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
         <div className="fight-grid-wrapper">
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight}>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom}>
             <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''} ${!gridBgVisible ? 'bg-hidden' : ''}`}
@@ -826,9 +840,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         </div>
       </div>
 
-      <DragOverlay>
+      <DragOverlay modifiers={[snapCenterToCursor]}>
         {activeCharacter && (
-          <div className="drag-overlay-wrapper">
+          <div className="drag-overlay-wrapper" style={{ transform: `scale(${viewportZoom})` }}>
             <Character
               character={activeCharacter}
               currentZone={null}

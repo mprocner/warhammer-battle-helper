@@ -911,7 +911,7 @@ header nav a:hover::after {
 
 /* Dragging (shared) */
 .character-entry.dragging {
-  opacity: 0.55;
+  opacity: 0;
   transform: scale(1.05);
   filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
   pointer-events: none;
@@ -1103,7 +1103,7 @@ align-items: center;
 .character-entry.in-grid:active { cursor: grabbing; }
 
 .character-entry.in-grid.dragging {
-  opacity: .6;
+  opacity: 0;
   transform: scale(1.08);
   box-shadow:
     0 8px 20px rgba(107, 68, 35, 0.4),
@@ -1231,7 +1231,6 @@ align-items: center;
 .drag-overlay-wrapper .character-entry.in-grid {
   pointer-events: none;
   box-shadow: 0 6px 16px rgba(0,0,0,.45), 0 0 0 4px rgba(59,130,246,.45);
-  transform: scale(1.08);
 }
 
 .drag-overlay-wrapper .character-entry.in-grid.has-custom-avatar {
