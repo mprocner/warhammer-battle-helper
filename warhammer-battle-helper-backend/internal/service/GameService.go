@@ -119,23 +119,38 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 		return nil, err
 	}
 
-	// Check if user is already in the game
+	// GM can join the game session but should not be added as a participant
+	if game.GameMasterID == userID {
+		return game, nil
+	}
+
+	// Check if user already exists in participants
+	var existingInactive bool
 	for _, p := range game.Participants {
-		if p.UserID == userID && p.IsActive {
-			return nil, fmt.Errorf("user already in game")
+		if p.UserID == userID {
+			if p.IsActive {
+				return nil, fmt.Errorf("user already in game")
+			}
+			existingInactive = true
+			break
 		}
 	}
 
-	// Add participant
-	participant := models.GameParticipant{
-		UserID:   userID,
-		Username: username,
-		Role:     models.RolePlayer,
-		IsActive: true,
-	}
-
-	if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
-		return nil, err
+	if existingInactive {
+		// Reactivate existing inactive participant instead of adding a duplicate
+		if err := s.gameRepo.ReactivateParticipant(gameID, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		participant := models.GameParticipant{
+			UserID:   userID,
+			Username: username,
+			Role:     models.RolePlayer,
+			IsActive: true,
+		}
+		if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
+			return nil, err
+		}
 	}
 
 	// Add join event

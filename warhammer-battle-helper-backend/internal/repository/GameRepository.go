@@ -200,6 +200,45 @@ func (r *GameRepository) RemoveParticipant(gameID string, userID primitive.Objec
 	return nil
 }
 
+// ReactivateParticipant sets an inactive participant back to active
+func (r *GameRepository) ReactivateParticipant(gameID string, userID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	now := time.Now()
+	filter := bson.M{
+		"_id":                   objectID,
+		"participants.userId":   userID,
+		"participants.isActive": false,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"participants.$.isActive": true,
+			"participants.$.joinedAt": now,
+			"updatedAt":               now,
+		},
+		"$unset": bson.M{
+			"participants.$.leftAt": "",
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to reactivate participant: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or inactive participant not found")
+	}
+
+	return nil
+}
+
 // AddCharacter adds a character to the game grid
 func (r *GameRepository) AddCharacter(gameID string, character models.GameCharacter) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
