@@ -108,6 +108,31 @@ git pull
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
+## Auto-Deploy (Optional)
+
+A watcher script (`scripts/autopull.sh`) checks for new commits every 5 minutes and automatically runs `scripts/deploy.sh` when changes are detected.
+
+### Setup as a systemd service
+
+```bash
+# Copy the service file (edit paths inside if your project isn't at /root/warhammer-battle-helper)
+sudo cp scripts/autopull.service /etc/systemd/system/
+
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl enable autopull
+sudo systemctl start autopull
+```
+
+### Managing the service
+
+```bash
+sudo systemctl status autopull       # check status
+sudo journalctl -u autopull -f       # follow logs
+sudo systemctl restart autopull      # restart
+sudo systemctl stop autopull         # stop
+```
+
 ## Useful Commands
 
 ```bash
