@@ -271,7 +271,7 @@
     "GAME_ENDED": "Game ended"
   },
   "log": {
-    "rolledDice": "Rolled d{{sides}}: {{result}}",
+    "rolledDice": "Rolled K{{sides}}: {{result}}",
     "character": "Character",
     "test": "Test",
     "rolled": "rolled",
@@ -463,5 +463,10 @@
     "fileTooLarge": "File too large. Maximum size is 5MB",
     "fileMoveError": "Failed to move file",
     "root": "Root"
+  },
+  "dice": {
+    "label": "K{{sides}}",
+    "custom": "Custom",
+    "roll": "Roll"
   }
 }

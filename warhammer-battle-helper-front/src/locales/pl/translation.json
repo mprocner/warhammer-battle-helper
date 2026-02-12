@@ -272,7 +272,7 @@
     "GAME_ENDED": "Gra zakończona"
   },
   "log": {
-    "rolledDice": "Rzucono k{{sides}}: {{result}}",
+    "rolledDice": "Rzucono K{{sides}}: {{result}}",
     "character": "Postać",
     "test": "Test",
     "rolled": "rzucono",
@@ -464,5 +464,10 @@
     "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
     "fileMoveError": "Nie udało się przenieść pliku",
     "root": "Główny"
+  },
+  "dice": {
+    "label": "K{{sides}}",
+    "custom": "Własna",
+    "roll": "Rzuć"
   }
 }

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../LogWindow.css';
 
+const DICE = [4, 6, 8, 10, 12, 20, 100];
+
 const DiceRollControls = ({ onRoll }) => {
+    const { t } = useTranslation();
     const [customSides, setCustomSides] = useState('');
 
     const handleCustomRoll = () => {
@@ -21,50 +25,29 @@ const DiceRollControls = ({ onRoll }) => {
     return (
         <div className="dice-controls">
             <div className="dice-controls__row">
-                <button
-                    className="dice-controls__button"
-                    onClick={() => onRoll(4)}
-                >
-                    d4
-                </button>
-                <button
-                    className="dice-controls__button"
-                    onClick={() => onRoll(6)}
-                >
-                    d6
-                </button>
-                <button
-                    className="dice-controls__button"
-                    onClick={() => onRoll(10)}
-                >
-                    d10
-                </button>
-                <button
-                    className="dice-controls__button"
-                    onClick={() => onRoll(20)}
-                >
-                    d20
-                </button>
-                <button
-                    className="dice-controls__button"
-                    onClick={() => onRoll(100)}
-                >
-                    d100
-                </button>
+                {DICE.map((sides) => (
+                    <button
+                        key={sides}
+                        className="dice-controls__button"
+                        onClick={() => onRoll(sides)}
+                    >
+                        {t('dice.label', { sides })}
+                    </button>
+                ))}
                 <input
                     type="text"
                     className="dice-controls__input"
                     value={customSides}
                     onChange={(e) => setCustomSides(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Custom"
+                    placeholder={t('dice.custom')}
                 />
                 <button
                     className="dice-controls__button"
                     onClick={handleCustomRoll}
                     disabled={!customSides || parseInt(customSides) <= 0}
                 >
-                    Roll
+                    {t('dice.roll')}
                 </button>
             </div>
         </div>
