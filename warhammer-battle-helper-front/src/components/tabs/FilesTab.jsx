@@ -246,14 +246,14 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
       return !f.folderId;
     }
     return f.folderId === currentFolderId;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name));
 
   const currentFolders = folders.filter(f => {
     if (currentFolderId === null) {
       return !f.parentId;
     }
     return f.parentId === currentFolderId;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name));
 
   // Get parent folder ID for back button drop target
   const parentFolderId = folderPath.length > 1
