@@ -42,7 +42,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
   const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
   const gridVisible = currentScene?.gridVisible !== false;
-  const gridBgVisible = currentScene?.gridBgVisible !== false;
   const sceneId = currentScene?.id || null;
 
   const fightZonesRef = useRef(generateFightZones(gridWidth, gridHeight));
@@ -811,7 +810,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom}>
             <div className="fight-grid">
               <div
-                className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''} ${!gridBgVisible ? 'bg-hidden' : ''}`}
+                className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}
                 style={{ gridTemplateColumns: `repeat(${gridWidth}, ${CELL_SIZE}px)` }}
               >
                 {fightZones.map(zone => (

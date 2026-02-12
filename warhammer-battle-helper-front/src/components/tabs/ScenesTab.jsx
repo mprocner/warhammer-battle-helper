@@ -266,17 +266,6 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             </label>
           </div>
 
-          {/* Grid background visibility */}
-          <div className="scenes-tab__field scenes-tab__field--checkbox">
-            <label>
-              <input
-                type="checkbox"
-                checked={selectedScene.gridBgVisible !== false}
-                onChange={(e) => handleUpdateScene('gridBgVisible', e.target.checked)}
-              />
-              {t('scenes.showGridBackground')}
-            </label>
-          </div>
 
           {/* Player assignment */}
           <div className="scenes-tab__field">

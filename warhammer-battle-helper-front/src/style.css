@@ -949,7 +949,6 @@ header nav a:hover::after {
   border: 20px solid #c9975b;
   box-sizing: border-box;
   align-content: start;
-  background: #c9975b;
   /*border: 6px solid #7a5c42;*/
   box-shadow:
     0 8px 24px rgba(107, 68, 35, 0.3),
@@ -960,16 +959,6 @@ header nav a:hover::after {
 /* Grid hidden mode - transparent borders */
 .fight-grid-inner.grid-hidden .fight-zone {
   border-color: transparent;
-}
-
-/* Background hidden mode - transparent grid and cells */
-.fight-grid-inner.bg-hidden {
-  background: transparent;
-  box-shadow: none;
-}
-
-.fight-grid-inner.bg-hidden .fight-zone {
-  background: transparent;
 }
 
 /* Decorative corner ornaments */
@@ -1004,7 +993,6 @@ header nav a:hover::after {
   aspect-ratio: 1 / 1;
   border: 1px solid #d4a574;
   border-radius: 0;
-  background: linear-gradient(135deg, #fdfbf7 0%, #f9f3e8 100%);
   overflow: visible;
   transition: all .2s;
   display: flex;
@@ -1013,7 +1001,6 @@ header nav a:hover::after {
 }
 
 .fight-zone:hover {
-  background: linear-gradient(135deg, #fff9f0 0%, #fdf8ec 100%);
   box-shadow: inset 0 0 15px rgba(212, 165, 116, 0.4);
   border-color: #c9975b;
 }
@@ -1021,9 +1008,6 @@ header nav a:hover::after {
 /* Drop target - Golden glow */
 .fight-zone.drag-target {
   border: 2px solid #c9975b;
-  background:
-    radial-gradient(circle at center, rgba(212, 165, 116, 0.3) 0%, transparent 100%),
-    linear-gradient(135deg, #fff9f0 0%, #fdf8ec 100%);
   box-shadow:
     inset 0 0 20px rgba(212, 165, 116, 0.5),
     0 0 12px rgba(201, 151, 91, 0.4);

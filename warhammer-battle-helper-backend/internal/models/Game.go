@@ -132,7 +132,6 @@ type Scene struct {
 	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
 	Name            string               `bson:"name" json:"name"`
 	GridVisible     bool                 `bson:"gridVisible" json:"gridVisible"`
-	GridBgVisible   bool                 `bson:"gridBgVisible" json:"gridBgVisible"`
 	GridWidth       int                  `bson:"gridWidth" json:"gridWidth"`
 	GridHeight      int                  `bson:"gridHeight" json:"gridHeight"`
 	Characters      []GameCharacter      `bson:"characters" json:"characters"`
@@ -188,11 +187,10 @@ type CreateSceneRequest struct {
 
 // UpdateSceneRequest is the request body for updating a scene
 type UpdateSceneRequest struct {
-	Name          *string `json:"name"`
-	GridVisible   *bool   `json:"gridVisible"`
-	GridBgVisible *bool   `json:"gridBgVisible"`
-	GridWidth     *int    `json:"gridWidth"`
-	GridHeight    *int    `json:"gridHeight"`
+	Name        *string `json:"name"`
+	GridVisible *bool   `json:"gridVisible"`
+	GridWidth   *int    `json:"gridWidth"`
+	GridHeight  *int    `json:"gridHeight"`
 }
 
 // AssignPlayerToSceneRequest is the request body for assigning a player to a scene

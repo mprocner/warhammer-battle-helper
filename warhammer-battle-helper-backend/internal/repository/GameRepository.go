@@ -619,9 +619,6 @@ func (r *GameRepository) UpdateScene(gameID string, sceneID primitive.ObjectID, 
 	if req.GridVisible != nil {
 		setFields["scenes.$.gridVisible"] = *req.GridVisible
 	}
-	if req.GridBgVisible != nil {
-		setFields["scenes.$.gridBgVisible"] = *req.GridBgVisible
-	}
 	if req.GridWidth != nil {
 		setFields["scenes.$.gridWidth"] = *req.GridWidth
 	}

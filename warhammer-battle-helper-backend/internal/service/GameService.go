@@ -1007,7 +1007,6 @@ func (s *GameService) EnsureDefaultScene(game *models.Game) {
 		scene := models.Scene{
 			Name:            "Default",
 			GridVisible:     true,
-			GridBgVisible:   true,
 			GridWidth:       20,
 			GridHeight:      20,
 			Characters:      game.Characters,
@@ -1045,7 +1044,6 @@ func (s *GameService) CreateScene(gameID string, userID primitive.ObjectID, req 
 	scene := models.Scene{
 		Name:            req.Name,
 		GridVisible:     true,
-		GridBgVisible:   true,
 		GridWidth:       gridWidth,
 		GridHeight:      gridHeight,
 		Characters:      []models.GameCharacter{},
