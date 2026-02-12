@@ -35,7 +35,7 @@ log "Project dir: $PROJECT_DIR"
 while true; do
     log "Checking for new commits..."
 
-    git fetch origin "$BRANCH" 2>/dev/null
+    git fetch origin "$BRANCH"
     if [ $? -ne 0 ]; then
         log_error "git fetch failed, retrying next cycle"
         sleep "$CHECK_INTERVAL"
