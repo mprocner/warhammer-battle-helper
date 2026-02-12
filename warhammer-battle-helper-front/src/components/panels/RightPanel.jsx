@@ -4,6 +4,7 @@ import LogWindow from '../LogWindow';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
 import FilesTab from '../tabs/FilesTab';
+import MusicTab from '../tabs/MusicTab';
 import GeneralTab from '../tabs/GeneralTab';
 import './RightPanel.css';
 
@@ -23,7 +24,11 @@ const RightPanel = ({
   currentSceneId,
   onSceneChange,
   editingLayer,
-  onEditingLayerChange
+  onEditingLayerChange,
+  musicState,
+  audioRef,
+  playerVolume,
+  onPlayerVolumeChange
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -56,6 +61,7 @@ const RightPanel = ({
 
     if (isGM) {
       baseTabs.push({ id: 'files', icon: '📁', label: t('rightPanel.tabs.files') });
+      baseTabs.push({ id: 'music', icon: '🎵', label: t('rightPanel.tabs.music') });
     }
 
     baseTabs.push({ id: 'general', icon: '⚙️', label: t('rightPanel.tabs.general') });
@@ -104,6 +110,15 @@ const RightPanel = ({
             currentSceneId={currentSceneId}
           />
         );
+      case 'music':
+        return (
+          <MusicTab
+            gameId={gameId}
+            token={token}
+            musicState={musicState}
+            audioRef={audioRef}
+          />
+        );
       case 'general':
         return (
           <GeneralTab
@@ -111,6 +126,9 @@ const RightPanel = ({
             onLeaveGame={onLeaveGame}
             gameState={gameState}
             isConnected={isConnected}
+            playerVolume={playerVolume}
+            onPlayerVolumeChange={onPlayerVolumeChange}
+            musicState={musicState}
           />
         );
       default:

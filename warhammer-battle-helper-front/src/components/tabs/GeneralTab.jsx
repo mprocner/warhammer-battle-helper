@@ -6,7 +6,7 @@ import './GeneralTab.css';
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected }) => {
+const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
@@ -49,6 +49,32 @@ const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected }) => {
           </div>
         </div>
       </section>
+
+      {/* Music Volume Section */}
+      {playerVolume !== undefined && onPlayerVolumeChange && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('music.playerVolume')}</h4>
+          {musicState?.trackName && (
+            <div className="general-tab__now-playing">
+              {musicState.isPlaying ? t('music.nowPlaying') : t('music.paused')}: {musicState.trackName}
+            </div>
+          )}
+          <div className="general-tab__volume-control">
+            <span className="general-tab__volume-icon">🔈</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={playerVolume}
+              onChange={(e) => onPlayerVolumeChange(parseFloat(e.target.value))}
+              className="general-tab__volume-slider"
+            />
+            <span className="general-tab__volume-icon">🔊</span>
+            <span className="general-tab__volume-value">{Math.round(playerVolume * 100)}%</span>
+          </div>
+        </section>
+      )}
 
       {/* Language Section */}
       <section className="general-tab__section">

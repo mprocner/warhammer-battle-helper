@@ -265,6 +265,172 @@ func (r *UserRepository) GetSubfolders(userID primitive.ObjectID, parentID primi
 	return subfolders, nil
 }
 
+// --- MUSIC METHODS ---
+
+// GetUserWithMusic returns user with music files and playlists
+func (r *UserRepository) GetUserWithMusic(userID primitive.ObjectID) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Music == nil {
+		user.Music = []models.MusicFile{}
+	}
+	if user.Playlists == nil {
+		user.Playlists = []models.Playlist{}
+	}
+
+	return &user, nil
+}
+
+// AddMusicFiles adds multiple music files to user's music array
+func (r *UserRepository) AddMusicFiles(userID primitive.ObjectID, files []models.MusicFile) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Ensure music field is an array (not null)
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": userID, "music": nil},
+		bson.M{"$set": bson.M{"music": bson.A{}}},
+	)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			"music": bson.M{"$each": files},
+		},
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	return err
+}
+
+// DeleteMusicFile removes a music file from user's music array and returns the deleted file
+func (r *UserRepository) DeleteMusicFile(userID primitive.ObjectID, fileID primitive.ObjectID) (*models.MusicFile, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	var deletedFile *models.MusicFile
+	for _, f := range user.Music {
+		if f.ID == fileID {
+			deletedFile = &f
+			break
+		}
+	}
+
+	if deletedFile == nil {
+		return nil, mongo.ErrNoDocuments
+	}
+
+	update := bson.M{
+		"$pull": bson.M{
+			"music": bson.M{"_id": fileID},
+		},
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return deletedFile, nil
+}
+
+// AddPlaylist adds a new playlist to user's playlists array
+func (r *UserRepository) AddPlaylist(userID primitive.ObjectID, playlist models.Playlist) (*models.Playlist, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	playlist.ID = primitive.NewObjectID()
+	playlist.CreatedAt = time.Now()
+	playlist.UpdatedAt = time.Now()
+	if playlist.Tracks == nil {
+		playlist.Tracks = []primitive.ObjectID{}
+	}
+
+	// Ensure playlists field is an array (not null)
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": userID, "playlists": nil},
+		bson.M{"$set": bson.M{"playlists": bson.A{}}},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			"playlists": playlist,
+		},
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return &playlist, nil
+}
+
+// UpdatePlaylist updates a playlist's name and tracks
+func (r *UserRepository) UpdatePlaylist(userID primitive.ObjectID, playlistID primitive.ObjectID, name string, tracks []primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"_id":           userID,
+		"playlists._id": playlistID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"playlists.$.name":      name,
+			"playlists.$.tracks":    tracks,
+			"playlists.$.updatedAt": time.Now(),
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	return nil
+}
+
+// DeletePlaylist removes a playlist from user's playlists array
+func (r *UserRepository) DeletePlaylist(userID primitive.ObjectID, playlistID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{
+		"$pull": bson.M{
+			"playlists": bson.M{"_id": playlistID},
+		},
+	}
+
+	_, err := r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	return err
+}
+
+// --- END MUSIC METHODS ---
+
 // MoveFile updates a file's folderId to move it to another folder
 func (r *UserRepository) MoveFile(userID primitive.ObjectID, fileID primitive.ObjectID, folderID *primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

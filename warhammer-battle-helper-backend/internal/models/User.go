@@ -28,9 +28,11 @@ type UserFolder struct {
 }
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Email    string             `bson:"email" json:"email"`
-	Password string             `bson:"password" json:"-"`
-	Files    []UserFile         `bson:"files" json:"files"`
-	Folders  []UserFolder       `bson:"folders" json:"folders"`
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Email     string             `bson:"email" json:"email"`
+	Password  string             `bson:"password" json:"-"`
+	Files     []UserFile         `bson:"files" json:"files"`
+	Folders   []UserFolder       `bson:"folders" json:"folders"`
+	Music     []MusicFile        `bson:"music" json:"music"`
+	Playlists []Playlist         `bson:"playlists" json:"playlists"`
 }

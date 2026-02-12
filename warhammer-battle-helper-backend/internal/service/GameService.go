@@ -1294,6 +1294,21 @@ func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID
 	return nil
 }
 
+// BroadcastMusicCommand validates GM and broadcasts a music command to all game clients
+func (s *GameService) BroadcastMusicCommand(gameID string, userID primitive.ObjectID, msgType string, payload map[string]interface{}) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can control music")
+	}
+
+	s.hub.BroadcastToGame(gameID, msgType, payload)
+	return nil
+}
+
 // GetScenes returns all scenes for a game
 func (s *GameService) GetScenes(gameID string) ([]models.Scene, error) {
 	game, err := s.gameRepo.GetByID(gameID)

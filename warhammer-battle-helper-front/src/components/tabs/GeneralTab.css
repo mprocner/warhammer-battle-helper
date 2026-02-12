@@ -94,6 +94,70 @@
   border: 1px solid #dc3545;
 }
 
+/* Now Playing */
+.general-tab__now-playing {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #2e7d32;
+  font-weight: 600;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Volume Control */
+.general-tab__volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.general-tab__volume-icon {
+  font-size: 1rem;
+}
+
+.general-tab__volume-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #d4c4a8;
+  border-radius: 3px;
+  outline: none;
+}
+
+.general-tab__volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6b4423;
+  cursor: pointer;
+  border: 2px solid #f5ebe0;
+}
+
+.general-tab__volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6b4423;
+  cursor: pointer;
+  border: 2px solid #f5ebe0;
+}
+
+.general-tab__volume-value {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.85rem;
+  color: #4a3728;
+  min-width: 36px;
+  text-align: right;
+}
+
 /* Language Button */
 .general-tab__language-btn {
   width: 100%;

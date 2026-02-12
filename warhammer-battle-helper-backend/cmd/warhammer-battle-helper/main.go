@@ -52,6 +52,17 @@ func main() {
 	}
 	// --- END USER FILES STORAGE ---
 
+	// --- MUSIC FILES STORAGE ---
+	musicFilesPath := os.Getenv("MUSIC_FILES_PATH")
+	if musicFilesPath == "" {
+		musicFilesPath = "./music-files"
+	}
+	musicFilesStorage, err := storage.NewLocalStorage(musicFilesPath, "/music-files")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to initialize music files storage: %v", err))
+	}
+	// --- END MUSIC FILES STORAGE ---
+
 	// Connect to MongoDB
 	db, err := config.ConnectDatabase()
 	if err != nil {
@@ -188,6 +199,21 @@ func main() {
 	r.DELETE("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.DeleteFolder)
 	r.GET("/user-files/:filename", fileHandler.GetFile)
 	// --- END USER FILES ROUTES ---
+
+	// --- MUSIC ROUTES ---
+	musicHandler := http.MusicHandler{UserRepo: userRepo, Storage: musicFilesStorage, GameService: gameService}
+	r.GET("/music", http.JWTAuthMiddleware(), musicHandler.GetMusic)
+	r.POST("/music/upload", http.JWTAuthMiddleware(), musicHandler.UploadMusic)
+	r.DELETE("/music/:musicId", http.JWTAuthMiddleware(), musicHandler.DeleteMusic)
+	r.GET("/music-files/:filename", musicHandler.GetMusicFile)
+	r.POST("/playlists", http.JWTAuthMiddleware(), musicHandler.CreatePlaylist)
+	r.PUT("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.UpdatePlaylist)
+	r.DELETE("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.DeletePlaylist)
+	r.POST("/games/:id/music/play", http.JWTAuthMiddleware(), musicHandler.PlayTrack)
+	r.POST("/games/:id/music/pause", http.JWTAuthMiddleware(), musicHandler.PauseTrack)
+	r.POST("/games/:id/music/stop", http.JWTAuthMiddleware(), musicHandler.StopTrack)
+	r.POST("/games/:id/music/volume", http.JWTAuthMiddleware(), musicHandler.SetVolume)
+	// --- END MUSIC ROUTES ---
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

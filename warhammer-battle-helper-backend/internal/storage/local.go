@@ -51,6 +51,16 @@ var AllowedHandoutTypes = map[string]string{
 // MaxFileSize is the maximum allowed file size (5MB)
 const MaxFileSize = 5 * 1024 * 1024
 
+// MaxMusicFileSize is the maximum allowed music file size (50MB)
+const MaxMusicFileSize = 50 * 1024 * 1024
+
+// AllowedMusicTypes contains the allowed MIME types for music uploads
+var AllowedMusicTypes = map[string]string{
+	"audio/mpeg":  ".mp3",
+	"audio/wav":   ".wav",
+	"audio/x-wav": ".wav",
+}
+
 // ValidateFile checks if the file is a valid image and within size limits
 func ValidateFile(file multipart.File, header *multipart.FileHeader) (string, error) {
 	// Check file size
@@ -143,6 +153,16 @@ func (s *LocalStorage) Get(filename string) (io.ReadCloser, string, error) {
 	// Check handout types (PDF, text)
 	if contentType == "application/octet-stream" {
 		for ct, e := range AllowedHandoutTypes {
+			if e == ext {
+				contentType = ct
+				break
+			}
+		}
+	}
+
+	// Check music types
+	if contentType == "application/octet-stream" {
+		for ct, e := range AllowedMusicTypes {
 			if e == ext {
 				contentType = ct
 				break

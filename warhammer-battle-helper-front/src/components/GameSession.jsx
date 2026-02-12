@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
@@ -20,6 +20,39 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [editingLayer, setEditingLayer] = useState('grid');
+
+  // --- Music state ---
+  const audioRef = useRef(new Audio());
+  const [musicState, setMusicState] = useState({
+    isPlaying: false,
+    trackUrl: null,
+    trackName: null,
+    position: 0,
+    gmVolume: 1.0
+  });
+  const [playerVolume, setPlayerVolume] = useState(() => {
+    const saved = localStorage.getItem('playerMusicVolume');
+    return saved !== null ? parseFloat(saved) : 1.0;
+  });
+
+  const onPlayerVolumeChange = useCallback((vol) => {
+    setPlayerVolume(vol);
+    localStorage.setItem('playerMusicVolume', String(vol));
+  }, []);
+
+  // Sync audio volume when gmVolume or playerVolume changes
+  useEffect(() => {
+    audioRef.current.volume = musicState.gmVolume * playerVolume;
+  }, [musicState.gmVolume, playerVolume]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    const audio = audioRef.current;
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
 
   // Add log message - Define early so it can be used in callbacks
   const addLogMessage = useCallback((message, type = 'info', data = null) => {
@@ -272,9 +305,63 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         fetchGameState();
         break;
 
+      // Music-related messages
+      case 'MUSIC_PLAY': {
+        const audio = audioRef.current;
+        const { trackUrl, trackName, position } = message.payload;
+        if (audio.src !== trackUrl) {
+          audio.src = trackUrl;
+        }
+        audio.currentTime = position || 0;
+        audio.play().catch((err) => {
+          console.warn('Autoplay blocked:', err);
+        });
+        setMusicState(prev => ({
+          ...prev,
+          isPlaying: true,
+          trackUrl,
+          trackName: trackName || '',
+          position: position || 0
+        }));
+        break;
+      }
+
+      case 'MUSIC_PAUSE': {
+        const audio = audioRef.current;
+        audio.pause();
+        setMusicState(prev => ({
+          ...prev,
+          isPlaying: false,
+          position: message.payload.position || audio.currentTime
+        }));
+        break;
+      }
+
+      case 'MUSIC_STOP': {
+        const audio = audioRef.current;
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        setMusicState({
+          isPlaying: false,
+          trackUrl: null,
+          trackName: null,
+          position: 0,
+          gmVolume: musicState.gmVolume
+        });
+        break;
+      }
+
+      case 'MUSIC_VOLUME': {
+        const { volume } = message.payload;
+        setMusicState(prev => ({ ...prev, gmVolume: volume }));
+        break;
+      }
+
       default:
         console.warn('Unknown message type:', message.type);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchGameState, addLogMessage]);
 
   // WebSocket connection
@@ -438,6 +525,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onSceneChange={setGmViewingSceneId}
           editingLayer={editingLayer}
           onEditingLayerChange={setEditingLayer}
+          musicState={musicState}
+          audioRef={audioRef}
+          playerVolume={playerVolume}
+          onPlayerVolumeChange={onPlayerVolumeChange}
         />
       </Box>
     </Box>
