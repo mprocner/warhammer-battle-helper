@@ -5,8 +5,10 @@ Wants=docker.service
 
 [Service]
 Type=simple
-WorkingDirectory=/root/warhammer-battle-helper
-ExecStart=/root/warhammer-battle-helper/scripts/autopull.sh
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/warhammer-battle-helper
+ExecStart=/home/ubuntu/warhammer-battle-helper/scripts/autopull.sh
 Restart=always
 RestartSec=30
 StandardOutput=journal
