@@ -520,15 +520,13 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 	}
 
 	// Get skill advances from character
+	// Grouped basic skills (e.g. ENTERTAIN_STORYTELLING) may be stored in either
+	// basicSkills or advancedSkills depending on which UI section was used
 	advances := 0
-	if skill.Type == "basic" || skill.Grouped {
-		if val, ok := character.BasicSkills[skillKey]; ok {
-			advances = val
-		}
-	} else {
-		if val, ok := character.AdvancedSkills[skillKey]; ok {
-			advances = val
-		}
+	if val, ok := character.BasicSkills[skillKey]; ok {
+		advances = val
+	} else if val, ok := character.AdvancedSkills[skillKey]; ok {
+		advances = val
 	}
 
 	// Get characteristic value based on skill's characteristic
@@ -671,6 +669,8 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 	// Get skill advances from character
 	advances := 0
 	if val, ok := character.BasicSkills[weaponSkill]; ok {
+		advances = val
+	} else if val, ok := character.AdvancedSkills[weaponSkill]; ok {
 		advances = val
 	}
 

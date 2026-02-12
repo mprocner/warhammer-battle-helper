@@ -35,6 +35,16 @@ function CharacterDetailsPanel({
         }
     }, [autoOpenSheet, character, onSheetOpened]);
 
+    const getSkillAdvances = (character, skillKey) => {
+        if (character.basicSkills?.[skillKey] !== undefined) {
+            return parseInt(character.basicSkills[skillKey]) || 0;
+        }
+        if (character.advancedSkills?.[skillKey] !== undefined) {
+            return parseInt(character.advancedSkills[skillKey]) || 0;
+        }
+        return 0;
+    };
+
     // Get favorite weapons with their calculated skill values
     const favoriteWeapons = useMemo(() => {
         if (!character || !character.weapons || character.weapons.length === 0) {
@@ -58,7 +68,7 @@ function CharacterDetailsPanel({
                 const characteristicValue = isMelee ? (stats.WS || 0) : isRanged ? (stats.BS || 0) : 0;
 
                 // Get skill advances from basicSkills
-                const advances = parseInt(character.basicSkills?.[weaponSkill]) || 0;
+                const advances = getSkillAdvances(character, weaponSkill);
                 const skillValue = characteristicValue + advances;
 
                 return {
@@ -94,7 +104,7 @@ function CharacterDetailsPanel({
                 const skill = skillsData.find(s => s.key === parentKey);
                 if (!skill) return null;
 
-                const advances = parseInt(character.basicSkills?.[skillKey]) || 0;
+                const advances = getSkillAdvances(character, skillKey);
                 const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
                     skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
                     skill.characteristic === 'STRENGTH' ? 'S' :
@@ -118,9 +128,7 @@ function CharacterDetailsPanel({
                 const skill = skillsData.find(s => s.key === skillKey);
                 if (!skill) return null;
 
-                const advances = skill.type === 'basic'
-                    ? (parseInt(character.basicSkills?.[skillKey]) || 0)
-                    : (parseInt(character.advancedSkills?.[skillKey]) || 0);
+                const advances = getSkillAdvances(character, skillKey);
 
                 const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
                     skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
