@@ -47,23 +47,24 @@ export const isCriticalFailure = (rollValue, isSuccess) => {
 export const getTranslatedSkillName = (t, skillKey, fallbackLabel = 'Skill') => {
     if (!skillKey) return t(`log.${fallbackLabel.toLowerCase()}`, { defaultValue: fallbackLabel });
 
-    // Try full key first (e.g., MELEE_BASIC)
-    const fullTranslation = t(`skills.${skillKey}`, { defaultValue: '' });
+    // Try full key from skills namespace (e.g., STEALTH_RURAL.name or OUTDOOR_SURVIVAL.name)
+    const fullTranslation = t(`${skillKey}.name`, { ns: 'skills', defaultValue: '' });
     if (fullTranslation) return fullTranslation;
 
-    // Try parent key (e.g., MELEE from MELEE_BASIC)
-    const parts = skillKey.split('_');
-    const parentKey = parts[0];
-    const parentTranslation = t(`skills.${parentKey}`, { defaultValue: '' });
+    // Try parent + specialisation lookup (e.g., MELEE_FENCING → MELEE.name + MELEE.specialisations.FENCING)
+    const underscoreIdx = skillKey.indexOf('_');
+    if (underscoreIdx > 0) {
+        const parent = skillKey.substring(0, underscoreIdx);
+        const suffix = skillKey.substring(underscoreIdx + 1);
 
-    if (parentTranslation && parts.length > 1) {
-        // Format suffix (e.g., BASIC -> Basic)
-        const suffix = parts.slice(1).map(p => p.charAt(0) + p.slice(1).toLowerCase()).join(' ');
-        return `${parentTranslation} (${suffix})`;
+        const parentName = t(`${parent}.name`, { ns: 'skills', defaultValue: '' });
+        if (parentName) {
+            const specName = t(`${parent}.specialisations.${suffix}`, { ns: 'skills', defaultValue: '' });
+            const formattedSuffix = specName || suffix.charAt(0) + suffix.slice(1).toLowerCase();
+            return `${parentName} (${formattedSuffix})`;
+        }
     }
 
-    if (parentTranslation) return parentTranslation;
-
-    // Fallback: format the key nicely
+    // Final fallback: format the key nicely
     return skillKey.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ');
 };
