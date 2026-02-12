@@ -495,26 +495,28 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	// Handle compound skill keys (e.g., "MELEE_BASIC", "STEALTH_RURAL")
-	var parentKey string
-	if strings.Contains(skillKey, "_") {
-		parts := strings.SplitN(skillKey, "_", 2)
-		parentKey = parts[0]
-	} else {
-		parentKey = skillKey
-	}
-
-	// Find the skill definition
+	// Find the skill definition - first try exact match, then try splitting
+	// compound keys (e.g., "MELEE_BASIC" -> parent "MELEE")
 	var skill *Skill
 	for i := range skills {
-		if skills[i].Key == parentKey {
+		if skills[i].Key == skillKey {
 			skill = &skills[i]
 			break
 		}
 	}
 
+	if skill == nil && strings.Contains(skillKey, "_") {
+		parentKey := strings.SplitN(skillKey, "_", 2)[0]
+		for i := range skills {
+			if skills[i].Key == parentKey {
+				skill = &skills[i]
+				break
+			}
+		}
+	}
+
 	if skill == nil {
-		return nil, fmt.Errorf("skill not found: %s", parentKey)
+		return nil, fmt.Errorf("skill not found: %s", skillKey)
 	}
 
 	// Get skill advances from character
@@ -642,26 +644,28 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	// Handle compound skill keys (e.g., "MELEE_BASIC", "RANGED_BOW")
-	var parentKey string
-	if strings.Contains(weaponSkill, "_") {
-		parts := strings.SplitN(weaponSkill, "_", 2)
-		parentKey = parts[0]
-	} else {
-		parentKey = weaponSkill
-	}
-
-	// Find the skill definition
+	// Find the skill definition - first try exact match, then try splitting
+	// compound keys (e.g., "MELEE_BASIC" -> parent "MELEE")
 	var skill *Skill
 	for i := range skills {
-		if skills[i].Key == parentKey {
+		if skills[i].Key == weaponSkill {
 			skill = &skills[i]
 			break
 		}
 	}
 
+	if skill == nil && strings.Contains(weaponSkill, "_") {
+		parentKey := strings.SplitN(weaponSkill, "_", 2)[0]
+		for i := range skills {
+			if skills[i].Key == parentKey {
+				skill = &skills[i]
+				break
+			}
+		}
+	}
+
 	if skill == nil {
-		return nil, fmt.Errorf("skill not found: %s", parentKey)
+		return nil, fmt.Errorf("skill not found: %s", weaponSkill)
 	}
 
 	// Get skill advances from character

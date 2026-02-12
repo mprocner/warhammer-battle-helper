@@ -64,7 +64,7 @@ function CharacterDetailsPanel({
                 return {
                     name: weapon.name,
                     skill: weaponSkill,
-                    damage: weapon.damage,
+                    damage: weapon.damage, 
                     value: skillValue,
                     isMelee,
                     isRanged
@@ -83,8 +83,11 @@ function CharacterDetailsPanel({
         const stats = character.characteristics?.current || {};
 
         return character.favoriteSkills.map(skillKey => {
-            // Check if it's a compound key (e.g., MELEE_BASIC, STEALTH_RURAL)
-            const isCompound = skillKey.includes('_');
+            // First try exact match (handles keys like OUTDOOR_SURVIVAL, CHARM_ANIMAL)
+            const exactMatch = skillsData.find(s => s.key === skillKey);
+
+            // If no exact match, try as compound key (e.g., MELEE_BASIC, STEALTH_RURAL)
+            const isCompound = !exactMatch && skillKey.includes('_');
 
             if (isCompound) {
                 const [parentKey, spec] = skillKey.split('_');
