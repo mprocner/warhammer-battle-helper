@@ -1026,26 +1026,51 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         try {
             // Roll d100 for characteristic test
             const sides = 100;
-            const modifiedValue = charValue + modifierValue;
-            const response = await axios.post(`${getApiUrl()}/roll`, {
-                "sides": sides
-            }, {
-                withCredentials: true
-            });
 
-            const rollResult = response.data.result;
-            const successLevel = Math.floor(modifiedValue / 10) - Math.floor(rollResult / 10);
-            const success = rollResult <= modifiedValue;
+            // If in a game session, use the game-specific endpoint
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({
+                        sides,
+                        characterId: character.id,
+                        attribute: charName,
+                        attributeModifier: modifierValue
+                    })
+                });
 
-            if (addLogMessage) {
-                const successText = success
-                    ? t('combat.success', { level: successLevel })
-                    : t('combat.failure', { level: successLevel });
-                const modifierText = modifierValue !== 0 ? ` (${modifierValue > 0 ? '+' : ''}${modifierValue})` : '';
-                addLogMessage(
-                    `${editedCharacter.basicInfo?.name} - ${charName}${modifierText} Test: Rolled ${rollResult} vs ${modifiedValue} - ${successText}`,
-                    success ? 'success' : 'error'
-                );
+                if (!response.ok) {
+                    throw new Error('Failed to roll dice');
+                }
+
+                // WebSocket will handle broadcasting the message with characteristic details
+            } else {
+                // Fallback to single-player mode
+                const modifiedValue = charValue + modifierValue;
+                const response = await axios.post(`${getApiUrl()}/roll`, {
+                    "sides": sides
+                }, {
+                    withCredentials: true
+                });
+
+                const rollResult = response.data.result;
+                const successLevel = Math.floor(modifiedValue / 10) - Math.floor(rollResult / 10);
+                const success = rollResult <= modifiedValue;
+
+                if (addLogMessage) {
+                    const successText = success
+                        ? t('combat.success', { level: successLevel })
+                        : t('combat.failure', { level: successLevel });
+                    const modifierText = modifierValue !== 0 ? ` (${modifierValue > 0 ? '+' : ''}${modifierValue})` : '';
+                    addLogMessage(
+                        `${editedCharacter.basicInfo?.name} - ${charName}${modifierText} Test: Rolled ${rollResult} vs ${modifiedValue} - ${successText}`,
+                        success ? 'success' : 'error'
+                    );
+                }
             }
         } catch (error) {
             console.error('Error rolling characteristic:', error);
