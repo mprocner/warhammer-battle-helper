@@ -504,6 +504,8 @@
   "dice": {
     "label": "K{{sides}}",
     "custom": "Własna",
-    "roll": "Rzuć"
+    "roll": "Rzuć",
+    "chatPlaceholder": "Wyślij wiadomość...",
+    "send": "Wyślij"
   }
 }

@@ -31,12 +31,15 @@ const getMessageTypeClass = (type) => {
     }
 };
 
-const SimpleMessage = ({ text, type, timestamp }) => {
+const SimpleMessage = ({ text, type, timestamp, username }) => {
     return (
         <li className={`log-simple-message ${getMessageTypeClass(type)}`}>
             <div className="log-simple-message__content">
                 {getMessageIcon(type)}
                 <div>
+                    {username && (
+                        <div className="log-simple-message__username">{username}</div>
+                    )}
                     <div className="log-simple-message__text">{text}</div>
                     {timestamp && (
                         <div className="log-simple-message__timestamp">{timestamp}</div>

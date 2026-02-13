@@ -38,6 +38,30 @@ const LogWindow = ({
         }
     }, [trimmedMessages, autoScroll]);
 
+    const sendMessage = async (text) => {
+        try {
+            if (gameId && token) {
+                const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
+                    method: 'POST',
+                    headers: getApiHeaders({
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }),
+                    body: JSON.stringify({ message: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+            } else {
+                addLogMessage(text, 'info');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            addLogMessage('Failed to send message', 'error');
+        }
+    };
+
     const rollDice = async (sides) => {
         try {
             if (gameId && token) {
@@ -83,7 +107,8 @@ const LogWindow = ({
         }
 
         // Fallback for simple text messages
-        return <SimpleMessage key={index} text={msg.text} type={msg.type} timestamp={msg.timestamp} />;
+        const username = msg.data && msg.data.username ? msg.data.username : null;
+        return <SimpleMessage key={index} text={msg.text} type={msg.type} timestamp={msg.timestamp} username={username} />;
     };
 
     return (
@@ -101,7 +126,7 @@ const LogWindow = ({
                 )}
             </div>
 
-            <DiceRollControls onRoll={rollDice} />
+            <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} />
         </div>
     );
 };

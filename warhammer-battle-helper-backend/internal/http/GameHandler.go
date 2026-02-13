@@ -394,6 +394,39 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// SendMessage sends a chat message to all game participants
+func (h *GameHandler) SendMessage(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req struct {
+		Message string `json:"message" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get user from JWT
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	username := claims["email"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = h.GameService.AddLogMessage(gameID, req.Message, "info", userID, username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Message sent"})
+}
+
 // HandleWebSocket upgrades HTTP connection to WebSocket for real-time game updates
 func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	gameID := c.Param("id")

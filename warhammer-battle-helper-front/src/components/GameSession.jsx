@@ -165,7 +165,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
               return { message: `${event.username} initiated combat`, type: 'warning', timestamp };
             case 'message':
               message = event.data.message || '';
-              return { message, type: event.data.type || 'info', timestamp };
+              return { message, type: event.data.type || 'info', timestamp, data: { username: event.username } };
             default:
               return null;
           }
@@ -236,8 +236,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
 
       case 'LOG_MESSAGE':
         addLogMessage(
-          `${message.payload.username}: ${message.payload.message}`,
-          message.payload.type || 'info'
+          message.payload.message,
+          message.payload.type || 'info',
+          { username: message.payload.username }
         );
         break;
 

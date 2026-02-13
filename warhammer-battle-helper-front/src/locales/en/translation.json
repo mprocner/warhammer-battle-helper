@@ -503,6 +503,8 @@
   "dice": {
     "label": "K{{sides}}",
     "custom": "Custom",
-    "roll": "Roll"
+    "roll": "Roll",
+    "chatPlaceholder": "Send a message...",
+    "send": "Send"
   }
 }

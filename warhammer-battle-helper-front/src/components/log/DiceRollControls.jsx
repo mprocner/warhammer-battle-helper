@@ -4,21 +4,21 @@ import '../LogWindow.css';
 
 const DICE = [4, 6, 8, 10, 12, 20, 100];
 
-const DiceRollControls = ({ onRoll }) => {
+const DiceRollControls = ({ onRoll, onSendMessage }) => {
     const { t } = useTranslation();
-    const [customSides, setCustomSides] = useState('');
+    const [chatMessage, setChatMessage] = useState('');
 
-    const handleCustomRoll = () => {
-        const sides = parseInt(customSides);
-        if (sides > 0) {
-            onRoll(sides);
-            setCustomSides('');
+    const handleSendMessage = () => {
+        const trimmed = chatMessage.trim();
+        if (trimmed) {
+            onSendMessage(trimmed);
+            setChatMessage('');
         }
     };
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
-            handleCustomRoll();
+            handleSendMessage();
         }
     };
 
@@ -34,20 +34,22 @@ const DiceRollControls = ({ onRoll }) => {
                         {t('dice.label', { sides })}
                     </button>
                 ))}
+            </div>
+            <div className="dice-controls__chat-row">
                 <input
                     type="text"
-                    className="dice-controls__input"
-                    value={customSides}
-                    onChange={(e) => setCustomSides(e.target.value)}
+                    className="dice-controls__chat-input"
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder={t('dice.custom')}
+                    placeholder={t('dice.chatPlaceholder')}
                 />
                 <button
-                    className="dice-controls__button"
-                    onClick={handleCustomRoll}
-                    disabled={!customSides || parseInt(customSides) <= 0}
+                    className="dice-controls__send-button"
+                    onClick={handleSendMessage}
+                    disabled={!chatMessage.trim()}
                 >
-                    {t('dice.roll')}
+                    {t('dice.send')}
                 </button>
             </div>
         </div>
