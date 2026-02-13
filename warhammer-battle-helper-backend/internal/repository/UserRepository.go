@@ -429,6 +429,41 @@ func (r *UserRepository) DeletePlaylist(userID primitive.ObjectID, playlistID pr
 	return err
 }
 
+// ReorderPlaylists reorders user's playlists array to match the given ID order
+func (r *UserRepository) ReorderPlaylists(userID primitive.ObjectID, playlistIDs []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return err
+	}
+
+	// Build map of playlist ID -> playlist
+	playlistMap := make(map[string]models.Playlist)
+	for _, p := range user.Playlists {
+		playlistMap[p.ID.Hex()] = p
+	}
+
+	// Rebuild array in requested order
+	reordered := make([]models.Playlist, 0, len(playlistIDs))
+	for _, idStr := range playlistIDs {
+		if p, ok := playlistMap[idStr]; ok {
+			reordered = append(reordered, p)
+		}
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"playlists": reordered,
+		},
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	return err
+}
+
 // --- END MUSIC METHODS ---
 
 // MoveFile updates a file's folderId to move it to another folder

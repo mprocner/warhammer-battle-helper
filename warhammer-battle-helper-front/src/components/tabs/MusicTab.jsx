@@ -1,12 +1,131 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, playTrack, pauseTrack, stopTrack, setVolume } from '../../api/music';
+import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume } from '../../api/music';
 import { getApiUrl } from '../../api/axios';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import './MusicTab.css';
 
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return '';
   return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
+};
+
+const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist, t }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: `${playlistId}-${track.id}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="music-tab__playlist-track">
+      <div className="music-tab__drag-handle" {...attributes} {...listeners}>
+        <span className="music-tab__drag-icon">⋮⋮</span>
+      </div>
+      <span className="music-tab__playlist-track-num">{index + 1}.</span>
+      <span className="music-tab__playlist-track-name" data-title={track.name}><span className="music-tab__truncate">{track.name}</span></span>
+      <button
+        className="music-tab__track-btn music-tab__track-btn--delete"
+        onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
+        data-title={t('common.delete')}
+      >
+        ✕
+      </button>
+    </div>
+  );
+};
+
+const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePlaylist, getPlaylistTracks, handlePlayPlaylist, handleStartEditPlaylist, handleDeletePlaylist, handleRemoveFromPlaylist, sensors, handleTrackDragEnd, t }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: playlist.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  };
+
+  const tracks = getPlaylistTracks(playlist);
+
+  return (
+    <div ref={setNodeRef} style={style} className={`music-tab__playlist-item ${isActive ? 'music-tab__playlist-item--active' : ''}`}>
+      <div className="music-tab__playlist-header" onClick={() => togglePlaylist(playlist.id)}>
+        <div className="music-tab__drag-handle" {...attributes} {...listeners} onClick={(e) => e.stopPropagation()}>
+          <span className="music-tab__drag-icon">⋮⋮</span>
+        </div>
+        <span className={`music-tab__chevron ${!expandedPlaylists[playlist.id] ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
+        <span className="music-tab__playlist-name" data-title={playlist.name}><span className="music-tab__truncate">{playlist.name} ({tracks.length})</span></span>
+        <div className="music-tab__playlist-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="music-tab__track-btn music-tab__track-btn--play"
+            onClick={() => handlePlayPlaylist(playlist)}
+            disabled={tracks.length === 0}
+            data-title={t('music.play')}
+          >
+            ▶
+          </button>
+          <button
+            className="music-tab__track-btn"
+            onClick={() => handleStartEditPlaylist(playlist)}
+            data-title={t('music.editPlaylist')}
+          >
+            ✎
+          </button>
+          <button
+            className="music-tab__track-btn music-tab__track-btn--delete"
+            onClick={() => handleDeletePlaylist(playlist)}
+            data-title={t('common.delete')}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      <div className={`music-tab__playlist-tracks ${!expandedPlaylists[playlist.id] ? 'music-tab__playlist-tracks--collapsed' : ''}`}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => handleTrackDragEnd(playlist.id, event)}>
+          <SortableContext items={tracks.map(track => `${playlist.id}-${track.id}`)} strategy={verticalListSortingStrategy}>
+            {tracks.map((track, index) => (
+              <SortableTrackItem
+                key={`${playlist.id}-${track.id}-${index}`}
+                track={track}
+                index={index}
+                playlistId={playlist.id}
+                handleRemoveFromPlaylist={handleRemoveFromPlaylist}
+                t={t}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+      </div>
+    </div>
+  );
 };
 
 const MusicTab = ({ gameId, token, musicState, audioRef }) => {
@@ -25,7 +144,67 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const [selectedTracksForPlaylist, setSelectedTracksForPlaylist] = useState([]);
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(null);
   const [loop, setLoop] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const [expandedPlaylists, setExpandedPlaylists] = useState({});
+  const [editingPlaylist, setEditingPlaylist] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
+
+  const sortedMusicFiles = useMemo(
+    () => [...musicFiles]
+      .filter(f => !searchQuery || f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [musicFiles, searchQuery]
+  );
+
+  const handlePlaylistDragEnd = async (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setPlaylists(prev => {
+        const oldIndex = prev.findIndex(p => p.id === active.id);
+        const newIndex = prev.findIndex(p => p.id === over.id);
+        const newOrder = arrayMove(prev, oldIndex, newIndex);
+        const playlistIds = newOrder.map(p => p.id);
+        reorderPlaylists(playlistIds).catch(() => fetchMusic());
+        return newOrder;
+      });
+    }
+  };
+
+  const handleTrackDragEnd = async (playlistId, event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const playlist = playlists.find(p => p.id === playlistId);
+    if (!playlist) return;
+    const tracks = playlist.tracks || [];
+    const activeTrackId = String(active.id).replace(`${playlistId}-`, '');
+    const overTrackId = String(over.id).replace(`${playlistId}-`, '');
+    const oldIndex = tracks.indexOf(activeTrackId);
+    const newIndex = tracks.indexOf(overTrackId);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const newTracks = arrayMove(tracks, oldIndex, newIndex);
+    setPlaylists(prev => prev.map(p => p.id === playlistId ? { ...p, tracks: newTracks } : p));
+    try {
+      await updatePlaylist(playlistId, playlist.name, newTracks);
+    } catch {
+      fetchMusic();
+    }
+  };
+
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const togglePlaylist = (playlistId) => {
+    setExpandedPlaylists(prev => ({ ...prev, [playlistId]: !prev[playlistId] }));
+  };
 
   const fetchMusic = useCallback(async () => {
     try {
@@ -178,16 +357,28 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     }
   };
 
+  const handleStartEditPlaylist = (playlist) => {
+    setEditingPlaylist(playlist);
+    setNewPlaylistName(playlist.name);
+    setSelectedTracksForPlaylist(playlist.tracks.map(t => t.id || t));
+    setShowCreatePlaylist(true);
+  };
+
   const handleCreatePlaylist = async () => {
     if (!newPlaylistName.trim()) return;
     try {
-      await createPlaylist(newPlaylistName.trim(), selectedTracksForPlaylist);
+      if (editingPlaylist) {
+        await updatePlaylist(editingPlaylist.id, newPlaylistName.trim(), selectedTracksForPlaylist);
+      } else {
+        await createPlaylist(newPlaylistName.trim(), selectedTracksForPlaylist);
+      }
       setNewPlaylistName('');
       setSelectedTracksForPlaylist([]);
       setShowCreatePlaylist(false);
+      setEditingPlaylist(null);
       await fetchMusic();
     } catch (err) {
-      setError(t('music.createPlaylistError'));
+      setError(editingPlaylist ? t('music.updatePlaylistError') : t('music.createPlaylistError'));
     }
   };
 
@@ -281,15 +472,15 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
           </div>
           <div className="music-tab__playback-controls">
             {musicState.isPlaying ? (
-              <button className="music-tab__control-btn" onClick={handlePause} title={t('music.pause')}>⏸</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} data-title={t('music.pause')}>⏸</button>
             ) : (
-              <button className="music-tab__control-btn" onClick={() => handleResume()} title={t('music.play')}>▶</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={() => handleResume()} data-title={t('music.play')}>▶</button>
             )}
-            <button className="music-tab__control-btn" onClick={handleStop} title={t('music.stop')}>⏹</button>
+            <button className="music-tab__control-btn" onClick={handleStop} data-title={t('music.stop')}>⏹</button>
             <button
               className={`music-tab__control-btn ${loop ? 'music-tab__control-btn--active' : ''}`}
               onClick={() => setLoop(!loop)}
-              title={t('music.loop')}
+              data-title={t('music.loop')}
             >
               🔁
             </button>
@@ -318,13 +509,23 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
 
       {/* Music Files List */}
       <section className="music-tab__section">
-        <div className="music-tab__section-header">
-          <h4 className="music-tab__section-title">{t('music.title')} ({musicFiles.length})</h4>
+        <div className="music-tab__section-header music-tab__section-header--clickable" onClick={() => toggleSection('library')}>
+          <h4 className="music-tab__section-title">
+            <span className={`music-tab__chevron ${collapsedSections.library ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
+            {t('music.title')} ({sortedMusicFiles.length})
+          </h4>
           <button
             className="music-tab__add-btn"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={(e) => { e.stopPropagation(); setSearchOpen(prev => { if (prev) setSearchQuery(''); return !prev; }); }}
+            data-title={t('music.searchPlaceholder')}
+          >
+            🔍
+          </button>
+          <button
+            className="music-tab__add-btn"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
             disabled={uploading}
-            title={t('music.uploadMusic')}
+            data-title={t('music.uploadMusic')}
           >
             {uploading ? '...' : '+'}
           </button>
@@ -337,64 +538,80 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             className="music-tab__file-input"
           />
         </div>
-        {musicFiles.length === 0 ? (
-          <p className="music-tab__empty">{t('music.noFiles')}</p>
-        ) : (
-          <div className="music-tab__track-list">
-            {musicFiles.map(file => (
-              <div key={file.id} className={`music-tab__track-item ${isTrackPlaying(file) ? 'music-tab__track-item--playing' : ''}`}>
-                <div className="music-tab__track-info">
-                  <span className="music-tab__track-name">{file.name}</span>
-                  <span className="music-tab__track-size">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
-                </div>
-                <div className="music-tab__track-actions">
-                  {isTrackPlaying(file) ? (
-                    <button className="music-tab__track-btn" onClick={handlePause} title={t('music.pause')}>⏸</button>
-                  ) : (
-                    <button className="music-tab__track-btn" onClick={() => handlePlay(file)} title={t('music.play')}>▶</button>
-                  )}
-                  <div className="music-tab__add-to-playlist-wrapper">
-                    <button
-                      className="music-tab__track-btn"
-                      onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
-                      title={t('music.addToPlaylist')}
-                    >
-                      +📋
-                    </button>
-                    {addToPlaylistOpen === file.id && playlists.length > 0 && (
-                      <div className="music-tab__playlist-dropdown">
-                        {playlists.map(pl => (
-                          <button
-                            key={pl.id}
-                            className="music-tab__playlist-dropdown-item"
-                            onClick={() => handleAddToPlaylist(pl.id, file.id)}
-                          >
-                            {pl.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+        <div className={`music-tab__section-body ${collapsedSections.library ? 'music-tab__section-body--collapsed' : ''}`}>
+          {searchOpen && (
+            <div style={{ marginBottom: 8 }}>
+              <input
+                type="text"
+                className="music-tab__input"
+                placeholder={t('music.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+          )}
+          {sortedMusicFiles.length === 0 ? (
+            <p className="music-tab__empty">{t('music.noFiles')}</p>
+          ) : (
+            <div className="music-tab__track-list">
+              {sortedMusicFiles.map(file => (
+                <div key={file.id} className={`music-tab__track-item ${isTrackPlaying(file) ? 'music-tab__track-item--playing' : ''}`}>
+                  <div className="music-tab__track-info">
+                    <span className="music-tab__track-name" data-title={file.name}><span className="music-tab__truncate">{file.name}</span></span>
                   </div>
-                  <button className="music-tab__track-btn music-tab__track-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}>✕</button>
+                  <div className="music-tab__track-actions">
+                    {isTrackPlaying(file) ? (
+                      <button className="music-tab__track-btn music-tab__track-btn--playback" onClick={handlePause} data-title={t('music.pause')}>⏸</button>
+                    ) : (
+                      <button className="music-tab__track-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} data-title={t('music.play')}>▶</button>
+                    )}
+                    <div className="music-tab__add-to-playlist-wrapper">
+                      <button
+                        className="music-tab__track-btn"
+                        onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
+                        data-title={t('music.addToPlaylist')}
+                      >
+                        +📋
+                      </button>
+                      {addToPlaylistOpen === file.id && playlists.length > 0 && (
+                        <div className="music-tab__playlist-dropdown">
+                          {playlists.map(pl => (
+                            <button
+                              key={pl.id}
+                              className="music-tab__playlist-dropdown-item"
+                              onClick={() => handleAddToPlaylist(pl.id, file.id)}
+                            >
+                              {pl.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button className="music-tab__track-btn music-tab__track-btn--delete" onClick={() => handleDelete(file)} data-title={t('common.delete')}>✕</button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Playlists Section */}
       <section className="music-tab__section">
-        <div className="music-tab__section-header">
-          <h4 className="music-tab__section-title">{t('music.playlists')}</h4>
+        <div className="music-tab__section-header music-tab__section-header--clickable" onClick={() => toggleSection('playlists')}>
+          <h4 className="music-tab__section-title">
+            <span className={`music-tab__chevron ${collapsedSections.playlists ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
+            {t('music.playlists')}
+          </h4>
           <button
             className="music-tab__create-btn"
-            onClick={() => setShowCreatePlaylist(!showCreatePlaylist)}
+            onClick={(e) => { e.stopPropagation(); setShowCreatePlaylist(!showCreatePlaylist); setEditingPlaylist(null); setNewPlaylistName(''); setSelectedTracksForPlaylist([]); }}
           >
             {showCreatePlaylist ? t('common.cancel') : t('music.createPlaylist')}
           </button>
         </div>
-
+        <div className={`music-tab__section-body ${collapsedSections.playlists ? 'music-tab__section-body--collapsed' : ''}`}>
         {showCreatePlaylist && (
           <div className="music-tab__create-playlist">
             <input
@@ -423,7 +640,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
               onClick={handleCreatePlaylist}
               disabled={!newPlaylistName.trim()}
             >
-              {t('common.create')}
+              {editingPlaylist ? t('common.save') : t('common.create')}
             </button>
           </div>
         )}
@@ -431,51 +648,31 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
         {playlists.length === 0 && !showCreatePlaylist ? (
           <p className="music-tab__empty">{t('music.noPlaylists')}</p>
         ) : (
-          <div className="music-tab__playlist-list">
-            {playlists.map(playlist => {
-              const tracks = getPlaylistTracks(playlist);
-              const isActive = activePlaylist?.id === playlist.id;
-              return (
-                <div key={playlist.id} className={`music-tab__playlist-item ${isActive ? 'music-tab__playlist-item--active' : ''}`}>
-                  <div className="music-tab__playlist-header">
-                    <span className="music-tab__playlist-name">{playlist.name}</span>
-                    <span className="music-tab__playlist-count">{tracks.length} {t('music.tracks')}</span>
-                  </div>
-                  <div className="music-tab__playlist-tracks">
-                    {tracks.map((track, index) => (
-                      <div key={`${playlist.id}-${track.id}-${index}`} className="music-tab__playlist-track">
-                        <span className="music-tab__playlist-track-num">{index + 1}.</span>
-                        <span className="music-tab__playlist-track-name">{track.name}</span>
-                        <button
-                          className="music-tab__track-btn music-tab__track-btn--small"
-                          onClick={() => handleRemoveFromPlaylist(playlist.id, track.id)}
-                          title={t('common.delete')}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="music-tab__playlist-actions">
-                    <button
-                      className="music-tab__playlist-play-btn"
-                      onClick={() => handlePlayPlaylist(playlist)}
-                      disabled={tracks.length === 0}
-                    >
-                      ▶ {t('music.play')}
-                    </button>
-                    <button
-                      className="music-tab__track-btn music-tab__track-btn--delete"
-                      onClick={() => handleDeletePlaylist(playlist)}
-                    >
-                      {t('common.delete')}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePlaylistDragEnd}>
+            <SortableContext items={playlists.map(p => p.id)} strategy={verticalListSortingStrategy}>
+              <div className="music-tab__playlist-list">
+                {playlists.map(playlist => (
+                  <SortablePlaylistItem
+                    key={playlist.id}
+                    playlist={playlist}
+                    isActive={activePlaylist?.id === playlist.id}
+                    expandedPlaylists={expandedPlaylists}
+                    togglePlaylist={togglePlaylist}
+                    getPlaylistTracks={getPlaylistTracks}
+                    handlePlayPlaylist={handlePlayPlaylist}
+                    handleStartEditPlaylist={handleStartEditPlaylist}
+                    handleDeletePlaylist={handleDeletePlaylist}
+                    handleRemoveFromPlaylist={handleRemoveFromPlaylist}
+                    sensors={sensors}
+                    handleTrackDragEnd={handleTrackDragEnd}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
+        </div>
       </section>
     </div>
   );

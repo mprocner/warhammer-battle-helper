@@ -40,6 +40,11 @@ export const deletePlaylist = async (playlistId) => {
   return response.data;
 };
 
+export const reorderPlaylists = async (playlistIds) => {
+  const response = await axiosInstance.put('/playlists/reorder', { playlistIds });
+  return response.data;
+};
+
 // --- Game Playback (GM-only) ---
 
 export const playTrack = async (gameId, trackUrl, trackName, position = 0) => {
@@ -71,6 +76,7 @@ const musicApi = {
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
+  reorderPlaylists,
   playTrack,
   pauseTrack,
   stopTrack,

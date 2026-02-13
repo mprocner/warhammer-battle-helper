@@ -364,11 +364,11 @@
 }
 
 .dice-controls__button {
-  min-width: 50px;
+  min-width: 37px;
   border: 1px solid var(--log-brown-light);
   color: var(--log-brown-dark);
   background: transparent;
-  padding: 6px 12px;
+  padding: 6px 3px;
   font-family: var(--log-font-display);
   font-weight: 600;
   cursor: pointer;

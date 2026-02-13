@@ -407,7 +407,9 @@
     "stopError": "Nie udało się zatrzymać odtwarzania",
     "createPlaylistError": "Nie udało się utworzyć playlisty",
     "deletePlaylistError": "Nie udało się usunąć playlisty",
-    "updatePlaylistError": "Nie udało się zaktualizować playlisty"
+    "updatePlaylistError": "Nie udało się zaktualizować playlisty",
+    "searchPlaceholder": "Szukaj utworów...",
+    "editPlaylist": "Edytuj playlistę"
   },
   "leftPanel": {
     "title": "Postacie",

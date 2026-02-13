@@ -84,10 +84,37 @@
   margin-bottom: 10px;
 }
 
+.music-tab__section-header--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
 .music-tab__section-header .music-tab__section-title {
   margin: 0;
   padding: 0;
   border: none;
+}
+
+/* Chevron indicator */
+.music-tab__chevron {
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+}
+
+.music-tab__chevron--collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Collapsible section body */
+.music-tab__section-body {
+  max-height: 2000px;
+  transition: max-height 0.3s ease;
+}
+
+.music-tab__section-body--collapsed {
+  max-height: 0;
+  overflow: hidden;
 }
 
 /* Add button (+) */
@@ -98,19 +125,39 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
-  border: 2px solid #8b6b3d;
-  border-radius: 50%;
+  border: 1px solid #c9a66b;
+  border-radius: 4px;
   font-size: 1.1rem;
   font-weight: 700;
   color: #6b4423;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  line-height: 1;
+  position: relative;
+}
+
+.music-tab__add-btn[data-title]:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: 4px;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .music-tab__add-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
   border-color: #6b4423;
+  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
 }
 
 .music-tab__add-btn:disabled {
@@ -194,11 +241,34 @@
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+}
+
+.music-tab__control-btn[data-title]:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: 4px;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .music-tab__control-btn:hover {
   background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
   border-color: #6b4423;
+}
+
+.music-tab__control-btn--playback {
+  width: 52px;
 }
 
 .music-tab__control-btn--active {
@@ -268,14 +338,14 @@
 .music-tab__track-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .music-tab__track-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
+  padding: 4px 8px;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 4px;
   border: 1px solid transparent;
@@ -294,8 +364,7 @@
 
 .music-tab__track-info {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
   min-width: 0;
   flex: 1;
 }
@@ -305,15 +374,32 @@
   font-size: 0.9rem;
   color: #4a3728;
   font-weight: 600;
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+
+.music-tab__track-name .music-tab__truncate {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.music-tab__track-size {
-  font-family: 'Crimson Text', serif;
-  font-size: 0.75rem;
-  color: #7a5c42;
+.music-tab__track-name:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .music-tab__track-actions {
@@ -331,11 +417,56 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  height: 26px;
+  min-width: 26px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.music-tab__track-btn[data-title]:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: 4px;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .music-tab__track-btn:hover {
   border-color: #6b4423;
   background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
+}
+
+.music-tab__track-btn--playback {
+  width: 34px;
+}
+
+.music-tab__track-btn--play {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border-color: #28a745;
+  color: #155724;
+}
+
+.music-tab__track-btn--play:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c3e6cb 0%, #a9dfbf 100%);
+}
+
+.music-tab__track-btn--play:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .music-tab__track-btn--delete {
@@ -345,11 +476,6 @@
 .music-tab__track-btn--delete:hover {
   border-color: #c94040;
   background: #f8d7da;
-}
-
-.music-tab__track-btn--small {
-  padding: 2px 6px;
-  font-size: 0.75rem;
 }
 
 /* Add to playlist dropdown */
@@ -513,9 +639,10 @@
 
 .music-tab__playlist-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .music-tab__playlist-name {
@@ -523,19 +650,55 @@
   font-size: 0.9rem;
   font-weight: 700;
   color: #6b4423;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.music-tab__playlist-name .music-tab__truncate {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-tab__playlist-name:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .music-tab__playlist-count {
   font-family: 'Crimson Text', serif;
   font-size: 0.8rem;
   color: #7a5c42;
+  flex: 1;
 }
 
 .music-tab__playlist-tracks {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 8px;
+  margin-top: 8px;
+  max-height: 1000px;
+  transition: max-height 0.3s ease, margin-top 0.3s ease;
+}
+
+.music-tab__playlist-tracks--collapsed {
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
 }
 
 .music-tab__playlist-track {
@@ -562,36 +725,58 @@
   font-size: 0.85rem;
   color: #4a3728;
   flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.music-tab__playlist-track-name .music-tab__truncate {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.music-tab__playlist-track-name:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+}
+
 .music-tab__playlist-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
+  flex-shrink: 0;
 }
 
-.music-tab__playlist-play-btn {
-  flex: 1;
-  padding: 6px 12px;
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border: 1px solid #28a745;
-  border-radius: 4px;
-  font-family: 'Crimson Text', serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #155724;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Drag Handle */
+.music-tab__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  padding: 0 4px;
+  touch-action: none;
 }
 
-.music-tab__playlist-play-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c3e6cb 0%, #a9dfbf 100%);
+.music-tab__drag-handle:active {
+  cursor: grabbing;
 }
 
-.music-tab__playlist-play-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.music-tab__drag-icon {
+  font-size: 0.9rem;
+  color: #a0896e;
+  letter-spacing: 2px;
+  user-select: none;
 }
+

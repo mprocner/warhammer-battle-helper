@@ -209,6 +209,7 @@ func main() {
 	r.POST("/playlists", http.JWTAuthMiddleware(), musicHandler.CreatePlaylist)
 	r.PUT("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.UpdatePlaylist)
 	r.DELETE("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.DeletePlaylist)
+	r.PUT("/playlists/reorder", http.JWTAuthMiddleware(), musicHandler.ReorderPlaylists)
 	r.POST("/games/:id/music/play", http.JWTAuthMiddleware(), musicHandler.PlayTrack)
 	r.POST("/games/:id/music/pause", http.JWTAuthMiddleware(), musicHandler.PauseTrack)
 	r.POST("/games/:id/music/stop", http.JWTAuthMiddleware(), musicHandler.StopTrack)

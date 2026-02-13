@@ -43,6 +43,10 @@ type UpdatePlaylistRequest struct {
 	Tracks []string `json:"tracks"`
 }
 
+type ReorderPlaylistsRequest struct {
+	PlaylistIDs []string `json:"playlistIds" binding:"required"`
+}
+
 type PlayTrackRequest struct {
 	TrackURL  string  `json:"trackUrl" binding:"required"`
 	TrackName string  `json:"trackName"`
@@ -338,6 +342,32 @@ func (h *MusicHandler) DeletePlaylist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Playlist deleted successfully"})
+}
+
+// ReorderPlaylists handles PUT /playlists/reorder - Reorder playlists
+func (h *MusicHandler) ReorderPlaylists(c *gin.Context) {
+	var req ReorderPlaylistsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.UserRepo.ReorderPlaylists(userID, req.PlaylistIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder playlists"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Playlists reordered successfully"})
 }
 
 // --- Game-level endpoints (playback, GM-only) ---

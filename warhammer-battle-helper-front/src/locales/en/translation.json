@@ -406,7 +406,9 @@
     "stopError": "Failed to stop track",
     "createPlaylistError": "Failed to create playlist",
     "deletePlaylistError": "Failed to delete playlist",
-    "updatePlaylistError": "Failed to update playlist"
+    "updatePlaylistError": "Failed to update playlist",
+    "searchPlaceholder": "Search tracks...",
+    "editPlaylist": "Edit playlist"
   },
   "leftPanel": {
     "title": "Character Details",
