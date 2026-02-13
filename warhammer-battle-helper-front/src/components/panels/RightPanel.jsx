@@ -111,14 +111,8 @@ const RightPanel = ({
           />
         );
       case 'music':
-        return (
-          <MusicTab
-            gameId={gameId}
-            token={token}
-            musicState={musicState}
-            audioRef={audioRef}
-          />
-        );
+        // MusicTab is always rendered below to keep it mounted; return null here
+        return null;
       case 'general':
         return (
           <GeneralTab
@@ -162,6 +156,17 @@ const RightPanel = ({
         {/* Tab Content Area */}
         <div className="right-panel__tab-content">
           {renderTabContent()}
+          {/* MusicTab is always mounted so audio event listeners persist across tab switches */}
+          {isGM && (
+            <div style={{ display: activeTab === 'music' ? 'contents' : 'none' }}>
+              <MusicTab
+                gameId={gameId}
+                token={token}
+                musicState={musicState}
+                audioRef={audioRef}
+              />
+            </div>
+          )}
         </div>
       </div>
     </aside>
