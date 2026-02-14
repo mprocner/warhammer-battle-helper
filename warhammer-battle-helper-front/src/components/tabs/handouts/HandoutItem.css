@@ -81,9 +81,33 @@
   font-weight: 600;
   font-family: 'Cinzel', serif;
   color: #3a2f1f;
+  position: relative;
+  overflow: visible;
+}
+
+.handout-item__truncate {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.handout-item__title:hover::after {
+  content: attr(data-title);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  background: #4a3728;
+  color: #f5ebe0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 250px;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .handout-item__visibility {

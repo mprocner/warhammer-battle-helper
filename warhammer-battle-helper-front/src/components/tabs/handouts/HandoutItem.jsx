@@ -62,7 +62,9 @@ const HandoutItem = ({
           <HandoutTypeIcon type={handout.type} />
         </div>
         <div className="handout-item__info">
-          <h4 className="handout-item__title">{handout.title}</h4>
+          <h4 className="handout-item__title" data-title={handout.title}>
+            <span className="handout-item__truncate">{handout.title}</span>
+          </h4>
           {/* Visibility on second line (GM only) */}
           {isGM && (
             <div className="handout-item__visibility">
