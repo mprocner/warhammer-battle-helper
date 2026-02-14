@@ -473,7 +473,8 @@
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
     "fitToScreen": "Fit to Screen",
-    "zoomLevel": "Zoom Level"
+    "zoomLevel": "Zoom Level",
+    "gmBadge": "GM"
   },
   "files": {
     "title": "Files",

@@ -474,7 +474,8 @@
     "zoomIn": "Przybliż",
     "zoomOut": "Oddal",
     "fitToScreen": "Dopasuj do ekranu",
-    "zoomLevel": "Poziom powiększenia"
+    "zoomLevel": "Poziom powiększenia",
+    "gmBadge": "MG"
   },
   "files": {
     "title": "Pliki",

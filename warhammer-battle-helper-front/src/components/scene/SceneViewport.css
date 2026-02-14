@@ -140,7 +140,27 @@
 }
 
 .scene-image--gm {
-  outline: 1px dashed rgba(255, 100, 100, 0.4);
+  opacity: 0.7;
+  outline: 1px dashed rgba(255, 255, 255, 0.5);
+}
+
+.scene-image--gm:hover {
+  opacity: 0.85;
+}
+
+.scene-image__gm-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.4;
 }
 
 /* Resize handles */

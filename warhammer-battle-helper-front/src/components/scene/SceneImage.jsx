@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { updateSceneImage, deleteSceneImage } from '../../api/scenes';
 import { getApiUrl } from '../../api/axios';
 import SceneImageContextMenu from './SceneImageContextMenu';
@@ -13,6 +14,7 @@ const getFileUrl = (fileUrl) => {
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
 const SceneImage = ({ image, isGM, gameId, sceneId }) => {
+  const { t } = useTranslation();
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -231,6 +233,11 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
             userSelect: 'none',
           }}
         />
+
+        {/* GM layer badge */}
+        {image.layer === 'gm' && (
+          <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
+        )}
 
         {/* Resize handles (GM only) */}
         {isGM && RESIZE_HANDLES.map(handle => (
