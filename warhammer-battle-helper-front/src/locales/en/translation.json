@@ -259,7 +259,7 @@
     "ablaze": "Ablaze"
   },
   "attributes": {
-    "hp": "HP",
+    "hp": "Hit Points",
     "movement": "Movement",
     "fortune": "Fortune"
   },

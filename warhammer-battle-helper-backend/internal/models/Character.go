@@ -74,11 +74,12 @@ type MovementInfo struct {
 }
 
 type WoundsInfo struct {
-	SB    string `bson:"sb" json:"sb"`
-	TB    string `bson:"tb" json:"tb"`
-	WPB   string `bson:"wpb" json:"wpb"`
-	Hardy string `bson:"hardy" json:"hardy"`
-	Total string `bson:"total" json:"total"`
+	SB      string `bson:"sb" json:"sb"`
+	TB      string `bson:"tb" json:"tb"`
+	WPB     string `bson:"wpb" json:"wpb"`
+	Hardy   string `bson:"hardy" json:"hardy"`
+	Total   string `bson:"total" json:"total"`
+	Current *int   `bson:"current,omitempty" json:"current,omitempty"`
 }
 
 type Talent struct {

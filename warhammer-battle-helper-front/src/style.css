@@ -421,7 +421,7 @@ header nav a:hover::after {
 /* Detail Grid */
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -493,6 +493,25 @@ header nav a:hover::after {
 
 .modifier-value.negative {
   color: #c94444;
+}
+
+.wounds-input {
+  width: 44px;
+  padding: 2px 4px;
+  border: 1px solid #c4a882;
+  border-radius: 4px;
+  background: #fff9f0;
+  color: #3a2f1f;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.wounds-input::-webkit-outer-spin-button,
+.wounds-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Characteristics Mini */

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
@@ -24,6 +24,7 @@ function CharacterDetailsPanel({
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
+    const woundsSaveTimerRef = useRef(null);
 
     // Auto-open character sheet when requested (e.g., after creating new character)
     useEffect(() => {
@@ -34,6 +35,23 @@ function CharacterDetailsPanel({
             }
         }
     }, [autoOpenSheet, character, onSheetOpened]);
+
+    // Initialize wounds.current to wounds.total if not set
+    useEffect(() => {
+        if (character && character.wounds?.total != null && character.wounds?.current == null) {
+            const updatedCharacter = {
+                ...character,
+                wounds: {
+                    ...character.wounds,
+                    current: character.wounds.total
+                }
+            };
+            axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter).catch((error) => {
+                console.error('Error initializing wounds.current:', error);
+            });
+            onCharacterUpdate(updatedCharacter);
+        }
+    }, [character?.id]);
 
     const getSkillAdvances = (character, skillKey) => {
         if (character.basicSkills?.[skillKey] !== undefined) {
@@ -201,7 +219,7 @@ function CharacterDetailsPanel({
     }
 
     const stats = character.characteristics?.current || {};
-    const hp = character.secondaryAttributes?.wounds || {};
+    const hp = character.wounds || {};
     const movement = character.secondaryAttributes?.movement?.current || 4;
 
     const adjustFortune = async (amount) => {
@@ -229,6 +247,36 @@ function CharacterDetailsPanel({
 
         // Update local state
         onCharacterUpdate(updatedCharacter);
+    };
+
+    const handleWoundsChange = (newValue) => {
+        const max = hp.total || 0;
+        const clamped = Math.max(0, Math.min(max, Number(newValue) || 0));
+
+        const updatedCharacter = {
+            ...character,
+            wounds: {
+                ...character.wounds,
+                current: clamped
+            }
+        };
+
+        onCharacterUpdate(updatedCharacter);
+
+        if (woundsSaveTimerRef.current) {
+            clearTimeout(woundsSaveTimerRef.current);
+        }
+
+        woundsSaveTimerRef.current = setTimeout(async () => {
+            try {
+                await axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter);
+            } catch (error) {
+                console.error('Error saving wounds:', error);
+                if (addLogMessage) {
+                    addLogMessage(t('combat.saveWoundsFailed'), 'error');
+                }
+            }
+        }, 1000);
     };
 
     const getModifierClass = () => {
@@ -487,11 +535,17 @@ function CharacterDetailsPanel({
             <div className="detail-grid">
                 <div className="detail-item">
                     <div className="detail-label">{t('attributes.hp')}</div>
-                    <div className="detail-value">{hp.current || '-'}/{hp.max || '-'}</div>
-                </div>
-                <div className="detail-item">
-                    <div className="detail-label">{t('attributes.movement')}</div>
-                    <div className="detail-value">{movement}</div>
+                    <div className="detail-value modifier-value">
+                        <input
+                            type="number"
+                            className="wounds-input"
+                            min={0}
+                            max={hp.total || 0}
+                            value={hp.current != null ? hp.current : (hp.total || 0)}
+                            onChange={(e) => handleWoundsChange(e.target.value)}
+                        />
+                        &nbsp;/ {hp.total || '-'}
+                    </div>
                 </div>
                 <div className="detail-item">
                     <div className="detail-label">{t('attributes.fortune')}</div>
