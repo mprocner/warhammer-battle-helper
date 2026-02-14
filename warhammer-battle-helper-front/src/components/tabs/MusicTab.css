@@ -217,6 +217,7 @@
   background: #c8e6c9;
   border-radius: 3px;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .music-tab__progress-fill {
@@ -711,6 +712,12 @@
 
 .music-tab__playlist-track:hover {
   background: rgba(255, 255, 255, 0.4);
+}
+
+.music-tab__track-btn--current {
+  background: linear-gradient(135deg, #a5d6a7 0%, #81c784 100%);
+  border-color: #2e7d32;
+  color: #1b5e20;
 }
 
 .music-tab__playlist-track-num {

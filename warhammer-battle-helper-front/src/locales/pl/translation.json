@@ -386,6 +386,8 @@
     "play": "Odtwórz",
     "pause": "Pauza",
     "stop": "Stop",
+    "previous": "Poprzedni",
+    "next": "Następny",
     "loop": "Zapętl",
     "nowPlaying": "Teraz gra",
     "paused": "Wstrzymano",

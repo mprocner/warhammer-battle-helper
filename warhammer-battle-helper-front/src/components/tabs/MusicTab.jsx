@@ -23,7 +23,7 @@ const getFileUrl = (fileUrl) => {
   return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
 };
 
-const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist, t }) => {
+const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist, handlePlayPlaylistFromTrack, isCurrentTrack, t }) => {
   const {
     attributes,
     listeners,
@@ -47,6 +47,13 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
       <span className="music-tab__playlist-track-num">{index + 1}.</span>
       <span className="music-tab__playlist-track-name" data-title={track.name}><span className="music-tab__truncate">{track.name}</span></span>
       <button
+        className={`music-tab__track-btn music-tab__track-btn--play ${isCurrentTrack ? 'music-tab__track-btn--current' : ''}`}
+        onClick={() => handlePlayPlaylistFromTrack(playlistId, index)}
+        data-title={t('music.play')}
+      >
+        ▶
+      </button>
+      <button
         className="music-tab__track-btn music-tab__track-btn--delete"
         onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
         data-title={t('common.delete')}
@@ -57,7 +64,7 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
   );
 };
 
-const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePlaylist, getPlaylistTracks, handlePlayPlaylist, handleStartEditPlaylist, handleDeletePlaylist, handleRemoveFromPlaylist, sensors, handleTrackDragEnd, t }) => {
+const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePlaylist, getPlaylistTracks, handlePlayPlaylist, handlePlayPlaylistFromTrack, handleStartEditPlaylist, handleDeletePlaylist, handleRemoveFromPlaylist, sensors, handleTrackDragEnd, activePlaylist, activeTrackIndex, musicState, t }) => {
   const {
     attributes,
     listeners,
@@ -118,6 +125,8 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
                 index={index}
                 playlistId={playlist.id}
                 handleRemoveFromPlaylist={handleRemoveFromPlaylist}
+                handlePlayPlaylistFromTrack={handlePlayPlaylistFromTrack}
+                isCurrentTrack={activePlaylist?.id === playlist.id && activeTrackIndex === index && musicState.isPlaying}
                 t={t}
               />
             ))}
@@ -357,6 +366,67 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     }
   };
 
+  const handlePlayPlaylistFromTrack = async (playlistId, trackIndex) => {
+    const playlist = playlists.find(p => p.id === playlistId);
+    if (!playlist) return;
+    const tracks = getPlaylistTracks(playlist);
+    if (trackIndex < 0 || trackIndex >= tracks.length) return;
+
+    setActivePlaylist(playlist);
+    setActiveTrackIndex(trackIndex);
+    try {
+      await playTrack(gameId, getFileUrl(tracks[trackIndex].fileUrl), tracks[trackIndex].name, 0);
+    } catch (err) {
+      setError(t('music.playError'));
+    }
+  };
+
+  const handleNextTrack = async () => {
+    if (activePlaylist) {
+      const tracks = getPlaylistTracks(activePlaylist);
+      if (tracks.length === 0) return;
+      const nextIndex = (activeTrackIndex + 1) % tracks.length;
+      setActiveTrackIndex(nextIndex);
+      try {
+        await playTrack(gameId, getFileUrl(tracks[nextIndex].fileUrl), tracks[nextIndex].name, 0);
+      } catch (err) {
+        setError(t('music.playError'));
+      }
+    } else {
+      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
+      if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
+      const nextIndex = (currentIndex + 1) % sortedMusicFiles.length;
+      try {
+        await playTrack(gameId, getFileUrl(sortedMusicFiles[nextIndex].fileUrl), sortedMusicFiles[nextIndex].name, 0);
+      } catch (err) {
+        setError(t('music.playError'));
+      }
+    }
+  };
+
+  const handlePreviousTrack = async () => {
+    if (activePlaylist) {
+      const tracks = getPlaylistTracks(activePlaylist);
+      if (tracks.length === 0) return;
+      const prevIndex = (activeTrackIndex - 1 + tracks.length) % tracks.length;
+      setActiveTrackIndex(prevIndex);
+      try {
+        await playTrack(gameId, getFileUrl(tracks[prevIndex].fileUrl), tracks[prevIndex].name, 0);
+      } catch (err) {
+        setError(t('music.playError'));
+      }
+    } else {
+      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
+      if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
+      const prevIndex = (currentIndex - 1 + sortedMusicFiles.length) % sortedMusicFiles.length;
+      try {
+        await playTrack(gameId, getFileUrl(sortedMusicFiles[prevIndex].fileUrl), sortedMusicFiles[prevIndex].name, 0);
+      } catch (err) {
+        setError(t('music.playError'));
+      }
+    }
+  };
+
   const handleStartEditPlaylist = (playlist) => {
     setEditingPlaylist(playlist);
     setNewPlaylistName(playlist.name);
@@ -462,7 +532,17 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
           </div>
           <div className="music-tab__progress">
             <span className="music-tab__time">{formatTime(currentTime)}</span>
-            <div className="music-tab__progress-bar">
+            <div
+              className="music-tab__progress-bar"
+              onClick={(e) => {
+                if (duration > 0 && musicState.trackUrl) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const newTime = (clickX / rect.width) * duration;
+                  playTrack(gameId, musicState.trackUrl, musicState.trackName, newTime).catch(console.error);
+                }
+              }}
+            >
               <div
                 className="music-tab__progress-fill"
                 style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}
@@ -471,6 +551,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             <span className="music-tab__time">{formatTime(duration)}</span>
           </div>
           <div className="music-tab__playback-controls">
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePreviousTrack} data-title={t('music.previous')}>⏮</button>
             {musicState.isPlaying ? (
               <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} data-title={t('music.pause')}>⏸</button>
             ) : (
@@ -484,6 +565,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             >
               🔁
             </button>
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handleNextTrack} data-title={t('music.next')}>⏭</button>
           </div>
         </section>
       )}
@@ -660,11 +742,15 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                     togglePlaylist={togglePlaylist}
                     getPlaylistTracks={getPlaylistTracks}
                     handlePlayPlaylist={handlePlayPlaylist}
+                    handlePlayPlaylistFromTrack={handlePlayPlaylistFromTrack}
                     handleStartEditPlaylist={handleStartEditPlaylist}
                     handleDeletePlaylist={handleDeletePlaylist}
                     handleRemoveFromPlaylist={handleRemoveFromPlaylist}
                     sensors={sensors}
                     handleTrackDragEnd={handleTrackDragEnd}
+                    activePlaylist={activePlaylist}
+                    activeTrackIndex={activeTrackIndex}
+                    musicState={musicState}
                     t={t}
                   />
                 ))}
