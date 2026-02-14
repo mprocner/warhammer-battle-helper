@@ -12,7 +12,7 @@ export const getResultColorClass = (isCritSuccess, isCritFailure, isSuccess) => 
  */
 export const getResultColor = (isCritSuccess, isCritFailure, isSuccess) => {
     if (isCritSuccess) return 'var(--log-gold-medium)';
-    if (isCritFailure) return 'var(--log-red-dark)';
+    if (isCritFailure) return 'var(--log-purple)';
     return isSuccess ? 'var(--log-success)' : 'var(--log-red-light)';
 };
 
@@ -24,17 +24,25 @@ export const calculateSuccessLevel = (rollValue, targetValue) => {
 };
 
 /**
- * Determine if roll is a critical success
+ * Check if a d100 roll is a doublet (both dice show the same number)
+ * Doublets: 11, 22, 33, 44, 55, 66, 77, 88, 99, and 100 (00 on real dice)
  */
-export const isCriticalSuccess = (rollValue, isSuccess) => {
-    return rollValue <= 5 && isSuccess;
+export const isDoublet = (rollValue) => {
+    return rollValue === 100 || (rollValue >= 11 && rollValue <= 99 && rollValue % 11 === 0);
 };
 
 /**
- * Determine if roll is a critical failure (fumble)
+ * Determine if roll is a critical success (success + doublet)
+ */
+export const isCriticalSuccess = (rollValue, isSuccess) => {
+    return isSuccess && isDoublet(rollValue);
+};
+
+/**
+ * Determine if roll is a critical failure/fumble (failure + doublet)
  */
 export const isCriticalFailure = (rollValue, isSuccess) => {
-    return rollValue >= 96 && !isSuccess;
+    return !isSuccess && isDoublet(rollValue);
 };
 
 /**

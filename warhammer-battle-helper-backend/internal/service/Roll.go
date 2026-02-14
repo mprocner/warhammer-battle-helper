@@ -26,6 +26,12 @@ func parseInt(s string) int {
 	return val
 }
 
+// isDoublet checks if a d100 roll is a doublet (both dice show the same number).
+// Doublets: 11, 22, 33, 44, 55, 66, 77, 88, 99, and 100 (00 on real dice).
+func isDoublet(roll int) bool {
+	return roll == 100 || (roll >= 11 && roll <= 99 && roll%11 == 0)
+}
+
 func (d Dice) Fight(attacker *models.Character, defender *models.Character, modifier int, defenderModifier int) responses.FightResult {
 	attackerResult := d.Roll()
 	defenderResult := d.Roll()
@@ -55,8 +61,8 @@ func (d Dice) Fight(attacker *models.Character, defender *models.Character, modi
 		TargetValue:   attackerWSWithModifier,
 		Modifier:      modifier,
 		BaseValue:     attackerWS,
-		IsCritSuccess: attackerResult <= 5 && attackerSuccessLevel > 0,
-		IsCritFailure: attackerResult >= 96 && attackerSuccessLevel < 0,
+		IsCritSuccess: isDoublet(attackerResult) && attackerSuccessLevel >= 0,
+		IsCritFailure: isDoublet(attackerResult) && attackerSuccessLevel < 0,
 	}
 
 	// Create defender result
@@ -68,8 +74,8 @@ func (d Dice) Fight(attacker *models.Character, defender *models.Character, modi
 		TargetValue:   defenderWSWithModifier,
 		Modifier:      defenderModifier,
 		BaseValue:     defenderWS,
-		IsCritSuccess: defenderResult <= 5 && defenderSuccessLevel > 0,
-		IsCritFailure: defenderResult >= 96 && defenderSuccessLevel < 0,
+		IsCritSuccess: isDoublet(defenderResult) && defenderSuccessLevel >= 0,
+		IsCritFailure: isDoublet(defenderResult) && defenderSuccessLevel < 0,
 	}
 
 	// Determine winner

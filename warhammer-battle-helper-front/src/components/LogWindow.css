@@ -31,6 +31,12 @@
   --log-gold-medium: #b8941f;
   --log-gold-light: #d4af37;
 
+  /* Purple/Critical Failure */
+  --log-purple-dark: #3a1a5c;
+  --log-purple-medium: #6b3fa0;
+  --log-purple-light: #9b6fd0;
+  --log-purple: var(--log-purple-medium);
+
   /* Backgrounds */
   --log-bg-parchment: #f9f3e8;
   --log-bg-parchment-dark: #ece3d4;
@@ -72,13 +78,13 @@
 
 .wax-seal-token--crit-failure {
   background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%),
-              radial-gradient(circle at 50% 50%, var(--log-red-dark), #6b1818);
-  border: 3px solid var(--log-crit-failure);
-  color: #ffcccc;
+              radial-gradient(circle at 50% 50%, var(--log-purple-medium), var(--log-purple-dark));
+  border: 3px solid var(--log-purple-dark);
+  color: #e8d0ff;
   box-shadow: 0 3px 6px rgba(0,0,0,0.3),
               inset 0 -2px 4px rgba(0,0,0,0.3),
               inset 0 2px 4px rgba(255,255,255,0.2),
-              0 0 10px rgba(139, 36, 36, 0.4);
+              0 0 10px rgba(107, 63, 160, 0.4);
 }
 
 .wax-seal-token--success {
@@ -174,7 +180,7 @@
 }
 
 .log-text--crit-failure {
-  color: var(--log-red-dark);
+  color: var(--log-purple);
 }
 
 .log-text--success {
