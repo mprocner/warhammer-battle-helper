@@ -78,11 +78,11 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t
           </button>
         )}
         <button
-          className="files-tab__item-action"
+          className="files-tab__item-action files-tab__item-action--delete"
           onClick={handleDelete}
           title={t('common.delete')}
         >
-          🗑️
+          ✕
         </button>
       </div>
     </div>
@@ -127,11 +127,11 @@ const DroppableFolderItem = ({ folder, isOver, onNavigate, onRename, onDelete, r
           ✏️
         </button>
         <button
-          className="files-tab__item-action"
+          className="files-tab__item-action files-tab__item-action--delete"
           onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
           title={t('common.delete')}
         >
-          🗑️
+          ✕
         </button>
       </div>
     </div>

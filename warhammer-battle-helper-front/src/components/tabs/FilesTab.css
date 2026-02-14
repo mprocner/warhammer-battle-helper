@@ -290,6 +290,15 @@
   border-color: #7a5c42;
 }
 
+.files-tab__item-action--delete {
+  color: #c94040;
+}
+
+.files-tab__item-action--delete:hover {
+  border-color: #c94040;
+  background: #f8d7da;
+}
+
 /* Rename form */
 .files-tab__rename-form {
   width: 100%;
