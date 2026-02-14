@@ -98,11 +98,11 @@
 .general-tab__now-playing {
   font-family: 'Crimson Text', serif;
   font-size: 0.9rem;
-  color: #2e7d32;
+  color: #8b5e2b;
   font-weight: 600;
   padding: 6px 8px;
   margin-bottom: 8px;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(184, 134, 58, 0.12);
   border-radius: 4px;
   overflow: hidden;
   text-overflow: ellipsis;

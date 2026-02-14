@@ -167,8 +167,8 @@
 
 /* Now Playing */
 .music-tab__now-playing {
-  background: linear-gradient(135deg, #e8f5e9 0%, #dcedc8 100%);
-  border-color: #66bb6a;
+  background: linear-gradient(135deg, #f5e6cc 0%, #eedabc 100%);
+  border-color: #c9975b;
 }
 
 .music-tab__now-playing-info {
@@ -181,14 +181,14 @@
 .music-tab__now-playing-label {
   font-family: 'Cinzel', serif;
   font-size: 0.8rem;
-  color: #2e7d32;
+  color: #8b5e2b;
   font-weight: 700;
 }
 
 .music-tab__now-playing-name {
   font-family: 'Crimson Text', serif;
   font-size: 1rem;
-  color: #1b5e20;
+  color: #6b4423;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -214,7 +214,7 @@
 .music-tab__progress-bar {
   flex: 1;
   height: 6px;
-  background: #c8e6c9;
+  background: #d4c4a8;
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
@@ -222,7 +222,7 @@
 
 .music-tab__progress-fill {
   height: 100%;
-  background: #43a047;
+  background: #b8863a;
   border-radius: 3px;
   transition: width 0.3s linear;
 }
@@ -273,13 +273,13 @@
 }
 
 .music-tab__control-btn--active {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border-color: #28a745;
+  background: linear-gradient(135deg, #f0e0c8 0%, #e4d0b0 100%);
+  border-color: #b8863a;
 }
 
 .music-tab__control-btn--active:hover {
-  background: linear-gradient(135deg, #c3e6cb 0%, #a9dfbf 100%);
-  border-color: #1e7e34;
+  background: linear-gradient(135deg, #e4d0b0 0%, #d4c4a8 100%);
+  border-color: #8b5e2b;
 }
 
 /* Volume Control */
@@ -359,8 +359,8 @@
 }
 
 .music-tab__track-item--playing {
-  background: rgba(76, 175, 80, 0.15);
-  border-color: #66bb6a;
+  background: rgba(184, 134, 58, 0.12);
+  border-color: #c9975b;
 }
 
 .music-tab__track-info {
@@ -456,13 +456,13 @@
 }
 
 .music-tab__track-btn--play {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border-color: #28a745;
-  color: #155724;
+  background: linear-gradient(135deg, #f0e0c8 0%, #e4d0b0 100%);
+  border-color: #b8863a;
+  color: #6b4423;
 }
 
 .music-tab__track-btn--play:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c3e6cb 0%, #a9dfbf 100%);
+  background: linear-gradient(135deg, #e4d0b0 0%, #d4c4a8 100%);
 }
 
 .music-tab__track-btn--play:disabled {
@@ -593,20 +593,20 @@
 
 .music-tab__submit-btn {
   padding: 8px 16px;
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border: 2px solid #28a745;
+  background: linear-gradient(135deg, #f0e0c8 0%, #e4d0b0 100%);
+  border: 2px solid #b8863a;
   border-radius: 4px;
   font-family: 'Crimson Text', serif;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #155724;
+  color: #6b4423;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .music-tab__submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c3e6cb 0%, #a9dfbf 100%);
-  border-color: #1e7e34;
+  background: linear-gradient(135deg, #e4d0b0 0%, #d4c4a8 100%);
+  border-color: #8b5e2b;
 }
 
 .music-tab__submit-btn:disabled {
@@ -634,8 +634,8 @@
 }
 
 .music-tab__playlist-item--active {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: #66bb6a;
+  background: rgba(184, 134, 58, 0.12);
+  border-color: #c9975b;
 }
 
 .music-tab__playlist-header {
@@ -715,9 +715,9 @@
 }
 
 .music-tab__track-btn--current {
-  background: linear-gradient(135deg, #a5d6a7 0%, #81c784 100%);
-  border-color: #2e7d32;
-  color: #1b5e20;
+  background: linear-gradient(135deg, #dcc9a8 0%, #c9b48e 100%);
+  border-color: #8b5e2b;
+  color: #6b4423;
 }
 
 .music-tab__playlist-track-num {
