@@ -1,15 +1,15 @@
-/* Handout Create/Edit Modal - Styled like CharacterSheetPopup */
+/* Handout Create/Edit Modal - Styled like CharacterSheetPopup (parchment theme) */
 .handout-modal {
   position: fixed;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border: 2px solid #8b4513;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 3px solid #7a5c42;
   border-radius: 8px;
-  color: #f5e6d3;
+  color: #3a2f1f;
   font-family: 'Cinzel', serif;
   width: 500px;
   max-width: 90vw;
   max-height: 90vh;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 8px 24px rgba(107, 68, 35, 0.35), 0 0 0 1px rgba(201, 151, 91, 0.3);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -22,10 +22,10 @@
 }
 
 .handout-modal__header {
-  background: linear-gradient(90deg, #8b4513 0%, #a0522d 100%);
+  background: linear-gradient(90deg, #c9975b 0%, #a67c52 100%);
   padding: 10px 12px;
-  border-bottom: 2px solid #654321;
-  border-radius: 6px 6px 0 0;
+  border-bottom: 3px solid #7a5c42;
+  border-radius: 5px 5px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -34,7 +34,7 @@
 }
 
 .handout-modal--minimized .handout-modal__header {
-  border-radius: 6px;
+  border-radius: 5px;
   border-bottom: none;
 }
 
@@ -42,8 +42,8 @@
   margin: 0;
   font-size: 16px;
   font-family: 'Cinzel', serif;
-  color: #f5e6d3;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  color: #fff9f0;
+  text-shadow: 1px 1px 3px rgba(58, 47, 31, 0.6);
   letter-spacing: 1px;
   flex: 1;
 }
@@ -60,10 +60,10 @@
 
 .handout-modal__minimize-btn,
 .handout-modal__close {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(58, 47, 31, 0.25);
+  border: 1px solid #7a5c42;
   border-radius: 4px;
-  color: #f5e6d3;
+  color: #fff9f0;
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
@@ -78,8 +78,8 @@
 }
 
 .handout-modal__minimize-btn:hover {
-  background: rgba(212, 175, 55, 0.3);
-  border-color: #d4af37;
+  background: rgba(58, 47, 31, 0.4);
+  border-color: #f4e8d8;
 }
 
 .handout-modal__close {
@@ -106,17 +106,17 @@
 }
 
 .handout-modal__form::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #e8dcc4;
   border-radius: 4px;
 }
 
 .handout-modal__form::-webkit-scrollbar-thumb {
-  background: #8b4513;
+  background: #c9975b;
   border-radius: 4px;
 }
 
 .handout-modal__form::-webkit-scrollbar-thumb:hover {
-  background: #a0522d;
+  background: #a67c52;
 }
 
 .handout-modal__field {
@@ -128,7 +128,7 @@
 .handout-modal__field label {
   font-size: 11px;
   font-weight: 600;
-  color: #d4af37;
+  color: #6b4423;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -136,10 +136,10 @@
 .handout-modal__field input,
 .handout-modal__field textarea {
   padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid #654321;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
   border-radius: 4px;
-  color: #f5e6d3;
+  color: #3a2f1f;
   font-size: 13px;
   font-family: 'Roboto', sans-serif;
   transition: border-color 0.3s;
@@ -148,8 +148,8 @@
 .handout-modal__field input:focus,
 .handout-modal__field textarea:focus {
   outline: none;
-  border-color: #d4af37;
-  box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+  border-color: #7a5c42;
+  box-shadow: 0 0 5px rgba(122, 92, 66, 0.3);
 }
 
 .handout-modal__field textarea {
@@ -170,25 +170,26 @@
   align-items: center;
   gap: 4px;
   padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
   border-radius: 6px;
   cursor: pointer;
-  color: #b8b8b8;
+  color: #6b4423;
   font-size: 11px;
   transition: all 0.2s ease;
 }
 
 .type-btn:hover {
-  border-color: #8b4513;
-  color: #f5e6d3;
+  border-color: #7a5c42;
+  background: rgba(255, 255, 255, 0.55);
+  color: #3a2f1f;
 }
 
 .type-btn--selected {
-  background: rgba(139, 69, 19, 0.4);
-  border-color: #d4af37;
-  color: #f5e6d3;
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+  background: rgba(201, 151, 91, 0.3);
+  border-color: #7a5c42;
+  color: #3a2f1f;
+  box-shadow: 0 0 8px rgba(122, 92, 66, 0.2);
 }
 
 .type-btn .handout-type-icon {
@@ -204,24 +205,24 @@
 
 .visibility-btn {
   padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
   border-radius: 4px;
   cursor: pointer;
-  color: #b8b8b8;
+  color: #6b4423;
   font-size: 12px;
   transition: all 0.2s ease;
 }
 
 .visibility-btn:hover {
-  border-color: #8b4513;
-  color: #f5e6d3;
+  border-color: #7a5c42;
+  color: #3a2f1f;
 }
 
 .visibility-btn--selected {
-  background: rgba(139, 69, 19, 0.4);
-  border-color: #d4af37;
-  color: #f5e6d3;
+  background: rgba(201, 151, 91, 0.3);
+  border-color: #7a5c42;
+  color: #3a2f1f;
 }
 
 .player-selector {
@@ -230,8 +231,8 @@
   gap: 6px;
   margin-top: 8px;
   padding: 10px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
   border-radius: 4px;
 }
 
@@ -240,20 +241,20 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  color: #b8b8b8;
+  color: #5a4a3a;
   font-size: 12px;
   font-family: 'Roboto', sans-serif;
 }
 
 .player-checkbox:hover {
-  color: #f5e6d3;
+  color: #3a2f1f;
 }
 
 .player-checkbox input {
   width: 14px;
   height: 14px;
   cursor: pointer;
-  accent-color: #8b4513;
+  accent-color: #7a5c42;
 }
 
 /* File Upload */
@@ -268,18 +269,18 @@
   justify-content: center;
   gap: 8px;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px dashed #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px dashed #c9975b;
   border-radius: 6px;
   cursor: pointer;
-  color: #b8b8b8;
+  color: #6b4423;
   transition: all 0.2s ease;
 }
 
 .file-upload-dropzone:hover {
-  border-color: #8b4513;
-  color: #f5e6d3;
-  background: rgba(139, 69, 19, 0.1);
+  border-color: #7a5c42;
+  color: #3a2f1f;
+  background: rgba(201, 151, 91, 0.15);
 }
 
 .upload-icon {
@@ -294,8 +295,8 @@
 .upload-spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #654321;
-  border-top-color: #d4af37;
+  border: 3px solid rgba(122, 92, 66, 0.3);
+  border-top-color: #7a5c42;
   border-radius: 50%;
   animation: modal-spin 1s linear infinite;
 }
@@ -310,8 +311,8 @@
   align-items: center;
   gap: 10px;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
   border-radius: 6px;
 }
 
@@ -320,7 +321,7 @@
   max-height: 150px;
   border-radius: 4px;
   object-fit: contain;
-  border: 1px solid #654321;
+  border: 1px solid #c9975b;
 }
 
 .file-preview__pdf,
@@ -330,7 +331,7 @@
   align-items: center;
   gap: 8px;
   padding: 16px;
-  color: #b8b8b8;
+  color: #6b4423;
 }
 
 .file-preview__pdf .handout-type-icon,
@@ -340,27 +341,27 @@
 
 .file-preview__change {
   padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
   border-radius: 4px;
-  color: #b8b8b8;
+  color: #6b4423;
   cursor: pointer;
   font-size: 11px;
   transition: all 0.2s ease;
 }
 
 .file-preview__change:hover {
-  border-color: #d4af37;
-  color: #f5e6d3;
+  border-color: #7a5c42;
+  color: #3a2f1f;
 }
 
 /* Error Message */
 .handout-modal__error {
   padding: 8px 10px;
-  background: rgba(139, 36, 36, 0.2);
-  border: 1px solid #8b2424;
+  background: rgba(201, 68, 68, 0.1);
+  border: 1px solid #c94444;
   border-radius: 4px;
-  color: #e57373;
+  color: #a93434;
   font-size: 12px;
   font-family: 'Roboto', sans-serif;
 }
@@ -371,7 +372,7 @@
   justify-content: flex-end;
   gap: 10px;
   padding-top: 10px;
-  border-top: 1px solid #654321;
+  border-top: 1px solid #c9975b;
 }
 
 .btn-secondary,
@@ -385,26 +386,26 @@
 }
 
 .btn-secondary {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #654321;
-  color: #b8b8b8;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
+  color: #6b4423;
 }
 
 .btn-secondary:hover {
-  border-color: #8b4513;
-  color: #f5e6d3;
+  border-color: #7a5c42;
+  color: #3a2f1f;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-  border: 1px solid #654321;
-  color: #f5e6d3;
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border: 1px solid #7a5c42;
+  color: #fff9f0;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #a0522d 0%, #cd853f 100%);
-  border-color: #d4af37;
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
+  border-color: #6b4423;
+  box-shadow: 0 0 8px rgba(122, 92, 66, 0.3);
 }
 
 .btn-primary:disabled {

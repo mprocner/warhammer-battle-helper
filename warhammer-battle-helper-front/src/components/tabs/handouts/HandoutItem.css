@@ -92,24 +92,6 @@
   text-overflow: ellipsis;
 }
 
-.handout-item__title:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 0;
-  top: 100%;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 400;
-  white-space: normal;
-  word-break: break-word;
-  max-width: 250px;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .handout-item__visibility {
   display: inline-block;
   font-size: 9px;
@@ -154,4 +136,47 @@
 .handout-item__btn--delete:hover {
   background: rgba(169, 52, 52, 0.15);
   border-color: #a93434;
+}
+
+/* Portal tooltip - positioned to the left of the title */
+.handout-item__tooltip {
+  position: fixed;
+  transform: translateY(-50%) translateX(-100%);
+  margin-left: -12px;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 6px 8px;
+  border: 1px solid #c9975b;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 250px;
+  width: max-content;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  animation: handoutTooltipFadeIn 0.15s ease-out;
+}
+
+.handout-item__tooltip-arrow {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: #c9975b;
+}
+
+@keyframes handoutTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-100%) translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-100%) translateX(0);
+  }
 }

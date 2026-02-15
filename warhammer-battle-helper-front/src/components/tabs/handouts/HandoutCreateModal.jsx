@@ -44,7 +44,7 @@ const HandoutCreateModal = ({
   const [uploadError, setUploadError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
-  const [position, setPosition] = useState({ x: 150, y: 50 });
+  const [position, setPosition] = useState({ x: Math.max(150, window.innerWidth / 2 - 250), y: 50 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -72,7 +72,7 @@ const HandoutCreateModal = ({
       }
       setUploadError('');
       setIsMinimized(false);
-      setPosition({ x: 150, y: 50 });
+      setPosition({ x: Math.max(150, window.innerWidth / 2 - 250), y: 50 });
     }
   }, [isOpen, editHandout]);
 

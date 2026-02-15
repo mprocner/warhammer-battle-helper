@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -16,6 +17,21 @@ const HandoutItem = ({
   onDelete
 }) => {
   const { t } = useTranslation();
+  const [tooltip, setTooltip] = useState(null);
+  const titleRef = useRef(null);
+  const hideTimeout = useRef(null);
+
+  const showTooltip = useCallback(() => {
+    clearTimeout(hideTimeout.current);
+    const el = titleRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setTooltip({ top: rect.top + rect.height / 2, left: rect.left });
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    hideTimeout.current = setTimeout(() => setTooltip(null), 100);
+  }, []);
   const {
     attributes,
     listeners,
@@ -62,7 +78,12 @@ const HandoutItem = ({
           <HandoutTypeIcon type={handout.type} />
         </div>
         <div className="handout-item__info">
-          <h4 className="handout-item__title" data-title={handout.title}>
+          <h4
+            className="handout-item__title"
+            ref={titleRef}
+            onMouseEnter={showTooltip}
+            onMouseLeave={hideTooltip}
+          >
             <span className="handout-item__truncate">{handout.title}</span>
           </h4>
           {/* Visibility on second line (GM only) */}
@@ -98,6 +119,16 @@ const HandoutItem = ({
             🗑️
           </button>
         </div>
+      )}
+      {tooltip && createPortal(
+        <div
+          className="handout-item__tooltip"
+          style={{ top: tooltip.top, left: tooltip.left }}
+        >
+          {handout.title}
+          <div className="handout-item__tooltip-arrow" />
+        </div>,
+        document.body
       )}
     </div>
   );

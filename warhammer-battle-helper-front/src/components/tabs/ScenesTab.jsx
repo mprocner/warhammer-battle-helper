@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene } from '../../api/scenes';
 import './ScenesTab.css';
@@ -15,6 +15,13 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   const [newSceneName, setNewSceneName] = useState('');
   const [newSceneWidth, setNewSceneWidth] = useState(20);
   const [newSceneHeight, setNewSceneHeight] = useState(20);
+
+  // Modal drag & minimize
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [modalPos, setModalPos] = useState({ x: Math.max(150, window.innerWidth / 2 - 200), y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const modalRef = useRef(null);
 
   const fetchScenes = useCallback(async () => {
     if (!gameId) return;
@@ -129,6 +136,37 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
       setError(t('scenes.assignError'));
     }
   };
+
+  // Modal drag handlers
+  const handleModalMouseDown = (e) => {
+    if (e.target.closest('.scenes-tab__modal-header') && !e.target.closest('.scenes-tab__modal-header-buttons')) {
+      setIsDragging(true);
+      const rect = modalRef.current.getBoundingClientRect();
+      setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMouseMove = (e) => {
+      setModalPos({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+    };
+    const handleMouseUp = () => setIsDragging(false);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  // Reset modal state when opening
+  useEffect(() => {
+    if (isCreateOpen) {
+      setIsMinimized(false);
+      setModalPos({ x: Math.max(150, window.innerWidth / 2 - 200), y: 80 });
+    }
+  }, [isCreateOpen]);
 
   if (isLoading) {
     return (
@@ -301,9 +339,34 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
 
       {/* Create scene modal */}
       {isCreateOpen && (
-        <div className="scenes-tab__modal-overlay" onClick={() => setIsCreateOpen(false)}>
-          <div className="scenes-tab__modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          ref={modalRef}
+          className={`scenes-tab__modal ${isMinimized ? 'scenes-tab__modal--minimized' : ''}`}
+          style={{ left: `${modalPos.x}px`, top: `${modalPos.y}px` }}
+          onMouseDown={handleModalMouseDown}
+        >
+          <div
+            className="scenes-tab__modal-header"
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
             <h4>{t('scenes.createScene')}</h4>
+            <div className="scenes-tab__modal-header-buttons">
+              <button
+                className="scenes-tab__modal-minimize-btn"
+                onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
+                title={isMinimized ? t('common.expand') : t('common.minimize')}
+              >
+                {isMinimized ? '▢' : '─'}
+              </button>
+              <button
+                className="scenes-tab__modal-close-btn"
+                onClick={(e) => { e.stopPropagation(); setIsCreateOpen(false); }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          {!isMinimized && (
             <form onSubmit={handleCreateScene}>
               <div className="scenes-tab__field">
                 <label>{t('scenes.name')}</label>
@@ -346,7 +409,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 </button>
               </div>
             </form>
-          </div>
+          )}
         </div>
       )}
     </div>

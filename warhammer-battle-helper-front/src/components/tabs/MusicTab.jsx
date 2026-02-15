@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume } from '../../api/music';
 import { getApiUrl } from '../../api/axios';
@@ -18,6 +19,44 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import './MusicTab.css';
 
+const PortalTooltip = ({ text, targetRef }) => {
+  const [pos, setPos] = useState(null);
+  const hideTimeout = useRef(null);
+
+  const show = useCallback(() => {
+    clearTimeout(hideTimeout.current);
+    const el = targetRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPos({ top: rect.top + rect.height / 2, left: rect.left });
+  }, [targetRef]);
+
+  const hide = useCallback(() => {
+    hideTimeout.current = setTimeout(() => setPos(null), 100);
+  }, []);
+
+  useEffect(() => {
+    const el = targetRef.current;
+    if (!el) return;
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mouseleave', hide);
+    return () => {
+      el.removeEventListener('mouseenter', show);
+      el.removeEventListener('mouseleave', hide);
+      clearTimeout(hideTimeout.current);
+    };
+  }, [targetRef, show, hide]);
+
+  if (!pos) return null;
+  return createPortal(
+    <div className="music-tab__portal-tooltip" style={{ top: pos.top, left: pos.left }}>
+      {text}
+      <div className="music-tab__portal-tooltip-arrow" />
+    </div>,
+    document.body
+  );
+};
+
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return '';
   return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
@@ -32,6 +71,7 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
     transition,
     isDragging
   } = useSortable({ id: `${playlistId}-${track.id}` });
+  const nameRef = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -45,18 +85,19 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
         <span className="music-tab__drag-icon">⋮⋮</span>
       </div>
       <span className="music-tab__playlist-track-num">{index + 1}.</span>
-      <span className="music-tab__playlist-track-name" data-title={track.name}><span className="music-tab__truncate">{track.name}</span></span>
+      <span className="music-tab__playlist-track-name" ref={nameRef}><span className="music-tab__truncate">{track.name}</span></span>
+      <PortalTooltip text={track.name} targetRef={nameRef} />
       <button
         className={`music-tab__track-btn music-tab__track-btn--play ${isCurrentTrack ? 'music-tab__track-btn--current' : ''}`}
         onClick={() => handlePlayPlaylistFromTrack(playlistId, index)}
-        data-title={t('music.play')}
+        title={t('music.play')}
       >
         ▶
       </button>
       <button
         className="music-tab__track-btn music-tab__track-btn--delete"
         onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
-        data-title={t('common.delete')}
+        title={t('common.delete')}
       >
         ✕
       </button>
@@ -73,6 +114,7 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
     transition,
     isDragging
   } = useSortable({ id: playlist.id });
+  const playlistNameRef = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -89,27 +131,28 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
           <span className="music-tab__drag-icon">⋮⋮</span>
         </div>
         <span className={`music-tab__chevron ${!expandedPlaylists[playlist.id] ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
-        <span className="music-tab__playlist-name" data-title={playlist.name}><span className="music-tab__truncate">{playlist.name} ({tracks.length})</span></span>
+        <span className="music-tab__playlist-name" ref={playlistNameRef}><span className="music-tab__truncate">{playlist.name} ({tracks.length})</span></span>
+        <PortalTooltip text={playlist.name} targetRef={playlistNameRef} />
         <div className="music-tab__playlist-actions" onClick={(e) => e.stopPropagation()}>
           <button
             className="music-tab__track-btn music-tab__track-btn--play"
             onClick={() => handlePlayPlaylist(playlist)}
             disabled={tracks.length === 0}
-            data-title={t('music.play')}
+            title={t('music.play')}
           >
             ▶
           </button>
           <button
             className="music-tab__track-btn"
             onClick={() => handleStartEditPlaylist(playlist)}
-            data-title={t('music.editPlaylist')}
+            title={t('music.editPlaylist')}
           >
             ✎
           </button>
           <button
             className="music-tab__track-btn music-tab__track-btn--delete"
             onClick={() => handleDeletePlaylist(playlist)}
-            data-title={t('common.delete')}
+            title={t('common.delete')}
           >
             ✕
           </button>
@@ -134,6 +177,16 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
         </DndContext>
       </div>
     </div>
+  );
+};
+
+const TrackName = ({ name }) => {
+  const ref = useRef(null);
+  return (
+    <>
+      <span className="music-tab__track-name" ref={ref}><span className="music-tab__truncate">{name}</span></span>
+      <PortalTooltip text={name} targetRef={ref} />
+    </>
   );
 };
 
@@ -551,21 +604,21 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             <span className="music-tab__time">{formatTime(duration)}</span>
           </div>
           <div className="music-tab__playback-controls">
-            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePreviousTrack} data-title={t('music.previous')}>⏮</button>
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePreviousTrack} title={t('music.previous')}>⏮</button>
             {musicState.isPlaying ? (
-              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} data-title={t('music.pause')}>⏸</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
             ) : (
-              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={() => handleResume()} data-title={t('music.play')}>▶</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={() => handleResume()} title={t('music.play')}>▶</button>
             )}
-            <button className="music-tab__control-btn" onClick={handleStop} data-title={t('music.stop')}>⏹</button>
+            <button className="music-tab__control-btn" onClick={handleStop} title={t('music.stop')}>⏹</button>
             <button
               className={`music-tab__control-btn ${loop ? 'music-tab__control-btn--active' : ''}`}
               onClick={() => setLoop(!loop)}
-              data-title={t('music.loop')}
+              title={t('music.loop')}
             >
               🔁
             </button>
-            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handleNextTrack} data-title={t('music.next')}>⏭</button>
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handleNextTrack} title={t('music.next')}>⏭</button>
           </div>
         </section>
       )}
@@ -599,7 +652,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
           <button
             className="music-tab__add-btn"
             onClick={(e) => { e.stopPropagation(); setSearchOpen(prev => { if (prev) setSearchQuery(''); return !prev; }); }}
-            data-title={t('music.searchPlaceholder')}
+            title={t('music.searchPlaceholder')}
           >
             🔍
           </button>
@@ -607,7 +660,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             className="music-tab__add-btn"
             onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
             disabled={uploading}
-            data-title={t('music.uploadMusic')}
+            title={t('music.uploadMusic')}
           >
             {uploading ? '...' : '+'}
           </button>
@@ -640,19 +693,19 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
               {sortedMusicFiles.map(file => (
                 <div key={file.id} className={`music-tab__track-item ${isTrackPlaying(file) ? 'music-tab__track-item--playing' : ''}`}>
                   <div className="music-tab__track-info">
-                    <span className="music-tab__track-name" data-title={file.name}><span className="music-tab__truncate">{file.name}</span></span>
+                    <TrackName name={file.name} />
                   </div>
                   <div className="music-tab__track-actions">
                     {isTrackPlaying(file) ? (
-                      <button className="music-tab__track-btn music-tab__track-btn--playback" onClick={handlePause} data-title={t('music.pause')}>⏸</button>
+                      <button className="music-tab__track-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
                     ) : (
-                      <button className="music-tab__track-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} data-title={t('music.play')}>▶</button>
+                      <button className="music-tab__track-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}>▶</button>
                     )}
                     <div className="music-tab__add-to-playlist-wrapper">
                       <button
                         className="music-tab__track-btn"
                         onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
-                        data-title={t('music.addToPlaylist')}
+                        title={t('music.addToPlaylist')}
                       >
                         +📋
                       </button>
@@ -670,7 +723,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                         </div>
                       )}
                     </div>
-                    <button className="music-tab__track-btn music-tab__track-btn--delete" onClick={() => handleDelete(file)} data-title={t('common.delete')}>✕</button>
+                    <button className="music-tab__track-btn music-tab__track-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}>✕</button>
                   </div>
                 </div>
               ))}

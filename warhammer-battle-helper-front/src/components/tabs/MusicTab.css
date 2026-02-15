@@ -137,24 +137,6 @@
   position: relative;
 }
 
-.music-tab__add-btn[data-title]:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 100%;
-  margin-bottom: 4px;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .music-tab__add-btn:hover:not(:disabled) {
   border-color: #6b4423;
   background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
@@ -243,24 +225,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-}
-
-.music-tab__control-btn[data-title]:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 100%;
-  margin-bottom: 4px;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
 }
 
 .music-tab__control-btn:hover {
@@ -387,22 +351,6 @@
   white-space: nowrap;
 }
 
-.music-tab__track-name:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 0;
-  bottom: 100%;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .music-tab__track-actions {
   display: flex;
   gap: 4px;
@@ -426,24 +374,6 @@
   justify-content: center;
   box-sizing: border-box;
   position: relative;
-}
-
-.music-tab__track-btn[data-title]:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 100%;
-  margin-bottom: 4px;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
 }
 
 .music-tab__track-btn:hover {
@@ -663,23 +593,6 @@
   white-space: nowrap;
 }
 
-.music-tab__playlist-name:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 0;
-  top: 100%;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: 'Crimson Text', serif;
-  font-size: 0.8rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .music-tab__playlist-count {
   font-family: 'Crimson Text', serif;
   font-size: 0.8rem;
@@ -743,22 +656,6 @@
   white-space: nowrap;
 }
 
-.music-tab__playlist-track-name:hover::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 0;
-  bottom: 100%;
-  background: #4a3728;
-  color: #f5ebe0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 400;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: none;
-}
-
 .music-tab__playlist-actions {
   display: flex;
   gap: 4px;
@@ -785,5 +682,48 @@
   color: #a0896e;
   letter-spacing: 2px;
   user-select: none;
+}
+
+/* Portal tooltip - positioned to the left of the name */
+.music-tab__portal-tooltip {
+  position: fixed;
+  transform: translateY(-50%) translateX(-100%);
+  margin-left: -12px;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 6px 8px;
+  border: 1px solid #c9975b;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 250px;
+  width: max-content;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  animation: musicTooltipFadeIn 0.15s ease-out;
+}
+
+.music-tab__portal-tooltip-arrow {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: #c9975b;
+}
+
+@keyframes musicTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-100%) translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-100%) translateX(0);
+  }
 }
 
