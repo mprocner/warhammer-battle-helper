@@ -116,7 +116,7 @@ func main() {
 	// --- END AUTH ---
 
 	// --- PROTECTED ---
-	characterHandler := http.CharacterHandler{CharacterRepo: charRepo}
+	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo}
 
 	r.GET("/profile", http.JWTAuthMiddleware(), func(c *gin.Context) {
 		token, _ := c.Get("jwt")
@@ -134,7 +134,7 @@ func main() {
 	r.PUT("/characters/:id", http.JWTAuthMiddleware(), characterHandler.UpdateCharacter)
 
 	// --- GAME ROUTES ---
-	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
+	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, CharacterRepo: charRepo}
 
 	// Public game routes
 	r.GET("/games", gameHandler.GetGames)
@@ -144,6 +144,7 @@ func main() {
 	r.POST("/games", http.JWTAuthMiddleware(), gameHandler.CreateGame)
 	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
 	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
+	r.GET("/games/:id/characters/all", http.JWTAuthMiddleware(), gameHandler.GetAllGameCharacters)
 	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), gameHandler.AddCharacter)
 	r.PUT("/games/:id/characters/move", http.JWTAuthMiddleware(), gameHandler.MoveCharacter)
 	r.DELETE("/games/:id/characters/:characterId", http.JWTAuthMiddleware(), gameHandler.RemoveCharacter)

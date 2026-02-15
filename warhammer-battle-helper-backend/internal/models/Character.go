@@ -1,9 +1,14 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 type Character struct {
@@ -73,13 +78,84 @@ type MovementInfo struct {
 	Run      string `bson:"run" json:"run"`
 }
 
+// FlexInt handles both string and int values from BSON/JSON (for backward compatibility)
+type FlexInt int
+
+func (fi *FlexInt) UnmarshalJSON(data []byte) error {
+	// Try int first
+	var i int
+	if err := json.Unmarshal(data, &i); err == nil {
+		*fi = FlexInt(i)
+		return nil
+	}
+	// Try string
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		if s == "" {
+			*fi = 0
+			return nil
+		}
+		val, err := strconv.Atoi(s)
+		if err != nil {
+			return err
+		}
+		*fi = FlexInt(val)
+		return nil
+	}
+	return fmt.Errorf("cannot unmarshal %s into FlexInt", string(data))
+}
+
+func (fi FlexInt) MarshalJSON() ([]byte, error) {
+	return json.Marshal(int(fi))
+}
+
+func (fi *FlexInt) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+	switch t {
+	case bsontype.Int32:
+		i32, _, ok := bsoncore.ReadInt32(data)
+		if !ok {
+			return fmt.Errorf("cannot read int32")
+		}
+		*fi = FlexInt(i32)
+	case bsontype.Int64:
+		i64, _, ok := bsoncore.ReadInt64(data)
+		if !ok {
+			return fmt.Errorf("cannot read int64")
+		}
+		*fi = FlexInt(i64)
+	case bsontype.Double:
+		f, _, ok := bsoncore.ReadDouble(data)
+		if !ok {
+			return fmt.Errorf("cannot read double")
+		}
+		*fi = FlexInt(int(f))
+	case bsontype.String:
+		s, _, ok := bsoncore.ReadString(data)
+		if !ok {
+			return fmt.Errorf("cannot read string")
+		}
+		if s == "" {
+			*fi = 0
+		} else {
+			val, err := strconv.Atoi(s)
+			if err != nil {
+				return err
+			}
+			*fi = FlexInt(val)
+		}
+	default:
+		*fi = 0
+	}
+	return nil
+}
+
 type WoundsInfo struct {
-	SB      string `bson:"sb" json:"sb"`
-	TB      string `bson:"tb" json:"tb"`
-	WPB     string `bson:"wpb" json:"wpb"`
-	Hardy   string `bson:"hardy" json:"hardy"`
-	Total   string `bson:"total" json:"total"`
-	Current *int   `bson:"current,omitempty" json:"current,omitempty"`
+	SB      FlexInt `bson:"sb" json:"sb"`
+	TB      FlexInt `bson:"tb" json:"tb"`
+	WPB     FlexInt `bson:"wpb" json:"wpb"`
+	Hardy   FlexInt `bson:"hardy" json:"hardy"`
+	Total   FlexInt `bson:"total" json:"total"`
+	Current *int    `bson:"current,omitempty" json:"current,omitempty"`
 }
 
 type Talent struct {

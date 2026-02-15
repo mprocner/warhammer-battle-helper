@@ -772,6 +772,13 @@ header nav a:hover::after {
   font-weight: 600;
 }
 
+.character-owner {
+  font-size: 12px;
+  color: #5a4a3a;
+  font-weight: 600;
+  margin-top: -2px;
+}
+
 .character-position {
   font-size: 11px;
   color: #7a5c42;

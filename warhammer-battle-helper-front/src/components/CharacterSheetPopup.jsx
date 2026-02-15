@@ -11,7 +11,7 @@ import AvatarUpload from './AvatarUpload';
 import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../api/axios'; 
 
-function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token }) {
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false }) {
     const { t } = useTranslation(['translation', 'skills', 'talents', 'weapons', 'armour']); 
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState({ x: 100, y: 100 });
@@ -62,6 +62,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             }
         };
     }, []);
+
+    // Build character save URL, appending gameId for GM editing other players' characters
+    const getCharacterSaveUrl = useCallback((charId) => {
+        if (isGM && gameId) {
+            return `/characters/${charId}?gameId=${gameId}`;
+        }
+        return `/characters/${charId}`;
+    }, [isGM, gameId]);
 
     // Close tooltip when clicking outside
     useEffect(() => {
@@ -696,7 +704,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setSaveSuccess(false);
         try {
             await axiosInstance.put(
-                `/characters/${updatedCharacter.id}`,
+                getCharacterSaveUrl(updatedCharacter.id),
                 updatedCharacter
             );
 
@@ -909,7 +917,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setSaveSuccess(false);
         try {
             await axiosInstance.put(
-                `/characters/${updatedCharacter.id}`,
+                getCharacterSaveUrl(updatedCharacter.id),
                 updatedCharacter
             );
 
@@ -924,7 +932,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             alert('Failed to save character: ' + (error.response?.data?.error || error.message));
         } finally {
             setIsSaving(false);
-        } 
+        }
     };
 
     // Handle characteristic click for rolling
@@ -1100,7 +1108,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setSaveSuccess(false);
         try {
             const response = await axiosInstance.put(
-                `/characters/${editedCharacter.id}`,
+                getCharacterSaveUrl(editedCharacter.id),
                 editedCharacter
             );
 
@@ -1122,7 +1130,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         } finally {
             setIsSaving(false);
         }
-    }, [editedCharacter, onCharacterUpdate]);
+    }, [editedCharacter, onCharacterUpdate, getCharacterSaveUrl]);
 
     // Auto-save when character is edited (with debouncing)
     useEffect(() => {
@@ -1505,23 +1513,23 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                 <div className="three-col-grid">
                                     <div className="mini-field">
                                         <label>{t('characterSheet.sb')}</label>
-                                        <input type="text" value={editedCharacter.wounds?.sb || ''} onChange={(e) => handleFieldChange('wounds.sb', e.target.value)} />
+                                        <input type="number" value={editedCharacter.wounds?.sb ?? 0} onChange={(e) => handleFieldChange('wounds.sb', parseInt(e.target.value) || 0)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>{t('characterSheet.tbPlus2')}</label>
-                                        <input type="text" value={editedCharacter.wounds?.tb || ''} onChange={(e) => handleFieldChange('wounds.tb', e.target.value)} />
+                                        <input type="number" value={editedCharacter.wounds?.tb ?? 0} onChange={(e) => handleFieldChange('wounds.tb', parseInt(e.target.value) || 0)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>{t('characterSheet.wpb')}</label>
-                                        <input type="text" value={editedCharacter.wounds?.wpb || ''} onChange={(e) => handleFieldChange('wounds.wpb', e.target.value)} />
+                                        <input type="number" value={editedCharacter.wounds?.wpb ?? 0} onChange={(e) => handleFieldChange('wounds.wpb', parseInt(e.target.value) || 0)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>{t('characterSheet.hardy')}</label>
-                                        <input type="text" value={editedCharacter.wounds?.hardy || ''} onChange={(e) => handleFieldChange('wounds.hardy', e.target.value)} />
+                                        <input type="number" value={editedCharacter.wounds?.hardy ?? 0} onChange={(e) => handleFieldChange('wounds.hardy', parseInt(e.target.value) || 0)} />
                                     </div>
                                     <div className="mini-field">
                                         <label>{t('characterSheet.total')}</label>
-                                        <input type="text" value={editedCharacter.wounds?.total || ''} onChange={(e) => handleFieldChange('wounds.total', e.target.value)} />
+                                        <input type="number" value={editedCharacter.wounds?.total ?? 0} onChange={(e) => handleFieldChange('wounds.total', parseInt(e.target.value) || 0)} />
                                     </div>
                                 </div>
                             </div>

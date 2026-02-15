@@ -12,6 +12,7 @@ import (
 
 type CharacterHandler struct {
 	CharacterRepo *repository.CharactersRepository
+	GameRepo      *repository.GameRepository
 }
 
 type CreateCharacterRequest struct {
@@ -128,7 +129,7 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
-	// Verify the character belongs to the user
+	// Verify the character belongs to the user (or user is GM of the specified game)
 	existingCharacter, err := h.CharacterRepo.GetByID(characterID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
@@ -136,8 +137,20 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 	}
 
 	if existingCharacter.OwnerID.Hex() != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
-		return
+		// Check if user is GM of the specified game
+		gameID := c.Query("gameId")
+		isGM := false
+		if gameID != "" && h.GameRepo != nil {
+			game, err := h.GameRepo.GetByID(gameID)
+			if err == nil {
+				userObjID, _ := primitive.ObjectIDFromHex(userID)
+				isGM = game.GameMasterID == userObjID
+			}
+		}
+		if !isGM {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
+			return
+		}
 	}
 
 	var updatedCharacter models.Character

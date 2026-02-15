@@ -102,8 +102,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
   // Select character and highlight nearby targets
   const handleSelectCharacter = (character) => {
-    // Only allow selecting own characters in multiplayer mode
-    if (gameId && token && !isOwnCharacter(character.id)) {
+    // Only allow selecting own characters in multiplayer mode (GM can select any)
+    if (gameId && token && !isGM && !isOwnCharacter(character.id)) {
       return; // Don't select other players' characters
     }
 
@@ -346,8 +346,22 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const fetchCharacters = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await axiosInstance.get('/my-characters');
-      const charactersData = res.data || [];
+
+      let charactersData;
+      if (isGM && gameId && token) {
+        // GM fetches all game participants' characters
+        const res = await fetch(`${getApiUrl()}/games/${gameId}/characters/all`, {
+          headers: getApiHeaders({
+            'Authorization': `Bearer ${token}`
+          })
+        });
+        if (!res.ok) throw new Error('Failed to fetch all characters');
+        charactersData = await res.json();
+      } else {
+        const res = await axiosInstance.get('/my-characters');
+        charactersData = res.data || [];
+      }
+
       setInitialCharacters(charactersData);
 
       // Filter out characters that are currently on the grid
@@ -367,7 +381,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         return charactersData.filter(
           char => !characterIdsOnGrid.has(char.id)
         );
-      }); 
+      });
 
       setError(null);
     } catch (e) {
@@ -376,7 +390,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isGM, gameId, token]);
 
   // Handle adding a new character - creates minimal character and opens sheet for editing
   const handleAddCharacter = useCallback(async () => {
@@ -575,8 +589,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
     if (!draggedChar) { setActiveId(null); setOverId(null); return; }
 
-    // In multiplayer mode, only allow moving own characters
-    if (gameId && token && !isOwnCharacter(draggedChar.id)) {
+    // In multiplayer mode, only allow moving own characters (GM can move any)
+    if (gameId && token && !isGM && !isOwnCharacter(draggedChar.id)) {
       setActiveId(null); setOverId(null); return;
     }
 
@@ -703,6 +717,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
+            isGM={isGM}
             autoOpenSheet={autoOpenCharacterSheet}
             onSheetOpened={() => setAutoOpenCharacterSheet(false)}
           />
@@ -779,6 +794,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                         {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
                       </div>
                     </div>
+                    {isGM && char.ownerUsername && (
+                      <div className="character-owner">{char.ownerUsername}</div>
+                    )}
                     <div className="character-position">
                       {onGrid ? 'On Grid' : 'Available'}
                       <button
@@ -829,7 +847,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                       onCharacterUpdate={handleCharacterUpdate}
                       onSelectCharacter={handleSelectCharacter}
                       selectedCharacterId={selectedCharacter?.id}
-                      isOwnCharacter={zone.character ? isOwnCharacter(zone.character.id) : false}
+                      isOwnCharacter={zone.character ? (isGM || isOwnCharacter(zone.character.id)) : false}
                       isMultiplayer={!!(gameId && token)}
                   />
                 ))}

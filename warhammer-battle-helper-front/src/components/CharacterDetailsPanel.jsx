@@ -16,6 +16,7 @@ function CharacterDetailsPanel({
     addLogMessage,
     gameId = null,
     token = null,
+    isGM = false,
     autoOpenSheet = false,
     onSheetOpened = null
 }) {
@@ -36,6 +37,14 @@ function CharacterDetailsPanel({
         }
     }, [autoOpenSheet, character, onSheetOpened]);
 
+    // Build character save URL, appending gameId for GM editing other players' characters
+    const getCharacterSaveUrl = (charId) => {
+        if (isGM && gameId) {
+            return `/characters/${charId}?gameId=${gameId}`;
+        }
+        return `/characters/${charId}`;
+    };
+
     // Initialize wounds.current to wounds.total if not set
     useEffect(() => {
         if (character && character.wounds?.total != null && character.wounds?.current == null) {
@@ -43,10 +52,10 @@ function CharacterDetailsPanel({
                 ...character,
                 wounds: {
                     ...character.wounds,
-                    current: character.wounds.total
+                    current: character.wounds.total || 0
                 }
             };
-            axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter).catch((error) => {
+            axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter).catch((error) => {
                 console.error('Error initializing wounds.current:', error);
             });
             onCharacterUpdate(updatedCharacter);
@@ -236,7 +245,7 @@ function CharacterDetailsPanel({
 
         // Save to backend
         try {
-            await axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter);
+            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
             console.log('Fortune updated and saved');
         } catch (error) {
             console.error('Error saving fortune change:', error);
@@ -269,7 +278,7 @@ function CharacterDetailsPanel({
 
         woundsSaveTimerRef.current = setTimeout(async () => {
             try {
-                await axiosInstance.put(`/characters/${updatedCharacter.id}`, updatedCharacter);
+                await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
             } catch (error) {
                 console.error('Error saving wounds:', error);
                 if (addLogMessage) {
@@ -703,6 +712,7 @@ function CharacterDetailsPanel({
                     addLogMessage={addLogMessage}
                     gameId={gameId}
                     token={token}
+                    isGM={isGM}
                 />
             )}
 
