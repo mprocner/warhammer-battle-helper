@@ -856,6 +856,164 @@ header nav a:hover::after {
   opacity: 1;
 }
 
+.character-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.clone-btn {
+  background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+  border: 1px solid #6b5a3a;
+  border-radius: 4px;
+  color: #d4c4a0;
+  font-size: 14px;
+  font-weight: bold;
+  width: 28px;
+  height: 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.clone-btn:hover {
+  background: linear-gradient(135deg, #5a4a3a 0%, #4a3a2a 100%);
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.clone-btn:active {
+  transform: scale(0.95);
+}
+
+.clone-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: rgba(20, 15, 10, 0.95);
+  color: #d4c4a0;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  border: 1px solid #6b5a3a;
+  margin-bottom: 4px;
+  font-weight: normal;
+}
+
+.clone-btn:hover::after {
+  opacity: 1;
+}
+
+.clone-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.clone-modal {
+  background: linear-gradient(135deg, #2a2218 0%, #1e1812 100%);
+  border: 2px solid #6b5a3a;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 280px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.clone-modal h3 {
+  font-family: 'Cinzel', serif;
+  color: #d4af37;
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+.clone-modal__character-name {
+  color: #d4c4a0;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+.clone-modal__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #d4c4a0;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.clone-modal__input {
+  width: 80px;
+  padding: 6px 10px;
+  border: 2px solid #6b5a3a;
+  border-radius: 4px;
+  background: #1a1410;
+  color: #d4c4a0;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.clone-modal__input:focus {
+  outline: none;
+  border-color: #d4af37;
+  box-shadow: 0 0 6px rgba(212, 175, 55, 0.2);
+}
+
+.clone-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.clone-modal__btn {
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #6b5a3a;
+}
+
+.clone-modal__btn--cancel {
+  background: transparent;
+  color: #d4c4a0;
+}
+
+.clone-modal__btn--cancel:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.clone-modal__btn--confirm {
+  background: linear-gradient(135deg, #4a3a2a 0%, #3a2a1a 100%);
+  color: #d4af37;
+  border-color: #6b5a3a;
+}
+
+.clone-modal__btn--confirm:hover {
+  background: linear-gradient(135deg, #5a4a3a 0%, #4a3a2a 100%);
+  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.2);
+}
+
 /* ================== SELECTED ZONE HIGHLIGHT ================== */
 .fight-zone.selected {
   border: 3px solid var(--brass-bright);

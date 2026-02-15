@@ -89,6 +89,11 @@
     "careerPlaceholder": "e.g., Soldier, Merchant",
     "nameRequired": "Character name is required",
     "createError": "Failed to create character",
+    "cloneError": "Failed to clone character",
+    "clone": "Clone",
+    "cloneTitle": "Clone Character",
+    "cloneCount": "Number of clones",
+    "cloneConfirm": "Clone",
     "characterCreated": "Character \"{{name}}\" created",
     "newCharacter": "New Character"
   },

@@ -3,6 +3,7 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,10 @@ type CreateCharacterRequest struct {
 	AdvancedSkills  map[string]int              `json:"advancedSkills"`
 	Weapons         []models.Weapon             `json:"weapons"`
 	Talents         []models.Talent             `json:"talents"`
+}
+
+type CloneCharacterRequest struct {
+	Count int `json:"count" binding:"required,min=1,max=20"`
 }
 
 // GetMyCharacters returns all characters owned by the authenticated user
@@ -169,4 +174,80 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updatedCharacter)
+}
+
+// CloneCharacter clones an existing character N times (GM only)
+func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
+	token, exists := c.Get("jwt")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
+		return
+	}
+
+	characterID := c.Param("id")
+	gameID := c.Query("gameId")
+
+	if gameID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "gameId query parameter is required"})
+		return
+	}
+
+	// Verify user is GM of the game
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+
+	userObjID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if game.GameMasterID != userObjID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only the Game Master can clone characters"})
+		return
+	}
+
+	var req CloneCharacterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Fetch the original character
+	original, err := h.CharacterRepo.GetByID(characterID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
+		return
+	}
+
+	clones := make([]*models.Character, 0, req.Count)
+	for i := 1; i <= req.Count; i++ {
+		clone := *original
+		clone.ID = primitive.NilObjectID
+		clone.BasicInfo.Name = fmt.Sprintf("%s %d", original.BasicInfo.Name, i)
+		clone.OwnerID = original.OwnerID
+
+		if err := h.CharacterRepo.Create(&clone); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create clone"})
+			return
+		}
+		clones = append(clones, &clone)
+	}
+
+	c.JSON(http.StatusCreated, clones)
 }

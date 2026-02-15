@@ -5,6 +5,7 @@ import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
 import ModifierSelectionModal from './ModifierSelectionModal';
+import CloneCharacterModal from './CloneCharacterModal';
 import SceneViewport from './scene/SceneViewport';
 import { CELL_SIZE } from '../constants/scene';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
@@ -68,6 +69,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
   // Auto-open character sheet after creating new character
   const [autoOpenCharacterSheet, setAutoOpenCharacterSheet] = useState(false);
+
+  // Clone character popup
+  const [cloneTarget, setCloneTarget] = useState(null);
 
   // Keep fightZonesRef in sync with fightZones state
   useEffect(() => {
@@ -438,6 +442,23 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   }, [fetchCharacters, addLogMessage, t]);
 
+  const handleCloneCharacter = useCallback(async (count) => {
+    if (!cloneTarget || !gameId) return;
+    try {
+      const response = await axiosInstance.post(
+        `/characters/${cloneTarget.id}/clone?gameId=${gameId}`,
+        { count }
+      );
+      if (response.data) {
+        await fetchCharacters();
+      }
+      setCloneTarget(null);
+    } catch (err) {
+      console.error('Failed to clone character:', err);
+      addLogMessage(t('character.cloneError'), 'error');
+    }
+  }, [cloneTarget, gameId, fetchCharacters, addLogMessage, t]);
+
   const handleCharacterUpdate = (updatedCharacter) => {
     // Update local state only - saving is handled by the component making the changes
 
@@ -799,13 +820,27 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                     )}
                     <div className="character-position">
                       {onGrid ? 'On Grid' : 'Available'}
-                      <button
-                        className="grid-toggle-btn"
-                        onClick={handleGridToggle}
-                        title={onGrid ? 'Remove from grid' : 'Add to grid'}
-                      >
-                        {onGrid ? '←' : '→'}
-                      </button>
+                      <div className="character-actions">
+                        {isGM && (
+                          <button
+                            className="clone-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCloneTarget(char);
+                            }}
+                            title={t('character.clone')}
+                          >
+                            ⧉
+                          </button>
+                        )}
+                        <button
+                          className="grid-toggle-btn"
+                          onClick={handleGridToggle}
+                          title={onGrid ? 'Remove from grid' : 'Add to grid'}
+                        >
+                          {onGrid ? '←' : '→'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -877,6 +912,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           </div>
         )}
       </DragOverlay>
+
+      {/* Clone Character Modal */}
+      {cloneTarget && (
+        <CloneCharacterModal
+          character={cloneTarget}
+          onConfirm={handleCloneCharacter}
+          onCancel={() => setCloneTarget(null)}
+        />
+      )}
 
       {/* Modifier Selection Modal */}
       {showModifierModal && (

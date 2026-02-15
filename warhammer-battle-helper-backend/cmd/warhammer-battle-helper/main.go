@@ -132,6 +132,7 @@ func main() {
 	r.GET("/my-characters", http.JWTAuthMiddleware(), characterHandler.GetMyCharacters)
 	r.POST("/my-characters", http.JWTAuthMiddleware(), characterHandler.CreateCharacter)
 	r.PUT("/characters/:id", http.JWTAuthMiddleware(), characterHandler.UpdateCharacter)
+	r.POST("/characters/:id/clone", http.JWTAuthMiddleware(), characterHandler.CloneCharacter)
 
 	// --- GAME ROUTES ---
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, CharacterRepo: charRepo}

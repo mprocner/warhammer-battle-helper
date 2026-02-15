@@ -89,6 +89,11 @@
     "careerPlaceholder": "np. Żołnierz, Kupiec",
     "nameRequired": "Imię postaci jest wymagane",
     "createError": "Nie udało się utworzyć postaci",
+    "cloneError": "Nie udało się sklonować postaci",
+    "clone": "Klonuj",
+    "cloneTitle": "Klonuj Postać",
+    "cloneCount": "Liczba klonów",
+    "cloneConfirm": "Klonuj",
     "characterCreated": "Postać \"{{name}}\" została utworzona",
     "newCharacter": "Nowa Postać"
   },
