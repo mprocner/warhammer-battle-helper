@@ -519,7 +519,7 @@
     "root": "Root"
   },
   "dice": {
-    "label": "K{{sides}}",
+    "label": "D{{sides}}",
     "custom": "Custom",
     "roll": "Roll",
     "chatPlaceholder": "Send a message...",
