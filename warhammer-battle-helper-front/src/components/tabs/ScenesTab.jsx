@@ -197,44 +197,45 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
         </div>
       )}
 
-      {/* Scene list */}
-      <div className="scenes-tab__list">
-        {scenes.length === 0 ? (
-          <div className="scenes-tab__empty">
-            <p>{t('scenes.noScenes')}</p>
-          </div>
-        ) : (
-          scenes.map(scene => (
-            <div
-              key={scene.id}
-              className={`scenes-tab__card ${selectedSceneId === scene.id ? 'scenes-tab__card--selected' : ''}`}
-              onClick={() => onSceneChange && onSceneChange(scene.id === selectedSceneId ? null : scene.id)}
-            >
-              <div className="scenes-tab__card-header">
-                <span className="scenes-tab__card-name">
-                  {scene.name}
-                  {scene.isDefault && <span className="scenes-tab__badge">{t('scenes.default')}</span>}
-                </span>
-                <span className="scenes-tab__card-info">
-                  {scene.gridWidth}x{scene.gridHeight} · {(scene.assignedPlayers || []).length} {t('scenes.players')}
-                </span>
-              </div>
-              {!scene.isDefault && (
-                <button
-                  className="scenes-tab__card-delete"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteScene(scene.id); }}
-                  title={t('common.delete')}
-                >
-                  🗑️
-                </button>
-              )}
+      {/* Scene list + settings scrollable area */}
+      <div className="scenes-tab__content">
+        <div className="scenes-tab__list">
+          {scenes.length === 0 ? (
+            <div className="scenes-tab__empty">
+              <p>{t('scenes.noScenes')}</p>
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            scenes.map(scene => (
+              <div
+                key={scene.id}
+                className={`scenes-tab__card ${selectedSceneId === scene.id ? 'scenes-tab__card--selected' : ''}`}
+                onClick={() => onSceneChange && onSceneChange(scene.id === selectedSceneId ? null : scene.id)}
+              >
+                <div className="scenes-tab__card-header">
+                  <span className="scenes-tab__card-name">
+                    {scene.name}
+                    {scene.isDefault && <span className="scenes-tab__badge">{t('scenes.default')}</span>}
+                  </span>
+                  <span className="scenes-tab__card-info">
+                    {scene.gridWidth}x{scene.gridHeight} · {(scene.assignedPlayers || []).length} {t('scenes.players')}
+                  </span>
+                </div>
+                {!scene.isDefault && (
+                  <button
+                    className="scenes-tab__card-delete"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteScene(scene.id); }}
+                    title={t('common.delete')}
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
 
-      {/* Selected scene settings */}
-      {selectedScene && (
+        {/* Selected scene settings */}
+        {selectedScene && (
         <div className="scenes-tab__settings">
           <h4 className="scenes-tab__settings-title">{t('scenes.sceneSettings')}</h4>
 
@@ -336,6 +337,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
           </div>
         </div>
       )}
+      </div>
 
       {/* Create scene modal */}
       {isCreateOpen && (

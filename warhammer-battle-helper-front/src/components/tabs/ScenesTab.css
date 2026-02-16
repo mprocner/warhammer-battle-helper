@@ -93,30 +93,36 @@
   color: #721c24;
 }
 
-.scenes-tab__list {
+.scenes-tab__content {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
   overflow-y: auto;
   flex: 1;
   padding-right: 4px;
 }
 
-.scenes-tab__list::-webkit-scrollbar {
+.scenes-tab__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scenes-tab__content::-webkit-scrollbar {
   width: 8px;
 }
 
-.scenes-tab__list::-webkit-scrollbar-track {
+.scenes-tab__content::-webkit-scrollbar-track {
   background: #e8dcc4;
   border-radius: 4px;
 }
 
-.scenes-tab__list::-webkit-scrollbar-thumb {
+.scenes-tab__content::-webkit-scrollbar-thumb {
   background: #c9975b;
   border-radius: 4px;
 }
 
-.scenes-tab__list::-webkit-scrollbar-thumb:hover {
+.scenes-tab__content::-webkit-scrollbar-thumb:hover {
   background: #a67c52;
 }
 
