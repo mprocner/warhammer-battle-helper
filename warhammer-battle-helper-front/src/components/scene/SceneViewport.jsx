@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import SceneLayer from './SceneLayer';
 import ZoomContext from './ZoomContext';
+import PointerPing from './PointerPing';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM } from '../../constants/scene';
 import './SceneViewport.css';
 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
+const PING_HOLD_MS = 500;
 
-const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children, onZoomChange }) => {
+const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children, onZoomChange, sendMessage, pointerPings = [], onRemovePing }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
   const viewportRef = useRef(null);
@@ -100,6 +102,40 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
   const handleZoomOut = () => applyZoom(zoom - ZOOM_STEP);
   const handleFit = () => applyZoom(calcFitZoom());
 
+  // Pointer ping — hold detection
+  const pingTimerRef = useRef(null);
+
+  const handleContentMouseDown = useCallback((e) => {
+    // Only primary button, ignore if no sendMessage
+    if (e.button !== 0 || !sendMessage || !scene) return;
+
+    const contentEl = e.currentTarget;
+    const rect = contentEl.getBoundingClientRect();
+    const canvasX = (e.clientX - rect.left) / zoom;
+    const canvasY = (e.clientY - rect.top) / zoom;
+
+    pingTimerRef.current = setTimeout(() => {
+      sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: scene.id });
+      pingTimerRef.current = null;
+    }, PING_HOLD_MS);
+  }, [sendMessage, scene, zoom]);
+
+  const clearPingTimer = useCallback(() => {
+    if (pingTimerRef.current) {
+      clearTimeout(pingTimerRef.current);
+      pingTimerRef.current = null;
+    }
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => clearPingTimer, [clearPingTimer]);
+
+  // Filter pings for current scene
+  const scenePings = useMemo(
+    () => pointerPings.filter(p => p.sceneId === scene?.id),
+    [pointerPings, scene?.id]
+  );
+
   // No scene — keep current responsive behavior (no zoom wrapper)
   if (!scene) {
     return <div className="scene-viewport">{children}</div>;
@@ -165,6 +201,9 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                   width: canvasSize.width,
                   height: canvasSize.height,
                 }}
+                onMouseDown={handleContentMouseDown}
+                onMouseUp={clearPingTimer}
+                onMouseLeave={clearPingTimer}
               >
                 {/* Background layer */}
                 <SceneLayer
@@ -192,6 +231,16 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                     editingLayer={editingLayer}
                   />
                 )}
+
+                {/* Pointer pings */}
+                {scenePings.map(ping => (
+                  <PointerPing
+                    key={ping.id}
+                    x={ping.x}
+                    y={ping.y}
+                    onComplete={() => onRemovePing?.(ping.id)}
+                  />
+                ))}
               </div>
             </div>
           </div>

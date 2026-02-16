@@ -37,7 +37,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, editingLayer = 'grid' }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, editingLayer = 'grid', sendMessage = null, pointerPings = [], onRemovePing }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -860,7 +860,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
         <div className="fight-grid-wrapper">
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom}>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing}>
             <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}

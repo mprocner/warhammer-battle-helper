@@ -20,6 +20,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [editingLayer, setEditingLayer] = useState('grid');
+  const [pointerPings, setPointerPings] = useState([]);
 
   // --- Music state ---
   const audioRef = useRef(new Audio());
@@ -182,6 +183,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       setLoading(false);
     }
   }, [gameId, token, historyLoaded]);
+
+  const removePing = useCallback((pingId) => {
+    setPointerPings(prev => prev.filter(p => p.id !== pingId));
+  }, []);
 
   // Handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message) => {
@@ -359,6 +364,13 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         break;
       }
 
+      case 'POINTER_PING': {
+        const { x, y, sceneId } = message.payload;
+        const ping = { id: `${Date.now()}-${Math.random()}`, x, y, sceneId };
+        setPointerPings(prev => [...prev, ping]);
+        break;
+      }
+
       default:
         console.warn('Unknown message type:', message.type);
     }
@@ -366,7 +378,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   }, [fetchGameState, addLogMessage]);
 
   // WebSocket connection
-  const { isConnected, error: wsError } = useWebSocket(
+  const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
     token,
     handleWebSocketMessage
@@ -508,6 +520,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             currentScene={displayScene}
             isGM={isGM}
             editingLayer={editingLayer}
+            sendMessage={sendMessage}
+            pointerPings={pointerPings}
+            onRemovePing={removePing}
           />
         </Box>
 
