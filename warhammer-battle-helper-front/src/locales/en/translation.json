@@ -189,7 +189,16 @@
     "avatarUploadFailed": "Failed to upload avatar",
     "invalidFileType": "Invalid file type. Please upload an image (JPEG, PNG, GIF, or WebP).",
     "fileTooLarge": "File too large. Maximum size is 5MB.",
-    "favoriteWeapon": "Toggle favorite weapon"
+    "favoriteWeapon": "Toggle favorite weapon",
+    "addCustomSkill": "Add Custom Skill",
+    "addCustomTalent": "Add Custom Talent",
+    "customSkillModalTitle": "New Skill",
+    "editCustomSkillModalTitle": "Edit Skill",
+    "customTalentModalTitle": "New Talent",
+    "editCustomTalentModalTitle": "Edit Talent",
+    "skillName": "Name",
+    "skillAttribute": "Attribute",
+    "skillDescription": "Description"
   },
   "characteristics": {
     "WEAPON_SKILL": "Weapon Skill",

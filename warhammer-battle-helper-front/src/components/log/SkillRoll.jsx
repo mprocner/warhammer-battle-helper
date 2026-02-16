@@ -6,11 +6,11 @@ import '../LogWindow.css';
 
 const SkillRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
-    const { success, SL, rollValue, targetValue, modifier, characterName, skillKey } = data;
+    const { success, SL, rollValue, targetValue, modifier, characterName, skillKey, skillName: customSkillName } = data;
     const isCritSuccess = isCriticalSuccess(rollValue, success);
     const isCritFailure = isCriticalFailure(rollValue, success);
 
-    const skillName = getTranslatedSkillName(t, skillKey, 'skill');
+    const skillName = customSkillName || getTranslatedSkillName(t, skillKey, 'skill');
     const resultColor = getResultColor(isCritSuccess, isCritFailure, success);
 
     const getResultText = () => {

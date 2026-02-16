@@ -7,6 +7,7 @@ import talentsData from '../data/talents.json';
 import weaponsData from '../data/weapons.json';
 import armourData from '../data/armour.json';
 import ModifierSelectionModal from './ModifierSelectionModal';
+import CustomItemModal from './CustomItemModal';
 import AvatarUpload from './AvatarUpload';
 import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../api/axios'; 
@@ -26,6 +27,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         basicSkills: character.basicSkills || {},
         advancedSkills: character.advancedSkills || {},
         favoriteSkills: character.favoriteSkills || [],
+        customSkills: character.customSkills || [],
         talents: character.talents || [],
         weapons: character.weapons || [],
         armour: character.armour || []
@@ -37,6 +39,12 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
+    const [showCustomSkillModal, setShowCustomSkillModal] = useState(false);
+    const [showCustomTalentModal, setShowCustomTalentModal] = useState(false);
+    const [customSkillForm, setCustomSkillForm] = useState({ name: '', characteristic: 'WEAPON_SKILL', description: '' });
+    const [customTalentForm, setCustomTalentForm] = useState({ name: '', description: '' });
+    const [editingCustomSkillKey, setEditingCustomSkillKey] = useState(null);
+    const [editingCustomTalentKey, setEditingCustomTalentKey] = useState(null);
     const popupRef = useRef(null);
     const saveTimeoutRef = useRef(null);
 
@@ -47,6 +55,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             basicSkills: character.basicSkills || {},
             advancedSkills: character.advancedSkills || {},
             favoriteSkills: character.favoriteSkills || [],
+            customSkills: character.customSkills || [],
             talents: character.talents || [],
             weapons: character.weapons || [],
             armour: character.armour || []
@@ -295,32 +304,46 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
 
     // Convert advanced skills map to array for rendering (sorted alphabetically)
     const advancedSkillsList = useMemo(() => {
-        if (!editedCharacter.advancedSkills) return [];
+        const list = [];
 
-        return Object.keys(editedCharacter.advancedSkills)
-            .map(skillKey => {
-                // Find the skill option to get name and characteristic
+        if (editedCharacter.advancedSkills) {
+            Object.keys(editedCharacter.advancedSkills).forEach(skillKey => {
+                // Check if it's a custom skill
+                const customSkill = editedCharacter.customSkills?.find(cs => cs.key === skillKey);
+                if (customSkill) {
+                    list.push({
+                        key: skillKey,
+                        name: customSkill.name,
+                        characteristic: customSkill.characteristic,
+                        description: customSkill.description,
+                        advances: editedCharacter.advancedSkills[skillKey],
+                        isCustom: true
+                    });
+                    return;
+                }
+
                 const skillOption = advancedSkillsOptions.find(s => s.key === skillKey);
-                if (!skillOption) return null;
+                if (!skillOption) return;
 
-                return {
+                list.push({
                     key: skillKey,
                     name: skillOption.name,
                     characteristic: skillOption.characteristic,
                     advances: editedCharacter.advancedSkills[skillKey]
-                };
-            })
-            .filter(s => s !== null)
-            .sort((a, b) => a.name.localeCompare(b.name));
-    }, [editedCharacter.advancedSkills, advancedSkillsOptions]);
+                });
+            });
+        }
+
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+    }, [editedCharacter.advancedSkills, editedCharacter.customSkills, advancedSkillsOptions]);
 
     // Sort talents alphabetically by name
     const sortedTalents = useMemo(() => {
         if (!editedCharacter.talents) return [];
 
         return [...editedCharacter.talents].sort((a, b) => {
-            const nameA = t(`talents:${a.key}.name`);
-            const nameB = t(`talents:${b.key}.name`);
+            const nameA = a.key.startsWith('CUSTOM_') ? a.name : t(`talents:${a.key}.name`);
+            const nameB = b.key.startsWith('CUSTOM_') ? b.name : t(`talents:${b.key}.name`);
             return nameA.localeCompare(nameB);
         });
     }, [editedCharacter.talents, t]);
@@ -522,9 +545,13 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         setEditedCharacter(prev => {
             const newAdvancedSkills = { ...prev.advancedSkills };
             delete newAdvancedSkills[skillKey];
+            const newCustomSkills = (prev.customSkills || []).filter(cs => cs.key !== skillKey);
+            const newFavoriteSkills = (prev.favoriteSkills || []).filter(k => k !== skillKey);
             return {
                 ...prev,
-                advancedSkills: newAdvancedSkills
+                advancedSkills: newAdvancedSkills,
+                customSkills: newCustomSkills,
+                favoriteSkills: newFavoriteSkills
             };
         });
         setHasChanges(true);
@@ -604,6 +631,90 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         saveTimeoutRef.current = setTimeout(() => {
             handleSave();
         }, 1000);
+    };
+
+    // Custom Skill handlers
+    const handleOpenCustomSkillModal = (editKey = null) => {
+        if (editKey) {
+            const cs = editedCharacter.customSkills?.find(s => s.key === editKey);
+            if (cs) {
+                setCustomSkillForm({ name: cs.name, characteristic: cs.characteristic, description: cs.description || '' });
+                setEditingCustomSkillKey(editKey);
+            }
+        } else {
+            setCustomSkillForm({ name: '', characteristic: 'WEAPON_SKILL', description: '' });
+            setEditingCustomSkillKey(null);
+        }
+        setShowCustomSkillModal(true);
+    };
+
+    const handleSaveCustomSkill = () => {
+        if (!customSkillForm.name.trim()) return;
+
+        const key = editingCustomSkillKey || `CUSTOM_${Date.now()}`;
+
+        setEditedCharacter(prev => {
+            const newCustomSkills = editingCustomSkillKey
+                ? (prev.customSkills || []).map(cs => cs.key === editingCustomSkillKey
+                    ? { ...cs, name: customSkillForm.name.trim(), characteristic: customSkillForm.characteristic, description: customSkillForm.description.trim() }
+                    : cs)
+                : [...(prev.customSkills || []), { key, name: customSkillForm.name.trim(), characteristic: customSkillForm.characteristic, description: customSkillForm.description.trim() }];
+
+            const newAdvancedSkills = { ...prev.advancedSkills };
+            if (!editingCustomSkillKey) {
+                newAdvancedSkills[key] = 0;
+            }
+
+            return {
+                ...prev,
+                customSkills: newCustomSkills,
+                advancedSkills: newAdvancedSkills
+            };
+        });
+        setHasChanges(true);
+        setShowCustomSkillModal(false);
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => { handleSave(); }, 1000);
+    };
+
+    // Custom Talent handlers
+    const handleOpenCustomTalentModal = (editKey = null) => {
+        if (editKey) {
+            const ct = editedCharacter.talents?.find(t => t.key === editKey);
+            if (ct) {
+                setCustomTalentForm({ name: ct.name || '', description: ct.description || '' });
+                setEditingCustomTalentKey(editKey);
+            }
+        } else {
+            setCustomTalentForm({ name: '', description: '' });
+            setEditingCustomTalentKey(null);
+        }
+        setShowCustomTalentModal(true);
+    };
+
+    const handleSaveCustomTalent = () => {
+        if (!customTalentForm.name.trim()) return;
+
+        const key = editingCustomTalentKey || `CUSTOM_${Date.now()}`;
+
+        setEditedCharacter(prev => {
+            const newTalents = editingCustomTalentKey
+                ? (prev.talents || []).map(t => t.key === editingCustomTalentKey
+                    ? { ...t, name: customTalentForm.name.trim(), description: customTalentForm.description.trim() }
+                    : t)
+                : [...(prev.talents || []), { key, name: customTalentForm.name.trim(), description: customTalentForm.description.trim(), timesTaken: 1 }];
+
+            return {
+                ...prev,
+                talents: newTalents
+            };
+        });
+        setHasChanges(true);
+        setShowCustomTalentModal(false);
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => { handleSave(); }, 1000);
     };
 
     // Add weapon from dropdown
@@ -1548,12 +1659,25 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <tbody>
                                         {sortedTalents.map((talent) => {
                                             const actualIndex = editedCharacter.talents?.findIndex(t => t.key === talent.key);
+                                            const isCustomTalent = talent.key.startsWith('CUSTOM_');
+                                            const talentName = isCustomTalent ? talent.name : t(`talents:${talent.key}.name`);
+                                            const talentDescription = isCustomTalent ? talent.description : t(`talents:${talent.key}.description`);
                                             return (
                                                 <tr key={talent.key}>
                                                     <td className="skill-name">
                                                         <span>
-                                                            {t(`talents:${talent.key}.name`)}
+                                                            {talentName}
                                                         </span>
+                                                        {isCustomTalent && (
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={() => handleOpenCustomTalentModal(talent.key)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('characterSheet.editCustomTalentModalTitle')}
+                                                            >
+                                                                ✏
+                                                            </span>
+                                                        )}
                                                         <span
                                                             className="skill-info-icon"
                                                             onClick={(e) => handleTooltipToggle(`talent-${talent.key}`, e)}
@@ -1562,7 +1686,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                         </span>
                                                         {activeTooltip === `talent-${talent.key}` && (
                                                             <div className="talent-tooltip">
-                                                                {t(`talents:${talent.key}.description`)}
+                                                                {talentDescription}
                                                             </div>
                                                         )}
                                                     </td>
@@ -1613,6 +1737,13 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             ))
                                         }
                                     </select>
+                                    <button
+                                        className="add-item-btn"
+                                        onClick={() => handleOpenCustomTalentModal()}
+                                        style={{ marginTop: '5px' }}
+                                    >
+                                        + {t('characterSheet.addCustomTalent')}
+                                    </button>
                                 </div>
                             </div>
 
@@ -2355,8 +2486,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     </thead>
                                     <tbody>
                                         {advancedSkillsList.map((skill) => {
-                                            // Extract base skill key for description (e.g., LANGUAGE from LANGUAGE_CLASSICAL)
-                                            const baseSkillKey = skill.key.includes('_') ? skill.key.split('_')[0] : skill.key;
+                                            const isCustom = skill.isCustom;
+                                            const baseSkillKey = !isCustom && skill.key.includes('_') ? skill.key.split('_')[0] : skill.key;
                                             const tooltipKey = `advanced-${skill.key}`;
                                             const isFavorite = editedCharacter.favoriteSkills?.includes(skill.key);
                                             const skillValue = calculateAdvancedSkillValue(skill.key, skill.characteristic);
@@ -2378,6 +2509,16 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                         >
                                                             {skill.name}
                                                         </span>
+                                                        {isCustom && (
+                                                            <span
+                                                                className="skill-info-icon"
+                                                                onClick={() => handleOpenCustomSkillModal(skill.key)}
+                                                                style={{ cursor: 'pointer' }}
+                                                                title={t('characterSheet.editCustomSkillModalTitle')}
+                                                            >
+                                                                ✏
+                                                            </span>
+                                                        )}
                                                         <span
                                                             className="skill-info-icon"
                                                             onClick={(e) => handleTooltipToggle(tooltipKey, e)}
@@ -2386,7 +2527,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                         </span>
                                                         {activeTooltip === tooltipKey && (
                                                             <div className="skill-tooltip">
-                                                                {t(`skills:${baseSkillKey}.description`)}
+                                                                {isCustom ? skill.description : t(`skills:${baseSkillKey}.description`)}
                                                             </div>
                                                         )}
                                                     </td>
@@ -2439,6 +2580,13 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                             ))
                                         }
                                     </select>
+                                    <button
+                                        className="add-item-btn"
+                                        onClick={() => handleOpenCustomSkillModal()}
+                                        style={{ marginTop: '5px' }}
+                                    >
+                                        + {t('characterSheet.addCustomSkill')}
+                                    </button>
                                 </div>
                             </div>
 
@@ -2530,6 +2678,28 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                     mousePosition={mousePosition}
                     onConfirm={handleModifierConfirm}
                     onCancel={handleModifierCancel}
+                />
+            )}
+
+            {showCustomSkillModal && (
+                <CustomItemModal
+                    type="skill"
+                    isEditing={!!editingCustomSkillKey}
+                    form={customSkillForm}
+                    onChange={setCustomSkillForm}
+                    onSave={handleSaveCustomSkill}
+                    onCancel={() => setShowCustomSkillModal(false)}
+                />
+            )}
+
+            {showCustomTalentModal && (
+                <CustomItemModal
+                    type="talent"
+                    isEditing={!!editingCustomTalentKey}
+                    form={customTalentForm}
+                    onChange={setCustomTalentForm}
+                    onSave={handleSaveCustomTalent}
+                    onCancel={() => setShowCustomTalentModal(false)}
                 />
             )}
         </div>

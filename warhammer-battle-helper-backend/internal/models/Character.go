@@ -31,6 +31,7 @@ type Character struct {
 	BasicSkills     map[string]int       `bson:"basicSkills" json:"basicSkills"`
 	AdvancedSkills  map[string]int       `bson:"advancedSkills" json:"advancedSkills"`
 	FavoriteSkills  []string             `bson:"favoriteSkills,omitempty" json:"favoriteSkills,omitempty"`
+	CustomSkills    []CustomSkill        `bson:"customSkills,omitempty" json:"customSkills,omitempty"`
 	Spells          []Spell              `bson:"spells" json:"spells"`
 	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
 	Party           PartyInfo            `bson:"party" json:"party"`
@@ -238,6 +239,13 @@ type Skill struct {
 	Characteristic string `bson:"characteristic" json:"characteristic"`
 	Advances       int    `bson:"advances" json:"advances"`
 	Skill          int    `bson:"skill" json:"skill"`
+}
+
+type CustomSkill struct {
+	Key            string `bson:"key" json:"key"`
+	Name           string `bson:"name" json:"name"`
+	Characteristic string `bson:"characteristic" json:"characteristic"`
+	Description    string `bson:"description,omitempty" json:"description,omitempty"`
 }
 
 type Spell struct {

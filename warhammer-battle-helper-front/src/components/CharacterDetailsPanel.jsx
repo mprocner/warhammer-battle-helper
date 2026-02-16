@@ -119,7 +119,31 @@ function CharacterDetailsPanel({
 
         const stats = character.characteristics?.current || {};
 
+        const charMapping = {
+            'WEAPON_SKILL': 'WS', 'BALLISTIC_SKILL': 'BS', 'STRENGTH': 'S',
+            'TOUGHNESS': 'T', 'INITIATIVE': 'I', 'AGILITY': 'Ag',
+            'DEXTERITY': 'Dex', 'INTELLIGENCE': 'Int', 'WILLPOWER': 'WP', 'FELLOWSHIP': 'Fel'
+        };
+
         return character.favoriteSkills.map(skillKey => {
+            // Check custom skills first
+            if (skillKey.startsWith('CUSTOM_')) {
+                const customSkill = character.customSkills?.find(cs => cs.key === skillKey);
+                if (!customSkill) return null;
+
+                const advances = getSkillAdvances(character, skillKey);
+                const characteristicValue = stats[charMapping[customSkill.characteristic] || 'WS'] || 0;
+                const skillValue = characteristicValue + advances;
+
+                return {
+                    key: skillKey,
+                    skillKey: skillKey,
+                    name: customSkill.name,
+                    value: skillValue,
+                    characteristic: customSkill.characteristic
+                };
+            }
+
             // First try exact match (handles keys like OUTDOOR_SURVIVAL, CHARM_ANIMAL)
             const exactMatch = skillsData.find(s => s.key === skillKey);
 
@@ -132,20 +156,12 @@ function CharacterDetailsPanel({
                 if (!skill) return null;
 
                 const advances = getSkillAdvances(character, skillKey);
-                const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
-                    skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
-                    skill.characteristic === 'STRENGTH' ? 'S' :
-                    skill.characteristic === 'TOUGHNESS' ? 'T' :
-                    skill.characteristic === 'INITIATIVE' ? 'I' :
-                    skill.characteristic === 'AGILITY' ? 'Ag' :
-                    skill.characteristic === 'DEXTERITY' ? 'Dex' :
-                    skill.characteristic === 'INTELLIGENCE' ? 'Int' :
-                    skill.characteristic === 'WILLPOWER' ? 'WP' : 'Fel'] || 0;
+                const characteristicValue = stats[charMapping[skill.characteristic] || 'Fel'] || 0;
                 const skillValue = characteristicValue + advances;
 
                 return {
                     key: skillKey,
-                    skillKey: skillKey, // Store the actual skill key for API call
+                    skillKey: skillKey,
                     name: `${t(`skills:${parentKey}.name`)} (${t(`skills:${parentKey}.specialisations.${spec}`)})`,
                     value: skillValue,
                     characteristic: skill.characteristic
@@ -156,21 +172,12 @@ function CharacterDetailsPanel({
                 if (!skill) return null;
 
                 const advances = getSkillAdvances(character, skillKey);
-
-                const characteristicValue = stats[skill.characteristic === 'WEAPON_SKILL' ? 'WS' :
-                    skill.characteristic === 'BALLISTIC_SKILL' ? 'BS' :
-                    skill.characteristic === 'STRENGTH' ? 'S' :
-                    skill.characteristic === 'TOUGHNESS' ? 'T' :
-                    skill.characteristic === 'INITIATIVE' ? 'I' :
-                    skill.characteristic === 'AGILITY' ? 'Ag' :
-                    skill.characteristic === 'DEXTERITY' ? 'Dex' :
-                    skill.characteristic === 'INTELLIGENCE' ? 'Int' :
-                    skill.characteristic === 'WILLPOWER' ? 'WP' : 'Fel'] || 0;
+                const characteristicValue = stats[charMapping[skill.characteristic] || 'Fel'] || 0;
                 const skillValue = characteristicValue + advances;
 
                 return {
                     key: skillKey,
-                    skillKey: skillKey, // Store the actual skill key for API call
+                    skillKey: skillKey,
                     name: t(`skills:${skillKey}.name`),
                     value: skillValue,
                     characteristic: skill.characteristic

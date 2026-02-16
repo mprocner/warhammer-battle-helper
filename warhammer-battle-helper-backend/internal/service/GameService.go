@@ -530,6 +530,21 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		}
 	}
 
+	var customSkillName string
+	if skill == nil {
+		// Fallback: check custom skills on the character
+		for _, cs := range character.CustomSkills {
+			if cs.Key == skillKey {
+				skill = &Skill{
+					Key:            cs.Key,
+					Characteristic: cs.Characteristic,
+				}
+				customSkillName = cs.Name
+				break
+			}
+		}
+	}
+
 	if skill == nil {
 		return nil, fmt.Errorf("skill not found: %s", skillKey)
 	}
@@ -611,6 +626,9 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		"skillValue":    skillValue,
 		"modifier":      modifier,
 	}
+	if customSkillName != "" {
+		eventData["skillName"] = customSkillName
+	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
@@ -636,6 +654,9 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		"skillValue":    skillValue,
 		"modifier":      modifier,
 		"username":      username,
+	}
+	if customSkillName != "" {
+		broadcastData["skillName"] = customSkillName
 	}
 
 	s.hub.BroadcastToGame(gameID, "SKILL_ROLLED", broadcastData)
