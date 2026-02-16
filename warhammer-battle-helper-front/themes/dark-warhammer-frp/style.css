@@ -2144,6 +2144,14 @@ align-items: center;
     gap: 6px;
 }
 
+.character-sheet-popup .wealth-exchange-info {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 4px 0 0 0;
+    font-style: italic;
+    text-align: center;
+}
+
 .character-sheet-popup .mini-box {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--brass-dark);

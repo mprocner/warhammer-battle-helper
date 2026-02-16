@@ -106,6 +106,7 @@
     "weapons": "Weapons",
     "armour": "Armour",
     "wealth": "Wealth",
+    "wealthExchangeInfo": "1 Gold = 20 Silver, 1 Silver = 12 Brass",
     "characteristics": "Characteristics",
     "basicSkills": "Basic Skills",
     "weaponSkills": "Weapon Skills",

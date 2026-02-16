@@ -1748,6 +1748,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                         <input type="text" value={editedCharacter.wealth?.gold || ''} onChange={(e) => handleFieldChange('wealth.gold', e.target.value)} />
                                     </div>
                                 </div>
+                                <p className="wealth-exchange-info">{t('characterSheet.wealthExchangeInfo')}</p>
                             </div>
                         </div>
 

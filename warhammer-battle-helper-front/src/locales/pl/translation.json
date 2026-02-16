@@ -106,6 +106,7 @@
     "weapons": "Broń",
     "armour": "Zbroja",
     "wealth": "Bogactwo",
+    "wealthExchangeInfo": "1 Złota Korona = 20 Szylingów, 1 Szyling = 12 Pensów",
     "characteristics": "Cechy",
     "basicSkills": "Podstawowe Umiejętności",
     "weaponSkills": "Broń",
