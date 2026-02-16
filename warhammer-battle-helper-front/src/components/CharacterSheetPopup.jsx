@@ -2627,7 +2627,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                         ))}
                                     </tbody>
                                 </table>
-                                <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                                <div style={{ marginTop: '10px' }}>
                                     <button
                                         className="add-item-btn"
                                         onClick={handleAddSpell}
