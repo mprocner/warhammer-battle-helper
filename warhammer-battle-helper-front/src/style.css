@@ -2908,3 +2908,41 @@ align-items: center;
     margin: 0;
     flex: 1;
 }
+
+/* Shared list action buttons (used in FilesTab, MusicTab) */
+.list-action-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.list-action-btn {
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
+  border: 1px solid #c9a66b;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 26px;
+  min-width: 26px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-action-btn:hover {
+  border-color: #6b4423;
+  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
+}
+
+.list-action-btn--delete {
+  color: #c94040;
+}
+
+.list-action-btn--delete:hover {
+  border-color: #c94040;
+  background: #f8d7da;
+}

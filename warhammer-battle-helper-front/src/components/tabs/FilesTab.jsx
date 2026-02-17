@@ -70,7 +70,7 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t
       <div className="files-tab__item-actions">
         {onAddToScene && (
           <button
-            className="files-tab__item-action"
+            className="list-action-btn"
             onClick={(e) => { e.stopPropagation(); onHover(null); onAddToScene(file); }}
             title={t('scenes.addToScene')}
           >
@@ -78,7 +78,7 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t
           </button>
         )}
         <button
-          className="files-tab__item-action files-tab__item-action--delete"
+          className="list-action-btn list-action-btn--delete"
           onClick={handleDelete}
           title={t('common.delete')}
         >
@@ -120,14 +120,14 @@ const DroppableFolderItem = ({ folder, isOver, onNavigate, onRename, onDelete, r
       )}
       <div className="files-tab__item-actions">
         <button
-          className="files-tab__item-action"
+          className="list-action-btn"
           onClick={(e) => onRename(folder, e)}
           title={t('files.renameFolder')}
         >
           ✏️
         </button>
         <button
-          className="files-tab__item-action files-tab__item-action--delete"
+          className="list-action-btn list-action-btn--delete"
           onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
           title={t('common.delete')}
         >
@@ -569,8 +569,8 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
           )}
         </div>
 
-        {/* File grid */}
-        <div className="files-tab__grid">
+        {/* File list */}
+        <div className="files-tab__list">
           {/* Back button when in subfolder */}
           {currentFolderId && (
             <DroppableBackButton
@@ -712,7 +712,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
       </div>
 
       {/* Drag overlay */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {draggingFile && (
           <div className="files-tab__drag-overlay">
             <img

@@ -88,14 +88,14 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
       <span className="music-tab__playlist-track-name" ref={nameRef}><span className="music-tab__truncate">{track.name}</span></span>
       <PortalTooltip text={track.name} targetRef={nameRef} />
       <button
-        className={`music-tab__track-btn music-tab__track-btn--play ${isCurrentTrack ? 'music-tab__track-btn--current' : ''}`}
+        className={`list-action-btn music-tab__track-btn--play ${isCurrentTrack ? 'music-tab__track-btn--current' : ''}`}
         onClick={() => handlePlayPlaylistFromTrack(playlistId, index)}
         title={t('music.play')}
       >
         ▶
       </button>
       <button
-        className="music-tab__track-btn music-tab__track-btn--delete"
+        className="list-action-btn list-action-btn--delete"
         onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
         title={t('common.delete')}
       >
@@ -135,7 +135,7 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
         <PortalTooltip text={playlist.name} targetRef={playlistNameRef} />
         <div className="music-tab__playlist-actions" onClick={(e) => e.stopPropagation()}>
           <button
-            className="music-tab__track-btn music-tab__track-btn--play"
+            className="list-action-btn music-tab__track-btn--play"
             onClick={() => handlePlayPlaylist(playlist)}
             disabled={tracks.length === 0}
             title={t('music.play')}
@@ -143,14 +143,14 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
             ▶
           </button>
           <button
-            className="music-tab__track-btn"
+            className="list-action-btn"
             onClick={() => handleStartEditPlaylist(playlist)}
             title={t('music.editPlaylist')}
           >
             ✎
           </button>
           <button
-            className="music-tab__track-btn music-tab__track-btn--delete"
+            className="list-action-btn list-action-btn--delete"
             onClick={() => handleDeletePlaylist(playlist)}
             title={t('common.delete')}
           >
@@ -697,13 +697,13 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   </div>
                   <div className="music-tab__track-actions">
                     {isTrackPlaying(file) ? (
-                      <button className="music-tab__track-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
+                      <button className="list-action-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
                     ) : (
-                      <button className="music-tab__track-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}>▶</button>
+                      <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}>▶</button>
                     )}
                     <div className="music-tab__add-to-playlist-wrapper">
                       <button
-                        className="music-tab__track-btn"
+                        className="list-action-btn"
                         onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
                         title={t('music.addToPlaylist')}
                       >
@@ -723,7 +723,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                         </div>
                       )}
                     </div>
-                    <button className="music-tab__track-btn music-tab__track-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}>✕</button>
+                    <button className="list-action-btn list-action-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}>✕</button>
                   </div>
                 </div>
               ))}
