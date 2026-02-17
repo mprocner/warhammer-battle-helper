@@ -29,7 +29,8 @@
   },
   {
     "key": "ARCANE_MAGIC",
-    "max": 1
+    "max": 1,
+    "hasSituation": true
   },
   {
     "key": "ARGUMENTATIVE",
@@ -73,7 +74,8 @@
   },
   {
     "key": "BLESS",
-    "max": 1
+    "max": 1,
+    "hasSituation": true
   },
   {
     "key": "BOOKISH",
@@ -116,7 +118,8 @@
   },
   {
     "key": "CHAOS_MAGIC",
-    "max": "Number of Spells available in chosen Chaos Magic Lore"
+    "max": "Number of Spells available in chosen Chaos Magic Lore",
+    "hasSituation": true
   },
   {
     "key": "COMBAT_AWARE",
@@ -225,7 +228,8 @@
   {
     "key": "ETIQUETTE",
     "max": "FELLOWSHIP",
-    "tests": "CHARM"
+    "tests": "CHARM",
+    "hasSituation": true
   },
   {
     "key": "FAST_HANDS",
@@ -240,7 +244,8 @@
   {
     "key": "FEARLESS",
     "max": "WILLPOWER",
-    "tests": "COOL"
+    "tests": "COOL",
+    "hasSituation": true
   },
   {
     "key": "FEINT",
@@ -298,7 +303,8 @@
   {
     "key": "HATRED",
     "max": "WILLPOWER",
-    "tests": "WILLPOWER"
+    "tests": "WILLPOWER",
+    "hasSituation": true
   },
   {
     "key": "HOLY_HATRED",
@@ -339,7 +345,8 @@
   },
   {
     "key": "INVOKE",
-    "max": 1
+    "max": 1,
+    "hasSituation": true
   },
   {
     "key": "IRON_JAW",
@@ -405,7 +412,8 @@
   },
   {
     "key": "MASTER_TRADESMAN",
-    "max": "DEXTERITY"
+    "max": "DEXTERITY",
+    "hasSituation": true
   },
   {
     "key": "MENACING",
@@ -500,7 +508,8 @@
   },
   {
     "key": "RESISTANCE",
-    "max": "TOUGHNESS"
+    "max": "TOUGHNESS",
+    "hasSituation": true
   },
   {
     "key": "RESOLUTE",
@@ -537,7 +546,8 @@
   {
     "key": "SAVANT",
     "max": "INTELLIGENCE",
-    "tests": "LORE"
+    "tests": "LORE",
+    "hasSituation": true
   },
   {
     "key": "SAVVY",
@@ -632,7 +642,8 @@
   {
     "key": "STRIDER",
     "max": "AGILITY",
-    "tests": "ATHLETICS"
+    "tests": "ATHLETICS",
+    "hasSituation": true
   },
   {
     "key": "STRIKE_MIGHTY_BLOW",

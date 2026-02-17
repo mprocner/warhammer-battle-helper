@@ -198,7 +198,8 @@
     "editCustomTalentModalTitle": "Edit Talent",
     "skillName": "Name",
     "skillAttribute": "Attribute",
-    "skillDescription": "Description"
+    "skillDescription": "Description",
+    "situation": "Situation"
   },
   "characteristics": {
     "WEAPON_SKILL": "Weapon Skill",

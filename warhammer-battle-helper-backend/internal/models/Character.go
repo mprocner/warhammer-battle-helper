@@ -164,6 +164,7 @@ type Talent struct {
 	Name        string `bson:"name,omitempty" json:"name,omitempty"`
 	TimesTaken  int    `bson:"timesTaken" json:"timesTaken"`
 	Description string `bson:"description,omitempty" json:"description,omitempty"`
+	Situation   string `bson:"situation,omitempty" json:"situation,omitempty"`
 }
 
 type ArmourPoints struct {

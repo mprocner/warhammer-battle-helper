@@ -253,6 +253,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         return options.sort((a, b) => a.name.localeCompare(b.name));
     }, [t]);
 
+    // Set of talent keys that have a situation field
+    const talentsWithSituation = useMemo(() => {
+        return new Set(talentsData.filter(t => t.hasSituation).map(t => t.key));
+    }, []);
+
     // Generate talent options from talents data
     const talentOptions = useMemo(() => {
         return talentsData.map(talent => ({
@@ -620,6 +625,25 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             ...prev,
             talents: prev.talents.map((talent, idx) =>
                 idx === index ? { ...talent, timesTaken: numValue } : talent
+            )
+        }));
+        setHasChanges(true);
+
+        // Auto-save
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            handleSave();
+        }, 1000);
+    };
+
+    // Update talent situation
+    const handleTalentSituationChange = (index, value) => {
+        setEditedCharacter(prev => ({
+            ...prev,
+            talents: prev.talents.map((talent, idx) =>
+                idx === index ? { ...talent, situation: value } : talent
             )
         }));
         setHasChanges(true);
@@ -1652,6 +1676,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     <thead>
                                         <tr>
                                             <th>{t('characterSheet.talentName')}</th>
+                                            <th>{t('characterSheet.situation')}</th>
                                             <th style={{ width: '60px' }}>{t('characterSheet.rozw')}</th>
                                             <th style={{ width: '40px' }}></th>
                                         </tr>
@@ -1691,6 +1716,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                                         )}
                                                     </td>
                                                     <td>
+                                                        {talentsWithSituation.has(talent.key) && (
+                                                            <input
+                                                                type="text"
+                                                                value={talent.situation || ''}
+                                                                onChange={(e) => handleTalentSituationChange(actualIndex, e.target.value)}
+                                                            />
+                                                        )}
+                                                    </td>
+                                                    <td>
                                                         <input
                                                             type="number"
                                                             value={talent.timesTaken || 1}
@@ -1712,7 +1746,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                         })}
                                         {(!editedCharacter.talents || editedCharacter.talents.length === 0) && (
                                             <tr>
-                                                <td colSpan="3" style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                                <td colSpan="4" style={{ textAlign: 'center', fontStyle: 'italic' }}>
                                                     {t('characterSheet.noTalents')}
                                                 </td>
                                             </tr>

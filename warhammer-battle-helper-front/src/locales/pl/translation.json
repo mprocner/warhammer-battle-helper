@@ -199,7 +199,8 @@
     "editCustomTalentModalTitle": "Edytuj Talent",
     "skillName": "Nazwa",
     "skillAttribute": "Cecha",
-    "skillDescription": "Opis"
+    "skillDescription": "Opis",
+    "situation": "Sytuacja"
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",
