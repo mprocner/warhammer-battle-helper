@@ -4,7 +4,6 @@ import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
-import ModifierSelectionModal from './ModifierSelectionModal';
 import CloneCharacterModal from './CloneCharacterModal';
 import SceneViewport from './scene/SceneViewport';
 import { CELL_SIZE } from '../constants/scene';
@@ -53,19 +52,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const [activeId, setActiveId] = useState(null);
   const [overId, setOverId] = useState(null);
   const [viewportZoom, setViewportZoom] = useState(1);
-  const [attacker, setAttacker] = useState(null);
   const hasInitializedRef = useRef(false);
-
-  const [highlightedTargets, setHighlightedTargets] = useState(new Set());
 
   // Selected character for details panel
   const [selectedCharacter, setSelectedCharacter] = useState(null);
-  const [attackModifier, setAttackModifier] = useState(0);
-
-  // Modifier selection modal
-  const [showModifierModal, setShowModifierModal] = useState(false);
-  const [pendingDefender, setPendingDefender] = useState(null);
-  const [mousePosition, setMousePosition] = useState(null);
 
   // Auto-open character sheet after creating new character
   const [autoOpenCharacterSheet, setAutoOpenCharacterSheet] = useState(false);
@@ -104,7 +94,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     return ownCharacterIds.has(characterId);
   }, [ownCharacterIds]);
 
-  // Select character and highlight nearby targets
+  // Select character to show details panel
   const handleSelectCharacter = (character) => {
     // Only allow selecting own characters in multiplayer mode (GM can select any)
     if (gameId && token && !isGM && !isOwnCharacter(character.id)) {
@@ -112,74 +102,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
 
     setSelectedCharacter(character);
-    setAttackModifier(0);
-
-    // Find the zone where this character is located
-    const characterZone = fightZones.find(z => z.character?.id === character.id);
-    if (characterZone) {
-      // Highlight nearby targets
-      highlightPossibleTargets(characterZone, fightZones);
-      setAttacker(character);
-    } else {
-      clearHighlightedTargets();
-    }
-  };
-
-  // Handle attack from details panel
-  const handlePanelAttack = () => {
-    if (!selectedCharacter) return;
-
-    const characterZone = fightZones.find(z => z.character?.id === selectedCharacter.id);
-    if (characterZone) {
-      highlightPossibleTargets(characterZone, fightZones);
-      setAttacker(selectedCharacter);
-    }
-  };
-
-  // Dodaj te funkcje przed return
-  const highlightPossibleTargets = (attackerZone, allFightZones) => {
-    console.log("Attacker:", attacker);
-      if (!attackerZone || !allFightZones) {
-          setHighlightedTargets(new Set());
-          return;
-      }
-
-      const currentRow = attackerZone.row;
-      const currentCol = attackerZone.col;
-      
-      const nearbyTargetIds = new Set();
-      allFightZones.forEach(zone => {
-          const rowDiff = Math.abs(zone.row - currentRow);
-          const colDiff = Math.abs(zone.col - currentCol);
-          
-          if (rowDiff <= 1 && colDiff <= 1 && zone.character && zone.character.id !== attackerZone.character?.id) {
-              nearbyTargetIds.add(zone.character.id);
-          }
-      });
-
-      setHighlightedTargets(nearbyTargetIds);
-  };
-
-  const clearHighlightedTargets = () => {
-      setHighlightedTargets(new Set());
-  };
-
-  const setCurrentAttacker = (character) => {
-      setAttacker(character);
-      console.log("Attacker set to:", character?.basicInfo?.name);
-      console.log("highlightedTargets:", [...highlightedTargets]);
-
-  };
-  const setCurrentDefender = (character, event) => {
-      console.log("Defender set to:", character?.basicInfo?.name);
-      setPendingDefender(character);
-
-      // Capture mouse position from the event
-      if (event) {
-          setMousePosition({ x: event.clientX, y: event.clientY });
-      }
-
-      setShowModifierModal(true);
   };
 
   // Multiplayer: Add character to grid (scene-aware)
@@ -277,74 +199,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       console.error('Error removing character from grid:', error);
       addLogMessage('Failed to remove character from grid', 'error');
     }
-  };
-
-  const handleAttack = async (attacker, defender, modifier = 0) => {
-    console.log("handleAttack called with:", { attacker, defender, modifier });
-
-    try {
-      // If in multiplayer mode, use game-specific endpoint
-      if (gameId && token) {
-        const response = await fetch(`${getApiUrl()}/games/${gameId}/fight`, {
-          method: 'POST',
-          headers: getApiHeaders({
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }),
-          body: JSON.stringify({
-            attacker: {
-              id: attacker?.id,
-              modifier: modifier
-            },
-            defender: {
-              id: defender?.id,
-              modifier: 0
-            }
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to initiate fight');
-        }
-
-        // Messages will come via WebSocket
-        console.log('Fight initiated in multiplayer mode');
-      } else {
-        // Single-player mode
-        const response = await axiosInstance.post('/fight', {
-          attacker: {
-            id: attacker?.id,
-            modifier: modifier
-          },
-          defender: {
-            id: defender?.id,
-            modifier: 0
-          },
-        });
-        addLogMessage(`Fight initiated:`, 'warning');
-        console.log('Fight initiated:', {attacker, defender, modifier});
-        for (const message in response.data.messages) {
-          addLogMessage(response.data.messages[message], 'info');
-        }
-        console.log('Fight result:', response.data);
-      }
-
-      setAttacker(null);
-      clearHighlightedTargets();
-    } catch (error) {
-      console.error('Error initiating fight:', error);
-      addLogMessage('Failed to initiate fight', 'error');
-    }
-  };
-  const handleModifierConfirm = (modifier) => {
-    setShowModifierModal(false);
-    handleAttack(attacker, pendingDefender, modifier);
-    setPendingDefender(null);
-  };
-
-  const handleModifierCancel = () => {
-    setShowModifierModal(false);
-    setPendingDefender(null);
   };
 
   const fetchCharacters = useCallback(async () => {
@@ -731,10 +585,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             </header>
             <CharacterDetailsPanel
             character={selectedCharacter}
-            onAttack={handlePanelAttack}
             onCharacterUpdate={handleCharacterUpdate}
-            modifier={attackModifier}
-            onFortuneChange={setAttackModifier}
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
@@ -870,18 +721,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                   <FightArea
                       key={zone.id}
                       currentZone={zone}
-                      fightZones={fightZones}
-                      addLogMessage={addLogMessage}
                       isActiveDrop={overId === zone.id}
                       activeId={activeId}
-                      highlightedTargets={highlightedTargets}
-                      highlightPossibleTargets={highlightPossibleTargets}
-                      clearHighlightedTargets={clearHighlightedTargets}
-                      setCurrentAttacker={setCurrentAttacker}
-                      setCurrentDefender={setCurrentDefender}
-                      onCharacterUpdate={handleCharacterUpdate}
                       onSelectCharacter={handleSelectCharacter}
-                      selectedCharacterId={selectedCharacter?.id}
                       isOwnCharacter={zone.character ? (isGM || isOwnCharacter(zone.character.id)) : false}
                       isMultiplayer={!!(gameId && token)}
                   />
@@ -898,16 +740,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             <Character
               character={activeCharacter}
               currentZone={null}
-              fightZones={fightZones}
-              addLogMessage={()=>{}}
-              onFightComplete={()=>{}}
               activeId={activeId}
               isOverlay
-              isHighlighted={false}
-              highlightPossibleTargets={highlightPossibleTargets}
-              clearHighlightedTargets={clearHighlightedTargets}
-              setCurrentAttacker={setCurrentAttacker}
-              onCharacterUpdate={handleCharacterUpdate}
             />
           </div>
         )}
@@ -922,14 +756,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         />
       )}
 
-      {/* Modifier Selection Modal */}
-      {showModifierModal && (
-        <ModifierSelectionModal
-          mousePosition={mousePosition}
-          onConfirm={handleModifierConfirm}
-          onCancel={handleModifierCancel}
-        />
-      )}
     </DndContext>
   );
 }

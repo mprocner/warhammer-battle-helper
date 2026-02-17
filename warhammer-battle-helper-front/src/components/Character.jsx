@@ -6,8 +6,6 @@ function Character({
         currentZone,
         character,
         activeId, isOverlay = false,
-        isHighlighted = false,
-        setCurrentDefender,
         isOwnCharacter = true,
         isMultiplayer = false,
     }) {
@@ -33,20 +31,8 @@ function Character({
     const hasCustomAvatar = character.basicInfo?.avatar && character.basicInfo.avatar.startsWith('/avatars/');
     const characterEntryClass = `character-entry${isEnemy ? " enemy" : ""} ${isDragging ? 'dragging' : ''} ${isOtherPlayer ? 'other-player' : ''} ${hasCustomAvatar ? 'has-custom-avatar' : ''}`;
 
-    // attack button
-    const targetButton = isHighlighted ? (
-        <button className='target-btn'
-            onClick={(e) => {
-                e.stopPropagation();
-                setCurrentDefender(character, e);
-            }}
-        >
-            <img src="/img/attack.png" alt="Target" draggable="false" />
-        </button>
-    ) : null;
-
     return (
-        <div className={"character-wrapper" + (isHighlighted ? ' possible-target' : '')}
+        <div className="character-wrapper"
         >
             <div
                 id={character.id}
@@ -63,7 +49,6 @@ function Character({
                 </div>
                 <span className="character-name">{character.basicInfo?.name}</span>
             </div>
-            {targetButton}
         </div>
     );
 }

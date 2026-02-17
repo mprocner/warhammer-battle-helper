@@ -1482,12 +1482,6 @@ align-items: center;
   position: relative;
 
 }
-.fight-zone .character-wrapper.possible-target {
-  outline: 2px solid #ba6a1a;
-  box-shadow: 0 0 0 10px #ba6a1a inset;
-  transition: outline-color .12s;
-}
-
 /* Postać w gridzie - Wax Seal Tokens */
 .character-entry.in-grid {
   pointer-events: auto;
@@ -1721,27 +1715,6 @@ align-items: center;
 /* Kontener postaci w kratce powinien mieć pozycjonowanie względne */
 .character-wrapper {
   position: relative;
-}
-
-/* Przycisk celu (targetButton) wyśrodkowany absolutnie w kratce */
-.target-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 20;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border-radius: 50%;
-  border: 2px solid #aaa;
-  /* box-shadow: 0 2px 8px rgba(0,0,0,0.12); */
-  padding: 8px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s;
-}
-
-.target-btn:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-  border-color: #666;
 }
 
 /* ================== MODAL (DETAILS) - Grimoire Style ================== */
@@ -2907,6 +2880,39 @@ align-items: center;
 .character-details-header h2 {
     margin: 0;
     flex: 1;
+}
+
+.character-sheet-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    position: relative;
+}
+
+.character-sheet-btn:hover {
+    opacity: 1;
+}
+
+.character-sheet-btn:hover .state-tooltip {
+    visibility: visible;
+    opacity: 1;
+    animation: stateTooltipFadeIn 0.15s ease-out;
+}
+
+.character-sheet-btn .state-tooltip {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.character-sheet-btn .state-tooltip-arrow {
+    left: auto;
+    right: 12px;
+    transform: none;
 }
 
 /* Shared list action buttons (used in FilesTab, MusicTab) */

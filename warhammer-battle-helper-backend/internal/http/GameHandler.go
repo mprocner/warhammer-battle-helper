@@ -299,47 +299,6 @@ func (h *GameHandler) RemoveCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Character removed successfully"})
 }
 
-// Fight initiates combat between two characters
-func (h *GameHandler) Fight(c *gin.Context) {
-	gameID := c.Param("id")
-
-	var req struct {
-		Attacker struct {
-			ID       string `json:"id" binding:"required"`
-			Modifier int    `json:"modifier"`
-		} `json:"attacker" binding:"required"`
-		Defender struct {
-			ID       string `json:"id" binding:"required"`
-			Modifier int    `json:"modifier"`
-		} `json:"defender" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-	username := claims["email"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	result, err := h.GameService.Fight(gameID, req.Attacker.ID, req.Defender.ID, req.Attacker.Modifier, req.Defender.Modifier, userID, username)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
 // RollDice rolls dice in the game context and broadcasts to all players
 func (h *GameHandler) RollDice(c *gin.Context) {
 	gameID := c.Param("id")

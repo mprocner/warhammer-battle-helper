@@ -68,7 +68,6 @@ type EventType string
 
 const (
 	EventTypeMove            EventType = "move"
-	EventTypeAttack          EventType = "attack"
 	EventTypeDiceRoll        EventType = "dice_roll"
 	EventTypeMessage         EventType = "message"
 	EventTypeCharacterAdd    EventType = "character_add"

@@ -2,7 +2,6 @@ package service
 
 import (
 	"battle-helper/internal/data"
-	"battle-helper/internal/http/requests"
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/websocket"
@@ -327,54 +326,6 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	})
 
 	return nil
-}
-
-// Fight initiates combat between two characters in the game
-func (s *GameService) Fight(gameID string, attackerID, defenderID string, attackerModifier, defenderModifier int, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
-	// Use the FightService to handle the combat logic
-	fightService := NewFightService(s.charRepo)
-
-	// Create fight request using the proper type
-	fightRequest := requests.FightRequest{
-		Attacker: requests.CharacterRequest{
-			Id:       attackerID,
-			Modifier: attackerModifier,
-		},
-		Defender: requests.CharacterRequest{
-			Id:       defenderID,
-			Modifier: defenderModifier,
-		},
-		ZoneId: gameID, // Use gameID as zoneId
-	}
-
-	// Execute fight
-	result := fightService.Fight(fightRequest)
-
-	// Add fight event
-	event := models.GameEvent{
-		Type:      models.EventTypeAttack,
-		CreatedBy: userID,
-		Username:  username,
-		Data: map[string]interface{}{
-			"attackerId": attackerID,
-			"defenderId": defenderID,
-			"result":     result.Result,
-		},
-	}
-	s.gameRepo.AddEvent(gameID, event)
-
-	// Broadcast fight result to all clients
-	s.hub.BroadcastToGame(gameID, "FIGHT_RESULT", map[string]interface{}{
-		"username": username,
-		"result":   result.Result,
-	})
-
-	// Convert response to map for API response
-	resultMap := map[string]interface{}{
-		"result": result.Result,
-	}
-
-	return resultMap, nil
 }
 
 // RollDice rolls dice and logs the result

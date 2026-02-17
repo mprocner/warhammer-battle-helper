@@ -10,10 +10,7 @@ import skillsData from '../data/skills.json';
 
 function CharacterDetailsPanel({
     character,
-    onAttack,
     onCharacterUpdate,
-    modifier,
-    onFortuneChange,
     addLogMessage,
     gameId = null,
     token = null,
@@ -296,12 +293,6 @@ function CharacterDetailsPanel({
         }, 1000);
     };
 
-    const getModifierClass = () => {
-        if (modifier > 0) return 'positive';
-        if (modifier < 0) return 'negative';
-        return '';
-    };
-
     const handleCharacteristicClick = (charName, charValue, event) => {
         if (!charValue || charValue === '-') {
             if (addLogMessage) {
@@ -491,29 +482,15 @@ function CharacterDetailsPanel({
             <div className="character-details-header">
                 <Avatar key={`${character.id}-${character.basicInfo?.avatar || 'default'}`} src={character.basicInfo?.avatar} />
                 <h2>{character.basicInfo?.name || 'Unknown'}</h2>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="action-buttons">
-                <button className="action-btn primary" onClick={onAttack} title={t('combat.attack')}>
-                    <span className="action-btn-icon">⚔️</span>
-                    <span className="action-btn-text">{t('combat.attack')}</span>
-                </button>
-                <button className="action-btn primary" title={t('combat.rangeAttack')}>
-                    <span className="action-btn-icon">🏹</span>
-                    <span className="action-btn-text">{t('combat.rangeAttack')}</span>
-                </button>
-                <button className="action-btn secondary" title={t('combat.castSpell')}>
-                    <span className="action-btn-icon">✨</span>
-                    <span className="action-btn-text">{t('combat.castSpell')}</span>
-                </button>
                 <button
-                    className="action-btn"
+                    className="character-sheet-btn"
                     onClick={() => setShowDetails(true)}
-                    title={t('character.characterCard')}
                 >
-                    <span className="action-btn-icon">📜</span>
-                    <span className="action-btn-text">{t('character.characterCard')}</span>
+                    📜
+                    <span className="state-tooltip">
+                        <span className="state-tooltip-arrow" />
+                        {t('character.characterCard')}
+                    </span>
                 </button>
             </div>
 
@@ -544,7 +521,7 @@ function CharacterDetailsPanel({
                     <div className="detail-label">{t('attributes.fortune')}</div>
                     <div className="modifier-input-container">
                         <button className="modifier-btn" onClick={() => adjustFortune(-1)}>-1</button>
-                        <span className={`modifier-value ${getModifierClass()}`}>
+                        <span className="modifier-value">
                             {character.fate.fortune}
                         </span>
                         <button className="modifier-btn" onClick={() => adjustFortune(1)}>+1</button>

@@ -106,7 +106,6 @@ func main() {
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
 	r.GET("/characters", handleCharactersHandler(charRepo))
-	r.POST("/fight", handleFightHandler(charRepo))
 	r.POST("/roll", handleRoll)
 
 	// --- AUTH ---
@@ -149,7 +148,6 @@ func main() {
 	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), gameHandler.AddCharacter)
 	r.PUT("/games/:id/characters/move", http.JWTAuthMiddleware(), gameHandler.MoveCharacter)
 	r.DELETE("/games/:id/characters/:characterId", http.JWTAuthMiddleware(), gameHandler.RemoveCharacter)
-	r.POST("/games/:id/fight", http.JWTAuthMiddleware(), gameHandler.Fight)
 	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
 	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
 	r.POST("/games/:id/rollWeapon", http.JWTAuthMiddleware(), gameHandler.RollWeapon)
@@ -264,26 +262,6 @@ func handleCharactersHandler(repo *repository.CharactersRepository) gin.HandlerF
 			return
 		}
 		c.JSON(nethttp.StatusOK, characters)
-	}
-}
-
-// @Summary Atak
-// @Description Pobiera listę wszystkich postaci z plików JSON
-// @Tags characters
-// @Produce json
-// @Success 200 {object} string "Lista postaci w formacie JSON"
-// @Failure 500 {string} string "Error scanning directory"
-// @Router /characters [get]
-func handleFightHandler(repo *repository.CharactersRepository) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		request := new(requests.FightRequest)
-		if err := c.ShouldBindJSON(request); err != nil {
-			c.JSON(nethttp.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
-			return
-		}
-		fightService := service.NewFightService(repo)
-		response := fightService.Fight(*request)
-		c.JSON(nethttp.StatusOK, response)
 	}
 }
 

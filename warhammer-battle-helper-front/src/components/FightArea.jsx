@@ -4,30 +4,18 @@ import Character from './Character';
 
 function FightArea({
     currentZone,
-    fightZones,
-    addLogMessage,
     isActiveDrop,
     activeId,
-    highlightedTargets,
-    highlightPossibleTargets,
-    clearHighlightedTargets,
-    setCurrentAttacker,
-    setCurrentDefender,
-    onCharacterUpdate,
     onSelectCharacter,
-    selectedCharacterId,
     isOwnCharacter = true,
     isMultiplayer = false
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
 
-    const isSelected = currentZone.character && selectedCharacterId && currentZone.character.id === selectedCharacterId;
-
     const classNames = [
         'fight-zone',
         isOver && 'drag-over',
         isActiveDrop && 'drag-target',
-        isSelected && 'selected'
     ].filter(Boolean).join(' ');
 
     const handleZoneClick = () => {
@@ -47,16 +35,7 @@ function FightArea({
                     <Character
                         character={currentZone.character}
                         currentZone={currentZone}
-                        fightZones={fightZones}
-                        addLogMessage={addLogMessage}
-                        onFightComplete={() => {}}
                         activeId={activeId}
-                        isHighlighted={highlightedTargets.has(currentZone.character.id)}
-                        highlightPossibleTargets={highlightPossibleTargets}
-                        clearHighlightedTargets={clearHighlightedTargets}
-                        setCurrentAttacker={setCurrentAttacker}
-                        setCurrentDefender={setCurrentDefender}
-                        onCharacterUpdate={onCharacterUpdate}
                         isOwnCharacter={isOwnCharacter}
                         isMultiplayer={isMultiplayer}
                     />
