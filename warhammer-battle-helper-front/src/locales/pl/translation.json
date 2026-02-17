@@ -267,13 +267,19 @@
     "saveFortuneFailed": "Nie udało się zapisać zmiany fortuny"
   },
   "conditions": {
-    "label": "Stany (not implemented)",
-    "prone": "Leżący",
-    "stunned": "Oszołomiony",
-    "unconscious": "Nieprzytomny",
-    "bleeding": "Krwawiący",
-    "poisoned": "Otruty",
-    "ablaze": "Płonący"
+    "label": "Stany",
+    "ablaze": "Podpalenie",
+    "bleeding": "Krwawienie",
+    "blinded": "Oślepienie",
+    "broken": "Panika",
+    "deafened": "Ogłuszenie",
+    "entangled": "Pochwycenie",
+    "fatigued": "Zmęczenie",
+    "poison": "Zatrucie",
+    "prone": "Powalenie",
+    "stunned": "Oszołomienie",
+    "surprised": "Zaskoczenie",
+    "unconscious": "Utrata Przytomności"
   },
   "attributes": {
     "hp": "Punkty Życia",

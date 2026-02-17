@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CharacterSheetPopup from './CharacterSheetPopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
+import CharacterStates from './CharacterStates';
 import Avatar from './Avatar';
 import axios from 'axios';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
@@ -517,35 +518,11 @@ function CharacterDetailsPanel({
             </div>
 
             {/* States/Conditions */}
-            <div className="states-container">
-                <div className="states-label">{t('conditions.label')}</div>
-                <div className="states-grid">
-                    <div className="state-icon" data-state="prone">
-                        <span>🛏️</span>
-                        <span className="state-tooltip">{t('conditions.prone')}</span>
-                    </div>
-                    <div className="state-icon" data-state="stunned">
-                        <span>😵</span>
-                        <span className="state-tooltip">{t('conditions.stunned')}</span>
-                    </div>
-                    <div className="state-icon" data-state="unconscious">
-                        <span>😴</span>
-                        <span className="state-tooltip">{t('conditions.unconscious')}</span>
-                    </div>
-                    <div className="state-icon" data-state="bleeding">
-                        <span>🩸</span>
-                        <span className="state-tooltip">{t('conditions.bleeding')}</span>
-                    </div>
-                    <div className="state-icon" data-state="poisoned">
-                        <span>🧪</span>
-                        <span className="state-tooltip">{t('conditions.poisoned')}</span>
-                    </div>
-                    <div className="state-icon" data-state="ablaze">
-                        <span>🔥</span>
-                        <span className="state-tooltip">{t('conditions.ablaze')}</span>
-                    </div>
-                </div>
-            </div>
+            <CharacterStates
+                character={character}
+                onCharacterUpdate={onCharacterUpdate}
+                saveUrl={getCharacterSaveUrl(character.id)}
+            />
 
             {/* Detail Grid */}
             <div className="detail-grid">

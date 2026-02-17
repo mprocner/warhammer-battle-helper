@@ -266,13 +266,19 @@
     "saveFortuneFailed": "Failed to save fortune change"
   },
   "conditions": {
-    "label": "Conditions (not implemented)",
+    "label": "Conditions",
+    "ablaze": "Ablaze",
+    "bleeding": "Bleeding",
+    "blinded": "Blinded",
+    "broken": "Broken",
+    "deafened": "Deafened",
+    "entangled": "Entangled",
+    "fatigued": "Fatigued",
+    "poison": "Poison",
     "prone": "Prone",
     "stunned": "Stunned",
-    "unconscious": "Unconscious",
-    "bleeding": "Bleeding",
-    "poisoned": "Poisoned",
-    "ablaze": "Ablaze"
+    "surprised": "Surprised",
+    "unconscious": "Unconscious"
   },
   "attributes": {
     "hp": "Hit Points",

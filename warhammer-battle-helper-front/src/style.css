@@ -383,6 +383,13 @@ header nav a:hover::after {
   position: relative;
   border: 2px solid transparent;
   background: rgba(255, 255, 255, 0.5);
+  color: #6b4423;
+}
+
+.state-icon > svg {
+  filter: grayscale(1);
+  opacity: 0.5;
+  transition: all 0.3s ease;
 }
 
 .state-icon.active {
@@ -391,31 +398,91 @@ header nav a:hover::after {
   box-shadow: 0 0 8px rgba(107, 68, 35, 0.3);
 }
 
+.state-icon.active > svg {
+  filter: none;
+  opacity: 1;
+}
+
 .state-icon:hover {
   transform: scale(1.1);
   border-color: #c9975b;
+  z-index: 10;
+}
+
+.state-icon:hover > svg {
+  opacity: 0.8;
+}
+
+.state-icon.active:hover > svg {
+  opacity: 1;
 }
 
 .state-tooltip {
   position: absolute;
-  bottom: -28px;
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(58, 47, 31, 0.95);
-  color: #f4e8d8;
-  padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 10px;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
   white-space: nowrap;
+  visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
-  border: 1px solid #7a5c42;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
   z-index: 100;
+  cursor: pointer;
+}
+
+.state-tooltip-arrow {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #c9975b;
+}
+
+/* Left edge: 1st and 7th icons (first column in 6-col grid) */
+.state-icon:nth-child(6n+1) .state-tooltip {
+  left: 0;
+  transform: none;
+}
+.state-icon:nth-child(6n+1) .state-tooltip-arrow {
+  left: 12px;
+  transform: none;
+}
+
+/* Right edge: 6th and 12th icons (last column in 6-col grid) */
+.state-icon:nth-child(6n) .state-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.state-icon:nth-child(6n) .state-tooltip-arrow {
+  left: auto;
+  right: 12px;
+  transform: none;
 }
 
 .state-icon:hover .state-tooltip {
+  visibility: visible;
   opacity: 1;
+  animation: stateTooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes stateTooltipFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Detail Grid */

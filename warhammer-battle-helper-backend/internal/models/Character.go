@@ -11,6 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
+type CharacterState struct {
+	Name  string `bson:"name" json:"name"`
+	Level int    `bson:"level" json:"level"`
+}
+
 type Character struct {
 	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
 	OwnerID         primitive.ObjectID   `bson:"ownerId" json:"ownerId"`
@@ -32,6 +37,7 @@ type Character struct {
 	AdvancedSkills  map[string]int       `bson:"advancedSkills" json:"advancedSkills"`
 	FavoriteSkills  []string             `bson:"favoriteSkills,omitempty" json:"favoriteSkills,omitempty"`
 	CustomSkills    []CustomSkill        `bson:"customSkills,omitempty" json:"customSkills,omitempty"`
+	States          []CharacterState     `bson:"states,omitempty" json:"states,omitempty"`
 	Spells          []Spell              `bson:"spells" json:"spells"`
 	Ambitions       AmbitionsInfo        `bson:"ambitions" json:"ambitions"`
 	Party           PartyInfo            `bson:"party" json:"party"`
