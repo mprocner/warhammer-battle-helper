@@ -199,7 +199,15 @@
     "skillName": "Name",
     "skillAttribute": "Attribute",
     "skillDescription": "Description",
-    "situation": "Situation"
+    "situation": "Situation",
+    "armourPoints": "Armour Points",
+    "head": "Head",
+    "leftArm": "Left Arm",
+    "rightArm": "Right Arm",
+    "bodyLocation": "Body",
+    "leftLeg": "Left Leg",
+    "rightLeg": "Right Leg",
+    "shield": "Shield"
   },
   "characteristics": {
     "WEAPON_SKILL": "Weapon Skill",

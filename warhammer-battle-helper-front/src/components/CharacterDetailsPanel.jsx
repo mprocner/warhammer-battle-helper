@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import CharacterSheetPopup from './CharacterSheetPopup';
-import ModifierSelectionModal from './ModifierSelectionModal';
+import CharacterSheetPopup from './character-sheet/CharacterSheetPopup';
+import ModifierSelectionModal from './character-sheet/ModifierSelectionModal';
 import CharacterStates from './CharacterStates';
 import Avatar from './Avatar';
 import axios from 'axios';

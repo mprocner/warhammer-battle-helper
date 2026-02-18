@@ -1,22 +1,29 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import axiosInstance from '../api/axios';
-import skillsData from '../data/skills.json';
-import talentsData from '../data/talents.json';
-import weaponsData from '../data/weapons.json';
-import armourData from '../data/armour.json';
+import axiosInstance from '../../api/axios';
+import skillsData from '../../data/skills.json';
+import talentsData from '../../data/talents.json';
+import weaponsData from '../../data/weapons.json';
+import armourData from '../../data/armour.json';
 import ModifierSelectionModal from './ModifierSelectionModal';
 import CustomItemModal from './CustomItemModal';
 import AvatarUpload from './AvatarUpload';
+import ArmourPointsSection from './ArmourPointsSection';
 import axios from 'axios';
-import { getApiUrl, getApiHeaders } from '../api/axios'; 
+import { getApiUrl, getApiHeaders } from '../../api/axios'; 
 
 function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false }) {
     const { t } = useTranslation(['translation', 'skills', 'talents', 'weapons', 'armour']); 
     const [isMinimized, setIsMinimized] = useState(false);
-    const [position, setPosition] = useState({ x: 100, y: 100 });
-    const [size, setSize] = useState({ width: 1400, height: 800 });
+    const [position, setPosition] = useState(() => ({
+        x: Math.min(0, window.innerWidth - 600),
+        y: Math.min(0, window.innerHeight - 400)
+    }));
+    const [size, setSize] = useState(() => ({
+        width: Math.min(1400, window.innerWidth),
+        height: Math.min(800, window.innerHeight)
+    }));
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState(null);
@@ -1313,7 +1320,14 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 'resilience.resolve',
                 'experience.current',
                 'experience.spent',
-                'experience.total'
+                'experience.total',
+                'armourPoints.head',
+                'armourPoints.leftArm',
+                'armourPoints.rightArm',
+                'armourPoints.body',
+                'armourPoints.leftLeg',
+                'armourPoints.rightLeg',
+                'armourPoints.shield'
             ];
 
             const shouldConvertToInt = numericFields.some(field => path.startsWith(field));
@@ -1400,8 +1414,11 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 const minWidth = 600;
                 const minHeight = 400;
 
+                const maxWidth = window.innerWidth;
+                const maxHeight = window.innerHeight;
+
                 if (resizeDirection.includes('e')) {
-                    newWidth = Math.max(minWidth, resizeStart.width + deltaX);
+                    newWidth = Math.max(minWidth, Math.min(resizeStart.width + deltaX, maxWidth - newX));
                 }
                 if (resizeDirection.includes('w')) {
                     const potentialWidth = resizeStart.width - deltaX;
@@ -1411,7 +1428,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                     }
                 }
                 if (resizeDirection.includes('s')) {
-                    newHeight = Math.max(minHeight, resizeStart.height + deltaY);
+                    newHeight = Math.max(minHeight, Math.min(resizeStart.height + deltaY, maxHeight - newY));
                 }
                 if (resizeDirection.includes('n')) {
                     const potentialHeight = resizeStart.height - deltaY;
@@ -1451,9 +1468,10 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
             style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,
-                width: isMinimized ? 'auto' : `${size.width}px`,
-                height: isMinimized ? 'auto' : `${size.height}px`,
-                maxWidth: 'none'
+                width: isMinimized ? 'auto' : `${Math.min(size.width, window.innerWidth)}px`,
+                height: isMinimized ? 'auto' : `${Math.min(size.height, window.innerHeight)}px`,
+                maxWidth: '100vw',
+                maxHeight: '100vh'
             }}
             onMouseDown={handleMouseDown}
         >
@@ -1895,6 +1913,12 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                                     </select>
                                 </div>
                             </div>
+
+                            {/* Armour Points */}
+                            <ArmourPointsSection
+                                armourPoints={editedCharacter.armourPoints}
+                                onFieldChange={handleFieldChange}
+                            />
 
                             {/* Wealth */}
                             <div className="card-section">

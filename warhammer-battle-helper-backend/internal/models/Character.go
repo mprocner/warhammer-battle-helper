@@ -174,13 +174,13 @@ type Talent struct {
 }
 
 type ArmourPoints struct {
-	Head     string `bson:"head" json:"head"`
-	LeftArm  string `bson:"leftArm" json:"leftArm"`
-	RightArm string `bson:"rightArm" json:"rightArm"`
-	Body     string `bson:"body" json:"body"`
-	LeftLeg  string `bson:"leftLeg" json:"leftLeg"`
-	RightLeg string `bson:"rightLeg" json:"rightLeg"`
-	Shield   string `bson:"shield" json:"shield"`
+	Head     FlexInt `bson:"head" json:"head"`
+	LeftArm  FlexInt `bson:"leftArm" json:"leftArm"`
+	RightArm FlexInt `bson:"rightArm" json:"rightArm"`
+	Body     FlexInt `bson:"body" json:"body"`
+	LeftLeg  FlexInt `bson:"leftLeg" json:"leftLeg"`
+	RightLeg FlexInt `bson:"rightLeg" json:"rightLeg"`
+	Shield   FlexInt `bson:"shield" json:"shield"`
 }
 
 type Weapon struct {

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import axiosInstance from '../api/axios';
-import { getAvatarUrl } from './Avatar';
+import axiosInstance from '../../api/axios';
+import { getAvatarUrl } from '../Avatar';
 
 function AvatarUpload({ currentAvatar, onAvatarChange, disabled = false }) {
     const { t } = useTranslation();

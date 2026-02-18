@@ -200,7 +200,15 @@
     "skillName": "Nazwa",
     "skillAttribute": "Cecha",
     "skillDescription": "Opis",
-    "situation": "Sytuacja"
+    "situation": "Sytuacja",
+    "armourPoints": "Punkty Pancerza",
+    "head": "Głowa",
+    "leftArm": "Lewa Ręka",
+    "rightArm": "Prawa Ręka",
+    "bodyLocation": "Tułów",
+    "leftLeg": "Lewa Noga",
+    "rightLeg": "Prawa Noga",
+    "shield": "Tarcza"
   },
   "characteristics": {
     "WEAPON_SKILL": "Walka Wręcz",
