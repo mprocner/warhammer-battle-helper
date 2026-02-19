@@ -165,6 +165,30 @@ type WoundsInfo struct {
 	Current *int    `bson:"current,omitempty" json:"current,omitempty"`
 }
 
+func (c *Character) ComputeDerivedFields() {
+	c.Wounds.SB = FlexInt(c.Characteristics.Current.S / 10)
+	c.Wounds.TB = FlexInt(c.Characteristics.Current.T / 10)
+	c.Wounds.WPB = FlexInt(c.Characteristics.Current.WP / 10)
+
+	c.Wounds.Hardy = 0
+	for _, t := range c.Talents {
+		if t.Key == "HARDY" {
+			c.Wounds.Hardy = c.Wounds.TB * FlexInt(t.TimesTaken)
+			break
+		}
+	}
+
+	c.Wounds.Total = c.Wounds.SB + c.Wounds.TB + c.Wounds.WPB + c.Wounds.Hardy
+
+	if m, err := strconv.Atoi(c.Movement.Movement); err == nil {
+		c.Movement.Walk = strconv.Itoa(m * 2)
+		c.Movement.Run = strconv.Itoa(m * 4)
+	} else {
+		c.Movement.Walk = ""
+		c.Movement.Run = ""
+	}
+}
+
 type Talent struct {
 	Key         string `bson:"key" json:"key"`
 	Name        string `bson:"name,omitempty" json:"name,omitempty"`

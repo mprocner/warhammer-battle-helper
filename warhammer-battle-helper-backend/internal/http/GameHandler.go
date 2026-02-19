@@ -140,6 +140,7 @@ func (h *GameHandler) GetAllGameCharacters(c *gin.Context) {
 
 	result := make([]CharacterWithOwner, len(characters))
 	for i, ch := range characters {
+		ch.ComputeDerivedFields()
 		result[i] = CharacterWithOwner{
 			Character:     ch,
 			OwnerUsername: usernameMap[ch.OwnerID],

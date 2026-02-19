@@ -16,6 +16,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const saveTimeoutRef = useRef(null);
+    const editedCharacterRef = useRef(editedCharacter);
 
     useEffect(() => {
         setEditedCharacter({
@@ -46,15 +47,23 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         return `/characters/${charId}`;
     }, [isGM, gameId]);
 
+    editedCharacterRef.current = editedCharacter;
+
+    const buildPayload = useCallback((charToSave) => {
+        const { sb: _sb, tb: _tb, wpb: _wpb, hardy: _hardy, total: _total, ...woundsRest } = charToSave.wounds ?? {};
+        const { walk: _walk, run: _run, ...movementRest } = charToSave.movement ?? {};
+        return { ...charToSave, wounds: woundsRest, movement: movementRest };
+    }, []);
+
     const save = useCallback(async (charToSave) => {
         setIsSaving(true);
         setSaveSuccess(false);
         try {
-            await axiosInstance.put(getCharacterSaveUrl(charToSave.id), charToSave);
+            const response = await axiosInstance.put(getCharacterSaveUrl(charToSave.id), buildPayload(charToSave));
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
             if (onCharacterUpdate) {
-                onCharacterUpdate(charToSave);
+                onCharacterUpdate(response.data);
             }
             setHasChanges(false);
         } catch (error) {
@@ -66,8 +75,8 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     }, [getCharacterSaveUrl, onCharacterUpdate]);
 
     const handleSave = useCallback(async () => {
-        await save(editedCharacter);
-    }, [editedCharacter, save]);
+        await save(editedCharacterRef.current);
+    }, [save]);
 
     const scheduleAutoSave = useCallback(() => {
         if (saveTimeoutRef.current) {
@@ -95,17 +104,17 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [hasChanges, handleSave]);
+    }, [hasChanges]);
 
     const saveImmediately = useCallback(async (updatedChar) => {
         setIsSaving(true);
         setSaveSuccess(false);
         try {
-            await axiosInstance.put(getCharacterSaveUrl(updatedChar.id), updatedChar);
+            const response = await axiosInstance.put(getCharacterSaveUrl(updatedChar.id), buildPayload(updatedChar));
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
             if (onCharacterUpdate) {
-                onCharacterUpdate(updatedChar);
+                onCharacterUpdate(response.data);
             }
         } catch (error) {
             console.error('Error saving character:', error);

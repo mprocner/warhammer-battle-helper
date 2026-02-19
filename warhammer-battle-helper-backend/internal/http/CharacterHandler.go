@@ -55,6 +55,10 @@ func (h *CharacterHandler) GetMyCharacters(c *gin.Context) {
 		return
 	}
 
+	for i := range characters {
+		characters[i].ComputeDerivedFields()
+	}
+
 	c.JSON(http.StatusOK, characters)
 }
 
@@ -105,6 +109,7 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		return
 	}
 
+	character.ComputeDerivedFields()
 	c.JSON(http.StatusCreated, character)
 }
 
@@ -173,6 +178,7 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
+	updatedCharacter.ComputeDerivedFields()
 	c.JSON(http.StatusOK, updatedCharacter)
 }
 
@@ -246,6 +252,7 @@ func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create clone"})
 			return
 		}
+		clone.ComputeDerivedFields()
 		clones = append(clones, &clone)
 	}
 

@@ -581,6 +581,66 @@ header nav a:hover::after {
   margin: 0;
 }
 
+.character-sheet-popup .stat-formula {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.character-sheet-popup .stat-formula__field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.character-sheet-popup .stat-formula__field label {
+    font-size: 11px;
+    color: #5a4a3a;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.character-sheet-popup .stat-formula__input {
+    width: 52px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0;
+    box-sizing: border-box;
+    height: 26px;
+}
+
+.character-sheet-popup .stat-formula__value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 26px;
+    box-sizing: border-box;
+    font-size: 14px;
+    font-weight: 700;
+    color: #3a2f1f;
+    background: rgba(200, 180, 150, 0.25);
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+}
+
+.character-sheet-popup .stat-formula__value--total {
+    color: #6b4423;
+    background: rgba(180, 140, 80, 0.2);
+    border-color: #a67c52;
+}
+
+.character-sheet-popup .stat-formula__op {
+    font-size: 16px;
+    font-weight: 700;
+    color: #6b4423;
+    padding-bottom: 3px;
+}
+
 /* Characteristics Mini */
 .characteristics-mini {
   display: grid;

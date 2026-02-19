@@ -4,6 +4,12 @@ import { useTranslation } from 'react-i18next';
 function ResourceBoxesSection({ character, onFieldChange }) {
     const { t } = useTranslation();
 
+    const sb = character.wounds?.sb ?? 0;
+    const tb = character.wounds?.tb ?? 0;
+    const wpb = character.wounds?.wpb ?? 0;
+    const hardy = character.wounds?.hardy ?? 0;
+    const total = character.wounds?.total ?? 0;
+
     return (
         <>
             <div className="three-col-grid">
@@ -85,76 +91,55 @@ function ResourceBoxesSection({ character, onFieldChange }) {
 
             <div className="card-section">
                 <h3>{t('characterSheet.movement')}</h3>
-                <div className="three-col-grid">
-                    <div className="mini-field">
+                <div className="stat-formula">
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.movement')}</label>
                         <input
                             type="text"
                             value={character.movement?.movement || ''}
                             onChange={(e) => onFieldChange('movement.movement', e.target.value)}
+                            className="stat-formula__input"
                         />
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">→</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.walk')}</label>
-                        <input
-                            type="text"
-                            value={character.movement?.walk || ''}
-                            onChange={(e) => onFieldChange('movement.walk', e.target.value)}
-                        />
+                        <span className="stat-formula__value">{character.movement?.walk || '—'}</span>
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">→</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.run')}</label>
-                        <input
-                            type="text"
-                            value={character.movement?.run || ''}
-                            onChange={(e) => onFieldChange('movement.run', e.target.value)}
-                        />
+                        <span className="stat-formula__value">{character.movement?.run || '—'}</span>
                     </div>
                 </div>
             </div>
 
             <div className="card-section">
                 <h3>{t('characterSheet.wounds')}</h3>
-                <div className="three-col-grid">
-                    <div className="mini-field">
+                <div className="stat-formula">
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.sb')}</label>
-                        <input
-                            type="number"
-                            value={character.wounds?.sb ?? 0}
-                            onChange={(e) => onFieldChange('wounds.sb', parseInt(e.target.value) || 0)}
-                        />
+                        <span className="stat-formula__value">{sb}</span>
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">+</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.tbPlus2')}</label>
-                        <input
-                            type="number"
-                            value={character.wounds?.tb ?? 0}
-                            onChange={(e) => onFieldChange('wounds.tb', parseInt(e.target.value) || 0)}
-                        />
+                        <span className="stat-formula__value">{tb}</span>
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">+</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.wpb')}</label>
-                        <input
-                            type="number"
-                            value={character.wounds?.wpb ?? 0}
-                            onChange={(e) => onFieldChange('wounds.wpb', parseInt(e.target.value) || 0)}
-                        />
+                        <span className="stat-formula__value">{wpb}</span>
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">+</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.hardy')}</label>
-                        <input
-                            type="number"
-                            value={character.wounds?.hardy ?? 0}
-                            onChange={(e) => onFieldChange('wounds.hardy', parseInt(e.target.value) || 0)}
-                        />
+                        <span className="stat-formula__value">{hardy}</span>
                     </div>
-                    <div className="mini-field">
+                    <span className="stat-formula__op">=</span>
+                    <div className="stat-formula__field">
                         <label>{t('characterSheet.total')}</label>
-                        <input
-                            type="number"
-                            value={character.wounds?.total ?? 0}
-                            onChange={(e) => onFieldChange('wounds.total', parseInt(e.target.value) || 0)}
-                        />
+                        <span className="stat-formula__value stat-formula__value--total">{total}</span>
                     </div>
                 </div>
             </div>
