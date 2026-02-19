@@ -5,7 +5,7 @@ import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import './HandoutCreateModal.css';
 
-const HANDOUT_TYPES = ['image', 'pdf', 'text', 'map', 'letter'];
+const HANDOUT_TYPES = ['map', 'letter', 'document', 'image', 'clue', 'poster'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const ALLOWED_FILE_TYPES = {
@@ -161,22 +161,6 @@ const HandoutCreateModal = ({
       setFormData(prev => ({ ...prev, fileUrl: result.url }));
       setPreviewUrl(result.url);
 
-      // Auto-detect type from file (only if current type is incompatible)
-      if (file.type.startsWith('image/')) {
-        // Don't change if already set to image or map (both valid for images)
-        setFormData(prev => {
-          if (prev.type === 'image' || prev.type === 'map') return prev;
-          return { ...prev, type: 'image' };
-        });
-      } else if (file.type === 'application/pdf') {
-        setFormData(prev => ({ ...prev, type: 'pdf' }));
-      } else if (file.type === 'text/plain') {
-        // Don't change if already set to text or letter (both valid for text files)
-        setFormData(prev => {
-          if (prev.type === 'text' || prev.type === 'letter') return prev;
-          return { ...prev, type: 'text' };
-        });
-      }
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadError(t('handouts.uploadFailed'));
@@ -217,6 +201,15 @@ const HandoutCreateModal = ({
     return previewUrl.startsWith('http')
       ? previewUrl
       : `${getApiUrl()}${previewUrl}`;
+  };
+
+  // Detect file type from URL extension for preview
+  const getUploadedFileType = (url) => {
+    if (!url) return null;
+    const lower = url.toLowerCase().split('?')[0];
+    if (lower.match(/\.(jpg|jpeg|png|gif|webp)$/)) return 'image';
+    if (lower.match(/\.pdf$/)) return 'pdf';
+    return 'text';
   };
 
   return (
@@ -361,16 +354,16 @@ const HandoutCreateModal = ({
             <div className="file-upload-area">
               {previewUrl ? (
                 <div className="file-preview">
-                  {formData.type === 'image' || formData.type === 'map' ? (
+                  {getUploadedFileType(previewUrl) === 'image' ? (
                     <img src={getPreviewUrl()} alt="Preview" className="file-preview__image" />
-                  ) : formData.type === 'pdf' ? (
+                  ) : getUploadedFileType(previewUrl) === 'pdf' ? (
                     <div className="file-preview__pdf">
-                      <HandoutTypeIcon type="pdf" />
+                      <HandoutTypeIcon type="document" />
                       <span>{t('handouts.pdfUploaded')}</span>
                     </div>
                   ) : (
                     <div className="file-preview__text">
-                      <HandoutTypeIcon type="text" />
+                      <HandoutTypeIcon type="letter" />
                       <span>{t('handouts.textUploaded')}</span>
                     </div>
                   )}

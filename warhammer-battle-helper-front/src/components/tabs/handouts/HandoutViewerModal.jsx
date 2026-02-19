@@ -51,8 +51,12 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
   }, [handout?.fileUrl, t]);
 
   useEffect(() => {
-    if (isOpen && handout && (handout.type === 'text' || handout.type === 'letter')) {
-      fetchTextContent();
+    if (isOpen && handout) {
+      const lower = (handout.fileUrl || '').toLowerCase().split('?')[0];
+      const isTextFile = !lower.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/);
+      if (isTextFile) {
+        fetchTextContent();
+      }
     }
   }, [isOpen, handout, fetchTextContent]);
 
@@ -170,74 +174,65 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
       : `${getApiUrl()}${handout.fileUrl}`;
   };
 
+  const getFileTypeFromUrl = (url) => {
+    if (!url) return 'text';
+    const lower = url.toLowerCase().split('?')[0];
+    if (lower.match(/\.(jpg|jpeg|png|gif|webp)$/)) return 'image';
+    if (lower.match(/\.pdf$/)) return 'pdf';
+    return 'text';
+  };
+
   const renderContent = () => {
     const fileUrl = getFileUrl();
+    const fileType = getFileTypeFromUrl(handout.fileUrl);
 
-    switch (handout.type) {
-      case 'image':
-      case 'map':
-        return (
-          <div className="handout-viewer__image-container">
-            <img
-              src={fileUrl}
-              alt={handout.title}
-              className="handout-viewer__image"
-            />
-          </div>
-        );
-
-      case 'pdf':
-        return (
-          <div className="handout-viewer__pdf-container">
-            <iframe
-              src={fileUrl}
-              title={handout.title}
-              className="handout-viewer__pdf"
-            />
-          </div>
-        );
-
-      case 'text':
-      case 'letter':
-        if (isLoading) {
-          return (
-            <div className="handout-viewer__loading">
-              <div className="loading-spinner" />
-              <span>{t('common.loading')}</span>
-            </div>
-          );
-        }
-
-        if (error) {
-          return (
-            <div className="handout-viewer__error">
-              {error}
-            </div>
-          );
-        }
-
-        return (
-          <div className={`handout-viewer__text-container ${handout.type === 'letter' ? 'handout-viewer__text-container--letter' : ''}`}>
-            <pre className="handout-viewer__text">{textContent}</pre>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="handout-viewer__unknown">
-            <HandoutTypeIcon type={handout.type} />
-            <p>{t('handouts.unsupportedType')}</p>
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="handout-viewer__download-btn"
-            >
-              {t('handouts.download')}
-            </a>
-          </div>
-        );
+    if (fileType === 'image') {
+      return (
+        <div className="handout-viewer__image-container">
+          <img
+            src={fileUrl}
+            alt={handout.title}
+            className="handout-viewer__image"
+          />
+        </div>
+      );
     }
+
+    if (fileType === 'pdf') {
+      return (
+        <div className="handout-viewer__pdf-container">
+          <iframe
+            src={fileUrl}
+            title={handout.title}
+            className="handout-viewer__pdf"
+          />
+        </div>
+      );
+    }
+
+    // text file
+    if (isLoading) {
+      return (
+        <div className="handout-viewer__loading">
+          <div className="loading-spinner" />
+          <span>{t('common.loading')}</span>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="handout-viewer__error">
+          {error}
+        </div>
+      );
+    }
+
+    return (
+      <div className={`handout-viewer__text-container ${handout.type === 'letter' ? 'handout-viewer__text-container--letter' : ''}`}>
+        <pre className="handout-viewer__text">{textContent}</pre>
+      </div>
+    );
   };
 
   const sizeStyle = isMinimized ? {} : {

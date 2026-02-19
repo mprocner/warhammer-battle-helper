@@ -369,11 +369,12 @@
     "descriptionPlaceholder": "Enter a brief description...",
     "type": "Type",
     "types": {
-      "image": "Image",
-      "pdf": "PDF",
-      "text": "Text",
       "map": "Map",
-      "letter": "Letter"
+      "letter": "Letter",
+      "document": "Document",
+      "image": "Image",
+      "clue": "Clue",
+      "poster": "Poster"
     },
     "visibility": "Visibility",
     "visibleToAll": "All Players",

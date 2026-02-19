@@ -370,11 +370,12 @@
     "descriptionPlaceholder": "Wprowadź krótki opis...",
     "type": "Typ",
     "types": {
-      "image": "Obraz",
-      "pdf": "PDF",
-      "text": "Tekst",
       "map": "Mapa",
-      "letter": "List"
+      "letter": "List",
+      "document": "Dokument",
+      "image": "Obraz",
+      "clue": "Wskazówka",
+      "poster": "Plakat"
     },
     "visibility": "Widoczność",
     "visibleToAll": "Wszyscy Gracze",
