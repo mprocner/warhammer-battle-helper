@@ -24,10 +24,20 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
 
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
+  const justFinishedDraggingRef = useRef(false);
+  const justFinishedResizingRef = useRef(false);
 
   // Sync with props when image updates from server
   useEffect(() => {
     if (!isDragging && !isResizing) {
+      if (justFinishedDraggingRef.current) {
+        justFinishedDraggingRef.current = false;
+        return;
+      }
+      if (justFinishedResizingRef.current) {
+        justFinishedResizingRef.current = false;
+        return;
+      }
       setPos({ x: image.x, y: image.y });
       setSize({ width: image.width, height: image.height });
     }
@@ -77,6 +87,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
       const finalX = startX + (e.clientX - mouseX) / z;
       const finalY = startY + (e.clientY - mouseY) / z;
       setPos({ x: finalX, y: finalY });
+      justFinishedDraggingRef.current = true;
       setIsDragging(false);
       savePosition(finalX, finalY, undefined, undefined);
     };
@@ -139,6 +150,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
 
       setPos({ x: newX, y: newY });
       setSize({ width: newW, height: newH });
+      justFinishedResizingRef.current = true;
       setIsResizing(false);
       savePosition(newX, newY, newW, newH);
     };
@@ -217,6 +229,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
+          cursor: isGM ? (isDragging ? 'grabbing' : 'grab') : 'default',
         }}
         onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}

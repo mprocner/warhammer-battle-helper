@@ -506,7 +506,7 @@
     "gridWidth": "Grid Width",
     "gridHeight": "Grid Height",
     "gridSizeError": "Maximum grid size is 50×50",
-    "showGrid": "Show Grid Lines",
+    "showGrid": "Show Grid",
     "assignedPlayers": "Assigned Players",
     "noPlayers": "No players in game",
     "players": "players",

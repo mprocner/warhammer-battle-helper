@@ -63,6 +63,18 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   // Clone character popup
   const [cloneTarget, setCloneTarget] = useState(null);
 
+  const characterTileRefs = useRef({});
+
+  // Scroll selected character tile into view when selection changes
+  useEffect(() => {
+    if (selectedCharacter) {
+      const el = characterTileRefs.current[selectedCharacter.id];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedCharacter]);
+
   // Keep fightZonesRef in sync with fightZones state
   useEffect(() => {
     fightZonesRef.current = fightZones;
@@ -101,7 +113,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       return; // Don't select other players' characters
     }
 
-    setSelectedCharacter(character);
+    // Always use the most up-to-date character data from initialCharacters
+    // to avoid stale/missing wounds.current from grid zone data
+    const freshChar = initialCharacters.find(c => c.id === character.id) || character;
+    setSelectedCharacter(freshChar);
   };
 
   // Multiplayer: Add character to grid (scene-aware)
@@ -657,6 +672,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                 return (
                   <div
                     key={char.id}
+                    ref={el => { if (el) characterTileRefs.current[char.id] = el; else delete characterTileRefs.current[char.id]; }}
                     className={`character-tile ${isSelected ? 'selected' : ''} ${onGrid ? 'on-grid' : ''}`}
                     onClick={() => handleSelectCharacter(char)}
                   >

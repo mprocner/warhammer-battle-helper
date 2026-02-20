@@ -132,6 +132,7 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
 
   const backgroundImages = (scene.images || []).filter(img => img.layer === 'background');
   const gmImages = (scene.images || []).filter(img => img.layer === 'gm');
+  const gridVisible = scene.gridVisible !== false;
 
   const zoomContextValue = { zoom, gridWidth, gridHeight };
 
@@ -205,7 +206,10 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                 />
 
                 {/* Grid layer */}
-                <div className="scene-viewport__grid-layer">
+                <div
+                  className="scene-viewport__grid-layer"
+                  style={{ pointerEvents: gridVisible ? 'auto' : 'none' }}
+                >
                   {children}
                 </div>
 

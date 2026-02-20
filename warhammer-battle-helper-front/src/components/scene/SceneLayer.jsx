@@ -5,8 +5,7 @@ const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer }) 
   const sortedImages = [...images].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
   const isActive = editingLayer === layerName;
-  const baseZIndex = layerName === 'background' ? 1 : 10;
-  const zIndex = isActive ? 20 : baseZIndex;
+  const zIndex = layerName === 'background' ? 1 : 10;
 
   return (
     <div
@@ -15,7 +14,7 @@ const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer }) 
         position: 'absolute',
         inset: 0,
         zIndex,
-        pointerEvents: isActive ? 'auto' : 'none',
+        pointerEvents: isGM ? 'none' : (isActive ? 'auto' : 'none'),
       }}
     >
       {sortedImages.map(image => (
