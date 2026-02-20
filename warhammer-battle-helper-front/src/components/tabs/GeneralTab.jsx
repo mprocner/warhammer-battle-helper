@@ -1,14 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl, getApiHeaders } from '../../api/axios';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import LogoutIcon from '@mui/icons-material/Logout';
 import './GeneralTab.css';
 
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState }) => {
+const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, isGM, token, gameId }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteStatus, setInviteStatus] = useState(null); // null | 'success' | 'notFound' | 'alreadyIn' | 'error'
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviteLoading(true);
+    setInviteStatus(null);
+    try {
+      const response = await fetch(`${getApiUrl()}/games/${gameId}/invite`, {
+        method: 'POST',
+        headers: getApiHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }),
+        body: JSON.stringify({ email: inviteEmail.trim() })
+      });
+      if (response.ok) {
+        setInviteStatus('success');
+        setInviteEmail('');
+      } else if (response.status === 404) {
+        setInviteStatus('notFound');
+      } else if (response.status === 409) {
+        setInviteStatus('alreadyIn');
+      } else {
+        setInviteStatus('error');
+      }
+    } catch {
+      setInviteStatus('error');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
@@ -49,6 +86,43 @@ const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected, playerVolum
           </div>
         </div>
       </section>
+
+      {/* Invite Players Section (GM only) */}
+      {isGM && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('settings.invitePlayers')}</h4>
+          <div className="general-tab__invite">
+            <input
+              type="email"
+              className="general-tab__invite-input"
+              placeholder={t('settings.inviteByEmail')}
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !inviteLoading) handleInvite(); }}
+              disabled={inviteLoading}
+            />
+            <button
+              className="general-tab__invite-btn"
+              onClick={handleInvite}
+              disabled={inviteLoading || !inviteEmail.trim()}
+            >
+              {t('settings.invite')}
+            </button>
+          </div>
+          {inviteStatus === 'success' && (
+            <p className="general-tab__invite-msg general-tab__invite-msg--success">{t('settings.inviteSuccess')}</p>
+          )}
+          {inviteStatus === 'notFound' && (
+            <p className="general-tab__invite-msg general-tab__invite-msg--error">{t('settings.inviteNotFound')}</p>
+          )}
+          {inviteStatus === 'alreadyIn' && (
+            <p className="general-tab__invite-msg general-tab__invite-msg--error">{t('settings.inviteAlreadyInGame')}</p>
+          )}
+          {inviteStatus === 'error' && (
+            <p className="general-tab__invite-msg general-tab__invite-msg--error">{t('common.error')}</p>
+          )}
+        </section>
+      )}
 
       {/* Music Volume Section */}
       {playerVolume !== undefined && onPlayerVolumeChange && (
@@ -95,15 +169,24 @@ const GeneralTab = ({ onLogout, onLeaveGame, gameState, isConnected, playerVolum
         <h4 className="general-tab__section-title">{t('settings.actions')}</h4>
         <div className="general-tab__actions">
           <button
+            className="general-tab__action-btn general-tab__action-btn--back"
+            onClick={onGoToGameList}
+          >
+            <ArrowBackIcon fontSize="small" />
+            {t('settings.backToGameList')}
+          </button>
+          <button
             className="general-tab__action-btn general-tab__action-btn--leave"
             onClick={onLeaveGame}
           >
+            <ExitToAppIcon fontSize="small" />
             {t('settings.leaveGame')}
           </button>
           <button
             className="general-tab__action-btn general-tab__action-btn--logout"
             onClick={handleLogout}
           >
+            <LogoutIcon fontSize="small" />
             {t('settings.logout')}
           </button>
         </div>

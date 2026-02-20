@@ -670,7 +670,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                       <div className="character-owner">{char.ownerUsername}</div>
                     )}
                     <div className="character-position">
-                      {onGrid ? 'On Grid' : 'Available'}
+                      {onGrid ? t('leftPanel.onGrid') : t('leftPanel.available')}
                       <div className="character-actions">
                         {isGM && (
                           <button

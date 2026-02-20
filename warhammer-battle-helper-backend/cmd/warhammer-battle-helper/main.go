@@ -137,11 +137,12 @@ func main() {
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, CharacterRepo: charRepo}
 
 	// Public game routes
-	r.GET("/games", gameHandler.GetGames)
 	r.GET("/games/:id", gameHandler.GetGame)
 
 	// Protected game routes
+	r.GET("/games", http.JWTAuthMiddleware(), gameHandler.GetGames)
 	r.POST("/games", http.JWTAuthMiddleware(), gameHandler.CreateGame)
+	r.POST("/games/:id/invite", http.JWTAuthMiddleware(), gameHandler.InvitePlayer)
 	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
 	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
 	r.GET("/games/:id/characters/all", http.JWTAuthMiddleware(), gameHandler.GetAllGameCharacters)

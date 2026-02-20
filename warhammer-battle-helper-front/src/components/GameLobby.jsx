@@ -30,11 +30,13 @@ const GameLobby = ({ onJoinGame, token }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch all active games
+  // Fetch games visible to the current user
   const fetchGames = async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games`, {
-        headers: getApiHeaders()
+        headers: getApiHeaders({
+          'Authorization': `Bearer ${token}`
+        })
       });
       if (!response.ok) throw new Error('Failed to fetch games');
       const data = await response.json();
@@ -273,7 +275,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                       py: 1
                     }}
                   >
-                    {t('game.joinGame')}
+                    {t('game.enterGame')}
                   </Button>
                 </CardActions>
               </Card>

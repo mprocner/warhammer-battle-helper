@@ -111,6 +111,80 @@ func (s *GameService) GetAllGames() ([]models.Game, error) {
 	return games, nil
 }
 
+// GetGamesForUser retrieves games visible to the given user (GM or active participant)
+func (s *GameService) GetGamesForUser(userID primitive.ObjectID) ([]models.Game, error) {
+	games, err := s.gameRepo.GetByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range games {
+		if !games[i].GameMasterID.IsZero() {
+			gmUser, err := s.userRepo.FindByID(games[i].GameMasterID)
+			if err == nil && gmUser != nil {
+				games[i].GameMasterEmail = gmUser.Email
+			}
+		}
+	}
+
+	return games, nil
+}
+
+// InvitePlayer invites a user by email to a game (GM only)
+func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive.ObjectID, email string) error {
+	game, err := s.gameRepo.GetByID(gameID.Hex())
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != gmUserID {
+		return fmt.Errorf("only the game master can invite players")
+	}
+
+	invitedUser, err := s.userRepo.FindByEmail(email)
+	if err != nil {
+		return fmt.Errorf("user not found")
+	}
+
+	// Check if user is already a participant
+	for _, p := range game.Participants {
+		if p.UserID == invitedUser.ID {
+			if p.IsActive {
+				return fmt.Errorf("user already in game")
+			}
+			// Reactivate inactive participant
+			if err := s.gameRepo.ReactivateParticipant(gameID.Hex(), invitedUser.ID); err != nil {
+				return err
+			}
+			s.hub.BroadcastToGame(gameID.Hex(), "PARTICIPANT_JOINED", map[string]interface{}{
+				"userId":   invitedUser.ID.Hex(),
+				"username": invitedUser.Email,
+				"role":     models.RolePlayer,
+			})
+			return nil
+		}
+	}
+
+	participant := models.GameParticipant{
+		UserID:   invitedUser.ID,
+		Username: invitedUser.Email,
+		Email:    invitedUser.Email,
+		Role:     models.RolePlayer,
+		IsActive: true,
+	}
+	if err := s.gameRepo.AddParticipant(gameID.Hex(), participant); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID.Hex(), "PARTICIPANT_JOINED", map[string]interface{}{
+		"userId":   invitedUser.ID.Hex(),
+		"username": invitedUser.Email,
+		"role":     models.RolePlayer,
+	})
+
+	return nil
+}
+
 // JoinGame adds a user to a game
 func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, username string) (*models.Game, error) {
 	game, err := s.gameRepo.GetByID(gameID)
@@ -176,8 +250,16 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 
 // LeaveGame removes a user from a game
 func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, username string) error {
-	if err := s.gameRepo.RemoveParticipant(gameID, userID); err != nil {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
 		return err
+	}
+
+	// GM is not stored as a participant, so skip RemoveParticipant
+	if game.GameMasterID != userID {
+		if err := s.gameRepo.RemoveParticipant(gameID, userID); err != nil {
+			return err
+		}
 	}
 
 	// Add leave event

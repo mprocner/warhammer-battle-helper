@@ -294,6 +294,16 @@
   flex: 1;
 }
 
+.scenes-tab__grid-error {
+  margin: 4px 0 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: #e05c5c;
+  background: rgba(224, 92, 92, 0.12);
+  border-left: 3px solid #e05c5c;
+  border-radius: 2px;
+}
+
 .scenes-tab__players {
   display: flex;
   flex-direction: column;

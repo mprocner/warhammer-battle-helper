@@ -58,15 +58,68 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	c.JSON(http.StatusCreated, game)
 }
 
-// GetGames returns all active games
+// GetGames returns games visible to the authenticated user
 func (h *GameHandler) GetGames(c *gin.Context) {
-	games, err := h.GameService.GetAllGames()
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	games, err := h.GameService.GetGamesForUser(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, games)
+}
+
+// InvitePlayer invites a user by email to a game (GM only)
+func (h *GameHandler) InvitePlayer(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req models.InvitePlayerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	gmUserID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	gameObjectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
+	}
+
+	if err := h.GameService.InvitePlayer(gameObjectID, gmUserID, req.Email); err != nil {
+		switch err.Error() {
+		case "only the game master can invite players":
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case "user not found":
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case "user already in game":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Player invited successfully"})
 }
 
 // GetGame returns a specific game

@@ -56,6 +56,7 @@
   "game": {
     "createGame": "Create Game",
     "joinGame": "Join Game",
+    "enterGame": "Enter Game",
     "gameLobby": "Game Lobby",
     "startGame": "Start Game",
     "endGame": "End Game",
@@ -348,8 +349,15 @@
     "english": "English",
     "polish": "Polski",
     "actions": "Actions",
+    "backToGameList": "Back to Game List",
     "leaveGame": "Leave Game",
-    "logout": "Logout"
+    "logout": "Logout",
+    "invitePlayers": "Invite Players",
+    "inviteByEmail": "Player email",
+    "invite": "Invite",
+    "inviteSuccess": "Player invited successfully",
+    "inviteNotFound": "No user found with that email",
+    "inviteAlreadyInGame": "Player is already in this game"
   },
   "handouts": {
     "title": "Handouts",
@@ -497,6 +505,7 @@
     "namePlaceholder": "Enter scene name...",
     "gridWidth": "Grid Width",
     "gridHeight": "Grid Height",
+    "gridSizeError": "Maximum grid size is 50×50",
     "showGrid": "Show Grid Lines",
     "assignedPlayers": "Assigned Players",
     "noPlayers": "No players in game",
@@ -518,7 +527,7 @@
     "gridLayer": "Grid",
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",
-    "fitToScreen": "Fit to Screen",
+    "fitToScreen": "Fit",
     "zoomLevel": "Zoom Level",
     "gmBadge": "GM"
   },

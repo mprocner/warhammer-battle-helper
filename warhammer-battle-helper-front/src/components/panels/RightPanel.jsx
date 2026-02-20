@@ -19,6 +19,7 @@ const RightPanel = ({
   token,
   onLogout,
   onLeaveGame,
+  onGoToGameList,
   gameState,
   isConnected,
   currentSceneId,
@@ -112,11 +113,15 @@ const RightPanel = ({
           <GeneralTab
             onLogout={onLogout}
             onLeaveGame={onLeaveGame}
+            onGoToGameList={onGoToGameList}
             gameState={gameState}
             isConnected={isConnected}
             playerVolume={playerVolume}
             onPlayerVolumeChange={onPlayerVolumeChange}
             musicState={musicState}
+            isGM={isGM}
+            token={token}
+            gameId={gameId}
           />
         );
       default:

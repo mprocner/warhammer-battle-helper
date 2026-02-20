@@ -190,6 +190,71 @@
   font-weight: 700;
 }
 
+/* Invite Section */
+.general-tab__invite {
+  display: flex;
+  gap: 8px;
+}
+
+.general-tab__invite-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #8b6b3d;
+  border-radius: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  background: #fdf8f2;
+  color: #4a3728;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.general-tab__invite-input:focus {
+  border-color: #6b4423;
+}
+
+.general-tab__invite-input:disabled {
+  opacity: 0.6;
+}
+
+.general-tab__invite-btn {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #6b4423 0%, #4a3728 100%);
+  border: none;
+  border-radius: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f5ebe0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.general-tab__invite-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.general-tab__invite-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.general-tab__invite-msg {
+  margin: 8px 0 0 0;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.general-tab__invite-msg--success {
+  color: #155724;
+}
+
+.general-tab__invite-msg--error {
+  color: #721c24;
+}
+
 /* Actions Section */
 .general-tab__actions {
   display: flex;
@@ -199,34 +264,23 @@
 
 .general-tab__action-btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
+  border: 2px solid #8b6b3d;
   border-radius: 6px;
   font-family: 'Crimson Text', serif;
   font-size: 1rem;
   font-weight: 600;
+  color: #4a3728;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid;
 }
 
-.general-tab__action-btn--leave {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-  border-color: #c9a227;
-  color: #856404;
+.general-tab__action-btn:hover {
+  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
+  border-color: #6b4423;
 }
 
-.general-tab__action-btn--leave:hover {
-  background: linear-gradient(135deg, #ffeeba 0%, #ffd93d 100%);
-  border-color: #856404;
-}
-
-.general-tab__action-btn--logout {
-  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-  border-color: #c94040;
-  color: #721c24;
-}
-
-.general-tab__action-btn--logout:hover {
-  background: linear-gradient(135deg, #f5c6cb 0%, #e57373 100%);
-  border-color: #721c24;
-}

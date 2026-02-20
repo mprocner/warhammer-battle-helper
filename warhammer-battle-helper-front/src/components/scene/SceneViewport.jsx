@@ -14,7 +14,7 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
   const viewportRef = useRef(null);
-  const prevSceneKeyRef = useRef(null);
+
 
   useEffect(() => {
     onZoomChange?.(zoom);
@@ -34,17 +34,6 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
     return Math.min(vw / canvasSize.width, vh / canvasSize.height, MAX_ZOOM);
   }, [canvasSize]);
 
-  // Auto-fit on mount and when scene/grid changes
-  useEffect(() => {
-    const sceneKey = `${scene?.id}-${gridWidth}-${gridHeight}`;
-    if (prevSceneKeyRef.current !== sceneKey) {
-      prevSceneKeyRef.current = sceneKey;
-      // Delay to let the DOM settle
-      requestAnimationFrame(() => {
-        setZoom(calcFitZoom());
-      });
-    }
-  }, [scene?.id, gridWidth, gridHeight, calcFitZoom]);
 
   // Center-preserving zoom helper
   const applyZoom = useCallback((newZoom) => {
@@ -173,7 +162,7 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
             onClick={handleFit}
             title={t('scenes.fitToScreen')}
           >
-            Fit
+            {t('scenes.fitToScreen')}
           </button>
         </div>
 

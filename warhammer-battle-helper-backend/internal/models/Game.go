@@ -44,10 +44,16 @@ type Game struct {
 type GameParticipant struct {
 	UserID   primitive.ObjectID `bson:"userId" json:"userId"`
 	Username string             `bson:"username" json:"username"`
+	Email    string             `bson:"email" json:"email"`
 	Role     ParticipantRole    `bson:"role" json:"role"`
 	JoinedAt time.Time          `bson:"joinedAt" json:"joinedAt"`
 	LeftAt   *time.Time         `bson:"leftAt,omitempty" json:"leftAt,omitempty"`
 	IsActive bool               `bson:"isActive" json:"isActive"`
+}
+
+// InvitePlayerRequest is the request body for inviting a player to a game
+type InvitePlayerRequest struct {
+	Email string `json:"email" binding:"required"`
 }
 
 // GameCharacter represents a character placed on the battle grid

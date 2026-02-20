@@ -56,6 +56,7 @@
   "game": {
     "createGame": "Utwórz Grę",
     "joinGame": "Dołącz do Gry",
+    "enterGame": "Wejdź do Gry",
     "gameLobby": "Poczekalnia Gry",
     "startGame": "Rozpocznij Grę",
     "endGame": "Zakończ Grę",
@@ -349,8 +350,15 @@
     "english": "English",
     "polish": "Polski",
     "actions": "Akcje",
-    "leaveGame": "Opusc Gre",
-    "logout": "Wyloguj"
+    "backToGameList": "Wróć do listy gier",
+    "leaveGame": "Opuść Grę",
+    "logout": "Wyloguj",
+    "invitePlayers": "Zaproś graczy",
+    "inviteByEmail": "Email gracza",
+    "invite": "Zaproś",
+    "inviteSuccess": "Gracz został zaproszony",
+    "inviteNotFound": "Nie znaleziono użytkownika o podanym emailu",
+    "inviteAlreadyInGame": "Gracz już należy do tej gry"
   },
   "handouts": {
     "title": "Handouty",
@@ -462,8 +470,8 @@
   "leftPanel": {
     "title": "Postacie",
     "yourCharacters": "Lista postaci",
-    "onGrid": "Na Siatce",
-    "available": "Dostępna",
+    "onGrid": "Na scenie",
+    "available": "Dostępny",
     "addToGrid": "Dodaj do siatki",
     "removeFromGrid": "Usuń z siatki",
     "showPanel": "Pokaż Panel",
@@ -498,6 +506,7 @@
     "namePlaceholder": "Wprowadź nazwę sceny...",
     "gridWidth": "Szerokość Siatki",
     "gridHeight": "Wysokość Siatki",
+    "gridSizeError": "Maksymalny rozmiar siatki to 50×50",
     "showGrid": "Pokaż Linie Siatki",
     "assignedPlayers": "Przypisani Gracze",
     "noPlayers": "Brak graczy w grze",
@@ -519,7 +528,7 @@
     "gridLayer": "Siatka",
     "zoomIn": "Przybliż",
     "zoomOut": "Oddal",
-    "fitToScreen": "Dopasuj do ekranu",
+    "fitToScreen": "Dopasuj",
     "zoomLevel": "Poziom powiększenia",
     "gmBadge": "MG"
   },

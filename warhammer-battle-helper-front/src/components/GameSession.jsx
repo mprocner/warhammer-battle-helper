@@ -538,6 +538,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           token={token}
           onLogout={onLogout}
           onLeaveGame={handleLeaveGame}
+          onGoToGameList={onLeaveGame}
           gameState={gameState}
           isConnected={isConnected}
           currentSceneId={displayScene?.id}

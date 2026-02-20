@@ -91,6 +91,35 @@ func (r *GameRepository) GetAll() ([]models.Game, error) {
 	return games, nil
 }
 
+// GetByUserID retrieves games where the user is GM or an active participant
+func (r *GameRepository) GetByUserID(userID primitive.ObjectID) ([]models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"status": bson.M{
+			"$in": []models.GameStatus{models.GameStatusActive, models.GameStatusPaused},
+		},
+		"$or": []bson.M{
+			{"gameMasterId": userID},
+			{"participants": bson.M{"$elemMatch": bson.M{"userId": userID, "isActive": true}}},
+		},
+	}
+
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	cursor, err := r.Collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get games: %w", err)
+	}
+
+	var games []models.Game
+	if err := cursor.All(ctx, &games); err != nil {
+		return nil, fmt.Errorf("failed to decode games: %w", err)
+	}
+
+	return games, nil
+}
+
 // Update updates a game
 func (r *GameRepository) Update(game *models.Game) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

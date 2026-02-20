@@ -13,8 +13,14 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   // Create scene form
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newSceneName, setNewSceneName] = useState('');
-  const [newSceneWidth, setNewSceneWidth] = useState(20);
-  const [newSceneHeight, setNewSceneHeight] = useState(20);
+  const [newSceneWidth, setNewSceneWidth] = useState('20');
+  const [newSceneHeight, setNewSceneHeight] = useState('20');
+
+  // Draft states for grid dimension inputs (updated on blur, not on every keystroke)
+  const [draftGridWidth, setDraftGridWidth] = useState('');
+  const [draftGridHeight, setDraftGridHeight] = useState('');
+  const [gridSizeError, setGridSizeError] = useState(false);
+  const [createGridError, setCreateGridError] = useState(false);
 
   // Modal drag & minimize
   const [isMinimized, setIsMinimized] = useState(false);
@@ -51,6 +57,14 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
 
   const selectedScene = scenes.find(s => s.id === selectedSceneId);
 
+  // Sync draft grid inputs when selected scene changes or its data loads
+  useEffect(() => {
+    if (selectedScene) {
+      setDraftGridWidth(String(selectedScene.gridWidth));
+      setDraftGridHeight(String(selectedScene.gridHeight));
+    }
+  }, [selectedSceneId, selectedScene?.gridWidth, selectedScene?.gridHeight]);
+
   const participants = gameState?.participants?.filter(p => p.isActive && p.role === 'player') || [];
 
   const handleCreateScene = async (e) => {
@@ -60,13 +74,13 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
     try {
       const created = await createScene(gameId, {
         name: newSceneName.trim(),
-        gridWidth: newSceneWidth,
-        gridHeight: newSceneHeight,
+        gridWidth: Math.min(50, Math.max(5, parseInt(newSceneWidth) || 20)),
+        gridHeight: Math.min(50, Math.max(5, parseInt(newSceneHeight) || 20)),
       });
       setScenes(prev => [...prev, created]);
       setNewSceneName('');
-      setNewSceneWidth(20);
-      setNewSceneHeight(20);
+      setNewSceneWidth('20');
+      setNewSceneHeight('20');
       setIsCreateOpen(false);
       if (onSceneChange) onSceneChange(created.id);
     } catch (err) {
@@ -277,8 +291,14 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 type="number"
                 min="5"
                 max="50"
-                value={selectedScene.gridWidth}
-                onChange={(e) => handleUpdateScene('gridWidth', parseInt(e.target.value) || 20)}
+                value={draftGridWidth}
+                onChange={(e) => { setDraftGridWidth(e.target.value); setGridSizeError(parseInt(e.target.value) > 50); }}
+                onBlur={() => {
+                  const clamped = Math.min(50, Math.max(5, parseInt(draftGridWidth) || 5));
+                  setDraftGridWidth(String(clamped));
+                  setGridSizeError(false);
+                  handleUpdateScene('gridWidth', clamped);
+                }}
               />
             </div>
             <div className="scenes-tab__field">
@@ -287,11 +307,20 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 type="number"
                 min="5"
                 max="50"
-                value={selectedScene.gridHeight}
-                onChange={(e) => handleUpdateScene('gridHeight', parseInt(e.target.value) || 20)}
+                value={draftGridHeight}
+                onChange={(e) => { setDraftGridHeight(e.target.value); setGridSizeError(parseInt(e.target.value) > 50); }}
+                onBlur={() => {
+                  const clamped = Math.min(50, Math.max(5, parseInt(draftGridHeight) || 5));
+                  setDraftGridHeight(String(clamped));
+                  setGridSizeError(false);
+                  handleUpdateScene('gridHeight', clamped);
+                }}
               />
             </div>
           </div>
+          {gridSizeError && (
+            <p className="scenes-tab__grid-error">{t('scenes.gridSizeError')}</p>
+          )}
 
           {/* Grid visibility */}
           <div className="scenes-tab__field scenes-tab__field--checkbox">
@@ -388,7 +417,8 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                     min="5"
                     max="50"
                     value={newSceneWidth}
-                    onChange={(e) => setNewSceneWidth(parseInt(e.target.value) || 20)}
+                    onChange={(e) => { setNewSceneWidth(e.target.value); setCreateGridError(parseInt(e.target.value) > 50); }}
+                    onBlur={() => { setNewSceneWidth(String(Math.min(50, Math.max(5, parseInt(newSceneWidth) || 20)))); setCreateGridError(false); }}
                   />
                 </div>
                 <div className="scenes-tab__field">
@@ -398,10 +428,14 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                     min="5"
                     max="50"
                     value={newSceneHeight}
-                    onChange={(e) => setNewSceneHeight(parseInt(e.target.value) || 20)}
+                    onChange={(e) => { setNewSceneHeight(e.target.value); setCreateGridError(parseInt(e.target.value) > 50); }}
+                    onBlur={() => { setNewSceneHeight(String(Math.min(50, Math.max(5, parseInt(newSceneHeight) || 20)))); setCreateGridError(false); }}
                   />
                 </div>
               </div>
+              {createGridError && (
+                <p className="scenes-tab__grid-error">{t('scenes.gridSizeError')}</p>
+              )}
               <div className="scenes-tab__modal-actions">
                 <button type="button" onClick={() => setIsCreateOpen(false)}>
                   {t('common.cancel')}
