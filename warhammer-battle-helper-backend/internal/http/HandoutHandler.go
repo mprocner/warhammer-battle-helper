@@ -155,7 +155,7 @@ func (h *HandoutHandler) CreateHandout(c *gin.Context) {
 	c.JSON(http.StatusCreated, handout)
 }
 
-// GetHandouts handles GET /games/:id/handouts - List visible handouts
+// GetHandouts handles GET /games/:id/handouts - List visible handouts and folders
 func (h *HandoutHandler) GetHandouts(c *gin.Context) {
 	gameID := c.Param("id")
 
@@ -170,13 +170,193 @@ func (h *HandoutHandler) GetHandouts(c *gin.Context) {
 		return
 	}
 
-	handouts, err := h.GameService.GetVisibleHandouts(gameID, userID)
+	data, err := h.GameService.GetHandoutsData(gameID, userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, handouts)
+	c.JSON(http.StatusOK, data)
+}
+
+// CreateHandoutFolder handles POST /games/:id/handout-folders
+func (h *HandoutHandler) CreateHandoutFolder(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req models.CreateHandoutFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	folder, err := h.GameService.CreateHandoutFolder(gameID, userID, req)
+	if err != nil {
+		if strings.Contains(err.Error(), "only the game master") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, folder)
+}
+
+// RenameHandoutFolder handles PUT /games/:id/handout-folders/:folderId
+func (h *HandoutHandler) RenameHandoutFolder(c *gin.Context) {
+	gameID := c.Param("id")
+	folderIDStr := c.Param("folderId")
+
+	folderID, err := primitive.ObjectIDFromHex(folderIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder ID"})
+		return
+	}
+
+	var req models.RenameHandoutFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = h.GameService.RenameHandoutFolder(gameID, folderID, userID, req)
+	if err != nil {
+		if strings.Contains(err.Error(), "only the game master") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder renamed successfully"})
+}
+
+// DeleteHandoutFolder handles DELETE /games/:id/handout-folders/:folderId
+func (h *HandoutHandler) DeleteHandoutFolder(c *gin.Context) {
+	gameID := c.Param("id")
+	folderIDStr := c.Param("folderId")
+
+	folderID, err := primitive.ObjectIDFromHex(folderIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder ID"})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = h.GameService.DeleteHandoutFolder(gameID, folderID, userID)
+	if err != nil {
+		if strings.Contains(err.Error(), "only the game master") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder deleted successfully"})
+}
+
+// ReorderHandoutFolders handles PUT /games/:id/handout-folders/reorder
+func (h *HandoutHandler) ReorderHandoutFolders(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req models.ReorderHandoutFoldersRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = h.GameService.ReorderHandoutFolders(gameID, userID, req.FolderIDs)
+	if err != nil {
+		if strings.Contains(err.Error(), "only the game master") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folders reordered successfully"})
+}
+
+// MoveHandout handles PUT /games/:id/handouts/:handoutId/move
+func (h *HandoutHandler) MoveHandout(c *gin.Context) {
+	gameID := c.Param("id")
+	handoutIDStr := c.Param("handoutId")
+
+	handoutID, err := primitive.ObjectIDFromHex(handoutIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid handout ID"})
+		return
+	}
+
+	var req models.MoveHandoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	err = h.GameService.MoveHandout(gameID, handoutID, userID, req)
+	if err != nil {
+		if strings.Contains(err.Error(), "only the game master") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Handout moved successfully"})
 }
 
 // UpdateHandout handles PUT /games/:id/handouts/:handoutId - Update handout

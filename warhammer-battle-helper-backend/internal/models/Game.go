@@ -34,6 +34,7 @@ type Game struct {
 	Characters      []GameCharacter    `bson:"characters" json:"characters"`
 	Events          []GameEvent        `bson:"events" json:"events"`
 	Handouts        []Handout          `bson:"handouts" json:"handouts"`
+	HandoutFolders  []HandoutFolder    `bson:"handoutFolders" json:"handoutFolders"`
 	Scenes          []Scene            `bson:"scenes" json:"scenes"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
@@ -141,17 +142,27 @@ type Scene struct {
 	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
 }
 
+// HandoutFolder represents a folder for organizing handouts
+type HandoutFolder struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name      string             `bson:"name" json:"name"`
+	Order     int                `bson:"order" json:"order"`
+	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+}
+
 // Handout represents a document/image shared in the game
 type Handout struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title       string             `bson:"title" json:"title"`
-	Description string             `bson:"description" json:"description"`
-	Type        string             `bson:"type" json:"type"` // image, pdf, text, map, letter
-	Visibility  []string           `bson:"visibility" json:"visibility"`
-	FileURL     string             `bson:"fileUrl" json:"fileUrl"`
-	Order       int                `bson:"order" json:"order"`
-	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID          primitive.ObjectID  `bson:"_id,omitempty" json:"id"`
+	Title       string              `bson:"title" json:"title"`
+	Description string              `bson:"description" json:"description"`
+	Type        string              `bson:"type" json:"type"` // image, pdf, text, map, letter
+	Visibility  []string            `bson:"visibility" json:"visibility"`
+	FileURL     string              `bson:"fileUrl" json:"fileUrl"`
+	FolderID    *primitive.ObjectID `bson:"folderId,omitempty" json:"folderId,omitempty"`
+	Order       int                 `bson:"order" json:"order"`
+	CreatedAt   time.Time           `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time           `bson:"updatedAt" json:"updatedAt"`
 }
 
 // CreateHandoutRequest is the request body for creating a new handout
@@ -175,6 +186,32 @@ type UpdateHandoutRequest struct {
 // ReorderHandoutsRequest is the request body for reordering handouts
 type ReorderHandoutsRequest struct {
 	HandoutIDs []string `json:"handoutIds" binding:"required"`
+}
+
+// CreateHandoutFolderRequest is the request body for creating a handout folder
+type CreateHandoutFolderRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// RenameHandoutFolderRequest is the request body for renaming a handout folder
+type RenameHandoutFolderRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// MoveHandoutRequest is the request body for moving a handout to a folder
+type MoveHandoutRequest struct {
+	FolderID *string `json:"folderId"` // null = ungrouped
+}
+
+// ReorderHandoutFoldersRequest is the request body for reordering handout folders
+type ReorderHandoutFoldersRequest struct {
+	FolderIDs []string `json:"folderIds" binding:"required"`
+}
+
+// GetHandoutsResponse is the response for getting handouts (includes folders)
+type GetHandoutsResponse struct {
+	Handouts       []Handout       `json:"handouts"`
+	HandoutFolders []HandoutFolder `json:"handoutFolders"`
 }
 
 // CreateSceneRequest is the request body for creating a new scene

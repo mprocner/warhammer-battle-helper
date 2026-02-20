@@ -394,7 +394,22 @@
     "textUploaded": "Plik tekstowy wgrany",
     "download": "Pobierz",
     "unsupportedType": "Ten typ pliku nie może być podglądany",
-    "loadContentError": "Nie udało się załadować treści"
+    "loadContentError": "Nie udało się załadować treści",
+    "folders": {
+      "createFolder": "Nowy Folder",
+      "namePlaceholder": "Nazwa folderu...",
+      "rename": "Zmień nazwę folderu",
+      "delete": "Usuń folder",
+      "confirmDelete": "Usunąć folder \"{{name}}\"? Handouty trafią do niezgrupowanych.",
+      "ungrouped": "Niezgrupowane",
+      "emptyDrop": "Upuść tutaj handouty",
+      "emptyPlaceholder": "Brak handoutów",
+      "dropToUngroup": "Upuść tutaj, aby wyjąć z folderu",
+      "createError": "Nie udało się utworzyć folderu",
+      "renameError": "Nie udało się zmienić nazwy folderu",
+      "deleteError": "Nie udało się usunąć folderu",
+      "dragToReorder": "Przeciągnij, aby zmienić kolejność folderów"
+    }
   },
   "rightPanel": {
     "title": "Ustawienia",

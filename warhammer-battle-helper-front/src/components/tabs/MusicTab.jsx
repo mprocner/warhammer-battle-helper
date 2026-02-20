@@ -567,6 +567,10 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
 
   return (
     <div className="music-tab">
+      <div className="music-tab__header">
+        <h3 className="music-tab__title">{t('rightPanel.tabs.music')}</h3>
+      </div>
+
       {error && (
         <div className="music-tab__error">
           <span>{error}</span>

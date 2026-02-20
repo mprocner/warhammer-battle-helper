@@ -2,8 +2,8 @@
 .handout-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 5px 10px;
   background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
   border: 1px solid #d4a574;
   border-radius: 4px;
@@ -15,6 +15,18 @@
   border-color: #7a5c42;
   transform: translateX(2px);
   box-shadow: 0 2px 6px rgba(107, 68, 35, 0.15);
+}
+
+.handout-item--phantom {
+  opacity: 0.45;
+  pointer-events: none;
+  border: 2px dashed #d4af37;
+  background: linear-gradient(135deg, rgba(255, 251, 240, 0.7) 0%, rgba(249, 243, 232, 0.7) 100%);
+}
+
+.handout-item--phantom:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .handout-item--dragging {
@@ -52,21 +64,21 @@
 .handout-item__content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   min-width: 0;
 }
 
 .handout-item__icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   background: linear-gradient(135deg, #e8dcc4 0%, #ddd0b8 100%);
   border: 1px solid #c9975b;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -95,8 +107,8 @@
 .handout-item__visibility {
   display: inline-block;
   font-size: 9px;
-  padding: 2px 8px;
-  margin-top: 4px;
+  padding: 1px 6px;
+  margin-top: 2px;
   background: rgba(201, 151, 91, 0.2);
   color: #6b4423;
   border: 1px solid #c9975b;
@@ -121,11 +133,14 @@
 .handout-item__btn {
   background: rgba(201, 151, 91, 0.1);
   border: 1px solid #d4a574;
-  padding: 4px 8px;
+  padding: 2px 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .handout-item__btn:hover {
@@ -133,9 +148,14 @@
   border-color: #7a5c42;
 }
 
+.handout-item__btn--delete {
+  color: #c94040;
+  font-size: 0.85rem;
+}
+
 .handout-item__btn--delete:hover {
-  background: rgba(169, 52, 52, 0.15);
-  border-color: #a93434;
+  background: #f8d7da;
+  border-color: #c94040;
 }
 
 /* Portal tooltip - positioned to the left of the title */

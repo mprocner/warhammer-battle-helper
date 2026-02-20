@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import './HandoutItem.css';
 
@@ -12,6 +13,7 @@ import './HandoutItem.css';
 const HandoutItem = ({
   handout,
   isGM,
+  folderId,
   onView,
   onEdit,
   onDelete
@@ -39,7 +41,11 @@ const HandoutItem = ({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: handout.id, disabled: !isGM });
+  } = useSortable({
+    id: handout.id,
+    disabled: !isGM,
+    data: { type: 'handout', handout, folderId: folderId ?? null },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -106,7 +112,7 @@ const HandoutItem = ({
             }}
             title={t('common.edit')}
           >
-            ✏️
+            <EditOutlinedIcon sx={{ fontSize: '0.85rem' }} />
           </button>
           <button
             className="handout-item__btn handout-item__btn--delete"
@@ -116,7 +122,7 @@ const HandoutItem = ({
             }}
             title={t('common.delete')}
           >
-            🗑️
+            ✕
           </button>
         </div>
       )}

@@ -393,7 +393,22 @@
     "textUploaded": "Text file uploaded",
     "download": "Download",
     "unsupportedType": "This file type cannot be previewed",
-    "loadContentError": "Failed to load content"
+    "loadContentError": "Failed to load content",
+    "folders": {
+      "createFolder": "New Folder",
+      "namePlaceholder": "Folder name...",
+      "rename": "Rename folder",
+      "delete": "Delete folder",
+      "confirmDelete": "Delete folder \"{{name}}\"? Handouts will be moved to ungrouped.",
+      "ungrouped": "Ungrouped",
+      "emptyDrop": "Drop handouts here",
+      "emptyPlaceholder": "No handouts",
+      "dropToUngroup": "Drop here to ungroup",
+      "createError": "Failed to create folder",
+      "renameError": "Failed to rename folder",
+      "deleteError": "Failed to delete folder",
+      "dragToReorder": "Drag to reorder folders"
+    }
   },
   "rightPanel": {
     "title": "Settings",

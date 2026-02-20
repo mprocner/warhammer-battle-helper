@@ -31,6 +31,7 @@ func (r *GameRepository) Create(game *models.Game) error {
 	game.Characters = []models.GameCharacter{}
 	game.Events = []models.GameEvent{}
 	game.Handouts = []models.Handout{}
+	game.HandoutFolders = []models.HandoutFolder{}
 	game.Scenes = []models.Scene{}
 
 	result, err := r.Collection.InsertOne(ctx, game)
@@ -553,6 +554,203 @@ func (r *GameRepository) GetHandout(gameID string, handoutID primitive.ObjectID)
 	}
 
 	return nil, fmt.Errorf("handout not found")
+}
+
+// AddHandoutFolder adds a folder to the game's handout folders
+func (r *GameRepository) AddHandoutFolder(gameID string, folder models.HandoutFolder) (*models.HandoutFolder, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	folder.ID = primitive.NewObjectID()
+	folder.CreatedAt = time.Now()
+	folder.UpdatedAt = time.Now()
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$push": bson.M{"handoutFolders": folder},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add handout folder: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("game not found")
+	}
+
+	return &folder, nil
+}
+
+// RenameHandoutFolder renames a handout folder
+func (r *GameRepository) RenameHandoutFolder(gameID string, folderID primitive.ObjectID, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":                objectID,
+		"handoutFolders._id": folderID,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"handoutFolders.$.name":      name,
+			"handoutFolders.$.updatedAt": time.Now(),
+			"updatedAt":                  time.Now(),
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to rename handout folder: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game or handout folder not found")
+	}
+
+	return nil
+}
+
+// DeleteHandoutFolder removes a folder and ungroups its handouts
+func (r *GameRepository) DeleteHandoutFolder(gameID string, folderID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+
+	// Op 1: Pull the folder from handoutFolders
+	update1 := bson.M{
+		"$pull": bson.M{"handoutFolders": bson.M{"_id": folderID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+	_, err = r.Collection.UpdateOne(ctx, filter, update1)
+	if err != nil {
+		return fmt.Errorf("failed to delete handout folder: %w", err)
+	}
+
+	// Op 2: Unset folderId on all handouts that belonged to this folder
+	update2 := bson.M{
+		"$unset": bson.M{"handouts.$[elem].folderId": ""},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem.folderId": folderID}},
+	})
+	_, err = r.Collection.UpdateOne(ctx, filter, update2, opts)
+	if err != nil {
+		return fmt.Errorf("failed to ungroup handouts: %w", err)
+	}
+
+	return nil
+}
+
+// MoveHandoutToFolder moves a handout to a folder (or ungroups it if folderID is nil)
+func (r *GameRepository) MoveHandoutToFolder(gameID string, handoutID primitive.ObjectID, folderID *primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+
+	var update bson.M
+	if folderID != nil {
+		update = bson.M{
+			"$set": bson.M{
+				"handouts.$[elem].folderId":  *folderID,
+				"handouts.$[elem].updatedAt": time.Now(),
+				"updatedAt":                  time.Now(),
+			},
+		}
+	} else {
+		update = bson.M{
+			"$unset": bson.M{"handouts.$[elem].folderId": ""},
+			"$set":   bson.M{"handouts.$[elem].updatedAt": time.Now(), "updatedAt": time.Now()},
+		}
+	}
+
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem._id": handoutID}},
+	})
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to move handout: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
+}
+
+// ReorderHandoutFolders updates the order of handout folders
+func (r *GameRepository) ReorderHandoutFolders(gameID string, folderIDs []primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	var game models.Game
+	err = r.Collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&game)
+	if err != nil {
+		return fmt.Errorf("failed to get game: %w", err)
+	}
+
+	folderMap := make(map[primitive.ObjectID]models.HandoutFolder)
+	for _, f := range game.HandoutFolders {
+		folderMap[f.ID] = f
+	}
+
+	reordered := make([]models.HandoutFolder, 0, len(folderIDs))
+	for i, id := range folderIDs {
+		if folder, ok := folderMap[id]; ok {
+			folder.Order = i
+			folder.UpdatedAt = time.Now()
+			reordered = append(reordered, folder)
+		}
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$set": bson.M{
+			"handoutFolders": reordered,
+			"updatedAt":      time.Now(),
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to reorder handout folders: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+
+	return nil
 }
 
 // --- Scene Repository Methods ---

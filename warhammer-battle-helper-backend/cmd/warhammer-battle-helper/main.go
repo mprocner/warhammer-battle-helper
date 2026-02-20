@@ -184,8 +184,13 @@ func main() {
 	r.POST("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.CreateHandout)
 	r.GET("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.GetHandouts)
 	r.PUT("/games/:id/handouts/reorder", http.JWTAuthMiddleware(), handoutHandler.ReorderHandouts)
+	r.PUT("/games/:id/handouts/:handoutId/move", http.JWTAuthMiddleware(), handoutHandler.MoveHandout)
 	r.PUT("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.UpdateHandout)
 	r.DELETE("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandout)
+	r.POST("/games/:id/handout-folders", http.JWTAuthMiddleware(), handoutHandler.CreateHandoutFolder)
+	r.PUT("/games/:id/handout-folders/reorder", http.JWTAuthMiddleware(), handoutHandler.ReorderHandoutFolders)
+	r.PUT("/games/:id/handout-folders/:folderId", http.JWTAuthMiddleware(), handoutHandler.RenameHandoutFolder)
+	r.DELETE("/games/:id/handout-folders/:folderId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandoutFolder)
 	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
 	// --- END HANDOUT ROUTES ---
 

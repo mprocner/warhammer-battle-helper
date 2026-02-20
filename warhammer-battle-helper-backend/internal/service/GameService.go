@@ -971,6 +971,188 @@ func (s *GameService) GetVisibleHandouts(gameID string, userID primitive.ObjectI
 	return visibleHandouts, nil
 }
 
+// GetHandoutsData returns handouts and folders visible to a specific user
+func (s *GameService) GetHandoutsData(gameID string, userID primitive.ObjectID) (*models.GetHandoutsResponse, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	isGM := game.GameMasterID == userID
+
+	visibleHandouts := make([]models.Handout, 0)
+	for _, handout := range game.Handouts {
+		if isGM {
+			visibleHandouts = append(visibleHandouts, handout)
+		} else {
+			for _, v := range handout.Visibility {
+				if v == "all" || v == userID.Hex() {
+					visibleHandouts = append(visibleHandouts, handout)
+					break
+				}
+			}
+		}
+	}
+
+	folders := game.HandoutFolders
+	if folders == nil {
+		folders = []models.HandoutFolder{}
+	}
+
+	return &models.GetHandoutsResponse{
+		Handouts:       visibleHandouts,
+		HandoutFolders: folders,
+	}, nil
+}
+
+// CreateHandoutFolder creates a new handout folder (GM only)
+func (s *GameService) CreateHandoutFolder(gameID string, userID primitive.ObjectID, req models.CreateHandoutFolderRequest) (*models.HandoutFolder, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if game.GameMasterID != userID {
+		return nil, fmt.Errorf("only the game master can create handout folders")
+	}
+
+	folder := models.HandoutFolder{
+		Name:  req.Name,
+		Order: len(game.HandoutFolders),
+	}
+
+	createdFolder, err := s.gameRepo.AddHandoutFolder(gameID, folder)
+	if err != nil {
+		return nil, err
+	}
+
+	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_CREATED", map[string]interface{}{
+		"folder": createdFolder,
+	})
+
+	return createdFolder, nil
+}
+
+// RenameHandoutFolder renames a handout folder (GM only)
+func (s *GameService) RenameHandoutFolder(gameID string, folderID primitive.ObjectID, userID primitive.ObjectID, req models.RenameHandoutFolderRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can rename handout folders")
+	}
+
+	if err := s.gameRepo.RenameHandoutFolder(gameID, folderID, req.Name); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_UPDATED", map[string]interface{}{
+		"folderId": folderID.Hex(),
+		"name":     req.Name,
+	})
+
+	return nil
+}
+
+// DeleteHandoutFolder deletes a handout folder and ungroups its handouts (GM only)
+func (s *GameService) DeleteHandoutFolder(gameID string, folderID primitive.ObjectID, userID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can delete handout folders")
+	}
+
+	if err := s.gameRepo.DeleteHandoutFolder(gameID, folderID); err != nil {
+		return err
+	}
+
+	updatedGame, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_DELETED", map[string]interface{}{
+		"folderId": folderID.Hex(),
+		"handouts": updatedGame.Handouts,
+		"folders":  updatedGame.HandoutFolders,
+	})
+
+	return nil
+}
+
+// ReorderHandoutFolders reorders handout folders (GM only)
+func (s *GameService) ReorderHandoutFolders(gameID string, userID primitive.ObjectID, folderIDs []string) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can reorder handout folders")
+	}
+
+	objectIDs := make([]primitive.ObjectID, len(folderIDs))
+	for i, id := range folderIDs {
+		oid, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return fmt.Errorf("invalid folder ID: %s", id)
+		}
+		objectIDs[i] = oid
+	}
+
+	if err := s.gameRepo.ReorderHandoutFolders(gameID, objectIDs); err != nil {
+		return err
+	}
+
+	updatedGame, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDERS_REORDERED", map[string]interface{}{
+		"folders": updatedGame.HandoutFolders,
+	})
+
+	return nil
+}
+
+// MoveHandout moves a handout to a folder (GM only)
+func (s *GameService) MoveHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID, req models.MoveHandoutRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can move handouts")
+	}
+
+	var folderObjectID *primitive.ObjectID
+	if req.FolderID != nil {
+		oid, err := primitive.ObjectIDFromHex(*req.FolderID)
+		if err != nil {
+			return fmt.Errorf("invalid folder ID: %w", err)
+		}
+		folderObjectID = &oid
+	}
+
+	if err := s.gameRepo.MoveHandoutToFolder(gameID, handoutID, folderObjectID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "HANDOUT_MOVED", map[string]interface{}{
+		"handoutId": handoutID.Hex(),
+		"folderId":  req.FolderID,
+	})
+
+	return nil
+}
+
 // --- Scene Service Methods ---
 
 // EnsureDefaultScene creates a default scene for games without scenes (backward compatibility)

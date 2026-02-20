@@ -94,14 +94,8 @@ const RightPanel = ({
           />
         );
       case 'handouts':
-        return (
-          <HandoutsTab
-            gameId={gameId}
-            token={token}
-            gameState={gameState}
-            isConnected={isConnected}
-          />
-        );
+        // HandoutsTab is always mounted below to preserve folder expand state
+        return null;
       case 'files':
         return (
           <FilesTab
@@ -156,6 +150,15 @@ const RightPanel = ({
         {/* Tab Content Area */}
         <div className="right-panel__tab-content">
           {renderTabContent()}
+          {/* HandoutsTab is always mounted to preserve folder expand/collapse state */}
+          <div style={{ display: activeTab === 'handouts' ? 'contents' : 'none' }}>
+            <HandoutsTab
+              gameId={gameId}
+              token={token}
+              gameState={gameState}
+              isConnected={isConnected}
+            />
+          </div>
           {/* MusicTab is always mounted so audio event listeners persist across tab switches */}
           {isGM && (
             <div style={{ display: activeTab === 'music' ? 'contents' : 'none' }}>

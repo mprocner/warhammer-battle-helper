@@ -285,8 +285,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       case 'HANDOUT_UPDATED':
       case 'HANDOUT_DELETED':
       case 'HANDOUTS_REORDERED':
-        // Handout updates are handled by the HandoutsTab component
-        // We just trigger a refresh of the game state
+      case 'HANDOUT_MOVED':
+      case 'HANDOUT_FOLDER_CREATED':
+      case 'HANDOUT_FOLDER_UPDATED':
+      case 'HANDOUT_FOLDER_DELETED':
+      case 'HANDOUT_FOLDERS_REORDERED':
         fetchGameState();
         break;
 

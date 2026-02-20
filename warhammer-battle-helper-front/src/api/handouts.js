@@ -34,9 +34,9 @@ export const createHandout = async (gameId, handout) => {
 };
 
 /**
- * Get all visible handouts for a game
+ * Get all visible handouts and folders for a game
  * @param {string} gameId - The game ID
- * @returns {Promise<Object[]>} - Array of visible handouts
+ * @returns {Promise<{handouts: Object[], handoutFolders: Object[]}>}
  */
 export const getHandouts = async (gameId) => {
   const response = await axiosInstance.get(`/games/${gameId}/handouts`);
@@ -79,13 +79,75 @@ export const reorderHandouts = async (gameId, handoutIds) => {
   return response.data;
 };
 
+/**
+ * Create a new handout folder
+ * @param {string} gameId - The game ID
+ * @param {string} name - Folder name
+ * @returns {Promise<Object>} - The created folder
+ */
+export const createHandoutFolder = async (gameId, name) => {
+  const response = await axiosInstance.post(`/games/${gameId}/handout-folders`, { name });
+  return response.data;
+};
+
+/**
+ * Rename a handout folder
+ * @param {string} gameId - The game ID
+ * @param {string} folderId - The folder ID
+ * @param {string} name - New folder name
+ * @returns {Promise<Object>} - Response message
+ */
+export const renameHandoutFolder = async (gameId, folderId, name) => {
+  const response = await axiosInstance.put(`/games/${gameId}/handout-folders/${folderId}`, { name });
+  return response.data;
+};
+
+/**
+ * Delete a handout folder (handouts become ungrouped)
+ * @param {string} gameId - The game ID
+ * @param {string} folderId - The folder ID
+ * @returns {Promise<Object>} - Response message
+ */
+export const deleteHandoutFolder = async (gameId, folderId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/handout-folders/${folderId}`);
+  return response.data;
+};
+
+/**
+ * Move a handout to a folder (or ungroup it)
+ * @param {string} gameId - The game ID
+ * @param {string} handoutId - The handout ID
+ * @param {string|null} folderId - Target folder ID, or null to ungroup
+ * @returns {Promise<Object>} - Response message
+ */
+export const moveHandout = async (gameId, handoutId, folderId) => {
+  const response = await axiosInstance.put(`/games/${gameId}/handouts/${handoutId}/move`, { folderId });
+  return response.data;
+};
+
+/**
+ * Reorder handout folders
+ * @param {string} gameId - The game ID
+ * @param {string[]} folderIds - Array of folder IDs in the new order
+ * @returns {Promise<Object>} - Response message
+ */
+export const reorderHandoutFolders = async (gameId, folderIds) => {
+  const response = await axiosInstance.put(`/games/${gameId}/handout-folders/reorder`, { folderIds });
+  return response.data;
+};
+
 const handoutsApi = {
   uploadHandoutFile,
   createHandout,
   getHandouts,
   updateHandout,
   deleteHandout,
-  reorderHandouts
+  reorderHandouts,
+  createHandoutFolder,
+  renameHandoutFolder,
+  deleteHandoutFolder,
+  moveHandout,
+  reorderHandoutFolders,
 };
 
 export default handoutsApi;

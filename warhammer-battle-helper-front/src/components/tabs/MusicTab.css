@@ -28,6 +28,25 @@
   background: #a67c52;
 }
 
+.music-tab__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #c9975b;
+  flex-shrink: 0;
+}
+
+.music-tab__title {
+  margin: 0;
+  font-size: 14px;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: #6b4423;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .music-tab__loading {
   font-family: 'Crimson Text', serif;
   color: #7a5c42;
