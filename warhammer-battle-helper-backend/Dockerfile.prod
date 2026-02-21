@@ -32,7 +32,7 @@ RUN addgroup -g 1001 appgroup && \
 COPY --from=builder /battle-helper .
 
 # Create directories for data
-RUN mkdir -p /app/keys /app/avatars /app/user-files /app/handouts && \
+RUN mkdir -p /app/keys /app/avatars /app/user-files /app/handouts /app/music-files && \
     chown -R appuser:appgroup /app
 
 USER appuser

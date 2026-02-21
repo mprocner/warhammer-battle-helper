@@ -25,12 +25,14 @@ services:
       - MONGO_DB_NAME=${MONGO_DB_NAME:-battle_helper}
       - AVATARS_PATH=/app/avatars
       - USER_FILES_PATH=/app/user-files
+      - MUSIC_FILES_PATH=/app/music-files
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     volumes:
       - ./warhammer-battle-helper-backend/keys:/app/keys:ro
       - backend-avatars:/app/avatars
       - backend-user-files:/app/user-files
       - backend-handouts:/app/handouts
+      - backend-music-files:/app/music-files
     depends_on:
       - mongo
 
@@ -49,3 +51,4 @@ volumes:
   backend-avatars:
   backend-user-files:
   backend-handouts:
+  backend-music-files:
