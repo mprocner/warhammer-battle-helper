@@ -23,6 +23,7 @@ type CreateCharacterRequest struct {
 	AdvancedSkills  map[string]int              `json:"advancedSkills"`
 	Weapons         []models.Weapon             `json:"weapons"`
 	Talents         []models.Talent             `json:"talents"`
+	IsNPC           bool                        `json:"isNPC"`
 }
 
 type CloneCharacterRequest struct {
@@ -102,6 +103,7 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		AdvancedSkills:  req.AdvancedSkills,
 		Weapons:         req.Weapons,
 		Talents:         req.Talents,
+		IsNPC:           req.IsNPC,
 	}
 
 	if err := h.CharacterRepo.Create(character); err != nil {

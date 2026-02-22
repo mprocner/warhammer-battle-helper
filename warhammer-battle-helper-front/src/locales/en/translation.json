@@ -468,7 +468,8 @@
   },
   "leftPanel": {
     "title": "Character Details",
-    "yourCharacters": "Your Characters",
+    "yourCharacters": "Characters",
+    "npcList": "NPC List",
     "onGrid": "On Grid",
     "available": "Available",
     "addToGrid": "Add to grid",

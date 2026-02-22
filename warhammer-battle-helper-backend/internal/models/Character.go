@@ -44,6 +44,7 @@ type Character struct {
 	Trappings       string               `bson:"trappings" json:"trappings"`
 	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
+	IsNPC           bool                 `bson:"isNPC,omitempty" json:"isNPC,omitempty"`
 }
 
 type BasicInfo struct {

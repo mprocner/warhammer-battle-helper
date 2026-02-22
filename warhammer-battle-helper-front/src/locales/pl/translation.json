@@ -73,7 +73,7 @@
   "character": {
     "name": "Imię",
     "details": "Szczegóły Postaci",
-    "addCharacter": "Dodaj Postać",
+    "addCharacter": "Dodaj",
     "editCharacter": "Edytuj Postać",
     "deleteCharacter": "Usuń Postać",
     "characterSheet": "Karta Postaci",
@@ -470,6 +470,7 @@
   "leftPanel": {
     "title": "Postacie",
     "yourCharacters": "Lista postaci",
+    "npcList": "Lista BN",
     "onGrid": "Na scenie",
     "available": "Dostępny",
     "addToGrid": "Dodaj do siatki",

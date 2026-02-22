@@ -63,6 +63,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   // Clone character popup
   const [cloneTarget, setCloneTarget] = useState(null);
 
+  // Collapsible character list sections
+  const [pcListCollapsed, setPcListCollapsed] = useState(false);
+  const [npcListCollapsed, setNpcListCollapsed] = useState(false);
+
+  // Resizable sidebar split
+  const [splitPercent, setSplitPercent] = useState(50);
+  const [isSplitDragging, setIsSplitDragging] = useState(false);
+  const sidebarContentRef = useRef(null);
+  const splitDraggingRef = useRef(false);
+
   const characterTileRefs = useRef({});
 
   // Scroll selected character tile into view when selection changes
@@ -307,6 +317,48 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       setAutoOpenCharacterSheet(true);
     } catch (err) {
       console.error('Failed to create character:', err);
+      addLogMessage(t('character.createError'), 'error');
+    }
+  }, [fetchCharacters, addLogMessage, t]);
+
+  const handleAddNPC = useCallback(async () => {
+    try {
+      const newCharacter = {
+        basicInfo: {
+          name: t('character.newCharacter'),
+          type: 'enemy',
+          species: '',
+          career: '',
+          careerLevel: '',
+          status: '',
+          careerPath: '',
+          class: '',
+          age: '',
+          height: '',
+          hair: '',
+          eyes: '',
+          avatar: ''
+        },
+        isNPC: true,
+        characteristics: {
+          initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+          advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+          current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
+        },
+        basicSkills: {},
+        advancedSkills: {},
+        weapons: [],
+        talents: []
+      };
+
+      const response = await axiosInstance.post('/my-characters', newCharacter);
+      const createdCharacter = response.data;
+
+      await fetchCharacters();
+      setSelectedCharacter(createdCharacter);
+      setAutoOpenCharacterSheet(true);
+    } catch (err) {
+      console.error('Failed to create NPC:', err);
       addLogMessage(t('character.createError'), 'error');
     }
   }, [fetchCharacters, addLogMessage, t]);
@@ -575,6 +627,41 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     })
   );
 
+  useEffect(() => {
+    if (isSplitDragging) {
+      document.body.style.cursor = 'ns-resize';
+    } else {
+      document.body.style.cursor = '';
+    }
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, [isSplitDragging]);
+
+  const handleResizerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    splitDraggingRef.current = true;
+    setIsSplitDragging(true);
+
+    const onMouseMove = (e) => {
+      if (!splitDraggingRef.current || !sidebarContentRef.current) return;
+      const rect = sidebarContentRef.current.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top;
+      const percent = (relativeY / rect.height) * 100;
+      setSplitPercent(Math.min(85, Math.max(15, percent)));
+    };
+
+    const onMouseUp = () => {
+      splitDraggingRef.current = false;
+      setIsSplitDragging(false);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
+
   if (isLoading) return <div>Ładowanie postaci...</div>;
   if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
 
@@ -598,43 +685,46 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
             <header className="panel-header">
               <h2 className="panel-header__title">{t('leftPanel.title')}</h2>
             </header>
-            <CharacterDetailsPanel
-            character={selectedCharacter}
-            onCharacterUpdate={handleCharacterUpdate}
-            addLogMessage={addLogMessage}
-            gameId={gameId}
-            token={token}
-            isGM={isGM}
-            autoOpenSheet={autoOpenCharacterSheet}
-            onSheetOpened={() => setAutoOpenCharacterSheet(false)}
-          />
+            <div
+              className="sidebar-resizable-container"
+              ref={sidebarContentRef}
+              style={{ userSelect: isSplitDragging ? 'none' : 'auto' }}
+            >
+              <div className="sidebar-top-section" style={{ height: `${splitPercent}%` }}>
+                <CharacterDetailsPanel
+                  character={selectedCharacter}
+                  onCharacterUpdate={handleCharacterUpdate}
+                  addLogMessage={addLogMessage}
+                  gameId={gameId}
+                  token={token}
+                  isGM={isGM}
+                  autoOpenSheet={autoOpenCharacterSheet}
+                  onSheetOpened={() => setAutoOpenCharacterSheet(false)}
+                />
+              </div>
 
-          {/* Characters List - always show all characters */}
-          <div className="characters-list">
-            <div className="characters-list-header">
-              <h3>{t('leftPanel.yourCharacters')}</h3>
-              <button
-                className="add-character-btn"
-                onClick={handleAddCharacter}
-              >
-                + {t('character.addCharacter')}
-              </button>
-            </div>
-            <div className="characters-list-content">
-              {(initialCharacters || []).map(char => {
+              <div
+                className={`sidebar-resizer${isSplitDragging ? ' sidebar-resizer--dragging' : ''}`}
+                onMouseDown={handleResizerMouseDown}
+              />
+
+              <div className="sidebar-bottom-section">
+                <div className="characters-list">
+            {(() => {
+              const pcCharacters = (initialCharacters || []).filter(c => !c.isNPC);
+              const npcCharacters = (initialCharacters || []).filter(c => c.isNPC);
+
+              const renderCharacterTile = (char) => {
                 const onGrid = isCharacterOnGrid(char.id);
                 const isSelected = selectedCharacter?.id === char.id;
 
                 const handleGridToggle = async (e) => {
-                  e.stopPropagation(); // Prevent selection when clicking button
+                  e.stopPropagation();
 
                   if (onGrid) {
-                    // Remove from grid
                     if (gameId && token) {
-                      // Multiplayer mode - sync with backend
                       await handleRemoveCharacter(char.id);
                     } else {
-                      // Single-player mode - update locally
                       setFightZones(prev =>
                         prev.map(zone =>
                           zone.character?.id === char.id
@@ -644,17 +734,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                       );
                     }
                   } else {
-                    // Add to grid - find first empty zone
                     const emptyZoneIndex = fightZones.findIndex(z => !z.character);
                     if (emptyZoneIndex !== -1) {
                       const targetZone = fightZones[emptyZoneIndex];
 
                       if (gameId && token) {
-                        // Multiplayer mode - sync with backend
-                        // col is X, row is Y
                         await handleAddCharacterToGrid(char.id, targetZone.col, targetZone.row, false);
                       } else {
-                        // Single-player mode - update locally
                         setFightZones(prev =>
                           prev.map((zone, idx) =>
                             idx === emptyZoneIndex
@@ -711,9 +797,55 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                     </div>
                   </div>
                 );
-              })}
+              };
+
+              return (
+                <>
+                  {/* PC Section */}
+                  <div className="characters-list-header">
+                    <div className="characters-list-header-left" onClick={() => setPcListCollapsed(v => !v)}>
+                      <button className="section-collapse-btn">
+                        {pcListCollapsed ? '▶' : '▼'}
+                      </button>
+                      <h3>{t('leftPanel.yourCharacters')}</h3>
+                    </div>
+                    <button className="add-character-btn" onClick={handleAddCharacter}>
+                      + {t('character.addCharacter')}
+                    </button>
+                  </div>
+                  {!pcListCollapsed && (
+                    <div className="characters-list-content">
+                      {pcCharacters.map(char => renderCharacterTile(char))}
+                    </div>
+                  )}
+
+                  {/* NPC Section (GM only) */}
+                  {isGM && (
+                    <>
+                      <div className="characters-list-header characters-list-header--npc">
+                        <div className="characters-list-header-left" onClick={() => setNpcListCollapsed(v => !v)}>
+                          <button className="section-collapse-btn">
+                            {npcListCollapsed ? '▶' : '▼'}
+                          </button>
+                          <h3>{t('leftPanel.npcList')}</h3>
+                        </div>
+                        <button className="add-character-btn" onClick={handleAddNPC}>
+                          + {t('character.addCharacter')}
+                        </button>
+                      </div>
+                      {!npcListCollapsed && (
+                        <div className="characters-list-content">
+                          {npcCharacters.map(char => renderCharacterTile(char))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              );
+            })()}
+                </div>
+              </div>
             </div>
-          </div>
           </div>
           {/* Left Panel Toggle */}
           <button
