@@ -52,9 +52,10 @@ docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" down
 log_info "Starting new containers..."
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
-# Cleanup old images
-log_info "Cleaning up unused Docker images..."
+# Cleanup old images and build cache
+log_info "Cleaning up unused Docker images and build cache..."
 docker image prune -f
+docker builder prune -a -f
 
 log_info "Deployment complete!"
 log_info "Checking container status..."
