@@ -75,6 +75,16 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
   const userId = getUserId();
   const isGM = gameState?.gameMasterId === userId;
 
+  const visibleHandouts = useMemo(() => {
+    if (isGM) return handouts;
+    return handouts.filter((h) => {
+      if (!h.visibility || h.visibility.length === 0) return false;
+      if (h.visibility.includes('gm-only')) return false;
+      if (h.visibility.includes('all')) return true;
+      return userId != null && h.visibility.includes(userId);
+    });
+  }, [handouts, isGM, userId]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -155,7 +165,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     map.set(null, []);
     folders.forEach((f) => map.set(f.id, []));
 
-    handouts.forEach((h) => {
+    visibleHandouts.forEach((h) => {
       const fid = h.folderId || null;
       const folderExists = fid && folders.some((f) => f.id === fid);
       if (folderExists) {
@@ -171,7 +181,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     }
 
     return map;
-  }, [handouts, folders]);
+  }, [visibleHandouts, folders]);
 
   const sortedFolders = useMemo(
     () => [...folders].sort((a, b) => a.order - b.order),
@@ -522,7 +532,11 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     );
   }
 
-  const totalHandouts = handouts.length;
+  const visibleSortedFolders = isGM
+    ? sortedFolders
+    : sortedFolders.filter((f) => (handoutsByFolder.get(f.id) || []).length > 0);
+
+  const totalVisibleHandouts = visibleHandouts.length;
 
   return (
     <div className="handouts-tab">
@@ -572,7 +586,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
       )}
 
       {/* Empty state when there are no handouts AND no folders */}
-      {totalHandouts === 0 && folders.length === 0 ? (
+      {totalVisibleHandouts === 0 && visibleSortedFolders.length === 0 ? (
         <div className="handouts-tab__empty">
           <div className="empty-icon">📜</div>
           <p>{t('handouts.noHandouts')}</p>
@@ -590,10 +604,10 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
           <div className="handouts-tab__list">
             {/* Named folders – wrapped in SortableContext for folder reordering */}
             <SortableContext
-              items={sortedFolders.map((f) => `folder-sort-${f.id}`)}
+              items={visibleSortedFolders.map((f) => `folder-sort-${f.id}`)}
               strategy={verticalListSortingStrategy}
             >
-              {sortedFolders.map((folder) => {
+              {visibleSortedFolders.map((folder) => {
                 const isTarget =
                   dragOverState?.targetFolderId === folder.id && activeHandout !== null;
                 return (
