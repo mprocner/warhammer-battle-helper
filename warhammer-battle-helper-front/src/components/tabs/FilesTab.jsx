@@ -235,13 +235,6 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
     fetchFiles();
   }, [fetchFiles]);
 
-  // Clear hover preview when dragging starts
-  useEffect(() => {
-    if (draggingFile) {
-      setHoveredFile(null);
-    }
-  }, [draggingFile]);
-
   // Get files and folders for current directory
   const currentFiles = files.filter(f => {
     if (currentFolderId === null) {
@@ -296,6 +289,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
     const { active } = event;
     if (active.data.current?.type === 'file') {
       setDraggingFile(active.data.current.file);
+      setHoveredFile(null);
     }
   };
 
