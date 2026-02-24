@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/storage"
+	"battle-helper/internal/websocket"
 	"io"
 	"log"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 type FileHandler struct {
 	UserRepo *repository.UserRepository
 	Storage  storage.Storage
+	GameRepo *repository.GameRepository
+	Hub      *websocket.Hub
 }
 
 // Request/Response types
@@ -230,6 +233,18 @@ func (h *FileHandler) DeleteFile(c *gin.Context) {
 	if deletedFile.FileURL != "" {
 		filename := filepath.Base(deletedFile.FileURL)
 		h.Storage.Delete(filename) // Ignore error - file already removed from DB
+
+		// Remove this file from all scenes in GM's games and broadcast events
+		affected, err := h.GameRepo.RemoveSceneImagesByGMAndFileURL(userID, deletedFile.FileURL)
+		if err != nil {
+			log.Printf("WARN: Failed to remove scene images for file %s: %v", deletedFile.FileURL, err)
+		}
+		for _, img := range affected {
+			h.Hub.BroadcastToGame(img.GameID, "SCENE_IMAGE_DELETED", map[string]interface{}{
+				"sceneId": img.SceneID,
+				"imageId": img.ImageID,
+			})
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
@@ -462,6 +477,60 @@ func (h *FileHandler) MoveFile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "File moved successfully"})
+}
+
+// GetFileUsage handles GET /files/:fileId/usage - Get games where a file is used
+func (h *FileHandler) GetFileUsage(c *gin.Context) {
+	fileIDStr := c.Param("fileId")
+
+	fileID, err := primitive.ObjectIDFromHex(fileIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file ID"})
+		return
+	}
+
+	// Get user from JWT
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Get user's files to find the file URL
+	user, err := h.UserRepo.GetUserWithFiles(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user files"})
+		return
+	}
+
+	var fileURL string
+	for _, f := range user.Files {
+		if f.ID == fileID {
+			fileURL = f.FileURL
+			break
+		}
+	}
+
+	if fileURL == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	games, err := h.GameRepo.GetGameNamesByGMAndFileURL(userID, fileURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check file usage"})
+		return
+	}
+
+	if games == nil {
+		games = []string{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"games": games})
 }
 
 // GetFile handles GET /user-files/:filename - Serve file (public)

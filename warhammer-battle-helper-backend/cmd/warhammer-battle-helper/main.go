@@ -196,10 +196,11 @@ func main() {
 	// --- END HANDOUT ROUTES ---
 
 	// --- USER FILES ROUTES ---
-	fileHandler := http.FileHandler{UserRepo: userRepo, Storage: userFilesStorage}
+	fileHandler := http.FileHandler{UserRepo: userRepo, Storage: userFilesStorage, GameRepo: gameRepo, Hub: hub}
 	r.GET("/files", http.JWTAuthMiddleware(), fileHandler.GetFiles)
 	r.POST("/files/upload", http.JWTAuthMiddleware(), fileHandler.UploadFiles)
 	r.DELETE("/files/:fileId", http.JWTAuthMiddleware(), fileHandler.DeleteFile)
+	r.GET("/files/:fileId/usage", http.JWTAuthMiddleware(), fileHandler.GetFileUsage)
 	r.PUT("/files/:fileId/move", http.JWTAuthMiddleware(), fileHandler.MoveFile)
 	r.POST("/folders", http.JWTAuthMiddleware(), fileHandler.CreateFolder)
 	r.PUT("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.RenameFolder)

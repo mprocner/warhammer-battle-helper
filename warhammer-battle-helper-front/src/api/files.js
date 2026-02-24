@@ -40,6 +40,16 @@ export const deleteFile = async (fileId) => {
 };
 
 /**
+ * Get games where a file is used
+ * @param {string} fileId - The file ID to check
+ * @returns {Promise<{games: string[]}>} - Game names using this file
+ */
+export const getFileUsage = async (fileId) => {
+  const response = await axiosInstance.get(`/files/${fileId}/usage`);
+  return response.data;
+};
+
+/**
  * Move a file to another folder
  * @param {string} fileId - The file ID to move
  * @param {string|null} folderId - Target folder ID (null for root)
@@ -89,6 +99,7 @@ const filesApi = {
   getFiles,
   uploadFiles,
   deleteFile,
+  getFileUsage,
   moveFile,
   createFolder,
   renameFolder,

@@ -1201,3 +1201,101 @@ func (r *GameRepository) GetScene(gameID string, sceneID primitive.ObjectID) (*m
 
 	return nil, fmt.Errorf("scene not found")
 }
+
+// AffectedSceneImage holds identifiers of a scene image that was removed
+type AffectedSceneImage struct {
+	GameID  string
+	SceneID string
+	ImageID string
+}
+
+// RemoveSceneImagesByGMAndFileURL removes all scene images with the given fileURL from all GM's games.
+// Returns the list of removed images so callers can broadcast events.
+func (r *GameRepository) RemoveSceneImagesByGMAndFileURL(gmID primitive.ObjectID, fileURL string) ([]AffectedSceneImage, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"gameMasterId":          gmID,
+		"scenes.images.fileUrl": fileURL,
+	}
+
+	// First find affected games/scenes/images
+	cursor, err := r.Collection.Find(ctx, filter, options.Find().SetProjection(bson.M{"_id": 1, "scenes": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query affected games: %w", err)
+	}
+
+	var games []struct {
+		ID     primitive.ObjectID `bson:"_id"`
+		Scenes []struct {
+			ID     primitive.ObjectID `bson:"_id"`
+			Images []struct {
+				ID      primitive.ObjectID `bson:"_id"`
+				FileURL string             `bson:"fileUrl"`
+			} `bson:"images"`
+		} `bson:"scenes"`
+	}
+	if err := cursor.All(ctx, &games); err != nil {
+		return nil, fmt.Errorf("failed to decode affected games: %w", err)
+	}
+
+	var affected []AffectedSceneImage
+	for _, g := range games {
+		for _, s := range g.Scenes {
+			for _, img := range s.Images {
+				if img.FileURL == fileURL {
+					affected = append(affected, AffectedSceneImage{
+						GameID:  g.ID.Hex(),
+						SceneID: s.ID.Hex(),
+						ImageID: img.ID.Hex(),
+					})
+				}
+			}
+		}
+	}
+
+	// Now remove from DB
+	update := bson.M{
+		"$pull": bson.M{
+			"scenes.$[].images": bson.M{"fileUrl": fileURL},
+		},
+		"$set": bson.M{"updatedAt": time.Now()},
+	}
+	if _, err := r.Collection.UpdateMany(ctx, filter, update); err != nil {
+		return nil, fmt.Errorf("failed to remove scene images: %w", err)
+	}
+
+	return affected, nil
+}
+
+// GetGameNamesByGMAndFileURL returns names of games where the given GM's file is used in scenes
+func (r *GameRepository) GetGameNamesByGMAndFileURL(gmID primitive.ObjectID, fileURL string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"gameMasterId":          gmID,
+		"scenes.images.fileUrl": fileURL,
+	}
+
+	opts := options.Find().SetProjection(bson.M{"name": 1})
+	cursor, err := r.Collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query games: %w", err)
+	}
+
+	var results []struct {
+		Name string `bson:"name"`
+	}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("failed to decode games: %w", err)
+	}
+
+	names := make([]string, 0, len(results))
+	for _, r := range results {
+		names = append(names, r.Name)
+	}
+
+	return names, nil
+}

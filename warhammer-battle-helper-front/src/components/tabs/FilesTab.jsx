@@ -9,9 +9,10 @@ import {
   useDraggable,
   useDroppable,
 } from '@dnd-kit/core';
-import { getFiles, uploadFiles, deleteFile, moveFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
+import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
 import { addSceneImage } from '../../api/scenes';
 import { getApiUrl } from '../../api/axios';
+import ConfirmModal from '../common/ConfirmModal';
 import './FilesTab.css';
 
 // Helper to get full URL for file
@@ -182,6 +183,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
   const [hoveredFile, setHoveredFile] = useState(null);
   const [addToSceneFile, setAddToSceneFile] = useState(null);
   const [addToSceneLayer, setAddToSceneLayer] = useState('background');
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, file: null, message: '', isLoading: false });
 
   const handleAddToScene = async () => {
     if (!addToSceneFile || !gameId || !currentSceneId) return;
@@ -399,18 +401,36 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
     e.target.value = ''; // Reset input
   };
 
-  // Delete file
+  // Delete file - show confirm modal with usage info
   const handleDeleteFile = async (file) => {
-    if (!window.confirm(t('files.confirmDeleteFile', { name: file.name }))) {
-      return;
+    setDeleteConfirm({ isOpen: true, file, message: '', isLoading: true });
+
+    try {
+      const usage = await getFileUsage(file.id);
+      const games = usage.games || [];
+      const message = games.length > 0
+        ? t('files.confirmDeleteFileUsed', { games: games.join(', ') })
+        : t('files.confirmDeleteFile');
+      setDeleteConfirm(prev => ({ ...prev, message, isLoading: false }));
+    } catch (err) {
+      console.error('Failed to fetch file usage:', err);
+      setDeleteConfirm(prev => ({ ...prev, message: t('files.confirmDeleteFile'), isLoading: false }));
     }
+  };
+
+  // Confirm actual deletion
+  const handleConfirmDelete = async () => {
+    const file = deleteConfirm.file;
+    setDeleteConfirm(prev => ({ ...prev, isLoading: true }));
 
     try {
       await deleteFile(file.id);
       setFiles(prev => prev.filter(f => f.id !== file.id));
+      setDeleteConfirm({ isOpen: false, file: null, message: '', isLoading: false });
     } catch (err) {
       console.error('Failed to delete file:', err);
       setError(t('files.deleteError'));
+      setDeleteConfirm({ isOpen: false, file: null, message: '', isLoading: false });
     }
   };
 
@@ -710,6 +730,16 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        message={deleteConfirm.message}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirm({ isOpen: false, file: null, message: '', isLoading: false })}
+        confirmLabel={t('common.delete')}
+        isLoading={deleteConfirm.isLoading}
+      />
 
       {/* Drag overlay */}
       <DragOverlay dropAnimation={null}>
