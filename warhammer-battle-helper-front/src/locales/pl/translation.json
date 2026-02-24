@@ -352,6 +352,7 @@
     "actions": "Akcje",
     "backToGameList": "Wróć do listy gier",
     "leaveGame": "Opuść Grę",
+    "leaveGameConfirm": "Czy na pewno chcesz opuścić trwającą sesję?",
     "logout": "Wyloguj",
     "invitePlayers": "Zaproś graczy",
     "inviteByEmail": "Email gracza",

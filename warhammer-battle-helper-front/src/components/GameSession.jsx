@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import ConfirmModal from './common/ConfirmModal';
 import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
 import PanelToggle from './panels/PanelToggle';
@@ -10,6 +12,7 @@ import { getApiUrl, getApiHeaders } from '../api/axios';
  * GameSession component - manages a multiplayer game session with real-time sync
  */
 const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState(null);
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState(null);
@@ -21,6 +24,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [editingLayer, setEditingLayer] = useState('grid');
   const [pointerPings, setPointerPings] = useState([]);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // --- Music state ---
   const audioRef = useRef(new Audio());
@@ -45,6 +49,29 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   useEffect(() => {
     audioRef.current.volume = musicState.gmVolume * playerVolume;
   }, [musicState.gmVolume, playerVolume]);
+
+  // Block browser back button and tab close while in game
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+      setShowLeaveConfirm(true);
+    };
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -551,6 +578,14 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onPlayerVolumeChange={onPlayerVolumeChange}
         />
       </Box>
+
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        message={t('settings.leaveGameConfirm')}
+        confirmLabel={t('settings.leaveGame')}
+        onConfirm={handleLeaveGame}
+        onCancel={() => setShowLeaveConfirm(false)}
+      />
     </Box>
   );
 };

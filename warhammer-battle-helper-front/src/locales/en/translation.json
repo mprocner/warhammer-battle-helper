@@ -351,6 +351,7 @@
     "actions": "Actions",
     "backToGameList": "Back to Game List",
     "leaveGame": "Leave Game",
+    "leaveGameConfirm": "Are you sure you want to leave the ongoing session?",
     "logout": "Logout",
     "invitePlayers": "Invite Players",
     "inviteByEmail": "Player email",
