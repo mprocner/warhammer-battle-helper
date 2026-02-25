@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import StopIcon from '@mui/icons-material/Stop';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import VolumeDownIcon from '@mui/icons-material/VolumeDown';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume } from '../../api/music';
 import { getApiUrl } from '../../api/axios';
 import {
@@ -82,7 +95,7 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
   return (
     <div ref={setNodeRef} style={style} className="music-tab__playlist-track">
       <div className="music-tab__drag-handle" {...attributes} {...listeners}>
-        <span className="music-tab__drag-icon">⋮⋮</span>
+        <DragHandleIcon fontSize="inherit" />
       </div>
       <span className="music-tab__playlist-track-num">{index + 1}.</span>
       <span className="music-tab__playlist-track-name" ref={nameRef}><span className="music-tab__truncate">{track.name}</span></span>
@@ -92,14 +105,14 @@ const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist,
         onClick={() => handlePlayPlaylistFromTrack(playlistId, index)}
         title={t('music.play')}
       >
-        ▶
+        <PlayArrowIcon fontSize="inherit" />
       </button>
       <button
         className="list-action-btn list-action-btn--delete"
         onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
         title={t('common.delete')}
       >
-        ✕
+        <CloseIcon fontSize="inherit" />
       </button>
     </div>
   );
@@ -128,7 +141,7 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
     <div ref={setNodeRef} style={style} className={`music-tab__playlist-item ${isActive ? 'music-tab__playlist-item--active' : ''}`}>
       <div className="music-tab__playlist-header" onClick={() => togglePlaylist(playlist.id)}>
         <div className="music-tab__drag-handle" {...attributes} {...listeners} onClick={(e) => e.stopPropagation()}>
-          <span className="music-tab__drag-icon">⋮⋮</span>
+          <DragHandleIcon fontSize="inherit" />
         </div>
         <span className={`music-tab__chevron ${!expandedPlaylists[playlist.id] ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
         <span className="music-tab__playlist-name" ref={playlistNameRef}><span className="music-tab__truncate">{playlist.name} ({tracks.length})</span></span>
@@ -140,21 +153,21 @@ const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePla
             disabled={tracks.length === 0}
             title={t('music.play')}
           >
-            ▶
+            <PlayArrowIcon fontSize="inherit" />
           </button>
           <button
             className="list-action-btn"
             onClick={() => handleStartEditPlaylist(playlist)}
             title={t('music.editPlaylist')}
           >
-            ✎
+            <EditIcon fontSize="inherit" />
           </button>
           <button
             className="list-action-btn list-action-btn--delete"
             onClick={() => handleDeletePlaylist(playlist)}
             title={t('common.delete')}
           >
-            ✕
+            <CloseIcon fontSize="inherit" />
           </button>
         </div>
       </div>
@@ -574,7 +587,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       {error && (
         <div className="music-tab__error">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="music-tab__error-close">&times;</button>
+          <button onClick={() => setError(null)} className="music-tab__error-close"><CloseIcon fontSize="inherit" /></button>
         </div>
       )}
 
@@ -608,21 +621,21 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             <span className="music-tab__time">{formatTime(duration)}</span>
           </div>
           <div className="music-tab__playback-controls">
-            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePreviousTrack} title={t('music.previous')}>⏮</button>
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePreviousTrack} title={t('music.previous')}><SkipPreviousIcon fontSize="inherit" /></button>
             {musicState.isPlaying ? (
-              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handlePause} title={t('music.pause')}><PauseIcon fontSize="inherit" /></button>
             ) : (
-              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={() => handleResume()} title={t('music.play')}>▶</button>
+              <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={() => handleResume()} title={t('music.play')}><PlayArrowIcon fontSize="inherit" /></button>
             )}
-            <button className="music-tab__control-btn" onClick={handleStop} title={t('music.stop')}>⏹</button>
+            <button className="music-tab__control-btn" onClick={handleStop} title={t('music.stop')}><StopIcon fontSize="inherit" /></button>
             <button
               className={`music-tab__control-btn ${loop ? 'music-tab__control-btn--active' : ''}`}
               onClick={() => setLoop(!loop)}
               title={t('music.loop')}
             >
-              🔁
+              <RepeatIcon fontSize="inherit" />
             </button>
-            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handleNextTrack} title={t('music.next')}>⏭</button>
+            <button className="music-tab__control-btn music-tab__control-btn--playback" onClick={handleNextTrack} title={t('music.next')}><SkipNextIcon fontSize="inherit" /></button>
           </div>
         </section>
       )}
@@ -631,7 +644,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       <section className="music-tab__section">
         <h4 className="music-tab__section-title">{t('music.gmVolume')}</h4>
         <div className="music-tab__volume-control">
-          <span className="music-tab__volume-icon">🔈</span>
+          <span className="music-tab__volume-icon"><VolumeDownIcon fontSize="inherit" /></span>
           <input
             type="range"
             min="0"
@@ -641,7 +654,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             onChange={handleVolumeChange}
             className="music-tab__volume-slider"
           />
-          <span className="music-tab__volume-icon">🔊</span>
+          <span className="music-tab__volume-icon"><VolumeUpIcon fontSize="inherit" /></span>
           <span className="music-tab__volume-value">{Math.round(musicState.gmVolume * 100)}%</span>
         </div>
       </section>
@@ -658,7 +671,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             onClick={(e) => { e.stopPropagation(); setSearchOpen(prev => { if (prev) setSearchQuery(''); return !prev; }); }}
             title={t('music.searchPlaceholder')}
           >
-            🔍
+            <SearchIcon fontSize="inherit" />
           </button>
           <button
             className="music-tab__add-btn"
@@ -701,9 +714,9 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   </div>
                   <div className="music-tab__track-actions">
                     {isTrackPlaying(file) ? (
-                      <button className="list-action-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}>⏸</button>
+                      <button className="list-action-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}><PauseIcon fontSize="inherit" /></button>
                     ) : (
-                      <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}>▶</button>
+                      <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}><PlayArrowIcon fontSize="inherit" /></button>
                     )}
                     <div className="music-tab__add-to-playlist-wrapper">
                       <button
@@ -711,7 +724,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                         onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
                         title={t('music.addToPlaylist')}
                       >
-                        +📋
+                        <PlaylistAddIcon fontSize="inherit" />
                       </button>
                       {addToPlaylistOpen === file.id && playlists.length > 0 && (
                         <div className="music-tab__playlist-dropdown">
@@ -727,7 +740,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                         </div>
                       )}
                     </div>
-                    <button className="list-action-btn list-action-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}>✕</button>
+                    <button className="list-action-btn list-action-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}><CloseIcon fontSize="inherit" /></button>
                   </div>
                 </div>
               ))}

@@ -34,20 +34,20 @@
 /* Vertical Tab Navigation */
 .right-panel__tabs-nav {
   width: var(--vertical-tabs-width);
-  background: linear-gradient(180deg, #4a3930 0%, #3a2920 100%);
+  background: linear-gradient(180deg, #e8d8bc 0%, #dccba8 100%);
   display: flex;
   flex-direction: column;
-  border-right: 2px solid #5c4a3a;
+  border-right: 2px solid #c9975b;
 }
 
 .right-panel__tab-btn {
-  padding: 16px 8px;
+  padding: 10px 8px;
   background: transparent;
   border: none;
   font-family: 'Cinzel', serif;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #c9975b;
+  color: #6b4423;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -60,14 +60,14 @@
 }
 
 .right-panel__tab-btn:hover {
-  background: rgba(201, 151, 91, 0.15);
-  color: #f4e8d8;
+  background: rgba(201, 151, 91, 0.25);
+  color: #4a2f1a;
 }
 
 .right-panel__tab-btn--active {
-  background: linear-gradient(90deg, rgba(249, 243, 232, 0.1) 0%, transparent 100%);
-  color: #d4af37;
-  border-left-color: #d4af37;
+  background: linear-gradient(90deg, rgba(201, 151, 91, 0.35) 0%, transparent 100%);
+  color: #7a4a1a;
+  border-left-color: #c9975b;
 }
 
 .right-panel__tab-icon {
@@ -97,11 +97,11 @@
   border-radius: 0;
 }
 
-/* Dark scrollbar for vertical tabs */
+/* Scrollbar for vertical tabs */
 .right-panel__tabs-nav::-webkit-scrollbar-track {
-  background: #3a2920;
+  background: #dccba8;
 }
 
 .right-panel__tabs-nav::-webkit-scrollbar-thumb {
-  background: #5c4a3a;
+  background: #c9975b;
 }

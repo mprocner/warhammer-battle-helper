@@ -1,5 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
+import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogWindow from '../LogWindow';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
@@ -51,21 +57,21 @@ const RightPanel = ({
   // Build tabs array - Files and Scenes tabs only visible to GM
   const tabs = useMemo(() => {
     const baseTabs = [
-      { id: 'chat', icon: '💬', label: t('rightPanel.tabs.chat') },
+      { id: 'chat', icon: <ChatBubbleOutlineIcon />, label: t('rightPanel.tabs.chat') },
     ];
 
     if (isGM) {
-      baseTabs.push({ id: 'scenes', icon: '🗺️', label: t('rightPanel.tabs.scenes') });
+      baseTabs.push({ id: 'scenes', icon: <MapOutlinedIcon />, label: t('rightPanel.tabs.scenes') });
     }
 
-    baseTabs.push({ id: 'handouts', icon: '📜', label: t('rightPanel.tabs.handouts') });
+    baseTabs.push({ id: 'handouts', icon: <ArticleOutlinedIcon />, label: t('rightPanel.tabs.handouts') });
 
     if (isGM) {
-      baseTabs.push({ id: 'files', icon: '📁', label: t('rightPanel.tabs.files') });
-      baseTabs.push({ id: 'music', icon: '🎵', label: t('rightPanel.tabs.music') });
+      baseTabs.push({ id: 'files', icon: <FolderOutlinedIcon />, label: t('rightPanel.tabs.files') });
+      baseTabs.push({ id: 'music', icon: <LibraryMusicOutlinedIcon />, label: t('rightPanel.tabs.music') });
     }
 
-    baseTabs.push({ id: 'general', icon: '⚙️', label: t('rightPanel.tabs.general') });
+    baseTabs.push({ id: 'general', icon: <SettingsOutlinedIcon />, label: t('rightPanel.tabs.general') });
 
     return baseTabs;
   }, [isGM, t]);

@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import MapIcon from '@mui/icons-material/Map';
+import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import {
   DndContext,
   DragOverlay,
@@ -75,7 +82,7 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t
             onClick={(e) => { e.stopPropagation(); onHover(null); onAddToScene(file); }}
             title={t('scenes.addToScene')}
           >
-            🗺️
+            <MapIcon fontSize="inherit" />
           </button>
         )}
         <button
@@ -83,7 +90,7 @@ const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t
           onClick={handleDelete}
           title={t('common.delete')}
         >
-          ✕
+          <CloseIcon fontSize="inherit" />
         </button>
       </div>
     </div>
@@ -105,7 +112,7 @@ const DroppableFolderItem = ({ folder, isOver, onNavigate, onRename, onDelete, r
       className={`files-tab__item files-tab__item--folder ${isDropTarget ? 'files-tab__item--drop-target' : ''}`}
       onClick={() => onNavigate(folder)}
     >
-      <span className="files-tab__item-icon">📁</span>
+      <span className="files-tab__item-icon"><FolderIcon fontSize="inherit" /></span>
       {renamingFolder?.id === folder.id ? (
         <form onSubmit={handleRenameFolder} className="files-tab__rename-form">
           <input
@@ -125,14 +132,14 @@ const DroppableFolderItem = ({ folder, isOver, onNavigate, onRename, onDelete, r
           onClick={(e) => onRename(folder, e)}
           title={t('files.renameFolder')}
         >
-          ✏️
+          <EditIcon fontSize="inherit" />
         </button>
         <button
           className="list-action-btn list-action-btn--delete"
           onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
           title={t('common.delete')}
         >
-          ✕
+          <CloseIcon fontSize="inherit" />
         </button>
       </div>
     </div>
@@ -152,7 +159,7 @@ const DroppableBackButton = ({ parentFolderId, onNavigateUp }) => {
       className={`files-tab__item files-tab__item--back ${isOver ? 'files-tab__item--drop-target' : ''}`}
       onClick={onNavigateUp}
     >
-      <span className="files-tab__item-icon">⬆️</span>
+      <span className="files-tab__item-icon"><ArrowUpwardIcon fontSize="inherit" /></span>
       <span className="files-tab__item-name">..</span>
     </div>
   );
@@ -524,32 +531,11 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
           </div>
         </div>
 
-        {/* Breadcrumb */}
-        <div className="files-tab__breadcrumb">
-          <span
-            className="files-tab__breadcrumb-item files-tab__breadcrumb-item--clickable"
-            onClick={() => navigateToBreadcrumb(-1)}
-          >
-            {t('files.root')}
-          </span>
-          {folderPath.map((folder, index) => (
-            <React.Fragment key={folder.id}>
-              <span className="files-tab__breadcrumb-separator">/</span>
-              <span
-                className="files-tab__breadcrumb-item files-tab__breadcrumb-item--clickable"
-                onClick={() => navigateToBreadcrumb(index)}
-              >
-                {folder.name}
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
-
         {/* Error message */}
         {error && (
           <div className="files-tab__error">
             <span>{error}</span>
-            <button onClick={() => setError('')}>&times;</button>
+            <button onClick={() => setError('')}><CloseIcon fontSize="inherit" /></button>
           </div>
         )}
 
@@ -576,11 +562,32 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
             </>
           ) : (
             <>
-              <span className="files-tab__upload-icon">📁</span>
+              <span className="files-tab__upload-icon"><CloudUploadIcon fontSize="inherit" /></span>
               <span>{t('files.dropOrClick')}</span>
               <span className="files-tab__upload-hint">{t('files.allowedFormats')}</span>
             </>
           )}
+        </div>
+
+        {/* Breadcrumb */}
+        <div className="files-tab__breadcrumb">
+          <span
+              className="files-tab__breadcrumb-item files-tab__breadcrumb-item--clickable"
+              onClick={() => navigateToBreadcrumb(-1)}
+          >
+            {t('files.root')}
+          </span>
+          {folderPath.map((folder, index) => (
+              <React.Fragment key={folder.id}>
+                <span className="files-tab__breadcrumb-separator">/</span>
+                <span
+                    className="files-tab__breadcrumb-item files-tab__breadcrumb-item--clickable"
+                    onClick={() => navigateToBreadcrumb(index)}
+                >
+                {folder.name}
+              </span>
+              </React.Fragment>
+          ))}
         </div>
 
         {/* File list */}
@@ -626,7 +633,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
           {/* Empty state */}
           {currentFolders.length === 0 && currentFiles.length === 0 && !currentFolderId && (
             <div className="files-tab__empty">
-              <div className="empty-icon">📁</div>
+              <div className="empty-icon"><FolderOpenIcon fontSize="inherit" /></div>
               <p>{t('files.noFiles')}</p>
               <p className="empty-hint">{t('files.noFilesHint')}</p>
             </div>
@@ -664,7 +671,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
           <div className="files-tab__modal-overlay" onClick={() => setPreviewFile(null)}>
             <div className="files-tab__preview-modal" onClick={(e) => e.stopPropagation()}>
               <button className="files-tab__preview-close" onClick={() => setPreviewFile(null)}>
-                &times;
+                <CloseIcon fontSize="inherit" />
               </button>
               <img src={getFileUrl(previewFile.fileUrl)} alt={previewFile.name} />
               <div className="files-tab__preview-info">

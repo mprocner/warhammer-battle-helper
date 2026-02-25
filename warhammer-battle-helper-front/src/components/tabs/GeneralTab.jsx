@@ -5,6 +5,8 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
+import VolumeDownIcon from '@mui/icons-material/VolumeDown';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import './GeneralTab.css';
 
 /**
@@ -134,7 +136,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
             </div>
           )}
           <div className="general-tab__volume-control">
-            <span className="general-tab__volume-icon">🔈</span>
+            <span className="general-tab__volume-icon"><VolumeDownIcon fontSize="inherit" /></span>
             <input
               type="range"
               min="0"
@@ -144,7 +146,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
               onChange={(e) => onPlayerVolumeChange(parseFloat(e.target.value))}
               className="general-tab__volume-slider"
             />
-            <span className="general-tab__volume-icon">🔊</span>
+            <span className="general-tab__volume-icon"><VolumeUpIcon fontSize="inherit" /></span>
             <span className="general-tab__volume-value">{Math.round(playerVolume * 100)}%</span>
           </div>
         </section>
