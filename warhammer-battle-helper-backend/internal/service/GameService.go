@@ -1494,6 +1494,21 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 		return fmt.Errorf("only the game master can update scene images")
 	}
 
+	// If the image is locked, only the locked field itself may be changed (to unlock)
+	for _, scene := range game.Scenes {
+		if scene.ID != sceneID {
+			continue
+		}
+		for _, img := range scene.Images {
+			if img.ID != imageID {
+				continue
+			}
+			if img.Locked && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil || req.ZIndex != nil || req.Layer != nil) {
+				return fmt.Errorf("image is locked")
+			}
+		}
+	}
+
 	if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, imageID, req); err != nil {
 		return err
 	}

@@ -129,6 +129,7 @@ type SceneImage struct {
 	Width     float64            `bson:"width" json:"width"`
 	Height    float64            `bson:"height" json:"height"`
 	ZIndex    int                `bson:"zIndex" json:"zIndex"`
+	Locked    bool               `bson:"locked" json:"locked"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
@@ -259,4 +260,5 @@ type UpdateSceneImageRequest struct {
 	Height *float64 `json:"height"`
 	ZIndex *int     `json:"zIndex"`
 	Layer  *string  `json:"layer"`
+	Locked *bool    `json:"locked"`
 }

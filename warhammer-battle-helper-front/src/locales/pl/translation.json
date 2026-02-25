@@ -526,6 +526,8 @@
     "moveToBackground": "Przenieś do Tła",
     "deleteImage": "Usuń Obraz",
     "resizeToGrid": "Dopasuj do Siatki",
+    "lockImage": "Zablokuj Obraz",
+    "unlockImage": "Odblokuj Obraz",
     "editingLayer": "Edytowana Warstwa",
     "gridLayer": "Siatka",
     "zoomIn": "Przybliż",

@@ -1542,50 +1542,19 @@ header nav a:hover::after {
 /* ================== FIGHT GRID (10x10) - Light Tactical Map ================== */
 .fight-grid {
   box-sizing: border-box;
-  border: 6px solid #7a5c42;
 }
 
 .fight-grid-inner {
   display: grid;
   grid-template-columns: repeat(20, 50px); /* fallback, overridden by inline style */
-  border: 20px solid #c9975b;
   box-sizing: border-box;
   align-content: start;
-  /*border: 6px solid #7a5c42;*/
-  box-shadow:
-    0 8px 24px rgba(107, 68, 35, 0.3),
-    inset 0 0 40px rgba(122, 92, 66, 0.15);
   position: relative;
 }
 
 /* Grid hidden mode - transparent borders */
 .fight-grid-inner.grid-hidden .fight-zone {
   border-color: transparent;
-}
-
-/* Decorative corner ornaments */
-.fight-grid::before,
-.fight-grid::after {
-  content: '';
-  position: absolute;
-  width: 30px;
-  height: 30px;
-  border: 3px solid #d4a574;
-  z-index: 1;
-}
-
-.fight-grid::before {
-  top: 10px;
-  left: 10px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.fight-grid::after {
-  bottom: 10px;
-  right: 10px;
-  border-left: none;
-  border-top: none;
 }
 
 /* Grid cells - Aged parchment squares */

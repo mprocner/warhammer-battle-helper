@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
-const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onDelete, onClose }) => {
+const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onLockToggle, onDelete, onClose }) => {
   const { t } = useTranslation();
   const [zIndex, setZIndex] = useState(image.zIndex || 0);
   const menuRef = useRef(null);
@@ -68,8 +68,19 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
       <button
         className="scene-context-menu__item"
         onClick={onResizeToGrid}
+        disabled={image.locked}
       >
         {t('scenes.resizeToGrid')}
+      </button>
+
+      <div className="scene-context-menu__divider" />
+
+      {/* Lock / Unlock */}
+      <button
+        className="scene-context-menu__item"
+        onClick={onLockToggle}
+      >
+        {image.locked ? `🔒 ${t('scenes.unlockImage')}` : `🔓 ${t('scenes.lockImage')}`}
       </button>
 
       <div className="scene-context-menu__divider" />

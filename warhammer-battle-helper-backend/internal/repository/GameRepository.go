@@ -1133,6 +1133,9 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	if req.Layer != nil {
 		setFields["scenes.$[scene].images.$[img].layer"] = *req.Layer
 	}
+	if req.Locked != nil {
+		setFields["scenes.$[scene].images.$[img].locked"] = *req.Locked
+	}
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{"$set": setFields}

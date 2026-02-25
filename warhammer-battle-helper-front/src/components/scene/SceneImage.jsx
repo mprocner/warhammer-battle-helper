@@ -4,7 +4,7 @@ import { updateSceneImage, deleteSceneImage } from '../../api/scenes';
 import { getApiUrl } from '../../api/axios';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
-import { CELL_SIZE, GRID_BORDER, GRID_PADDING } from '../../constants/scene';
+import { CELL_SIZE } from '../../constants/scene';
 
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return '';
@@ -58,7 +58,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
 
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
-    if (!isGM || e.button !== 0) return;
+    if (!isGM || e.button !== 0 || image.locked) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -68,24 +68,26 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
       startX: pos.x,
       startY: pos.y,
       z: zoom,
+      maxX: Math.max(0, gridWidth * CELL_SIZE - size.width),
+      maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
-  }, [isGM, pos, zoom]);
+  }, [isGM, pos, zoom, image.locked, size, gridWidth, gridHeight]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e) => {
-      const { mouseX, mouseY, startX, startY, z } = dragStartRef.current;
+      const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
       setPos({
-        x: startX + (e.clientX - mouseX) / z,
-        y: startY + (e.clientY - mouseY) / z,
+        x: Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX)),
+        y: Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY)),
       });
     };
 
     const handleMouseUpFinal = (e) => {
-      const { mouseX, mouseY, startX, startY, z } = dragStartRef.current;
-      const finalX = startX + (e.clientX - mouseX) / z;
-      const finalY = startY + (e.clientY - mouseY) / z;
+      const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
+      const finalX = Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX));
+      const finalY = Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY));
       setPos({ x: finalX, y: finalY });
       justFinishedDraggingRef.current = true;
       setIsDragging(false);
@@ -102,7 +104,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
 
   // --- Resize ---
   const handleResizeStart = useCallback((e, handle) => {
-    if (!isGM) return;
+    if (!isGM || image.locked) return;
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
@@ -116,7 +118,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
       startH: size.height,
       z: zoom,
     };
-  }, [isGM, pos, size, zoom]);
+  }, [isGM, pos, size, zoom, image.locked]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -198,9 +200,18 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
     setContextMenu(null);
   };
 
+  const handleLockToggle = async () => {
+    try {
+      await updateSceneImage(gameId, sceneId, image.id, { locked: !image.locked });
+    } catch (err) {
+      console.error('Failed to toggle image lock:', err);
+    }
+    setContextMenu(null);
+  };
+
   const handleResizeToGrid = () => {
-    const newX = GRID_BORDER + GRID_PADDING;
-    const newY = GRID_BORDER + GRID_PADDING;
+    const newX = 0;
+    const newY = 0;
     const newWidth = gridWidth * CELL_SIZE;
     const newHeight = gridHeight * CELL_SIZE;
 
@@ -220,7 +231,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
   return (
     <>
       <div
-        className={`scene-image ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''}`}
+        className={`scene-image ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${image.locked ? 'scene-image--locked' : ''}`}
         style={{
           position: 'absolute',
           left: pos.x,
@@ -229,7 +240,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          cursor: isGM ? (image.locked ? 'default' : isDragging ? 'grabbing' : 'grab') : 'default',
         }}
         onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}
@@ -252,8 +263,13 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
           <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
         )}
 
-        {/* Resize handles (GM only) */}
-        {isGM && RESIZE_HANDLES.map(handle => (
+        {/* Lock badge (GM only) */}
+        {isGM && image.locked && (
+          <span className="scene-image__lock-badge">🔒</span>
+        )}
+
+        {/* Resize handles (GM only, only when unlocked) */}
+        {isGM && !image.locked && RESIZE_HANDLES.map(handle => (
           <div
             key={handle}
             className={`scene-image__handle scene-image__handle--${handle}`}
@@ -273,6 +289,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
           onLayerChange={handleLayerChange}
           onDelete={handleDelete}
           onResizeToGrid={handleResizeToGrid}
+          onLockToggle={handleLockToggle}
           onClose={() => setContextMenu(null)}
         />
       )}

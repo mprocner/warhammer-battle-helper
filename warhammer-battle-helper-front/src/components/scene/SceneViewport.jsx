@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import SceneLayer from './SceneLayer';
 import ZoomContext from './ZoomContext';
 import PointerPing from './PointerPing';
-import { getCanvasSize, MIN_ZOOM, MAX_ZOOM } from '../../constants/scene';
+import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING } from '../../constants/scene';
 import './SceneViewport.css';
+
+const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
@@ -31,7 +33,9 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
     if (!el) return 1;
     const vw = el.clientWidth;
     const vh = el.clientHeight;
-    return Math.min(vw / canvasSize.width, vh / canvasSize.height, MAX_ZOOM);
+    const totalW = canvasSize.width + FRAME_SIZE * 2;
+    const totalH = canvasSize.height + FRAME_SIZE * 2;
+    return Math.min(vw / totalW, vh / totalH, MAX_ZOOM);
   }, [canvasSize]);
 
 
@@ -172,8 +176,8 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
           <div
             className="scene-viewport__sizer"
             style={{
-              width: canvasSize.width * zoom,
-              height: canvasSize.height * zoom,
+              width: (canvasSize.width + FRAME_SIZE * 2) * zoom,
+              height: (canvasSize.height + FRAME_SIZE * 2) * zoom,
             }}
           >
             {/* Transform — applies visual scale */}
@@ -184,10 +188,13 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                 transformOrigin: '0 0',
               }}
             >
-              {/* Content — fixed canvas size */}
+              {/* Content — pure grid area, offset by frame size */}
               <div
                 className="scene-viewport__content"
                 style={{
+                  position: 'absolute',
+                  top: FRAME_SIZE,
+                  left: FRAME_SIZE,
                   width: canvasSize.width,
                   height: canvasSize.height,
                 }}
@@ -235,6 +242,14 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                   />
                 ))}
               </div>
+              {/* Decorative frame — rendered after content so it appears on top */}
+              <div
+                className="scene-viewport__frame"
+                style={{
+                  width: canvasSize.width + FRAME_SIZE * 2,
+                  height: canvasSize.height + FRAME_SIZE * 2,
+                }}
+              />
             </div>
           </div>
         </div>

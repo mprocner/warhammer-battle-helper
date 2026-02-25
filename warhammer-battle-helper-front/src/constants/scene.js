@@ -5,6 +5,6 @@ export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 3.0;
 
 export const getCanvasSize = (gridWidth, gridHeight) => ({
-  width: gridWidth * CELL_SIZE + GRID_PADDING * 2 + GRID_BORDER * 2,
-  height: gridHeight * CELL_SIZE + GRID_PADDING * 2 + GRID_BORDER * 2,
+  width: gridWidth * CELL_SIZE,
+  height: gridHeight * CELL_SIZE,
 });

@@ -525,6 +525,8 @@
     "moveToBackground": "Move to Background",
     "deleteImage": "Delete Image",
     "resizeToGrid": "Resize to Grid",
+    "lockImage": "Lock Image",
+    "unlockImage": "Unlock Image",
     "editingLayer": "Editing Layer",
     "gridLayer": "Grid",
     "zoomIn": "Zoom In",
