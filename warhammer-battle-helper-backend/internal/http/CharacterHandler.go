@@ -3,17 +3,18 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/websocket"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type CharacterHandler struct {
 	CharacterRepo *repository.CharactersRepository
 	GameRepo      *repository.GameRepository
+	Hub           *websocket.Hub
 }
 
 type CreateCharacterRequest struct {
@@ -30,56 +31,65 @@ type CloneCharacterRequest struct {
 	Count int `json:"count" binding:"required,min=1,max=20"`
 }
 
-// GetMyCharacters returns all characters owned by the authenticated user
-func (h *CharacterHandler) GetMyCharacters(c *gin.Context) {
-	token, exists := c.Get("jwt")
-	if !exists {
+type UpdateVisibilityRequest struct {
+	VisibleTo []string `json:"visibleTo" binding:"required"`
+}
+
+// GetGameCharacters returns characters for a game.
+// GM gets all characters; player gets only characters where their userId is in VisibleTo.
+func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
+	gameID := c.Param("id")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
-		return
-	}
+	isGM := game.GameMasterID == userObjID
 
-	characters, err := h.CharacterRepo.GetByOwnerID(userID)
+	characters, err := h.CharacterRepo.GetByGameID(gameID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	for i := range characters {
-		characters[i].ComputeDerivedFields()
+	// Filter by visibility for non-GM users
+	var result []models.Character
+	for _, char := range characters {
+		char.ComputeDerivedFields()
+		if isGM {
+			result = append(result, char)
+		} else {
+			for _, visID := range char.VisibleTo {
+				if visID == userObjID {
+					result = append(result, char)
+					break
+				}
+			}
+		}
 	}
 
-	c.JSON(http.StatusOK, characters)
+	if result == nil {
+		result = []models.Character{}
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
-// CreateCharacter creates a new character for the authenticated user
-func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
-	token, exists := c.Get("jwt")
-	if !exists {
+// CreateGameCharacter creates a new character scoped to the game
+func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
+	gameID := c.Param("id")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
 		return
 	}
 
@@ -89,14 +99,16 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 		return
 	}
 
-	ownerObjectID, err := primitive.ObjectIDFromHex(userID)
+	gameObjID, err := primitive.ObjectIDFromHex(gameID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
 		return
 	}
 
 	character := &models.Character{
-		OwnerID:         ownerObjectID,
+		GameID:          gameObjID,
+		CreatedBy:       userObjID,
+		VisibleTo:       []primitive.ObjectID{userObjID},
 		BasicInfo:       req.BasicInfo,
 		Characteristics: req.Characteristics,
 		BasicSkills:     req.BasicSkills,
@@ -115,51 +127,42 @@ func (h *CharacterHandler) CreateCharacter(c *gin.Context) {
 	c.JSON(http.StatusCreated, character)
 }
 
-// UpdateCharacter updates an existing character owned by the authenticated user
-func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
-	token, exists := c.Get("jwt")
-	if !exists {
+// UpdateGameCharacter updates an existing character (owner or GM)
+func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
+	gameID := c.Param("id")
+	charID := c.Param("charId")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
-		return
-	}
+	isGM := game.GameMasterID == userObjID
 
-	characterID := c.Param("id")
-	if characterID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Character ID is required"})
-		return
-	}
-
-	// Verify the character belongs to the user (or user is GM of the specified game)
-	existingCharacter, err := h.CharacterRepo.GetByID(characterID)
+	existingCharacter, err := h.CharacterRepo.GetByID(charID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
 	}
 
-	if existingCharacter.OwnerID.Hex() != userID {
-		// Check if user is GM of the specified game
-		gameID := c.Query("gameId")
-		isGM := false
-		if gameID != "" && h.GameRepo != nil {
-			game, err := h.GameRepo.GetByID(gameID)
-			if err == nil {
-				userObjID, _ := primitive.ObjectIDFromHex(userID)
-				isGM = game.GameMasterID == userObjID
+	if !isGM {
+		canEdit := existingCharacter.CreatedBy == userObjID
+		if !canEdit {
+			for _, visID := range existingCharacter.VisibleTo {
+				if visID == userObjID {
+					canEdit = true
+					break
+				}
 			}
 		}
-		if !isGM {
+		if !canEdit {
 			c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
 			return
 		}
@@ -171,57 +174,80 @@ func (h *CharacterHandler) UpdateCharacter(c *gin.Context) {
 		return
 	}
 
-	// Preserve ownership
-	updatedCharacter.OwnerID = existingCharacter.OwnerID
+	// Preserve immutable fields
+	updatedCharacter.GameID = existingCharacter.GameID
+	updatedCharacter.CreatedBy = existingCharacter.CreatedBy
+	updatedCharacter.VisibleTo = existingCharacter.VisibleTo
 	updatedCharacter.CreatedAt = existingCharacter.CreatedAt
 
-	if err := h.CharacterRepo.Update(characterID, &updatedCharacter); err != nil {
+	if err := h.CharacterRepo.Update(charID, &updatedCharacter); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	updatedCharacter.ComputeDerivedFields()
+
+	if h.Hub != nil {
+		h.Hub.BroadcastToGame(gameID, "CHARACTER_UPDATED", map[string]interface{}{
+			"characterId": charID,
+		})
+	}
+
 	c.JSON(http.StatusOK, updatedCharacter)
 }
 
-// CloneCharacter clones an existing character N times (GM only)
-func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
-	token, exists := c.Get("jwt")
-	if !exists {
+// DeleteGameCharacter deletes a character from the collection (owner or GM)
+func (h *CharacterHandler) DeleteGameCharacter(c *gin.Context) {
+	gameID := c.Param("id")
+	charID := c.Param("charId")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID not found in token"})
-		return
-	}
-
-	characterID := c.Param("id")
-	gameID := c.Query("gameId")
-
-	if gameID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "gameId query parameter is required"})
-		return
-	}
-
-	// Verify user is GM of the game
 	game, err := h.GameRepo.GetByID(gameID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	userObjID, err := primitive.ObjectIDFromHex(userID)
+	isGM := game.GameMasterID == userObjID
+
+	existingCharacter, err := h.CharacterRepo.GetByID(charID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
+		return
+	}
+
+	if !isGM && existingCharacter.CreatedBy != userObjID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to delete this character"})
+		return
+	}
+
+	if err := h.CharacterRepo.Delete(charID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Character deleted successfully"})
+}
+
+// CloneGameCharacter clones an existing character N times in the same game (GM only)
+func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
+	gameID := c.Param("id")
+	charID := c.Param("charId")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
@@ -236,8 +262,7 @@ func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
 		return
 	}
 
-	// Fetch the original character
-	original, err := h.CharacterRepo.GetByID(characterID)
+	original, err := h.CharacterRepo.GetByID(charID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
@@ -248,7 +273,8 @@ func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
 		clone := *original
 		clone.ID = primitive.NilObjectID
 		clone.BasicInfo.Name = fmt.Sprintf("%s %d", original.BasicInfo.Name, i)
-		clone.OwnerID = original.OwnerID
+		clone.CreatedBy = userObjID
+		clone.VisibleTo = []primitive.ObjectID{userObjID}
 
 		if err := h.CharacterRepo.Create(&clone); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create clone"})
@@ -259,4 +285,57 @@ func (h *CharacterHandler) CloneCharacter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, clones)
+}
+
+// UpdateCharacterVisibility updates the VisibleTo list for a character (GM only)
+func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
+	gameID := c.Param("id")
+	charID := c.Param("charId")
+
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+
+	if game.GameMasterID != userObjID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only the Game Master can manage character visibility"})
+		return
+	}
+
+	var req UpdateVisibilityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	visibleTo := make([]primitive.ObjectID, 0, len(req.VisibleTo))
+	for _, idStr := range req.VisibleTo {
+		objID, err := primitive.ObjectIDFromHex(idStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID in visibleTo: " + idStr})
+			return
+		}
+		visibleTo = append(visibleTo, objID)
+	}
+
+	if err := h.CharacterRepo.UpdateVisibility(charID, visibleTo); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if h.Hub != nil {
+		h.Hub.BroadcastToGame(gameID, "CHARACTER_VISIBILITY_UPDATED", map[string]interface{}{
+			"characterId": charID,
+			"visibleTo":   req.VisibleTo,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Visibility updated successfully"})
 }

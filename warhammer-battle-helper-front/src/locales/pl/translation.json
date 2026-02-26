@@ -19,7 +19,8 @@
     "saveCharacter": "Zapisz Postać",
     "expand": "Rozwiń",
     "minimize": "Minimalizuj",
-    "retry": "Ponów"
+    "retry": "Ponów",
+    "saving": "Zapisywanie..."
   },
   "navigation": {
     "title": "RollHammer",
@@ -96,7 +97,9 @@
     "cloneCount": "Liczba klonów",
     "cloneConfirm": "Klonuj",
     "characterCreated": "Postać \"{{name}}\" została utworzona",
-    "newCharacter": "Nowa Postać"
+    "newCharacter": "Nowa Postać",
+    "manageVisibility": "Zarządzaj widocznością",
+    "noParticipants": "Brak graczy w tej grze"
   },
   "characterSheet": {
     "title": "Karta Postaci",

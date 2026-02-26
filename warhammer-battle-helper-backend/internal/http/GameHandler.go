@@ -3,7 +3,6 @@ package http
 import (
 	"battle-helper/internal/config/helpers"
 	"battle-helper/internal/models"
-	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
 	"battle-helper/internal/websocket"
 	"fmt"
@@ -16,9 +15,8 @@ import (
 )
 
 type GameHandler struct {
-	GameService   *service.GameService
-	Hub           *websocket.Hub
-	CharacterRepo *repository.CharactersRepository
+	GameService *service.GameService
+	Hub         *websocket.Hub
 }
 
 var upgrader = gorilla.Upgrader{
@@ -135,74 +133,6 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
-// GetAllGameCharacters returns all characters owned by game participants (GM only)
-func (h *GameHandler) GetAllGameCharacters(c *gin.Context) {
-	gameID := c.Param("id")
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	// Get game and verify GM
-	game, err := h.GameService.GetGame(gameID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
-		return
-	}
-
-	if game.GameMasterID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only the GM can view all characters"})
-		return
-	}
-
-	// Collect all active participant user IDs (including GM)
-	ownerIDs := []primitive.ObjectID{game.GameMasterID}
-	for _, p := range game.Participants {
-		if p.IsActive && p.UserID != game.GameMasterID {
-			ownerIDs = append(ownerIDs, p.UserID)
-		}
-	}
-
-	// Fetch all characters for these owners
-	characters, err := h.CharacterRepo.GetByOwnerIDs(ownerIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch characters"})
-		return
-	}
-
-	// Build owner ID -> username map
-	usernameMap := map[primitive.ObjectID]string{}
-	// GM username from claims
-	usernameMap[game.GameMasterID] = claims["email"].(string)
-	for _, p := range game.Participants {
-		usernameMap[p.UserID] = p.Username
-	}
-
-	// Build response with ownerUsername
-	type CharacterWithOwner struct {
-		models.Character
-		OwnerUsername string `json:"ownerUsername"`
-	}
-
-	result := make([]CharacterWithOwner, len(characters))
-	for i, ch := range characters {
-		ch.ComputeDerivedFields()
-		result[i] = CharacterWithOwner{
-			Character:     ch,
-			OwnerUsername: usernameMap[ch.OwnerID],
-		}
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
 // JoinGame adds current user to a game
 func (h *GameHandler) JoinGame(c *gin.Context) {
 	gameID := c.Param("id")
@@ -251,106 +181,6 @@ func (h *GameHandler) LeaveGame(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Left game successfully"})
-}
-
-// AddCharacter adds a character to the game grid
-func (h *GameHandler) AddCharacter(c *gin.Context) {
-	gameID := c.Param("id")
-
-	var req models.AddCharacterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-	username := claims["email"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	err = h.GameService.AddCharacterToGrid(gameID, req.CharacterID, req.PositionX, req.PositionY, req.IsEnemy, userID, username)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Character added successfully"})
-}
-
-// MoveCharacter updates a character's position
-func (h *GameHandler) MoveCharacter(c *gin.Context) {
-	gameID := c.Param("id")
-
-	var req models.MoveCharacterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-	username := claims["email"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	characterID, err := primitive.ObjectIDFromHex(req.CharacterID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid character ID"})
-		return
-	}
-
-	err = h.GameService.MoveCharacter(gameID, characterID, req.PositionX, req.PositionY, userID, username)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Character moved successfully"})
-}
-
-// RemoveCharacter removes a character from the game grid
-func (h *GameHandler) RemoveCharacter(c *gin.Context) {
-	gameID := c.Param("id")
-	characterID := c.Param("characterId")
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-	username := claims["email"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	charObjID, err := primitive.ObjectIDFromHex(characterID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid character ID"})
-		return
-	}
-
-	err = h.GameService.RemoveCharacter(gameID, charObjID, userID, username)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Character removed successfully"})
 }
 
 // RollDice rolls dice in the game context and broadcasts to all players

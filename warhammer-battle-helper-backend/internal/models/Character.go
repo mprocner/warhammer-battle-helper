@@ -18,7 +18,9 @@ type CharacterState struct {
 
 type Character struct {
 	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
-	OwnerID         primitive.ObjectID   `bson:"ownerId" json:"ownerId"`
+	GameID          primitive.ObjectID   `bson:"gameId" json:"gameId"`
+	CreatedBy       primitive.ObjectID   `bson:"createdBy" json:"createdBy"`
+	VisibleTo       []primitive.ObjectID `bson:"visibleTo" json:"visibleTo"`
 	BasicInfo       BasicInfo            `bson:"basicInfo" json:"basicInfo"`
 	Fate            FateInfo             `bson:"fate" json:"fate"`
 	Resilience      ResilienceInfo       `bson:"resilience" json:"resilience"`

@@ -105,7 +105,6 @@ func main() {
 
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
-	r.GET("/characters", handleCharactersHandler(charRepo))
 	r.POST("/roll", handleRoll)
 
 	// --- AUTH ---
@@ -115,7 +114,7 @@ func main() {
 	// --- END AUTH ---
 
 	// --- PROTECTED ---
-	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo}
+	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
 
 	r.GET("/profile", http.JWTAuthMiddleware(), func(c *gin.Context) {
 		token, _ := c.Get("jwt")
@@ -128,13 +127,8 @@ func main() {
 		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
 	})
 
-	r.GET("/my-characters", http.JWTAuthMiddleware(), characterHandler.GetMyCharacters)
-	r.POST("/my-characters", http.JWTAuthMiddleware(), characterHandler.CreateCharacter)
-	r.PUT("/characters/:id", http.JWTAuthMiddleware(), characterHandler.UpdateCharacter)
-	r.POST("/characters/:id/clone", http.JWTAuthMiddleware(), characterHandler.CloneCharacter)
-
 	// --- GAME ROUTES ---
-	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, CharacterRepo: charRepo}
+	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
 
 	// Public game routes
 	r.GET("/games/:id", gameHandler.GetGame)
@@ -145,10 +139,12 @@ func main() {
 	r.POST("/games/:id/invite", http.JWTAuthMiddleware(), gameHandler.InvitePlayer)
 	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
 	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
-	r.GET("/games/:id/characters/all", http.JWTAuthMiddleware(), gameHandler.GetAllGameCharacters)
-	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), gameHandler.AddCharacter)
-	r.PUT("/games/:id/characters/move", http.JWTAuthMiddleware(), gameHandler.MoveCharacter)
-	r.DELETE("/games/:id/characters/:characterId", http.JWTAuthMiddleware(), gameHandler.RemoveCharacter)
+	r.GET("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.GetGameCharacters)
+	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.CreateGameCharacter)
+	r.PUT("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.UpdateGameCharacter)
+	r.DELETE("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.DeleteGameCharacter)
+	r.POST("/games/:id/characters/:charId/clone", http.JWTAuthMiddleware(), characterHandler.CloneGameCharacter)
+	r.PUT("/games/:id/characters/:charId/visibility", http.JWTAuthMiddleware(), characterHandler.UpdateCharacterVisibility)
 	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
 	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
 	r.POST("/games/:id/rollWeapon", http.JWTAuthMiddleware(), gameHandler.RollWeapon)
@@ -251,25 +247,6 @@ func handleHome(c *gin.Context) {
 // @Router /health [get]
 func handleHealth(c *gin.Context) {
 	c.String(nethttp.StatusOK, "Health is OK!!")
-}
-
-// @Summary Lista postaci
-// @Description Pobiera listę wszystkich postaci z plików JSON
-// @Tags characters
-// @Produce json
-// @Success 200 {object} string "Lista postaci w formacie JSON"
-// @Failure 500 {string} string "Error scanning directory"
-// @Router /characters [get]
-func handleCharactersHandler(repo *repository.CharactersRepository) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		fmt.Println("Fetching characters from MongoDB...")
-		characters, err := repo.GetAll()
-		if err != nil {
-			c.JSON(nethttp.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(nethttp.StatusOK, characters)
-	}
 }
 
 func handleRoll(c *gin.Context) {

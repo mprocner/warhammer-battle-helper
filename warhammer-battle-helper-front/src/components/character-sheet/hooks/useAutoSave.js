@@ -41,11 +41,11 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     }, []);
 
     const getCharacterSaveUrl = useCallback((charId) => {
-        if (isGM && gameId) {
-            return `/characters/${charId}?gameId=${gameId}`;
+        if (gameId) {
+            return `/games/${gameId}/characters/${charId}`;
         }
         return `/characters/${charId}`;
-    }, [isGM, gameId]);
+    }, [gameId]);
 
     editedCharacterRef.current = editedCharacter;
 

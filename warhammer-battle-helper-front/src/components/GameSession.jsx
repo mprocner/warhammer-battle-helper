@@ -19,6 +19,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [characterUpdateTrigger, setCharacterUpdateTrigger] = useState(0);
+  const [characterDataTrigger, setCharacterDataTrigger] = useState(0);
   const [leftPanelHidden, setLeftPanelHidden] = useState(false);
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
@@ -341,6 +342,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         fetchGameState();
         break;
 
+      case 'CHARACTER_UPDATED':
+      case 'CHARACTER_VISIBILITY_UPDATED':
+        setCharacterDataTrigger(prev => prev + 1);
+        break;
+
       // Music-related messages
       case 'MUSIC_PLAY': {
         const audio = audioRef.current;
@@ -545,10 +551,13 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             gameId={gameId}
             token={token}
             characterUpdateTrigger={characterUpdateTrigger}
+            characterDataTrigger={characterDataTrigger}
             isHidden={leftPanelHidden}
             onTogglePanel={() => setLeftPanelHidden(!leftPanelHidden)}
             currentScene={displayScene}
             isGM={isGM}
+            userId={userId}
+            participants={gameState?.participants || []}
             editingLayer={editingLayer}
             sendMessage={sendMessage}
             pointerPings={pointerPings}

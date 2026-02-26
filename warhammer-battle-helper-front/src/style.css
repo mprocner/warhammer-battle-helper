@@ -1038,18 +1038,20 @@ header nav a:hover::after {
   position: absolute;
   bottom: 100%;
   right: 0;
-  background: rgba(58, 47, 31, 0.95);
-  color: #f4e8d8;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
   padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
-  border: 1px solid #7a5c42;
+  transition: opacity 0.15s ease-out;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
   margin-bottom: 4px;
-  font-weight: normal;
 }
 
 .grid-toggle-btn:hover::after {
@@ -1096,21 +1098,73 @@ header nav a:hover::after {
   position: absolute;
   bottom: 100%;
   right: 0;
-  background: rgba(58, 47, 31, 0.95);
-  color: #f4e8d8;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
   padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
-  border: 1px solid #7a5c42;
+  transition: opacity 0.15s ease-out;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
   margin-bottom: 4px;
-  font-weight: normal;
 }
 
 .clone-btn:hover::after {
+  opacity: 1;
+}
+
+.visibility-btn {
+  background: linear-gradient(135deg, #7a5c42 0%, #6b4423 100%);
+  border: 1px solid #5a3a1a;
+  border-radius: 4px;
+  color: #f4e8d8;
+  font-size: 14px;
+  width: 28px;
+  height: 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.2);
+  position: relative;
+}
+
+.visibility-btn:hover {
+  background: linear-gradient(135deg, #8a6c52 0%, #7a5433 100%);
+  border-color: #6b4423;
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+}
+
+.visibility-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  margin-bottom: 4px;
+}
+
+.visibility-btn:hover::after {
   opacity: 1;
 }
 

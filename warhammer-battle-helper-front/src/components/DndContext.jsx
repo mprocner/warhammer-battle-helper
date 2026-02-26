@@ -1,13 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import { useTranslation } from 'react-i18next';
-import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
+import { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
 import Character from './Character';
 import CloneCharacterModal from './CloneCharacterModal';
+import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import { CELL_SIZE } from '../constants/scene';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -36,7 +38,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, editingLayer = 'grid', sendMessage = null, pointerPings = [], onRemovePing }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', sendMessage = null, pointerPings = [], onRemovePing }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -62,6 +64,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
   // Clone character popup
   const [cloneTarget, setCloneTarget] = useState(null);
+
+  // Visibility management popup (GM only)
+  const [visibilityTarget, setVisibilityTarget] = useState(null);
 
   // Collapsible character list sections
   const [pcListCollapsed, setPcListCollapsed] = useState(false);
@@ -106,25 +111,23 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   }, [sceneId, gridWidth, gridHeight, gameId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Get set of user's own character IDs
-  const ownCharacterIds = useMemo(() => {
-    return new Set((initialCharacters || []).map(c => c.id));
-  }, [initialCharacters]);
-
-  // Check if a character belongs to the current user
+  // Check if the current user can interact with a character (createdBy or visibleTo)
   const isOwnCharacter = useCallback((characterId) => {
-    return ownCharacterIds.has(characterId);
-  }, [ownCharacterIds]);
+    if (isGM) return true;
+    const char = initialCharacters.find(c => c.id === characterId);
+    if (!char) return false;
+    if (char.createdBy === userId) return true;
+    return (char.visibleTo || []).includes(userId);
+  }, [isGM, initialCharacters, userId]);
 
   // Select character to show details panel
   const handleSelectCharacter = (character) => {
     // Only allow selecting own characters in multiplayer mode (GM can select any)
     if (gameId && token && !isGM && !isOwnCharacter(character.id)) {
-      return; // Don't select other players' characters
+      return;
     }
 
     // Always use the most up-to-date character data from initialCharacters
-    // to avoid stale/missing wounds.current from grid zone data
     const freshChar = initialCharacters.find(c => c.id === character.id) || character;
     setSelectedCharacter(freshChar);
   };
@@ -226,31 +229,33 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   };
 
-  const fetchCharacters = useCallback(async () => {
+  const fetchCharacters = useCallback(async (silent = false) => {
+    if (!gameId || !token) {
+      if (!silent) setIsLoading(false);
+      return;
+    }
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
 
-      let charactersData;
-      if (isGM && gameId && token) {
-        // GM fetches all game participants' characters
-        const res = await fetch(`${getApiUrl()}/games/${gameId}/characters/all`, {
-          headers: getApiHeaders({
-            'Authorization': `Bearer ${token}`
-          })
-        });
-        if (!res.ok) throw new Error('Failed to fetch all characters');
-        charactersData = await res.json();
-      } else {
-        const res = await axiosInstance.get('/my-characters');
-        charactersData = res.data || [];
-      }
+      const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
+        headers: getApiHeaders({
+          'Authorization': `Bearer ${token}`
+        })
+      });
+      if (!res.ok) throw new Error('Failed to fetch characters');
+      const charactersData = await res.json();
 
       setInitialCharacters(charactersData);
 
-      // Filter out characters that are currently on the grid
-      // Use functional update to read current fightZones without adding it as dependency
-      setCharacters(prevCharacters => {
-        // Add null check for fightZonesRef.current
+      // Update selected character with fresh data, or clear if access was revoked
+      setSelectedCharacter(prev => {
+        if (!prev) return prev;
+        const fresh = charactersData.find(c => c.id === prev.id);
+        return fresh || null;
+      });
+
+      // Filter out characters currently on the grid
+      setCharacters(() => {
         if (!fightZonesRef.current || !Array.isArray(fightZonesRef.current)) {
           return charactersData;
         }
@@ -269,11 +274,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       setError(null);
     } catch (e) {
       console.error(e);
-      setError('Nie udało się pobrać postaci.');
+      if (!silent) setError('Nie udało się pobrać postaci.');
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
-  }, [isGM, gameId, token]);
+  }, [gameId, token]);
 
   // Handle adding a new character - creates minimal character and opens sheet for editing
   const handleAddCharacter = useCallback(async () => {
@@ -306,20 +311,25 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         talents: []
       };
 
-      const response = await axiosInstance.post('/my-characters', newCharacter);
-      const createdCharacter = response.data;
+      const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
+        method: 'POST',
+        headers: getApiHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }),
+        body: JSON.stringify(newCharacter)
+      });
+      if (!res.ok) throw new Error('Failed to create character');
+      const createdCharacter = await res.json();
 
-      // Refresh the character list
       await fetchCharacters();
-      // Select the newly created character
       setSelectedCharacter(createdCharacter);
-      // Trigger auto-open of character sheet
       setAutoOpenCharacterSheet(true);
     } catch (err) {
       console.error('Failed to create character:', err);
       addLogMessage(t('character.createError'), 'error');
     }
-  }, [fetchCharacters, addLogMessage, t]);
+  }, [gameId, token, fetchCharacters, addLogMessage, t]);
 
   const handleAddNPC = useCallback(async () => {
     try {
@@ -351,8 +361,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         talents: []
       };
 
-      const response = await axiosInstance.post('/my-characters', newCharacter);
-      const createdCharacter = response.data;
+      const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
+        method: 'POST',
+        headers: getApiHeaders({
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }),
+        body: JSON.stringify(newCharacter)
+      });
+      if (!res.ok) throw new Error('Failed to create NPC');
+      const createdCharacter = await res.json();
 
       await fetchCharacters();
       setSelectedCharacter(createdCharacter);
@@ -361,24 +379,30 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
       console.error('Failed to create NPC:', err);
       addLogMessage(t('character.createError'), 'error');
     }
-  }, [fetchCharacters, addLogMessage, t]);
+  }, [gameId, token, fetchCharacters, addLogMessage, t]);
 
   const handleCloneCharacter = useCallback(async (count) => {
     if (!cloneTarget || !gameId) return;
     try {
-      const response = await axiosInstance.post(
-        `/characters/${cloneTarget.id}/clone?gameId=${gameId}`,
-        { count }
+      const res = await fetch(
+        `${getApiUrl()}/games/${gameId}/characters/${cloneTarget.id}/clone`,
+        {
+          method: 'POST',
+          headers: getApiHeaders({
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }),
+          body: JSON.stringify({ count })
+        }
       );
-      if (response.data) {
-        await fetchCharacters();
-      }
+      if (!res.ok) throw new Error('Failed to clone character');
+      await fetchCharacters();
       setCloneTarget(null);
     } catch (err) {
       console.error('Failed to clone character:', err);
       addLogMessage(t('character.cloneError'), 'error');
     }
-  }, [cloneTarget, gameId, fetchCharacters, addLogMessage, t]);
+  }, [cloneTarget, gameId, token, fetchCharacters, addLogMessage, t]);
 
   const handleCharacterUpdate = (updatedCharacter) => {
     // Update local state only - saving is handled by the component making the changes
@@ -447,9 +471,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
 
       // Populate fight zones with characters from the scene
       if (sceneCharacters.length > 0) {
-        // Get all full character data first
-        const allCharsResponse = await axiosInstance.get('/characters');
-        const allCharacters = allCharsResponse.data || [];
+        // Get all game character data
+        const allCharsResponse = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
+          headers: getApiHeaders({ 'Authorization': `Bearer ${token}` })
+        });
+        const allCharacters = allCharsResponse.ok ? await allCharsResponse.json() : [];
 
         // Track which character IDs are on the grid
         const characterIdsOnGrid = new Set();
@@ -501,14 +527,19 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Watch for character updates in multiplayer mode
+  // Grid placement changed — refetch positions
   useEffect(() => {
-    // Don't check characters.length - we need to refetch even if pool is empty
     if (gameId && token && characterUpdateTrigger > 0) {
-      console.log('Character update trigger changed:', characterUpdateTrigger);
       fetchGameCharacters();
     }
   }, [characterUpdateTrigger, fetchGameCharacters, gameId, token]);
+
+  // Character data changed (sheet edit, visibility) — silent refetch, no loading flash
+  useEffect(() => {
+    if (gameId && token && characterDataTrigger > 0) {
+      fetchCharacters(true);
+    }
+  }, [characterDataTrigger, fetchCharacters, gameId, token]);
 
   const handleDragStart = e => setActiveId(e.active.id);
   const handleDragOver = e => setOverId(e.over ? e.over.id : null);
@@ -768,28 +799,39 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                         {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
                       </div>
                     </div>
-                    {isGM && char.ownerUsername && (
-                      <div className="character-owner">{char.ownerUsername}</div>
+                    {isGM && char.createdBy && (
+                      <div className="character-owner">
+                        {participants.find(p => p.userId === char.createdBy)?.username || 'GM'}
+                      </div>
                     )}
                     <div className="character-position">
                       {onGrid ? t('leftPanel.onGrid') : t('leftPanel.available')}
                       <div className="character-actions">
                         {isGM && (
-                          <button
-                            className="clone-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCloneTarget(char);
-                            }}
-                            title={t('character.clone')}
-                          >
-                            ⧉
-                          </button>
+                          <>
+                            <button
+                              className="clone-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCloneTarget(char);
+                              }}
+                              title={t('character.clone')}
+                            >
+                              ⧉
+                            </button>
+                            <button
+                              className="visibility-btn"
+                              onClick={(e) => { e.stopPropagation(); setVisibilityTarget(char); }}
+                              title={t('character.manageVisibility')}
+                            >
+                              <VisibilityIcon style={{ fontSize: 14 }} />
+                            </button>
+                          </>
                         )}
                         <button
                           className="grid-toggle-btn"
                           onClick={handleGridToggle}
-                          title={onGrid ? 'Remove from grid' : 'Add to grid'}
+                          title={onGrid ? t('leftPanel.removeFromGrid') : t('leftPanel.addToGrid')}
                         >
                           {onGrid ? '←' : '→'}
                         </button>
@@ -809,9 +851,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                       </button>
                       <h3>{t('leftPanel.yourCharacters')}</h3>
                     </div>
-                    <button className="add-character-btn" onClick={handleAddCharacter}>
-                      + {t('character.addCharacter')}
-                    </button>
+                    {gameId && (
+                      <button className="add-character-btn" onClick={handleAddCharacter}>
+                        + {t('character.addCharacter')}
+                      </button>
+                    )}
                   </div>
                   {!pcListCollapsed && (
                     <div className="characters-list-content">
@@ -901,6 +945,17 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           character={cloneTarget}
           onConfirm={handleCloneCharacter}
           onCancel={() => setCloneTarget(null)}
+        />
+      )}
+
+      {/* Character Visibility Modal (GM only) */}
+      {visibilityTarget && (
+        <CharacterVisibilityModal
+          character={visibilityTarget}
+          participants={participants}
+          gameId={gameId}
+          token={token}
+          onClose={() => setVisibilityTarget(null)}
         />
       )}
 

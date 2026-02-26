@@ -19,7 +19,8 @@
     "saveCharacter": "Save Character",
     "expand": "Expand",
     "minimize": "Minimize",
-    "retry": "Retry"
+    "retry": "Retry",
+    "saving": "Saving..."
   },
   "navigation": {
     "title": "RollHammer",
@@ -96,7 +97,9 @@
     "cloneCount": "Number of clones",
     "cloneConfirm": "Clone",
     "characterCreated": "Character \"{{name}}\" created",
-    "newCharacter": "New Character"
+    "newCharacter": "New Character",
+    "manageVisibility": "Manage Visibility",
+    "noParticipants": "No players in this game"
   },
   "characterSheet": {
     "title": "Character Sheet",
