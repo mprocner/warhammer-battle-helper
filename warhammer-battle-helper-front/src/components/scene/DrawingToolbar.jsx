@@ -16,7 +16,8 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import DeblurIcon from '@mui/icons-material/Deblur';
+import FoggyIcon from '@mui/icons-material/Foggy';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import './DrawingToolbar.css';
 
 const PRESET_COLORS = ['#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
@@ -76,25 +77,25 @@ const DrawingToolbar = ({
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
             onClick={() => onEditingLayerChange(editingLayer === 'fog' ? 'grid' : 'fog')}
-            title={t('scenes.fogLayer')}
           >
             <CloudIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.fogLayer')}</span>
           </button>
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'drawing' ? 'drawing-toolbar__tab--active' : ''}`}
             onClick={() => onEditingLayerChange(editingLayer === 'drawing' ? 'grid' : 'drawing')}
-            title={t('scenes.drawingLayer')}
           >
             <EditIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
           </button>
         </div>
       ) : (
         <button
           className={`drawing-toolbar__toggle ${isActive ? 'drawing-toolbar__toggle--on' : ''}`}
           onClick={handleToggle}
-          title={t('scenes.drawingLayer')}
         >
           <EditIcon style={{ fontSize: 24 }} />
+          <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
         </button>
       )}
 
@@ -108,9 +109,9 @@ const DrawingToolbar = ({
                 key={value}
                 className={`drawing-toolbar__tool ${activeTool === value ? 'drawing-toolbar__tool--active' : ''}`}
                 onClick={() => onActiveToolChange(value)}
-                title={t(labelKey)}
               >
                 <Icon style={{ fontSize: 20 }} />
+                <span className="drawing-toolbar__tooltip">{t(labelKey)}</span>
               </button>
             ))}
           </div>
@@ -215,27 +216,36 @@ const DrawingToolbar = ({
               className="drawing-toolbar__action"
               onClick={handleUndo}
               disabled={!undoEnabled}
-              title={t('scenes.drawingUndo')}
             >
               <UndoIcon style={{ fontSize: 18 }} />
+              <span className="drawing-toolbar__tooltip">{t('scenes.drawingUndo')}</span>
             </button>
             {isGM && isFogMode && (
-              <button
-                className="drawing-toolbar__action"
-                onClick={onRevealAllFog}
-                title={t('scenes.fogRevealAll')}
-              >
-                <DeblurIcon style={{ fontSize: 18 }} />
-              </button>
+              <>
+                <button
+                  className="drawing-toolbar__action"
+                  onClick={onRevealAllFog}
+                >
+                  <WbSunnyIcon style={{ fontSize: 18 }} />
+                  <span className="drawing-toolbar__tooltip">{t('scenes.fogRevealAll')}</span>
+                </button>
+                <button
+                  className="drawing-toolbar__action"
+                  onClick={handleClear}
+                >
+                  <FoggyIcon style={{ fontSize: 18 }} />
+                  <span className="drawing-toolbar__tooltip">{t('scenes.fogCoverAll')}</span>
+                </button>
+              </>
             )}
-            {isGM && (
+            {isGM && !isFogMode && (
               <button
                 className="drawing-toolbar__action drawing-toolbar__action--danger"
                 onClick={handleClear}
                 disabled={!undoEnabled}
-                title={t('scenes.drawingClear')}
               >
                 <DeleteSweepIcon style={{ fontSize: 18 }} />
+                <span className="drawing-toolbar__tooltip">{t('scenes.drawingClear')}</span>
               </button>
             )}
             {!isFogMode && (
@@ -243,9 +253,9 @@ const DrawingToolbar = ({
                 className="drawing-toolbar__action drawing-toolbar__action--danger"
                 onClick={() => onDeleteSelected?.()}
                 disabled={!selectedPathId}
-                title={t('scenes.drawingDelete')}
               >
                 <DeleteIcon style={{ fontSize: 18 }} />
+                <span className="drawing-toolbar__tooltip">{t('scenes.drawingDelete')}</span>
               </button>
             )}
           </div>

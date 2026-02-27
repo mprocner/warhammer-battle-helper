@@ -346,10 +346,8 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             </label>
           </div>
 
-
           {/* Fog of War section */}
-          <div className="scenes-tab__fog-section">
-            <h5 className="scenes-tab__fog-title">{t('scenes.fogSection')}</h5>
+
             <div className="scenes-tab__field scenes-tab__field--checkbox">
               <label>
                 <input
@@ -360,7 +358,6 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 {t('scenes.fogEnabled')}
               </label>
             </div>
-          </div>
 
           {/* Player assignment */}
           <div className="scenes-tab__field">

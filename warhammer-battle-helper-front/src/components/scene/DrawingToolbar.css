@@ -15,6 +15,56 @@
 }
 
 /* ── Przycisk toggle (okrągły ołówek) ── */
+/* ── Tooltip (pergaminowy, pojawia się po lewej przycisku) ── */
+.drawing-toolbar__tab,
+.drawing-toolbar__toggle,
+.drawing-toolbar__tool,
+.drawing-toolbar__action {
+  position: relative;
+  overflow: visible;
+}
+
+.drawing-toolbar__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 5px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  z-index: 200;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+}
+
+/* Strzałka wskazująca w dół (na przycisk) */
+.drawing-toolbar__tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #c9975b;
+}
+
+.drawing-toolbar__tab:hover .drawing-toolbar__tooltip,
+.drawing-toolbar__toggle:hover .drawing-toolbar__tooltip,
+.drawing-toolbar__tool:hover .drawing-toolbar__tooltip,
+.drawing-toolbar__action:hover .drawing-toolbar__tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
 .drawing-toolbar__toggle {
   width: 52px;
   height: 52px;
