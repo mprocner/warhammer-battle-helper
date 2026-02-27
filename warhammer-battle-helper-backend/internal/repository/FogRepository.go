@@ -65,6 +65,15 @@ func (r *FogRepository) AddFogPath(gameID string, sceneID primitive.ObjectID, pa
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
+	// Initialize revealPaths to [] if null (scenes created before this field was added)
+	initFilter := bson.M{
+		"_id": objectID,
+		"scenes": bson.M{
+			"$elemMatch": bson.M{"_id": sceneID, "revealPaths": nil},
+		},
+	}
+	r.Collection.UpdateOne(ctx, initFilter, bson.M{"$set": bson.M{"scenes.$.revealPaths": bson.A{}}}) //nolint
+
 	filter := bson.M{
 		"_id":        objectID,
 		"scenes._id": sceneID,

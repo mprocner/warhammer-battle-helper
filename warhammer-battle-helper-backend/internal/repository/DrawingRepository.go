@@ -30,6 +30,15 @@ func (r *DrawingRepository) AddDrawingPath(gameID string, sceneID primitive.Obje
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
+	// Initialize drawingPaths to [] if null (scenes created before this field was added)
+	initFilter := bson.M{
+		"_id": objectID,
+		"scenes": bson.M{
+			"$elemMatch": bson.M{"_id": sceneID, "drawingPaths": nil},
+		},
+	}
+	r.Collection.UpdateOne(ctx, initFilter, bson.M{"$set": bson.M{"scenes.$.drawingPaths": bson.A{}}}) //nolint
+
 	filter := bson.M{
 		"_id":        objectID,
 		"scenes._id": sceneID,
