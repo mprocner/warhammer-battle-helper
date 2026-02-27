@@ -4,6 +4,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudIcon from '@mui/icons-material/Cloud';
+import OpenWithIcon from '@mui/icons-material/OpenWith';
 import BrushIcon from '@mui/icons-material/Brush';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
@@ -20,7 +21,7 @@ import FoggyIcon from '@mui/icons-material/Foggy';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import './DrawingToolbar.css';
 
-const PRESET_COLORS = ['#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
+const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
 
 // fogCompat: true → narzędzie widoczne w trybie mgły; false → ukryte w fog mode
 const TOOLS = [
@@ -74,6 +75,13 @@ const DrawingToolbar = ({
       {/* Toggle / Tabs */}
       {isGM ? (
         <div className="drawing-toolbar__tabs">
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'grid' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange('grid')}
+          >
+            <OpenWithIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.sceneLayer')}</span>
+          </button>
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
             onClick={() => onEditingLayerChange(editingLayer === 'fog' ? 'grid' : 'fog')}

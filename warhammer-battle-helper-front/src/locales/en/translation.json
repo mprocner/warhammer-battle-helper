@@ -532,6 +532,7 @@
     "unlockImage": "Unlock Image",
     "editingLayer": "Editing Layer",
     "gridLayer": "Grid",
+    "sceneLayer": "Scene",
     "fogLayer": "Fog of War",
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",

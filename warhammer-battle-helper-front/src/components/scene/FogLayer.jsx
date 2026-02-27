@@ -214,7 +214,7 @@ const FogLayer = ({
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 20,
+        zIndex: 30,
         opacity: cssOpacity,
         pointerEvents: isEditingFog ? 'auto' : 'none',
         cursor: isEditingFog ? (fogTool === 'freehand' ? 'none' : 'crosshair') : 'default',

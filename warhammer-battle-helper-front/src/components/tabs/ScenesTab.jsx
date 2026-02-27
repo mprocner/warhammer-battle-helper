@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
+import OpenWithIcon from '@mui/icons-material/OpenWith';
+import CloudIcon from '@mui/icons-material/Cloud';
+import EditIcon from '@mui/icons-material/Edit';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
@@ -271,15 +274,18 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             <label>{t('scenes.editingLayer')}</label>
             <div className="scenes-tab__layer-toggle">
               {[
-                { value: 'fog', label: t('scenes.fogLayer') },
-                { value: 'drawing', label: t('scenes.drawingLayer') },
-              ].map(layer => (
+                { value: 'grid',    label: t('scenes.sceneLayer'),   Icon: OpenWithIcon },
+                { value: 'fog',     label: t('scenes.fogLayer'),     Icon: CloudIcon },
+                { value: 'drawing', label: t('scenes.drawingLayer'), Icon: EditIcon },
+              ].map(({ value, label, Icon }) => (
                 <button
-                  key={layer.value}
-                  className={`scenes-tab__layer-btn ${editingLayer === layer.value ? 'scenes-tab__layer-btn--active' : ''}`}
-                  onClick={() => onEditingLayerChange(layer.value)}
+                  key={value}
+                  className={`scenes-tab__layer-btn ${editingLayer === value ? 'scenes-tab__layer-btn--active' : ''}`}
+                  onClick={() => onEditingLayerChange(value)}
+                  title={label}
                 >
-                  {layer.label}
+                  <Icon style={{ fontSize: 16 }} />
+                  {label}
                 </button>
               ))}
             </div>

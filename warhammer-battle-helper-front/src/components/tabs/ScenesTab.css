@@ -515,6 +515,10 @@
 
 .scenes-tab__layer-btn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   padding: 4px 8px;
   font-size: 11px;
   font-family: 'Cinzel', serif;
