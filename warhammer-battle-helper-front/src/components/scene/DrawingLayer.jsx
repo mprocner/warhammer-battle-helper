@@ -335,7 +335,7 @@ const DrawingLayer = ({
     isDrawingRef.current = true;
 
     if (activeTool === 'freehand') {
-      currentPathRef.current = [[x, y]];
+      currentPathRef.current = [[x, y], [x, y]];
     } else {
       shapeStartRef.current = [x, y];
       currentPathRef.current = [[x, y], [x, y]];
