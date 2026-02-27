@@ -1623,6 +1623,7 @@ header nav a:hover::after {
   display: flex;
   align-items: stretch;
   justify-content: center;
+  pointer-events: none; /* puste komórki nie blokują obrazków tła */
 }
 
 .fight-zone:hover {
@@ -1643,7 +1644,7 @@ header nav a:hover::after {
 .zone-characters-row {
 align-items: center;
     justify-content: center;
-    pointer-events: none;
+    pointer-events: auto; /* postacie nadal ruszalne */
     overflow: visible;
     width: 100%;
 }

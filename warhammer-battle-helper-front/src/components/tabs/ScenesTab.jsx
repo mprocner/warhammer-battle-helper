@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene } from '../../api/scenes';
+import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
@@ -151,6 +151,19 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
     }
   };
 
+  const handleToggleFog = async (enabled) => {
+    if (!selectedSceneId) return;
+    try {
+      await toggleFog(gameId, selectedSceneId, { enabled, fogOpacity: selectedScene?.fogOpacity || 0.85 });
+      setScenes(prev => prev.map(s =>
+        s.id === selectedSceneId ? { ...s, fogEnabled: enabled } : s
+      ));
+    } catch (err) {
+      console.error('Failed to toggle fog:', err);
+      setError(t('scenes.updateError'));
+    }
+  };
+
   // Modal drag handlers
   const handleModalMouseDown = (e) => {
     if (e.target.closest('.scenes-tab__modal-header') && !e.target.closest('.scenes-tab__modal-header-buttons')) {
@@ -258,9 +271,8 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             <label>{t('scenes.editingLayer')}</label>
             <div className="scenes-tab__layer-toggle">
               {[
-                { value: 'background', label: t('scenes.backgroundLayer') },
-                { value: 'grid', label: t('scenes.gridLayer') },
-                { value: 'gm', label: t('scenes.gmLayer') },
+                { value: 'fog', label: t('scenes.fogLayer') },
+                { value: 'drawing', label: t('scenes.drawingLayer') },
               ].map(layer => (
                 <button
                   key={layer.value}
@@ -334,6 +346,21 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             </label>
           </div>
 
+
+          {/* Fog of War section */}
+          <div className="scenes-tab__fog-section">
+            <h5 className="scenes-tab__fog-title">{t('scenes.fogSection')}</h5>
+            <div className="scenes-tab__field scenes-tab__field--checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selectedScene.fogEnabled || false}
+                  onChange={(e) => handleToggleFog(e.target.checked)}
+                />
+                {t('scenes.fogEnabled')}
+              </label>
+            </div>
+          </div>
 
           {/* Player assignment */}
           <div className="scenes-tab__field">

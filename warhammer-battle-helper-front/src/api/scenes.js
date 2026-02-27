@@ -57,3 +57,48 @@ export const deleteSceneImage = async (gameId, sceneId, imageId) => {
   const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/images/${imageId}`);
   return response.data;
 };
+
+export const toggleFog = async (gameId, sceneId, data) => {
+  const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/fog`, data);
+  return response.data;
+};
+
+export const addFogPath = async (gameId, sceneId, data) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/fog/path`, data);
+  return response.data;
+};
+
+export const clearFogPaths = async (gameId, sceneId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/fog/paths`);
+  return response.data;
+};
+
+export const undoLastFogPath = async (gameId, sceneId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/fog/path/last`);
+  return response.data;
+};
+
+export const revealAllFog = async (gameId, sceneId) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/fog/reveal-all`);
+  return response.data;
+};
+
+export const addDrawingPath = async (gameId, sceneId, data) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/drawing/path`, data);
+  return response.data;
+};
+
+export const undoLastDrawingPath = async (gameId, sceneId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/drawing/path/last`);
+  return response.data;
+};
+
+export const clearDrawingPaths = async (gameId, sceneId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/drawing/paths`);
+  return response.data;
+};
+
+export const deleteDrawingPath = async (gameId, sceneId, pathId) => {
+  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/drawing/path/${pathId}`);
+  return response.data;
+};

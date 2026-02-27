@@ -134,6 +134,26 @@ type SceneImage struct {
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
+// FogPath represents a single brush stroke or shape that reveals or covers area in fog of war
+type FogPath struct {
+	Points    [][2]float64 `bson:"points" json:"points"`
+	BrushSize float64      `bson:"brushSize" json:"brushSize"`
+	Shape     string       `bson:"shape" json:"shape"` // "" or "freehand" = stroke, "rect" = filled rectangle
+	Cover     bool         `bson:"cover" json:"cover"` // true = cover (add fog), false = reveal (remove fog)
+}
+
+// DrawingPath represents a single drawing stroke or shape on the annotation layer
+type DrawingPath struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	UserID    primitive.ObjectID `bson:"userId"        json:"userId"`
+	Tool      string             `bson:"tool"          json:"tool"` // freehand|line|rect|circle|arrow|text
+	Points    [][2]float64       `bson:"points"        json:"points"`
+	BrushSize float64            `bson:"brushSize"     json:"brushSize"`
+	Color     string             `bson:"color"         json:"color"`    // hex, e.g. "#ff0000"
+	Text      string             `bson:"text"          json:"text"`     // only for tool=="text"
+	FontSize  float64            `bson:"fontSize"      json:"fontSize"` // only for tool=="text"
+}
+
 // Scene represents a battle scene with its own grid and characters
 type Scene struct {
 	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
@@ -145,6 +165,10 @@ type Scene struct {
 	Images          []SceneImage         `bson:"images" json:"images"`
 	AssignedPlayers []primitive.ObjectID `bson:"assignedPlayers" json:"assignedPlayers"`
 	IsDefault       bool                 `bson:"isDefault" json:"isDefault"`
+	FogEnabled      bool                 `bson:"fogEnabled" json:"fogEnabled"`
+	FogOpacity      float64              `bson:"fogOpacity" json:"fogOpacity"`
+	RevealPaths     []FogPath            `bson:"revealPaths" json:"revealPaths"`
+	DrawingPaths    []DrawingPath        `bson:"drawingPaths" json:"drawingPaths"`
 	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
 }
@@ -250,6 +274,30 @@ type AddSceneImageRequest struct {
 	Y        float64 `json:"y"`
 	Width    float64 `json:"width"`
 	Height   float64 `json:"height"`
+}
+
+// ToggleFogRequest is the request body for toggling fog of war
+type ToggleFogRequest struct {
+	Enabled    bool    `json:"enabled"`
+	FogOpacity float64 `json:"fogOpacity"`
+}
+
+// AddFogPathRequest is the request body for adding a fog reveal/cover path
+type AddFogPathRequest struct {
+	Points    [][2]float64 `json:"points" binding:"required"`
+	BrushSize float64      `json:"brushSize"`
+	Shape     string       `json:"shape"`
+	Cover     bool         `json:"cover"`
+}
+
+// AddDrawingPathRequest is the request body for adding a drawing path
+type AddDrawingPathRequest struct {
+	Tool      string       `json:"tool" binding:"required"`
+	Points    [][2]float64 `json:"points" binding:"required"`
+	BrushSize float64      `json:"brushSize"`
+	Color     string       `json:"color"`
+	Text      string       `json:"text"`
+	FontSize  float64      `json:"fontSize"`
 }
 
 // UpdateSceneImageRequest is the request body for updating a scene image

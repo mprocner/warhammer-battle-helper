@@ -7,6 +7,7 @@ import RightPanel from './panels/RightPanel';
 import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -24,8 +25,13 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [editingLayer, setEditingLayer] = useState('grid');
+  const [fogCoverMode, setFogCoverMode] = useState(false);
   const [pointerPings, setPointerPings] = useState([]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [activeTool, setActiveTool] = useState('freehand');
+  const [brushSize, setBrushSize] = useState(10);
+  const [drawingColor, setDrawingColor] = useState('#ff0000');
+  const [drawingFontSize, setDrawingFontSize] = useState(16);
 
   // --- Music state ---
   const audioRef = useRef(new Audio());
@@ -342,6 +348,118 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         fetchGameState();
         break;
 
+      case 'FOG_TOGGLED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, fogEnabled, fogOpacity } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId ? { ...s, fogEnabled, fogOpacity } : s
+            ),
+          };
+        });
+        break;
+
+      case 'FOG_PATH_ADDED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, path } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId
+                ? { ...s, revealPaths: [...(s.revealPaths || []), path] }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case 'FOG_PATH_REMOVED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId
+                ? { ...s, revealPaths: (s.revealPaths || []).slice(0, -1) }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case 'FOG_CLEARED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId ? { ...s, revealPaths: [] } : s
+            ),
+          };
+        });
+        break;
+
+      case 'FOG_REVEALED_ALL':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, path } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId ? { ...s, revealPaths: [path] } : s
+            ),
+          };
+        });
+        break;
+
+      case 'DRAWING_PATH_ADDED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, path } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId
+                ? { ...s, drawingPaths: [...(s.drawingPaths || []), path] }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case 'DRAWING_PATH_REMOVED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, pathId } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId
+                ? { ...s, drawingPaths: (s.drawingPaths || []).filter(p => p.id !== pathId) }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case 'DRAWING_CLEARED':
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId ? { ...s, drawingPaths: [] } : s
+            ),
+          };
+        });
+        break;
+
       case 'CHARACTER_UPDATED':
       case 'CHARACTER_VISIBILITY_UPDATED':
         setCharacterDataTrigger(prev => prev + 1);
@@ -476,6 +594,73 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     }
   }, [gameState?.scenes, isGM, gmViewingSceneId, userId]);
 
+  const handleFogPathComplete = useCallback(async (path) => {
+    if (!displayScene) return;
+    try {
+      await addFogPath(gameId, displayScene.id, path);
+      // State update handled by WS FOG_PATH_ADDED — no optimistic update
+      // to avoid duplicates (GM receives its own WS broadcast)
+    } catch (err) {
+      console.error('Failed to save fog path:', err);
+    }
+  }, [gameId, displayScene]);
+
+  const handleDrawingPathComplete = useCallback(async (path) => {
+    if (!displayScene) return;
+    // Optimistic update
+    const tempPath = { ...path, id: `temp-${Date.now()}` };
+    setGameState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        scenes: prev.scenes.map(s =>
+          s.id === displayScene.id
+            ? { ...s, drawingPaths: [...(s.drawingPaths || []), tempPath] }
+            : s
+        ),
+      };
+    });
+    try {
+      await addDrawingPath(gameId, displayScene.id, path);
+      // Remove temp path — WS DRAWING_PATH_ADDED will add the real one
+      setGameState(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          scenes: prev.scenes.map(s =>
+            s.id === displayScene.id
+              ? { ...s, drawingPaths: (s.drawingPaths || []).filter(p => p.id !== tempPath.id) }
+              : s
+          ),
+        };
+      });
+    } catch (err) {
+      console.error('Failed to save drawing path:', err);
+      // Rollback optimistic update
+      setGameState(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          scenes: prev.scenes.map(s =>
+            s.id === displayScene.id
+              ? { ...s, drawingPaths: (s.drawingPaths || []).filter(p => p.id !== tempPath.id) }
+              : s
+          ),
+        };
+      });
+    }
+  }, [gameId, displayScene]);
+
+  const handleDeleteDrawingPath = useCallback(async (pathId) => {
+    if (!displayScene || !pathId) return;
+    try {
+      await deleteDrawingPath(gameId, displayScene.id, pathId);
+      // WS DRAWING_PATH_REMOVED will update state
+    } catch (err) {
+      console.error('Failed to delete drawing path:', err);
+    }
+  }, [gameId, displayScene]);
+
   if (loading) {
     return (
       <Box sx={{
@@ -559,9 +744,24 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             userId={userId}
             participants={gameState?.participants || []}
             editingLayer={editingLayer}
+            onEditingLayerChange={setEditingLayer}
+            fogCoverMode={fogCoverMode}
+            onFogCoverModeChange={setFogCoverMode}
             sendMessage={sendMessage}
             pointerPings={pointerPings}
             onRemovePing={removePing}
+            onFogPathComplete={handleFogPathComplete}
+            activeTool={activeTool}
+            onActiveToolChange={setActiveTool}
+            brushSize={brushSize}
+            onBrushSizeChange={setBrushSize}
+            drawingColor={drawingColor}
+            onDrawingColorChange={setDrawingColor}
+            drawingFontSize={drawingFontSize}
+            onDrawingFontSizeChange={setDrawingFontSize}
+            onDrawingPathComplete={handleDrawingPathComplete}
+            onDeleteDrawingPath={handleDeleteDrawingPath}
+            currentSceneId={displayScene?.id}
           />
         </Box>
 

@@ -13,7 +13,7 @@ const getFileUrl = (fileUrl) => {
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
   const { t } = useTranslation();
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
@@ -58,7 +58,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
 
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
-    if (!isGM || e.button !== 0 || image.locked) return;
+    if (!isGM || editingLayer === 'fog' || editingLayer === 'drawing' || e.button !== 0 || image.locked) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -71,7 +71,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
       maxX: Math.max(0, gridWidth * CELL_SIZE - size.width),
       maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
-  }, [isGM, pos, zoom, image.locked, size, gridWidth, gridHeight]);
+  }, [isGM, editingLayer, pos, zoom, image.locked, size, gridWidth, gridHeight]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -240,7 +240,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId }) => {
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM ? (image.locked ? 'default' : isDragging ? 'grabbing' : 'grab') : 'default',
+          cursor: isGM && !image.locked && editingLayer !== 'fog' && editingLayer !== 'drawing' ? (isDragging ? 'grabbing' : 'grab') : 'default',
         }}
         onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}

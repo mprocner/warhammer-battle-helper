@@ -35,7 +35,7 @@ const RightPanel = ({
   musicState,
   audioRef,
   playerVolume,
-  onPlayerVolumeChange
+  onPlayerVolumeChange,
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');

@@ -538,3 +538,94 @@
   background: #c9975b;
   color: #fff;
 }
+
+/* Fog of War section */
+.scenes-tab__fog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(30, 30, 30, 0.06);
+  border: 1px solid #c9975b;
+  border-radius: 4px;
+}
+
+.scenes-tab__fog-title {
+  margin: 0 0 2px 0;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: #6b4423;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.scenes-tab__fog-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.scenes-tab__btn--small {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.scenes-tab__btn--danger {
+  border-color: #a93434;
+  color: #a93434;
+}
+
+.scenes-tab__btn--danger:hover:not(:disabled) {
+  background: rgba(169, 52, 52, 0.1);
+  border-color: #7c1f1f;
+}
+
+.scenes-tab__btn--small:disabled,
+.scenes-tab__btn--danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.scenes-tab__field input[type="range"] {
+  width: 100%;
+  accent-color: #c9975b;
+}
+
+/* Drawing color row */
+.scenes-tab__color-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.scenes-tab__color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.1s, transform 0.1s;
+}
+
+.scenes-tab__color-swatch--active {
+  border-color: #fff;
+  transform: scale(1.15);
+}
+
+.scenes-tab__color-swatch:hover {
+  opacity: 0.85;
+}
+
+.scenes-tab__color-picker {
+  width: 26px;
+  height: 26px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 50%;
+}

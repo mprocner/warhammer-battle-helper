@@ -85,7 +85,7 @@ func main() {
 
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
-		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "ngrok-skip-browser-warning"},
 		AllowCredentials: true,
 		AllowWildcard:    true,
@@ -102,6 +102,12 @@ func main() {
 
 	// Initialize services
 	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub)
+
+	fogRepo := repository.NewFogRepository(db.GamesCollection)
+	fogService := service.NewFogService(fogRepo, hub)
+
+	drawingRepo := repository.NewDrawingRepository(db.GamesCollection)
+	drawingService := service.NewDrawingService(drawingRepo, hub)
 
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
@@ -166,6 +172,23 @@ func main() {
 	r.POST("/games/:id/scenes/:sceneId/images", http.JWTAuthMiddleware(), sceneHandler.AddSceneImage)
 	r.PUT("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.UpdateSceneImage)
 	r.DELETE("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.DeleteSceneImage)
+
+	// --- FOG OF WAR ROUTES ---
+	fogHandler := http.FogHandler{FogService: fogService}
+	r.PATCH("/games/:id/scenes/:sceneId/fog", http.JWTAuthMiddleware(), fogHandler.ToggleFog)
+	r.POST("/games/:id/scenes/:sceneId/fog/path", http.JWTAuthMiddleware(), fogHandler.AddFogPath)
+	r.DELETE("/games/:id/scenes/:sceneId/fog/paths", http.JWTAuthMiddleware(), fogHandler.ClearFogPaths)
+	r.DELETE("/games/:id/scenes/:sceneId/fog/path/last", http.JWTAuthMiddleware(), fogHandler.UndoLastFogPath)
+	r.POST("/games/:id/scenes/:sceneId/fog/reveal-all", http.JWTAuthMiddleware(), fogHandler.RevealAllFog)
+	// --- END FOG OF WAR ROUTES ---
+
+	// --- DRAWING ROUTES ---
+	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
+	r.POST("/games/:id/scenes/:sceneId/drawing/path", http.JWTAuthMiddleware(), drawingHandler.AddDrawingPath)
+	r.DELETE("/games/:id/scenes/:sceneId/drawing/path/last", http.JWTAuthMiddleware(), drawingHandler.UndoLastDrawingPath)
+	r.DELETE("/games/:id/scenes/:sceneId/drawing/path/:pathId", http.JWTAuthMiddleware(), drawingHandler.DeleteDrawingPath)
+	r.DELETE("/games/:id/scenes/:sceneId/drawing/paths", http.JWTAuthMiddleware(), drawingHandler.ClearDrawingPaths)
+	// --- END DRAWING ROUTES ---
 	// --- END SCENE ROUTES ---
 	// --- END GAME ROUTES ---
 

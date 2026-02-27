@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import SceneLayer from './SceneLayer';
+import FogLayer from './FogLayer';
+import DrawingLayer from './DrawingLayer';
 import ZoomContext from './ZoomContext';
 import PointerPing from './PointerPing';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING } from '../../constants/scene';
@@ -12,9 +14,17 @@ const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 const PING_HOLD_MS = 500;
 
-const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children, onZoomChange, sendMessage, pointerPings = [], onRemovePing }) => {
+const SceneViewport = ({
+  scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children,
+  onZoomChange, sendMessage, pointerPings = [], onRemovePing,
+  brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
+  drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
+  selectedPathId = null, onSelectionChange, onDeletePath,
+}) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
+  const [textInputPos, setTextInputPos] = useState(null); // scene coords when text tool is clicked
+  const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
 
 
@@ -123,6 +133,28 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
   // Cleanup timer on unmount
   useEffect(() => clearPingTimer, [clearPingTimer]);
 
+  const isDrawingMode = editingLayer === 'drawing';
+
+  const handleTextPlacement = useCallback((coords) => {
+    setTextInputPos(coords);
+    setTextInputValue('');
+  }, []);
+
+  const commitText = useCallback((value) => {
+    if (value.trim() && textInputPos && onDrawingPathComplete) {
+      onDrawingPathComplete({
+        tool: 'text',
+        points: [textInputPos],
+        brushSize,
+        color: drawingColor,
+        fontSize: drawingFontSize,
+        text: value.trim(),
+      });
+    }
+    setTextInputPos(null);
+    setTextInputValue('');
+  }, [textInputPos, brushSize, drawingColor, drawingFontSize, onDrawingPathComplete]);
+
   // Filter pings for current scene
   const scenePings = useMemo(
     () => pointerPings.filter(p => p.sceneId === scene?.id),
@@ -136,7 +168,6 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
 
   const backgroundImages = (scene.images || []).filter(img => img.layer === 'background');
   const gmImages = (scene.images || []).filter(img => img.layer === 'gm');
-  const gridVisible = scene.gridVisible !== false;
 
   const zoomContextValue = { zoom, gridWidth, gridHeight };
 
@@ -215,7 +246,7 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                 {/* Grid layer */}
                 <div
                   className="scene-viewport__grid-layer"
-                  style={{ pointerEvents: gridVisible ? 'auto' : 'none' }}
+                  style={{ pointerEvents: 'none' }}
                 >
                   {children}
                 </div>
@@ -241,6 +272,69 @@ const SceneViewport = ({ scene, isGM, gameId, editingLayer, gridWidth, gridHeigh
                     onComplete={() => onRemovePing?.(ping.id)}
                   />
                 ))}
+
+                {/* Fog of War layer — GM sees it only when editing fog layer, players only when enabled */}
+                {(isGM ? editingLayer === 'fog' : scene.fogEnabled) && (
+                  <FogLayer
+                    scene={scene}
+                    isGM={isGM}
+                    editingLayer={editingLayer}
+                    brushSize={brushSize}
+                    fogTool={activeTool}
+                    fogCoverMode={fogCoverMode}
+                    onPathComplete={onFogPathComplete}
+                    canvasWidth={canvasSize.width}
+                    canvasHeight={canvasSize.height}
+                  />
+                )}
+
+                {/* Drawing layer — always visible, interactive only in drawing mode */}
+                {scene && (
+                  <DrawingLayer
+                    scene={scene}
+                    isDrawingMode={isDrawingMode}
+                    activeTool={activeTool}
+                    brushSize={brushSize}
+                    color={drawingColor}
+                    fontSize={drawingFontSize}
+                    onPathComplete={onDrawingPathComplete}
+                    onTextPlacement={handleTextPlacement}
+                    selectedPathId={selectedPathId}
+                    onSelectionChange={onSelectionChange}
+                    onDeletePath={onDeletePath}
+                    canvasWidth={canvasSize.width}
+                    canvasHeight={canvasSize.height}
+                  />
+                )}
+
+                {/* Floating text input for text tool */}
+                {textInputPos && (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={textInputValue}
+                    onChange={e => setTextInputValue(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitText(textInputValue);
+                      if (e.key === 'Escape') { setTextInputPos(null); setTextInputValue(''); }
+                    }}
+                    onBlur={() => commitText(textInputValue)}
+                    style={{
+                      position: 'absolute',
+                      left: textInputPos[0],
+                      top: textInputPos[1],
+                      zIndex: 30,
+                      background: 'rgba(0,0,0,0.7)',
+                      color: drawingColor,
+                      border: `1px solid ${drawingColor}`,
+                      fontSize: drawingFontSize,
+                      fontFamily: 'sans-serif',
+                      padding: '2px 4px',
+                      outline: 'none',
+                      minWidth: 80,
+                    }}
+                  />
+                )}
               </div>
               {/* Decorative frame — rendered after content so it appears on top */}
               <div

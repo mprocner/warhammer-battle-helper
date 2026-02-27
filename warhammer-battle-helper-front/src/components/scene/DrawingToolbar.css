@@ -1,0 +1,268 @@
+/* =====================================================
+   DrawingToolbar — pergaminowy motyw pasujący do reszty
+   ===================================================== */
+
+.drawing-toolbar {
+  position: absolute;
+  bottom: 64px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+/* ── Przycisk toggle (okrągły ołówek) ── */
+.drawing-toolbar__toggle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #c9975b;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+}
+
+.drawing-toolbar__toggle:hover {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.35);
+}
+
+.drawing-toolbar__toggle--on {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #7a5c42;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.4);
+}
+
+.drawing-toolbar__toggle--on:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
+  transform: translateY(-1px);
+}
+
+/* ── Taby GM (Mgła + Rysowanie) ── */
+.drawing-toolbar__tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.drawing-toolbar__tab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #c9975b;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+}
+
+.drawing-toolbar__tab:hover {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.35);
+}
+
+.drawing-toolbar__tab--active {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #7a5c42;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.4);
+}
+
+.drawing-toolbar__tab--active:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
+  transform: translateY(-1px);
+}
+
+/* ── Panel z narzędziami ── */
+.drawing-toolbar__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  border: 2px solid #c9975b;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 210px;
+  box-shadow: 0 4px 16px rgba(107, 68, 35, 0.3), 0 0 0 1px rgba(201, 151, 91, 0.2);
+}
+
+/* ── Siatka przycisków narzędzi ── */
+.drawing-toolbar__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.drawing-toolbar__tool {
+  width: 42px;
+  height: 42px;
+  border-radius: 4px;
+  border: 1px solid #d4a574;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-size: 17px;
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.1);
+}
+
+.drawing-toolbar__tool:hover:not(.drawing-toolbar__tool--active):not(.drawing-toolbar__tool--disabled) {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(107, 68, 35, 0.2);
+}
+
+.drawing-toolbar__tool--active {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #7a5c42;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+}
+
+.drawing-toolbar__tool--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Kolor — swatche i picker ── */
+.drawing-toolbar__colors {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  border-top: 1px solid #d4a574;
+  border-bottom: 1px solid #d4a574;
+}
+
+.drawing-toolbar__color {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #d4a574;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.1s, transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.2);
+}
+
+.drawing-toolbar__color--active {
+  border-color: #7a5c42;
+  box-shadow: 0 0 0 2px #c9975b, 0 2px 5px rgba(107, 68, 35, 0.3);
+}
+
+.drawing-toolbar__color:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+}
+
+.drawing-toolbar__color-picker {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #d4a574;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.drawing-toolbar__color-picker:hover {
+  border-color: #7a5c42;
+}
+
+/* ── Suwak grubości / rozmiaru czcionki ── */
+.drawing-toolbar__slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawing-toolbar__label {
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  color: #7a5c42;
+  min-width: 34px;
+  text-align: right;
+  letter-spacing: 0.3px;
+}
+
+.drawing-toolbar__slider {
+  flex: 1;
+  accent-color: #c9975b;
+  cursor: pointer;
+}
+
+/* ── Przyciski akcji (Cofnij / Wyczyść / Usuń) ── */
+.drawing-toolbar__actions {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid #d4a574;
+}
+
+.drawing-toolbar__action {
+  width: 38px;
+  height: 34px;
+  border-radius: 4px;
+  border: 1px solid #d4a574;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.1);
+}
+
+.drawing-toolbar__action:not(:disabled):hover {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(107, 68, 35, 0.2);
+}
+
+.drawing-toolbar__action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.drawing-toolbar__action--danger:not(:disabled) {
+  border-color: #c94444;
+  color: #c94444;
+}
+
+.drawing-toolbar__action--danger:not(:disabled):hover {
+  background: linear-gradient(135deg, #c94444 0%, #a93434 100%);
+  border-color: #a93434;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(201, 68, 68, 0.35);
+}

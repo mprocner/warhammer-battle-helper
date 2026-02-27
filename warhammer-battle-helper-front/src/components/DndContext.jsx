@@ -7,7 +7,9 @@ import Character from './Character';
 import CloneCharacterModal from './CloneCharacterModal';
 import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
+import DrawingToolbar from './scene/DrawingToolbar';
 import { CELL_SIZE } from '../constants/scene';
+import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
@@ -38,7 +40,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', sendMessage = null, pointerPings = [], onRemovePing }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -541,6 +543,83 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     }
   }, [characterDataTrigger, fetchCharacters, gameId, token]);
 
+  // Selected drawing path (for select/delete tool)
+  const [selectedDrawingPathId, setSelectedDrawingPathId] = useState(null);
+
+  // Clear selection when the selected path is removed by any user
+  useEffect(() => {
+    if (!selectedDrawingPathId) return;
+    const paths = currentScene?.drawingPaths || [];
+    if (!paths.find(p => p.id === selectedDrawingPathId)) {
+      setSelectedDrawingPathId(null);
+    }
+  }, [currentScene?.drawingPaths, selectedDrawingPathId]);
+
+  // Clear selection when switching away from select tool
+  useEffect(() => {
+    if (activeTool !== 'select') setSelectedDrawingPathId(null);
+  }, [activeTool]);
+
+  // Drawing undo/clear handlers
+  const handleUndoDrawing = useCallback(async () => {
+    if (!gameId || !currentSceneId) return;
+    try {
+      await undoLastDrawingPath(gameId, currentSceneId);
+    } catch (err) {
+      console.error('Failed to undo drawing path:', err);
+    }
+  }, [gameId, currentSceneId]);
+
+  const handleClearDrawing = useCallback(async () => {
+    if (!gameId || !currentSceneId) return;
+    try {
+      await clearDrawingPaths(gameId, currentSceneId);
+    } catch (err) {
+      console.error('Failed to clear drawing paths:', err);
+    }
+  }, [gameId, currentSceneId]);
+
+  // Fog undo/clear handlers (for the unified toolbar in fog mode)
+  const handleUndoFog = useCallback(async () => {
+    if (!gameId || !currentSceneId) return;
+    try {
+      await undoLastFogPath(gameId, currentSceneId);
+    } catch (err) {
+      console.error('Failed to undo fog path:', err);
+    }
+  }, [gameId, currentSceneId]);
+
+  const handleClearFog = useCallback(async () => {
+    if (!gameId || !currentSceneId) return;
+    try {
+      await clearFogPaths(gameId, currentSceneId);
+    } catch (err) {
+      console.error('Failed to clear fog paths:', err);
+    }
+  }, [gameId, currentSceneId]);
+
+  const handleRevealAllFog = useCallback(async () => {
+    if (!gameId || !currentSceneId) return;
+    try {
+      await revealAllFog(gameId, currentSceneId);
+    } catch (err) {
+      console.error('Failed to reveal all fog:', err);
+    }
+  }, [gameId, currentSceneId]);
+
+  // Delete the currently selected drawing path
+  const handleDeleteSelectedDrawing = useCallback(async (pathId) => {
+    const id = pathId || selectedDrawingPathId;
+    if (!gameId || !currentSceneId || !id) return;
+    try {
+      await deleteDrawingPath(gameId, currentSceneId, id);
+      setSelectedDrawingPathId(null);
+      // WS DRAWING_PATH_REMOVED will update game state
+    } catch (err) {
+      console.error('Failed to delete drawing path:', err);
+    }
+  }, [gameId, currentSceneId, selectedDrawingPathId]);
+
   const handleDragStart = e => setActiveId(e.active.id);
   const handleDragOver = e => setOverId(e.over ? e.over.id : null);
   
@@ -901,9 +980,37 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           </button>
         </div>
 
-        <div className="fight-grid-wrapper">
+        <div className="fight-grid-wrapper" style={{ position: 'relative' }}>
+          {/* Drawing toolbar — floats over the scene, visible to all */}
+          {currentScene && (
+            <DrawingToolbar
+              editingLayer={editingLayer}
+              onEditingLayerChange={onEditingLayerChange}
+              fogCoverMode={fogCoverMode}
+              onFogCoverModeChange={onFogCoverModeChange}
+              activeTool={activeTool}
+              onActiveToolChange={onActiveToolChange}
+              brushSize={brushSize}
+              onBrushSizeChange={onBrushSizeChange}
+              drawingColor={drawingColor}
+              onDrawingColorChange={onDrawingColorChange}
+              drawingFontSize={drawingFontSize}
+              onDrawingFontSizeChange={onDrawingFontSizeChange}
+              onUndoDrawing={handleUndoDrawing}
+              onClearDrawing={handleClearDrawing}
+              onUndoFog={handleUndoFog}
+              onClearFog={handleClearFog}
+              onRevealAllFog={handleRevealAllFog}
+              selectedPathId={selectedDrawingPathId}
+              onDeleteSelected={handleDeleteSelectedDrawing}
+              isGM={isGM}
+              canUndo={(currentScene?.drawingPaths || []).length > 0}
+              canUndoFog={(currentScene?.revealPaths || []).length > 0}
+            />
+          )}
+
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing}>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing}>
             <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}
