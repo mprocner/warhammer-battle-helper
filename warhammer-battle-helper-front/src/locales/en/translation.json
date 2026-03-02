@@ -558,6 +558,7 @@
     "drawingTool_line": "Line",
     "drawingTool_rect": "Rectangle",
     "drawingTool_circle": "Circle",
+    "drawingTool_polygon": "Polygon",
     "drawingTool_arrow": "Arrow",
     "drawingTool_text": "Text",
     "drawingColor": "Color",

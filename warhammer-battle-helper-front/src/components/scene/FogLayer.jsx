@@ -33,6 +33,11 @@ const FogLayer = ({
   const isDrawingRef = useRef(false);
   const cursorPosRef = useRef(null);   // current cursor position in scene coords
 
+  // Polygon tool refs
+  const polygonPointsRef  = useRef([]);    // wierzchołki w scene coords
+  const polygonCursorRef  = useRef(null);  // pozycja kursora w scene coords
+  const polygonActiveRef  = useRef(false); // czy trwa rysowanie wielokąta
+
   const fogEnabled = scene?.fogEnabled || false;
   const fogOpacity = scene?.fogOpacity || 0.85;
   const isEditingFog = isGM && editingLayer === 'fog';
@@ -82,6 +87,16 @@ const FogLayer = ({
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
+      } else if (path.shape === 'polygon') {
+        if (path.points.length >= 3) {
+          ctx.beginPath();
+          ctx.moveTo(path.points[0][0], path.points[0][1]);
+          for (let i = 1; i < path.points.length; i++) {
+            ctx.lineTo(path.points[i][0], path.points[i][1]);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
       } else {
         ctx.lineWidth = path.brushSize || 30;
         ctx.lineCap = 'round';
@@ -114,12 +129,90 @@ const FogLayer = ({
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
+
+    // --- Overlay wielokąta: linie pomocnicze i snap indicator ---
+    if (isEditingFog && fogTool === 'polygon' && polygonActiveRef.current) {
+      const pts = polygonPointsRef.current;
+      const cursor = polygonCursorRef.current;
+      if (pts.length >= 1 && cursor) {
+        const [cx, cy] = cursor;
+        const [fx, fy] = pts[0];
+        const rect2 = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect2.width;
+        const snapDist = Math.hypot(cx - fx, cy - fy) / scaleX; // w px ekranu
+        const isSnapping = pts.length >= 3 && snapDist < 15;
+
+        ctx.lineCap = 'round';
+
+        // Ciągła linia: ostatni punkt → kursor (podgląd następnego odcinka)
+        ctx.strokeStyle = 'rgba(255, 220, 100, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+        ctx.lineTo(cx, cy);
+        ctx.stroke();
+
+        // Przerywana linia: kursor → pierwszy punkt (podgląd zamknięcia)
+        if (pts.length >= 2) {
+          ctx.strokeStyle = 'rgba(255, 220, 100, 0.55)';
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(fx, fy);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Snap indicator: żółty okrąg wokół pierwszego punktu gdy blisko
+        if (isSnapping) {
+          ctx.strokeStyle = 'rgba(255, 255, 100, 1.0)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(fx, fy, 8 * scaleX, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Kropki na każdym umieszczonym wierzchołku
+        pts.forEach(([px, py]) => {
+          ctx.fillStyle = 'rgba(255, 220, 100, 0.9)';
+          ctx.beginPath();
+          ctx.arc(px, py, 3 * scaleX, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+    }
   }, [scene?.revealPaths, isEditingFog, scene, fogTool, brushSize]);
 
   // Re-render whenever saved paths or editing mode change
   useEffect(() => {
     render(currentPathRef.current ? { points: currentPathRef.current, brushSize } : null);
   }, [render, brushSize]);
+
+  // Escape key — cancel active polygon
+  useEffect(() => {
+    if (!isEditingFog || fogTool !== 'polygon') return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && polygonActiveRef.current) {
+        polygonPointsRef.current = [];
+        polygonActiveRef.current = false;
+        polygonCursorRef.current = null;
+        render(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditingFog, fogTool, render]);
+
+  // Cancel polygon when switching away from polygon tool
+  useEffect(() => {
+    if (fogTool !== 'polygon' && polygonActiveRef.current) {
+      polygonPointsRef.current = [];
+      polygonActiveRef.current = false;
+      polygonCursorRef.current = null;
+      render(null);
+    }
+  }, [fogTool, render]);
 
   // Helpers — convert mouse event to scene-space coords
   const getSceneCoords = useCallback((e) => {
@@ -136,7 +229,45 @@ const FogLayer = ({
     e.preventDefault();
     e.stopPropagation();
 
+    const canvas = canvasRef.current;
     const [x, y] = getSceneCoords(e);
+
+    // Polygon tool — obsługa kliku (nie ustawiamy isDrawingRef)
+    if (fogTool === 'polygon') {
+      const pts = polygonPointsRef.current;
+      if (pts.length === 0) {
+        // Pierwszy punkt — start wielokąta
+        polygonPointsRef.current = [[x, y]];
+        polygonActiveRef.current = true;
+        render(null);
+        return;
+      }
+      // Snap check — czy blisko pierwszego punktu?
+      const rect2 = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect2.width;
+      const snapDist = Math.hypot(x - pts[0][0], y - pts[0][1]) / scaleX;
+      if (pts.length >= 3 && snapDist < 15) {
+        // Zamknij wielokąt
+        const completed = [...pts];
+        polygonPointsRef.current = [];
+        polygonActiveRef.current = false;
+        polygonCursorRef.current = null;
+        render(null);
+        if (onPathComplete) {
+          onPathComplete({ points: completed, brushSize, shape: 'polygon', cover: fogCoverMode });
+        }
+        return;
+      }
+      // Dodaj nowy punkt
+      polygonPointsRef.current = [...pts, [x, y]];
+      render({
+        points: [...polygonPointsRef.current, polygonCursorRef.current ?? [x, y]],
+        shape: 'polygon',
+        cover: fogCoverMode,
+      });
+      return;
+    }
+
     isDrawingRef.current = true;
 
     if (fogTool === 'rect' || fogTool === 'line' || fogTool === 'circle') {
@@ -145,7 +276,7 @@ const FogLayer = ({
     } else {
       currentPathRef.current = [[x, y]];
     }
-  }, [isEditingFog, fogTool, getSceneCoords]);
+  }, [isEditingFog, fogTool, fogCoverMode, brushSize, onPathComplete, getSceneCoords, render]);
 
   const handleMouseMove = useCallback((e) => {
     if (!isEditingFog) return;
@@ -153,6 +284,19 @@ const FogLayer = ({
 
     const [x, y] = getSceneCoords(e);
     cursorPosRef.current = [x, y];
+
+    // Polygon — aktualizacja kursora i podgląd
+    if (fogTool === 'polygon') {
+      polygonCursorRef.current = [x, y];
+      if (polygonActiveRef.current) {
+        const pts = polygonPointsRef.current;
+        const virtualPath = pts.length >= 2
+          ? { points: [...pts, [x, y]], shape: 'polygon', cover: fogCoverMode }
+          : null;
+        render(virtualPath);
+      }
+      return;
+    }
 
     if (isDrawingRef.current) {
       if (fogTool === 'rect' || fogTool === 'line' || fogTool === 'circle') {
@@ -187,6 +331,7 @@ const FogLayer = ({
   }, [isEditingFog, fogTool, fogCoverMode, onPathComplete, brushSize]);
 
   const handleMouseLeave = useCallback((e) => {
+    polygonCursorRef.current = null;
     cursorPosRef.current = null;
     if (isDrawingRef.current) {
       handleMouseUp(e);

@@ -10,6 +10,7 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import PolylineIcon from '@mui/icons-material/Polyline';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -29,6 +30,7 @@ const TOOLS = [
   { value: 'line',     Icon: HorizontalRuleIcon,       labelKey: 'scenes.drawingTool_line',     fogCompat: true  },
   { value: 'rect',     Icon: CropSquareIcon,           labelKey: 'scenes.drawingTool_rect',     fogCompat: true  },
   { value: 'circle',   Icon: RadioButtonUncheckedIcon, labelKey: 'scenes.drawingTool_circle',   fogCompat: true  },
+  { value: 'polygon',  Icon: PolylineIcon,             labelKey: 'scenes.drawingTool_polygon',  fogCompat: true  },
   { value: 'arrow',    Icon: ArrowForwardIcon,         labelKey: 'scenes.drawingTool_arrow',    fogCompat: false },
   { value: 'text',     Icon: TextFieldsIcon,           labelKey: 'scenes.drawingTool_text',     fogCompat: false },
   { value: 'select',   Icon: NearMeIcon,               labelKey: 'scenes.drawingTool_select',   fogCompat: false },
