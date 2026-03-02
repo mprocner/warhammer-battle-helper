@@ -25,12 +25,13 @@ import './DrawingToolbar.css';
 const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
 
 // fogCompat: true → narzędzie widoczne w trybie mgły; false → ukryte w fog mode
+// fogOnly: true → narzędzie widoczne TYLKO w trybie mgły (ukryte w trybie rysowania)
 const TOOLS = [
   { value: 'freehand', Icon: BrushIcon,               labelKey: 'scenes.drawingTool_freehand', fogCompat: true  },
   { value: 'line',     Icon: HorizontalRuleIcon,       labelKey: 'scenes.drawingTool_line',     fogCompat: true  },
   { value: 'rect',     Icon: CropSquareIcon,           labelKey: 'scenes.drawingTool_rect',     fogCompat: true  },
   { value: 'circle',   Icon: RadioButtonUncheckedIcon, labelKey: 'scenes.drawingTool_circle',   fogCompat: true  },
-  { value: 'polygon',  Icon: PolylineIcon,             labelKey: 'scenes.drawingTool_polygon',  fogCompat: true  },
+  { value: 'polygon',  Icon: PolylineIcon,             labelKey: 'scenes.drawingTool_polygon',  fogCompat: true,  fogOnly: true },
   { value: 'arrow',    Icon: ArrowForwardIcon,         labelKey: 'scenes.drawingTool_arrow',    fogCompat: false },
   { value: 'text',     Icon: TextFieldsIcon,           labelKey: 'scenes.drawingTool_text',     fogCompat: false },
   { value: 'select',   Icon: NearMeIcon,               labelKey: 'scenes.drawingTool_select',   fogCompat: false },
@@ -114,7 +115,7 @@ const DrawingToolbar = ({
         <div className="drawing-toolbar__controls">
           {/* Tool buttons — fog-incompatible tools hidden in fog mode */}
           <div className="drawing-toolbar__tools">
-            {TOOLS.filter(({ fogCompat }) => !isFogMode || fogCompat).map(({ value, Icon, labelKey }) => (
+            {TOOLS.filter(({ fogCompat, fogOnly }) => isFogMode ? fogCompat : !fogOnly).map(({ value, Icon, labelKey }) => (
               <button
                 key={value}
                 className={`drawing-toolbar__tool ${activeTool === value ? 'drawing-toolbar__tool--active' : ''}`}
