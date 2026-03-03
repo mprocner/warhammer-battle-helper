@@ -1,5 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axiosInstance from '../../../api/axios';
+import { buildPayload } from '../../../utils/buildPayload';
+
+// Spreads stats into root for Warhammer characters so legacy components
+// can still access character.basicInfo, character.characteristics, etc.
+function normalizeCharacter(char) {
+    if (!char) return char;
+    if (char.gameSystem && char.gameSystem !== 'warhammer4e') return char;
+    if (char.stats && typeof char.stats === 'object') {
+        return { ...char.stats, ...char };
+    }
+    return char;
+}
 
 function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     const [editedCharacter, setEditedCharacter] = useState(() => ({
@@ -49,11 +61,6 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
 
     editedCharacterRef.current = editedCharacter;
 
-    const buildPayload = useCallback((charToSave) => {
-        const { sb: _sb, tb: _tb, wpb: _wpb, hardy: _hardy, total: _total, ...woundsRest } = charToSave.wounds ?? {};
-        const { walk: _walk, run: _run, ...movementRest } = charToSave.movement ?? {};
-        return { ...charToSave, wounds: woundsRest, movement: movementRest };
-    }, []);
 
     const save = useCallback(async (charToSave) => {
         setIsSaving(true);
@@ -63,7 +70,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
             if (onCharacterUpdate) {
-                onCharacterUpdate(response.data);
+                onCharacterUpdate(normalizeCharacter(response.data));
             }
             setHasChanges(false);
         } catch (error) {
@@ -104,6 +111,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasChanges]);
 
     const saveImmediately = useCallback(async (updatedChar) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
@@ -16,22 +16,32 @@ import {
   Grid,
   Chip,
   Divider,
-  Alert
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
+
+const GAME_SYSTEMS = [
+  { value: 'warhammer4e', label: 'Warhammer Fantasy Roleplay 4e' },
+  { value: 'coc7e',       label: 'Call of Cthulhu 7e' },
+];
 
 const GameLobby = ({ onJoinGame, token }) => {
   const { t } = useTranslation();
   const [games, setGames] = useState([]);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newGameName, setNewGameName] = useState('');
+  const [newGameSystem, setNewGameSystem] = useState('warhammer4e');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Fetch games visible to the current user
-  const fetchGames = async () => {
+  const fetchGames = useCallback(async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games`, {
         headers: getApiHeaders({
@@ -44,14 +54,14 @@ const GameLobby = ({ onJoinGame, token }) => {
     } catch (err) {
       setError(err.message);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchGames();
     // Refresh games list every 5 seconds
     const interval = setInterval(fetchGames, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchGames]);
 
   // Create new game
   const handleCreateGame = async () => {
@@ -70,7 +80,7 @@ const GameLobby = ({ onJoinGame, token }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }),
-        body: JSON.stringify({ name: newGameName })
+        body: JSON.stringify({ name: newGameName, gameSystem: newGameSystem })
       });
 
       if (!response.ok) {
@@ -81,6 +91,7 @@ const GameLobby = ({ onJoinGame, token }) => {
       const game = await response.json();
       setOpenCreateDialog(false);
       setNewGameName('');
+      setNewGameSystem('warhammer4e');
 
       // Automatically enter the created game (no need to join - already GM)
       onJoinGame(game.id);
@@ -248,7 +259,7 @@ const GameLobby = ({ onJoinGame, token }) => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mt: 2 }}>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Chip
                       label={game.status === 'active' ? t('game.active') : game.status}
                       color={game.status === 'active' ? 'success' : 'default'}
@@ -259,6 +270,14 @@ const GameLobby = ({ onJoinGame, token }) => {
                         fontWeight: 600
                       }}
                     />
+                    {game.gameSystem && (
+                      <Chip
+                        label={GAME_SYSTEMS.find(s => s.value === game.gameSystem)?.label || game.gameSystem}
+                        variant="outlined"
+                        size="small"
+                        sx={{ fontFamily: 'Crimson Text, serif' }}
+                      />
+                    )}
                   </Box>
                 </CardContent>
 
@@ -334,6 +353,24 @@ const GameLobby = ({ onJoinGame, token }) => {
               }
             }}
           />
+
+          <FormControl fullWidth variant="outlined" sx={{ mt: 2 }} disabled={loading}>
+            <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}>
+              {t('game.gameSystem')}
+            </InputLabel>
+            <Select
+              value={newGameSystem}
+              onChange={(e) => setNewGameSystem(e.target.value)}
+              label={t('game.gameSystem')}
+              sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}
+            >
+              {GAME_SYSTEMS.map(sys => (
+                <MenuItem key={sys.value} value={sys.value} sx={{ fontFamily: 'Crimson Text, serif' }}>
+                  {sys.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
 
         <DialogActions sx={{ p: 2, pt: 0 }}>

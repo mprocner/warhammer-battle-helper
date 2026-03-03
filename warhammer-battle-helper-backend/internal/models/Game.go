@@ -27,6 +27,7 @@ const (
 type Game struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name            string             `bson:"name" json:"name"`
+	GameSystem      string             `bson:"gameSystem" json:"gameSystem"` // "warhammer4e" | "coc7e"
 	GameMasterID    primitive.ObjectID `bson:"gameMasterId" json:"gameMasterId"`
 	GameMasterEmail string             `bson:"-" json:"gameMasterEmail,omitempty"`
 	Status          GameStatus         `bson:"status" json:"status"`
@@ -95,7 +96,8 @@ type GameEvent struct {
 
 // CreateGameRequest is the request body for creating a new game
 type CreateGameRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name       string `json:"name" binding:"required"`
+	GameSystem string `json:"gameSystem" binding:"required,oneof=warhammer4e coc7e"`
 }
 
 // JoinGameRequest is the request body for joining a game

@@ -66,6 +66,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
       setDraftGridWidth(String(selectedScene.gridWidth));
       setDraftGridHeight(String(selectedScene.gridHeight));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSceneId, selectedScene?.gridWidth, selectedScene?.gridHeight]);
 
   const participants = gameState?.participants?.filter(p => p.isActive && p.role === 'player') || [];

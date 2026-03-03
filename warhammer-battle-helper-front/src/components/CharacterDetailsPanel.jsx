@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import CharacterSheetPopup from './character-sheet/CharacterSheetPopup';
 import ModifierSelectionModal from './character-sheet/ModifierSelectionModal';
 import CharacterStates from './CharacterStates';
 import Avatar from './Avatar';
 import axios from 'axios';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../api/axios';
 import skillsData from '../data/skills.json';
+import { getSystem } from '../systems/registry';
+import { buildPayload } from '../utils/buildPayload';
 
 function CharacterDetailsPanel({
     character,
@@ -15,9 +16,11 @@ function CharacterDetailsPanel({
     gameId = null,
     token = null,
     isGM = false,
+    gameSystem = 'warhammer4e',
     autoOpenSheet = false,
     onSheetOpened = null
 }) {
+    const system = getSystem(gameSystem);
     const { t } = useTranslation();
     const [showDetails, setShowDetails] = useState(false);
     const [showModifierModal, setShowModifierModal] = useState(false);
@@ -35,11 +38,9 @@ function CharacterDetailsPanel({
         }
     }, [autoOpenSheet, character, onSheetOpened]);
 
-    // Build character save URL, appending gameId for GM editing other players' characters
+    // Build character save URL
     const getCharacterSaveUrl = (charId) => {
-        if (isGM && gameId) {
-            return `/characters/${charId}?gameId=${gameId}`;
-        }
+        if (gameId) return `/games/${gameId}/characters/${charId}`;
         return `/characters/${charId}`;
     };
 
@@ -58,6 +59,7 @@ function CharacterDetailsPanel({
             });
             onCharacterUpdate(updatedCharacter);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [character?.id]);
 
     const getSkillAdvances = (character, skillKey) => {
@@ -232,26 +234,39 @@ function CharacterDetailsPanel({
         );
     }
 
+    // For non-Warhammer systems, delegate to the system-specific CharacterDetails component
+    if (gameSystem !== 'warhammer4e' && system.CharacterDetails) {
+        const SystemCharacterDetails = system.CharacterDetails;
+        return (
+            <SystemCharacterDetails
+                character={character}
+                onCharacterUpdate={onCharacterUpdate}
+                addLogMessage={addLogMessage}
+                gameId={gameId}
+                token={token}
+                isGM={isGM}
+            />
+        );
+    }
+
     const stats = character.characteristics?.current || {};
     const hp = character.wounds || {};
-    const movement = character.secondaryAttributes?.movement?.current || 4;
+    const fate = character.fate || {};
 
     const adjustFortune = async (amount) => {
-        const currentFortune = Number(character.fate.fortune) || 0;
+        const currentFortune = Number(fate.fortune) || 0;
         const newFortune = Math.max(0, currentFortune + amount);
-        console.log(`Adjusting fortune by ${amount}: ${newFortune}, current: ${character.fate.fortune}`);
         const updatedCharacter = {
             ...character,
             fate: {
-                ...character.fate,
+                ...fate,
                 fortune: newFortune
             }
         };
 
         // Save to backend
         try {
-            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
-            console.log('Fortune updated and saved');
+            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), buildPayload(updatedCharacter));
         } catch (error) {
             console.error('Error saving fortune change:', error);
             if (addLogMessage) {
@@ -283,7 +298,7 @@ function CharacterDetailsPanel({
 
         woundsSaveTimerRef.current = setTimeout(async () => {
             try {
-                await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
+                await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), buildPayload(updatedCharacter));
             } catch (error) {
                 console.error('Error saving wounds:', error);
                 if (addLogMessage) {
@@ -301,8 +316,8 @@ function CharacterDetailsPanel({
             return;
         }
 
-        // Store pending characteristic and show modifier modal
-        setPendingCharacteristic({ name: charName, value: charValue });
+        // Route characteristic rolls through rollSkill with attr_ prefix
+        setPendingCharacteristic({ name: charName, value: charValue, skillKey: `attr_${charName}`, isSkill: true });
         setMousePosition({ x: event.clientX, y: event.clientY });
         setShowModifierModal(true);
     };
@@ -522,7 +537,7 @@ function CharacterDetailsPanel({
                     <div className="modifier-input-container">
                         <button className="modifier-btn" onClick={() => adjustFortune(-1)}>-1</button>
                         <span className="modifier-value">
-                            {character.fate.fortune}
+                            {fate.fortune ?? 0}
                         </span>
                         <button className="modifier-btn" onClick={() => adjustFortune(1)}>+1</button>
                     </div>
@@ -665,17 +680,20 @@ function CharacterDetailsPanel({
                 </div>
             )}
 
-            {showDetails && (
-                <CharacterSheetPopup
-                    character={character}
-                    onClose={() => setShowDetails(false)}
-                    onCharacterUpdate={onCharacterUpdate}
-                    addLogMessage={addLogMessage}
-                    gameId={gameId}
-                    token={token}
-                    isGM={isGM}
-                />
-            )}
+            {showDetails && (() => {
+                const CharacterSheet = system.CharacterSheet;
+                return (
+                    <CharacterSheet
+                        character={character}
+                        onClose={() => setShowDetails(false)}
+                        onCharacterUpdate={onCharacterUpdate}
+                        addLogMessage={addLogMessage}
+                        gameId={gameId}
+                        token={token}
+                        isGM={isGM}
+                    />
+                );
+            })()}
 
             {showModifierModal && (
                 <ModifierSelectionModal

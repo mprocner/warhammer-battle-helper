@@ -182,7 +182,7 @@ const FogLayer = ({
         });
       }
     }
-  }, [scene?.revealPaths, isEditingFog, scene, fogTool, brushSize]);
+  }, [isEditingFog, scene, fogTool, brushSize]);
 
   // Re-render whenever saved paths or editing mode change
   useEffect(() => {

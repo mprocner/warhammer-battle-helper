@@ -85,6 +85,7 @@ const RightPanel = ({
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
+            gameSystem={gameState?.gameSystem}
           />
         );
       case 'scenes':

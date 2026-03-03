@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
+import { buildPayload } from '../utils/buildPayload';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import BloodtypeIcon from '@mui/icons-material/Bloodtype';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -43,7 +44,7 @@ function CharacterStates({ character, onCharacterUpdate, saveUrl }) {
         onCharacterUpdate(updatedCharacter);
 
         try {
-            await axiosInstance.put(saveUrl, updatedCharacter);
+            await axiosInstance.put(saveUrl, buildPayload(updatedCharacter));
         } catch (error) {
             console.error('Error saving state change:', error);
         }

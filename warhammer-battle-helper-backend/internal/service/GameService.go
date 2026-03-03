@@ -1,13 +1,11 @@
 package service
 
 import (
-	"battle-helper/internal/data"
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -34,9 +32,10 @@ func NewGameService(
 }
 
 // CreateGame creates a new game session
-func (s *GameService) CreateGame(name string, gameMasterID primitive.ObjectID, username string) (*models.Game, error) {
+func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive.ObjectID, username string) (*models.Game, error) {
 	game := &models.Game{
 		Name:         name,
+		GameSystem:   gameSystem,
 		GameMasterID: gameMasterID,
 		Status:       models.GameStatusActive,
 		Participants: []models.GameParticipant{
@@ -294,8 +293,8 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 
 	gameChar := models.GameCharacter{
 		CharacterID: charObjectID,
-		Name:        character.BasicInfo.Name,
-		Avatar:      character.BasicInfo.Avatar,
+		Name:        character.Name,
+		Avatar:      character.Avatar,
 		PositionX:   x,
 		PositionY:   y,
 		IsEnemy:     isEnemy,
@@ -313,7 +312,7 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 		Username:  username,
 		Data: map[string]interface{}{
 			"characterId": characterID,
-			"name":        character.BasicInfo.Name,
+			"name":        character.Name,
 			"x":           x,
 			"y":           y,
 			"isEnemy":     isEnemy,
@@ -410,71 +409,16 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	return nil
 }
 
-// RollDice rolls dice and logs the result
-func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, characterID string, attributeName string, attributeModifier int) (int, string, int, error) {
-	// Use the Dice service for proper random rolls
+// RollDice rolls dice and logs the result (simple die roll, no character lookup)
+func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string) (int, error) {
 	dice := Dice{Sizes: sides}
 	result := dice.Roll()
 
 	eventData := map[string]interface{}{
+		"rollType": "simple",
 		"sides":    sides,
 		"result":   result,
 		"username": username,
-	}
-
-	var characterName string
-	var attributeValue int
-
-	// Add characteristic test data if provided
-	if characterID != "" && attributeName != "" {
-		// Fetch character from database to get actual characteristic value
-		character, err := s.charRepo.GetByID(characterID)
-		if err != nil {
-			return 0, "", 0, fmt.Errorf("character not found: %w", err)
-		}
-
-		characterName = character.BasicInfo.Name
-
-		// Get the characteristic value based on attribute name
-		baseValue := 0
-		switch attributeName {
-		case "WS":
-			baseValue = character.Characteristics.Current.WS
-		case "BS":
-			baseValue = character.Characteristics.Current.BS
-		case "S":
-			baseValue = character.Characteristics.Current.S
-		case "T":
-			baseValue = character.Characteristics.Current.T
-		case "I":
-			baseValue = character.Characteristics.Current.I
-		case "Ag":
-			baseValue = character.Characteristics.Current.Ag
-		case "Dex":
-			baseValue = character.Characteristics.Current.Dex
-		case "Int":
-			baseValue = character.Characteristics.Current.Int
-		case "WP":
-			baseValue = character.Characteristics.Current.WP
-		case "Fel":
-			baseValue = character.Characteristics.Current.Fel
-		default:
-			return 0, "", 0, fmt.Errorf("unknown attribute: %s", attributeName)
-		}
-
-		if baseValue == 0 {
-			return 0, "", 0, fmt.Errorf("characteristic %s not found or is zero", attributeName)
-		}
-
-		// Apply modifier on backend (server-authoritative)
-		attributeValue = baseValue + attributeModifier
-
-		eventData["characterId"] = characterID
-		eventData["characterName"] = characterName
-		eventData["attribute"] = attributeName
-		eventData["attributeValue"] = attributeValue
-		eventData["attributeModifier"] = attributeModifier
-		eventData["baseValue"] = baseValue
 	}
 
 	event := models.GameEvent{
@@ -485,403 +429,120 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	}
 
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
-		return 0, "", 0, err
+		return 0, err
 	}
 
-	// Prepare broadcast data
-	broadcastData := map[string]interface{}{
-		"sides":    sides,
-		"result":   result,
-		"username": username,
-	}
-
-	// Add characteristic test data to broadcast if provided
-	if characterID != "" && attributeName != "" {
-		broadcastData["characterId"] = characterID
-		broadcastData["characterName"] = characterName
-		broadcastData["attribute"] = attributeName
-		broadcastData["attributeValue"] = attributeValue
-		broadcastData["attributeModifier"] = attributeModifier
-	}
-
-	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", broadcastData)
-
-	return result, characterName, attributeValue, nil
+	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", eventData)
+	return result, nil
 }
 
-// Skill represents a skill from skills.json
-type Skill struct {
-	Key             string   `json:"key"`
-	Characteristic  string   `json:"characteristic"`
-	Type            string   `json:"type"`
-	Grouped         bool     `json:"grouped"`
-	Specialisations []string `json:"specialisations"`
-}
-
-// loadSkills loads skills data from embedded JSON
-func loadSkills() ([]Skill, error) {
-	var skills []Skill
-	if err := json.Unmarshal(data.SkillsJSON, &skills); err != nil {
-		return nil, fmt.Errorf("failed to parse skills.json: %w", err)
-	}
-
-	return skills, nil
-}
-
-// RollSkill rolls a skill check and broadcasts the result
+// RollSkill rolls a skill/attribute check dispatched through the game system registry.
 func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
-	// Load skills data
-	skills, err := loadSkills()
+	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("game not found: %w", err)
 	}
 
-	// Get character from database
 	character, err := s.charRepo.GetByID(characterID)
 	if err != nil {
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	// Find the skill definition - first try exact match, then try splitting
-	// compound keys (e.g., "MELEE_BASIC" -> parent "MELEE")
-	var skill *Skill
-	for i := range skills {
-		if skills[i].Key == skillKey {
-			skill = &skills[i]
-			break
-		}
+	plugin, err := registry.Get(game.GameSystem)
+	if err != nil {
+		return nil, err
 	}
 
-	if skill == nil && strings.Contains(skillKey, "_") {
-		parentKey := strings.SplitN(skillKey, "_", 2)[0]
-		for i := range skills {
-			if skills[i].Key == parentKey {
-				skill = &skills[i]
-				break
-			}
-		}
+	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier)
+	if err != nil {
+		return nil, err
 	}
 
-	var customSkillName string
-	if skill == nil {
-		// Fallback: check custom skills on the character
-		for _, cs := range character.CustomSkills {
-			if cs.Key == skillKey {
-				skill = &Skill{
-					Key:            cs.Key,
-					Characteristic: cs.Characteristic,
-				}
-				customSkillName = cs.Name
-				break
-			}
-		}
-	}
+	rollResult.CharacterID = characterID
+	rollResult.CharacterName = character.Name
+	rollResult.Username = username
 
-	if skill == nil {
-		return nil, fmt.Errorf("skill not found: %s", skillKey)
-	}
-
-	// Get skill advances from character
-	// Grouped basic skills (e.g. ENTERTAIN_STORYTELLING) may be stored in either
-	// basicSkills or advancedSkills depending on which UI section was used
-	advances := 0
-	if val, ok := character.BasicSkills[skillKey]; ok {
-		advances = val
-	} else if val, ok := character.AdvancedSkills[skillKey]; ok {
-		advances = val
-	}
-
-	// Get characteristic value based on skill's characteristic
-	var characteristicValue int
-	switch skill.Characteristic {
-	case "WEAPON_SKILL":
-		characteristicValue = character.Characteristics.Current.WS
-	case "BALLISTIC_SKILL":
-		characteristicValue = character.Characteristics.Current.BS
-	case "STRENGTH":
-		characteristicValue = character.Characteristics.Current.S
-	case "TOUGHNESS":
-		characteristicValue = character.Characteristics.Current.T
-	case "INITIATIVE":
-		characteristicValue = character.Characteristics.Current.I
-	case "AGILITY":
-		characteristicValue = character.Characteristics.Current.Ag
-	case "DEXTERITY":
-		characteristicValue = character.Characteristics.Current.Dex
-	case "INTELLIGENCE":
-		characteristicValue = character.Characteristics.Current.Int
-	case "WILLPOWER":
-		characteristicValue = character.Characteristics.Current.WP
-	case "FELLOWSHIP":
-		characteristicValue = character.Characteristics.Current.Fel
-	default:
-		return nil, fmt.Errorf("unknown characteristic: %s", skill.Characteristic)
-	}
-
-	if characteristicValue == 0 {
-		return nil, fmt.Errorf("characteristic %s not found or is zero", skill.Characteristic)
-	}
-
-	// Calculate skill value (characteristic + advances)
-	skillValue := characteristicValue + advances
-
-	// Calculate target value (skill value + modifier)
-	targetValue := skillValue + modifier
-
-	// Roll d100
-	dice := Dice{Sizes: 100}
-	rollValue := dice.Roll()
-
-	// Calculate success and SL
-	success := rollValue <= targetValue
-	SL := (targetValue / 10) - (rollValue / 10)
-
-	// Prepare response
-	response := map[string]interface{}{
-		"success":     success,
-		"SL":          SL,
-		"rollValue":   rollValue,
-		"targetValue": targetValue,
-		"skillValue":  skillValue,
-		"modifier":    modifier,
-	}
-
-	// Add event
-	eventData := map[string]interface{}{
+	broadcastData := map[string]interface{}{
+		"rollType":      rollResult.RollType,
 		"characterId":   characterID,
-		"characterName": character.BasicInfo.Name,
-		"skillKey":      skillKey,
-		"success":       success,
-		"SL":            SL,
-		"rollValue":     rollValue,
-		"targetValue":   targetValue,
-		"skillValue":    skillValue,
+		"characterName": character.Name,
+		"skillKey":      rollResult.SkillKey,
+		"skillName":     rollResult.SkillName,
+		"roll":          rollResult.Roll,
+		"target":        rollResult.Target,
+		"outcome":       rollResult.Outcome,
+		"successLevel":  rollResult.SuccessLevel,
 		"modifier":      modifier,
-	}
-	if customSkillName != "" {
-		eventData["skillName"] = customSkillName
+		"username":      username,
 	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
 		Username:  username,
-		Data:      eventData,
+		Data:      broadcastData,
 	}
-
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return nil, err
-	}
-
-	// Broadcast to all clients
-	broadcastData := map[string]interface{}{
-		"type":          "SKILL_ROLLED",
-		"characterId":   characterID,
-		"characterName": character.BasicInfo.Name,
-		"skillKey":      skillKey,
-		"success":       success,
-		"SL":            SL,
-		"rollValue":     rollValue,
-		"targetValue":   targetValue,
-		"skillValue":    skillValue,
-		"modifier":      modifier,
-		"username":      username,
-	}
-	if customSkillName != "" {
-		broadcastData["skillName"] = customSkillName
 	}
 
 	s.hub.BroadcastToGame(gameID, "SKILL_ROLLED", broadcastData)
-
-	return response, nil
+	return broadcastData, nil
 }
 
-// RollWeapon rolls a weapon attack and broadcasts the result with damage info
+// RollWeapon rolls a weapon attack dispatched through the game system registry.
 func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
-	// Load skills data to find weapon skill characteristic
-	skills, err := loadSkills()
+	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("game not found: %w", err)
 	}
 
-	// Get character from database
 	character, err := s.charRepo.GetByID(characterID)
 	if err != nil {
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	// Find the skill definition - first try exact match, then try splitting
-	// compound keys (e.g., "MELEE_BASIC" -> parent "MELEE")
-	var skill *Skill
-	for i := range skills {
-		if skills[i].Key == weaponSkill {
-			skill = &skills[i]
-			break
-		}
+	plugin, err := registry.Get(game.GameSystem)
+	if err != nil {
+		return nil, err
 	}
 
-	if skill == nil && strings.Contains(weaponSkill, "_") {
-		parentKey := strings.SplitN(weaponSkill, "_", 2)[0]
-		for i := range skills {
-			if skills[i].Key == parentKey {
-				skill = &skills[i]
-				break
-			}
-		}
+	rollResult, err := plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier)
+	if err != nil {
+		return nil, err
 	}
 
-	if skill == nil {
-		return nil, fmt.Errorf("skill not found: %s", weaponSkill)
-	}
+	rollResult.CharacterID = characterID
+	rollResult.CharacterName = character.Name
+	rollResult.Username = username
 
-	// Get skill advances from character
-	advances := 0
-	if val, ok := character.BasicSkills[weaponSkill]; ok {
-		advances = val
-	} else if val, ok := character.AdvancedSkills[weaponSkill]; ok {
-		advances = val
-	}
-
-	// Get characteristic value based on skill's characteristic
-	var characteristicValue int
-	switch skill.Characteristic {
-	case "WEAPON_SKILL":
-		characteristicValue = character.Characteristics.Current.WS
-	case "BALLISTIC_SKILL":
-		characteristicValue = character.Characteristics.Current.BS
-	default:
-		return nil, fmt.Errorf("unknown characteristic: %s", skill.Characteristic)
-	}
-
-	if characteristicValue == 0 {
-		return nil, fmt.Errorf("characteristic %s not found or is zero", skill.Characteristic)
-	}
-
-	// Calculate skill value (characteristic + advances)
-	skillValue := characteristicValue + advances
-
-	// Calculate target value (skill value + modifier)
-	targetValue := skillValue + modifier
-
-	// Roll d100
-	dice := Dice{Sizes: 100}
-	rollValue := dice.Roll()
-
-	// Calculate success and SL
-	success := rollValue <= targetValue
-	SL := (targetValue / 10) - (rollValue / 10)
-
-	// Calculate damage based on damage formula
-	damageFormula := damage
-	damageValue := 0
-
-	// Parse damage formula (e.g., "SB+4", "BB+3", "8")
-	if strings.Contains(damage, "SB") {
-		// Strength Bonus based damage
-		sb := character.Characteristics.Current.S / 10
-		bonus := 0
-		if strings.Contains(damage, "+") {
-			parts := strings.Split(damage, "+")
-			if len(parts) == 2 {
-				fmt.Sscanf(parts[1], "%d", &bonus)
-			}
-		} else if strings.Contains(damage, "-") {
-			parts := strings.Split(damage, "-")
-			if len(parts) == 2 {
-				fmt.Sscanf(parts[1], "%d", &bonus)
-				bonus = -bonus
-			}
-		}
-		damageValue = sb + bonus
-	} else if strings.Contains(damage, "BB") {
-		// Ballistic Bonus based damage (rare, but possible)
-		bb := character.Characteristics.Current.BS / 10
-		bonus := 0
-		if strings.Contains(damage, "+") {
-			parts := strings.Split(damage, "+")
-			if len(parts) == 2 {
-				fmt.Sscanf(parts[1], "%d", &bonus)
-			}
-		} else if strings.Contains(damage, "-") {
-			parts := strings.Split(damage, "-")
-			if len(parts) == 2 {
-				fmt.Sscanf(parts[1], "%d", &bonus)
-				bonus = -bonus
-			}
-		}
-		damageValue = bb + bonus
-	} else {
-		// Fixed damage value
-		fmt.Sscanf(damage, "%d", &damageValue)
-	}
-
-	// Add SL to damage on successful hit
-	if success && SL > 0 {
-		damageValue += SL
-	}
-
-	// Prepare response
-	response := map[string]interface{}{
-		"success":       success,
-		"SL":            SL,
-		"rollValue":     rollValue,
-		"targetValue":   targetValue,
-		"skillValue":    skillValue,
-		"modifier":      modifier,
-		"damageFormula": damageFormula,
-		"damageValue":   damageValue,
-		"weaponName":    weaponName,
-	}
-
-	// Add event
-	eventData := map[string]interface{}{
+	broadcastData := map[string]interface{}{
+		"rollType":      rollResult.RollType,
 		"characterId":   characterID,
-		"characterName": character.BasicInfo.Name,
-		"weaponName":    weaponName,
-		"weaponSkill":   weaponSkill,
-		"success":       success,
-		"SL":            SL,
-		"rollValue":     rollValue,
-		"targetValue":   targetValue,
-		"skillValue":    skillValue,
+		"characterName": character.Name,
+		"weaponName":    rollResult.WeaponName,
+		"damage":        rollResult.Damage,
+		"damageRoll":    rollResult.DamageRoll,
+		"roll":          rollResult.Roll,
+		"target":        rollResult.Target,
+		"outcome":       rollResult.Outcome,
+		"successLevel":  rollResult.SuccessLevel,
 		"modifier":      modifier,
-		"damageFormula": damageFormula,
-		"damageValue":   damageValue,
+		"username":      username,
 	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
 		Username:  username,
-		Data:      eventData,
+		Data:      broadcastData,
 	}
-
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return nil, err
 	}
 
-	// Broadcast to all clients
-	broadcastData := map[string]interface{}{
-		"type":          "WEAPON_ROLLED",
-		"characterId":   characterID,
-		"characterName": character.BasicInfo.Name,
-		"weaponName":    weaponName,
-		"weaponSkill":   weaponSkill,
-		"success":       success,
-		"SL":            SL,
-		"rollValue":     rollValue,
-		"targetValue":   targetValue,
-		"skillValue":    skillValue,
-		"modifier":      modifier,
-		"damageFormula": damageFormula,
-		"damageValue":   damageValue,
-		"username":      username,
-	}
-
 	s.hub.BroadcastToGame(gameID, "WEAPON_ROLLED", broadcastData)
-
-	return response, nil
+	return broadcastData, nil
 }
 
 // CreateHandout creates a new handout in a game (GM only)
@@ -1398,8 +1059,8 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 
 	gameChar := models.GameCharacter{
 		CharacterID: charObjectID,
-		Name:        character.BasicInfo.Name,
-		Avatar:      character.BasicInfo.Avatar,
+		Name:        character.Name,
+		Avatar:      character.Avatar,
 		PositionX:   x,
 		PositionY:   y,
 		IsEnemy:     isEnemy,

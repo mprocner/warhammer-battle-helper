@@ -6,7 +6,12 @@ import '../LogWindow.css';
 
 const SkillRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
-    const { success, SL, rollValue, targetValue, modifier, characterName, skillKey, skillName: customSkillName } = data;
+    const { outcome, successLevel, roll, target, modifier, characterName, skillKey, skillName: customSkillName } = data;
+    // Map backend field names to component variables
+    const rollValue = roll;
+    const targetValue = target;
+    const SL = successLevel;
+    const success = outcome !== 'failure' && outcome !== 'fumble';
     const isCritSuccess = isCriticalSuccess(rollValue, success);
     const isCritFailure = isCriticalFailure(rollValue, success);
 

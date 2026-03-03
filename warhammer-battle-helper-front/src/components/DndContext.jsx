@@ -15,6 +15,23 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
+
+/**
+ * Normalizes a character received from the API.
+ * For Warhammer characters the Warhammer-specific data lives inside `stats`,
+ * but the existing CharacterSheetPopup / CharacterDetailsPanel still access
+ * fields like character.basicInfo, character.characteristics, etc. directly.
+ * We spread stats into the root so old components keep working unchanged.
+ */
+function normalizeCharacter(char) {
+  if (!char) return char;
+  // Only flatten for warhammer4e (or legacy chars with no gameSystem)
+  if (char.gameSystem && char.gameSystem !== 'warhammer4e') return char;
+  if (char.stats && typeof char.stats === 'object') {
+    return { ...char.stats, ...char };
+  }
+  return char;
+}
 const generateFightZones = (width, height) => {
   const w = width || DEFAULT_GRID_WIDTH;
   const h = height || DEFAULT_GRID_HEIGHT;
@@ -40,7 +57,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -245,7 +262,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         })
       });
       if (!res.ok) throw new Error('Failed to fetch characters');
-      const charactersData = await res.json();
+      const rawData = await res.json();
+      const charactersData = rawData.map(normalizeCharacter);
 
       setInitialCharacters(charactersData);
 
@@ -287,30 +305,33 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
     try {
       // Create minimal character with required structure
       const newCharacter = {
-        basicInfo: {
-          name: t('character.newCharacter'),
-          type: 'ally',
-          species: '',
-          career: '',
-          careerLevel: '',
-          status: '',
-          careerPath: '',
-          class: '',
-          age: '',
-          height: '',
-          hair: '',
-          eyes: '',
-          avatar: ''
-        },
-        characteristics: {
-          initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-          advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-          current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
-        },
-        basicSkills: {},
-        advancedSkills: {},
-        weapons: [],
-        talents: []
+        name: t('character.newCharacter'),
+        stats: {
+          basicInfo: {
+            name: t('character.newCharacter'),
+            type: 'ally',
+            species: '',
+            career: '',
+            careerLevel: '',
+            status: '',
+            careerPath: '',
+            class: '',
+            age: '',
+            height: '',
+            hair: '',
+            eyes: '',
+            avatar: ''
+          },
+          characteristics: {
+            initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+            advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+            current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
+          },
+          basicSkills: {},
+          advancedSkills: {},
+          weapons: [],
+          talents: []
+        }
       };
 
       const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
@@ -322,7 +343,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         body: JSON.stringify(newCharacter)
       });
       if (!res.ok) throw new Error('Failed to create character');
-      const createdCharacter = await res.json();
+      const createdCharacter = normalizeCharacter(await res.json());
 
       await fetchCharacters();
       setSelectedCharacter(createdCharacter);
@@ -336,31 +357,34 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
   const handleAddNPC = useCallback(async () => {
     try {
       const newCharacter = {
-        basicInfo: {
-          name: t('character.newCharacter'),
-          type: 'enemy',
-          species: '',
-          career: '',
-          careerLevel: '',
-          status: '',
-          careerPath: '',
-          class: '',
-          age: '',
-          height: '',
-          hair: '',
-          eyes: '',
-          avatar: ''
-        },
+        name: t('character.newCharacter'),
         isNPC: true,
-        characteristics: {
-          initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-          advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-          current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
-        },
-        basicSkills: {},
-        advancedSkills: {},
-        weapons: [],
-        talents: []
+        stats: {
+          basicInfo: {
+            name: t('character.newCharacter'),
+            type: 'enemy',
+            species: '',
+            career: '',
+            careerLevel: '',
+            status: '',
+            careerPath: '',
+            class: '',
+            age: '',
+            height: '',
+            hair: '',
+            eyes: '',
+            avatar: ''
+          },
+          characteristics: {
+            initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+            advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
+            current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
+          },
+          basicSkills: {},
+          advancedSkills: {},
+          weapons: [],
+          talents: []
+        }
       };
 
       const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
@@ -372,7 +396,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
         body: JSON.stringify(newCharacter)
       });
       if (!res.ok) throw new Error('Failed to create NPC');
-      const createdCharacter = await res.json();
+      const createdCharacter = normalizeCharacter(await res.json());
 
       await fetchCharacters();
       setSelectedCharacter(createdCharacter);
@@ -490,7 +514,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
           if (zoneIndex !== -1) {
             const fullChar = allCharacters.find(c => c.id === gameChar.characterId);
             if (fullChar) {
-              clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: fullChar };
+              clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: normalizeCharacter(fullChar) };
               characterIdsOnGrid.add(gameChar.characterId);
             }
           }
@@ -808,6 +832,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                   gameId={gameId}
                   token={token}
                   isGM={isGM}
+                  gameSystem={gameSystem}
                   autoOpenSheet={autoOpenCharacterSheet}
                   onSheetOpened={() => setAutoOpenCharacterSheet(false)}
                 />
@@ -873,7 +898,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, charac
                     onClick={() => handleSelectCharacter(char)}
                   >
                     <div className="character-tile-header">
-                      <div className="character-name">{char.basicInfo?.name}</div>
+                      <div className="character-name">{char.basicInfo?.name || char.name}</div>
                       <div className="character-hp">
                         {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
                       </div>

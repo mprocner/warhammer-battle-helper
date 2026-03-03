@@ -7,17 +7,22 @@ import '../LogWindow.css';
 const WeaponRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
     const {
-        success,
-        SL,
-        rollValue,
-        targetValue,
+        outcome,
+        successLevel,
+        roll,
+        target,
         modifier,
         characterName,
         weaponName,
-        damageFormula,
-        damageValue
+        damage: damageFormula,
+        damageRoll: damageValue
     } = data;
 
+    // Map backend field names to component variables
+    const rollValue = roll;
+    const targetValue = target;
+    const SL = successLevel;
+    const success = outcome !== 'failure' && outcome !== 'fumble';
     const isCritSuccess = isCriticalSuccess(rollValue, success);
     const isCritFailure = isCriticalFailure(rollValue, success);
     const resultColor = getResultColor(isCritSuccess, isCritFailure, success);

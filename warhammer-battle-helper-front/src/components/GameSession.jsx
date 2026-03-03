@@ -735,6 +735,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
+            gameSystem={gameState?.gameSystem}
             characterUpdateTrigger={characterUpdateTrigger}
             characterDataTrigger={characterDataTrigger}
             isHidden={leftPanelHidden}

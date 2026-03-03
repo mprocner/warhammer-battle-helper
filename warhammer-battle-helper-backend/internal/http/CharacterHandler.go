@@ -3,11 +3,14 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -17,14 +20,21 @@ type CharacterHandler struct {
 	Hub           *websocket.Hub
 }
 
+// CreateCharacterRequest accepts the character name, system-specific stats as raw JSON,
+// plus common flags. The frontend sends the full stats blob as an opaque JSON object.
 type CreateCharacterRequest struct {
-	BasicInfo       models.BasicInfo            `json:"basicInfo" binding:"required"`
-	Characteristics models.CharacteristicsTable `json:"characteristics"`
-	BasicSkills     map[string]int              `json:"basicSkills"`
-	AdvancedSkills  map[string]int              `json:"advancedSkills"`
-	Weapons         []models.Weapon             `json:"weapons"`
-	Talents         []models.Talent             `json:"talents"`
-	IsNPC           bool                        `json:"isNPC"`
+	Name       string          `json:"name" binding:"required"`
+	Avatar     string          `json:"avatar"`
+	IsNPC      bool            `json:"isNPC"`
+	GameSystem string          `json:"gameSystem"` // inherited from game if empty
+	Stats      json.RawMessage `json:"stats"`      // system-specific payload
+}
+
+type UpdateCharacterRequest struct {
+	Name   string                  `json:"name"`
+	Avatar string                  `json:"avatar"`
+	Stats  json.RawMessage         `json:"stats"`
+	States []models.CharacterState `json:"states"`
 }
 
 type CloneCharacterRequest struct {
@@ -60,10 +70,15 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 		return
 	}
 
-	// Filter by visibility for non-GM users
 	var result []models.Character
 	for _, char := range characters {
-		char.ComputeDerivedFields()
+		// Recompute derived stats (wounds bonuses, movement) before returning
+		if sys, sysErr := registry.Get(char.GameSystem); sysErr == nil {
+			if derived, derivedErr := sys.ComputeDerived(char.Stats); derivedErr == nil {
+				char.Stats = derived
+			}
+		}
+
 		if isGM {
 			result = append(result, char)
 		} else {
@@ -83,13 +98,19 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// CreateGameCharacter creates a new character scoped to the game
+// CreateGameCharacter creates a new character scoped to the game.
 func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 	gameID := c.Param("id")
 
 	userObjID, err := getUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
@@ -105,17 +126,43 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 		return
 	}
 
+	// Encode incoming JSON stats payload as BSON
+	var statsRaw bson.Raw
+	if len(req.Stats) > 0 {
+		// Convert JSON bytes to a map, then marshal to BSON
+		var statsMap interface{}
+		if err := bsonUnmarshalJSON(req.Stats, &statsMap); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid stats: " + err.Error()})
+			return
+		}
+		statsRaw, err = bson.Marshal(statsMap)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to encode stats"})
+			return
+		}
+	}
+
+	gameSystem := req.GameSystem
+	if gameSystem == "" {
+		gameSystem = game.GameSystem
+	}
+
+	// Run derived-stat computation (e.g. wounds/movement for Warhammer)
+	if sys, sysErr := registry.Get(gameSystem); sysErr == nil {
+		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
+			statsRaw = derived
+		}
+	}
+
 	character := &models.Character{
-		GameID:          gameObjID,
-		CreatedBy:       userObjID,
-		VisibleTo:       []primitive.ObjectID{userObjID},
-		BasicInfo:       req.BasicInfo,
-		Characteristics: req.Characteristics,
-		BasicSkills:     req.BasicSkills,
-		AdvancedSkills:  req.AdvancedSkills,
-		Weapons:         req.Weapons,
-		Talents:         req.Talents,
-		IsNPC:           req.IsNPC,
+		GameID:     gameObjID,
+		GameSystem: gameSystem,
+		CreatedBy:  userObjID,
+		VisibleTo:  []primitive.ObjectID{userObjID},
+		Name:       req.Name,
+		Avatar:     req.Avatar,
+		IsNPC:      req.IsNPC,
+		Stats:      statsRaw,
 	}
 
 	if err := h.CharacterRepo.Create(character); err != nil {
@@ -123,11 +170,10 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 		return
 	}
 
-	character.ComputeDerivedFields()
 	c.JSON(http.StatusCreated, character)
 }
 
-// UpdateGameCharacter updates an existing character (owner or GM)
+// UpdateGameCharacter replaces character data (owner or GM).
 func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	gameID := c.Param("id")
 	charID := c.Param("charId")
@@ -168,14 +214,52 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 		}
 	}
 
-	var updatedCharacter models.Character
-	if err := c.ShouldBindJSON(&updatedCharacter); err != nil {
+	var req UpdateCharacterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	var statsRaw bson.Raw
+	if len(req.Stats) > 0 {
+		var statsMap interface{}
+		if err := bsonUnmarshalJSON(req.Stats, &statsMap); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid stats: " + err.Error()})
+			return
+		}
+		statsRaw, err = bson.Marshal(statsMap)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to encode stats"})
+			return
+		}
+	} else {
+		// Keep existing stats if none provided
+		statsRaw = existingCharacter.Stats
+	}
+
+	// Run derived-stat computation (e.g. wounds/movement for Warhammer)
+	if sys, sysErr := registry.Get(existingCharacter.GameSystem); sysErr == nil {
+		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
+			statsRaw = derived
+		}
+	}
+
+	states := req.States
+	if states == nil {
+		states = existingCharacter.States
+	}
+
+	updatedCharacter := models.Character{
+		Name:   req.Name,
+		Avatar: req.Avatar,
+		Stats:  statsRaw,
+		States: states,
+	}
+
 	// Preserve immutable fields
+	updatedCharacter.ID = existingCharacter.ID
 	updatedCharacter.GameID = existingCharacter.GameID
+	updatedCharacter.GameSystem = existingCharacter.GameSystem
 	updatedCharacter.CreatedBy = existingCharacter.CreatedBy
 	updatedCharacter.VisibleTo = existingCharacter.VisibleTo
 	updatedCharacter.CreatedAt = existingCharacter.CreatedAt
@@ -184,8 +268,6 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	updatedCharacter.ComputeDerivedFields()
 
 	if h.Hub != nil {
 		h.Hub.BroadcastToGame(gameID, "CHARACTER_UPDATED", map[string]interface{}{
@@ -196,7 +278,7 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedCharacter)
 }
 
-// DeleteGameCharacter deletes a character from the collection (owner or GM)
+// DeleteGameCharacter deletes a character (owner or GM).
 func (h *CharacterHandler) DeleteGameCharacter(c *gin.Context) {
 	gameID := c.Param("id")
 	charID := c.Param("charId")
@@ -234,7 +316,7 @@ func (h *CharacterHandler) DeleteGameCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Character deleted successfully"})
 }
 
-// CloneGameCharacter clones an existing character N times in the same game (GM only)
+// CloneGameCharacter clones an existing character N times (GM only).
 func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 	gameID := c.Param("id")
 	charID := c.Param("charId")
@@ -268,26 +350,59 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 		return
 	}
 
+	// For Warhammer, basicInfo.name is the authoritative display name (edited in sheet).
+	// Use it as the base for clone names; fall back to top-level Name.
+	baseName := original.Name
+	if original.GameSystem == "warhammer4e" && len(original.Stats) > 0 {
+		var statsMap bson.M
+		if err := bson.Unmarshal(original.Stats, &statsMap); err == nil {
+			if basicInfo, ok := statsMap["basicInfo"].(bson.M); ok {
+				if n, ok := basicInfo["name"].(string); ok && n != "" {
+					baseName = n
+				}
+			}
+		}
+	}
+
 	clones := make([]*models.Character, 0, req.Count)
 	for i := 1; i <= req.Count; i++ {
 		clone := *original
 		clone.ID = primitive.NilObjectID
-		clone.BasicInfo.Name = fmt.Sprintf("%s %d", original.BasicInfo.Name, i)
+		clone.Name = fmt.Sprintf("%s %d", baseName, i)
 		clone.CreatedBy = userObjID
 		clone.VisibleTo = []primitive.ObjectID{userObjID}
+
+		// Keep stats.basicInfo.name in sync with the clone's top-level Name
+		if clone.GameSystem == "warhammer4e" && len(clone.Stats) > 0 {
+			var statsMap bson.M
+			if err := bson.Unmarshal(clone.Stats, &statsMap); err == nil {
+				if basicInfo, ok := statsMap["basicInfo"].(bson.M); ok {
+					basicInfo["name"] = clone.Name
+				}
+				if rawStats, err := bson.Marshal(statsMap); err == nil {
+					clone.Stats = rawStats
+				}
+			}
+		}
+
+		// Recompute derived stats for the clone
+		if sys, sysErr := registry.Get(clone.GameSystem); sysErr == nil {
+			if derived, derivedErr := sys.ComputeDerived(clone.Stats); derivedErr == nil {
+				clone.Stats = derived
+			}
+		}
 
 		if err := h.CharacterRepo.Create(&clone); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create clone"})
 			return
 		}
-		clone.ComputeDerivedFields()
 		clones = append(clones, &clone)
 	}
 
 	c.JSON(http.StatusCreated, clones)
 }
 
-// UpdateCharacterVisibility updates the VisibleTo list for a character (GM only)
+// UpdateCharacterVisibility updates VisibleTo (GM only).
 func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 	gameID := c.Param("id")
 	charID := c.Param("charId")
@@ -338,4 +453,9 @@ func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Visibility updated successfully"})
+}
+
+// bsonUnmarshalJSON converts raw JSON bytes to an interface{} for BSON encoding.
+func bsonUnmarshalJSON(data []byte, v interface{}) error {
+	return bson.UnmarshalExtJSON(data, true, v)
 }

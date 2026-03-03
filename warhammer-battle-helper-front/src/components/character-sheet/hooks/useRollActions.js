@@ -98,7 +98,7 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
             }
             return;
         }
-        setPendingRoll({ name: charName, value: charValue, isSkill: false });
+        setPendingRoll({ name: charName, skillKey: `attr_${charName}`, value: charValue, isSkill: true });
         setMousePosition({ x: event.clientX, y: event.clientY });
         setShowModifierModal(true);
     }, [addLogMessage, t]);

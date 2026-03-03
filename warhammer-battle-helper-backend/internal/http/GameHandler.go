@@ -5,7 +5,6 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
 	"battle-helper/internal/websocket"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -47,7 +46,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.GameService.CreateGame(req.Name, userID, username)
+	game, err := h.GameService.CreateGame(req.Name, req.GameSystem, userID, username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -188,16 +187,12 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		Sides             int    `json:"sides" binding:"required"`
-		CharacterId       string `json:"characterId"`
-		Attribute         string `json:"attribute"`
-		AttributeModifier int    `json:"attributeModifier"`
+		Sides int `json:"sides" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Printf("Request = %v", req)
 
 	// Get user from JWT
 	token, _ := c.Get("jwt")
@@ -211,27 +206,13 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 		return
 	}
 
-	result, characterName, attributeValue, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.CharacterId, req.Attribute, req.AttributeModifier)
+	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := gin.H{
-		"result": result,
-		"sides":  req.Sides,
-	}
-
-	// Add character and attribute data if available
-	if req.CharacterId != "" && req.Attribute != "" {
-		response["characterId"] = req.CharacterId
-		response["characterName"] = characterName
-		response["attribute"] = req.Attribute
-		response["attributeValue"] = attributeValue
-		response["modifier"] = req.AttributeModifier
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, gin.H{"result": result, "sides": req.Sides})
 }
 
 // RollSkill rolls a skill check in the game context and broadcasts to all players

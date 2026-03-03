@@ -25,10 +25,13 @@ function Character({
         ? { opacity: 0.95, pointerEvents: 'none' }
         : (transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : undefined);
 
-    const isEnemy = character.basicInfo?.type === 'enemy';
+    // For Warhammer, basicInfo.name is authoritative (edited in sheet); name is fallback for CoC
+    const displayName = character.basicInfo?.name || character.name;
+    const displayAvatar = character.basicInfo?.avatar || character.avatar;
+    const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo);
     const isDragging = character.id === activeId && !isOverlay;
     const isOtherPlayer = isMultiplayer && !isOwnCharacter;
-    const hasCustomAvatar = character.basicInfo?.avatar && character.basicInfo.avatar.startsWith('/avatars/');
+    const hasCustomAvatar = displayAvatar && displayAvatar.startsWith('/avatars/');
     const characterEntryClass = `character-entry${isEnemy ? " enemy" : ""} ${isDragging ? 'dragging' : ''} ${isOtherPlayer ? 'other-player' : ''} ${hasCustomAvatar ? 'has-custom-avatar' : ''}`;
 
     return (
@@ -42,12 +45,12 @@ function Character({
                 }}
                 className={characterEntryClass + (currentZone?.id ? ' in-grid' : '')}
                 style={style}
-                
+
             >
                 <div className="drag-handle" {...(canDrag ? { ...attributes, ...listeners } : {})}>
-                    <Avatar key={character.basicInfo?.avatar || 'default'} src={character.basicInfo?.avatar} />
+                    <Avatar key={displayAvatar || 'default'} src={displayAvatar} />
                 </div>
-                <span className="character-name">{character.basicInfo?.name}</span>
+                <span className="character-name">{displayName}</span>
             </div>
         </div>
     );

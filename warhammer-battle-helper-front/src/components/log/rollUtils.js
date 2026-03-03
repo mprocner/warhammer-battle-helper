@@ -52,8 +52,23 @@ export const isCriticalFailure = (rollValue, isSuccess) => {
  * @param {string} fallbackLabel - Fallback label if no translation found
  * @returns {string} Translated skill name
  */
+const ATTR_SHORT_TO_FULL = {
+    WS: 'WEAPON_SKILL', BS: 'BALLISTIC_SKILL', S: 'STRENGTH',
+    T: 'TOUGHNESS', I: 'INITIATIVE', Ag: 'AGILITY',
+    Dex: 'DEXTERITY', Int: 'INTELLIGENCE', WP: 'WILLPOWER', Fel: 'FELLOWSHIP',
+};
+
 export const getTranslatedSkillName = (t, skillKey, fallbackLabel = 'Skill') => {
     if (!skillKey) return t(`log.${fallbackLabel.toLowerCase()}`, { defaultValue: fallbackLabel });
+
+    // Characteristic test keys: attr_WS, attr_BS, etc.
+    if (skillKey.startsWith('attr_')) {
+        const shortName = skillKey.slice(5);
+        const fullKey = ATTR_SHORT_TO_FULL[shortName];
+        return fullKey
+            ? t(`characteristics.${fullKey}`, { defaultValue: shortName })
+            : shortName;
+    }
 
     // Try full key from skills namespace (e.g., STEALTH_RURAL.name or OUTDOOR_SURVIVAL.name)
     const fullTranslation = t(`${skillKey}.name`, { ns: 'skills', defaultValue: '' });

@@ -1,12 +1,10 @@
 import React, {useEffect, useRef} from 'react';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import SimpleDiceRoll from './log/SimpleDiceRoll';
-import AttributeRoll from './log/AttributeRoll';
-import SkillRoll from './log/SkillRoll';
-import WeaponRoll from './log/WeaponRoll';
 import FightResult from './log/FightResult';
 import DiceRollControls from './log/DiceRollControls';
 import SimpleMessage from './log/SimpleMessage';
+import { getSystem } from '../systems/registry';
 import './LogWindow.css';
 
 const LogWindow = ({
@@ -16,8 +14,10 @@ const LogWindow = ({
     autoScroll = true,
     addLogMessage,
     gameId = null,
-    token = null
+    token = null,
+    gameSystem = 'warhammer4e'
 }) => {
+    const system = getSystem(gameSystem);
     const logEndRef = useRef(null);
 
     // Support both 'messages' and 'logs' props
@@ -88,21 +88,20 @@ const LogWindow = ({
     };
 
     const renderMessage = (msg, index) => {
-        // Check if message has structured data
         if (msg.data && msg.data.rollType) {
-            switch (msg.data.rollType) {
-                case 'simple':
-                    return <SimpleDiceRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
-                case 'attribute':
-                    return <AttributeRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
-                case 'skill':
-                    return <SkillRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
-                case 'weapon':
-                    return <WeaponRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
-                case 'fight':
-                    return <FightResult key={index} data={msg.data} />;
-                default:
-                    break;
+            const rollType = msg.data.rollType;
+
+            if (rollType === 'simple') {
+                return <SimpleDiceRoll key={index} data={msg.data} timestamp={msg.timestamp} />;
+            }
+            if (rollType === 'fight') {
+                return <FightResult key={index} data={msg.data} />;
+            }
+
+            // Dispatch to system plugin for skill/weapon/attribute/sanity rolls
+            const RollComponent = system.getRollComponent(rollType);
+            if (RollComponent) {
+                return <RollComponent key={index} data={msg.data} timestamp={msg.timestamp} />;
             }
         }
 
