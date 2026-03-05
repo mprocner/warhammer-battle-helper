@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
-function DraggablePopup({ title, onClose, headerButtons, children }) {
+function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400 }) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState(() => ({
         x: Math.min(0, window.innerWidth - 600),
         y: Math.min(0, window.innerHeight - 400)
     }));
     const [size, setSize] = useState(() => ({
-        width: Math.min(1400, window.innerWidth),
+        width: Math.min(initialWidth, window.innerWidth),
         height: Math.min(800, window.innerHeight)
     }));
     const [isDragging, setIsDragging] = useState(false);

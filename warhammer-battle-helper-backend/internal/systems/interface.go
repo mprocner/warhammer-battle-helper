@@ -20,9 +20,10 @@ type RollResult struct {
 	Modifier  int    `json:"modifier,omitempty"`
 
 	// Optional weapon-specific
-	WeaponName string `json:"weaponName,omitempty"`
-	Damage     string `json:"damage,omitempty"`
-	DamageRoll int    `json:"damageRoll,omitempty"`
+	WeaponName      string `json:"weaponName,omitempty"`
+	Damage          string `json:"damage,omitempty"`
+	DamageRoll      int    `json:"damageRoll,omitempty"`
+	DamageBreakdown string `json:"damageBreakdown,omitempty"`
 
 	// Optional sanity-specific (CoC)
 	SanLoss       string `json:"sanLoss,omitempty"`

@@ -517,18 +517,19 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 	rollResult.Username = username
 
 	broadcastData := map[string]interface{}{
-		"rollType":      rollResult.RollType,
-		"characterId":   characterID,
-		"characterName": character.Name,
-		"weaponName":    rollResult.WeaponName,
-		"damage":        rollResult.Damage,
-		"damageRoll":    rollResult.DamageRoll,
-		"roll":          rollResult.Roll,
-		"target":        rollResult.Target,
-		"outcome":       rollResult.Outcome,
-		"successLevel":  rollResult.SuccessLevel,
-		"modifier":      modifier,
-		"username":      username,
+		"rollType":        rollResult.RollType,
+		"characterId":     characterID,
+		"characterName":   character.Name,
+		"weaponName":      rollResult.WeaponName,
+		"damage":          rollResult.Damage,
+		"damageRoll":      rollResult.DamageRoll,
+		"damageBreakdown": rollResult.DamageBreakdown,
+		"roll":            rollResult.Roll,
+		"target":          rollResult.Target,
+		"outcome":         rollResult.Outcome,
+		"successLevel":    rollResult.SuccessLevel,
+		"modifier":        modifier,
+		"username":        username,
 	}
 
 	event := models.GameEvent{

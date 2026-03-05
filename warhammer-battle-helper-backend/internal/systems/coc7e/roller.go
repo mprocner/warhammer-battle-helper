@@ -2,12 +2,53 @@ package coc7e
 
 import (
 	gsys "battle-helper/internal/systems"
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+//go:embed skills.json
+var skillsJSON []byte
+
+type skillDef struct {
+	Key         string `json:"key"`
+	Base        int    `json:"base"`
+	BaseFormula string `json:"baseFormula"`
+}
+
+var skillDefaults map[string]skillDef
+
+func init() {
+	var defs []skillDef
+	if err := json.Unmarshal(skillsJSON, &defs); err != nil {
+		panic("coc7e: failed to parse skills.json: " + err.Error())
+	}
+	skillDefaults = make(map[string]skillDef, len(defs))
+	for _, d := range defs {
+		skillDefaults[d.Key] = d
+	}
+}
+
+// skillBaseValue returns the base percentage for a skill when not stored on the character.
+func skillBaseValue(stats *Stats, key string) int {
+	def, ok := skillDefaults[key]
+	if !ok {
+		return 0
+	}
+	switch def.BaseFormula {
+	case "DEX/2":
+		return stats.DEX / 2
+	case "EDU×5":
+		return stats.EDU * 5
+	default:
+		return def.Base
+	}
+}
 
 // Plugin implements the systems.GameSystem interface for Call of Cthulhu 7e.
 type Plugin struct{}
@@ -65,13 +106,104 @@ func outcomeCoC(roll, skillPct int) string {
 	return "failure"
 }
 
-// ComputeDerived is a no-op for CoC 7e — derived stats are computed on the frontend.
+// computeDamageAndBuild returns the DamageBonus string and Build integer
+// derived from STR + SIZ per the CoC 7e table (BRP SRD Table I).
+func computeDamageAndBuild(str, siz int) (string, int) {
+	sum := str + siz
+	switch {
+	case sum <= 64:
+		return "-2", -2
+	case sum <= 84:
+		return "-1", -1
+	case sum <= 124:
+		return "0", 0
+	case sum <= 164:
+		return "+1d4", 1
+	case sum <= 204:
+		return "+1d6", 2
+	case sum <= 284:
+		return "+2d6", 3
+	case sum <= 364:
+		return "+3d6", 4
+	default:
+		return "+4d6", 5
+	}
+}
+
+// ComputeDerived recalculates SanityMax and the Damage Bonus / Build stats.
 func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
-	return raw, nil
+	stats, err := decodeStats(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	cthulhuMythos := 0
+	if v, ok := stats.Skills["cthulhu_mythos"]; ok {
+		cthulhuMythos = v
+	}
+	stats.SanityMax = 99 - cthulhuMythos
+	if stats.Sanity > stats.SanityMax {
+		stats.Sanity = stats.SanityMax
+	}
+
+	stats.DamageBonus, stats.Build = computeDamageAndBuild(stats.STR, stats.SIZ)
+
+	out, err := bson.Marshal(stats)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// getAttrValue returns the raw attribute value from Stats by lowercase name.
+func getAttrValue(stats *Stats, attrName string) int {
+	switch attrName {
+	case "str":
+		return stats.STR
+	case "con":
+		return stats.CON
+	case "siz":
+		return stats.SIZ
+	case "dex":
+		return stats.DEX
+	case "app":
+		return stats.APP
+	case "int":
+		return stats.INT
+	case "pow":
+		return stats.POW
+	case "edu":
+		return stats.EDU
+	}
+	return 0
+}
+
+// attrRollName returns the full characteristic name for a given attribute key.
+func attrRollName(attrName string) string {
+	switch attrName {
+	case "str":
+		return "Strength"
+	case "con":
+		return "Constitution"
+	case "int":
+		return "Intelligence"
+	case "pow":
+		return "Power"
+	case "dex":
+		return "Dexterity"
+	case "app":
+		return "Appearance"
+	case "siz":
+		return "Size"
+	case "edu":
+		return "Education"
+	}
+	return strings.ToUpper(attrName)
 }
 
 // RollSkill performs a CoC 7e skill check.
-// skillKey should match a key in Stats.Skills (e.g. "fighting_brawl").
+// skillKey should match a key in Stats.Skills (e.g. "fighting_brawl"),
+// or use "attr_<name>" prefix for characteristic rolls (e.g. "attr_str" → STR×5).
 // modifier is applied directly to the skill percentage.
 func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
@@ -79,9 +211,37 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.R
 		return nil, err
 	}
 
-	skillPct, ok := stats.Skills[skillKey]
-	if !ok {
-		return nil, fmt.Errorf("coc7e: skill %q not found on character", skillKey)
+	var skillPct int
+	var skillName string
+
+	if strings.HasPrefix(skillKey, "attr_") {
+		attrName := strings.TrimPrefix(skillKey, "attr_")
+		if attrName == "luck" {
+			skillPct = stats.Luck
+			skillName = "Luck"
+		} else if attrName == "sanity" {
+			skillPct = stats.Sanity
+			skillName = "Sanity"
+		} else {
+			// CoC attributes are stored as percentages already (e.g. STR=65 means 65%)
+			skillPct = getAttrValue(stats, attrName)
+			skillName = attrRollName(attrName)
+		}
+	} else {
+		val, ok := stats.Skills[skillKey]
+		if !ok {
+			val = skillBaseValue(stats, skillKey)
+		}
+		skillPct = val
+		skillName = skillKey
+		if strings.HasPrefix(skillKey, "custom_") {
+			for _, cs := range stats.CustomSkills {
+				if cs.Key == skillKey && cs.Name != "" {
+					skillName = cs.Name
+					break
+				}
+			}
+		}
 	}
 
 	target := skillPct + modifier
@@ -94,7 +254,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.R
 		Target:    target,
 		Outcome:   outcome,
 		SkillKey:  skillKey,
-		SkillName: skillKey,
+		SkillName: skillName,
 		Modifier:  modifier,
 	}, nil
 }
@@ -108,42 +268,77 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 
 	skillPct, ok := stats.Skills[weaponSkillKey]
 	if !ok {
-		return nil, fmt.Errorf("coc7e: weapon skill %q not found on character", weaponSkillKey)
+		skillPct = skillBaseValue(stats, weaponSkillKey)
 	}
 
 	target := skillPct + modifier
 	roll := rollD100()
 	outcome := outcomeCoC(roll, target)
 
-	damageRoll := rollDamage(damage, stats.DamageBonus)
+	damageRoll, damageBreakdown := rollDamage(damage, stats.DamageBonus)
 
 	return &gsys.RollResult{
-		RollType:   "weapon",
-		Roll:       roll,
-		Target:     target,
-		Outcome:    outcome,
-		WeaponName: weaponName,
-		Damage:     damage,
-		DamageRoll: damageRoll,
-		Modifier:   modifier,
+		RollType:        "weapon",
+		Roll:            roll,
+		Target:          target,
+		Outcome:         outcome,
+		WeaponName:      weaponName,
+		Damage:          damage,
+		DamageRoll:      damageRoll,
+		DamageBreakdown: damageBreakdown,
+		Modifier:        modifier,
 	}, nil
 }
 
-// rollDamage parses a CoC damage formula like "1d3+db", "1d10", "2d6+1".
-// db is substituted by the character's DamageBonus string (e.g. "+1d4", "-1").
-func rollDamage(formula, damageBonus string) int {
+// rollDamage parses a CoC damage formula like "1d3+db", "1K3+MO", "1d10", "2d6+1".
+// Returns the total damage and a human-readable breakdown, e.g. "1K3(2) + MO(1) = 3".
+func rollDamage(formula, damageBonus string) (int, string) {
 	if formula == "" {
-		return 0
+		return 0, ""
 	}
 	formula = strings.ToLower(strings.TrimSpace(formula))
+	formula = strings.ReplaceAll(formula, "k", "d")   // Polish K notation (1K3 → 1d3)
+	formula = strings.ReplaceAll(formula, "mo", "db") // Polish MO placeholder → db
+	formula = strings.ReplaceAll(formula, " ", "")    // strip spaces
 
-	// Substitute damage bonus placeholder
-	if strings.Contains(formula, "db") {
-		db := rollDamageBonus(damageBonus)
-		formula = strings.ReplaceAll(formula, "db", fmt.Sprintf("%d", db))
+	var breakParts []string
+	total := 0
+
+	for _, seg := range strings.Split(formula, "+") {
+		if seg == "" {
+			continue
+		}
+		if seg == "db" {
+			dbVal := rollDamageBonus(damageBonus)
+			breakParts = append(breakParts, formatDamageBonusPart(damageBonus, dbVal))
+			total += dbVal
+		} else if strings.Contains(seg, "d") {
+			if strings.HasPrefix(seg, "d") {
+				seg = "1" + seg
+			}
+			var num, sides int
+			if _, err := fmt.Sscanf(seg, "%dd%d", &num, &sides); err == nil && sides > 0 {
+				partTotal := 0
+				for i := 0; i < num; i++ {
+					partTotal += rand.Intn(sides) + 1
+				}
+				breakParts = append(breakParts, fmt.Sprintf("%dK%d(%d)", num, sides, partTotal))
+				total += partTotal
+			}
+		} else {
+			var v int
+			fmt.Sscanf(seg, "%d", &v)
+			if v != 0 {
+				breakParts = append(breakParts, strconv.Itoa(v))
+				total += v
+			}
+		}
 	}
 
-	return evalDiceFormula(formula)
+	if len(breakParts) == 0 {
+		return 0, ""
+	}
+	return total, strings.Join(breakParts, " + ") + " = " + strconv.Itoa(total)
 }
 
 // rollDamageBonus evaluates the character's damage bonus string (e.g. "+1d4", "-1", "0").
@@ -163,12 +358,39 @@ func rollDamageBonus(db string) int {
 	return sign * evalDiceFormula(strings.ToLower(db))
 }
 
+// formatDamageBonusPart returns a human-readable label for the damage bonus component,
+// e.g. "+1d4" → "1K4(3)", "-1" → "-1", "" → "0".
+func formatDamageBonusPart(db string, result int) string {
+	if db == "" || db == "0" || db == "None" {
+		return "0"
+	}
+	db = strings.TrimSpace(db)
+	sign := ""
+	stripped := db
+	if strings.HasPrefix(db, "-") {
+		sign = "-"
+		stripped = db[1:]
+	} else if strings.HasPrefix(db, "+") {
+		stripped = db[1:]
+	}
+	stripped = strings.ToLower(stripped)
+	var num, sides int
+	if _, err := fmt.Sscanf(stripped, "%dd%d", &num, &sides); err == nil && sides > 0 {
+		return fmt.Sprintf("%s%dK%d(%d)", sign, num, sides, result)
+	}
+	return strconv.Itoa(result)
+}
+
 func evalDiceFormula(formula string) int {
 	total := 0
 	parts := strings.Split(formula, "+")
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if strings.Contains(part, "d") {
+			// Support "d10" (no leading number) as shorthand for "1d10"
+			if strings.HasPrefix(part, "d") {
+				part = "1" + part
+			}
 			var num, sides int
 			if _, err := fmt.Sscanf(part, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				for i := 0; i < num; i++ {

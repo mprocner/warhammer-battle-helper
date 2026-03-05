@@ -3276,66 +3276,154 @@ align-items: center;
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+.coc-tab-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.coc-tab-content::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 5px;
+}
+
+.coc-tab-content::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 5px;
+}
+
+.coc-tab-content::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
 }
 
 /* Attributes table */
-.coc-attrs-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  margin-bottom: 16px;
+.coc-attrs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
-.coc-attrs-table th {
+.coc-attr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: rgba(255, 249, 240, 0.7);
+  border: 1px solid #c9975b;
+  border-radius: 5px;
+  overflow: hidden;
+  transition: box-shadow 0.15s, background 0.15s;
+}
+
+.coc-attr-card--simple .coc-attr-card__input {
+  flex: 1;
+}
+
+.coc-attr-card--clickable {
+  cursor: pointer;
+}
+
+.coc-attr-card--clickable:hover {
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.3);
+  background: rgba(255, 249, 240, 0.95);
+}
+
+.coc-attr-card__name {
   text-align: center;
-  padding: 5px 8px;
-  color: var(--text-secondary, #aaa);
-  font-weight: 600;
-  font-size: 11px;
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  color: #fff9f0;
+  font-size: 13px;
+  font-weight: 700;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color, #333);
+  padding: 5px 4px;
+  letter-spacing: 0.06em;
 }
 
-.coc-attrs-table th:first-child {
-  text-align: left;
-}
-
-.coc-attrs-table td {
+.coc-attr-card input.coc-attr-card__input {
+  width: 100%;
   text-align: center;
-  padding: 4px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: #3a2f1f;
+  font-size: 34px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 10px 4px;
+  min-width: 0;
 }
 
-.coc-attrs-table td:first-child {
-  text-align: left;
-  font-weight: 500;
-  color: var(--text-primary, #e0e0e0);
+.coc-attr-card input.coc-attr-card__input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  box-shadow: none;
 }
 
-.coc-attrs-table input[type="number"] {
-  width: 48px;
-  text-align: center;
-  background: var(--bg-input, #111);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 3px;
-  color: var(--text-primary, #e0e0e0);
-  padding: 2px 4px;
-  font-size: 13px;
+.coc-attr-card input.coc-attr-card__input::-webkit-inner-spin-button,
+.coc-attr-card input.coc-attr-card__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.coc-attr-card input.coc-attr-card__input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.coc-attr-card__sub {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #c9975b;
+}
+
+.coc-attr-card__sub-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 2px;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.coc-attr-card__sub-item:first-child {
+  border-right: 1px solid #c9975b;
+}
+
+.coc-attr-card__sub-label {
+  font-size: 11px;
+  color: #8a6a4a;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.coc-attr-card__sub-val {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5a3e28;
+  line-height: 1.4;
 }
 
 .coc-roll-btn {
   background: transparent;
-  border: 1px solid var(--border-color, #444);
+  border: 1px solid #c4a882;
   border-radius: 3px;
-  color: var(--accent-color, #c0a060);
-  padding: 2px 6px;
+  color: #6b4423;
+  padding: 2px 5px;
   cursor: pointer;
   font-size: 12px;
   transition: background 0.15s;
 }
 
 .coc-roll-btn:hover {
-  background: rgba(192,160,96,0.15);
+  background: rgba(201, 151, 91, 0.2);
+  border-color: #7a5c42;
+}
+
+.coc-roll-btn--lg {
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Resources */
@@ -3442,11 +3530,11 @@ align-items: center;
 
 .coc-bg-field {
   width: 100%;
-  background: var(--bg-secondary, #252540);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 4px;
-  color: var(--text-primary, #e0e0e0);
-  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  padding: 0;
   font-size: 13px;
   resize: vertical;
   min-height: 60px;
@@ -3485,10 +3573,10 @@ align-items: center;
 .coc-weapons-table th {
   padding: 4px 6px;
   text-align: left;
-  color: var(--text-secondary, #aaa);
+  color: #6b4423;
   font-size: 10px;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color, #333);
+  border-bottom: 1px solid #c4a882;
 }
 
 .coc-weapons-table td {
@@ -3500,10 +3588,48 @@ align-items: center;
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border-color, #333);
-  color: var(--text-primary, #e0e0e0);
+  border-bottom: 1px solid #c4a882;
+  color: #3a2f1f;
   font-size: 12px;
   padding: 1px 2px;
+  font-family: inherit;
+}
+
+.coc-weapons-table__col--narrow {
+  width: 60px;
+  text-align: center;
+}
+
+.coc-weapon-skill-select {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #c4a882;
+  color: #3a2f1f;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 1px 2px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.coc-weapon-skill-select:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.coc-weapons-table__col--narrow input {
+  text-align: center;
+}
+
+.coc-weapons-table__col--actions {
+  width: 50px;
+}
+
+.coc-weapons-table__actions {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Roll log — CoC outcome & thresholds */
@@ -3524,36 +3650,508 @@ align-items: center;
   gap: 6px;
 }
 
-.coc-details .char-box-button {
-  background: var(--bg-secondary, #1e1e3a);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 6px;
-  padding: 6px 4px;
+/* ===== CoC 7e Sheet Layout ===== */
+.coc-sheet-layout {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  gap: 8px;
+  padding: 10px;
+  overflow: auto;
+  height: 100%;
+  min-width: 800px;
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
 }
 
-.coc-details .char-box-button:hover:not(:disabled) {
-  background: rgba(192,160,96,0.12);
-  border-color: var(--accent-color, #c0a060);
+.coc-sheet-layout::-webkit-scrollbar {
+  width: 10px;
 }
 
-.coc-details .char-box-button:disabled {
-  opacity: 0.4;
+.coc-sheet-layout::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 5px;
 }
 
-.coc-details .char-box-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  color: var(--text-secondary, #aaa);
+.coc-sheet-layout::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 5px;
 }
 
-.coc-details .char-box-value {
-  font-size: 15px;
+.coc-sheet-layout::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
+}
+
+.coc-top-row {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.coc-col-info {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coc-col-info .coc-section:last-child {
+  flex: 1;
+}
+
+.coc-col-attrs {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Section card — matches .card-section from Warhammer */
+.coc-section {
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid #c9975b;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.coc-section-title {
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-primary, #e0e0e0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b4423;
+  border-bottom: 2px solid #c9975b;
+  padding-bottom: 4px;
+  margin: 0 0 8px;
+}
+
+/* Info grid */
+.coc-info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.coc-info-grid label {
+  color: #6b4423;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.coc-info-grid input {
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 3px 6px;
+  font-size: 12px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.coc-info-grid input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* Resources grid */
+.coc-resources-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.coc-resource-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  padding: 5px 7px;
+  border-radius: 4px;
+  border: 1px solid #d4b896;
+  background: rgba(255, 249, 240, 0.5);
+}
+
+.coc-resource-pair--featured {
+  border-color: #a67c52;
+  background: rgba(255, 249, 240, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.coc-resource-pair--rollable {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.coc-resource-pair__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.coc-resource-pair label {
+  color: #6b4423;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.coc-resource-pair--featured label {
+  font-size: 11px;
+  color: #4a2e12;
+}
+
+
+.coc-resource-pair__inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.coc-resource-pair__inputs span {
+  color: #6b4423;
+  font-weight: 600;
+}
+
+.coc-resource-pair__derived {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5a3e28;
+  min-width: 28px;
+  text-align: left;
+  opacity: 0.7;
+}
+
+.coc-resource-pair input {
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 2px 4px;
+  width: 44px;
+  text-align: center;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.coc-resource-pair--featured input {
+  font-size: 16px;
+  font-weight: 700;
+  width: 50px;
+  padding: 3px 4px;
+}
+
+.coc-resource-pair input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* Skills two-col */
+.coc-skills-two-col {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.coc-skills-two-col table {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Skills table — matches .skills-table from Warhammer */
+.coc-skills-table2 {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.coc-skills-table2 th {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border: 1px solid #7a5c42;
+  padding: 3px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: #fff9f0;
+  white-space: nowrap;
+}
+
+.coc-skills-table2 th:first-child,
+.coc-skills-table2 th:nth-child(2) {
+  width: 18px;
+}
+
+.coc-skills-table2 tr {
+  height: 23px;
+}
+
+.coc-skills-table2 td {
+  border: 1px solid #c9975b;
+  padding: 0 3px;
+  text-align: center;
+  vertical-align: middle;
+  height: 22px;
+  max-height: 22px;
+  overflow: hidden;
+}
+
+.coc-skills-table2 td.coc-skill-name-cell {
+  text-align: left;
+  cursor: pointer;
+  color: #3a2f1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95px;
+  padding: 2px 4px;
+}
+
+.coc-skills-table2 td.coc-skill-name-cell:hover {
+  color: #7a5c42;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.coc-skills-table2 td.coc-skill-name-cell--custom {
+  cursor: default;
+  padding: 0 2px;
+}
+
+.coc-skills-table2 td.coc-skill-name-cell--custom:hover {
+  color: inherit;
+  background: none;
+}
+
+
+.coc-custom-skill-actions {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.coc-custom-skill-name-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  border-bottom: 1px solid rgba(196, 168, 130, 0.5);
+  color: #3a2f1f;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 0 2px;
+  height: 20px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.coc-custom-skill-name-input:focus {
+  border-bottom-color: #7a5c42;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.coc-skills-table2 input[type="number"] {
+  width: 36px;
+  height: 20px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  color: #3a2f1f;
+  padding: 0 2px;
+  text-align: center;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.coc-skills-table2 input[type="number"]:focus {
+  outline: none;
+  background: #fff9f0;
+}
+
+.coc-skills-table2 .coc-derived-cell {
+  color: #5a4a3a;
+  font-size: 10px;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.coc-skills-table2 input[type="checkbox"] {
+  cursor: pointer;
+  width: 13px;
+  height: 13px;
+  accent-color: #7a5c42;
+}
+
+/* bg-label / bg-textarea for background section */
+.coc-bg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.coc-bg-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b4423;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.coc-bg-textarea {
+  width: 100%;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 4px 6px;
+  font-size: 12px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.coc-bg-textarea:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* Equipment & Cash section */
+.coc-equip-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.coc-equip-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.coc-equip-textarea {
+  flex: 1;
+  width: 100%;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 4px 6px;
+  font-size: 12px;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  min-height: 100px;
+}
+
+.coc-equip-textarea:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.coc-equip-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.coc-equip-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.coc-equip-input-row label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6b4423;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.coc-equip-input-row input {
+  flex: 1;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.coc-equip-input-row input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+
+/* Weapon rows */
+.coc-weapon-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.coc-weapon-row input {
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  padding: 3px 5px;
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+}
+
+.coc-weapon-row input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.coc-add-btn {
+  background: transparent;
+  border: 1px dashed #c4a882;
+  border-radius: 4px;
+  color: #6b4423;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  margin-top: 4px;
+  font-family: inherit;
+}
+
+.coc-add-btn:hover {
+  border-color: #7a5c42;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.coc-remove-btn {
+  background: transparent;
+  border: none;
+  color: #8a7a6a;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.coc-remove-btn:hover {
+  color: #9a3030;
 }
 
 /* GameLobby system chip */

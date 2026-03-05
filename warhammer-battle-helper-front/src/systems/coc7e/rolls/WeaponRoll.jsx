@@ -1,48 +1,72 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
+import { getResultColor } from '../../../components/log/rollUtils';
+import '../../../components/LogWindow.css';
 
-const OUTCOME_SEAL = {
-  critical_success: { seal: '★', color: '#d4af37' },
-  extreme_success:  { seal: '◆', color: '#2ecc71' },
-  hard_success:     { seal: '▲', color: '#27ae60' },
-  regular_success:  { seal: '●', color: '#3498db' },
-  failure:          { seal: '✕', color: '#e74c3c' },
-  fumble:           { seal: '☠', color: '#8e1010' },
+const OUTCOME_MAP = {
+  critical_success: { isCritSuccess: true,  isCritFailure: false, isSuccess: true,  symbol: '★', label: 'coc.criticalSuccess' },
+  extreme_success:  { isCritSuccess: true,  isCritFailure: false, isSuccess: true,  symbol: '◆', label: 'coc.extremeSuccess'  },
+  hard_success:     { isCritSuccess: false, isCritFailure: false, isSuccess: true,  symbol: '▲', label: 'coc.hardSuccess'      },
+  regular_success:  { isCritSuccess: false, isCritFailure: false, isSuccess: true,  symbol: '●', label: 'coc.regularSuccess'   },
+  failure:          { isCritSuccess: false, isCritFailure: false, isSuccess: false, symbol: '✕', label: 'coc.failure'          },
+  fumble:           { isCritSuccess: false, isCritFailure: true,  isSuccess: false, symbol: '☠', label: 'coc.fumble'           },
 };
 
 function CoCWeaponRoll({ data, timestamp }) {
   const { t } = useTranslation();
-  const cfg = OUTCOME_SEAL[data.outcome] || OUTCOME_SEAL.failure;
-  const isSuccess = !['failure', 'fumble'].includes(data.outcome);
+  const cfg = OUTCOME_MAP[data.outcome] || OUTCOME_MAP.failure;
+  const { isCritSuccess, isCritFailure, isSuccess, label } = cfg;
+  const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
 
   return (
-    <li className="log-entry log-entry--roll">
-      <div className="roll-header">
-        <WaxSealToken symbol={cfg.seal} color={cfg.color} />
-        <div className="roll-info">
-          <span className="roll-character">{data.characterName}</span>
-          {data.username && <span className="roll-user"> ({data.username})</span>}
+    <li className="log-list-item">
+      <WaxSealToken
+        symbol={data.roll}
+        isCritSuccess={isCritSuccess}
+        isCritFailure={isCritFailure}
+        isSuccess={isSuccess}
+        successLevel={0}
+      />
+      <div className="log-list-item__content">
+        <div className="log-list-item__header">
+          <span className="log-list-item__character-name">
+            {data.characterName || t('log.character')}
+            {data.username && (
+              <span style={{ fontWeight: 400 }}> ({data.username})</span>
+            )}
+          </span>
+          {timestamp && (
+            <span className="log-list-item__timestamp">{timestamp}</span>
+          )}
         </div>
-        {timestamp && <span className="roll-timestamp">{timestamp}</span>}
-      </div>
 
-      <div className="roll-body">
-        <div className="roll-skill-name">⚔️ {data.weaponName}</div>
-
-        <div className="roll-dice-line">
-          <span className="roll-result">{data.roll}</span>
-          <span className="roll-vs"> vs </span>
-          <span className="roll-target">{data.target}%</span>
+        <div className="log-list-item__description">
+          <strong className="log-list-item__character-name">⚔ {data.weaponName}</strong>
+          {': '}
+          <strong className="log-roll-value" style={{ color: resultColor }}>
+            {data.roll}
+          </strong>
+          {' '}{t('log.vs')}{' '}
+          <strong className="log-roll-value" style={{ color: resultColor }}>
+            {data.target}
+          </strong>
+          {data.modifier !== 0 && (
+            <span className="log-modifier">
+              {' '}({t('log.modifier')}: {data.modifier >= 0 ? '+' : ''}{data.modifier})
+            </span>
+          )}
         </div>
 
-        <div className="coc-outcome" style={{ color: cfg.color, fontWeight: 700 }}>
-          {t(`coc.${data.outcome}`) || data.outcome}
+        <div className="log-list-item__result" style={{ color: resultColor }}>
+          {t(label)}
         </div>
 
         {isSuccess && data.damageRoll != null && (
-          <div className="roll-damage">
-            {t('coc.damage')}: <strong>{data.damage}</strong> → <span className="damage-value">{data.damageRoll}</span>
+          <div className="log-list-item__damage">
+            {t('coc.damage')}: <strong style={{ color: resultColor }}>
+              {data.damageBreakdown || data.damageRoll}
+            </strong>
           </div>
         )}
       </div>

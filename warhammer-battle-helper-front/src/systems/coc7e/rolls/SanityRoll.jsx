@@ -1,36 +1,59 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
+import { getResultColor } from '../../../components/log/rollUtils';
+import '../../../components/LogWindow.css';
 
 function SanityRoll({ data, timestamp }) {
   const { t } = useTranslation();
   const isSuccess = data.outcome === 'regular_success';
+  const resultColor = getResultColor(false, !isSuccess, isSuccess);
 
   return (
-    <li className="log-entry log-entry--roll">
-      <div className="roll-header">
-        <WaxSealToken symbol={isSuccess ? '🧠' : '💀'} color={isSuccess ? '#2ecc71' : '#8e1010'} />
-        <div className="roll-info">
-          <span className="roll-character">{data.characterName}</span>
-          {data.username && <span className="roll-user"> ({data.username})</span>}
+    <li className="log-list-item">
+      <WaxSealToken
+        symbol={data.roll}
+        isCritSuccess={false}
+        isCritFailure={!isSuccess}
+        isSuccess={isSuccess}
+        successLevel={0}
+      />
+      <div className="log-list-item__content">
+        <div className="log-list-item__header">
+          <span className="log-list-item__character-name">
+            {data.characterName || t('log.character')}
+            {data.username && (
+              <span style={{ fontWeight: 400 }}> ({data.username})</span>
+            )}
+          </span>
+          {timestamp && (
+            <span className="log-list-item__timestamp">{timestamp}</span>
+          )}
         </div>
-        {timestamp && <span className="roll-timestamp">{timestamp}</span>}
-      </div>
 
-      <div className="roll-body">
-        <div className="roll-skill-name">😱 {t('coc.sanityRoll')}</div>
+        <div className="log-list-item__description">
+          <strong className="log-list-item__character-name">
+            😱 {t('coc.sanityRoll')}
+          </strong>
+          {': '}
+          <strong className="log-roll-value" style={{ color: resultColor }}>
+            {data.roll}
+          </strong>
+          {' '}{t('log.vs')}{' '}
+          <strong className="log-roll-value" style={{ color: resultColor }}>
+            {data.target}
+          </strong>
+        </div>
 
-        <div className="roll-dice-line">
-          <span className="roll-result">{data.roll}</span>
-          <span className="roll-vs"> vs </span>
-          <span className="roll-target">{data.target}</span>
+        <div className="log-list-item__result" style={{ color: resultColor }}>
+          {isSuccess ? t('coc.regularSuccess') : t('coc.failure')}
         </div>
 
         {data.sanLoss && (
-          <div className="roll-damage">
+          <div className="log-list-item__damage">
             {t('coc.sanLoss')}: <strong>{data.sanLoss}</strong>
             {data.sanLossResult != null && (
-              <> → <span className="damage-value">{data.sanLossResult}</span></>
+              <> → <strong style={{ color: resultColor }}>{data.sanLossResult}</strong></>
             )}
           </div>
         )}

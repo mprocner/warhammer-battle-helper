@@ -58,6 +58,9 @@ type GameSystem interface {
 const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, CharacterDetails, rolls }
 ```
 
+### Konwencje UI
+- Ikony: zawsze używaj ikon z `@mui/icons-material` (Material UI Icons), nigdy SVG inline ani innych bibliotek ikon
+
 ### Kluczowe konwencje
 - `Character.Stats` = `bson.Raw` — surowe dane systemu, nie ma pól Warhammer-specyficznych w modelu
 - `ComputeDerived` wywoływane na: GET list, Create, Update, Clone

@@ -255,9 +255,9 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		WeaponName  string `json:"weaponName" binding:"required"`
+		WeaponName  string `json:"weaponName"`
 		WeaponSkill string `json:"weaponSkill" binding:"required"`
-		Damage      string `json:"damage" binding:"required"`
+		Damage      string `json:"damage"`
 		Modifier    int    `json:"modifier"`
 		CharacterID string `json:"characterId" binding:"required"`
 	}
