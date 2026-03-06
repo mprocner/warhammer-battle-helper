@@ -303,7 +303,6 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     <table className="coc-skills-table2">
       <thead>
         <tr>
-          <th title={t('coc.favorite')}><StarIcon sx={{ fontSize: 14 }} /></th>
           <th title={t('coc.development')}><TrendingUpIcon sx={{ fontSize: 14 }} /></th>
           <th style={{ textAlign: 'left' }}>{t('coc.skill')}</th>
           <th>{t('coc.base')}</th>
@@ -323,13 +322,6 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           const isEditing = skill.editing;
           return (
             <tr key={skill.key}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={isFav}
-                  onChange={() => handleToggleSkillFlag(skill.key, 'favoriteSkills')}
-                />
-              </td>
               <td>
                 <input
                   type="checkbox"
@@ -376,34 +368,43 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
               <td className="coc-derived-cell">{half(val)}</td>
               <td className="coc-derived-cell">{fifth(val)}</td>
               <td>
-                {skill.custom && (
-                  <div className="coc-custom-skill-actions">
-                    {isEditing ? (
+                <div className="coc-custom-skill-actions">
+                  <button
+                    className={`coc-remove-btn coc-star-btn${isFav ? ' coc-star-btn--active' : ''}`}
+                    onClick={() => handleToggleSkillFlag(skill.key, 'favoriteSkills')}
+                    title={t('coc.favorite')}
+                  >
+                    <StarIcon sx={{ fontSize: 14 }} />
+                  </button>
+                  {skill.custom && (
+                    <>
+                      {isEditing ? (
+                        <button
+                          className="coc-remove-btn"
+                          onClick={() => saveCustomSkill(skill.key)}
+                          title={t('coc.saveCustomSkill')}
+                        >
+                          <CheckIcon sx={{ fontSize: 16 }} />
+                        </button>
+                      ) : (
+                        <button
+                          className="coc-remove-btn"
+                          onClick={() => editCustomSkill(skill.key, skill.label)}
+                          title={t('coc.editCustomSkill')}
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                        </button>
+                      )}
                       <button
                         className="coc-remove-btn"
-                        onClick={() => saveCustomSkill(skill.key)}
-                        title={t('coc.saveCustomSkill')}
+                        onClick={() => removeCustomSkill(skill.key)}
+                        title={t('coc.removeCustomSkill')}
                       >
-                        <CheckIcon sx={{ fontSize: 16 }} />
+                        <DeleteIcon sx={{ fontSize: 16 }} />
                       </button>
-                    ) : (
-                      <button
-                        className="coc-remove-btn"
-                        onClick={() => editCustomSkill(skill.key, skill.label)}
-                        title={t('coc.editCustomSkill')}
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </button>
-                    )}
-                    <button
-                      className="coc-remove-btn"
-                      onClick={() => removeCustomSkill(skill.key)}
-                      title={t('coc.removeCustomSkill')}
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </td>
             </tr>
           );

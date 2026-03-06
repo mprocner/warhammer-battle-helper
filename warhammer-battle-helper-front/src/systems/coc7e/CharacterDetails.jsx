@@ -127,16 +127,24 @@ function CoCCharacterDetails({
   const favoriteSkills = useMemo(() => {
     const favKeys = stats.favoriteSkills || [];
     if (favKeys.length === 0) return [];
+    const customSkills = stats.customSkills || [];
     return favKeys
       .map(key => {
         const def = skillsData.find(s => s.key === key);
-        if (!def) return null;
-        const val = (stats.skills || {})[key] ?? def.base;
-        return { key, label: t(def.labelKey, { defaultValue: def.label }), value: val };
+        if (def) {
+          const val = (stats.skills || {})[key] ?? def.base;
+          return { key, label: t(def.labelKey, { defaultValue: def.label }), value: val };
+        }
+        const custom = customSkills.find(cs => cs.key === key);
+        if (custom) {
+          const val = (stats.skills || {})[key] ?? custom.base ?? 0;
+          return { key, label: custom.name || key, value: val };
+        }
+        return null;
       })
       .filter(Boolean)
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [stats.favoriteSkills, stats.skills, t]);
+  }, [stats.favoriteSkills, stats.skills, stats.customSkills, t]);
 
   if (!character) {
     return (

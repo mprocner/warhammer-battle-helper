@@ -129,43 +129,13 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
               // Don't show movement events in chat
               return null;
             case 'dice_roll':
-              // Check if it's a skill roll (has skillKey)
-              if (event.data.skillKey && event.data.characterId) {
-                return {
-                  message: null,
-                  type: 'skill_roll',
-                  timestamp,
-                  data: {
-                    rollType: 'skill',
-                    ...event.data
-                  }
-                };
-              }
-              // Check if it's an attribute roll
-              else if (event.data.attribute && event.data.characterId) {
-                return {
-                  message: null,
-                  type: 'dice_roll',
-                  timestamp,
-                  data: {
-                    rollType: 'attribute',
-                    ...event.data
-                  }
-                };
-              }
-              // Simple dice roll
-              else {
-                return {
-                  message: null,
-                  type: 'dice_roll',
-                  timestamp,
-                  data: {
-                    rollType: 'simple',
-                    result: event.data.result,
-                    sides: event.data.sides
-                  }
-                };
-              }
+              // Use rollType stored in event.data (always present for skill/weapon/simple rolls)
+              return {
+                message: null,
+                type: 'dice_roll',
+                timestamp,
+                data: { ...event.data }
+              };
             case 'skill_roll':
               return {
                 message: null,

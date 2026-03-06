@@ -3934,7 +3934,7 @@ align-items: center;
   display: flex;
   gap: 2px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   height: 100%;
 }
 
@@ -4152,6 +4152,20 @@ align-items: center;
 
 .coc-remove-btn:hover {
   color: #9a3030;
+}
+
+.coc-star-btn {
+  opacity: 0.25;
+}
+
+.coc-star-btn--active {
+  opacity: 1;
+  color: #c9975b;
+}
+
+.coc-star-btn:hover {
+  opacity: 0.7;
+  color: #c9975b;
 }
 
 /* GameLobby system chip */
