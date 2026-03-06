@@ -53,7 +53,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const editingOriginalNames = useRef({});
 
   const getCharacterSaveUrl = useCallback((charId) => {
-    if (isGM && gameId) return `/games/${gameId}/characters/${charId}`;
+    if (gameId) return `/games/${gameId}/characters/${charId}`;
     return `/characters/${charId}`;
   }, [isGM, gameId]);
 

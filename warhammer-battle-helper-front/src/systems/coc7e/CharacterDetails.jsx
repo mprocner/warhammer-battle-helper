@@ -35,7 +35,7 @@ function CoCCharacterDetails({
   const stats = character?.stats || {};
 
   const getCharacterSaveUrl = (charId) => {
-    if (isGM && gameId) return `/games/${gameId}/characters/${charId}`;
+    if (gameId) return `/games/${gameId}/characters/${charId}`;
     return `/characters/${charId}`;
   };
 
