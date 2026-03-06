@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { uploadHandoutFile } from '../../../api/handouts';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import './HandoutCreateModal.css';
 
 const HANDOUT_TYPES = ['map', 'letter', 'document', 'image', 'clue', 'poster'];
@@ -384,7 +385,7 @@ const HandoutCreateModal = ({
                     <div className="upload-spinner" />
                   ) : (
                     <>
-                      <span className="upload-icon">📁</span>
+                      <UploadFileIcon className="upload-icon" />
                       <span>{t('handouts.clickToUpload')}</span>
                       <span className="upload-hint">{t('handouts.allowedFormats')}</span>
                     </>
