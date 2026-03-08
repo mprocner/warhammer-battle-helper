@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Container,
   Typography,
   TextField,
   Dialog,
@@ -136,12 +137,13 @@ const GameLobby = ({ onJoinGame, token }) => {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Container maxWidth="xl">
+    <Box sx={{ }}>
       <Box sx={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        mb: 4
+        mb: 4,
       }}>
         <Typography
           variant="h3"
@@ -395,6 +397,7 @@ const GameLobby = ({ onJoinGame, token }) => {
         </DialogActions>
       </Dialog>
     </Box>
+    </Container>
   );
 };
 

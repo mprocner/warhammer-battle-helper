@@ -75,10 +75,7 @@ const Login = ({ onLogin, addLogMessage }) => {
             >
                 <Paper elevation={6} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-                        <LoginIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                        <Typography component="h1" variant="h4" fontWeight="bold" color="text.primary">
-                            {t('navigation.title')}
-                        </Typography>
+                        <img src="/img/logo.png" alt="RollHammer" style={{ height: 240, objectFit: 'contain', marginBottom: 8 }} />
                         <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>
                             {t('navigation.login')}
                         </Typography>

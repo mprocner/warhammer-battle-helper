@@ -32,7 +32,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background: linear-gradient(180deg, #f9f3e8 0%, #f4e8d8 100%);
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
   border-bottom: 4px solid #7a5c42;
   box-shadow: 0 4px 12px rgba(107, 68, 35, 0.2);
   position: relative;

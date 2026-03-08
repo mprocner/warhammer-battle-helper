@@ -40,48 +40,12 @@ const Navigation = ({ user, onLogout, inGame }) => {
     }
 
     return (
-        <AppBar position="static" elevation={4}>
+        <AppBar position="static" elevation={0}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <BattleIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="a"
-                        href="/"
-                        sx={{
-                            mr: 2,
-                            display: { xs: 'none', md: 'flex' },
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            letterSpacing: '.1rem',
-                            color: 'inherit',
-                            textDecoration: 'none',
-                            flexGrow: 1
-                        }}
-                    >
-                        {t('navigation.title')}
-                    </Typography>
-
-                    <BattleIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="a"
-                        href="/"
-                        sx={{
-                            mr: 2,
-                            display: { xs: 'flex', md: 'none' },
-                            flexGrow: 1,
-                            fontFamily: 'monospace',
-                            fontWeight: 700,
-                            letterSpacing: '.1rem',
-                            color: 'inherit',
-                            textDecoration: 'none',
-                        }}
-                    >
-                        WBH
-                    </Typography>
+                    <Box component="a" href="/" sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 2 }}>
+                        <img src="/img/logo.png" alt="RollHammer" style={{height: 100, objectFit: 'contain' }} />
+                    </Box>
 
                     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
                         <IconButton

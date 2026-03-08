@@ -175,6 +175,18 @@ const theme = createTheme({
                 },
             },
         },
+        MuiAppBar: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#e8dcc4',
+                    backgroundImage: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)',
+                    color: '#493119',
+                    boxShadow: 'none',
+                    border: 'none',
+                    '--Paper-overlay': 'none',
+                },
+            },
+        },
         MuiListItem: {
             styleOverrides: {
                 root: {

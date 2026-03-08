@@ -193,6 +193,10 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           </button>
         </div>
       </section>
+      {/* Logo */}
+      <div className="general-tab__logo">
+        <img src="/img/logo.png" alt="Warhammer Battle Helper" className="general-tab__logo-img" />
+      </div>
     </div>
   );
 };
