@@ -31,7 +31,7 @@ func (s *DrawingService) isParticipant(gameID string, userID primitive.ObjectID)
 		return nil
 	}
 	for _, p := range game.Participants {
-		if p.UserID == userID && p.IsActive {
+		if p.UserID == userID {
 			return nil
 		}
 	}

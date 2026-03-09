@@ -12,6 +12,8 @@ import { CELL_SIZE } from '../constants/scene';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
+import ConfirmModal from './common/ConfirmModal';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -86,6 +88,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
   // Visibility management popup (GM only)
   const [visibilityTarget, setVisibilityTarget] = useState(null);
+
+  // Delete character confirm
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Collapsible character list sections
   const [pcListCollapsed, setPcListCollapsed] = useState(false);
@@ -431,6 +437,29 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       addLogMessage(t('character.cloneError'), 'error');
     }
   }, [cloneTarget, gameId, token, fetchCharacters, addLogMessage, t]);
+
+  const handleDeleteCharacter = useCallback(async () => {
+    if (!deleteTarget || !gameId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `${getApiUrl()}/games/${gameId}/characters/${deleteTarget.id}`,
+        {
+          method: 'DELETE',
+          headers: getApiHeaders({ 'Authorization': `Bearer ${token}` })
+        }
+      );
+      if (!res.ok) throw new Error('Failed to delete character');
+      setDeleteTarget(null);
+      await fetchCharacters(true);
+      setSelectedCharacter(prev => prev?.id === deleteTarget.id ? null : prev);
+    } catch (err) {
+      console.error('Failed to delete character:', err);
+      addLogMessage(t('character.deleteError'), 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteTarget, gameId, token, fetchCharacters, addLogMessage, t]);
 
   const handleCharacterUpdate = (updatedCharacter) => {
     // Update local state only - saving is handled by the component making the changes
@@ -934,6 +963,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                             </button>
                           </>
                         )}
+                        {(isGM || char.createdBy === userId) && (
+                          <button
+                            className="delete-character-btn"
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(char); }}
+                            title={t('character.deleteCharacter')}
+                          >
+                            <CloseIcon style={{ fontSize: 14 }} />
+                          </button>
+                        )}
                         <button
                           className="grid-toggle-btn"
                           onClick={handleGridToggle}
@@ -1092,6 +1130,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           onClose={() => setVisibilityTarget(null)}
         />
       )}
+
+      {/* Delete Character Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        message={t('character.confirmDeleteCharacter', { name: deleteTarget?.basicInfo?.name || deleteTarget?.name || '' })}
+        onConfirm={handleDeleteCharacter}
+        onCancel={() => setDeleteTarget(null)}
+        isLoading={isDeleting}
+      />
 
     </DndContext>
   );

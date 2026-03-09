@@ -14,8 +14,8 @@ function CharacterVisibilityModal({ character, participants, gameId, token, onCl
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Only show non-GM participants (active)
-  const playerParticipants = (participants || []).filter(p => p.isActive);
+  // Only show non-GM participants
+  const playerParticipants = (participants || []).filter(p => p.role !== 'gm');
 
   const handleToggle = (userId) => {
     setSelectedIds(prev => {

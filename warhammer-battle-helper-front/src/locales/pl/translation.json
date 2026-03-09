@@ -101,7 +101,9 @@
     "characterCreated": "Postać \"{{name}}\" została utworzona",
     "newCharacter": "Nowa Postać",
     "manageVisibility": "Zarządzaj widocznością",
-    "noParticipants": "Brak graczy w tej grze"
+    "noParticipants": "Brak graczy w tej grze",
+    "confirmDeleteCharacter": "Czy na pewno chcesz usunąć \"{{name}}\"? Tej operacji nie można cofnąć.",
+    "deleteError": "Nie udało się usunąć postaci"
   },
   "characterSheet": {
     "title": "Karta Postaci",

@@ -101,7 +101,9 @@
     "characterCreated": "Character \"{{name}}\" created",
     "newCharacter": "New Character",
     "manageVisibility": "Manage Visibility",
-    "noParticipants": "No players in this game"
+    "noParticipants": "No players in this game",
+    "confirmDeleteCharacter": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "deleteError": "Failed to delete character"
   },
   "characterSheet": {
     "title": "Character Sheet",

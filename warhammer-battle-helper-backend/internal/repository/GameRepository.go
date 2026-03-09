@@ -91,7 +91,7 @@ func (r *GameRepository) GetAll() ([]models.Game, error) {
 	return games, nil
 }
 
-// GetByUserID retrieves games where the user is GM or an active participant
+// GetByUserID retrieves games where the user is GM or a participant
 func (r *GameRepository) GetByUserID(userID primitive.ObjectID) ([]models.Game, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -102,7 +102,7 @@ func (r *GameRepository) GetByUserID(userID primitive.ObjectID) ([]models.Game, 
 		},
 		"$or": []bson.M{
 			{"gameMasterId": userID},
-			{"participants": bson.M{"$elemMatch": bson.M{"userId": userID, "isActive": true}}},
+			{"participants.userId": userID},
 		},
 	}
 
@@ -175,7 +175,6 @@ func (r *GameRepository) AddParticipant(gameID string, participant models.GamePa
 	}
 
 	participant.JoinedAt = time.Now()
-	participant.IsActive = true
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{
@@ -195,7 +194,7 @@ func (r *GameRepository) AddParticipant(gameID string, participant models.GamePa
 	return nil
 }
 
-// RemoveParticipant marks a participant as inactive
+// RemoveParticipant removes a participant from the game
 func (r *GameRepository) RemoveParticipant(gameID string, userID primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -205,17 +204,10 @@ func (r *GameRepository) RemoveParticipant(gameID string, userID primitive.Objec
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
-	now := time.Now()
-	filter := bson.M{
-		"_id":                 objectID,
-		"participants.userId": userID,
-	}
+	filter := bson.M{"_id": objectID}
 	update := bson.M{
-		"$set": bson.M{
-			"participants.$.isActive": false,
-			"participants.$.leftAt":   now,
-			"updatedAt":               now,
-		},
+		"$pull": bson.M{"participants": bson.M{"userId": userID}},
+		"$set":  bson.M{"updatedAt": time.Now()},
 	}
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
@@ -224,46 +216,7 @@ func (r *GameRepository) RemoveParticipant(gameID string, userID primitive.Objec
 	}
 
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("game or participant not found")
-	}
-
-	return nil
-}
-
-// ReactivateParticipant sets an inactive participant back to active
-func (r *GameRepository) ReactivateParticipant(gameID string, userID primitive.ObjectID) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	objectID, err := primitive.ObjectIDFromHex(gameID)
-	if err != nil {
-		return fmt.Errorf("invalid game ID: %w", err)
-	}
-
-	now := time.Now()
-	filter := bson.M{
-		"_id":                   objectID,
-		"participants.userId":   userID,
-		"participants.isActive": false,
-	}
-	update := bson.M{
-		"$set": bson.M{
-			"participants.$.isActive": true,
-			"participants.$.joinedAt": now,
-			"updatedAt":               now,
-		},
-		"$unset": bson.M{
-			"participants.$.leftAt": "",
-		},
-	}
-
-	result, err := r.Collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to reactivate participant: %w", err)
-	}
-
-	if result.MatchedCount == 0 {
-		return fmt.Errorf("game or inactive participant not found")
+		return fmt.Errorf("game not found")
 	}
 
 	return nil

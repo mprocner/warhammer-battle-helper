@@ -69,7 +69,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSceneId, selectedScene?.gridWidth, selectedScene?.gridHeight]);
 
-  const participants = gameState?.participants?.filter(p => p.isActive && p.role === 'player') || [];
+  const participants = gameState?.participants?.filter(p => p.role === 'player') || [];
 
   const handleCreateScene = async (e) => {
     e.preventDefault();

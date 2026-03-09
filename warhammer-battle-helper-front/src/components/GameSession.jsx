@@ -744,7 +744,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           gameId={gameId}
           token={token}
           onLogout={onLogout}
-          onLeaveGame={handleLeaveGame}
+          onLeaveGame={() => setShowLeaveConfirm(true)}
           onGoToGameList={onLeaveGame}
           gameState={gameState}
           isConnected={isConnected}

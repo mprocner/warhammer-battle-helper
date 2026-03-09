@@ -43,7 +43,6 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 				UserID:   gameMasterID,
 				Username: username,
 				Role:     models.RoleGameMaster,
-				IsActive: true,
 			},
 		},
 		Characters: []models.GameCharacter{},
@@ -148,19 +147,7 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 	// Check if user is already a participant
 	for _, p := range game.Participants {
 		if p.UserID == invitedUser.ID {
-			if p.IsActive {
-				return fmt.Errorf("user already in game")
-			}
-			// Reactivate inactive participant
-			if err := s.gameRepo.ReactivateParticipant(gameID.Hex(), invitedUser.ID); err != nil {
-				return err
-			}
-			s.hub.BroadcastToGame(gameID.Hex(), "PARTICIPANT_JOINED", map[string]interface{}{
-				"userId":   invitedUser.ID.Hex(),
-				"username": invitedUser.Email,
-				"role":     models.RolePlayer,
-			})
-			return nil
+			return fmt.Errorf("user already in game")
 		}
 	}
 
@@ -169,7 +156,6 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 		Username: invitedUser.Email,
 		Email:    invitedUser.Email,
 		Role:     models.RolePlayer,
-		IsActive: true,
 	}
 	if err := s.gameRepo.AddParticipant(gameID.Hex(), participant); err != nil {
 		return err
@@ -197,32 +183,19 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 	}
 
 	// Check if user already exists in participants
-	var existingInactive bool
 	for _, p := range game.Participants {
 		if p.UserID == userID {
-			if p.IsActive {
-				return nil, fmt.Errorf("user already in game")
-			}
-			existingInactive = true
-			break
+			return nil, fmt.Errorf("user already in game")
 		}
 	}
 
-	if existingInactive {
-		// Reactivate existing inactive participant instead of adding a duplicate
-		if err := s.gameRepo.ReactivateParticipant(gameID, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		participant := models.GameParticipant{
-			UserID:   userID,
-			Username: username,
-			Role:     models.RolePlayer,
-			IsActive: true,
-		}
-		if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
-			return nil, err
-		}
+	participant := models.GameParticipant{
+		UserID:   userID,
+		Username: username,
+		Role:     models.RolePlayer,
+	}
+	if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
+		return nil, err
 	}
 
 	// Add join event

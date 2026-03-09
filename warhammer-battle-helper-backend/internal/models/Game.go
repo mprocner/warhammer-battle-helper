@@ -48,8 +48,6 @@ type GameParticipant struct {
 	Email    string             `bson:"email" json:"email"`
 	Role     ParticipantRole    `bson:"role" json:"role"`
 	JoinedAt time.Time          `bson:"joinedAt" json:"joinedAt"`
-	LeftAt   *time.Time         `bson:"leftAt,omitempty" json:"leftAt,omitempty"`
-	IsActive bool               `bson:"isActive" json:"isActive"`
 }
 
 // InvitePlayerRequest is the request body for inviting a player to a game
