@@ -122,6 +122,25 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
     }
   };
 
+  const handleAssignAllPlayers = async () => {
+    if (!selectedScene) return;
+    const unassigned = participants.filter(p => !selectedScene.assignedPlayers?.includes(p.userId));
+    try {
+      await Promise.all(unassigned.map(p => assignPlayerToScene(gameId, selectedSceneId, p.userId, true)));
+      const allIds = participants.map(p => p.userId);
+      setScenes(prev => prev.map(s => {
+        if (s.id === selectedSceneId) {
+          return { ...s, assignedPlayers: allIds };
+        }
+        // Remove these players from other scenes
+        return { ...s, assignedPlayers: (s.assignedPlayers || []).filter(id => !allIds.includes(id)) };
+      }));
+    } catch (err) {
+      console.error('Failed to assign all players:', err);
+      setError(t('scenes.assignError'));
+    }
+  };
+
   const handleTogglePlayer = async (playerId) => {
     if (!selectedScene) return;
     const isAssigned = selectedScene.assignedPlayers?.includes(playerId);
@@ -368,7 +387,17 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
 
           {/* Player assignment */}
           <div className="scenes-tab__field">
-            <label>{t('scenes.assignedPlayers')}</label>
+            <div className="scenes-tab__players-header">
+              <label>{t('scenes.assignedPlayers')}</label>
+              {participants.length > 0 && (
+                <button
+                  className="scenes-tab__btn scenes-tab__btn--sm"
+                  onClick={handleAssignAllPlayers}
+                >
+                  {t('scenes.assignAllPlayers')}
+                </button>
+              )}
+            </div>
             <div className="scenes-tab__players">
               {participants.length === 0 ? (
                 <span className="scenes-tab__no-players">{t('scenes.noPlayers')}</span>

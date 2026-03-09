@@ -304,6 +304,22 @@
   border-radius: 2px;
 }
 
+.scenes-tab__players-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.scenes-tab__players-header label {
+  margin-bottom: 0;
+}
+
+.scenes-tab__btn--sm {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
 .scenes-tab__players {
   display: flex;
   flex-direction: column;
