@@ -54,7 +54,8 @@ func (r *GameRepository) GetByID(id string) (*models.Game, error) {
 	}
 
 	var game models.Game
-	err = r.Collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&game)
+	filter := bson.M{"_id": objectID, "deletedAt": bson.M{"$exists": false}}
+	err = r.Collection.FindOne(ctx, filter).Decode(&game)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("game not found")
@@ -70,11 +71,12 @@ func (r *GameRepository) GetAll() ([]models.Game, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Only return active and paused games, not completed ones
+	// Only return active and paused games, not completed or deleted ones
 	filter := bson.M{
 		"status": bson.M{
 			"$in": []models.GameStatus{models.GameStatusActive, models.GameStatusPaused},
 		},
+		"deletedAt": bson.M{"$exists": false},
 	}
 
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
@@ -100,6 +102,7 @@ func (r *GameRepository) GetByUserID(userID primitive.ObjectID) ([]models.Game, 
 		"status": bson.M{
 			"$in": []models.GameStatus{models.GameStatusActive, models.GameStatusPaused},
 		},
+		"deletedAt": bson.M{"$exists": false},
 		"$or": []bson.M{
 			{"gameMasterId": userID},
 			{"participants.userId": userID},
@@ -142,7 +145,7 @@ func (r *GameRepository) Update(game *models.Game) error {
 	return nil
 }
 
-// Delete deletes a game
+// Delete soft-deletes a game by setting deletedAt timestamp
 func (r *GameRepository) Delete(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -152,12 +155,16 @@ func (r *GameRepository) Delete(id string) error {
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
-	result, err := r.Collection.DeleteOne(ctx, bson.M{"_id": objectID})
+	now := time.Now()
+	filter := bson.M{"_id": objectID, "deletedAt": bson.M{"$exists": false}}
+	update := bson.M{"$set": bson.M{"deletedAt": now, "updatedAt": now}}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf("failed to delete game: %w", err)
 	}
 
-	if result.DeletedCount == 0 {
+	if result.MatchedCount == 0 {
 		return fmt.Errorf("game not found")
 	}
 

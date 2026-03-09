@@ -140,6 +140,7 @@ function App() {
                                         <GameLobby
                                             onJoinGame={handleJoinGame}
                                             token={user.token}
+                                            userEmail={user.email}
                                         />
                                     )}
                                 </ProtectedRoute>

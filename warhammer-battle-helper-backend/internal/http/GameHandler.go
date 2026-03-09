@@ -157,6 +157,33 @@ func (h *GameHandler) JoinGame(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
+// DeleteGame deletes a game (GM only)
+func (h *GameHandler) DeleteGame(c *gin.Context) {
+	gameID := c.Param("id")
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.DeleteGame(gameID, userID); err != nil {
+		switch err.Error() {
+		case "only the game master can delete the game":
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game deleted successfully"})
+}
+
 // LeaveGame removes current user from a game
 func (h *GameHandler) LeaveGame(c *gin.Context) {
 	gameID := c.Param("id")

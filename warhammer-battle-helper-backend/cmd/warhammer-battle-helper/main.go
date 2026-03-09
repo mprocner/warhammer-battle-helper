@@ -142,6 +142,7 @@ func main() {
 	// Protected game routes
 	r.GET("/games", http.JWTAuthMiddleware(), gameHandler.GetGames)
 	r.POST("/games", http.JWTAuthMiddleware(), gameHandler.CreateGame)
+	r.DELETE("/games/:id", http.JWTAuthMiddleware(), gameHandler.DeleteGame)
 	r.POST("/games/:id/invite", http.JWTAuthMiddleware(), gameHandler.InvitePlayer)
 	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
 	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)

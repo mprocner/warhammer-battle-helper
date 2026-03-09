@@ -21,18 +21,22 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 const GAME_SYSTEMS = [
   { value: 'warhammer4e', label: 'Warhammer Fantasy Roleplay 4e' },
   { value: 'coc7e',       label: 'Call of Cthulhu 7e' },
 ];
 
-const GameLobby = ({ onJoinGame, token }) => {
+const GameLobby = ({ onJoinGame, token, userEmail }) => {
   const { t } = useTranslation();
   const [games, setGames] = useState([]);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -40,6 +44,7 @@ const GameLobby = ({ onJoinGame, token }) => {
   const [newGameSystem, setNewGameSystem] = useState('warhammer4e');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, gameId: null, gameName: '' });
 
   // Fetch games visible to the current user
   const fetchGames = useCallback(async () => {
@@ -136,6 +141,66 @@ const GameLobby = ({ onJoinGame, token }) => {
     }
   };
 
+  // Delete game (GM only)
+  const handleDeleteGame = async () => {
+    const { gameId } = confirmDialog;
+    setConfirmDialog({ open: false, type: null, gameId: null, gameName: '' });
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${getApiUrl()}/games/${gameId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders({
+          'Authorization': `Bearer ${token}`
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete game');
+      }
+
+      setGames(prev => prev.filter(g => g.id !== gameId));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Leave game (player)
+  const handleLeaveGame = async () => {
+    const { gameId } = confirmDialog;
+    setConfirmDialog({ open: false, type: null, gameId: null, gameName: '' });
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${getApiUrl()}/games/${gameId}/leave`, {
+        method: 'POST',
+        headers: getApiHeaders({
+          'Authorization': `Bearer ${token}`
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to leave game');
+      }
+
+      setGames(prev => prev.filter(g => g.id !== gameId));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openConfirmDialog = (type, gameId, gameName) => {
+    setConfirmDialog({ open: true, type, gameId, gameName });
+  };
+
   return (
     <Container maxWidth="xl">
     <Box sx={{ }}>
@@ -203,105 +268,130 @@ const GameLobby = ({ onJoinGame, token }) => {
             </Card>
           </Grid>
         ) : (
-          games.map((game) => (
-            <Grid item xs={12} md={6} lg={4} key={game.id}>
-              <Card sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
-                border: '3px solid',
-                borderColor: 'primary.main',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.25)'
-                }
-              }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography
-                    variant="h5"
-                    gutterBottom
-                    sx={{
-                      fontFamily: 'Cinzel, serif',
-                      fontWeight: 600,
-                      color: 'primary.main',
-                      mb: 2
-                    }}
-                  >
-                    {game.name}
-                  </Typography>
+          games.map((game) => {
+            const isGM = game.gameMasterEmail === userEmail;
+            return (
+              <Grid item xs={12} md={6} lg={4} key={game.id}>
+                <Card sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
+                  border: '3px solid',
+                  borderColor: 'primary.main',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.25)'
+                  }
+                }}>
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontFamily: 'Cinzel, serif',
+                          fontWeight: 600,
+                          color: 'primary.main',
+                          flexGrow: 1
+                        }}
+                      >
+                        {game.name}
+                      </Typography>
+                      {isGM ? (
+                        <Tooltip title={t('game.deleteGame')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => openConfirmDialog('delete', game.id, game.name)}
+                            sx={{ color: 'error.main', ml: 1 }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={t('game.leaveGame')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => openConfirmDialog('leave', game.id, game.name)}
+                            sx={{ color: 'text.secondary', ml: 1 }}
+                          >
+                            <ExitToAppIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
 
-                  <Divider sx={{ my: 1.5, borderColor: 'primary.light' }} />
+                    <Divider sx={{ my: 1.5, borderColor: 'primary.light' }} />
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PersonIcon sx={{ mr: 1, color: 'secondary.main', fontSize: '1.2rem' }} />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontFamily: 'Crimson Text, serif',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      <strong>{t('game.gameMaster')}:</strong> {game.gameMasterEmail || t('common.unknown')}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <PersonIcon sx={{ mr: 1, color: 'secondary.main', fontSize: '1.2rem' }} />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'Crimson Text, serif',
+                          fontSize: '1rem'
+                        }}
+                      >
+                        <strong>{t('game.gameMaster')}:</strong> {game.gameMasterEmail || t('common.unknown')}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PeopleIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.2rem' }} />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontFamily: 'Crimson Text, serif',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      <strong>{t('game.players')}:</strong> {game.participants?.length || 0}
-                    </Typography>
-                  </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <PeopleIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.2rem' }} />
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'Crimson Text, serif',
+                          fontSize: '1rem'
+                        }}
+                      >
+                        <strong>{t('game.players')}:</strong> {game.participants?.length || 0}
+                      </Typography>
+                    </Box>
 
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip
-                      label={game.status === 'active' ? t('game.active') : game.status}
-                      color={game.status === 'active' ? 'success' : 'default'}
-                      size="small"
-                      sx={{
-                        fontFamily: 'Crimson Text, serif',
-                        textTransform: 'uppercase',
-                        fontWeight: 600
-                      }}
-                    />
-                    {game.gameSystem && (
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Chip
-                        label={GAME_SYSTEMS.find(s => s.value === game.gameSystem)?.label || game.gameSystem}
-                        variant="outlined"
+                        label={game.status === 'active' ? t('game.active') : game.status}
+                        color={game.status === 'active' ? 'success' : 'default'}
                         size="small"
-                        sx={{ fontFamily: 'Crimson Text, serif' }}
+                        sx={{
+                          fontFamily: 'Crimson Text, serif',
+                          textTransform: 'uppercase',
+                          fontWeight: 600
+                        }}
                       />
-                    )}
-                  </Box>
-                </CardContent>
+                      {game.gameSystem && (
+                        <Chip
+                          label={GAME_SYSTEMS.find(s => s.value === game.gameSystem)?.label || game.gameSystem}
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontFamily: 'Crimson Text, serif' }}
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
 
-                <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={() => handleJoinGame(game.id)}
-                    disabled={loading}
-                    sx={{
-                      fontFamily: 'Crimson Text, serif',
-                      fontSize: '1.1rem',
-                      fontWeight: 600,
-                      py: 1
-                    }}
-                  >
-                    {t('game.enterGame')}
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))
+                  <CardActions sx={{ p: 2, pt: 0 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handleJoinGame(game.id)}
+                      disabled={loading}
+                      sx={{
+                        fontFamily: 'Crimson Text, serif',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        py: 1
+                      }}
+                    >
+                      {t('game.enterGame')}
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            );
+          })
         )}
       </Grid>
 
@@ -393,6 +483,53 @@ const GameLobby = ({ onJoinGame, token }) => {
             }}
           >
             {loading ? t('common.creating') : t('common.create')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm Delete/Leave Dialog */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, type: null, gameId: null, gameName: '' })}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
+            border: '3px solid',
+            borderColor: confirmDialog.type === 'delete' ? 'error.main' : 'primary.main'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          fontFamily: 'Cinzel, serif',
+          fontWeight: 700,
+          color: confirmDialog.type === 'delete' ? 'error.main' : 'primary.main'
+        }}>
+          {confirmDialog.type === 'delete' ? t('game.deleteGame') : t('game.leaveGame')}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}>
+            {confirmDialog.type === 'delete'
+              ? t('game.deleteGameConfirm', { name: confirmDialog.gameName })
+              : t('game.leaveGameConfirm', { name: confirmDialog.gameName })
+            }
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={() => setConfirmDialog({ open: false, type: null, gameId: null, gameName: '' })}
+            sx={{ fontFamily: 'Crimson Text, serif' }}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={confirmDialog.type === 'delete' ? handleDeleteGame : handleLeaveGame}
+            variant="contained"
+            color={confirmDialog.type === 'delete' ? 'error' : 'primary'}
+            sx={{ fontFamily: 'Crimson Text, serif', fontWeight: 600 }}
+          >
+            {confirmDialog.type === 'delete' ? t('common.delete') : t('game.leaveGame')}
           </Button>
         </DialogActions>
       </Dialog>

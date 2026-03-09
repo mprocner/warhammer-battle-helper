@@ -39,6 +39,7 @@ type Game struct {
 	Scenes          []Scene            `bson:"scenes" json:"scenes"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
+	DeletedAt       *time.Time         `bson:"deletedAt,omitempty" json:"-"`
 }
 
 // GameParticipant represents a user participating in a game

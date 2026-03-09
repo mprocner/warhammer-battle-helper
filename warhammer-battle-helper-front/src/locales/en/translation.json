@@ -71,7 +71,11 @@
     "active": "Active",
     "characterCards": "Character Cards",
     "gameSystem": "Game System",
-    "selectSystem": "Select System"
+    "selectSystem": "Select System",
+    "deleteGame": "Delete Game",
+    "deleteGameConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "leaveGame": "Leave Game",
+    "leaveGameConfirm": "Are you sure you want to leave \"{{name}}\"?"
   },
   "character": {
     "name": "Name",

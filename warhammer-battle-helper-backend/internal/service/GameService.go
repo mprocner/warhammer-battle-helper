@@ -220,6 +220,28 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 	return s.gameRepo.GetByID(gameID)
 }
 
+// DeleteGame deletes a game entirely (GM only)
+func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can delete the game")
+	}
+
+	if err := s.gameRepo.Delete(gameID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "GAME_DELETED", map[string]interface{}{
+		"gameId": gameID,
+	})
+
+	return nil
+}
+
 // LeaveGame removes a user from a game
 func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, username string) error {
 	game, err := s.gameRepo.GetByID(gameID)

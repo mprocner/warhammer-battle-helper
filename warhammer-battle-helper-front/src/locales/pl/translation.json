@@ -71,7 +71,11 @@
     "active": "Aktywna",
     "characterCards": "Karty Postaci",
     "gameSystem": "System Gry",
-    "selectSystem": "Wybierz System"
+    "selectSystem": "Wybierz System",
+    "deleteGame": "Usuń Grę",
+    "deleteGameConfirm": "Czy na pewno chcesz usunąć \"{{name}}\"? Tej operacji nie można cofnąć.",
+    "leaveGame": "Opuść Grę",
+    "leaveGameConfirm": "Czy na pewno chcesz opuścić \"{{name}}\"?"
   },
   "character": {
     "name": "Imię",
