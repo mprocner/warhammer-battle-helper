@@ -345,7 +345,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       if (!res.ok) throw new Error('Failed to create character');
       const createdCharacter = normalizeCharacter(await res.json());
 
-      await fetchCharacters();
+      await fetchCharacters(true);
+      setPcListCollapsed(false);
       setSelectedCharacter(createdCharacter);
       setAutoOpenCharacterSheet(true);
     } catch (err) {
@@ -398,7 +399,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       if (!res.ok) throw new Error('Failed to create NPC');
       const createdCharacter = normalizeCharacter(await res.json());
 
-      await fetchCharacters();
+      await fetchCharacters(true);
+      setNpcListCollapsed(false);
       setSelectedCharacter(createdCharacter);
       setAutoOpenCharacterSheet(true);
     } catch (err) {
@@ -422,7 +424,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         }
       );
       if (!res.ok) throw new Error('Failed to clone character');
-      await fetchCharacters();
+      await fetchCharacters(true);
       setCloneTarget(null);
     } catch (err) {
       console.error('Failed to clone character:', err);
