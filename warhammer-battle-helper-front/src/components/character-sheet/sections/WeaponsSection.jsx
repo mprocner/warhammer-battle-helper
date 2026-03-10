@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import weaponsData from '../../../data/weapons.json';
 import axiosInstance from '../../../api/axios';
 
@@ -126,7 +128,7 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
             <table className="skills-table">
                 <thead>
                     <tr>
-                        <th style={{ width: '30px' }}>⭐</th>
+                        <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: '#c9975b', verticalAlign: 'middle' }} /></th>
                         <th>{t('characterSheet.name')}</th>
                         <th style={{ width: '70px' }}>{t('characterSheet.group')}</th>
                         <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
@@ -140,12 +142,16 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
                     {character.weapons?.map((weapon, idx) => (
                         <tr key={idx}>
                             <td style={{ textAlign: 'center' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={weapon.isFavourite || false}
-                                    onChange={() => handleToggleFavoriteWeapon(idx)}
-                                    title={t('characterSheet.favoriteWeapon')}
-                                />
+                                <span
+                                    onClick={() => handleToggleFavoriteWeapon(idx)}
+                                    className="skill-favorite-btn"
+                                    title={weapon.isFavourite ? t('characterSheet.removeFromFavorites') : t('characterSheet.addToFavorites')}
+                                >
+                                    {weapon.isFavourite
+                                        ? <StarIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                        : <StarBorderIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                    }
+                                </span>
                             </td>
                             <td><input type="text" value={weapon.name || ''} onChange={(e) => handleWeaponFieldChange(idx, 'name', e.target.value)} /></td>
                             <td><input type="text" value={weapon.group || ''} onChange={(e) => handleWeaponFieldChange(idx, 'group', e.target.value)} /></td>

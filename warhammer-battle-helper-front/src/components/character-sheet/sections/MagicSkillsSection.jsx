@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import skillsData from '../../../data/skills.json';
+import axiosInstance from '../../../api/axios';
 
-function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onSkillClick, getCharacteristicValue }) {
+function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl, onSkillClick, getCharacteristicValue }) {
     const { t } = useTranslation(['translation', 'skills']);
     const [activeTooltip, setActiveTooltip] = useState(null);
 
@@ -56,6 +59,23 @@ function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onSkill
         return getCharacteristicValue(skill.characteristic) + getAdvances(skill);
     };
 
+    const handleToggleFavoriteSkill = async (skillKey) => {
+        const updatedCharacter = {
+            ...character,
+            favoriteSkills: character.favoriteSkills?.includes(skillKey)
+                ? character.favoriteSkills.filter(k => k !== skillKey)
+                : [...(character.favoriteSkills || []), skillKey]
+        };
+        setCharacter(updatedCharacter);
+        try {
+            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
+            if (onCharacterUpdate) onCharacterUpdate(updatedCharacter);
+        } catch (error) {
+            console.error('Error saving character:', error);
+            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
     const handleAdvancesChange = (skill, value) => {
         const numValue = parseInt(value) || 0;
         if (skill.isGeneral) {
@@ -84,7 +104,7 @@ function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onSkill
             <table className="skills-table">
                 <thead>
                     <tr>
-                        <th style={{ width: '30px' }}>⭐</th>
+                        <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: '#c9975b', verticalAlign: 'middle' }} /></th>
                         <th>{t('characterSheet.name')}</th>
                         <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                         <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -102,12 +122,16 @@ function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onSkill
                         return (
                             <tr key={skill.key}>
                                 <td style={{ textAlign: 'center', padding: '2px' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={isFavorite}
-                                        readOnly
-                                        style={{ cursor: 'default' }}
-                                    />
+                                    <span
+                                        onClick={() => handleToggleFavoriteSkill(skill.key)}
+                                        className="skill-favorite-btn"
+                                        title={isFavorite ? t('characterSheet.removeFromFavorites') : t('characterSheet.addToFavorites')}
+                                    >
+                                        {isFavorite
+                                            ? <StarIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                            : <StarBorderIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                        }
+                                    </span>
                                 </td>
                                 <td className="skill-name">
                                     <span

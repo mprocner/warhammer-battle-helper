@@ -128,6 +128,8 @@
     "advancedSkills": "Advanced Skills",
     "addAdvancedSkill": "-- Add Advanced Skill --",
     "addWeaponSkill": "-- Add Weapon Skill --",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
     "addRangedSkill": "-- Add Ranged Weapon Skill --",
     "noAdvancedSkills": "No advanced skills added",
     "spellsAndPrayers": "Spells and Prayers",

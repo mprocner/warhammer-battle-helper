@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import skillsData from '../../../data/skills.json';
 import axiosInstance from '../../../api/axios';
 
@@ -88,12 +90,16 @@ function WeaponSkillsSection({ character, setCharacter, scheduleAutoSave, onChar
         return (
             <tr key={compoundKey}>
                 <td style={{ textAlign: 'center', padding: '2px' }}>
-                    <input
-                        type="checkbox"
-                        checked={isFavorite}
-                        onChange={() => handleToggleFavoriteSkill(compoundKey)}
-                        style={{ cursor: 'pointer' }}
-                    />
+                    <span
+                        onClick={() => handleToggleFavoriteSkill(compoundKey)}
+                        className="skill-favorite-btn"
+                        title={isFavorite ? t('characterSheet.removeFromFavorites') : t('characterSheet.addToFavorites')}
+                    >
+                        {isFavorite
+                            ? <StarIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                            : <StarBorderIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                        }
+                    </span>
                 </td>
                 <td className="skill-name">
                     <span
@@ -138,7 +144,7 @@ function WeaponSkillsSection({ character, setCharacter, scheduleAutoSave, onChar
     const tableHead = (
         <thead>
             <tr>
-                <th style={{ width: '30px' }}>⭐</th>
+                <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: '#c9975b', verticalAlign: 'middle' }} /></th>
                 <th>{t('characterSheet.name')}</th>
                 <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                 <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
