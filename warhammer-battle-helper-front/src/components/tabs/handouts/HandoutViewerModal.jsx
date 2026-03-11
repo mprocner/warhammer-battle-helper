@@ -23,7 +23,12 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDir, setResizeDir] = useState(null);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, posX: 0, posY: 0 });
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imagePan, setImagePan] = useState({ x: 0, y: 0 });
+  const [isImagePanning, setIsImagePanning] = useState(false);
   const popupRef = useRef(null);
+  const imageContainerRef = useRef(null);
+  const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
 
   const fetchTextContent = useCallback(async () => {
     if (!handout?.fileUrl) return;
@@ -32,7 +37,6 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     setError('');
 
     try {
-      // Build the full URL for the file
       const url = handout.fileUrl.startsWith('http')
         ? handout.fileUrl
         : `${getApiUrl()}${handout.fileUrl}`;
@@ -60,14 +64,34 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     }
   }, [isOpen, handout, fetchTextContent]);
 
-  // Reset position and size when opening
+  // Reset position, size and zoom when opening or switching handout
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 100, y: 100 });
       setSize({ width: 900, height: 0 });
       setIsMinimized(false);
+      setImageZoom(1);
+      setImagePan({ x: 0, y: 0 });
     }
-  }, [isOpen]);
+  }, [isOpen, handout?.id]);
+
+  // Wheel zoom for images (passive: false required to preventDefault)
+  useEffect(() => {
+    const el = imageContainerRef.current;
+    if (!el) return;
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      setImageZoom(prev => Math.max(0.2, Math.min(5, prev * factor)));
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handout?.fileUrl]);
+
+  const resetImageView = useCallback(() => {
+    setImageZoom(1);
+    setImagePan({ x: 0, y: 0 });
+  }, []);
 
   // Clamp position so the header bar always stays on screen
   const clampPosition = useCallback((x, y) => {
@@ -75,18 +99,16 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     const vh = window.innerHeight;
     const el = popupRef.current;
     const elWidth = el ? el.offsetWidth : 300;
-    const headerHeight = 46; // approximate header height
+    const headerHeight = 46;
 
-    // At least 80px of the window must remain visible horizontally
     const minVisibleX = 80;
     const clampedX = Math.max(-elWidth + minVisibleX, Math.min(x, vw - minVisibleX));
-    // Top: cannot go above 0; Bottom: header must stay visible
     const clampedY = Math.max(0, Math.min(y, vh - headerHeight));
 
     return { x: clampedX, y: clampedY };
   }, []);
 
-  // Drag handlers
+  // Modal drag handlers
   const handleMouseDown = (e) => {
     if (e.target.closest('.handout-viewer__header') && !e.target.closest('.handout-viewer__header-buttons')) {
       setIsDragging(true);
@@ -96,6 +118,19 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
         y: e.clientY - rect.top
       });
     }
+  };
+
+  // Image pan handlers
+  const handleImageMouseDown = (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    setIsImagePanning(true);
+    panStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      panX: imagePan.x,
+      panY: imagePan.y,
+    };
   };
 
   // Resize handlers
@@ -146,15 +181,24 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
         const clamped = clampPosition(newX, newY);
         setPosition(clamped);
       }
+      if (isImagePanning) {
+        const dx = e.clientX - panStartRef.current.mouseX;
+        const dy = e.clientY - panStartRef.current.mouseY;
+        setImagePan({
+          x: panStartRef.current.panX + dx,
+          y: panStartRef.current.panY + dy,
+        });
+      }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
       setIsResizing(false);
       setResizeDir(null);
+      setIsImagePanning(false);
     };
 
-    if (isDragging || isResizing) {
+    if (isDragging || isResizing || isImagePanning) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -163,7 +207,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, clampPosition]);
+  }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, isImagePanning, clampPosition]);
 
   if (!isOpen || !handout) return null;
 
@@ -187,13 +231,46 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     const fileType = getFileTypeFromUrl(handout.fileUrl);
 
     if (fileType === 'image') {
+      const isZoomed = imageZoom !== 1 || imagePan.x !== 0 || imagePan.y !== 0;
       return (
-        <div className="handout-viewer__image-container">
-          <img
-            src={fileUrl}
-            alt={handout.title}
-            className="handout-viewer__image"
-          />
+        <div className="handout-viewer__image-wrapper">
+          <div
+            ref={imageContainerRef}
+            className="handout-viewer__image-container"
+            style={{ cursor: isImagePanning ? 'grabbing' : (imageZoom > 1 ? 'grab' : 'default') }}
+            onMouseDown={handleImageMouseDown}
+          >
+            <img
+              src={fileUrl}
+              alt={handout.title}
+              className="handout-viewer__image"
+              style={{
+                transform: `translate(${imagePan.x}px, ${imagePan.y}px) scale(${imageZoom})`,
+                transformOrigin: 'center center',
+              }}
+              onDoubleClick={resetImageView}
+              draggable={false}
+            />
+          </div>
+          <div className="handout-viewer__image-controls">
+            <button
+              className="handout-viewer__zoom-btn"
+              onClick={() => setImageZoom(prev => Math.max(0.2, prev * 0.9))}
+              title="Zoom out"
+            >−</button>
+            <button
+              className={`handout-viewer__zoom-btn handout-viewer__zoom-btn--label ${isZoomed ? 'handout-viewer__zoom-btn--active' : ''}`}
+              onClick={resetImageView}
+              title="Reset view"
+            >
+              {Math.round(imageZoom * 100)}%
+            </button>
+            <button
+              className="handout-viewer__zoom-btn"
+              onClick={() => setImageZoom(prev => Math.min(5, prev * 1.1))}
+              title="Zoom in"
+            >+</button>
+          </div>
         </div>
       );
     }
