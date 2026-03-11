@@ -3935,6 +3935,7 @@ align-items: center;
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
+  table-layout: fixed;
 }
 
 .coc-skills-table2 th {
@@ -3948,9 +3949,22 @@ align-items: center;
   white-space: nowrap;
 }
 
-.coc-skills-table2 th:first-child,
-.coc-skills-table2 th:nth-child(2) {
-  width: 18px;
+.coc-skills-table2 th:first-child {
+  width: 22px;
+}
+
+.coc-skills-table2 th:nth-child(3),
+.coc-skills-table2 th:nth-child(4) {
+  width: 44px;
+}
+
+.coc-skills-table2 th:nth-child(5),
+.coc-skills-table2 th:nth-child(6) {
+  width: 32px;
+}
+
+.coc-skills-table2 th:last-child {
+  width: 56px;
 }
 
 .coc-skills-table2 tr {
@@ -3974,7 +3988,6 @@ align-items: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 95px;
   padding: 2px 4px;
 }
 
