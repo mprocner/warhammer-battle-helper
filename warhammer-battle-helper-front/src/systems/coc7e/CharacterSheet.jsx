@@ -55,7 +55,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const getCharacterSaveUrl = useCallback((charId) => {
     if (gameId) return `/games/${gameId}/characters/${charId}`;
     return `/characters/${charId}`;
-  }, [isGM, gameId]);
+  }, [gameId]);
 
   const saveCharacter = useCallback(async (payload) => {
     setIsSaving(true);

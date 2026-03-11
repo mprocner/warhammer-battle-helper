@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
@@ -22,8 +23,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
-  Tooltip
+  IconButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PeopleIcon from '@mui/icons-material/People';
@@ -45,6 +45,18 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, gameId: null, gameName: '' });
+  const [tooltip, setTooltip] = useState(null);
+  const tooltipHideTimeout = useRef(null);
+
+  const showTooltip = useCallback((text, el) => {
+    clearTimeout(tooltipHideTimeout.current);
+    const rect = el.getBoundingClientRect();
+    setTooltip({ top: rect.top + rect.height / 2, left: rect.left, text });
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    tooltipHideTimeout.current = setTimeout(() => setTooltip(null), 100);
+  }, []);
 
   // Fetch games visible to the current user
   const fetchGames = useCallback(async () => {
@@ -202,6 +214,7 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
   };
 
   return (
+    <>
     <Container maxWidth="xl">
     <Box sx={{ }}>
       <Box sx={{
@@ -300,25 +313,25 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
                         {game.name}
                       </Typography>
                       {isGM ? (
-                        <Tooltip title={t('game.deleteGame')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => openConfirmDialog('delete', game.id, game.name)}
-                            sx={{ color: 'error.main', ml: 1 }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          onClick={() => openConfirmDialog('delete', game.id, game.name)}
+                          onMouseEnter={e => showTooltip(t('game.deleteGame'), e.currentTarget)}
+                          onMouseLeave={hideTooltip}
+                          sx={{ color: 'error.main', ml: 1 }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       ) : (
-                        <Tooltip title={t('game.leaveGame')}>
-                          <IconButton
-                            size="small"
-                            onClick={() => openConfirmDialog('leave', game.id, game.name)}
-                            sx={{ color: 'text.secondary', ml: 1 }}
-                          >
-                            <ExitToAppIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <IconButton
+                          size="small"
+                          onClick={() => openConfirmDialog('leave', game.id, game.name)}
+                          onMouseEnter={e => showTooltip(t('game.leaveGame'), e.currentTarget)}
+                          onMouseLeave={hideTooltip}
+                          sx={{ color: 'text.secondary', ml: 1 }}
+                        >
+                          <ExitToAppIcon fontSize="small" />
+                        </IconButton>
                       )}
                     </Box>
 
@@ -535,6 +548,14 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
       </Dialog>
     </Box>
     </Container>
+    {tooltip && createPortal(
+      <div className="portal-tooltip" style={{ top: tooltip.top, left: tooltip.left }}>
+        {tooltip.text}
+        <div className="portal-tooltip__arrow" />
+      </div>,
+      document.body
+    )}
+    </>
   );
 };
 

@@ -37,7 +37,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     const getCharacterSaveUrl = useCallback((charId) => {
         if (gameId) return `/games/${gameId}/characters/${charId}`;
         return `/characters/${charId}`;
-    }, [isGM, gameId]);
+    }, [gameId]);
 
     const {
         showModifierModal,

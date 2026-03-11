@@ -4246,3 +4246,46 @@ align-items: center;
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* ================== PORTAL TOOLTIP (shared) ================== */
+.portal-tooltip {
+  position: fixed;
+  transform: translateY(-50%) translateX(-100%);
+  margin-left: -12px;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 6px 8px;
+  border: 1px solid #c9975b;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 250px;
+  width: max-content;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  animation: portalTooltipFadeIn 0.15s ease-out;
+}
+
+.portal-tooltip__arrow {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: #c9975b;
+}
+
+@keyframes portalTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-100%) translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(-100%) translateX(0);
+  }
+}

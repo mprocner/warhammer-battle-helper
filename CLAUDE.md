@@ -60,6 +60,7 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
 
 ### Konwencje UI
 - Ikony: zawsze używaj ikon z `@mui/icons-material` (Material UI Icons), nigdy SVG inline ani innych bibliotek ikon
+- Tooltipy: nigdy MUI `<Tooltip>`. Używaj custom portal tooltip z `createPortal` do `document.body`. Stan: `useState(null)` dla `{top, left, text}`. Globalne klasy CSS: `.portal-tooltip` + `.portal-tooltip__arrow` w `style.css`. Wzorzec: `onMouseEnter={e => showTooltip(text, e.currentTarget)}` + `onMouseLeave={hideTooltip}` z `useRef` dla timeout. Tooltip pozycjonowany na lewo od elementu (`translateX(-100%)`), strzałka po prawej stronie.
 
 ### Kluczowe konwencje
 - `Character.Stats` = `bson.Raw` — surowe dane systemu, nie ma pól Warhammer-specyficznych w modelu

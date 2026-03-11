@@ -15,7 +15,6 @@ import {
     Login as LoginIcon,
     PersonAdd as PersonAddIcon,
     Logout as LogoutIcon,
-    SportsKabaddi as BattleIcon,
     Language as LanguageIcon
 } from '@mui/icons-material';
 
@@ -66,13 +65,6 @@ const Navigation = ({ user, onLogout, inGame }) => {
                                     size="small"
                                     sx={{ display: { xs: 'none', sm: 'flex' } }}
                                 />
-                                <Button
-                                    color="inherit"
-                                    startIcon={<BattleIcon />}
-                                    onClick={() => navigate('/app')}
-                                >
-                                    {t('navigation.battleArena')}
-                                </Button>
                                 <Button
                                     color="inherit"
                                     startIcon={<LogoutIcon />}

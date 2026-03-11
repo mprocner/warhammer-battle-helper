@@ -24,8 +24,7 @@
   },
   "navigation": {
     "title": "RollHammer",
-    "battleArena": "Battle Arena",
-    "login": "Login",
+"login": "Login",
     "logout": "Logout",
     "register": "Register"
   },

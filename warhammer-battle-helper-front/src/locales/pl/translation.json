@@ -24,8 +24,7 @@
   },
   "navigation": {
     "title": "RollHammer",
-    "battleArena": "Arena Bitewna",
-    "login": "Zaloguj",
+"login": "Zaloguj",
     "logout": "Wyloguj",
     "register": "Zarejestruj"
   },
