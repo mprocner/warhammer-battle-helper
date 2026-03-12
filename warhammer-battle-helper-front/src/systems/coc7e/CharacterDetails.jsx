@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import CasinoIcon from '@mui/icons-material/Casino';
 import Avatar from '../../components/Avatar';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -62,6 +63,32 @@ function CoCCharacterDetails({
       await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
     } catch (err) {
       console.error('Error saving HP:', err);
+    }
+  };
+
+  const handleLuckChange = async (newValue) => {
+    const updated = {
+      ...character,
+      stats: { ...stats, luck: Math.max(0, Math.min(99, Number(newValue) || 0)) }
+    };
+    onCharacterUpdate(updated);
+    try {
+      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+    } catch (err) {
+      console.error('Error saving luck:', err);
+    }
+  };
+
+  const handleMpChange = async (newValue) => {
+    const updated = {
+      ...character,
+      stats: { ...stats, mp: Math.max(0, Math.min(stats.mpMax || 99, Number(newValue) || 0)) }
+    };
+    onCharacterUpdate(updated);
+    try {
+      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+    } catch (err) {
+      console.error('Error saving MP:', err);
     }
   };
 
@@ -172,40 +199,77 @@ function CoCCharacterDetails({
       {/* HP / Sanity / Luck quick view */}
       <div className="detail-grid">
         <div className="detail-item">
-          <div className="detail-label">{t('coc.hp')}</div>
+          <div className="detail-label">{t('coc.luck')}</div>
           <div className="detail-value modifier-value">
-            <input
-              type="number"
-              className="wounds-input"
-              min={0}
-              max={stats.hpMax || 20}
-              value={stats.hp ?? stats.hpMax ?? 0}
-              onChange={e => handleHpChange(e.target.value)}
-            />
-            &nbsp;/ {stats.hpMax || '—'}
+            <div className="coc-detail-left">
+              <input
+                type="number"
+                className="wounds-input"
+                min={0}
+                max={99}
+                value={stats.luck ?? 0}
+                onChange={e => handleLuckChange(e.target.value)}
+              />
+            </div>
+            {gameId && (
+              <button className="coc-roll-btn" onClick={() => rollAttr('luck', stats.luck)} title={`Roll ${t('coc.luck')}`}>
+                <CasinoIcon fontSize="small" />
+              </button>
+            )}
           </div>
         </div>
         <div className="detail-item">
           <div className="detail-label">{t('coc.sanity')}</div>
           <div className="detail-value modifier-value">
-            <input
-              type="number"
-              className="wounds-input"
-              min={0}
-              max={stats.sanityMax || 99}
-              value={stats.sanity ?? stats.sanityMax ?? 0}
-              onChange={e => handleSanityChange(e.target.value)}
-            />
-            &nbsp;/ {stats.sanityMax || '—'}
+            <div className="coc-detail-left">
+              <input
+                type="number"
+                className="wounds-input"
+                min={0}
+                max={stats.sanityMax || 99}
+                value={stats.sanity ?? stats.sanityMax ?? 0}
+                onChange={e => handleSanityChange(e.target.value)}
+              />
+              <span>/ {stats.sanityMax || '—'}</span>
+            </div>
+            {gameId && (
+              <button className="coc-roll-btn" onClick={() => rollAttr('sanity', stats.sanity)} title={`Roll ${t('coc.sanity')}`}>
+                <CasinoIcon fontSize="small" />
+              </button>
+            )}
           </div>
         </div>
         <div className="detail-item">
-          <div className="detail-label">{t('coc.luck')}</div>
-          <div className="detail-value">{stats.luck ?? '—'}</div>
+          <div className="detail-label">{t('coc.hp_short')}</div>
+          <div className="detail-value modifier-value">
+            <div className="coc-detail-left">
+              <input
+                type="number"
+                className="wounds-input"
+                min={0}
+                max={stats.hpMax || 20}
+                value={stats.hp ?? stats.hpMax ?? 0}
+                onChange={e => handleHpChange(e.target.value)}
+              />
+              <span>/ {stats.hpMax || '—'}</span>
+            </div>
+          </div>
         </div>
         <div className="detail-item">
-          <div className="detail-label">{t('coc.mp')}</div>
-          <div className="detail-value">{stats.mp ?? '—'} / {stats.mpMax ?? '—'}</div>
+          <div className="detail-label">{t('coc.mp_short')}</div>
+          <div className="detail-value modifier-value">
+            <div className="coc-detail-left">
+              <input
+                type="number"
+                className="wounds-input"
+                min={0}
+                max={stats.mpMax || 99}
+                value={stats.mp ?? stats.mpMax ?? 0}
+                onChange={e => handleMpChange(e.target.value)}
+              />
+              <span>/ {stats.mpMax || '—'}</span>
+            </div>
+          </div>
         </div>
       </div>
 

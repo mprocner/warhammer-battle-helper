@@ -362,7 +362,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                   />
                 ) : baseDisplay}
               </td>
-              <td>
+              <td className="coc-skill-value-cell">
                 <input
                   type="number"
                   value={val}

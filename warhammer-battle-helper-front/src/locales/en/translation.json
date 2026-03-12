@@ -616,10 +616,12 @@
     "send": "Send"
   },
   "coc": {
-    "hp": "HP",
+    "hp": "Hit Points",
+    "hp_short": "HP",
     "sanity": "SAN",
     "luck": "Luck",
-    "mp": "MP",
+    "mp": "Magic Points",
+    "mp_short": "MP",
     "criticalSuccess": "Critical Success!",
     "extremeSuccess": "Extreme Success",
     "hardSuccess": "Hard Success",

@@ -618,9 +618,11 @@
   },
   "coc": {
     "hp": "Punkty Wytrzymałości",
+    "hp_short": "P. Wytrzymałości",
     "sanity": "Poczytalność",
     "luck": "Szczęście",
     "mp": "Punkty Magii",
+    "mp_short": "P. Magii",
     "criticalSuccess": "Krytyczny Sukces!",
     "extremeSuccess": "Ekstremalny Sukces",
     "hardSuccess": "Trudny Sukces",

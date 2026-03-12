@@ -3709,6 +3709,21 @@ align-items: center;
 }
 
 /* CharacterDetails mini panel — CoC (scoped to avoid overriding Warhammer styles) */
+
+.coc-details .detail-value.modifier-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  min-width: unset;
+}
+
+.coc-details .detail-value.modifier-value .coc-detail-left {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .coc-details .characteristics-mini {
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
@@ -3934,7 +3949,7 @@ align-items: center;
 .coc-skills-table2 {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: 13px;
   table-layout: fixed;
 }
 
@@ -3955,7 +3970,7 @@ align-items: center;
 
 .coc-skills-table2 th:nth-child(3),
 .coc-skills-table2 th:nth-child(4) {
-  width: 44px;
+  width: 56px;
 }
 
 .coc-skills-table2 th:nth-child(5),
@@ -4035,7 +4050,7 @@ align-items: center;
 }
 
 .coc-skills-table2 input[type="number"] {
-  width: 36px;
+  width: 48px;
   height: 20px;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.5);
@@ -4043,13 +4058,25 @@ align-items: center;
   color: #3a2f1f;
   padding: 0 2px;
   text-align: center;
-  font-size: 11px;
+  font-size: 13px;
   font-family: inherit;
+  -moz-appearance: textfield;
+}
+
+.coc-skills-table2 input[type="number"]::-webkit-outer-spin-button,
+.coc-skills-table2 input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .coc-skills-table2 input[type="number"]:focus {
   outline: none;
   background: #fff9f0;
+}
+
+.coc-skills-table2 .coc-skill-value-cell input[type="number"] {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .coc-skills-table2 .coc-derived-cell {
@@ -4063,6 +4090,8 @@ align-items: center;
   width: 13px;
   height: 13px;
   accent-color: #7a5c42;
+  display: block;
+  margin: auto;
 }
 
 /* bg-label / bg-textarea for background section */
