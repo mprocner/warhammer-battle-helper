@@ -50,6 +50,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const autoSaveTimer = useRef(null);
   const charNameRef = useRef(character.name || '');
   const charAvatarRef = useRef(character.avatar || '');
+  const pendingFocusKey = useRef(null);
   const editingOriginalNames = useRef({});
 
   const getCharacterSaveUrl = useCallback((charId) => {
@@ -158,6 +159,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     }));
     setEditingCustomSkills(prev => { const next = new Set(prev); next.add(key); return next; });
     setNewCustomSkills(prev => { const next = new Set(prev); next.add(key); return next; });
+    pendingFocusKey.current = key;
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
@@ -340,6 +342,12 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                     onChange={e => updateCustomSkillName(skill.key, e.target.value)}
                     onClick={e => e.stopPropagation()}
                     placeholder={t('coc.customSkillNamePlaceholder')}
+                    ref={el => {
+                      if (el && pendingFocusKey.current === skill.key) {
+                        el.focus();
+                        pendingFocusKey.current = null;
+                      }
+                    }}
                   />
                 ) : skillLabel}
               </td>
@@ -413,7 +421,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
 
   return (
     <DraggablePopup
-      title={`${character.name || '?'} — Call of Cthulhu 7e`}
+      title={`${character.name || '?'}`}
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={900}
