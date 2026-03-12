@@ -718,6 +718,8 @@
     "skill_cthulhu_mythos":   "Cthulhu Mythos",
     "skill_disguise":         "Disguise",
     "skill_dodge":            "Dodge",
+    "skill_dodge_base":       "DEX/2",
+    "skill_language_own_base": "EDU",
     "skill_drive_auto":       "Drive Auto",
     "skill_elec_repair":      "Elec. Repair",
     "skill_fast_talk":        "Fast Talk",
@@ -756,7 +758,7 @@
     "cashAndPossessions": "Cash & Possessions",
     "spendingLevel": "Spending Level",
     "cash": "Cash",
-    "dobytek": "Possessions"
+    "assets": "Possessions"
   },
   "gameSystems": {
     "warhammer4e": "Warhammer Fantasy 4e",

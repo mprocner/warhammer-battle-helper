@@ -719,6 +719,8 @@
     "skill_cthulhu_mythos":   "Mity Cthulhu",
     "skill_disguise":         "Charakteryzacja",
     "skill_dodge":            "Unik",
+    "skill_dodge_base":       "ZR/2",
+    "skill_language_own_base": "WYK",
     "skill_drive_auto":       "Prowadzenie Samochodu",
     "skill_elec_repair":      "Elektryka",
     "skill_fast_talk":        "Gadanina",
@@ -757,7 +759,7 @@
     "cashAndPossessions": "Gotówka i dobytek",
     "spendingLevel": "Poziom wydatków",
     "cash": "Gotówka",
-    "dobytek": "Dobytek"
+    "assets": "Dobytek"
   },
   "gameSystems": {
     "warhammer4e": "Warhammer Fantasy 4e",

@@ -278,8 +278,6 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const skillVal = (skill) => {
     const stored = (edited.skills || {})[skill.key];
     if (stored !== undefined) return stored;
-    if (skill.baseFormula === 'DEX/2') return half(numAttr('dex'));
-    if (skill.baseFormula === 'EDU×5') return fifth(numAttr('edu')) * 5;
     return skill.base;
   };
 
@@ -317,7 +315,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           const val = skillVal(skill);
           const isFav = (edited.favoriteSkills || []).includes(skill.key);
           const isDev = (edited.developmentSkills || []).includes(skill.key);
-          const baseDisplay = skill.baseFormula || `${skill.base}%`;
+          const baseDisplay = skill.baseLabelKey ? t(skill.baseLabelKey) : `${skill.base}%`;
           const skillLabel = skill.custom ? skill.label : t(skill.labelKey, { defaultValue: skill.label });
           const isEditing = skill.editing;
           return (
@@ -665,11 +663,11 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                   <input value={edited.cash || ''} onChange={e => setField('cash', e.target.value)} />
                 </div>
               </div>
-              <label className="coc-bg-label">{t('coc.dobytek')}</label>
+              <label className="coc-bg-label">{t('coc.assets')}</label>
               <textarea
                 className="coc-equip-textarea"
-                value={edited.dobytek || ''}
-                onChange={e => setField('dobytek', e.target.value)}
+                value={edited.assets || ''}
+                onChange={e => setField('assets', e.target.value)}
               />
             </div>
           </div>

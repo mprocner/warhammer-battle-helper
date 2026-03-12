@@ -91,6 +91,12 @@ type Stats struct {
 	// Weapons: simplified list
 	Weapons []CoCWeapon `bson:"weapons" json:"weapons"`
 
+	// Equipment & cash
+	Equipment     string `bson:"equipment" json:"equipment"`
+	SpendingLevel string `bson:"spendingLevel" json:"spendingLevel"`
+	Cash          string `bson:"cash" json:"cash"`
+	Assets        string `bson:"assets" json:"assets"`
+
 	// Background / flavour text
 	PersonalDescription    string `bson:"personalDescription" json:"personalDescription"`
 	Ideology               string `bson:"ideology" json:"ideology"`
