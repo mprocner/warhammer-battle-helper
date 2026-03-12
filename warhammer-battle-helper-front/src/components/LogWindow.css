@@ -151,11 +151,18 @@
   font-weight: 600;
   color: var(--log-brown-dark);
   font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .log-list-item__timestamp {
   font-size: 10px;
   color: var(--log-brown-medium);
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: 4px;
 }
 
 .log-list-item__description {
