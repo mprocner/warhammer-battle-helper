@@ -337,7 +337,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       audio.removeEventListener('ended', handleEnded);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, activePlaylist, activeTrackIndex, musicFiles, loop]);
+  }, [gameId, activePlaylist, activeTrackIndex, musicFiles, loop, musicState.trackUrl, musicState.trackName]);
 
   const getPlaylistTracks = useCallback((playlist) => {
     if (!playlist) return [];

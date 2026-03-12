@@ -256,13 +256,16 @@
 }
 
 .music-tab__control-btn--active {
-  background: linear-gradient(135deg, #f0e0c8 0%, #e4d0b0 100%);
-  border-color: #b8863a;
+  background: linear-gradient(135deg, #b8760a 0%, #8b5e1a 100%);
+  border-color: #f0c060;
+  color: #fff8e8;
+  box-shadow: 0 0 6px rgba(184, 118, 10, 0.6);
 }
 
 .music-tab__control-btn--active:hover {
-  background: linear-gradient(135deg, #e4d0b0 0%, #d4c4a8 100%);
-  border-color: #8b5e2b;
+  background: linear-gradient(135deg, #d08820 0%, #a06a20 100%);
+  border-color: #f5d070;
+  box-shadow: 0 0 10px rgba(184, 118, 10, 0.8);
 }
 
 /* Volume Control */
