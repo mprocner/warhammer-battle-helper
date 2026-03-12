@@ -1,5 +1,9 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 import DraggablePopup from '../common/DraggablePopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
@@ -22,7 +26,7 @@ import AdvancedSkillsSection from './sections/AdvancedSkillsSection';
 import SpellsSection from './sections/SpellsSection';
 import NotesSection from './sections/NotesSection';
 
-function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false }) {
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false }) {
     const { t } = useTranslation();
 
     const {
@@ -115,18 +119,35 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         return current[shortKey] || 0;
     }, [editedCharacter.characteristics]);
 
+    const handlePopOut = useCallback(() => {
+        const params = new URLSearchParams({ characterId: character.id });
+        if (gameId) params.set('gameId', gameId);
+        window.open(`/character-sheet?${params.toString()}`, '_blank', 'width=1400,height=900,noopener');
+    }, [character.id, gameId]);
+
     const headerButtons = (
-        <button
-            className="save-btn-sheet"
-            onClick={(e) => {
-                e.stopPropagation();
-                handleSave();
-            }}
-            disabled={isSaving}
-            title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
-        >
-            {isSaving ? '⏳' : saveSuccess ? '✓' : '💾'}
-        </button>
+        <>
+            {!isStandalone && (
+                <button
+                    className="pop-out-btn-sheet"
+                    onClick={(e) => { e.stopPropagation(); handlePopOut(); }}
+                    title={t('characterSheet.popOut', 'Open in new window')}
+                >
+                    <OpenInNewIcon style={{ fontSize: 16 }} />
+                </button>
+            )}
+            <button
+                className="save-btn-sheet"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave();
+                }}
+                disabled={isSaving}
+                title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
+            >
+                {isSaving ? <HourglassEmptyIcon style={{ fontSize: 16 }} /> : saveSuccess ? <CheckIcon style={{ fontSize: 16 }} /> : <SaveIcon style={{ fontSize: 16 }} />}
+            </button>
+        </>
     );
 
     const sharedSkillProps = {
@@ -139,6 +160,88 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         getCharacteristicValue
     };
 
+    const sheetContent = (
+        <div className="two-page-layout">
+            {/* LEFT SIDE */}
+            <div className="page-one">
+                <CharacterInfoSection
+                    character={editedCharacter}
+                    onFieldChange={handleFieldChange}
+                />
+                <ResourceBoxesSection
+                    character={editedCharacter}
+                    onFieldChange={handleFieldChange}
+                />
+                <TalentsSection
+                    character={editedCharacter}
+                    setCharacter={setEditedCharacter}
+                    scheduleAutoSave={scheduleAutoSave}
+                />
+                <WeaponsSection
+                    character={editedCharacter}
+                    setCharacter={setEditedCharacter}
+                    scheduleAutoSave={scheduleAutoSave}
+                    onCharacterUpdate={onCharacterUpdate}
+                    getCharacterSaveUrl={getCharacterSaveUrl}
+                />
+                <ArmourSection
+                    character={editedCharacter}
+                    setCharacter={setEditedCharacter}
+                    scheduleAutoSave={scheduleAutoSave}
+                />
+                <ArmourPointsSection
+                    armourPoints={editedCharacter.armourPoints}
+                    onFieldChange={handleFieldChange}
+                />
+                <WealthSection
+                    character={editedCharacter}
+                    onFieldChange={handleFieldChange}
+                />
+            </div>
+
+            {/* RIGHT SIDE */}
+            <div className="page-one-right">
+                <CharacteristicsSection
+                    character={editedCharacter}
+                    onFieldChange={handleFieldChange}
+                    onCharacteristicClick={handleCharacteristicClick}
+                />
+                <BasicSkillsSection {...sharedSkillProps} />
+                <WeaponSkillsSection {...sharedSkillProps} />
+                <MagicSkillsSection {...sharedSkillProps} />
+                <AdvancedSkillsSection {...sharedSkillProps} />
+                <SpellsSection
+                    character={editedCharacter}
+                    setCharacter={setEditedCharacter}
+                    scheduleAutoSave={scheduleAutoSave}
+                />
+                <NotesSection
+                    character={editedCharacter}
+                    onFieldChange={handleFieldChange}
+                />
+            </div>
+        </div>
+    );
+
+    if (isStandalone) {
+        return (
+            <>
+                <div className="sheet-standalone character-sheet-popup">
+                    <div className="sheet-standalone__content">
+                        {sheetContent}
+                    </div>
+                </div>
+                {showModifierModal && (
+                    <ModifierSelectionModal
+                        mousePosition={mousePosition}
+                        onConfirm={handleModifierConfirm}
+                        onCancel={handleModifierCancel}
+                    />
+                )}
+            </>
+        );
+    }
+
     return (
         <>
             <DraggablePopup
@@ -146,66 +249,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 onClose={onClose}
                 headerButtons={headerButtons}
             >
-                <div className="two-page-layout">
-                    {/* LEFT SIDE */}
-                    <div className="page-one">
-                        <CharacterInfoSection
-                            character={editedCharacter}
-                            onFieldChange={handleFieldChange}
-                        />
-                        <ResourceBoxesSection
-                            character={editedCharacter}
-                            onFieldChange={handleFieldChange}
-                        />
-                        <TalentsSection
-                            character={editedCharacter}
-                            setCharacter={setEditedCharacter}
-                            scheduleAutoSave={scheduleAutoSave}
-                        />
-                        <WeaponsSection
-                            character={editedCharacter}
-                            setCharacter={setEditedCharacter}
-                            scheduleAutoSave={scheduleAutoSave}
-                            onCharacterUpdate={onCharacterUpdate}
-                            getCharacterSaveUrl={getCharacterSaveUrl}
-                        />
-                        <ArmourSection
-                            character={editedCharacter}
-                            setCharacter={setEditedCharacter}
-                            scheduleAutoSave={scheduleAutoSave}
-                        />
-                        <ArmourPointsSection
-                            armourPoints={editedCharacter.armourPoints}
-                            onFieldChange={handleFieldChange}
-                        />
-                        <WealthSection
-                            character={editedCharacter}
-                            onFieldChange={handleFieldChange}
-                        />
-                    </div>
-
-                    {/* RIGHT SIDE */}
-                    <div className="page-one-right">
-                        <CharacteristicsSection
-                            character={editedCharacter}
-                            onFieldChange={handleFieldChange}
-                            onCharacteristicClick={handleCharacteristicClick}
-                        />
-                        <BasicSkillsSection {...sharedSkillProps} />
-                        <WeaponSkillsSection {...sharedSkillProps} />
-                        <MagicSkillsSection {...sharedSkillProps} />
-                        <AdvancedSkillsSection {...sharedSkillProps} />
-                        <SpellsSection
-                            character={editedCharacter}
-                            setCharacter={setEditedCharacter}
-                            scheduleAutoSave={scheduleAutoSave}
-                        />
-                        <NotesSection
-                            character={editedCharacter}
-                            onFieldChange={handleFieldChange}
-                        />
-                    </div>
-                </div>
+                {sheetContent}
             </DraggablePopup>
 
             {showModifierModal && (

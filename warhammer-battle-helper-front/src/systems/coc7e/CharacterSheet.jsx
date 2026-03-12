@@ -6,6 +6,9 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SaveIcon from '@mui/icons-material/Save';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import DraggablePopup from '../../components/common/DraggablePopup';
 import AvatarUpload from '../../components/character-sheet/AvatarUpload';
 import axiosInstance from '../../api/axios';
@@ -24,7 +27,7 @@ const ATTRIBUTES = [
   { key: 'mov', labelKey: 'coc.attr_mov', simple: true },
 ];
 
-function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false }) {
+function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false }) {
   const { t } = useTranslation();
   const stats = character.stats || {};
 
@@ -283,15 +286,30 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     return skill.base;
   };
 
+  const handlePopOut = useCallback(() => {
+    const params = new URLSearchParams({ characterId: character.id });
+    if (gameId) params.set('gameId', gameId);
+    window.open(`/character-sheet?${params.toString()}`, '_blank', 'width=1400,height=900,noopener');
+  }, [character.id, gameId]);
+
   const headerButtons = (
-    <button
-      className="save-btn-sheet"
-      onClick={(e) => { e.stopPropagation(); handleSave(); }}
-      disabled={isSaving}
-      title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
-    >
-      {isSaving ? '⏳' : saveSuccess ? '✓' : '💾'}
-    </button>
+    <>
+      <button
+        className="pop-out-btn-sheet"
+        onClick={(e) => { e.stopPropagation(); handlePopOut(); }}
+        title={t('characterSheet.popOut', 'Open in new window')}
+      >
+        <OpenInNewIcon style={{ fontSize: 16 }} />
+      </button>
+      <button
+        className="save-btn-sheet"
+        onClick={(e) => { e.stopPropagation(); handleSave(); }}
+        disabled={isSaving}
+        title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
+      >
+        {isSaving ? <HourglassEmptyIcon style={{ fontSize: 16 }} /> : saveSuccess ? <CheckIcon style={{ fontSize: 16 }} /> : <SaveIcon style={{ fontSize: 16 }} />}
+      </button>
+    </>
   );
 
   // Skills split into two columns
@@ -419,14 +437,8 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     </table>
   );
 
-  return (
-    <DraggablePopup
-      title={`${character.name || '?'}`}
-      onClose={onClose}
-      headerButtons={headerButtons}
-      initialWidth={900}
-    >
-      <div className="coc-sheet-layout">
+  const sheetContent = (
+    <div className="coc-sheet-layout">
         {/* TOP ROW — Info + Resources | Characteristics */}
         <div className="coc-top-row">
           <div className="coc-col-info">
@@ -710,6 +722,26 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           </div>
         </div>
       </div>
+  );
+
+  if (isStandalone) {
+    return (
+      <div className="sheet-standalone character-sheet-popup">
+        <div className="sheet-standalone__content">
+          {sheetContent}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <DraggablePopup
+      title={`${character.name || '?'}`}
+      onClose={onClose}
+      headerButtons={headerButtons}
+      initialWidth={900}
+    >
+      {sheetContent}
     </DraggablePopup>
   );
 }

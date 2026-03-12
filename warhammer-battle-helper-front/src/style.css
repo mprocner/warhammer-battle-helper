@@ -2433,6 +2433,46 @@ align-items: center;
     border-color: #c92a2a;
 }
 
+.character-sheet-popup .pop-out-btn-sheet {
+    background: rgba(58, 47, 31, 0.25);
+    border: 1px solid #7a5c42;
+    border-radius: 4px;
+    color: #d4b896;
+    cursor: pointer;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.character-sheet-popup .pop-out-btn-sheet:hover {
+    background: rgba(58, 47, 31, 0.4);
+    border-color: #f4e8d8;
+}
+
+/* Standalone character sheet page */
+.sheet-standalone {
+    width: 100vw;
+    min-height: 100vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+/* Override popup positioning when used as standalone page */
+.sheet-standalone.character-sheet-popup {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    z-index: auto;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+}
+
+.sheet-standalone__content {
+    padding: 12px;
+}
+
 .character-sheet-popup .sheet-content {
     padding: 12px;
     max-height: calc(90vh - 80px);

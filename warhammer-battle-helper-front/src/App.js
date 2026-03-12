@@ -11,6 +11,7 @@ import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
+import CharacterSheetPage from './components/CharacterSheetPage';
 
 function App() {
     const [, setLogs] = useState([
@@ -103,7 +104,9 @@ function App() {
             <CssBaseline />
             <Router>
                 <div className="App">
-                    <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
+                    {window.location.pathname !== '/character-sheet' && (
+                        <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
+                    )}
 
                     <Routes>
                     <Route
@@ -121,6 +124,12 @@ function App() {
                             <Navigate to="/" replace /> :
                             <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
                         }
+                    />
+
+                    {/* Standalone character sheet window */}
+                    <Route
+                        path="/character-sheet"
+                        element={<CharacterSheetPage />}
                     />
 
                     {/* Game Lobby - Main multiplayer hub */}
