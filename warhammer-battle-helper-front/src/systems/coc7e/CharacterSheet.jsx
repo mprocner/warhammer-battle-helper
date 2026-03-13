@@ -51,6 +51,20 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const [editingCustomSkills, setEditingCustomSkills] = useState(() => new Set());
   const [newCustomSkills, setNewCustomSkills] = useState(() => new Set());
 
+  // Sync resource fields changed from the left panel (CharacterDetails)
+  React.useEffect(() => {
+    setEdited(prev => ({
+      ...prev,
+      hp: character.stats?.hp ?? prev.hp,
+      hpMax: character.stats?.hpMax ?? prev.hpMax,
+      sanity: character.stats?.sanity ?? prev.sanity,
+      luck: character.stats?.luck ?? prev.luck,
+      mp: character.stats?.mp ?? prev.mp,
+      mpMax: character.stats?.mpMax ?? prev.mpMax,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character.stats?.hp, character.stats?.hpMax, character.stats?.sanity, character.stats?.luck, character.stats?.mp, character.stats?.mpMax]);
+
   const autoSaveTimer = useRef(null);
   const charNameRef = useRef(character.name || '');
   const charAvatarRef = useRef(character.avatar || '');
