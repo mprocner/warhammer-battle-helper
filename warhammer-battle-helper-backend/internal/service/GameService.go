@@ -432,7 +432,7 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.
-func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return nil, fmt.Errorf("game not found: %w", err)
@@ -448,7 +448,7 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		return nil, err
 	}
 
-	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier)
+	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier, diceMod)
 	if err != nil {
 		return nil, err
 	}
@@ -468,6 +468,8 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 		"outcome":       rollResult.Outcome,
 		"successLevel":  rollResult.SuccessLevel,
 		"modifier":      modifier,
+		"diceMod":       diceMod,
+		"allRolls":      rollResult.AllRolls,
 		"username":      username,
 	}
 
@@ -486,7 +488,7 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, ch
 }
 
 // RollWeapon rolls a weapon attack dispatched through the game system registry.
-func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return nil, fmt.Errorf("game not found: %w", err)
@@ -502,7 +504,7 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		return nil, err
 	}
 
-	rollResult, err := plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier)
+	rollResult, err := plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier, diceMod)
 	if err != nil {
 		return nil, err
 	}
@@ -524,6 +526,8 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		"outcome":         rollResult.Outcome,
 		"successLevel":    rollResult.SuccessLevel,
 		"modifier":        modifier,
+		"diceMod":         diceMod,
+		"allRolls":        rollResult.AllRolls,
 		"username":        username,
 	}
 

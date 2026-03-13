@@ -249,6 +249,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 	var req struct {
 		Skill       string `json:"skill" binding:"required"`
 		Modifier    int    `json:"modifier"`
+		DiceMod     int    `json:"diceMod"`
 		CharacterID string `json:"characterId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -268,7 +269,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.CharacterID, userID, username)
+	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.DiceMod, req.CharacterID, userID, username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -286,6 +287,7 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 		WeaponSkill string `json:"weaponSkill" binding:"required"`
 		Damage      string `json:"damage"`
 		Modifier    int    `json:"modifier"`
+		DiceMod     int    `json:"diceMod"`
 		CharacterID string `json:"characterId" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -305,7 +307,7 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.CharacterID, userID, username)
+	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.DiceMod, req.CharacterID, userID, username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

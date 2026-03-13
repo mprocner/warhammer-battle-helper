@@ -78,6 +78,59 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 
 func rollD100() int { return rand.Intn(100) + 1 }
 
+// rollWithDiceMod rolls a D100 applying CoC 7e bonus/penalty dice mechanics.
+// diceMod > 0 = bonus dice (pick lowest), diceMod < 0 = penalty dice (pick highest).
+// Returns the final roll and all candidate values.
+func rollWithDiceMod(diceMod int) (int, []int) {
+	main := rollD100()
+	units := main % 10
+	alts := []int{main}
+	for i := 0; i < abs(diceMod); i++ {
+		extraTens := rand.Intn(10) // 0–9
+		alt := extraTens*10 + units
+		if alt == 0 {
+			alt = 100 // 00+0 = 100 (fumble)
+		}
+		alts = append(alts, alt)
+	}
+	var final int
+	if diceMod > 0 {
+		final = minSlice(alts)
+	} else if diceMod < 0 {
+		final = maxSlice(alts)
+	} else {
+		final = main
+	}
+	return final, alts
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func minSlice(s []int) int {
+	m := s[0]
+	for _, v := range s[1:] {
+		if v < m {
+			m = v
+		}
+	}
+	return m
+}
+
+func maxSlice(s []int) int {
+	m := s[0]
+	for _, v := range s[1:] {
+		if v > m {
+			m = v
+		}
+	}
+	return m
+}
+
 // outcomeCoC returns a CoC 7e outcome string based on the roll and skill percentage.
 func outcomeCoC(roll, skillPct int) string {
 	// Critical / Impale
@@ -205,7 +258,8 @@ func attrRollName(attrName string) string {
 // skillKey should match a key in Stats.Skills (e.g. "fighting_brawl"),
 // or use "attr_<name>" prefix for characteristic rolls (e.g. "attr_str" → STR×5).
 // modifier is applied directly to the skill percentage.
-func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.RollResult, error) {
+// diceMod: +1/+2 bonus dice (pick lowest), -1/-2 penalty dice (pick highest).
+func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err
@@ -245,7 +299,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.R
 	}
 
 	target := skillPct + modifier
-	roll := rollD100()
+	roll, allRolls := rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
 	return &gsys.RollResult{
@@ -256,11 +310,14 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.R
 		SkillKey:  skillKey,
 		SkillName: skillName,
 		Modifier:  modifier,
+		DiceMod:   diceMod,
+		AllRolls:  allRolls,
 	}, nil
 }
 
 // RollWeapon performs a CoC 7e weapon attack (hit test + damage roll).
-func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage string, modifier int) (*gsys.RollResult, error) {
+// diceMod: +1/+2 bonus dice (pick lowest), -1/-2 penalty dice (pick highest).
+func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage string, modifier int, diceMod int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err
@@ -272,7 +329,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	}
 
 	target := skillPct + modifier
-	roll := rollD100()
+	roll, allRolls := rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
 	damageRoll, damageBreakdown := rollDamage(damage, stats.DamageBonus)
@@ -287,6 +344,8 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 		DamageRoll:      damageRoll,
 		DamageBreakdown: damageBreakdown,
 		Modifier:        modifier,
+		DiceMod:         diceMod,
+		AllRolls:        allRolls,
 	}, nil
 }
 

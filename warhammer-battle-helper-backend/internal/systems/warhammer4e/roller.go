@@ -132,7 +132,7 @@ var attrShortToChar = map[string]string{
 }
 
 // RollSkill performs a Warhammer skill/characteristic check.
-func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, _ int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int) (*gsys.R
 }
 
 // RollWeapon performs a Warhammer weapon attack (hit test + damage roll).
-func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage string, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage string, modifier int, _ int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err

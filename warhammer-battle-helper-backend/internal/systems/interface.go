@@ -28,15 +28,19 @@ type RollResult struct {
 	// Optional sanity-specific (CoC)
 	SanLoss       string `json:"sanLoss,omitempty"`
 	SanLossResult int    `json:"sanLossResult,omitempty"`
+
+	// Optional bonus/penalty dice (CoC)
+	DiceMod  int   `json:"diceMod,omitempty"`  // +1/+2 bonus, -1/-2 penalty
+	AllRolls []int `json:"allRolls,omitempty"` // all candidates; final = Roll
 }
 
 // GameSystem is the interface every game-system plugin must implement.
 type GameSystem interface {
 	// RollSkill performs a skill/characteristic check.
-	RollSkill(stats bson.Raw, skillKey string, modifier int) (*RollResult, error)
+	RollSkill(stats bson.Raw, skillKey string, modifier int, diceMod int) (*RollResult, error)
 
 	// RollWeapon performs a weapon attack roll (hit + damage).
-	RollWeapon(stats bson.Raw, weaponName, weaponSkill, damage string, modifier int) (*RollResult, error)
+	RollWeapon(stats bson.Raw, weaponName, weaponSkill, damage string, modifier int, diceMod int) (*RollResult, error)
 
 	// DefaultStats returns a zero-value stats document encoded as BSON
 	// that can be stored on newly created characters.

@@ -7,6 +7,7 @@ import Avatar from '../../components/Avatar';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CoCCharacterSheet from './CharacterSheet';
+import CoCDiceModOverlay from './CoCDiceModOverlay';
 import skillsData from './skills.json';
 
 const COC_ATTRS = [
@@ -92,14 +93,14 @@ function CoCCharacterDetails({
     }
   };
 
-  const rollAttr = async (attrKey, attrVal) => {
+  const rollAttr = async (attrKey, attrVal, diceMod = 0) => {
     if (!gameId || !token || !attrVal) return;
     const skillKey = `attr_${attrKey}`;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
       });
     } catch (err) {
       console.error('Roll error:', err);
@@ -107,7 +108,7 @@ function CoCCharacterDetails({
     }
   };
 
-  const rollWeapon = async (weapon) => {
+  const rollWeapon = async (weapon, diceMod = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
@@ -118,6 +119,7 @@ function CoCCharacterDetails({
           weaponSkill: weapon.skillKey,
           damage: weapon.damage,
           modifier: 0,
+          diceMod,
           characterId: character.id
         })
       });
@@ -126,13 +128,13 @@ function CoCCharacterDetails({
     }
   };
 
-  const rollSkill = async (skillKey) => {
+  const rollSkill = async (skillKey, diceMod = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
       });
     } catch (err) {
       console.error('Roll error:', err);
@@ -212,9 +214,11 @@ function CoCCharacterDetails({
               />
             </div>
             {gameId && (
-              <button className="coc-roll-btn" onClick={() => rollAttr('luck', stats.luck)} title={`Roll ${t('coc.luck')}`}>
-                <CasinoIcon fontSize="small" />
-              </button>
+              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('luck', stats.luck, d)} disabled={!gameId}>
+                <button className="coc-roll-btn" title={`Roll ${t('coc.luck')}`}>
+                  <CasinoIcon fontSize="small" />
+                </button>
+              </CoCDiceModOverlay>
             )}
           </div>
         </div>
@@ -233,9 +237,11 @@ function CoCCharacterDetails({
               <span>/ {stats.sanityMax || '—'}</span>
             </div>
             {gameId && (
-              <button className="coc-roll-btn" onClick={() => rollAttr('sanity', stats.sanity)} title={`Roll ${t('coc.sanity')}`}>
-                <CasinoIcon fontSize="small" />
-              </button>
+              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('sanity', stats.sanity, d)} disabled={!gameId}>
+                <button className="coc-roll-btn" title={`Roll ${t('coc.sanity')}`}>
+                  <CasinoIcon fontSize="small" />
+                </button>
+              </CoCDiceModOverlay>
             )}
           </div>
         </div>
@@ -279,16 +285,16 @@ function CoCCharacterDetails({
           const val = stats[key] || 0;
           const label = t(labelKey);
           return (
-            <button
-              key={key}
-              className="char-box char-box-button"
-              onClick={() => rollAttr(key, val)}
-              disabled={!val}
-              title={`Roll ${label}`}
-            >
-              <div className="char-box-label">{label}</div>
-              <div className="char-box-value">{val || '—'}</div>
-            </button>
+            <CoCDiceModOverlay key={key} onDiceModRoll={(d) => rollAttr(key, val, d)} disabled={!val || !gameId}>
+              <button
+                className="char-box char-box-button"
+                disabled={!val}
+                title={`Roll ${label}`}
+              >
+                <div className="char-box-label">{label}</div>
+                <div className="char-box-value">{val || '—'}</div>
+              </button>
+            </CoCDiceModOverlay>
           );
         })}
       </div>
@@ -299,16 +305,16 @@ function CoCCharacterDetails({
           <div className="favorite-skills-label"><GpsFixedIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('coc.weapons')}</div>
           <div className="favorite-skills-grid">
             {favoriteWeapons.map((weapon, idx) => (
-              <button
-                key={idx}
-                className="skill-box skill-box-button"
-                onClick={() => rollWeapon(weapon)}
-                disabled={!gameId}
-                title={weapon.skillLabel}
-              >
-                <div className="skill-box-label">{weapon.name}</div>
-                <div className="skill-box-value">{weapon.value}</div>
-              </button>
+              <CoCDiceModOverlay key={idx} onDiceModRoll={(d) => rollWeapon(weapon, d)} disabled={!gameId}>
+                <button
+                  className="skill-box skill-box-button"
+                  disabled={!gameId}
+                  title={weapon.skillLabel}
+                >
+                  <div className="skill-box-label">{weapon.name}</div>
+                  <div className="skill-box-value">{weapon.value}</div>
+                </button>
+              </CoCDiceModOverlay>
             ))}
           </div>
         </div>
@@ -320,16 +326,16 @@ function CoCCharacterDetails({
           <div className="favorite-skills-label"><StarIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('favoriteSkills')}</div>
           <div className="favorite-skills-grid">
             {favoriteSkills.map(skill => (
-              <button
-                key={skill.key}
-                className="skill-box skill-box-button"
-                onClick={() => rollSkill(skill.key)}
-                disabled={!gameId}
-                title={skill.label}
-              >
-                <div className="skill-box-label">{skill.label}</div>
-                <div className="skill-box-value">{skill.value}</div>
-              </button>
+              <CoCDiceModOverlay key={skill.key} onDiceModRoll={(d) => rollSkill(skill.key, d)} disabled={!gameId}>
+                <button
+                  className="skill-box skill-box-button"
+                  disabled={!gameId}
+                  title={skill.label}
+                >
+                  <div className="skill-box-label">{skill.label}</div>
+                  <div className="skill-box-value">{skill.value}</div>
+                </button>
+              </CoCDiceModOverlay>
             ))}
           </div>
         </div>

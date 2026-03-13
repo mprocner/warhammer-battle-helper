@@ -97,6 +97,22 @@ function CoCSkillRoll({ data, timestamp }) {
           {t(label)}
         </div>
 
+        {/* Bonus / Penalty dice summary */}
+        {data.allRolls?.length > 1 && (
+          <div style={{ fontSize: 13, color: 'var(--log-brown-dark, #5a4a3a)', marginTop: 2 }}>
+            {data.diceMod > 0
+              ? t('coc.bonusDice', { count: data.diceMod })
+              : t('coc.penaltyDice', { count: Math.abs(data.diceMod) })}
+            {' · '}
+            {t('coc.allRolls')}{': '}
+            {data.allRolls.map((r, i) => (
+              <span key={i} style={{ fontSize: 15, fontWeight: r === data.roll ? 700 : 400, textDecoration: r === data.roll ? 'underline' : 'none', marginRight: 4 }}>
+                {r}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Hard / Extreme thresholds hint */}
         <div style={{ fontSize: 12, color: 'var(--log-brown-dark, #5a4a3a)', marginTop: 2 }}>
           {t('coc.hard')}: {Math.floor(data.target / 2)}

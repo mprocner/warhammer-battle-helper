@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import CoCDiceModOverlay from './CoCDiceModOverlay';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -211,33 +212,33 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
-  const rollAttr = useCallback(async (attrKey) => {
+  const rollAttr = useCallback(async (attrKey, diceMod = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `attr_${attrKey}`, modifier: 0, characterId: character.id })
+        body: JSON.stringify({ skill: `attr_${attrKey}`, modifier: 0, diceMod, characterId: character.id })
       });
     } catch (err) {
       console.error('Roll error:', err);
     }
   }, [gameId, token, character.id]);
 
-  const rollSkill = useCallback(async (skillKey) => {
+  const rollSkill = useCallback(async (skillKey, diceMod = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
       });
     } catch (err) {
       console.error('Roll error:', err);
     }
   }, [gameId, token, character.id]);
 
-  const rollWeapon = useCallback(async (weapon) => {
+  const rollWeapon = useCallback(async (weapon, diceMod = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
@@ -248,6 +249,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           weaponSkill: weapon.skillKey,
           damage: weapon.damage,
           modifier: 0,
+          diceMod,
           characterId: character.id
         })
       });
@@ -350,7 +352,6 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
               <td
                 className={`coc-skill-name-cell${isEditing ? ' coc-skill-name-cell--custom' : ''}`}
                 title={!isEditing ? skillLabel : undefined}
-                onClick={() => !isEditing && gameId && rollSkill(skill.key)}
               >
                 {isEditing ? (
                   <input
@@ -367,7 +368,11 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                       }
                     }}
                   />
-                ) : skillLabel}
+                ) : (
+                  <CoCDiceModOverlay onDiceModRoll={(d) => { rollSkill(skill.key, d); }} disabled={!gameId}>
+                    <span style={{ display: 'block', width: '100%', height: '100%' }}>{skillLabel}</span>
+                  </CoCDiceModOverlay>
+                )}
               </td>
               <td className="coc-derived-cell">
                 {isEditing ? (
@@ -495,7 +500,11 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                       <span className="coc-resource-pair__derived">{edited.sanityMax ?? 99}</span>
                     </div>
                   </div>
-                  {gameId && <button className="coc-roll-btn coc-roll-btn--lg" onClick={() => rollAttr('sanity')} title="Roll Sanity"><CasinoIcon fontSize="large" /></button>}
+                  {gameId && (
+                    <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('sanity', d)} disabled={!gameId}>
+                      <button className="coc-roll-btn coc-roll-btn--lg" title="Roll Sanity"><CasinoIcon fontSize="large" /></button>
+                    </CoCDiceModOverlay>
+                  )}
                 </div>
                 <div className="coc-resource-pair coc-resource-pair--featured coc-resource-pair--rollable">
                   <div className="coc-resource-pair__body">
@@ -504,7 +513,11 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                       <input type="number" value={edited.luck ?? ''} onChange={e => setField('luck', parseInt(e.target.value) || 0)} />
                     </div>
                   </div>
-                  {gameId && <button className="coc-roll-btn coc-roll-btn--lg" onClick={() => rollAttr('luck')} title="Roll Luck"><CasinoIcon fontSize="large" /></button>}
+                  {gameId && (
+                    <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('luck', d)} disabled={!gameId}>
+                      <button className="coc-roll-btn coc-roll-btn--lg" title="Roll Luck"><CasinoIcon fontSize="large" /></button>
+                    </CoCDiceModOverlay>
+                  )}
                 </div>
                 <div className="coc-resource-pair">
                   <label>{t('coc.damageBonus')}</label>
@@ -526,10 +539,9 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                 {ATTRIBUTES.map(({ key, labelKey, simple }) => {
                   const val = numAttr(key);
                   return (
+                    <CoCDiceModOverlay key={key} onDiceModRoll={(d) => rollAttr(key, d)} disabled={!gameId}>
                     <div
-                      key={key}
                       className={`coc-attr-card${simple ? ' coc-attr-card--simple' : ''}${gameId ? ' coc-attr-card--clickable' : ''}`}
-                      onClick={() => gameId && rollAttr(key)}
                       title={gameId ? `Roll ${t(labelKey)}` : undefined}
                     >
                       <div className="coc-attr-card__name">{t(labelKey)}</div>
@@ -555,6 +567,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                         </div>
                       )}
                     </div>
+                    </CoCDiceModOverlay>
                   );
                 })}
               </div>
@@ -629,9 +642,11 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                     </td>
                     <td className="coc-weapons-table__actions">
                       {gameId && (
-                        <button className="coc-roll-btn" onClick={() => rollWeapon(w)} title={t('coc.rollWeapon')}>
-                          <CasinoIcon fontSize="small" />
-                        </button>
+                        <CoCDiceModOverlay onDiceModRoll={(d) => rollWeapon(w, d)} disabled={!gameId}>
+                          <button className="coc-roll-btn" title={t('coc.rollWeapon')}>
+                            <CasinoIcon fontSize="small" />
+                          </button>
+                        </CoCDiceModOverlay>
                       )}
                       {i !== 0 && (
                         <button

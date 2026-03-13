@@ -62,6 +62,22 @@ function CoCWeaponRoll({ data, timestamp }) {
           {t(label)}
         </div>
 
+        {/* Bonus / Penalty dice summary */}
+        {data.allRolls?.length > 1 && (
+          <div style={{ fontSize: 13, color: 'var(--log-brown-dark, #5a4a3a)', marginTop: 2 }}>
+            {data.diceMod > 0
+              ? t('coc.bonusDice', { count: data.diceMod })
+              : t('coc.penaltyDice', { count: Math.abs(data.diceMod) })}
+            {' · '}
+            {t('coc.allRolls')}{': '}
+            {data.allRolls.map((r, i) => (
+              <span key={i} style={{ fontSize: 15, fontWeight: r === data.roll ? 700 : 400, textDecoration: r === data.roll ? 'underline' : 'none', marginRight: 4 }}>
+                {r}
+              </span>
+            ))}
+          </div>
+        )}
+
         {isSuccess && data.damageRoll != null && (
           <div className="log-list-item__damage">
             {t('coc.damage')}: <strong style={{ color: resultColor }}>
