@@ -652,6 +652,9 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                         <option value="fighting_brawl">{t('coc.skill_fighting_brawl')}</option>
                         <option value="firearms_handgun">{t('coc.skill_firearms_handgun')}</option>
                         <option value="firearms_rifle">{t('coc.skill_firearms_rifle')}</option>
+                        {(edited.customSkills || []).filter(cs => cs.name).map(cs => (
+                          <option key={cs.key} value={cs.key}>{cs.name}</option>
+                        ))}
                       </select>
                     </td>
                     <td className="coc-weapons-table__actions">
