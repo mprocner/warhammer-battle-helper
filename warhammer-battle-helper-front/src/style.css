@@ -3818,7 +3818,7 @@ align-items: center;
   display: flex;
   gap: 2px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 /* Roll log — CoC outcome & thresholds */

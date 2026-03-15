@@ -267,7 +267,7 @@ func (r *UserRepository) GetSubfolders(userID primitive.ObjectID, parentID primi
 
 // --- MUSIC METHODS ---
 
-// GetUserWithMusic returns user with music files and playlists
+// GetUserWithMusic returns user with music files, folders and playlists
 func (r *UserRepository) GetUserWithMusic(userID primitive.ObjectID) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -281,11 +281,136 @@ func (r *UserRepository) GetUserWithMusic(userID primitive.ObjectID) (*models.Us
 	if user.Music == nil {
 		user.Music = []models.MusicFile{}
 	}
+	if user.MusicFolders == nil {
+		user.MusicFolders = []models.MusicFolder{}
+	}
 	if user.Playlists == nil {
 		user.Playlists = []models.Playlist{}
 	}
 
 	return &user, nil
+}
+
+// AddMusicFolder adds a new folder to user's musicFolders array
+func (r *UserRepository) AddMusicFolder(userID primitive.ObjectID, folder models.MusicFolder) (*models.MusicFolder, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	folder.ID = primitive.NewObjectID()
+	folder.CreatedAt = time.Now()
+	folder.UpdatedAt = time.Now()
+
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": userID, "musicFolders": nil},
+		bson.M{"$set": bson.M{"musicFolders": bson.A{}}},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	update := bson.M{"$push": bson.M{"musicFolders": folder}}
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return &folder, nil
+}
+
+// UpdateMusicFolder updates a music folder's name
+func (r *UserRepository) UpdateMusicFolder(userID primitive.ObjectID, folderID primitive.ObjectID, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": userID, "musicFolders._id": folderID}
+	update := bson.M{"$set": bson.M{
+		"musicFolders.$.name":      name,
+		"musicFolders.$.updatedAt": time.Now(),
+	}}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
+}
+
+// DeleteMusicFolder removes a folder from user's musicFolders array
+func (r *UserRepository) DeleteMusicFolder(userID primitive.ObjectID, folderID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{"$pull": bson.M{"musicFolders": bson.M{"_id": folderID}}}
+	_, err := r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	return err
+}
+
+// DeleteMusicFilesInFolder removes all music files in a specific folder and returns them
+func (r *UserRepository) DeleteMusicFilesInFolder(userID primitive.ObjectID, folderID primitive.ObjectID) ([]models.MusicFile, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	var deleted []models.MusicFile
+	for _, f := range user.Music {
+		if f.FolderID != nil && *f.FolderID == folderID {
+			deleted = append(deleted, f)
+		}
+	}
+
+	update := bson.M{"$pull": bson.M{"music": bson.M{"folderId": folderID}}}
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": userID}, update)
+	if err != nil {
+		return nil, err
+	}
+
+	return deleted, nil
+}
+
+// GetMusicSubfolders returns all direct subfolders of a music folder
+func (r *UserRepository) GetMusicSubfolders(userID primitive.ObjectID, parentID primitive.ObjectID) ([]models.MusicFolder, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	var subfolders []models.MusicFolder
+	for _, f := range user.MusicFolders {
+		if f.ParentID != nil && *f.ParentID == parentID {
+			subfolders = append(subfolders, f)
+		}
+	}
+	return subfolders, nil
+}
+
+// MoveMusicFile updates a music file's folderId
+func (r *UserRepository) MoveMusicFile(userID primitive.ObjectID, fileID primitive.ObjectID, folderID *primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": userID, "music._id": fileID}
+	update := bson.M{"$set": bson.M{"music.$.folderId": folderID}}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }
 
 // AddMusicFiles adds multiple music files to user's music array

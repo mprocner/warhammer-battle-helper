@@ -477,7 +477,17 @@
     "deletePlaylistError": "Failed to delete playlist",
     "updatePlaylistError": "Failed to update playlist",
     "searchPlaceholder": "Search tracks...",
-    "editPlaylist": "Edit playlist"
+    "editPlaylist": "Edit playlist",
+    "createFolder": "New Folder",
+    "renameFolder": "Rename folder",
+    "deleteFolder": "Delete folder",
+    "folderNamePlaceholder": "Enter folder name...",
+    "folderHasContents": "This folder contains files. Delete all contents?",
+    "moveMusicError": "Failed to move music file",
+    "folderCreateError": "Failed to create folder",
+    "folderRenameError": "Failed to rename folder",
+    "folderDeleteError": "Failed to delete folder",
+    "root": "Library"
   },
   "leftPanel": {
     "title": "Character Details",

@@ -8,12 +8,22 @@ import (
 
 // MusicFile represents an uploaded music file in the user's music library
 type MusicFile struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name      string             `bson:"name" json:"name"`
-	FileURL   string             `bson:"fileUrl" json:"fileUrl"`
-	MimeType  string             `bson:"mimeType" json:"mimeType"`
-	Size      int64              `bson:"size" json:"size"`
-	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
+	ID        primitive.ObjectID  `bson:"_id,omitempty" json:"id"`
+	Name      string              `bson:"name" json:"name"`
+	FileURL   string              `bson:"fileUrl" json:"fileUrl"`
+	FolderID  *primitive.ObjectID `bson:"folderId,omitempty" json:"folderId,omitempty"`
+	MimeType  string              `bson:"mimeType" json:"mimeType"`
+	Size      int64               `bson:"size" json:"size"`
+	CreatedAt time.Time           `bson:"createdAt" json:"createdAt"`
+}
+
+// MusicFolder represents a folder in the user's music library
+type MusicFolder struct {
+	ID        primitive.ObjectID  `bson:"_id,omitempty" json:"id"`
+	Name      string              `bson:"name" json:"name"`
+	ParentID  *primitive.ObjectID `bson:"parentId,omitempty" json:"parentId,omitempty"`
+	CreatedAt time.Time           `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time           `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Playlist represents a music playlist

@@ -14,14 +14,20 @@ import SearchIcon from '@mui/icons-material/Search';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume } from '../../api/music';
+import FolderIcon from '@mui/icons-material/Folder';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile } from '../../api/music';
 import { getApiUrl } from '../../api/axios';
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
+  useDraggable,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -203,9 +209,138 @@ const TrackName = ({ name }) => {
   );
 };
 
+// Draggable music file item (for moving into folders)
+const DraggableMusicItem = ({ file, onPlay, onPause, onDelete, onAddToPlaylist, isPlaying, playlists, addToPlaylistOpen, setAddToPlaylistOpen, t }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `music-${file.id}`,
+    data: { type: 'music', file },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`music-tab__track-item ${isPlaying ? 'music-tab__track-item--playing' : ''} ${isDragging ? 'music-tab__track-item--dragging' : ''}`}
+      {...listeners}
+      {...attributes}
+    >
+      <div className="music-tab__track-info">
+        <span className="music-tab__track-icon"><MusicNoteIcon fontSize="inherit" /></span>
+        <TrackName name={file.name} />
+      </div>
+      <div className="music-tab__track-actions">
+        {isPlaying ? (
+          <button className="list-action-btn music-tab__track-btn--playback" onClick={(e) => { e.stopPropagation(); onPause(); }} title={t('music.pause')}><PauseIcon fontSize="inherit" /></button>
+        ) : (
+          <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={(e) => { e.stopPropagation(); onPlay(file); }} title={t('music.play')}><PlayArrowIcon fontSize="inherit" /></button>
+        )}
+        <div className="music-tab__add-to-playlist-wrapper">
+          <button
+            className="list-action-btn"
+            onClick={(e) => { e.stopPropagation(); setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id); }}
+            title={t('music.addToPlaylist')}
+          >
+            <PlaylistAddIcon fontSize="inherit" />
+          </button>
+          {addToPlaylistOpen === file.id && playlists.length > 0 && (
+            <div className="music-tab__playlist-dropdown">
+              {playlists.map(pl => (
+                <button
+                  key={pl.id}
+                  className="music-tab__playlist-dropdown-item"
+                  onClick={(e) => { e.stopPropagation(); onAddToPlaylist(pl.id, file.id); }}
+                >
+                  {pl.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button className="list-action-btn list-action-btn--delete" onClick={(e) => { e.stopPropagation(); onDelete(file); }} title={t('common.delete')}><CloseIcon fontSize="inherit" /></button>
+      </div>
+    </div>
+  );
+};
+
+// Droppable music folder item
+const DroppableMusicFolderItem = ({ folder, onNavigate, onDelete, renamingFolder, renameValue, setRenameValue, setRenamingFolder, handleRenameFolder, t }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `folder-${folder.id}`,
+    data: { type: 'folder', folderId: folder.id },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`music-tab__track-item music-tab__folder-item ${isOver ? 'music-tab__folder-item--drop-target' : ''}`}
+      onClick={() => onNavigate(folder)}
+    >
+      <div className="music-tab__track-info">
+        <span className="music-tab__track-icon"><FolderIcon fontSize="inherit" /></span>
+        {renamingFolder?.id === folder.id ? (
+          <form onSubmit={handleRenameFolder} onClick={(e) => e.stopPropagation()}>
+            <input
+              type="text"
+              className="music-tab__input music-tab__input--inline"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={() => setRenamingFolder(null)}
+              autoFocus
+            />
+          </form>
+        ) : (
+          <span className="music-tab__track-name"><span className="music-tab__truncate">{folder.name}</span></span>
+        )}
+      </div>
+      <div className="music-tab__track-actions">
+        <button
+          className="list-action-btn"
+          onClick={(e) => { e.stopPropagation(); setRenamingFolder(folder); setRenameValue(folder.name); }}
+          title={t('music.renameFolder')}
+        >
+          <EditIcon fontSize="inherit" />
+        </button>
+        <button
+          className="list-action-btn list-action-btn--delete"
+          onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
+          title={t('music.deleteFolder')}
+        >
+          <CloseIcon fontSize="inherit" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Droppable back button (drop here to move file to parent folder)
+const DroppableMusicBackButton = ({ parentFolderId, onNavigateUp }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'music-parent-folder',
+    data: { type: 'parent', folderId: parentFolderId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`music-tab__track-item music-tab__folder-item music-tab__back-item ${isOver ? 'music-tab__folder-item--drop-target' : ''}`}
+      onClick={onNavigateUp}
+    >
+      <span className="music-tab__track-icon"><ArrowUpwardIcon fontSize="inherit" /></span>
+      <span className="music-tab__track-name">..</span>
+    </div>
+  );
+};
+
 const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const { t } = useTranslation();
   const [musicFiles, setMusicFiles] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderPath, setFolderPath] = useState([]);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [renamingFolder, setRenamingFolder] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [draggingMusicFile, setDraggingMusicFile] = useState(null);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -232,12 +367,26 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     })
   );
 
+  // Files and folders for current directory
+  const currentMusicFiles = useMemo(() =>
+    musicFiles.filter(f => currentFolderId === null ? !f.folderId : f.folderId === currentFolderId),
+    [musicFiles, currentFolderId]
+  );
+
+  const currentFolders = useMemo(() =>
+    folders.filter(f => currentFolderId === null ? !f.parentId : f.parentId === currentFolderId)
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [folders, currentFolderId]
+  );
+
   const sortedMusicFiles = useMemo(
-    () => [...musicFiles]
+    () => [...currentMusicFiles]
       .filter(f => !searchQuery || f.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name)),
-    [musicFiles, searchQuery]
+    [currentMusicFiles, searchQuery]
   );
+
+  const parentFolderId = folderPath.length > 1 ? folderPath[folderPath.length - 2].id : null;
 
   const handlePlaylistDragEnd = async (event) => {
     const { active, over } = event;
@@ -285,6 +434,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     try {
       const data = await getMusic();
       setMusicFiles(data.music || []);
+      setFolders(data.folders || []);
       setPlaylists(data.playlists || []);
       setError(null);
     } catch (err) {
@@ -346,6 +496,117 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       .filter(Boolean);
   }, [musicFiles]);
 
+  // Folder navigation
+  const navigateToFolder = (folder) => {
+    setCurrentFolderId(folder.id);
+    setFolderPath(prev => [...prev, folder]);
+  };
+
+  const navigateToBreadcrumb = (index) => {
+    if (index === -1) {
+      setCurrentFolderId(null);
+      setFolderPath([]);
+    } else {
+      const folder = folderPath[index];
+      setCurrentFolderId(folder.id);
+      setFolderPath(folderPath.slice(0, index + 1));
+    }
+  };
+
+  const navigateUp = () => {
+    if (folderPath.length > 0) {
+      const newPath = folderPath.slice(0, -1);
+      const parentFolder = newPath[newPath.length - 1];
+      setCurrentFolderId(parentFolder?.id || null);
+      setFolderPath(newPath);
+    }
+  };
+
+  // Folder CRUD
+  const handleCreateFolder = async (e) => {
+    e.preventDefault();
+    if (!newFolderName.trim()) return;
+    try {
+      const folder = await createMusicFolder(newFolderName.trim(), currentFolderId);
+      setFolders(prev => [...prev, folder]);
+      setNewFolderName('');
+      setIsCreateFolderOpen(false);
+    } catch (err) {
+      setError(t('music.folderCreateError'));
+    }
+  };
+
+  const handleRenameFolder = async (e) => {
+    e.preventDefault();
+    if (!renameValue.trim() || !renamingFolder) return;
+    try {
+      await renameMusicFolder(renamingFolder.id, renameValue.trim());
+      setFolders(prev => prev.map(f =>
+        f.id === renamingFolder.id ? { ...f, name: renameValue.trim() } : f
+      ));
+      setRenamingFolder(null);
+      setRenameValue('');
+    } catch (err) {
+      setError(t('music.folderRenameError'));
+    }
+  };
+
+  const handleDeleteFolder = async (folder) => {
+    const hasContents = musicFiles.some(f => f.folderId === folder.id) ||
+                       folders.some(f => f.parentId === folder.id);
+    const message = hasContents
+      ? t('music.folderHasContents')
+      : t('music.deleteFolder') + ` "${folder.name}"?`;
+    if (!window.confirm(message)) return;
+    try {
+      await deleteMusicFolder(folder.id, hasContents);
+      setFolders(prev => prev.filter(f => f.id !== folder.id && f.parentId !== folder.id));
+      if (hasContents) {
+        setMusicFiles(prev => prev.filter(f => f.folderId !== folder.id));
+      }
+    } catch (err) {
+      setError(t('music.folderDeleteError'));
+    }
+  };
+
+  // Library DnD handlers
+  const handleLibraryDragStart = (event) => {
+    const { active } = event;
+    if (active.data.current?.type === 'music') {
+      setDraggingMusicFile(active.data.current.file);
+    }
+  };
+
+  const handleLibraryDragEnd = async (event) => {
+    const { active, over } = event;
+    setDraggingMusicFile(null);
+    if (!over || !active.data.current?.file) return;
+
+    const file = active.data.current.file;
+    const targetData = over.data.current;
+    if (!targetData) return;
+
+    let targetFolderId = null;
+    if (targetData.type === 'folder') {
+      targetFolderId = targetData.folderId;
+    } else if (targetData.type === 'parent') {
+      targetFolderId = targetData.folderId;
+    } else {
+      return;
+    }
+
+    if (file.folderId === targetFolderId || (!file.folderId && !targetFolderId)) return;
+
+    try {
+      await moveMusicFile(file.id, targetFolderId);
+      setMusicFiles(prev => prev.map(f =>
+        f.id === file.id ? { ...f, folderId: targetFolderId } : f
+      ));
+    } catch (err) {
+      setError(t('music.moveMusicError'));
+    }
+  };
+
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -353,7 +614,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setUploading(true);
     setError(null);
     try {
-      await uploadMusic(files);
+      await uploadMusic(files, currentFolderId);
       await fetchMusic();
     } catch (err) {
       setError(t('music.uploadError'));
@@ -659,95 +920,165 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
         </div>
       </section>
 
-      {/* Music Files List */}
-      <section className="music-tab__section">
-        <div className="music-tab__section-header music-tab__section-header--clickable" onClick={() => toggleSection('library')}>
-          <h4 className="music-tab__section-title">
-            <span className={`music-tab__chevron ${collapsedSections.library ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
-            {t('music.title')} ({sortedMusicFiles.length})
-          </h4>
-          <button
-            className="music-tab__add-btn"
-            onClick={(e) => { e.stopPropagation(); setSearchOpen(prev => { if (prev) setSearchQuery(''); return !prev; }); }}
-            title={t('music.searchPlaceholder')}
-          >
-            <SearchIcon fontSize="inherit" />
-          </button>
-          <button
-            className="music-tab__add-btn"
-            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-            disabled={uploading}
-            title={t('music.uploadMusic')}
-          >
-            {uploading ? '...' : '+'}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".mp3,.wav"
-            multiple
-            onChange={handleUpload}
-            className="music-tab__file-input"
-          />
-        </div>
-        <div className={`music-tab__section-body ${collapsedSections.library ? 'music-tab__section-body--collapsed' : ''}`}>
-          {searchOpen && (
-            <div style={{ marginBottom: 8 }}>
-              <input
-                type="text"
-                className="music-tab__input"
-                placeholder={t('music.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-              />
-            </div>
-          )}
-          {sortedMusicFiles.length === 0 ? (
-            <p className="music-tab__empty">{t('music.noFiles')}</p>
-          ) : (
-            <div className="music-tab__track-list">
-              {sortedMusicFiles.map(file => (
-                <div key={file.id} className={`music-tab__track-item ${isTrackPlaying(file) ? 'music-tab__track-item--playing' : ''}`}>
-                  <div className="music-tab__track-info">
-                    <TrackName name={file.name} />
-                  </div>
-                  <div className="music-tab__track-actions">
-                    {isTrackPlaying(file) ? (
-                      <button className="list-action-btn music-tab__track-btn--playback" onClick={handlePause} title={t('music.pause')}><PauseIcon fontSize="inherit" /></button>
-                    ) : (
-                      <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={() => handlePlay(file)} title={t('music.play')}><PlayArrowIcon fontSize="inherit" /></button>
-                    )}
-                    <div className="music-tab__add-to-playlist-wrapper">
-                      <button
-                        className="list-action-btn"
-                        onClick={() => setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id)}
-                        title={t('music.addToPlaylist')}
-                      >
-                        <PlaylistAddIcon fontSize="inherit" />
-                      </button>
-                      {addToPlaylistOpen === file.id && playlists.length > 0 && (
-                        <div className="music-tab__playlist-dropdown">
-                          {playlists.map(pl => (
-                            <button
-                              key={pl.id}
-                              className="music-tab__playlist-dropdown-item"
-                              onClick={() => handleAddToPlaylist(pl.id, file.id)}
-                            >
-                              {pl.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <button className="list-action-btn list-action-btn--delete" onClick={() => handleDelete(file)} title={t('common.delete')}><CloseIcon fontSize="inherit" /></button>
-                  </div>
+      {/* Music Library Section */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleLibraryDragStart}
+        onDragEnd={handleLibraryDragEnd}
+      >
+        <section className="music-tab__section">
+          <div className="music-tab__section-header music-tab__section-header--clickable" onClick={() => toggleSection('library')}>
+            <h4 className="music-tab__section-title">
+              <span className={`music-tab__chevron ${collapsedSections.library ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
+              {t('music.title')} ({sortedMusicFiles.length})
+            </h4>
+            <button
+              className="music-tab__add-btn"
+              onClick={(e) => { e.stopPropagation(); setSearchOpen(prev => { if (prev) setSearchQuery(''); return !prev; }); }}
+              title={t('music.searchPlaceholder')}
+            >
+              <SearchIcon fontSize="inherit" />
+            </button>
+            <button
+              className="music-tab__add-btn"
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              disabled={uploading}
+              title={t('music.uploadMusic')}
+            >
+              {uploading ? '...' : '+'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".mp3,.wav"
+              multiple
+              onChange={handleUpload}
+              onClick={(e) => e.stopPropagation()}
+              className="music-tab__file-input"
+            />
+          </div>
+          <div className={`music-tab__section-body ${collapsedSections.library ? 'music-tab__section-body--collapsed' : ''}`}>
+            {/* New folder button */}
+            <button
+              className="music-tab__new-folder-btn"
+              onClick={() => setIsCreateFolderOpen(prev => !prev)}
+            >
+              + {t('music.createFolder')}
+            </button>
+
+            {/* New folder form */}
+            {isCreateFolderOpen && (
+              <form onSubmit={handleCreateFolder} className="music-tab__folder-form">
+                <input
+                  type="text"
+                  className="music-tab__input"
+                  placeholder={t('music.folderNamePlaceholder')}
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  autoFocus
+                />
+                <div className="music-tab__folder-form-actions">
+                  <button type="button" onClick={() => { setIsCreateFolderOpen(false); setNewFolderName(''); }}>
+                    {t('common.cancel')}
+                  </button>
+                  <button type="submit" disabled={!newFolderName.trim()}>
+                    {t('common.create')}
+                  </button>
                 </div>
+              </form>
+            )}
+
+            {/* Search input */}
+            {searchOpen && (
+              <div style={{ marginBottom: 8 }}>
+                <input
+                  type="text"
+                  className="music-tab__input"
+                  placeholder={t('music.searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {/* Breadcrumb */}
+            <div className="music-tab__breadcrumb">
+              <span
+                className="music-tab__breadcrumb-item music-tab__breadcrumb-item--clickable"
+                onClick={() => navigateToBreadcrumb(-1)}
+              >
+                {t('music.root')}
+              </span>
+              {folderPath.map((folder, index) => (
+                <React.Fragment key={folder.id}>
+                  <span className="music-tab__breadcrumb-sep">/</span>
+                  <span
+                    className="music-tab__breadcrumb-item music-tab__breadcrumb-item--clickable"
+                    onClick={() => navigateToBreadcrumb(index)}
+                  >
+                    {folder.name}
+                  </span>
+                </React.Fragment>
               ))}
             </div>
+
+            <div className="music-tab__track-list">
+              {/* Back button when in subfolder */}
+              {currentFolderId && (
+                <DroppableMusicBackButton parentFolderId={parentFolderId} onNavigateUp={navigateUp} />
+              )}
+
+              {/* Folders */}
+              {currentFolders.map(folder => (
+                <DroppableMusicFolderItem
+                  key={folder.id}
+                  folder={folder}
+                  onNavigate={navigateToFolder}
+                  onDelete={handleDeleteFolder}
+                  renamingFolder={renamingFolder}
+                  renameValue={renameValue}
+                  setRenameValue={setRenameValue}
+                  setRenamingFolder={setRenamingFolder}
+                  handleRenameFolder={handleRenameFolder}
+                  t={t}
+                />
+              ))}
+
+              {/* Music files */}
+              {sortedMusicFiles.map(file => (
+                <DraggableMusicItem
+                  key={file.id}
+                  file={file}
+                  onPlay={handlePlay}
+                  onPause={handlePause}
+                  onDelete={handleDelete}
+                  onAddToPlaylist={handleAddToPlaylist}
+                  isPlaying={isTrackPlaying(file)}
+                  playlists={playlists}
+                  addToPlaylistOpen={addToPlaylistOpen}
+                  setAddToPlaylistOpen={setAddToPlaylistOpen}
+                  t={t}
+                />
+              ))}
+
+              {/* Empty state */}
+              {currentFolders.length === 0 && sortedMusicFiles.length === 0 && !currentFolderId && (
+                <p className="music-tab__empty">{t('music.noFiles')}</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <DragOverlay dropAnimation={null}>
+          {draggingMusicFile && (
+            <div className="music-tab__drag-overlay">
+              <MusicNoteIcon fontSize="inherit" />
+              <span>{draggingMusicFile.name}</span>
+            </div>
           )}
-        </div>
-      </section>
+        </DragOverlay>
+      </DndContext>
 
       {/* Playlists Section */}
       <section className="music-tab__section">

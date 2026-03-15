@@ -7,9 +7,10 @@ export const getMusic = async () => {
   return response.data;
 };
 
-export const uploadMusic = async (files) => {
+export const uploadMusic = async (files, folderId = null) => {
   const formData = new FormData();
   files.forEach(file => formData.append('files', file));
+  if (folderId) formData.append('folderId', folderId);
 
   const response = await axiosInstance.post('/music/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -20,6 +21,28 @@ export const uploadMusic = async (files) => {
 
 export const deleteMusic = async (musicId) => {
   const response = await axiosInstance.delete(`/music/${musicId}`);
+  return response.data;
+};
+
+// --- Music Folders ---
+
+export const createMusicFolder = async (name, parentId = null) => {
+  const response = await axiosInstance.post('/music/folders', { name, parentId });
+  return response.data;
+};
+
+export const renameMusicFolder = async (folderId, name) => {
+  const response = await axiosInstance.put(`/music/folders/${folderId}`, { name });
+  return response.data;
+};
+
+export const deleteMusicFolder = async (folderId, deleteContents = false) => {
+  const response = await axiosInstance.delete(`/music/folders/${folderId}?deleteContents=${deleteContents}`);
+  return response.data;
+};
+
+export const moveMusicFile = async (musicId, folderId) => {
+  const response = await axiosInstance.put(`/music/${musicId}/move`, { folderId: folderId || null });
   return response.data;
 };
 

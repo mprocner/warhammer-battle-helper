@@ -365,6 +365,7 @@
   position: relative;
   min-width: 0;
   flex: 1;
+  cursor: pointer;
 }
 
 .music-tab__track-name .music-tab__truncate {
@@ -718,3 +719,126 @@
   }
 }
 
+
+/* Folder support */
+.music-tab__new-folder-btn {
+  background: none;
+  border: 1px dashed #c9975b;
+  color: #8b6b3d;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-bottom: 6px;
+  transition: background 0.15s;
+}
+.music-tab__new-folder-btn:hover {
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.music-tab__folder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: rgba(201, 151, 91, 0.08);
+  border-radius: 4px;
+}
+.music-tab__folder-form-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.music-tab__folder-form-actions button {
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid #c9975b;
+  background: none;
+  color: #8b6b3d;
+  cursor: pointer;
+  font-size: 11px;
+}
+.music-tab__folder-form-actions button[type="submit"] {
+  background: #c9975b;
+  color: white;
+}
+
+.music-tab__breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  font-size: 11px;
+  color: #8b6b3d;
+  margin-bottom: 6px;
+  min-height: 18px;
+}
+.music-tab__breadcrumb-item {
+  color: #8b6b3d;
+}
+.music-tab__breadcrumb-item--clickable {
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.75;
+}
+.music-tab__breadcrumb-item--clickable:hover {
+  opacity: 1;
+}
+.music-tab__breadcrumb-sep {
+  opacity: 0.5;
+  padding: 0 2px;
+}
+
+.music-tab__folder-item {
+  cursor: pointer;
+  background: rgba(201, 151, 91, 0.06);
+}
+.music-tab__folder-item:hover {
+  background: rgba(201, 151, 91, 0.14);
+}
+.music-tab__folder-item--drop-target {
+  background: rgba(201, 151, 91, 0.28) !important;
+  outline: 2px dashed #c9975b;
+}
+
+.music-tab__back-item {
+  opacity: 0.75;
+}
+
+.music-tab__track-icon {
+  display: flex;
+  align-items: center;
+  color: #c9975b;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.music-tab__input--inline {
+  padding: 2px 6px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.music-tab__track-item--dragging {
+  opacity: 0.4;
+}
+
+.music-tab__drag-overlay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #faf3e8;
+  border: 1px solid #c9975b;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #6b4423;
+  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.3);
+  pointer-events: none;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

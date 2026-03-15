@@ -24,8 +24,22 @@ type MusicHandler struct {
 // --- Request/Response types ---
 
 type GetMusicResponse struct {
-	Music     []models.MusicFile `json:"music"`
-	Playlists []models.Playlist  `json:"playlists"`
+	Music     []models.MusicFile   `json:"music"`
+	Folders   []models.MusicFolder `json:"folders"`
+	Playlists []models.Playlist    `json:"playlists"`
+}
+
+type CreateMusicFolderRequest struct {
+	Name     string  `json:"name" binding:"required"`
+	ParentID *string `json:"parentId,omitempty"`
+}
+
+type RenameMusicFolderRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+type MoveMusicFileRequest struct {
+	FolderID *string `json:"folderId"`
 }
 
 type UploadMusicResponse struct {
@@ -83,6 +97,7 @@ func (h *MusicHandler) GetMusic(c *gin.Context) {
 
 	c.JSON(http.StatusOK, GetMusicResponse{
 		Music:     user.Music,
+		Folders:   user.MusicFolders,
 		Playlists: user.Playlists,
 	})
 }
@@ -109,6 +124,15 @@ func (h *MusicHandler) UploadMusic(c *gin.Context) {
 	if len(files) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No files provided"})
 		return
+	}
+
+	// Optional folderId form field
+	var folderID *primitive.ObjectID
+	if folderIDStr := c.Request.FormValue("folderId"); folderIDStr != "" {
+		oid, err := primitive.ObjectIDFromHex(folderIDStr)
+		if err == nil {
+			folderID = &oid
+		}
 	}
 
 	var uploadedFiles []models.MusicFile
@@ -148,6 +172,7 @@ func (h *MusicHandler) UploadMusic(c *gin.Context) {
 			ID:        primitive.NewObjectID(),
 			Name:      header.Filename,
 			FileURL:   url,
+			FolderID:  folderID,
 			MimeType:  contentType,
 			Size:      header.Size,
 			CreatedAt: time.Now(),
@@ -226,6 +251,181 @@ func (h *MusicHandler) GetMusicFile(c *gin.Context) {
 	// Use c.File() for proper HTTP Range support needed for audio seeking
 	filePath := filepath.Join("./music-files", filename)
 	c.File(filePath)
+}
+
+// --- User-level endpoints (music folders) ---
+
+// CreateMusicFolder handles POST /music/folders
+func (h *MusicHandler) CreateMusicFolder(c *gin.Context) {
+	var req CreateMusicFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	folder := models.MusicFolder{Name: req.Name}
+	if req.ParentID != nil && *req.ParentID != "" {
+		oid, err := primitive.ObjectIDFromHex(*req.ParentID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid parent folder ID"})
+			return
+		}
+		folder.ParentID = &oid
+	}
+
+	created, err := h.UserRepo.AddMusicFolder(userID, folder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, created)
+}
+
+// RenameMusicFolder handles PUT /music/folders/:folderId
+func (h *MusicHandler) RenameMusicFolder(c *gin.Context) {
+	folderIDStr := c.Param("folderId")
+	folderID, err := primitive.ObjectIDFromHex(folderIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder ID"})
+		return
+	}
+
+	var req RenameMusicFolderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.UserRepo.UpdateMusicFolder(userID, folderID, req.Name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Folder not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder renamed"})
+}
+
+// DeleteMusicFolder handles DELETE /music/folders/:folderId
+func (h *MusicHandler) DeleteMusicFolder(c *gin.Context) {
+	folderIDStr := c.Param("folderId")
+	folderID, err := primitive.ObjectIDFromHex(folderIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder ID"})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	deleteContents := c.Query("deleteContents") == "true"
+
+	if deleteContents {
+		if err := h.deleteMusicFolderRecursive(userID, folderID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder contents"})
+			return
+		}
+	} else {
+		if err := h.UserRepo.DeleteMusicFolder(userID, folderID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete folder"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Folder deleted"})
+}
+
+// deleteMusicFolderRecursive recursively deletes a music folder and all its contents
+func (h *MusicHandler) deleteMusicFolderRecursive(userID, folderID primitive.ObjectID) error {
+	// Delete all music files in this folder (and clean up storage)
+	deletedFiles, err := h.UserRepo.DeleteMusicFilesInFolder(userID, folderID)
+	if err != nil {
+		return err
+	}
+	for _, f := range deletedFiles {
+		if f.FileURL != "" {
+			h.Storage.Delete(filepath.Base(f.FileURL))
+		}
+	}
+
+	// Recurse into subfolders
+	subfolders, err := h.UserRepo.GetMusicSubfolders(userID, folderID)
+	if err != nil {
+		return err
+	}
+	for _, sub := range subfolders {
+		if err := h.deleteMusicFolderRecursive(userID, sub.ID); err != nil {
+			return err
+		}
+	}
+
+	// Delete the folder itself
+	return h.UserRepo.DeleteMusicFolder(userID, folderID)
+}
+
+// MoveMusicFile handles PUT /music/:musicId/move
+func (h *MusicHandler) MoveMusicFile(c *gin.Context) {
+	musicIDStr := c.Param("musicId")
+	musicID, err := primitive.ObjectIDFromHex(musicIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid music file ID"})
+		return
+	}
+
+	var req MoveMusicFileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var folderID *primitive.ObjectID
+	if req.FolderID != nil && *req.FolderID != "" {
+		oid, err := primitive.ObjectIDFromHex(*req.FolderID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid folder ID"})
+			return
+		}
+		folderID = &oid
+	}
+
+	if err := h.UserRepo.MoveMusicFile(userID, musicID, folderID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Music file not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Music file moved"})
 }
 
 // --- User-level endpoints (playlists) ---

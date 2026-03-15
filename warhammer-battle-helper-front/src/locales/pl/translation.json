@@ -478,7 +478,17 @@
     "deletePlaylistError": "Nie udało się usunąć playlisty",
     "updatePlaylistError": "Nie udało się zaktualizować playlisty",
     "searchPlaceholder": "Szukaj utworów...",
-    "editPlaylist": "Edytuj playlistę"
+    "editPlaylist": "Edytuj playlistę",
+    "createFolder": "Nowy Folder",
+    "renameFolder": "Zmień nazwę folderu",
+    "deleteFolder": "Usuń folder",
+    "folderNamePlaceholder": "Wpisz nazwę folderu...",
+    "folderHasContents": "Ten folder zawiera pliki. Usunąć całą zawartość?",
+    "moveMusicError": "Nie udało się przenieść pliku muzycznego",
+    "folderCreateError": "Nie udało się utworzyć folderu",
+    "folderRenameError": "Nie udało się zmienić nazwy folderu",
+    "folderDeleteError": "Nie udało się usunąć folderu",
+    "root": "Biblioteka"
   },
   "leftPanel": {
     "title": "Postacie",
