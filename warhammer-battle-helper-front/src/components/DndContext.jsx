@@ -59,7 +59,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -1046,6 +1046,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         </div>
 
         <div className="fight-grid-wrapper" style={{ position: 'relative' }}>
+          {sceneSelector}
           {/* Drawing toolbar — floats over the scene, visible to all */}
           {currentScene && (
             <DrawingToolbar

@@ -259,7 +259,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
               <div
                 key={scene.id}
                 className={`scenes-tab__card ${selectedSceneId === scene.id ? 'scenes-tab__card--selected' : ''}`}
-                onClick={() => onSceneChange && onSceneChange(scene.id === selectedSceneId ? null : scene.id)}
+                onClick={() => onSceneChange && onSceneChange(scene.id)}
               >
                 <div className="scenes-tab__card-header">
                   <span className="scenes-tab__card-name">

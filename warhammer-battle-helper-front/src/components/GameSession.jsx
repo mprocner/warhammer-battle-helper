@@ -8,6 +8,7 @@ import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
+import SceneSelector from './scene/SceneSelector';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -697,11 +698,18 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         />
 
         {/* Battle Grid */}
-        <Box sx={{
-          flexGrow: 1,
-          overflow: 'auto'
-        }}>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
           <DragAndDropContext
+            sceneSelector={isGM ? (
+              <SceneSelector
+                scenes={gameState?.scenes || []}
+                activeSceneId={displayScene?.id}
+                onSceneChange={setGmViewingSceneId}
+                participants={gameState?.participants || []}
+                gameId={gameId}
+                onSceneCreated={setGmViewingSceneId}
+              />
+            ) : null}
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
