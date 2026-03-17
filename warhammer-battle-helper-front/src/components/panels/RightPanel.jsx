@@ -7,6 +7,8 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogWindow from '../LogWindow';
+import DiceRollControls from '../log/DiceRollControls';
+import { getApiUrl, getApiHeaders } from '../../api/axios';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
 import FilesTab from '../tabs/FilesTab';
@@ -54,6 +56,43 @@ const RightPanel = ({
   const userId = getUserId();
   const isGM = gameState?.gameMasterId === userId;
 
+  const sendMessage = useCallback(async (text) => {
+    try {
+      if (gameId && token) {
+        const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
+          method: 'POST',
+          headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+          body: JSON.stringify({ message: text })
+        });
+        if (!response.ok) throw new Error('Failed to send message');
+      } else {
+        addLogMessage(text, 'info');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      addLogMessage('Failed to send message', 'error');
+    }
+  }, [gameId, token, addLogMessage]);
+
+  const rollDice = useCallback(async (sides) => {
+    try {
+      if (gameId && token) {
+        const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
+          method: 'POST',
+          headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+          body: JSON.stringify({ sides })
+        });
+        if (!response.ok) throw new Error('Failed to roll dice');
+      } else {
+        const result = Math.floor(Math.random() * sides) + 1;
+        addLogMessage(`Rolled d${sides}: ${result}`, 'success');
+      }
+    } catch (error) {
+      console.error('Error rolling dice:', error);
+      addLogMessage('Failed to roll dice', 'error');
+    }
+  }, [gameId, token, addLogMessage]);
+
   // Build tabs array - Files and Scenes tabs only visible to GM
   const tabs = useMemo(() => {
     const baseTabs = [
@@ -82,9 +121,6 @@ const RightPanel = ({
         return (
           <LogWindow
             logs={logs}
-            addLogMessage={addLogMessage}
-            gameId={gameId}
-            token={token}
             gameSystem={gameState?.gameSystem}
           />
         );
@@ -159,29 +195,34 @@ const RightPanel = ({
           ))}
         </nav>
 
-        {/* Tab Content Area */}
-        <div className="right-panel__tab-content">
-          {renderTabContent()}
-          {/* HandoutsTab is always mounted to preserve folder expand/collapse state */}
-          <div style={{ display: activeTab === 'handouts' ? 'contents' : 'none' }}>
-            <HandoutsTab
-              gameId={gameId}
-              token={token}
-              gameState={gameState}
-              isConnected={isConnected}
-            />
-          </div>
-          {/* MusicTab is always mounted so audio event listeners persist across tab switches */}
-          {isGM && (
-            <div style={{ display: activeTab === 'music' ? 'contents' : 'none' }}>
-              <MusicTab
+        {/* Right column: tab content + persistent dice controls */}
+        <div className="right-panel__right-col">
+          {/* Tab Content Area */}
+          <div className="right-panel__tab-content">
+            {renderTabContent()}
+            {/* HandoutsTab is always mounted to preserve folder expand/collapse state */}
+            <div style={{ display: activeTab === 'handouts' ? 'contents' : 'none' }}>
+              <HandoutsTab
                 gameId={gameId}
                 token={token}
-                musicState={musicState}
-                audioRef={audioRef}
+                gameState={gameState}
+                isConnected={isConnected}
               />
             </div>
-          )}
+            {/* MusicTab is always mounted so audio event listeners persist across tab switches */}
+            {isGM && (
+              <div style={{ display: activeTab === 'music' ? 'contents' : 'none' }}>
+                <MusicTab
+                  gameId={gameId}
+                  token={token}
+                  musicState={musicState}
+                  audioRef={audioRef}
+                />
+              </div>
+            )}
+          </div>
+
+          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} />
         </div>
       </div>
     </aside>

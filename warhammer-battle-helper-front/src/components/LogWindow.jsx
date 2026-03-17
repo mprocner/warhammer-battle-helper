@@ -1,8 +1,6 @@
 import React, {useEffect, useRef} from 'react';
-import { getApiUrl, getApiHeaders } from '../api/axios';
 import SimpleDiceRoll from './log/SimpleDiceRoll';
 import FightResult from './log/FightResult';
-import DiceRollControls from './log/DiceRollControls';
 import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
 import './LogWindow.css';
@@ -12,9 +10,6 @@ const LogWindow = ({
     logs = [],
     maxMessages = 100,
     autoScroll = true,
-    addLogMessage,
-    gameId = null,
-    token = null,
     gameSystem = 'warhammer4e'
 }) => {
     const system = getSystem(gameSystem);
@@ -37,55 +32,6 @@ const LogWindow = ({
             logEndRef.current.scrollIntoView({ behavior: 'instant' });
         }
     }, [trimmedMessages, autoScroll]);
-
-    const sendMessage = async (text) => {
-        try {
-            if (gameId && token) {
-                const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
-                    method: 'POST',
-                    headers: getApiHeaders({
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }),
-                    body: JSON.stringify({ message: text })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to send message');
-                }
-            } else {
-                addLogMessage(text, 'info');
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-            addLogMessage('Failed to send message', 'error');
-        }
-    };
-
-    const rollDice = async (sides) => {
-        try {
-            if (gameId && token) {
-                const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
-                    method: 'POST',
-                    headers: getApiHeaders({
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }),
-                    body: JSON.stringify({ sides })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to roll dice');
-                }
-            } else {
-                const result = Math.floor(Math.random() * sides) + 1;
-                addLogMessage(`Rolled d${sides}: ${result}`, 'success');
-            }
-        } catch (error) {
-            console.error('Error rolling dice:', error);
-            addLogMessage('Failed to roll dice', 'error');
-        }
-    };
 
     const renderMessage = (msg, index) => {
         if (msg.data && msg.data.rollType) {
@@ -125,7 +71,6 @@ const LogWindow = ({
                 )}
             </div>
 
-            <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} />
         </div>
     );
 };

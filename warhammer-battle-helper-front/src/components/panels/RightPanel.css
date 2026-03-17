@@ -141,6 +141,14 @@
   white-space: nowrap;
 }
 
+/* Right column: tab content + dice controls */
+.right-panel__right-col {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Tab Content Area */
 .right-panel__tab-content {
   flex: 1;
