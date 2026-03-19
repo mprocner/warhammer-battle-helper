@@ -4,6 +4,7 @@ import (
 	_ "battle-helper/api"
 	"battle-helper/internal/config"
 	"battle-helper/internal/config/helpers"
+	"battle-helper/internal/email"
 	"battle-helper/internal/http"
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
@@ -114,9 +115,11 @@ func main() {
 	r.POST("/roll", handleRoll)
 
 	// --- AUTH ---
-	authHandler := http.AuthHandler{UserRepo: userRepo}
+	emailService := email.NewEmailService()
+	authHandler := http.AuthHandler{UserRepo: userRepo, EmailService: emailService}
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
+	r.GET("/verify-email", authHandler.VerifyEmail)
 	// --- END AUTH ---
 
 	// --- PROTECTED ---

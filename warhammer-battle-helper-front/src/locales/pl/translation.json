@@ -40,9 +40,15 @@
     "registerHere": "Zarejestruj się tutaj",
     "createAccount": "Utwórz Konto",
     "creatingAccount": "Tworzenie konta...",
-    "registrationSuccess": "Rejestracja zakończona sukcesem! Możesz się teraz zalogować.",
+    "registrationSuccess": "Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę e-mail, aby aktywować konto.",
     "registrationFailed": "Rejestracja nie powiodła się",
-    "minimumCharacters": "Minimum 6 znaków"
+    "minimumCharacters": "Minimum 6 znaków",
+    "emailNotConfirmed": "Potwierdź swój adres e-mail przed zalogowaniem",
+    "verifyEmailTitle": "Konto aktywowane!",
+    "verifyEmailSuccess": "Twój adres e-mail został potwierdzony. Konto jest teraz aktywne.",
+    "verifyEmailError": "Nieprawidłowy lub wygasły link aktywacyjny.",
+    "verifyEmailActivating": "Aktywowanie konta...",
+    "verifyEmailGoToLogin": "Przejdź do logowania"
   },
   "validation": {
     "required": "To pole jest wymagane",

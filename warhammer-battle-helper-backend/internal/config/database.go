@@ -23,13 +23,13 @@ func ConnectDatabase() (*Database, error) {
 	// Get MongoDB URI from environment or use default
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
-		mongoURI = "mongodb://root:example@mongo:27017"
+		mongoURI = "mongodb://root:examplee@mongo:27017"
 	}
 
 	// Get database name from environment or use default
 	dbName := os.Getenv("MONGO_DB_NAME")
 	if dbName == "" {
-		dbName = "battle_helper"
+		dbName = "battle_helperr"
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

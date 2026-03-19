@@ -40,9 +40,15 @@
     "registerHere": "Register here",
     "createAccount": "Create Account",
     "creatingAccount": "Creating Account...",
-    "registrationSuccess": "Registration successful! You can now log in.",
+    "registrationSuccess": "Registration successful! Please check your email to activate your account.",
     "registrationFailed": "Registration failed",
-    "minimumCharacters": "Minimum 6 characters"
+    "minimumCharacters": "Minimum 6 characters",
+    "emailNotConfirmed": "Please confirm your email address before logging in",
+    "verifyEmailTitle": "Account Activated!",
+    "verifyEmailSuccess": "Your email address has been confirmed. Your account is now active.",
+    "verifyEmailError": "Invalid or expired activation link.",
+    "verifyEmailActivating": "Activating your account...",
+    "verifyEmailGoToLogin": "Go to Login"
   },
   "validation": {
     "required": "This field is required",

@@ -7,6 +7,7 @@ import theme from './theme';
 
 import Login from './components/Login';
 import Register from './components/Register';
+import EmailVerification from './components/EmailVerification';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
@@ -125,6 +126,8 @@ function App() {
                             <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
                         }
                     />
+
+                    <Route path="/verify-email" element={<EmailVerification />} />
 
                     {/* Standalone character sheet window */}
                     <Route

@@ -27,6 +27,12 @@ services:
       - USER_FILES_PATH=/app/user-files
       - MUSIC_FILES_PATH=/app/music-files
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - APP_URL=${APP_URL:-}
     volumes:
       - ./warhammer-battle-helper-backend/keys:/app/keys:ro
       - backend-avatars:/app/avatars
