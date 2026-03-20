@@ -126,6 +126,12 @@ const Login = ({ onLogin, addLogMessage }) => {
                             {isLoading ? t('common.loading') : t('auth.loginButton')}
                         </Button>
 
+                        <Box sx={{ textAlign: 'center', mt: 1 }}>
+                            <Link href="/forgot-password" underline="hover" variant="body2">
+                                {t('auth.forgotPassword.title')}
+                            </Link>
+                        </Box>
+
                         <Box sx={{ textAlign: 'center', mt: 2 }}>
                             <Typography variant="body2">
                                 {t('auth.dontHaveAccount')}{' '}

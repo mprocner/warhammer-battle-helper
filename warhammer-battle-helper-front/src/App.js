@@ -8,6 +8,8 @@ import theme from './theme';
 import Login from './components/Login';
 import Register from './components/Register';
 import EmailVerification from './components/EmailVerification';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
@@ -128,6 +130,8 @@ function App() {
                     />
 
                     <Route path="/verify-email" element={<EmailVerification />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* Standalone character sheet window */}
                     <Route

@@ -48,7 +48,28 @@
     "verifyEmailSuccess": "Twój adres e-mail został potwierdzony. Konto jest teraz aktywne.",
     "verifyEmailError": "Nieprawidłowy lub wygasły link aktywacyjny.",
     "verifyEmailActivating": "Aktywowanie konta...",
-    "verifyEmailGoToLogin": "Przejdź do logowania"
+    "verifyEmailGoToLogin": "Przejdź do logowania",
+    "forgotPassword": {
+      "title": "Nie pamiętasz hasła?",
+      "description": "Podaj swój adres e-mail, a wyślemy Ci link do resetowania hasła.",
+      "emailLabel": "Adres e-mail",
+      "submitButton": "Wyślij link resetujący",
+      "sending": "Wysyłanie...",
+      "successMessage": "Jeśli ten adres e-mail jest zarejestrowany, otrzymasz link do resetowania hasła.",
+      "backToLogin": "Powrót do logowania"
+    },
+    "resetPassword": {
+      "title": "Ustaw nowe hasło",
+      "newPasswordLabel": "Nowe hasło",
+      "confirmPasswordLabel": "Potwierdź hasło",
+      "submitButton": "Ustaw nowe hasło",
+      "submitting": "Zapisywanie...",
+      "successMessage": "Hasło zostało zaktualizowane. Możesz się teraz zalogować.",
+      "errorInvalidToken": "Ten link jest nieprawidłowy lub wygasł. Poproś o nowy.",
+      "errorPasswordMismatch": "Hasła nie są zgodne.",
+      "errorPasswordTooShort": "Hasło musi mieć co najmniej 8 znaków.",
+      "requestNewLink": "Poproś o nowy link"
+    }
   },
   "validation": {
     "required": "To pole jest wymagane",

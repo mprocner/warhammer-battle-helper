@@ -286,6 +286,37 @@ func (r *UserRepository) GetSubfolders(userID primitive.ObjectID, parentID primi
 	return subfolders, nil
 }
 
+func (r *UserRepository) SetResetToken(id primitive.ObjectID, token string, expiry time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"resetToken": token, "resetTokenExpiry": expiry}},
+	)
+	return err
+}
+
+func (r *UserRepository) FindByResetToken(token string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var user models.User
+	err := r.Collection.FindOne(ctx, bson.M{"resetToken": token}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) UpdatePasswordAndClearToken(id primitive.ObjectID, hashedPassword string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"password": hashedPassword, "resetToken": "", "resetTokenExpiry": time.Time{}}},
+	)
+	return err
+}
+
 // --- MUSIC METHODS ---
 
 // GetUserWithMusic returns user with music files, folders and playlists

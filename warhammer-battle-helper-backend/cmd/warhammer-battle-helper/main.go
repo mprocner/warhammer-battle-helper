@@ -120,6 +120,8 @@ func main() {
 	r.POST("/register", authHandler.Register)
 	r.POST("/login", authHandler.Login)
 	r.GET("/verify-email", authHandler.VerifyEmail)
+	r.POST("/forgot-password", authHandler.ForgotPassword)
+	r.POST("/reset-password", authHandler.ResetPassword)
 	// --- END AUTH ---
 
 	// --- PROTECTED ---

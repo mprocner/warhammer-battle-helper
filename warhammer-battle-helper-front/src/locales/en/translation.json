@@ -48,7 +48,28 @@
     "verifyEmailSuccess": "Your email address has been confirmed. Your account is now active.",
     "verifyEmailError": "Invalid or expired activation link.",
     "verifyEmailActivating": "Activating your account...",
-    "verifyEmailGoToLogin": "Go to Login"
+    "verifyEmailGoToLogin": "Go to Login",
+    "forgotPassword": {
+      "title": "Forgot password?",
+      "description": "Enter your email address and we'll send you a reset link.",
+      "emailLabel": "Email address",
+      "submitButton": "Send reset link",
+      "sending": "Sending...",
+      "successMessage": "If this email is registered, you will receive a reset link shortly.",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "Set new password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "submitButton": "Set new password",
+      "submitting": "Saving...",
+      "successMessage": "Password updated successfully. You can now log in.",
+      "errorInvalidToken": "This link is invalid or has expired. Please request a new one.",
+      "errorPasswordMismatch": "Passwords do not match.",
+      "errorPasswordTooShort": "Password must be at least 8 characters.",
+      "requestNewLink": "Request new reset link"
+    }
   },
   "validation": {
     "required": "This field is required",
