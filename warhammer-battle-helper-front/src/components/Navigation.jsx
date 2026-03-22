@@ -15,7 +15,8 @@ import {
     Login as LoginIcon,
     PersonAdd as PersonAddIcon,
     Logout as LogoutIcon,
-    Language as LanguageIcon
+    Language as LanguageIcon,
+    Settings as SettingsIcon
 } from '@mui/icons-material';
 
 const Navigation = ({ user, onLogout, inGame }) => {
@@ -65,6 +66,13 @@ const Navigation = ({ user, onLogout, inGame }) => {
                                     size="small"
                                     sx={{ display: { xs: 'none', sm: 'flex' } }}
                                 />
+                                <IconButton
+                                    color="inherit"
+                                    onClick={() => navigate('/settings')}
+                                    title={t('navigation.settings')}
+                                >
+                                    <SettingsIcon />
+                                </IconButton>
                                 <Button
                                     color="inherit"
                                     startIcon={<LogoutIcon />}

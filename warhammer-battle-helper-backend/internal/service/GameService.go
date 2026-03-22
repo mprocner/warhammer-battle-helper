@@ -53,6 +53,9 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 		return nil, fmt.Errorf("failed to create game: %w", err)
 	}
 
+	// Create default scene
+	s.EnsureDefaultScene(game)
+
 	// Add initial event
 	event := models.GameEvent{
 		Type:      models.EventTypeMessage,
@@ -1227,8 +1230,6 @@ func (s *GameService) GetScenes(gameID string) ([]models.Scene, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	s.EnsureDefaultScene(game)
 
 	return game.Scenes, nil
 }

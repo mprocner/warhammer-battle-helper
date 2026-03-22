@@ -24,9 +24,10 @@
   },
   "navigation": {
     "title": "RollHammer",
-"login": "Zaloguj",
+    "login": "Zaloguj",
     "logout": "Wyloguj",
-    "register": "Zarejestruj"
+    "register": "Zarejestruj",
+    "settings": "Ustawienia"
   },
   "auth": {
     "email": "Adres Email",
@@ -69,6 +70,22 @@
       "errorPasswordMismatch": "Hasła nie są zgodne.",
       "errorPasswordTooShort": "Hasło musi mieć co najmniej 8 znaków.",
       "requestNewLink": "Poproś o nowy link"
+    }
+  },
+  "userSettings": {
+    "title": "Ustawienia konta",
+    "selectOption": "Wybierz opcję z menu",
+    "changePassword": {
+      "title": "Zmiana hasła",
+      "currentPasswordLabel": "Aktualne hasło",
+      "newPasswordLabel": "Nowe hasło",
+      "confirmPasswordLabel": "Potwierdź nowe hasło",
+      "submitButton": "Zmień hasło",
+      "submitting": "Zmienianie...",
+      "successMessage": "Hasło zostało zmienione",
+      "errorCurrentPassword": "Aktualne hasło jest nieprawidłowe",
+      "errorPasswordTooShort": "Hasło musi mieć co najmniej 8 znaków",
+      "errorPasswordMismatch": "Hasła nie są zgodne"
     }
   },
   "validation": {

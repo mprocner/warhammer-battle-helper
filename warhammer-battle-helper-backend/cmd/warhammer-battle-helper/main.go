@@ -122,6 +122,7 @@ func main() {
 	r.GET("/verify-email", authHandler.VerifyEmail)
 	r.POST("/forgot-password", authHandler.ForgotPassword)
 	r.POST("/reset-password", authHandler.ResetPassword)
+	r.PATCH("/change-password", http.JWTAuthMiddleware(), authHandler.ChangePassword)
 	// --- END AUTH ---
 
 	// --- PROTECTED ---

@@ -24,9 +24,10 @@
   },
   "navigation": {
     "title": "RollHammer",
-"login": "Login",
+    "login": "Login",
     "logout": "Logout",
-    "register": "Register"
+    "register": "Register",
+    "settings": "Settings"
   },
   "auth": {
     "email": "Email Address",
@@ -69,6 +70,22 @@
       "errorPasswordMismatch": "Passwords do not match.",
       "errorPasswordTooShort": "Password must be at least 8 characters.",
       "requestNewLink": "Request new reset link"
+    }
+  },
+  "userSettings": {
+    "title": "Account Settings",
+    "selectOption": "Select an option from the menu",
+    "changePassword": {
+      "title": "Change Password",
+      "currentPasswordLabel": "Current Password",
+      "newPasswordLabel": "New Password",
+      "confirmPasswordLabel": "Confirm New Password",
+      "submitButton": "Change Password",
+      "submitting": "Changing...",
+      "successMessage": "Password changed successfully",
+      "errorCurrentPassword": "Current password is incorrect",
+      "errorPasswordTooShort": "Password must be at least 8 characters",
+      "errorPasswordMismatch": "Passwords do not match"
     }
   },
   "validation": {

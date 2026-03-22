@@ -307,6 +307,16 @@ func (r *UserRepository) FindByResetToken(token string) (*models.User, error) {
 	return &user, nil
 }
 
+func (r *UserRepository) UpdatePassword(id primitive.ObjectID, hashedPassword string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"password": hashedPassword}},
+	)
+	return err
+}
+
 func (r *UserRepository) UpdatePasswordAndClearToken(id primitive.ObjectID, hashedPassword string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

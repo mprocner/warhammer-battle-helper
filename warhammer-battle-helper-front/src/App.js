@@ -15,6 +15,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
 import CharacterSheetPage from './components/CharacterSheetPage';
+import SettingsPage from './components/settings/SettingsPage';
 
 function App() {
     const [, setLogs] = useState([
@@ -126,6 +127,15 @@ function App() {
                             user ?
                             <Navigate to="/" replace /> :
                             <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
+                        }
+                    />
+
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute user={user}>
+                                <SettingsPage />
+                            </ProtectedRoute>
                         }
                     />
 
