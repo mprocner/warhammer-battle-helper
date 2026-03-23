@@ -45,8 +45,10 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 				Role:     models.RoleGameMaster,
 			},
 		},
-		Characters: []models.GameCharacter{},
-		Events:     []models.GameEvent{},
+		Characters:     []models.GameCharacter{},
+		Events:         []models.GameEvent{},
+		Handouts:       []models.Handout{},
+		HandoutFolders: []models.HandoutFolder{},
 	}
 
 	if err := s.gameRepo.Create(game); err != nil {

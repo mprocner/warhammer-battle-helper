@@ -84,7 +84,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           </div>
           <div className="general-tab__info-row">
             <span className="general-tab__label">{t('settings.players')}:</span>
-            <span className="general-tab__value">{gameState?.participants?.length || 0}</span>
+            <span className="general-tab__value">{gameState?.participants?.filter(p => p.role !== 'gm').length || 0}</span>
           </div>
         </div>
       </section>

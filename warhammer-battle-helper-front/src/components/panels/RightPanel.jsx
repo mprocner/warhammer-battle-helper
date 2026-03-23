@@ -14,6 +14,7 @@ import HandoutsTab from '../tabs/HandoutsTab';
 import FilesTab from '../tabs/FilesTab';
 import MusicTab from '../tabs/MusicTab';
 import GeneralTab from '../tabs/GeneralTab';
+import OnlineUsersBar from '../online-users/OnlineUsersBar';
 import './RightPanel.css';
 
 /**
@@ -38,6 +39,7 @@ const RightPanel = ({
   audioRef,
   playerVolume,
   onPlayerVolumeChange,
+  onlineUserIds = [],
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -178,6 +180,13 @@ const RightPanel = ({
       <header className="panel-header">
         <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
       </header>
+
+      {/* Online Users Bar */}
+      <OnlineUsersBar
+        game={gameState}
+        participants={gameState?.participants || []}
+        onlineUserIds={onlineUserIds}
+      />
 
       {/* Tabs Wrapper */}
       <div className="right-panel__tabs-wrapper">

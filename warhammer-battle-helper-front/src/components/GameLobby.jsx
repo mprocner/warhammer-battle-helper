@@ -359,7 +359,7 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
                           fontSize: '1rem'
                         }}
                       >
-                        <strong>{t('game.players')}:</strong> {game.participants?.length || 0}
+                        <strong>{t('game.players')}:</strong> {game.participants?.filter(p => p.role !== 'gm').length || 0}
                       </Typography>
                     </Box>
 

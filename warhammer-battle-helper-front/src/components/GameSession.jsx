@@ -6,6 +6,7 @@ import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
 import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
+import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 import SceneSelector from './scene/SceneSelector';
@@ -33,6 +34,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [brushSize, setBrushSize] = useState(10);
   const [drawingColor, setDrawingColor] = useState('#ff0000');
   const [drawingFontSize, setDrawingFontSize] = useState(16);
+
+  // --- Online users ---
+  const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
 
   // --- Music state ---
   const audioRef = useRef(new Audio());
@@ -496,11 +500,15 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         break;
       }
 
+      case 'USERS_ONLINE':
+        handleOnlineUsersMessage(message);
+        break;
+
       default:
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage]);
 
   // WebSocket connection
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
@@ -764,6 +772,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           audioRef={audioRef}
           playerVolume={playerVolume}
           onPlayerVolumeChange={onPlayerVolumeChange}
+          onlineUserIds={onlineUserIds}
         />
       </Box>
 

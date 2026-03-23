@@ -4456,3 +4456,56 @@ align-items: center;
     transform: translateY(-50%) translateX(-100%) translateX(0);
   }
 }
+
+/* === Online Users Bar === */
+.right-panel__online-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(192, 160, 96, 0.25);
+  min-height: 48px;
+  align-items: center;
+}
+
+.online-user-bubble {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a3520 0%, #2e1f0f 100%);
+  border: 1px solid rgba(192, 160, 96, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.online-user-bubble--offline {
+  opacity: 0.45;
+}
+
+.online-user-bubble__initials {
+  font-size: 0.65rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: #c0a060;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.online-user-bubble__dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #1a1209;
+  background: #9e9e9e;
+}
+
+.online-user-bubble--online .online-user-bubble__dot {
+  background: #4caf50;
+}

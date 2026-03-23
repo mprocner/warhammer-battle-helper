@@ -27,12 +27,6 @@ func (r *GameRepository) Create(game *models.Game) error {
 
 	game.CreatedAt = time.Now()
 	game.UpdatedAt = time.Now()
-	game.Participants = []models.GameParticipant{}
-	game.Characters = []models.GameCharacter{}
-	game.Events = []models.GameEvent{}
-	game.Handouts = []models.Handout{}
-	game.HandoutFolders = []models.HandoutFolder{}
-	game.Scenes = []models.Scene{}
 
 	result, err := r.Collection.InsertOne(ctx, game)
 	if err != nil {

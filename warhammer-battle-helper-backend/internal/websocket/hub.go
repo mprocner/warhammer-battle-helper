@@ -74,9 +74,11 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.registerClient(client)
+			go h.BroadcastOnlineUsers(client.GameID)
 
 		case client := <-h.Unregister:
 			h.unregisterClient(client)
+			go h.BroadcastOnlineUsers(client.GameID)
 
 		case message := <-h.Broadcast:
 			h.broadcastMessage(message)
@@ -250,6 +252,36 @@ func (h *Hub) BroadcastToGame(gameID, messageType string, payload map[string]int
 		Payload: payload,
 	}
 	h.Broadcast <- message
+}
+
+// GetGameOnlineUserIDs returns the list of connected user IDs for a game (thread-safe)
+func (h *Hub) GetGameOnlineUserIDs(gameID string) []string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	ids := []string{}
+	for client := range h.Games[gameID] {
+		ids = append(ids, client.ID.Hex())
+	}
+	return ids
+}
+
+// BroadcastOnlineUsers sends USERS_ONLINE event to all clients in a game.
+// Writes directly to Send channels (bypasses Broadcast channel to avoid deadlock).
+func (h *Hub) BroadcastOnlineUsers(gameID string) {
+	ids := h.GetGameOnlineUserIDs(gameID)
+	payload := map[string]interface{}{"onlineUserIds": ids}
+	msg, err := json.Marshal(Message{Type: "USERS_ONLINE", GameID: gameID, Payload: payload})
+	if err != nil {
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for client := range h.Games[gameID] {
+		select {
+		case client.Send <- msg:
+		default:
+		}
+	}
 }
 
 // GetGameClientCount returns the number of connected clients in a game
