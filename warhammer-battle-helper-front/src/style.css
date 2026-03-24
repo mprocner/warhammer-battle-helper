@@ -3041,7 +3041,7 @@ align-items: center;
     position: relative;
     width: 100px;
     height: 100px;
-    border-radius: 8px;
+    border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid #c9975b;

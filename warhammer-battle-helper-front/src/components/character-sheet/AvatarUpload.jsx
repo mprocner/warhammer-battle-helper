@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import MuiAvatar from '@mui/material/Avatar';
 import axiosInstance from '../../api/axios';
 import { getAvatarUrl } from '../Avatar';
 
@@ -58,12 +59,16 @@ function AvatarUpload({ currentAvatar, onAvatarChange, disabled = false }) {
             className={`avatar-upload ${disabled ? 'disabled' : ''} ${isUploading ? 'uploading' : ''}`}
             onClick={handleClick}
         >
-            <img
-                key={currentAvatar || 'default'}
-                src={getAvatarUrl(currentAvatar)}
-                alt="Character Avatar"
-                className="avatar-preview"
-            />
+            {currentAvatar ? (
+                <img
+                    key={currentAvatar}
+                    src={getAvatarUrl(currentAvatar)}
+                    alt="Character Avatar"
+                    className="avatar-preview"
+                />
+            ) : (
+                <MuiAvatar sx={{ width: '100%', height: '100%', fontSize: '2.5rem' }} />
+            )}
             {isUploading && <div className="avatar-spinner" />}
             <div className="avatar-overlay">
                 <span>{t('characterSheet.clickToChangeAvatar')}</span>
