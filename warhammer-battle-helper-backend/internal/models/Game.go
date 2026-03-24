@@ -111,8 +111,8 @@ type JoinGameRequest struct {
 // MoveCharacterRequest is the request body for moving a character
 type MoveCharacterRequest struct {
 	CharacterID string `json:"characterId" binding:"required"`
-	PositionX   int    `json:"positionX" binding:"required"`
-	PositionY   int    `json:"positionY" binding:"required"`
+	PositionX   int    `json:"positionX"`
+	PositionY   int    `json:"positionY"`
 }
 
 // AddCharacterRequest is the request body for adding a character to the grid
