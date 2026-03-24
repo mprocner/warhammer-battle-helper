@@ -254,6 +254,29 @@ func (h *Hub) BroadcastToGame(gameID, messageType string, payload map[string]int
 	h.Broadcast <- message
 }
 
+// BroadcastToUsers sends a message directly to specific users in a game (bypasses Broadcast channel).
+func (h *Hub) BroadcastToUsers(gameID, messageType string, payload map[string]interface{}, userIDs []string) {
+	message := Message{Type: messageType, GameID: gameID, Payload: payload}
+	msg, err := json.Marshal(message)
+	if err != nil {
+		return
+	}
+	targetSet := make(map[string]bool)
+	for _, id := range userIDs {
+		targetSet[id] = true
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for client := range h.Games[gameID] {
+		if targetSet[client.ID.Hex()] {
+			select {
+			case client.Send <- msg:
+			default:
+			}
+		}
+	}
+}
+
 // GetGameOnlineUserIDs returns the list of connected user IDs for a game (thread-safe)
 func (h *Hub) GetGameOnlineUserIDs(gameID string) []string {
 	h.mu.RLock()

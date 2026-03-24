@@ -133,8 +133,8 @@ func main() {
 	// --- GAME ROUTES ---
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
 
-	// Public game routes
-	r.GET("/games/:id", gameHandler.GetGame)
+	// Public game routes (JWT optional — used for event visibility filtering)
+	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// Protected game routes
 	r.GET("/games", http.JWTAuthMiddleware(), gameHandler.GetGames)

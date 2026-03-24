@@ -119,15 +119,50 @@ func (h *GameHandler) InvitePlayer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Player invited successfully"})
 }
 
-// GetGame returns a specific game
+// GetGame returns a specific game, filtering events based on the requesting user's visibility.
+// This route is public so JWT is optional — unauthenticated callers only see "all" events.
 func (h *GameHandler) GetGame(c *gin.Context) {
 	gameID := c.Param("id")
+
+	// Extract requesting user ID from JWT if present (route is public, so JWT may be absent)
+	var requestingUserID primitive.ObjectID
+	hasUser := false
+	if tokenRaw, exists := c.Get("jwt"); exists && tokenRaw != nil {
+		if jwtToken, ok := tokenRaw.(*jwt.Token); ok {
+			if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok {
+				if userIDStr, ok := claims["user_id"].(string); ok {
+					if id, err := primitive.ObjectIDFromHex(userIDStr); err == nil {
+						requestingUserID = id
+						hasUser = true
+					}
+				}
+			}
+		}
+	}
 
 	game, err := h.GameService.GetGame(gameID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Filter events based on visibility and requesting user
+	filteredEvents := []models.GameEvent{}
+	for _, e := range game.Events {
+		switch e.Visibility {
+		case "gm_only":
+			if hasUser && requestingUserID == game.GameMasterID {
+				filteredEvents = append(filteredEvents, e)
+			}
+		case "gm_and_roller":
+			if hasUser && (requestingUserID == game.GameMasterID || requestingUserID == e.RollerUserID) {
+				filteredEvents = append(filteredEvents, e)
+			}
+		default: // "all" or legacy events without visibility
+			filteredEvents = append(filteredEvents, e)
+		}
+	}
+	game.Events = filteredEvents
 
 	c.JSON(http.StatusOK, game)
 }
@@ -214,7 +249,8 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		Sides int `json:"sides" binding:"required"`
+		Sides      int    `json:"sides" binding:"required"`
+		Visibility string `json:"visibility"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -233,7 +269,7 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username)
+	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -251,6 +287,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 		Modifier    int    `json:"modifier"`
 		DiceMod     int    `json:"diceMod"`
 		CharacterID string `json:"characterId" binding:"required"`
+		Visibility  string `json:"visibility"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -269,7 +306,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.DiceMod, req.CharacterID, userID, username)
+	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.DiceMod, req.CharacterID, userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -289,6 +326,7 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 		Modifier    int    `json:"modifier"`
 		DiceMod     int    `json:"diceMod"`
 		CharacterID string `json:"characterId" binding:"required"`
+		Visibility  string `json:"visibility"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -307,7 +345,7 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.DiceMod, req.CharacterID, userID, username)
+	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.DiceMod, req.CharacterID, userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

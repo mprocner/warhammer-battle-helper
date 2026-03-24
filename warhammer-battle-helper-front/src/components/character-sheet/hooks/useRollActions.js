@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { getApiUrl, getApiHeaders } from '../../../api/axios';
 
-function useRollActions(gameId, token, characterId, characterName, addLogMessage) {
+function useRollActions(gameId, token, characterId, characterName, addLogMessage, rollVisibility = 'all') {
     const { t } = useTranslation();
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
@@ -27,7 +27,8 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
                 body: JSON.stringify({
                     skill: skillKey,
                     modifier: modifierValue,
-                    characterId
+                    characterId,
+                    visibility: rollVisibility
                 })
             });
 
@@ -41,7 +42,7 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
                 addLogMessage(t('combat.rollFailed'), 'error');
             }
         }
-    }, [gameId, token, characterId, addLogMessage, t]);
+    }, [gameId, token, characterId, addLogMessage, t, rollVisibility]);
 
     const rollCharacteristic = useCallback(async (charName, charValue, modifierValue) => {
         const sides = 100;
@@ -58,7 +59,8 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
                         sides,
                         characterId,
                         attribute: charName,
-                        attributeModifier: modifierValue
+                        attributeModifier: modifierValue,
+                        visibility: rollVisibility
                     })
                 });
 
@@ -89,7 +91,7 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
                 addLogMessage(t('combat.rollFailed'), 'error');
             }
         }
-    }, [gameId, token, characterId, characterName, addLogMessage, t]);
+    }, [gameId, token, characterId, characterName, addLogMessage, t, rollVisibility]);
 
     const handleCharacteristicClick = useCallback((charName, charValue, event) => {
         if (!charValue || charValue === '-') {

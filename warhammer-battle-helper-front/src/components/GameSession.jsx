@@ -35,6 +35,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [brushSize, setBrushSize] = useState(10);
   const [drawingColor, setDrawingColor] = useState('#ff0000');
   const [drawingFontSize, setDrawingFontSize] = useState(16);
+  const [rollVisibility, setRollVisibility] = useState('all');
 
   // --- Online users ---
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -754,6 +755,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             onDrawingPathComplete={handleDrawingPathComplete}
             onDeleteDrawingPath={handleDeleteDrawingPath}
             currentSceneId={displayScene?.id}
+            rollVisibility={rollVisibility}
           />
         </Box>
 
@@ -779,6 +781,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onPlayerVolumeChange={onPlayerVolumeChange}
           onlineUserIds={onlineUserIds}
           onParticipantUpdated={fetchGameState}
+          rollVisibility={rollVisibility}
+          onRollVisibilityChange={setRollVisibility}
         />
       </Box>
 

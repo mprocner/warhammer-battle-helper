@@ -698,7 +698,12 @@
     "custom": "Custom",
     "roll": "Roll",
     "chatPlaceholder": "Send a message...",
-    "send": "Send"
+    "send": "Send",
+    "visibility": {
+      "all": "Everyone",
+      "gmAndRoller": "GM + Player",
+      "gmOnly": "GM Only"
+    }
   },
   "coc": {
     "hp": "Hit Points",

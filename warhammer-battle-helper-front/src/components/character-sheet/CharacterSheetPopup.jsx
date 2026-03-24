@@ -26,7 +26,7 @@ import AdvancedSkillsSection from './sections/AdvancedSkillsSection';
 import SpellsSection from './sections/SpellsSection';
 import NotesSection from './sections/NotesSection';
 
-function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false }) {
+function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all' }) {
     const { t } = useTranslation();
 
     const {
@@ -50,7 +50,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         handleSkillClick,
         handleModifierConfirm,
         handleModifierCancel
-    } = useRollActions(gameId, token, character.id, editedCharacter.basicInfo?.name, addLogMessage);
+    } = useRollActions(gameId, token, character.id, editedCharacter.basicInfo?.name, addLogMessage, rollVisibility);
 
     // Generic field change with deep path support and characteristic recalculation
     const handleFieldChange = useCallback((path, value) => {

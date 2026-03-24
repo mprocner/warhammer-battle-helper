@@ -503,40 +503,65 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	return nil
 }
 
+// broadcastRoll sends a roll event to the appropriate set of clients based on visibility.
+func (s *GameService) broadcastRoll(gameID, eventType string, payload map[string]interface{}, visibility string, rollerID, gmID primitive.ObjectID) {
+	switch visibility {
+	case "gm_only":
+		s.hub.BroadcastToUsers(gameID, eventType, payload, []string{gmID.Hex()})
+	case "gm_and_roller":
+		targets := []string{gmID.Hex()}
+		if rollerID != gmID {
+			targets = append(targets, rollerID.Hex())
+		}
+		s.hub.BroadcastToUsers(gameID, eventType, payload, targets)
+	default: // "all" or empty
+		s.hub.BroadcastToGame(gameID, eventType, payload)
+	}
+}
+
 // RollDice rolls dice and logs the result (simple die roll, no character lookup)
-func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string) (int, error) {
+func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, visibility string) (int, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return 0, fmt.Errorf("game not found: %w", err)
+	}
+
 	dice := Dice{Sizes: sides}
 	result := dice.Roll()
 
-	displayName := username
-	if game, err := s.gameRepo.GetByID(gameID); err == nil {
-		displayName = s.resolveDisplayNameForUser(game, userID, username)
+	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	if visibility == "" {
+		visibility = "all"
 	}
 
 	eventData := map[string]interface{}{
-		"rollType": "simple",
-		"sides":    sides,
-		"result":   result,
-		"username": displayName,
+		"rollType":     "simple",
+		"sides":        sides,
+		"result":       result,
+		"username":     displayName,
+		"visibility":   visibility,
+		"rollerUserId": userID.Hex(),
 	}
 
 	event := models.GameEvent{
-		Type:      models.EventTypeDiceRoll,
-		CreatedBy: userID,
-		Username:  displayName,
-		Data:      eventData,
+		Type:         models.EventTypeDiceRoll,
+		CreatedBy:    userID,
+		Username:     displayName,
+		Visibility:   visibility,
+		RollerUserID: userID,
+		Data:         eventData,
 	}
 
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return 0, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "DICE_ROLLED", eventData)
+	s.broadcastRoll(gameID, "DICE_ROLLED", eventData, visibility, userID, game.GameMasterID)
 	return result, nil
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.
-func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return nil, fmt.Errorf("game not found: %w", err)
@@ -558,6 +583,9 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 	}
 
 	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	if visibility == "" {
+		visibility = "all"
+	}
 
 	rollResult.CharacterID = characterID
 	rollResult.CharacterName = character.Name
@@ -577,24 +605,28 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 		"diceMod":       diceMod,
 		"allRolls":      rollResult.AllRolls,
 		"username":      displayName,
+		"visibility":    visibility,
+		"rollerUserId":  userID.Hex(),
 	}
 
 	event := models.GameEvent{
-		Type:      models.EventTypeDiceRoll,
-		CreatedBy: userID,
-		Username:  displayName,
-		Data:      broadcastData,
+		Type:         models.EventTypeDiceRoll,
+		CreatedBy:    userID,
+		Username:     displayName,
+		Visibility:   visibility,
+		RollerUserID: userID,
+		Data:         broadcastData,
 	}
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SKILL_ROLLED", broadcastData)
+	s.broadcastRoll(gameID, "SKILL_ROLLED", broadcastData, visibility, userID, game.GameMasterID)
 	return broadcastData, nil
 }
 
 // RollWeapon rolls a weapon attack dispatched through the game system registry.
-func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string) (map[string]interface{}, error) {
+func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return nil, fmt.Errorf("game not found: %w", err)
@@ -616,6 +648,9 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 	}
 
 	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	if visibility == "" {
+		visibility = "all"
+	}
 
 	rollResult.CharacterID = characterID
 	rollResult.CharacterName = character.Name
@@ -637,19 +672,23 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		"diceMod":         diceMod,
 		"allRolls":        rollResult.AllRolls,
 		"username":        displayName,
+		"visibility":      visibility,
+		"rollerUserId":    userID.Hex(),
 	}
 
 	event := models.GameEvent{
-		Type:      models.EventTypeDiceRoll,
-		CreatedBy: userID,
-		Username:  displayName,
-		Data:      broadcastData,
+		Type:         models.EventTypeDiceRoll,
+		CreatedBy:    userID,
+		Username:     displayName,
+		Visibility:   visibility,
+		RollerUserID: userID,
+		Data:         broadcastData,
 	}
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "WEAPON_ROLLED", broadcastData)
+	s.broadcastRoll(gameID, "WEAPON_ROLLED", broadcastData, visibility, userID, game.GameMasterID)
 	return broadcastData, nil
 }
 

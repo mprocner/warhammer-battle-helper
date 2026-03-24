@@ -18,7 +18,8 @@ function CharacterDetailsPanel({
     isGM = false,
     gameSystem = 'warhammer4e',
     autoOpenSheet = false,
-    onSheetOpened = null
+    onSheetOpened = null,
+    rollVisibility = 'all'
 }) {
     const system = getSystem(gameSystem);
     const { t } = useTranslation();
@@ -245,6 +246,7 @@ function CharacterDetailsPanel({
                 gameId={gameId}
                 token={token}
                 isGM={isGM}
+                rollVisibility={rollVisibility}
             />
         );
     }
@@ -374,7 +376,8 @@ function CharacterDetailsPanel({
                         sides,
                         characterId: character.id,
                         attribute: charName,
-                        attributeModifier: modifierValue
+                        attributeModifier: modifierValue,
+                        visibility: rollVisibility
                     })
                 });
 
@@ -429,7 +432,8 @@ function CharacterDetailsPanel({
                     body: JSON.stringify({
                         skill: skillKey,
                         modifier: modifierValue,
-                        characterId: character.id
+                        characterId: character.id,
+                        visibility: rollVisibility
                     })
                 });
 
@@ -468,7 +472,8 @@ function CharacterDetailsPanel({
                         weaponSkill: weaponSkill,
                         damage: weaponDamage || '',
                         modifier: modifierValue,
-                        characterId: character.id
+                        characterId: character.id,
+                        visibility: rollVisibility
                     })
                 });
 
@@ -691,6 +696,7 @@ function CharacterDetailsPanel({
                         gameId={gameId}
                         token={token}
                         isGM={isGM}
+                        rollVisibility={rollVisibility}
                     />
                 );
             })()}

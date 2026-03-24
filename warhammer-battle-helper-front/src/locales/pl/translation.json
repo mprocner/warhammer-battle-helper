@@ -699,7 +699,12 @@
     "custom": "Własna",
     "roll": "Rzuć",
     "chatPlaceholder": "Wyślij wiadomość...",
-    "send": "Wyślij"
+    "send": "Wyślij",
+    "visibility": {
+      "all": "Wszyscy",
+      "gmAndRoller": "MG + Gracz",
+      "gmOnly": "Tylko MG"
+    }
   },
   "coc": {
     "hp": "Punkty Wytrzymałości",

@@ -28,7 +28,7 @@ const ATTRIBUTES = [
   { key: 'mov', labelKey: 'coc.attr_mov', simple: true },
 ];
 
-function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false }) {
+function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all' }) {
   const { t } = useTranslation();
   const stats = character.stats || {};
 
@@ -232,12 +232,12 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `attr_${attrKey}`, modifier: 0, diceMod, characterId: character.id })
+        body: JSON.stringify({ skill: `attr_${attrKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) {
       console.error('Roll error:', err);
     }
-  }, [gameId, token, character.id]);
+  }, [gameId, token, character.id, rollVisibility]);
 
   const rollSkill = useCallback(async (skillKey, diceMod = 0) => {
     if (!gameId || !token) return;
@@ -245,12 +245,12 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) {
       console.error('Roll error:', err);
     }
-  }, [gameId, token, character.id]);
+  }, [gameId, token, character.id, rollVisibility]);
 
   const rollWeapon = useCallback(async (weapon, diceMod = 0) => {
     if (!gameId || !token) return;
@@ -264,13 +264,14 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           damage: weapon.damage,
           modifier: 0,
           diceMod,
-          characterId: character.id
+          characterId: character.id,
+          visibility: rollVisibility
         })
       });
     } catch (err) {
       console.error('Weapon roll error:', err);
     }
-  }, [gameId, token, character.id]);
+  }, [gameId, token, character.id, rollVisibility]);
 
   // Sorted skills from JSON + custom skills. Only brand-new (unsaved) custom skills go last.
   const skills = useMemo(() => {

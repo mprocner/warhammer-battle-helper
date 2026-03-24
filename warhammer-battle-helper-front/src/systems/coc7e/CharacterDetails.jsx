@@ -30,6 +30,7 @@ function CoCCharacterDetails({
   isGM = false,
   autoOpenSheet = false,
   onSheetOpened = null,
+  rollVisibility = 'all',
 }) {
   const { t } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
@@ -100,7 +101,7 @@ function CoCCharacterDetails({
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) {
       console.error('Roll error:', err);
@@ -120,7 +121,8 @@ function CoCCharacterDetails({
           damage: weapon.damage,
           modifier: 0,
           diceMod,
-          characterId: character.id
+          characterId: character.id,
+          visibility: rollVisibility
         })
       });
     } catch (err) {
@@ -134,7 +136,7 @@ function CoCCharacterDetails({
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id })
+        body: JSON.stringify({ skill: skillKey, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) {
       console.error('Roll error:', err);
@@ -350,6 +352,7 @@ function CoCCharacterDetails({
           gameId={gameId}
           token={token}
           isGM={isGM}
+          rollVisibility={rollVisibility}
         />
       )}
     </div>

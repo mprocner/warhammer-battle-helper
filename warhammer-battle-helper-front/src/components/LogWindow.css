@@ -388,6 +388,7 @@
   flex-direction: row;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: space-around;
 }
 
 .dice-controls__button {
@@ -470,6 +471,51 @@
 .dice-controls__send-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ================== ROLL VISIBILITY SELECT ================== */
+.dice-controls__visibility-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.dice-controls__visibility-select {
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--log-brown-light);
+  border-radius: 4px;
+  color: var(--log-brown-text);
+  font-family: var(--log-font-body);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.dice-controls__visibility-select:hover,
+.dice-controls__visibility-select:focus {
+  border-color: #a67c52;
+  outline: none;
+}
+
+.dice-controls__visibility-select option {
+  background: #2a1f14;
+  color: var(--log-brown-accent);
+}
+
+/* ================== HIDDEN ROLL INDICATOR ================== */
+.log-entry--hidden-roll {
+  position: relative;
+}
+
+.log-entry__lock-icon {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 12px !important;
+  color: var(--log-brown-muted);
+  opacity: 0.8;
 }
 
 /* ================== MODIFIER TEXT ================== */

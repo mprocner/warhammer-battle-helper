@@ -8,6 +8,28 @@ import (
 	"strings"
 )
 
+// JWTOptionalMiddleware parses the JWT if present and sets it in context, but does not abort if missing.
+func JWTOptionalMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		if header == "" || !strings.HasPrefix(header, "Bearer ") {
+			c.Next()
+			return
+		}
+		tokenStr := strings.TrimPrefix(header, "Bearer ")
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return helpers.PublicKey, nil
+		})
+		if err == nil && token.Valid {
+			c.Set("jwt", token)
+		}
+		c.Next()
+	}
+}
+
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")

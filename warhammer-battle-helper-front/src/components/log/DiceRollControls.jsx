@@ -4,7 +4,7 @@ import '../LogWindow.css';
 
 const DICE = [4, 6, 8, 10, 12, 20, 100];
 
-const DiceRollControls = ({ onRoll, onSendMessage }) => {
+const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange }) => {
     const { t } = useTranslation();
     const [chatMessage, setChatMessage] = useState('');
 
@@ -24,6 +24,17 @@ const DiceRollControls = ({ onRoll, onSendMessage }) => {
 
     return (
         <div className="dice-controls">
+            <div className="dice-controls__visibility-row">
+                <select
+                    className="dice-controls__visibility-select"
+                    value={rollVisibility}
+                    onChange={e => onVisibilityChange && onVisibilityChange(e.target.value)}
+                >
+                    <option value="all">{t('dice.visibility.all')}</option>
+                    <option value="gm_and_roller">{t('dice.visibility.gmAndRoller')}</option>
+                    <option value="gm_only">{t('dice.visibility.gmOnly')}</option>
+                </select>
+            </div>
             <div className="dice-controls__row">
                 {DICE.map((sides) => (
                     <button

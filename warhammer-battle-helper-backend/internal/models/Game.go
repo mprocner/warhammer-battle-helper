@@ -89,12 +89,14 @@ const (
 
 // GameEvent represents an event that occurred in the game
 type GameEvent struct {
-	ID        primitive.ObjectID     `bson:"_id,omitempty" json:"id"`
-	Type      EventType              `bson:"type" json:"type"`
-	Data      map[string]interface{} `bson:"data" json:"data"`
-	CreatedBy primitive.ObjectID     `bson:"createdBy" json:"createdBy"`
-	Username  string                 `bson:"username" json:"username"`
-	CreatedAt time.Time              `bson:"createdAt" json:"createdAt"`
+	ID           primitive.ObjectID     `bson:"_id,omitempty" json:"id"`
+	Type         EventType              `bson:"type" json:"type"`
+	Data         map[string]interface{} `bson:"data" json:"data"`
+	CreatedBy    primitive.ObjectID     `bson:"createdBy" json:"createdBy"`
+	Username     string                 `bson:"username" json:"username"`
+	Visibility   string                 `bson:"visibility" json:"visibility"`     // "all" | "gm_and_roller" | "gm_only"
+	RollerUserID primitive.ObjectID     `bson:"rollerUserId" json:"rollerUserId"` // who triggered the roll
+	CreatedAt    time.Time              `bson:"createdAt" json:"createdAt"`
 }
 
 // CreateGameRequest is the request body for creating a new game

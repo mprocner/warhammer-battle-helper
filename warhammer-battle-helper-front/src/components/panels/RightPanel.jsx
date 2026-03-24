@@ -41,6 +41,8 @@ const RightPanel = ({
   onPlayerVolumeChange,
   onlineUserIds = [],
   onParticipantUpdated,
+  rollVisibility = 'all',
+  onRollVisibilityChange,
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -83,7 +85,7 @@ const RightPanel = ({
         const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
           method: 'POST',
           headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-          body: JSON.stringify({ sides })
+          body: JSON.stringify({ sides, visibility: rollVisibility })
         });
         if (!response.ok) throw new Error('Failed to roll dice');
       } else {
@@ -94,7 +96,7 @@ const RightPanel = ({
       console.error('Error rolling dice:', error);
       addLogMessage('Failed to roll dice', 'error');
     }
-  }, [gameId, token, addLogMessage]);
+  }, [gameId, token, addLogMessage, rollVisibility]);
 
   // Build tabs array - Files and Scenes tabs only visible to GM
   const tabs = useMemo(() => {
@@ -226,7 +228,7 @@ const RightPanel = ({
             )}
           </div>
 
-          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} />
+          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} />
         </div>
       </div>
     </aside>
