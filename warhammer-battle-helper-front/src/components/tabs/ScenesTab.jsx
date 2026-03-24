@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
+import { resolveDisplayName } from '../../utils/participants';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
 import CloudIcon from '@mui/icons-material/Cloud';
 import EditIcon from '@mui/icons-material/Edit';
@@ -411,7 +412,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                         checked={isAssigned}
                         onChange={() => handleTogglePlayer(p.userId)}
                       />
-                      <span>{p.username}</span>
+                      <span>{resolveDisplayName(p) || p.username}</span>
                     </label>
                   );
                 })

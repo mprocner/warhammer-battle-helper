@@ -18,7 +18,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // @title Battle Helper API
@@ -128,16 +127,8 @@ func main() {
 	// --- PROTECTED ---
 	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
 
-	r.GET("/profile", http.JWTAuthMiddleware(), func(c *gin.Context) {
-		token, _ := c.Get("jwt")
-		if claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims); ok {
-			email := claims["email"].(string)
-			userID := claims["user_id"].(string)
-			c.JSON(nethttp.StatusOK, gin.H{"email": email, "user_id": userID})
-			return
-		}
-		c.JSON(nethttp.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
-	})
+	r.GET("/profile", http.JWTAuthMiddleware(), authHandler.GetProfile)
+	r.PATCH("/profile", http.JWTAuthMiddleware(), authHandler.UpdateProfile)
 
 	// --- GAME ROUTES ---
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
@@ -158,6 +149,7 @@ func main() {
 	r.DELETE("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.DeleteGameCharacter)
 	r.POST("/games/:id/characters/:charId/clone", http.JWTAuthMiddleware(), characterHandler.CloneGameCharacter)
 	r.PUT("/games/:id/characters/:charId/visibility", http.JWTAuthMiddleware(), characterHandler.UpdateCharacterVisibility)
+	r.PATCH("/games/:id/participant", http.JWTAuthMiddleware(), gameHandler.UpdateParticipant)
 	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
 	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
 	r.POST("/games/:id/rollWeapon", http.JWTAuthMiddleware(), gameHandler.RollWeapon)

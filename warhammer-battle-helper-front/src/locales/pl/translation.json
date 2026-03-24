@@ -44,6 +44,8 @@
     "registrationSuccess": "Rejestracja zakończona sukcesem! Sprawdź swoją skrzynkę e-mail, aby aktywować konto.",
     "registrationFailed": "Rejestracja nie powiodła się",
     "minimumCharacters": "Minimum 6 znaków",
+    "signature": "Podpis (opcjonalnie)",
+    "signaturePlaceholder": "Jak inni będą Cię widzieć w grach",
     "emailNotConfirmed": "Potwierdź swój adres e-mail przed zalogowaniem",
     "verifyEmailTitle": "Konto aktywowane!",
     "verifyEmailSuccess": "Twój adres e-mail został potwierdzony. Konto jest teraz aktywne.",
@@ -75,6 +77,16 @@
   "userSettings": {
     "title": "Ustawienia konta",
     "selectOption": "Wybierz opcję z menu",
+    "account": {
+      "title": "Konto",
+      "avatar": "Avatar",
+      "signature": "Podpis",
+      "signaturePlaceholder": "Jak inni będą Cię widzieć w grach",
+      "save": "Zapisz",
+      "saving": "Zapisywanie...",
+      "successMessage": "Profil zaktualizowany",
+      "avatarHint": "Kliknij, aby zmienić avatar"
+    },
     "changePassword": {
       "title": "Zmiana hasła",
       "currentPasswordLabel": "Aktualne hasło",
@@ -118,7 +130,23 @@
     "deleteGame": "Usuń Grę",
     "deleteGameConfirm": "Czy na pewno chcesz usunąć \"{{name}}\"? Tej operacji nie można cofnąć.",
     "leaveGame": "Opuść Grę",
-    "leaveGameConfirm": "Czy na pewno chcesz opuścić \"{{name}}\"?"
+    "leaveGameConfirm": "Czy na pewno chcesz opuścić \"{{name}}\"?",
+    "player": {
+      "title": "Gracz",
+      "avatar": "Avatar w tej grze",
+      "avatarHint": "Nadpisuje avatar z ustawień konta dla tej gry",
+      "signature": "Podpis w tej grze",
+      "signatureType": {
+        "account": "Podpis z konta",
+        "character": "Nazwa postaci",
+        "custom": "Własny podpis"
+      },
+      "characterPlaceholder": "Wybierz postać...",
+      "customPlaceholder": "Wpisz swój podpis...",
+      "save": "Zapisz",
+      "saving": "Zapisywanie...",
+      "successMessage": "Ustawienia gracza zaktualizowane"
+    }
   },
   "character": {
     "name": "Imię",

@@ -10,6 +10,7 @@ import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 import SceneSelector from './scene/SceneSelector';
+import OnlineUsersBar from './online-users/OnlineUsersBar';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -224,6 +225,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           `A player left the game`,
           'info'
         );
+        fetchGameState();
+        break;
+
+      case 'PARTICIPANT_UPDATED':
         fetchGameState();
         break;
 
@@ -773,8 +778,15 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           playerVolume={playerVolume}
           onPlayerVolumeChange={onPlayerVolumeChange}
           onlineUserIds={onlineUserIds}
+          onParticipantUpdated={fetchGameState}
         />
       </Box>
+
+      <OnlineUsersBar
+        game={gameState}
+        participants={gameState?.participants || []}
+        onlineUserIds={onlineUserIds}
+      />
 
       <ConfirmModal
         isOpen={showLeaveConfirm}

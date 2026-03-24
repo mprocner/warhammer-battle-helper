@@ -349,6 +349,43 @@ func (h *GameHandler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Message sent"})
 }
 
+// UpdateParticipant updates avatar and signature for the requesting user in a game
+func (h *GameHandler) UpdateParticipant(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req struct {
+		Avatar    string `json:"avatar"`
+		Signature string `json:"signature"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.UpdateParticipant(gameID, userID, req.Avatar, req.Signature); err != nil {
+		switch err.Error() {
+		case "user is not a participant of this game":
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case "signature must be at most 50 characters":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Participant updated successfully"})
+}
+
 // HandleWebSocket upgrades HTTP connection to WebSocket for real-time game updates
 func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	gameID := c.Param("id")

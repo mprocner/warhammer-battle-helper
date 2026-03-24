@@ -307,6 +307,33 @@ func (r *UserRepository) FindByResetToken(token string) (*models.User, error) {
 	return &user, nil
 }
 
+// UpdateProfile updates user's avatar and signature
+func (r *UserRepository) UpdateProfile(id primitive.ObjectID, avatar, signature string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"avatar": avatar, "signature": signature}},
+	)
+	return err
+}
+
+// FindByIDs retrieves multiple users by their IDs (batch query)
+func (r *UserRepository) FindByIDs(ids []primitive.ObjectID) ([]models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cursor, err := r.Collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	var users []models.User
+	if err := cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepository) UpdatePassword(id primitive.ObjectID, hashedPassword string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

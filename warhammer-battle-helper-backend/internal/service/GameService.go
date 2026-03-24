@@ -6,6 +6,7 @@ import (
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"fmt"
+	"log"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -49,6 +50,7 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 		Events:         []models.GameEvent{},
 		Handouts:       []models.Handout{},
 		HandoutFolders: []models.HandoutFolder{},
+		Scenes:         []models.Scene{},
 	}
 
 	if err := s.gameRepo.Create(game); err != nil {
@@ -83,6 +85,9 @@ func (s *GameService) GetGame(gameID string) (*models.Game, error) {
 	// Ensure backward compatibility - create default scene if none exist
 	s.EnsureDefaultScene(game)
 
+	// Ensure GM is in participants (backward compat for older games)
+	s.EnsureGMParticipant(game)
+
 	// Populate Game Master email
 	if !game.GameMasterID.IsZero() {
 		gmUser, err := s.userRepo.FindByID(game.GameMasterID)
@@ -91,7 +96,96 @@ func (s *GameService) GetGame(gameID string) (*models.Game, error) {
 		}
 	}
 
+	// Enrich participants with account avatar and signature
+	s.enrichParticipants(game)
+
 	return game, nil
+}
+
+// EnsureGMParticipant adds the GM to the participants array if missing (backward compat for older games)
+func (s *GameService) EnsureGMParticipant(game *models.Game) {
+	if game.GameMasterID.IsZero() {
+		return
+	}
+	for _, p := range game.Participants {
+		if p.UserID == game.GameMasterID {
+			return // GM already present
+		}
+	}
+	gmUser, err := s.userRepo.FindByID(game.GameMasterID)
+	if err != nil || gmUser == nil {
+		return
+	}
+	gm := models.GameParticipant{
+		UserID:   game.GameMasterID,
+		Username: gmUser.Email,
+		Email:    gmUser.Email,
+		Role:     models.RoleGameMaster,
+		JoinedAt: game.CreatedAt,
+	}
+	log.Printf("[DEBUG] EnsureGMParticipant: adding GM %s to participants for game %s", gmUser.Email, game.ID.Hex())
+	if err := s.gameRepo.AddParticipant(game.ID.Hex(), gm); err != nil {
+		log.Printf("[DEBUG] EnsureGMParticipant: failed to persist: %v", err)
+	}
+	game.Participants = append(game.Participants, gm)
+}
+
+// enrichParticipants populates AccountAvatar and AccountSignature for each participant
+func (s *GameService) enrichParticipants(game *models.Game) {
+	if len(game.Participants) == 0 {
+		return
+	}
+	ids := make([]primitive.ObjectID, 0, len(game.Participants))
+	for _, p := range game.Participants {
+		ids = append(ids, p.UserID)
+	}
+	users, err := s.userRepo.FindByIDs(ids)
+	if err != nil {
+		return
+	}
+	userMap := make(map[primitive.ObjectID]*models.User, len(users))
+	for i := range users {
+		userMap[users[i].ID] = &users[i]
+	}
+	for i := range game.Participants {
+		if u, ok := userMap[game.Participants[i].UserID]; ok {
+			game.Participants[i].AccountAvatar = u.Avatar
+			game.Participants[i].AccountSignature = u.Signature
+		}
+	}
+}
+
+// resolveDisplayName returns the best display name for a participant: game sig → account sig → email
+func resolveDisplayName(participant *models.GameParticipant, user *models.User) string {
+	if participant.Signature != "" {
+		return participant.Signature
+	}
+	if user != nil && user.Signature != "" {
+		return user.Signature
+	}
+	if user != nil {
+		return user.Email
+	}
+	return participant.Email
+}
+
+// resolveDisplayNameForUser resolves display name for a user in a game context
+func (s *GameService) resolveDisplayNameForUser(game *models.Game, userID primitive.ObjectID, fallbackEmail string) string {
+	var participant *models.GameParticipant
+	for i := range game.Participants {
+		if game.Participants[i].UserID == userID {
+			participant = &game.Participants[i]
+			break
+		}
+	}
+	if participant == nil {
+		return fallbackEmail
+	}
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return resolveDisplayName(participant, nil)
+	}
+	return resolveDisplayName(participant, user)
 }
 
 // GetAllGames retrieves all active games
@@ -414,17 +508,22 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	dice := Dice{Sizes: sides}
 	result := dice.Roll()
 
+	displayName := username
+	if game, err := s.gameRepo.GetByID(gameID); err == nil {
+		displayName = s.resolveDisplayNameForUser(game, userID, username)
+	}
+
 	eventData := map[string]interface{}{
 		"rollType": "simple",
 		"sides":    sides,
 		"result":   result,
-		"username": username,
+		"username": displayName,
 	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
-		Username:  username,
+		Username:  displayName,
 		Data:      eventData,
 	}
 
@@ -458,9 +557,11 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 		return nil, err
 	}
 
+	displayName := s.resolveDisplayNameForUser(game, userID, username)
+
 	rollResult.CharacterID = characterID
 	rollResult.CharacterName = character.Name
-	rollResult.Username = username
+	rollResult.Username = displayName
 
 	broadcastData := map[string]interface{}{
 		"rollType":      rollResult.RollType,
@@ -475,13 +576,13 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 		"modifier":      modifier,
 		"diceMod":       diceMod,
 		"allRolls":      rollResult.AllRolls,
-		"username":      username,
+		"username":      displayName,
 	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
-		Username:  username,
+		Username:  displayName,
 		Data:      broadcastData,
 	}
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
@@ -514,9 +615,11 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		return nil, err
 	}
 
+	displayName := s.resolveDisplayNameForUser(game, userID, username)
+
 	rollResult.CharacterID = characterID
 	rollResult.CharacterName = character.Name
-	rollResult.Username = username
+	rollResult.Username = displayName
 
 	broadcastData := map[string]interface{}{
 		"rollType":        rollResult.RollType,
@@ -533,13 +636,13 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		"modifier":        modifier,
 		"diceMod":         diceMod,
 		"allRolls":        rollResult.AllRolls,
-		"username":        username,
+		"username":        displayName,
 	}
 
 	event := models.GameEvent{
 		Type:      models.EventTypeDiceRoll,
 		CreatedBy: userID,
-		Username:  username,
+		Username:  displayName,
 		Data:      broadcastData,
 	}
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
@@ -548,6 +651,39 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 
 	s.hub.BroadcastToGame(gameID, "WEAPON_ROLLED", broadcastData)
 	return broadcastData, nil
+}
+
+// UpdateParticipant updates avatar and signature for the requesting user in a game
+func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, signature string) error {
+	if len(signature) > 50 {
+		return fmt.Errorf("signature must be at most 50 characters")
+	}
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return fmt.Errorf("game not found")
+	}
+	// Verify user is a participant
+	found := false
+	for _, p := range game.Participants {
+		if p.UserID == userID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("user is not a participant of this game")
+	}
+	gameObjID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID")
+	}
+	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, signature); err != nil {
+		return err
+	}
+	s.hub.BroadcastToGame(gameID, "PARTICIPANT_UPDATED", map[string]interface{}{
+		"userId": userID.Hex(),
+	})
+	return nil
 }
 
 // CreateHandout creates a new handout in a game (GM only)

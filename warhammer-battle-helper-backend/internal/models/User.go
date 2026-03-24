@@ -35,6 +35,8 @@ type User struct {
 	ActivationToken  string             `bson:"activationToken" json:"-"`
 	ResetToken       string             `bson:"resetToken,omitempty" json:"-"`
 	ResetTokenExpiry time.Time          `bson:"resetTokenExpiry,omitempty" json:"-"`
+	Avatar           string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	Signature        string             `bson:"signature,omitempty" json:"signature,omitempty"`
 	Files            []UserFile         `bson:"files" json:"files"`
 	Folders          []UserFolder       `bson:"folders" json:"folders"`
 	Music            []MusicFile        `bson:"music" json:"music"`

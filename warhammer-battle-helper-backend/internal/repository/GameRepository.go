@@ -165,6 +165,33 @@ func (r *GameRepository) Delete(id string) error {
 	return nil
 }
 
+// UpdateParticipant updates avatar and signature for a specific participant in a game
+func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, avatar, signature string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": gameID}
+	update := bson.M{
+		"$set": bson.M{
+			"participants.$[elem].avatar":    avatar,
+			"participants.$[elem].signature": signature,
+		},
+	}
+	arrayFilters := options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem.userId": userID}},
+	}
+	opts := options.UpdateOptions{ArrayFilters: &arrayFilters}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update, &opts)
+	if err != nil {
+		return fmt.Errorf("failed to update participant: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
 // AddParticipant adds a participant to a game
 func (r *GameRepository) AddParticipant(gameID string, participant models.GameParticipant) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -760,6 +787,10 @@ func (r *GameRepository) AddScene(gameID string, scene models.Scene) (*models.Sc
 	if scene.AssignedPlayers == nil {
 		scene.AssignedPlayers = []primitive.ObjectID{}
 	}
+
+	// Ensure scenes field is an array (handles legacy documents with null)
+	r.Collection.UpdateOne(ctx, bson.M{"_id": objectID, "scenes": nil},
+		bson.M{"$set": bson.M{"scenes": []interface{}{}}})
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{

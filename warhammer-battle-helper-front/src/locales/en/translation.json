@@ -44,6 +44,8 @@
     "registrationSuccess": "Registration successful! Please check your email to activate your account.",
     "registrationFailed": "Registration failed",
     "minimumCharacters": "Minimum 6 characters",
+    "signature": "Signature (optional)",
+    "signaturePlaceholder": "How others will see you in games",
     "emailNotConfirmed": "Please confirm your email address before logging in",
     "verifyEmailTitle": "Account Activated!",
     "verifyEmailSuccess": "Your email address has been confirmed. Your account is now active.",
@@ -75,6 +77,16 @@
   "userSettings": {
     "title": "Account Settings",
     "selectOption": "Select an option from the menu",
+    "account": {
+      "title": "Account",
+      "avatar": "Avatar",
+      "signature": "Signature",
+      "signaturePlaceholder": "How others will see you in games",
+      "save": "Save",
+      "saving": "Saving...",
+      "successMessage": "Profile updated successfully",
+      "avatarHint": "Click to change avatar"
+    },
     "changePassword": {
       "title": "Change Password",
       "currentPasswordLabel": "Current Password",
@@ -118,7 +130,23 @@
     "deleteGame": "Delete Game",
     "deleteGameConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "leaveGame": "Leave Game",
-    "leaveGameConfirm": "Are you sure you want to leave \"{{name}}\"?"
+    "leaveGameConfirm": "Are you sure you want to leave \"{{name}}\"?",
+    "player": {
+      "title": "Player",
+      "avatar": "Avatar in this game",
+      "avatarHint": "Override your account avatar for this game",
+      "signature": "Signature in this game",
+      "signatureType": {
+        "account": "Account signature",
+        "character": "Character name",
+        "custom": "Custom"
+      },
+      "characterPlaceholder": "Select character...",
+      "customPlaceholder": "Enter your signature...",
+      "save": "Save",
+      "saving": "Saving...",
+      "successMessage": "Player settings updated"
+    }
   },
   "character": {
     "name": "Name",

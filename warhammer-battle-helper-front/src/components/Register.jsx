@@ -20,7 +20,8 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        signature: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -53,7 +54,8 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             // eslint-disable-next-line no-unused-vars
             const response = await axios.post(`${getApiUrl()}/register`, {
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
+                ...(formData.signature.trim() && { signature: formData.signature.trim() })
             }, {
                 headers: getApiHeaders()
             });
@@ -64,7 +66,8 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             setFormData({
                 email: '',
                 password: '',
-                confirmPassword: ''
+                confirmPassword: '',
+                signature: ''
             });
 
             if (onRegisterSuccess) {
@@ -140,6 +143,19 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             value={formData.confirmPassword}
                             onChange={handleChange}
                             disabled={isLoading}
+                        />
+
+                        <TextField
+                            margin="normal"
+                            fullWidth
+                            name="signature"
+                            label={t('auth.signature')}
+                            id="signature"
+                            value={formData.signature}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                            inputProps={{ maxLength: 50 }}
+                            helperText={t('auth.signaturePlaceholder')}
                         />
 
                         {error && (

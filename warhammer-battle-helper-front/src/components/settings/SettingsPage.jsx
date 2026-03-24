@@ -3,14 +3,16 @@ import { Container, Box, Paper, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import SettingsSidebar from './SettingsSidebar';
 import ChangePasswordForm from './ChangePasswordForm';
+import AccountSettingsForm from './AccountSettingsForm';
 
 const SECTION_COMPONENTS = {
+    account: <AccountSettingsForm />,
     changePassword: <ChangePasswordForm />,
 };
 
 const SettingsPage = () => {
     const { t } = useTranslation();
-    const [activeSection, setActiveSection] = useState(null);
+    const [activeSection, setActiveSection] = useState('account');
 
     return (
         <Container component="main" maxWidth="md">

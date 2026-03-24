@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { resolveDisplayName } from '../utils/participants';
 
 function CharacterVisibilityModal({ character, participants, gameId, token, onClose }) {
   const { t } = useTranslation();
@@ -78,7 +79,7 @@ function CharacterVisibilityModal({ character, participants, gameId, token, onCl
                       checked={selectedIds.has(p.userId)}
                       onChange={() => handleToggle(p.userId)}
                     />
-                    <span>{p.username || p.email}</span>
+                    <span>{resolveDisplayName(p) || p.username}</span>
                   </label>
                 </li>
               ))}

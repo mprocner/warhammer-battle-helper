@@ -40,6 +40,7 @@ const RightPanel = ({
   playerVolume,
   onPlayerVolumeChange,
   onlineUserIds = [],
+  onParticipantUpdated,
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -167,6 +168,7 @@ const RightPanel = ({
             isGM={isGM}
             token={token}
             gameId={gameId}
+            onParticipantUpdated={onParticipantUpdated}
           />
         );
       default:
@@ -180,13 +182,6 @@ const RightPanel = ({
       <header className="panel-header">
         <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
       </header>
-
-      {/* Online Users Bar */}
-      <OnlineUsersBar
-        game={gameState}
-        participants={gameState?.participants || []}
-        onlineUserIds={onlineUserIds}
-      />
 
       {/* Tabs Wrapper */}
       <div className="right-panel__tabs-wrapper">

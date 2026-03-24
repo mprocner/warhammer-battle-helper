@@ -1,9 +1,10 @@
 import React from 'react';
 import { List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { LockReset as LockResetIcon } from '@mui/icons-material';
+import { LockReset as LockResetIcon, AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
 const SECTIONS = [
+    { key: 'account', icon: <AccountCircleIcon /> },
     { key: 'changePassword', icon: <LockResetIcon /> },
 ];
 

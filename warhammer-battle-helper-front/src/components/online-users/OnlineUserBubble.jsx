@@ -1,6 +1,38 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { getAvatarUrl } from '../Avatar';
+import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
+
+const MARGIN = 8;
+
+function TooltipAbove({ top, center, text }) {
+    const ref = useRef(null);
+    const [left, setLeft] = useState(center);
+    const [arrowLeft, setArrowLeft] = useState('50%');
+
+    useLayoutEffect(() => {
+        if (!ref.current) return;
+        const w = ref.current.offsetWidth;
+        const clamped = Math.min(
+            Math.max(center - w / 2, MARGIN),
+            window.innerWidth - w - MARGIN
+        );
+        setLeft(clamped);
+        setArrowLeft(`${center - clamped}px`);
+    }, [center, text]);
+
+    return (
+        <div
+            ref={ref}
+            className="portal-tooltip portal-tooltip--above"
+            style={{ top, left }}
+        >
+            {text}
+            <span className="portal-tooltip__arrow" style={{ left: arrowLeft }} />
+        </div>
+    );
+}
 
 function getInitials(username) {
     if (!username) return '?';
@@ -18,8 +50,8 @@ const OnlineUserBubble = ({ participant, isOnline }) => {
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
         const rect = element.getBoundingClientRect();
         setTooltip({
-            top: rect.top + rect.height / 2,
-            left: rect.left,
+            top: rect.top,
+            center: rect.left + rect.width / 2,
             text,
         });
     };
@@ -31,8 +63,9 @@ const OnlineUserBubble = ({ participant, isOnline }) => {
     const roleLabel = participant.isGM
         ? t('onlineUsers.role_gm')
         : t('onlineUsers.role_player');
-    const tooltipText = `${participant.username} — ${roleLabel}`;
-    const initials = getInitials(participant.username);
+    const displayName = resolveDisplayName(participant) || participant.username;
+    const tooltipText = `${displayName} — ${roleLabel}`;
+    const avatarUrl = resolveAvatar(participant);
 
     return (
         <>
@@ -41,17 +74,19 @@ const OnlineUserBubble = ({ participant, isOnline }) => {
                 onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
                 onMouseLeave={hideTooltip}
             >
-                <span className="online-user-bubble__initials">{initials}</span>
+                {avatarUrl ? (
+                    <img
+                        src={getAvatarUrl(avatarUrl)}
+                        alt={displayName}
+                        className="online-user-bubble__avatar"
+                    />
+                ) : (
+                    <span className="online-user-bubble__initials">{getInitials(participant.username)}</span>
+                )}
                 <span className="online-user-bubble__dot" />
             </div>
             {tooltip && createPortal(
-                <div
-                    className="portal-tooltip"
-                    style={{ top: tooltip.top, left: tooltip.left }}
-                >
-                    {tooltip.text}
-                    <span className="portal-tooltip__arrow" />
-                </div>,
+                <TooltipAbove top={tooltip.top} center={tooltip.center} text={tooltip.text} />,
                 document.body
             )}
         </>

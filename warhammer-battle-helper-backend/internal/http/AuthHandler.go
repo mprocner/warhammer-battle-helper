@@ -21,8 +21,9 @@ type AuthHandler struct {
 }
 
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=8"`
+	Signature string `json:"signature"`
 }
 
 type LoginRequest struct {
@@ -74,6 +75,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Password:        string(hash),
 		Active:          false,
 		ActivationToken: token,
+		Signature:       req.Signature,
 	}
 	if err := h.UserRepo.Create(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
@@ -239,6 +241,69 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
+}
+
+func (h *AuthHandler) GetProfile(c *gin.Context) {
+	token, _ := c.Get("jwt")
+	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+		return
+	}
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	user, err := h.UserRepo.FindByID(userID)
+	if err != nil || user == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"email":     user.Email,
+		"user_id":   userIDStr,
+		"avatar":    user.Avatar,
+		"signature": user.Signature,
+	})
+}
+
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	var req struct {
+		Avatar    string `json:"avatar"`
+		Signature string `json:"signature"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if len(req.Signature) > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Signature must be at most 50 characters"})
+		return
+	}
+	token, _ := c.Get("jwt")
+	claims, ok := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token claims"})
+		return
+	}
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	if err := h.UserRepo.UpdateProfile(userID, req.Avatar, req.Signature); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"email":     claims["email"].(string),
+		"user_id":   userIDStr,
+		"avatar":    req.Avatar,
+		"signature": req.Signature,
+	})
 }
 
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {

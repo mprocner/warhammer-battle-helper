@@ -8,16 +8,17 @@ const OnlineUsersBar = ({ game, participants, onlineUserIds }) => {
         // GM is stored in participants[] with role "gm"
         const gm = (participants || []).find(p => p.userId === game.gameMasterId);
         const gmEntry = {
+            ...(gm || {}),
             userId: game.gameMasterId,
             username: gm?.username || game.gameMasterEmail || 'GM',
+            email: gm?.email || game.gameMasterEmail || '',
             isGM: true,
         };
 
         const players = (participants || [])
             .filter(p => p.userId !== game.gameMasterId)
             .map(p => ({
-                userId: p.userId,
-                username: p.username,
+                ...p,
                 isGM: false,
             }));
 
