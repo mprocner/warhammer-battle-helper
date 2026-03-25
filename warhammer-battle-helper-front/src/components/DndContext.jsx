@@ -1069,8 +1069,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
         <div className="fight-grid-wrapper" style={{ position: 'relative' }}>
           {sceneSelector}
-          {/* TODO: usunąć ten warunek po sesji :) */}
-          {(participants.find(p => p.userId === userId) || {}).email !== 'kowluc@op.pl' && (
           <OnlineUsersBar
             game={game}
             participants={participants}
@@ -1078,7 +1076,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
             bubbleSize={(participants.find(p => p.userId === userId) || {}).avatarSize || 'small'}
             showSignature={!!(participants.find(p => p.userId === userId) || {}).showSignature}
           />
-          )}
           {/* Drawing toolbar — floats over the scene, visible to all */}
           {currentScene && (
             <DrawingToolbar
