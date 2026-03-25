@@ -1,7 +1,7 @@
 .players-tab {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   padding: 16px;
   height: 100%;
   overflow-y: auto;
@@ -27,22 +27,113 @@
   background: #a67c52;
 }
 
+/* Header */
+.players-tab__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #c9975b;
+  flex-shrink: 0;
+}
+
 .players-tab__title {
+  margin: 0;
+  font-size: 14px;
   font-family: 'Cinzel', serif;
-  font-size: 1rem;
+  font-weight: 600;
+  color: #6b4423;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Section card */
+.players-tab__section {
+  background: linear-gradient(135deg, #f5ebe0 0%, #ede0ce 100%);
+  border: 2px solid #c9a66b;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.players-tab__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #6b4423;
-  margin: 0 0 4px 0;
-  padding-bottom: 8px;
+  margin: 0 0 2px 0;
+  padding-bottom: 6px;
   border-bottom: 1px solid #c9a66b;
 }
 
-.players-tab__empty {
-  color: #8a6a3a;
-  font-style: italic;
+/* Invite form */
+.players-tab__invite {
+  display: flex;
+  gap: 6px;
+}
+
+.players-tab__invite-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 2px solid #c9a66b;
+  border-radius: 6px;
+  background: #faf6f0;
+  color: #3d2800;
   font-size: 0.85rem;
+  outline: none;
+}
+
+.players-tab__invite-input:focus {
+  border-color: #6b4423;
+}
+
+.players-tab__invite-btn {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
+  color: #6b4423;
+  border: 1px solid #8b6b3d;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.players-tab__invite-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
+  border-color: #6b4423;
+}
+
+.players-tab__invite-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.players-tab__invite-msg {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.players-tab__invite-msg--success {
+  color: #2e7d32;
+}
+
+.players-tab__invite-msg--error {
+  color: #b94040;
+}
+
+/* Player list */
+.players-tab__empty {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #7a5c42;
   text-align: center;
-  margin-top: 16px;
+  padding: 8px;
+  font-style: italic;
 }
 
 .players-tab__list {
@@ -51,17 +142,23 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .players-tab__item {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(135deg, #f5ebe0 0%, #ede0ce 100%);
-  border: 1px solid #c9a66b;
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 8px;
+  transition: all 0.2s ease;
+}
+
+.players-tab__item:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #c9a66b;
 }
 
 .players-tab__avatar {
@@ -117,9 +214,10 @@
 }
 
 .players-tab__name {
-  font-size: 0.85rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #3d2800;
+  color: #4a3728;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

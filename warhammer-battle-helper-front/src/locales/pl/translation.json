@@ -525,6 +525,7 @@
   },
   "players": {
     "title": "Gracze",
+    "listTitle": "Lista graczy",
     "kick": "Usuń",
     "kickConfirm": "Usunąć {{name}} z gry?",
     "noPlayers": "Brak graczy"

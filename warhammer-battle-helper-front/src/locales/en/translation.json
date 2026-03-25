@@ -524,6 +524,7 @@
   },
   "players": {
     "title": "Players",
+    "listTitle": "Player list",
     "kick": "Remove",
     "kickConfirm": "Remove {{name}} from the game?",
     "noPlayers": "No players yet"
