@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
@@ -8,11 +9,15 @@ import CloneCharacterModal from './CloneCharacterModal';
 import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
+import OnlineUsersBar from './online-users/OnlineUsersBar';
 import { CELL_SIZE } from '../constants/scene';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConfirmModal from './common/ConfirmModal';
 
 const DEFAULT_GRID_WIDTH = 20;
@@ -59,7 +64,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all' }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [] }) {
   const { t } = useTranslation();
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
@@ -96,6 +101,18 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Collapsible character list sections
   const [pcListCollapsed, setPcListCollapsed] = useState(false);
   const [npcListCollapsed, setNpcListCollapsed] = useState(false);
+
+  // Character list button tooltips
+  const [charListTooltip, setCharListTooltip] = useState(null);
+  const charListTooltipTimeout = useRef(null);
+  const showCharTooltip = useCallback((text, el) => {
+    clearTimeout(charListTooltipTimeout.current);
+    const rect = el.getBoundingClientRect();
+    setCharListTooltip({ top: rect.top, left: rect.left + rect.width / 2, text });
+  }, []);
+  const hideCharTooltip = useCallback(() => {
+    charListTooltipTimeout.current = setTimeout(() => setCharListTooltip(null), 100);
+  }, []);
 
   // Resizable sidebar split
   const [splitPercent, setSplitPercent] = useState(50);
@@ -951,16 +968,18 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                                 e.stopPropagation();
                                 setCloneTarget(char);
                               }}
-                              title={t('character.clone')}
+                              onMouseEnter={e => showCharTooltip(t('character.clone'), e.currentTarget)}
+                              onMouseLeave={hideCharTooltip}
                             >
-                              ⧉
+                              <ContentCopyIcon style={{ fontSize: 14 }} aria-hidden />
                             </button>
                             <button
                               className="visibility-btn"
                               onClick={(e) => { e.stopPropagation(); setVisibilityTarget(char); }}
-                              title={t('character.manageVisibility')}
+                              onMouseEnter={e => showCharTooltip(t('character.manageVisibility'), e.currentTarget)}
+                              onMouseLeave={hideCharTooltip}
                             >
-                              <VisibilityIcon style={{ fontSize: 14 }} />
+                              <VisibilityIcon style={{ fontSize: 14 }} aria-hidden />
                             </button>
                           </>
                         )}
@@ -968,17 +987,19 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                           <button
                             className="delete-character-btn"
                             onClick={(e) => { e.stopPropagation(); setDeleteTarget(char); }}
-                            title={t('character.deleteCharacter')}
+                            onMouseEnter={e => showCharTooltip(t('character.deleteCharacter'), e.currentTarget)}
+                            onMouseLeave={hideCharTooltip}
                           >
-                            <CloseIcon style={{ fontSize: 14 }} />
+                            <CloseIcon style={{ fontSize: 14 }} aria-hidden />
                           </button>
                         )}
                         <button
                           className="grid-toggle-btn"
                           onClick={handleGridToggle}
-                          title={onGrid ? t('leftPanel.removeFromGrid') : t('leftPanel.addToGrid')}
+                          onMouseEnter={e => showCharTooltip(onGrid ? t('leftPanel.removeFromGrid') : t('leftPanel.addToGrid'), e.currentTarget)}
+                          onMouseLeave={hideCharTooltip}
                         >
-                          {onGrid ? '←' : '→'}
+                          {onGrid ? <ArrowBackIcon style={{ fontSize: 14 }} aria-hidden /> : <ArrowForwardIcon style={{ fontSize: 14 }} aria-hidden />}
                         </button>
                       </div>
                     </div>
@@ -1048,6 +1069,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
         <div className="fight-grid-wrapper" style={{ position: 'relative' }}>
           {sceneSelector}
+          <OnlineUsersBar
+            game={game}
+            participants={participants}
+            onlineUserIds={onlineUserIds}
+            bubbleSize={(participants.find(p => p.userId === userId) || {}).avatarSize || 'small'}
+            showSignature={!!(participants.find(p => p.userId === userId) || {}).showSignature}
+          />
           {/* Drawing toolbar — floats over the scene, visible to all */}
           {currentScene && (
             <DrawingToolbar
@@ -1131,6 +1159,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           token={token}
           onClose={() => setVisibilityTarget(null)}
         />
+      )}
+
+      {charListTooltip && createPortal(
+        <div className="portal-tooltip portal-tooltip--above" style={{ top: charListTooltip.top, left: charListTooltip.left }}>
+          {charListTooltip.text}
+          <div className="portal-tooltip__arrow" />
+        </div>,
+        document.body
       )}
 
       {/* Delete Character Confirm Modal */}

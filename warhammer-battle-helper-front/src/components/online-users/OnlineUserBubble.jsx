@@ -1,35 +1,17 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
 
-const MARGIN = 8;
-
 function TooltipAbove({ top, center, text }) {
-    const ref = useRef(null);
-    const [left, setLeft] = useState(center);
-    const [arrowLeft, setArrowLeft] = useState('50%');
-
-    useLayoutEffect(() => {
-        if (!ref.current) return;
-        const w = ref.current.offsetWidth;
-        const clamped = Math.min(
-            Math.max(center - w / 2, MARGIN),
-            window.innerWidth - w - MARGIN
-        );
-        setLeft(clamped);
-        setArrowLeft(`${center - clamped}px`);
-    }, [center, text]);
-
     return (
         <div
-            ref={ref}
             className="portal-tooltip portal-tooltip--above"
-            style={{ top, left }}
+            style={{ top, left: center }}
         >
             {text}
-            <span className="portal-tooltip__arrow" style={{ left: arrowLeft }} />
+            <span className="portal-tooltip__arrow" />
         </div>
     );
 }
@@ -41,7 +23,7 @@ function getInitials(username) {
     return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-const OnlineUserBubble = ({ participant, isOnline }) => {
+const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSignature = false }) => {
     const { t } = useTranslation();
     const [tooltip, setTooltip] = useState(null);
     const tooltipTimeoutRef = useRef(null);
@@ -69,21 +51,26 @@ const OnlineUserBubble = ({ participant, isOnline }) => {
 
     return (
         <>
-            <div
-                className={`online-user-bubble ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}`}
-                onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
-                onMouseLeave={hideTooltip}
-            >
-                {avatarUrl ? (
-                    <img
-                        src={getAvatarUrl(avatarUrl)}
-                        alt={displayName}
-                        className="online-user-bubble__avatar"
-                    />
-                ) : (
-                    <span className="online-user-bubble__initials">{getInitials(participant.username)}</span>
+            <div className={`online-user-bubble__wrapper online-user-bubble__wrapper--${bubbleSize}`}>
+                <div
+                    className={`online-user-bubble online-user-bubble--${bubbleSize} ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}`}
+                    onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
+                    onMouseLeave={hideTooltip}
+                >
+                    {avatarUrl ? (
+                        <img
+                            src={getAvatarUrl(avatarUrl)}
+                            alt={displayName}
+                            className="online-user-bubble__avatar"
+                        />
+                    ) : (
+                        <span className="online-user-bubble__initials">{getInitials(participant.username)}</span>
+                    )}
+                    <span className="online-user-bubble__dot" />
+                </div>
+                {showSignature && (
+                    <span className="online-user-bubble__label">{displayName}</span>
                 )}
-                <span className="online-user-bubble__dot" />
             </div>
             {tooltip && createPortal(
                 <TooltipAbove top={tooltip.top} center={tooltip.center} text={tooltip.text} />,

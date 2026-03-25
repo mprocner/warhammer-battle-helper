@@ -135,6 +135,13 @@
       "title": "Gracz",
       "avatar": "Avatar w tej grze",
       "avatarHint": "Nadpisuje avatar z ustawień konta dla tej gry",
+      "bubbleSize": "Rozmiar avatarów",
+      "bubbleSizes": {
+        "small": "Mały",
+        "medium": "Średni",
+        "big": "Duży"
+      },
+      "showSignature": "Pokaż podpis pod avatarami",
       "signature": "Podpis w tej grze",
       "signatureType": {
         "account": "Podpis z konta",

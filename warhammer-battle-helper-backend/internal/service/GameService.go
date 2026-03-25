@@ -692,8 +692,8 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 	return broadcastData, nil
 }
 
-// UpdateParticipant updates avatar and signature for the requesting user in a game
-func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, signature string) error {
+// UpdateParticipant updates avatar, signature, avatarSize and showSignature for the requesting user in a game
+func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, signature, avatarSize string, showSignature bool) error {
 	if len(signature) > 50 {
 		return fmt.Errorf("signature must be at most 50 characters")
 	}
@@ -716,7 +716,7 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 	if err != nil {
 		return fmt.Errorf("invalid game ID")
 	}
-	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, signature); err != nil {
+	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, signature, avatarSize, showSignature); err != nil {
 		return err
 	}
 	s.hub.BroadcastToGame(gameID, "PARTICIPANT_UPDATED", map[string]interface{}{

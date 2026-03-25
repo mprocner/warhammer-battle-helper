@@ -29,6 +29,8 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
   const [selectedCharacterId, setSelectedCharacterId] = useState('');
   const [customSignature, setCustomSignature] = useState('');
   const [characters, setCharacters] = useState(null); // lazy loaded
+  const [avatarSize, setAvatarSize] = useState('small');
+  const [showSignature, setShowSignature] = useState(false);
   const [playerSaving, setPlayerSaving] = useState(false);
   const [playerSaveSuccess, setPlayerSaveSuccess] = useState(false);
   const [playerSaveError, setPlayerSaveError] = useState('');
@@ -41,6 +43,8 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
         const me = gameState.participants.find(p => p.userId === profile.user_id);
         if (me) {
           setPlayerAvatar(me.avatar || '');
+          setAvatarSize(me.avatarSize || 'small');
+          setShowSignature(!!me.showSignature);
           if (me.signature) {
             setCustomSignature(me.signature);
             setSignatureType('custom');
@@ -75,7 +79,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
     setPlayerSaveSuccess(false);
     setPlayerSaveError('');
     try {
-      await updateGameParticipant(gameId, { avatar: playerAvatar, signature: resolveSignatureToSave() });
+      await updateGameParticipant(gameId, { avatar: playerAvatar, signature: resolveSignatureToSave(), avatarSize, showSignature });
       setPlayerSaveSuccess(true);
       if (onParticipantUpdated) onParticipantUpdated();
     } catch {
@@ -200,6 +204,26 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           currentAvatar={playerAvatar}
           onAvatarChange={url => { setPlayerAvatar(url); setPlayerSaveSuccess(false); }}
         />
+
+        <div className="general-tab__player-sig-label">{t('game.player.bubbleSize')}</div>
+        <select
+          className="general-tab__player-sig-select"
+          value={avatarSize}
+          onChange={e => { setAvatarSize(e.target.value); setPlayerSaveSuccess(false); }}
+        >
+          {['small', 'medium', 'big'].map(size => (
+            <option key={size} value={size}>{t(`game.player.bubbleSizes.${size}`)}</option>
+          ))}
+        </select>
+
+        <label className="general-tab__player-checkbox">
+          <input
+            type="checkbox"
+            checked={showSignature}
+            onChange={e => { setShowSignature(e.target.checked); setPlayerSaveSuccess(false); }}
+          />
+          {t('game.player.showSignature')}
+        </label>
 
         <div className="general-tab__player-sig-label">{t('game.player.signature')}</div>
         <div className="general-tab__player-sig-options">

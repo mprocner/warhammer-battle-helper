@@ -51,6 +51,8 @@ type GameParticipant struct {
 	JoinedAt         time.Time          `bson:"joinedAt" json:"joinedAt"`
 	Avatar           string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
 	Signature        string             `bson:"signature,omitempty" json:"signature,omitempty"`
+	AvatarSize       string             `bson:"avatarSize,omitempty" json:"avatarSize,omitempty"`
+	ShowSignature    bool               `bson:"showSignature,omitempty" json:"showSignature,omitempty"`
 	AccountAvatar    string             `bson:"-" json:"accountAvatar,omitempty"`
 	AccountSignature string             `bson:"-" json:"accountSignature,omitempty"`
 }

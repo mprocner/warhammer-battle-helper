@@ -392,8 +392,10 @@ func (h *GameHandler) UpdateParticipant(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		Avatar    string `json:"avatar"`
-		Signature string `json:"signature"`
+		Avatar        string `json:"avatar"`
+		Signature     string `json:"signature"`
+		AvatarSize    string `json:"avatarSize"`
+		ShowSignature bool   `json:"showSignature"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -409,7 +411,7 @@ func (h *GameHandler) UpdateParticipant(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.UpdateParticipant(gameID, userID, req.Avatar, req.Signature); err != nil {
+	if err := h.GameService.UpdateParticipant(gameID, userID, req.Avatar, req.Signature, req.AvatarSize, req.ShowSignature); err != nil {
 		switch err.Error() {
 		case "user is not a participant of this game":
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})

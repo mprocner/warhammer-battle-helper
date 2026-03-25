@@ -135,6 +135,13 @@
       "title": "Player",
       "avatar": "Avatar in this game",
       "avatarHint": "Override your account avatar for this game",
+      "bubbleSize": "Avatars size",
+      "bubbleSizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "big": "Big"
+      },
+      "showSignature": "Show signature under avatars",
       "signature": "Signature in this game",
       "signatureType": {
         "account": "Account signature",

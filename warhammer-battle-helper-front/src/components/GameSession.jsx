@@ -10,7 +10,6 @@ import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 import SceneSelector from './scene/SceneSelector';
-import OnlineUsersBar from './online-users/OnlineUsersBar';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -756,6 +755,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             onDeleteDrawingPath={handleDeleteDrawingPath}
             currentSceneId={displayScene?.id}
             rollVisibility={rollVisibility}
+            game={gameState}
+            onlineUserIds={onlineUserIds}
           />
         </Box>
 
@@ -785,12 +786,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onRollVisibilityChange={setRollVisibility}
         />
       </Box>
-
-      <OnlineUsersBar
-        game={gameState}
-        participants={gameState?.participants || []}
-        onlineUserIds={onlineUserIds}
-      />
 
       <ConfirmModal
         isOpen={showLeaveConfirm}

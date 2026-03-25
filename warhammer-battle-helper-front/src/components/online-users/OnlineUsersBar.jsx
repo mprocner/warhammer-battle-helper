@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import OnlineUserBubble from './OnlineUserBubble';
 
-const OnlineUsersBar = ({ game, participants, onlineUserIds }) => {
+const OnlineUsersBar = ({ game, participants, onlineUserIds, bubbleSize = 'small', showSignature = false }) => {
     const allParticipants = useMemo(() => {
         if (!game) return [];
 
@@ -32,6 +32,8 @@ const OnlineUsersBar = ({ game, participants, onlineUserIds }) => {
                     key={p.userId}
                     participant={p}
                     isOnline={onlineUserIds.includes(p.userId)}
+                    bubbleSize={bubbleSize}
+                    showSignature={showSignature}
                 />
             ))}
         </div>
