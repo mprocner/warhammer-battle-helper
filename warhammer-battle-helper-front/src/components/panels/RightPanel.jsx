@@ -5,6 +5,7 @@ import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
+import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
@@ -14,7 +15,7 @@ import HandoutsTab from '../tabs/HandoutsTab';
 import FilesTab from '../tabs/FilesTab';
 import MusicTab from '../tabs/MusicTab';
 import GeneralTab from '../tabs/GeneralTab';
-import OnlineUsersBar from '../online-users/OnlineUsersBar';
+import PlayersTab from '../tabs/PlayersTab';
 import './RightPanel.css';
 
 /**
@@ -113,6 +114,7 @@ const RightPanel = ({
     if (isGM) {
       baseTabs.push({ id: 'files', icon: <FolderOutlinedIcon />, label: t('rightPanel.tabs.files') });
       baseTabs.push({ id: 'music', icon: <LibraryMusicOutlinedIcon />, label: t('rightPanel.tabs.music') });
+      baseTabs.push({ id: 'players', icon: <PeopleOutlinedIcon />, label: t('rightPanel.tabs.players') });
     }
 
     baseTabs.push({ id: 'general', icon: <SettingsOutlinedIcon />, label: t('rightPanel.tabs.general') });
@@ -156,6 +158,16 @@ const RightPanel = ({
       case 'music':
         // MusicTab is always rendered below to keep it mounted; return null here
         return null;
+      case 'players':
+        return (
+          <PlayersTab
+            gameId={gameId}
+            token={token}
+            gameState={gameState}
+            onlineUserIds={onlineUserIds}
+            onParticipantUpdated={onParticipantUpdated}
+          />
+        );
       case 'general':
         return (
           <GeneralTab

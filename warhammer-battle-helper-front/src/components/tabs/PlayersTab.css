@@ -1,0 +1,153 @@
+.players-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+.players-tab::-webkit-scrollbar {
+  width: 8px;
+}
+
+.players-tab::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.players-tab::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.players-tab::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
+}
+
+.players-tab__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin: 0 0 4px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #c9a66b;
+}
+
+.players-tab__empty {
+  color: #8a6a3a;
+  font-style: italic;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.players-tab__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.players-tab__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #f5ebe0 0%, #ede0ce 100%);
+  border: 1px solid #c9a66b;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.players-tab__avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.players-tab__avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #c9a66b;
+}
+
+.players-tab__avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #c9a66b;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 2px solid #a67c52;
+}
+
+.players-tab__online-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #888;
+  border: 2px solid #f5ebe0;
+}
+
+.players-tab__online-dot--online {
+  background: #4caf50;
+}
+
+.players-tab__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.players-tab__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3d2800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.players-tab__email {
+  font-size: 0.75rem;
+  color: #8a6a3a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.players-tab__kick-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #b94040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.players-tab__kick-btn:hover {
+  background: rgba(185, 64, 64, 0.1);
+  color: #8b2020;
+}

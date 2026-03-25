@@ -518,8 +518,15 @@
       "handouts": "Handouts",
       "files": "Files",
       "music": "Music",
+      "players": "Players",
       "general": "General"
     }
+  },
+  "players": {
+    "title": "Players",
+    "kick": "Remove",
+    "kickConfirm": "Remove {{name}} from the game?",
+    "noPlayers": "No players yet"
   },
   "music": {
     "title": "Music Library",

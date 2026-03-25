@@ -143,6 +143,7 @@ func main() {
 	r.POST("/games/:id/invite", http.JWTAuthMiddleware(), gameHandler.InvitePlayer)
 	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
 	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
+	r.DELETE("/games/:id/participants/:userId", http.JWTAuthMiddleware(), gameHandler.KickPlayer)
 	r.GET("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.GetGameCharacters)
 	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.CreateGameCharacter)
 	r.PUT("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.UpdateGameCharacter)

@@ -375,6 +375,32 @@ func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, userna
 	return nil
 }
 
+// KickPlayer removes a participant from the game (GM only)
+func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, targetUserID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if game.GameMasterID != gmUserID {
+		return fmt.Errorf("only the game master can kick players")
+	}
+
+	if targetUserID == gmUserID {
+		return fmt.Errorf("cannot kick the game master")
+	}
+
+	if err := s.gameRepo.RemoveParticipant(gameID, targetUserID); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, "PARTICIPANT_LEFT", map[string]interface{}{
+		"userId": targetUserID.Hex(),
+	})
+
+	return nil
+}
+
 // AddCharacterToGrid adds a character to the battle grid
 func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, isEnemy bool, placedBy primitive.ObjectID, username string) error {
 	// Get character details

@@ -244,6 +244,42 @@ func (h *GameHandler) LeaveGame(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Left game successfully"})
 }
 
+// KickPlayer removes a participant from the game (GM only)
+func (h *GameHandler) KickPlayer(c *gin.Context) {
+	gameID := c.Param("id")
+	targetUserIDStr := c.Param("userId")
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	gmUserIDStr := claims["user_id"].(string)
+
+	gmUserID, err := primitive.ObjectIDFromHex(gmUserIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	targetUserID, err := primitive.ObjectIDFromHex(targetUserIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid target user ID"})
+		return
+	}
+
+	if err := h.GameService.KickPlayer(gameID, gmUserID, targetUserID); err != nil {
+		switch err.Error() {
+		case "only the game master can kick players":
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case "cannot kick the game master":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Player removed successfully"})
+}
+
 // RollDice rolls dice in the game context and broadcasts to all players
 func (h *GameHandler) RollDice(c *gin.Context) {
 	gameID := c.Param("id")

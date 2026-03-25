@@ -519,8 +519,15 @@
       "handouts": "Handouty",
       "files": "Pliki",
       "music": "Muzyka",
+      "players": "Gracze",
       "general": "Ogólne"
     }
+  },
+  "players": {
+    "title": "Gracze",
+    "kick": "Usuń",
+    "kickConfirm": "Usunąć {{name}} z gry?",
+    "noPlayers": "Brak graczy"
   },
   "music": {
     "title": "Biblioteka Muzyki",
