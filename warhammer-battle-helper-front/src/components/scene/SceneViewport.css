@@ -36,6 +36,16 @@
   background: #a67c52;
 }
 
+.scene-viewport--grab,
+.scene-viewport--grab * {
+  cursor: grab !important;
+}
+
+.scene-viewport--grabbing,
+.scene-viewport--grabbing * {
+  cursor: grabbing !important;
+}
+
 /* Sizer — creates proper scrollbar dimensions (width/height = canvas × zoom) */
 .scene-viewport__sizer {
   position: relative;

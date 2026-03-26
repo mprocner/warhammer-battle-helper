@@ -26,7 +26,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [leftPanelHidden, setLeftPanelHidden] = useState(false);
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
-  const [editingLayer, setEditingLayer] = useState('grid');
+  const [editingLayer, setEditingLayer] = useState(null);
   const [fogCoverMode, setFogCoverMode] = useState(false);
   const [pointerPings, setPointerPings] = useState([]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -254,6 +254,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         break;
 
       case 'CHARACTER_UPDATED':
+      case 'CHARACTER_VISIBILITY_UPDATED':
         fetchGameState();
         setCharacterDataTrigger(prev => prev + 1);
         break;
@@ -445,10 +446,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'CHARACTER_UPDATED':
-      case 'CHARACTER_VISIBILITY_UPDATED':
-        setCharacterDataTrigger(prev => prev + 1);
-        break;
 
       // Music-related messages
       case 'MUSIC_PLAY': {

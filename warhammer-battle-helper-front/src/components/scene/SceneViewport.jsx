@@ -23,6 +23,8 @@ const SceneViewport = ({
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef(null);
   const [textInputPos, setTextInputPos] = useState(null); // scene coords when text tool is clicked
   const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
@@ -69,13 +71,12 @@ const SceneViewport = ({
     });
   }, [zoom]);
 
-  // Ctrl+Scroll wheel zoom
+  // Scroll wheel zoom (toward mouse position)
   useEffect(() => {
     const el = viewportRef.current;
     if (!el || !scene) return;
 
     const handleWheel = (e) => {
-      if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
 
       const delta = -e.deltaY * WHEEL_ZOOM_FACTOR;
@@ -105,12 +106,55 @@ const SceneViewport = ({
   const handleZoomOut = () => applyZoom(zoom - ZOOM_STEP);
   const handleFit = () => applyZoom(calcFitZoom());
 
+  // Pan on drag — ref-based, listeners registered once on mount to avoid timing issues
+  const editingLayerRef = useRef(editingLayer);
+  useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
+
+  const handleViewportMouseDown = useCallback((e) => {
+    const layer = editingLayerRef.current;
+    if (e.button !== 0 || layer !== null) return;
+    if (e.target.closest('.character-wrapper')) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    panStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      scrollLeft: el.scrollLeft,
+      scrollTop: el.scrollTop,
+    };
+    setIsPanning(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      const el = viewportRef.current;
+      if (!el || !panStartRef.current) return;
+      const dx = e.clientX - panStartRef.current.mouseX;
+      const dy = e.clientY - panStartRef.current.mouseY;
+      el.scrollLeft = panStartRef.current.scrollLeft - dx;
+      el.scrollTop = panStartRef.current.scrollTop - dy;
+    };
+
+    const handleUp = () => {
+      if (!panStartRef.current) return;
+      panStartRef.current = null;
+      setIsPanning(false);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, []);
+
   // Pointer ping — hold detection
   const pingTimerRef = useRef(null);
 
   const handleContentMouseDown = useCallback((e) => {
-    // Only primary button, ignore if no sendMessage
-    if (e.button !== 0 || !sendMessage || !scene) return;
+    // Only primary button, ignore if no sendMessage; ping only in editing mode (pan takes LPM otherwise)
+    if (e.button !== 0 || !sendMessage || !scene || (editingLayer !== 'fog' && editingLayer !== 'drawing')) return;
 
     const contentEl = e.currentTarget;
     const rect = contentEl.getBoundingClientRect();
@@ -121,7 +165,7 @@ const SceneViewport = ({
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: scene.id });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, scene, zoom]);
+  }, [sendMessage, scene, zoom, editingLayer]);
 
   const clearPingTimer = useCallback(() => {
     if (pingTimerRef.current) {
@@ -202,7 +246,11 @@ const SceneViewport = ({
           </button>
         </div>
 
-        <div className="scene-viewport" ref={viewportRef}>
+        <div
+          ref={viewportRef}
+          onMouseDownCapture={handleViewportMouseDown}
+          className={`scene-viewport${isPanning ? ' scene-viewport--grabbing' : editingLayer === null ? ' scene-viewport--grab' : ''}`}
+        >
           {/* Sizer — sets scroll extent */}
           <div
             className="scene-viewport__sizer"

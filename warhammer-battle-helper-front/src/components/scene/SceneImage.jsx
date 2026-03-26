@@ -58,7 +58,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
 
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
-    if (!isGM || editingLayer === 'fog' || editingLayer === 'drawing' || e.button !== 0 || image.locked) return;
+    if (!isGM || editingLayer !== 'grid' || e.button !== 0 || image.locked) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -240,7 +240,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM && !image.locked && editingLayer !== 'fog' && editingLayer !== 'drawing' ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          cursor: isGM && !image.locked && editingLayer === 'grid' ? (isDragging ? 'grabbing' : 'grab') : 'default',
         }}
         onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}

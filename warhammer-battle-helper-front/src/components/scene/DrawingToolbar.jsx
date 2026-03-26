@@ -5,6 +5,8 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudIcon from '@mui/icons-material/Cloud';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
+import ImageIcon from '@mui/icons-material/Image';
+import PanToolIcon from '@mui/icons-material/PanTool';
 import BrushIcon from '@mui/icons-material/Brush';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
@@ -66,7 +68,7 @@ const DrawingToolbar = ({
   const isFogMode = editingLayer === 'fog';
 
   const handleToggle = () => {
-    onEditingLayerChange(isActive ? 'grid' : 'drawing');
+    onEditingLayerChange(isActive ? null : 'drawing');
   };
 
   const handleUndo = isFogMode ? onUndoFog : onUndoDrawing;
@@ -79,22 +81,29 @@ const DrawingToolbar = ({
       {isGM ? (
         <div className="drawing-toolbar__tabs">
           <button
-            className={`drawing-toolbar__tab ${editingLayer === 'grid' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange('grid')}
+            className={`drawing-toolbar__tab ${editingLayer === null ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(null)}
           >
-            <OpenWithIcon style={{ fontSize: 22 }} />
+            <PanToolIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.panLayer')}</span>
+          </button>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'grid' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'grid' ? null : 'grid')}
+          >
+            <ImageIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.sceneLayer')}</span>
           </button>
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'fog' ? 'grid' : 'fog')}
+            onClick={() => onEditingLayerChange(editingLayer === 'fog' ? null : 'fog')}
           >
             <CloudIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.fogLayer')}</span>
           </button>
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'drawing' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'drawing' ? 'grid' : 'drawing')}
+            onClick={() => onEditingLayerChange(editingLayer === 'drawing' ? null : 'drawing')}
           >
             <EditIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
