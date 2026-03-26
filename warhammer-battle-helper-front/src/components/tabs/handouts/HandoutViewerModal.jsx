@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
@@ -10,7 +11,7 @@ import './HandoutViewerModal.css';
 const MIN_WIDTH = 300;
 const MIN_HEIGHT = 200;
 
-const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
+const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
   const { t } = useTranslation();
   const [textContent, setTextContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +68,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
   // Reset position, size and zoom when opening or switching handout
   useEffect(() => {
     if (isOpen) {
-      setPosition({ x: 100, y: 100 });
+      setPosition({ x: 100 + index * 30, y: 100 + index * 30 });
       setSize({ width: 900, height: 0 });
       setIsMinimized(false);
       setImageZoom(1);
@@ -317,7 +318,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
     ...(size.height > 0 ? { height: `${size.height}px` } : {}),
   };
 
-  return (
+  return createPortal(
     <div
       ref={popupRef}
       className={`handout-viewer ${isMinimized ? 'handout-viewer--minimized' : ''} ${isResizing ? 'handout-viewer--resizing' : ''}`}
@@ -382,7 +383,8 @@ const HandoutViewerModal = ({ isOpen, onClose, handout }) => {
           <div className="handout-viewer__resize handout-viewer__resize--sw" onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
         </>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 

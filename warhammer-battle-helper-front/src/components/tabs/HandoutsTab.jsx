@@ -55,8 +55,18 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingHandout, setEditingHandout] = useState(null);
-  const [viewingHandout, setViewingHandout] = useState(null);
+  const [openHandouts, setOpenHandouts] = useState([]);
   const [createForFolderId, setCreateForFolderId] = useState(undefined);
+
+  const handleViewHandout = useCallback((handout) => {
+    setOpenHandouts((prev) =>
+      prev.find((h) => h.id === handout.id) ? prev : [...prev, handout]
+    );
+  }, []);
+
+  const handleCloseHandout = useCallback((handoutId) => {
+    setOpenHandouts((prev) => prev.filter((h) => h.id !== handoutId));
+  }, []);
 
   // Folder creation inline form
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -618,7 +628,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
                     isGM={isGM}
                     isExpanded={expandedFolders.has(folder.id)}
                     onToggle={() => toggleFolder(folder.id)}
-                    onView={setViewingHandout}
+                    onView={handleViewHandout}
                     onEdit={setEditingHandout}
                     onDelete={handleDeleteHandout}
                     onAddHandout={() => handleOpenCreateForFolder(folder.id)}
@@ -664,7 +674,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
                               handout={handout}
                               isGM={isGM}
                               folderId={null}
-                              onView={setViewingHandout}
+                              onView={handleViewHandout}
                               onEdit={setEditingHandout}
                               onDelete={handleDeleteHandout}
                             />
@@ -717,12 +727,16 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
         editHandout={editingHandout}
       />
 
-      {/* Viewer Modal */}
-      <HandoutViewerModal
-        isOpen={!!viewingHandout}
-        onClose={() => setViewingHandout(null)}
-        handout={viewingHandout}
-      />
+      {/* Viewer Modals – one per open handout */}
+      {openHandouts.map((handout, index) => (
+        <HandoutViewerModal
+          key={handout.id}
+          isOpen={true}
+          onClose={() => handleCloseHandout(handout.id)}
+          handout={handout}
+          index={index}
+        />
+      ))}
     </div>
   );
 };
