@@ -202,25 +202,6 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
             )
           )}
 
-          <div className="player-settings-popup__field-label">{t('game.player.bubbleSize')}</div>
-          <select
-            className="player-settings-popup__select"
-            value={avatarSize}
-            onChange={e => { setAvatarSize(e.target.value); setPlayerSaveSuccess(false); }}
-          >
-            {['small', 'medium', 'big'].map(size => (
-              <option key={size} value={size}>{t(`game.player.bubbleSizes.${size}`)}</option>
-            ))}
-          </select>
-
-          <label className="player-settings-popup__checkbox">
-            <input
-              type="checkbox"
-              checked={showSignature}
-              onChange={e => { setShowSignature(e.target.checked); setPlayerSaveSuccess(false); }}
-            />
-            {t('game.player.showSignature')}
-          </label>
 
           <div className="player-settings-popup__field-label">{t('game.player.signature')}</div>
           <div className="player-settings-popup__sig-options">
@@ -284,6 +265,26 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
               />
             )}
           </div>
+
+          <div className="player-settings-popup__field-label">{t('game.player.bubbleSize')}</div>
+          <select
+              className="player-settings-popup__select"
+              value={avatarSize}
+              onChange={e => { setAvatarSize(e.target.value); setPlayerSaveSuccess(false); }}
+          >
+            {['small', 'medium', 'big'].map(size => (
+                <option key={size} value={size}>{t(`game.player.bubbleSizes.${size}`)}</option>
+            ))}
+          </select>
+
+          <label className="player-settings-popup__checkbox">
+            <input
+                type="checkbox"
+                checked={showSignature}
+                onChange={e => { setShowSignature(e.target.checked); setPlayerSaveSuccess(false); }}
+            />
+            {t('game.player.showSignature')}
+          </label>
 
           {playerSaveError && <p className="player-settings-popup__msg player-settings-popup__msg--error">{playerSaveError}</p>}
           {playerSaveSuccess && <p className="player-settings-popup__msg player-settings-popup__msg--success">{t('game.player.successMessage')}</p>}
