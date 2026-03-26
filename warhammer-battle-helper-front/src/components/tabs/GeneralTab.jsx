@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../api/axios';
-import { getProfile, updateGameParticipant } from '../../api/profile';
-import AvatarUpload from '../character-sheet/AvatarUpload';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -14,75 +11,9 @@ import './GeneralTab.css';
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, gameId, onParticipantUpdated }) => {
+const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  // Player section state
-  const [userProfile, setUserProfile] = useState(null);
-  const [playerAvatar, setPlayerAvatar] = useState('');
-  const [signatureType, setSignatureType] = useState('account'); // 'account' | 'character' | 'custom'
-  const [selectedCharacterId, setSelectedCharacterId] = useState('');
-  const [customSignature, setCustomSignature] = useState('');
-  const [characters, setCharacters] = useState(null); // lazy loaded
-  const [avatarSize, setAvatarSize] = useState('small');
-  const [showSignature, setShowSignature] = useState(false);
-  const [playerSaving, setPlayerSaving] = useState(false);
-  const [playerSaveSuccess, setPlayerSaveSuccess] = useState(false);
-  const [playerSaveError, setPlayerSaveError] = useState('');
-
-  useEffect(() => {
-    getProfile().then(profile => {
-      setUserProfile(profile);
-      // Find current participant in gameState to pre-fill
-      if (gameState?.participants) {
-        const me = gameState.participants.find(p => p.userId === profile.user_id);
-        if (me) {
-          setPlayerAvatar(me.avatar || '');
-          setAvatarSize(me.avatarSize || 'small');
-          setShowSignature(!!me.showSignature);
-          if (me.signature) {
-            setCustomSignature(me.signature);
-            setSignatureType('custom');
-          }
-        }
-      }
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId]);
-
-  const handleSignatureTypeChange = (type) => {
-    setSignatureType(type);
-    setPlayerSaveSuccess(false);
-    if (type === 'character' && characters === null) {
-      axiosInstance.get(`/games/${gameId}/characters`)
-        .then(res => setCharacters(res.data || []))
-        .catch(() => setCharacters([]));
-    }
-  };
-
-  const resolveSignatureToSave = () => {
-    if (signatureType === 'account') return '';
-    if (signatureType === 'character') {
-      const char = (characters || []).find(c => c.id === selectedCharacterId);
-      return char ? char.name : '';
-    }
-    return customSignature.trim();
-  };
-
-  const handlePlayerSave = async () => {
-    setPlayerSaving(true);
-    setPlayerSaveSuccess(false);
-    setPlayerSaveError('');
-    try {
-      await updateGameParticipant(gameId, { avatar: playerAvatar, signature: resolveSignatureToSave(), avatarSize, showSignature });
-      setPlayerSaveSuccess(true);
-      if (onParticipantUpdated) onParticipantUpdated();
-    } catch {
-      setPlayerSaveError(t('common.error'));
-    } finally {
-      setPlayerSaving(false);
-    }
-  };
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
@@ -122,110 +53,6 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
             <span className="general-tab__value">{gameState?.participants?.filter(p => p.role !== 'gm').length || 0}</span>
           </div>
         </div>
-      </section>
-
-      {/* Player Section */}
-      <section className="general-tab__section">
-        <h4 className="general-tab__section-title">{t('game.player.title')}</h4>
-        <div className="general-tab__player-avatar-label">{t('game.player.avatar')}</div>
-        <AvatarUpload
-          currentAvatar={playerAvatar}
-          onAvatarChange={url => { setPlayerAvatar(url); setPlayerSaveSuccess(false); }}
-        />
-
-        <div className="general-tab__player-sig-label">{t('game.player.bubbleSize')}</div>
-        <select
-          className="general-tab__player-sig-select"
-          value={avatarSize}
-          onChange={e => { setAvatarSize(e.target.value); setPlayerSaveSuccess(false); }}
-        >
-          {['small', 'medium', 'big'].map(size => (
-            <option key={size} value={size}>{t(`game.player.bubbleSizes.${size}`)}</option>
-          ))}
-        </select>
-
-        <label className="general-tab__player-checkbox">
-          <input
-            type="checkbox"
-            checked={showSignature}
-            onChange={e => { setShowSignature(e.target.checked); setPlayerSaveSuccess(false); }}
-          />
-          {t('game.player.showSignature')}
-        </label>
-
-        <div className="general-tab__player-sig-label">{t('game.player.signature')}</div>
-        <div className="general-tab__player-sig-options">
-          <label className="general-tab__player-sig-option">
-            <input
-              type="radio"
-              name="sigType"
-              value="account"
-              checked={signatureType === 'account'}
-              onChange={() => handleSignatureTypeChange('account')}
-            />
-            {t('game.player.signatureType.account')}
-            {signatureType === 'account' && (
-              <span className="general-tab__player-sig-preview">
-                → {userProfile?.signature || userProfile?.email || ''}
-              </span>
-            )}
-          </label>
-
-          <label className="general-tab__player-sig-option">
-            <input
-              type="radio"
-              name="sigType"
-              value="character"
-              checked={signatureType === 'character'}
-              onChange={() => handleSignatureTypeChange('character')}
-            />
-            {t('game.player.signatureType.character')}
-          </label>
-          {signatureType === 'character' && (
-            <select
-              className="general-tab__player-sig-select"
-              value={selectedCharacterId}
-              onChange={e => setSelectedCharacterId(e.target.value)}
-            >
-              <option value="">{t('game.player.characterPlaceholder')}</option>
-              {(characters || []).map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          )}
-
-          <label className="general-tab__player-sig-option">
-            <input
-              type="radio"
-              name="sigType"
-              value="custom"
-              checked={signatureType === 'custom'}
-              onChange={() => handleSignatureTypeChange('custom')}
-            />
-            {t('game.player.signatureType.custom')}
-          </label>
-          {signatureType === 'custom' && (
-            <input
-              type="text"
-              className="general-tab__player-sig-input"
-              value={customSignature}
-              onChange={e => { setCustomSignature(e.target.value); setPlayerSaveSuccess(false); }}
-              placeholder={t('game.player.customPlaceholder')}
-              maxLength={50}
-            />
-          )}
-        </div>
-
-        {playerSaveError && <p className="general-tab__player-msg general-tab__player-msg--error">{playerSaveError}</p>}
-        {playerSaveSuccess && <p className="general-tab__player-msg general-tab__player-msg--success">{t('game.player.successMessage')}</p>}
-
-        <button
-          className="general-tab__player-save-btn"
-          onClick={handlePlayerSave}
-          disabled={playerSaving}
-        >
-          {playerSaving ? t('game.player.saving') : t('game.player.save')}
-        </button>
       </section>
 
       {/* Music Volume Section */}

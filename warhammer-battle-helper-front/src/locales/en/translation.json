@@ -135,6 +135,13 @@
       "title": "Player",
       "avatar": "Avatar in this game",
       "avatarHint": "Override your account avatar for this game",
+      "avatarType": {
+        "upload": "Custom",
+        "character": "From character",
+        "account": "From account"
+      },
+      "noCharacterAvatar": "Character has no avatar",
+      "noAccountAvatar": "Account has no avatar assigned",
       "bubbleSize": "Avatars size",
       "bubbleSizes": {
         "small": "Small",

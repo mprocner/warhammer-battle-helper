@@ -166,17 +166,19 @@ func (r *GameRepository) Delete(id string) error {
 }
 
 // UpdateParticipant updates avatar, signature, avatarSize and showSignature for a specific participant in a game
-func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, avatar, signature, avatarSize string, showSignature bool) error {
+func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	filter := bson.M{"_id": gameID}
 	update := bson.M{
 		"$set": bson.M{
-			"participants.$[elem].avatar":        avatar,
-			"participants.$[elem].signature":     signature,
-			"participants.$[elem].avatarSize":    avatarSize,
-			"participants.$[elem].showSignature": showSignature,
+			"participants.$[elem].avatar":            avatar,
+			"participants.$[elem].avatarType":        avatarType,
+			"participants.$[elem].avatarCharacterId": avatarCharacterId,
+			"participants.$[elem].signature":         signature,
+			"participants.$[elem].avatarSize":        avatarSize,
+			"participants.$[elem].showSignature":     showSignature,
 		},
 	}
 	arrayFilters := options.ArrayFilters{

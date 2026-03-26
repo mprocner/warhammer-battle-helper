@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
+
 
 function TooltipAbove({ top, center, text }) {
     return (
@@ -23,7 +25,7 @@ function getInitials(username) {
     return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSignature = false }) => {
+const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSignature = false, isCurrentUser = false, onOpenSettings }) => {
     const { t } = useTranslation();
     const [tooltip, setTooltip] = useState(null);
     const tooltipTimeoutRef = useRef(null);
@@ -53,9 +55,10 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
         <>
             <div className={`online-user-bubble__wrapper online-user-bubble__wrapper--${bubbleSize}`}>
                 <div
-                    className={`online-user-bubble online-user-bubble--${bubbleSize} ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}`}
-                    onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
-                    onMouseLeave={hideTooltip}
+                    className={`online-user-bubble online-user-bubble--${bubbleSize} ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}${isCurrentUser ? ' online-user-bubble--current-user' : ''}`}
+                    onMouseEnter={isCurrentUser ? undefined : e => showTooltip(tooltipText, e.currentTarget)}
+                    onMouseLeave={isCurrentUser ? undefined : hideTooltip}
+                    onClick={isCurrentUser ? onOpenSettings : undefined}
                 >
                     {avatarUrl ? (
                         <img
@@ -67,6 +70,11 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
                         <span className="online-user-bubble__initials">{getInitials(participant.username)}</span>
                     )}
                     <span className="online-user-bubble__dot" />
+                    {isCurrentUser && (
+                        <div className="online-user-bubble__edit-overlay">
+                            <SettingsIcon className="online-user-bubble__settings-icon" />
+                        </div>
+                    )}
                 </div>
                 {showSignature && (
                     <span className="online-user-bubble__label">{displayName}</span>

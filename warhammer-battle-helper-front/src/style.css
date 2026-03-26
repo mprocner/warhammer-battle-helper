@@ -4522,6 +4522,47 @@ align-items: center;
 .online-user-bubble--online .online-user-bubble__dot {
   background: #4caf50;
 }
+
+.online-user-bubble--current-user {
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.online-user-bubble--current-user:hover {
+  border-color: rgba(201, 151, 91, 0.9);
+  box-shadow: 0 0 8px rgba(201, 151, 91, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.online-user-bubble__edit-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(58, 47, 31, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+  font-size: 1.1rem;
+  color: #f4e8d8;
+}
+
+.online-user-bubble--current-user:hover .online-user-bubble__edit-overlay {
+  opacity: 1;
+}
+
+.online-user-bubble--small .online-user-bubble__settings-icon {
+  font-size: 18px;
+}
+
+.online-user-bubble--medium .online-user-bubble__settings-icon {
+  font-size: 30px;
+}
+
+.online-user-bubble--big .online-user-bubble__settings-icon {
+  font-size: 60px;
+}
+
 /* Account Settings Form */
 .account-settings__field {
   display: flex;

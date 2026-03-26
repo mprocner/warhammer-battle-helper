@@ -10,6 +10,7 @@ import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
+import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
 import { CELL_SIZE } from '../constants/scene';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
@@ -64,8 +65,9 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [] }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated }) {
   const { t } = useTranslation();
+  const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
   const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
@@ -1075,6 +1077,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
             onlineUserIds={onlineUserIds}
             bubbleSize={(participants.find(p => p.userId === userId) || {}).avatarSize || 'small'}
             showSignature={!!(participants.find(p => p.userId === userId) || {}).showSignature}
+            currentUserId={userId}
+            onOpenPlayerSettings={() => setPlayerSettingsOpen(true)}
+          />
+          <PlayerSettingsPopup
+            isOpen={playerSettingsOpen}
+            onClose={() => setPlayerSettingsOpen(false)}
+            gameId={gameId}
+            participants={participants}
+            onParticipantUpdated={onParticipantUpdated}
           />
           {/* Drawing toolbar — floats over the scene, visible to all */}
           {currentScene && (

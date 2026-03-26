@@ -44,17 +44,20 @@ type Game struct {
 
 // GameParticipant represents a user participating in a game
 type GameParticipant struct {
-	UserID           primitive.ObjectID `bson:"userId" json:"userId"`
-	Username         string             `bson:"username" json:"username"`
-	Email            string             `bson:"email" json:"email"`
-	Role             ParticipantRole    `bson:"role" json:"role"`
-	JoinedAt         time.Time          `bson:"joinedAt" json:"joinedAt"`
-	Avatar           string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	Signature        string             `bson:"signature,omitempty" json:"signature,omitempty"`
-	AvatarSize       string             `bson:"avatarSize,omitempty" json:"avatarSize,omitempty"`
-	ShowSignature    bool               `bson:"showSignature,omitempty" json:"showSignature,omitempty"`
-	AccountAvatar    string             `bson:"-" json:"accountAvatar,omitempty"`
-	AccountSignature string             `bson:"-" json:"accountSignature,omitempty"`
+	UserID             primitive.ObjectID `bson:"userId" json:"userId"`
+	Username           string             `bson:"username" json:"username"`
+	Email              string             `bson:"email" json:"email"`
+	Role               ParticipantRole    `bson:"role" json:"role"`
+	JoinedAt           time.Time          `bson:"joinedAt" json:"joinedAt"`
+	Avatar             string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	AvatarType         string             `bson:"avatarType,omitempty" json:"avatarType,omitempty"`
+	AvatarCharacterId  string             `bson:"avatarCharacterId,omitempty" json:"avatarCharacterId,omitempty"`
+	AvatarCharacterUrl string             `bson:"-" json:"avatarCharacterUrl,omitempty"`
+	Signature          string             `bson:"signature,omitempty" json:"signature,omitempty"`
+	AvatarSize         string             `bson:"avatarSize,omitempty" json:"avatarSize,omitempty"`
+	ShowSignature      bool               `bson:"showSignature,omitempty" json:"showSignature,omitempty"`
+	AccountAvatar      string             `bson:"-" json:"accountAvatar,omitempty"`
+	AccountSignature   string             `bson:"-" json:"accountSignature,omitempty"`
 }
 
 // InvitePlayerRequest is the request body for inviting a player to a game

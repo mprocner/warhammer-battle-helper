@@ -1,0 +1,295 @@
+.player-settings-popup__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-settings-popup {
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 3px solid #7a5c42;
+  border-radius: 8px;
+  color: #3a2f1f;
+  font-family: 'Cinzel', serif;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 85vh;
+  box-shadow: 0 8px 24px rgba(107, 68, 35, 0.35), 0 0 0 1px rgba(201, 151, 91, 0.3);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.player-settings-popup__header {
+  background: linear-gradient(90deg, #c9975b 0%, #a67c52 100%);
+  padding: 10px 12px;
+  border-bottom: 3px solid #7a5c42;
+  border-radius: 5px 5px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.player-settings-popup__title {
+  margin: 0;
+  font-size: 16px;
+  font-family: 'Cinzel', serif;
+  color: #fff9f0;
+  text-shadow: 1px 1px 3px rgba(58, 47, 31, 0.6);
+  letter-spacing: 1px;
+}
+
+.player-settings-popup__close {
+  background: rgba(139, 36, 36, 0.5);
+  border: 1px solid #8b2424;
+  border-radius: 4px;
+  color: #fff9f0;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.player-settings-popup__close:hover {
+  background: rgba(201, 42, 42, 0.7);
+  border-color: #c92a2a;
+}
+
+.player-settings-popup__body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-settings-popup__body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.player-settings-popup__body::-webkit-scrollbar-track {
+  background: #e8dcc4;
+  border-radius: 4px;
+}
+
+.player-settings-popup__body::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+}
+
+.player-settings-popup__body::-webkit-scrollbar-thumb:hover {
+  background: #a67c52;
+}
+
+.player-settings-popup__field-label {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+
+.player-settings-popup__select {
+  width: 100%;
+  padding: 8px 10px;
+  background: #fdf8f2;
+  border: 2px solid #8b6b3d;
+  border-radius: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #2c1810;
+  box-sizing: border-box;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.player-settings-popup__select:focus {
+  border-color: #6b4423;
+}
+
+.player-settings-popup__input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #fdf8f2;
+  border: 2px solid #8b6b3d;
+  border-radius: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #2c1810;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.player-settings-popup__input:focus {
+  border-color: #6b4423;
+}
+
+.player-settings-popup__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #4a3728;
+  padding: 6px 0;
+  margin-top: 4px;
+}
+
+.player-settings-popup__checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #8b6b3d;
+  border-radius: 3px;
+  background: #fdf8f2;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.player-settings-popup__checkbox input[type="checkbox"]:checked {
+  border-color: #6b4423;
+  background: #6b4423;
+}
+
+.player-settings-popup__checkbox input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fdf8f2;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.player-settings-popup__sig-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-settings-popup__sig-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #4a3728;
+  cursor: pointer;
+  padding: 6px 0;
+  border-radius: 5px;
+  transition: background 0.15s ease;
+}
+
+.player-settings-popup__sig-option:hover {
+  background: rgba(201, 166, 107, 0.15);
+}
+
+.player-settings-popup__sig-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #8b6b3d;
+  border-radius: 50%;
+  background: #fdf8f2;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
+}
+
+.player-settings-popup__sig-option input[type="radio"]:checked {
+  border-color: #6b4423;
+  background: #6b4423;
+  box-shadow: inset 0 0 0 3px #fdf8f2;
+}
+
+.player-settings-popup__avatar-character {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.player-settings-popup__avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #c9975b;
+  flex-shrink: 0;
+}
+
+.player-settings-popup__avatar-hint {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: #8b6b3d;
+  margin: 4px 0 0;
+}
+
+.player-settings-popup__sig-preview {
+  font-size: 0.82rem;
+  color: #8b6914;
+  font-style: italic;
+  margin-left: 2px;
+}
+
+.player-settings-popup__msg {
+  font-size: 0.85rem;
+  margin: 4px 0 0;
+}
+
+.player-settings-popup__msg--success { color: #2d7a2d; }
+.player-settings-popup__msg--error { color: #c0392b; }
+
+.player-settings-popup__footer {
+  padding: 12px 16px;
+  border-top: 1px solid #c9975b;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.player-settings-popup__save-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #6b4423 0%, #4a3728 100%);
+  border: none;
+  border-radius: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f5ebe0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.player-settings-popup__save-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.player-settings-popup__save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

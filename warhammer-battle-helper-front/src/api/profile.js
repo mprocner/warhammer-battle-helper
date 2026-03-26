@@ -10,7 +10,7 @@ export const updateProfile = async ({ avatar, signature }) => {
     return response.data;
 };
 
-export const updateGameParticipant = async (gameId, { avatar, signature, avatarSize, showSignature }) => {
-    const response = await axiosInstance.patch(`/games/${gameId}/participant`, { avatar, signature, avatarSize, showSignature });
+export const updateGameParticipant = async (gameId, { avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature }) => {
+    const response = await axiosInstance.patch(`/games/${gameId}/participant`, { avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature });
     return response.data;
 };

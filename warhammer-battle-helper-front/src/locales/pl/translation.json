@@ -135,6 +135,13 @@
       "title": "Gracz",
       "avatar": "Avatar w tej grze",
       "avatarHint": "Nadpisuje avatar z ustawień konta dla tej gry",
+      "avatarType": {
+        "upload": "Własny",
+        "character": "Z postaci",
+        "account": "Z konta"
+      },
+      "noCharacterAvatar": "Postać nie ma dodanego avatara",
+      "noAccountAvatar": "Do konta nie ma przypisanego avatara",
       "bubbleSize": "Rozmiar avatarów",
       "bubbleSizes": {
         "small": "Mały",

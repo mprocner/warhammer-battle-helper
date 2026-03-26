@@ -253,6 +253,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
 
+      case 'CHARACTER_UPDATED':
+        fetchGameState();
+        setCharacterDataTrigger(prev => prev + 1);
+        break;
+
       case 'LOG_MESSAGE':
         addLogMessage(
           message.payload.message,
@@ -757,6 +762,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             rollVisibility={rollVisibility}
             game={gameState}
             onlineUserIds={onlineUserIds}
+            onParticipantUpdated={fetchGameState}
           />
         </Box>
 

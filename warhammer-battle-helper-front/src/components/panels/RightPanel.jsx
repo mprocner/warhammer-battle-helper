@@ -179,10 +179,6 @@ const RightPanel = ({
             playerVolume={playerVolume}
             onPlayerVolumeChange={onPlayerVolumeChange}
             musicState={musicState}
-            isGM={isGM}
-            token={token}
-            gameId={gameId}
-            onParticipantUpdated={onParticipantUpdated}
           />
         );
       default:

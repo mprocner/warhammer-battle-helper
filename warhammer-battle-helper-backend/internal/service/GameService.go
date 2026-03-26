@@ -130,7 +130,7 @@ func (s *GameService) EnsureGMParticipant(game *models.Game) {
 	game.Participants = append(game.Participants, gm)
 }
 
-// enrichParticipants populates AccountAvatar and AccountSignature for each participant
+// enrichParticipants populates AccountAvatar, AccountSignature and AvatarCharacterUrl for each participant
 func (s *GameService) enrichParticipants(game *models.Game) {
 	if len(game.Participants) == 0 {
 		return
@@ -147,10 +147,31 @@ func (s *GameService) enrichParticipants(game *models.Game) {
 	for i := range users {
 		userMap[users[i].ID] = &users[i]
 	}
+
+	// Check if any participant uses a character avatar
+	needsCharacters := false
+	for _, p := range game.Participants {
+		if p.AvatarCharacterId != "" {
+			needsCharacters = true
+			break
+		}
+	}
+	charAvatarMap := make(map[string]string)
+	if needsCharacters {
+		if chars, charErr := s.charRepo.GetByGameID(game.ID.Hex()); charErr == nil {
+			for _, c := range chars {
+				charAvatarMap[c.ID.Hex()] = c.Avatar
+			}
+		}
+	}
+
 	for i := range game.Participants {
 		if u, ok := userMap[game.Participants[i].UserID]; ok {
 			game.Participants[i].AccountAvatar = u.Avatar
 			game.Participants[i].AccountSignature = u.Signature
+		}
+		if charID := game.Participants[i].AvatarCharacterId; charID != "" {
+			game.Participants[i].AvatarCharacterUrl = charAvatarMap[charID]
 		}
 	}
 }
@@ -719,7 +740,7 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 }
 
 // UpdateParticipant updates avatar, signature, avatarSize and showSignature for the requesting user in a game
-func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, signature, avatarSize string, showSignature bool) error {
+func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool) error {
 	if len(signature) > 50 {
 		return fmt.Errorf("signature must be at most 50 characters")
 	}
@@ -742,7 +763,7 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 	if err != nil {
 		return fmt.Errorf("invalid game ID")
 	}
-	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, signature, avatarSize, showSignature); err != nil {
+	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature); err != nil {
 		return err
 	}
 	s.hub.BroadcastToGame(gameID, "PARTICIPANT_UPDATED", map[string]interface{}{
