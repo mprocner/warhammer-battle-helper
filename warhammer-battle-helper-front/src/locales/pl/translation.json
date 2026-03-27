@@ -457,7 +457,12 @@
     "invite": "Zaproś",
     "inviteSuccess": "Gracz został zaproszony",
     "inviteNotFound": "Nie znaleziono użytkownika o podanym emailu",
-    "inviteAlreadyInGame": "Gracz już należy do tej gry"
+    "inviteAlreadyInGame": "Gracz już należy do tej gry",
+    "controlScheme": "Sterowanie sceną",
+    "controlSchemeModern": "Nowoczesne",
+    "controlSchemeModernDesc": "Scroll → zoom · Przeciągnij → pan",
+    "controlSchemeClassic": "Klasyczne",
+    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan"
   },
   "handouts": {
     "title": "Handouty",

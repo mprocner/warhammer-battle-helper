@@ -129,6 +129,8 @@ func main() {
 
 	r.GET("/profile", http.JWTAuthMiddleware(), authHandler.GetProfile)
 	r.PATCH("/profile", http.JWTAuthMiddleware(), authHandler.UpdateProfile)
+	r.GET("/settings", http.JWTAuthMiddleware(), authHandler.GetSettings)
+	r.PATCH("/settings", http.JWTAuthMiddleware(), authHandler.UpdateSettings)
 
 	// --- GAME ROUTES ---
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}

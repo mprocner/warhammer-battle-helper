@@ -68,6 +68,16 @@ func (r *UserRepository) FindByID(id primitive.ObjectID) (*models.User, error) {
 	return &user, nil
 }
 
+func (r *UserRepository) UpdateSettings(id primitive.ObjectID, settings models.UserSettings) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := r.Collection.UpdateOne(ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"settings": settings}},
+	)
+	return err
+}
+
 // GetUserWithFiles returns user with files and folders
 func (r *UserRepository) GetUserWithFiles(userID primitive.ObjectID) (*models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

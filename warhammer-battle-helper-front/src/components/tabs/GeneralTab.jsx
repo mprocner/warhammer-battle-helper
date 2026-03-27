@@ -6,12 +6,13 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import ControlSchemeSelector from '../scene/ControlSchemeSelector';
 import './GeneralTab.css';
 
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState }) => {
+const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
@@ -80,6 +81,12 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           </div>
         </section>
       )}
+
+      {/* Scene Controls Section */}
+      <section className="general-tab__section">
+        <h4 className="general-tab__section-title">{t('settings.controlScheme')}</h4>
+        <ControlSchemeSelector value={controlScheme || 'modern'} onChange={onControlSchemeChange} />
+      </section>
 
       {/* Language Section */}
       <section className="general-tab__section">

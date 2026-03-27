@@ -20,6 +20,7 @@ const SceneViewport = ({
   brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
+  controlScheme = 'modern',
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
@@ -68,13 +69,23 @@ const SceneViewport = ({
     const totalW = cs.width + FRAME_SIZE * 2;
     const totalH = cs.height + FRAME_SIZE * 2;
     const fitZoom = Math.min(el.clientWidth / totalW, el.clientHeight / totalH, MAX_ZOOM);
-    const sw = totalW * fitZoom;
-    const sh = totalH * fitZoom;
-    const newOffset = { x: (el.clientWidth - sw) / 2, y: (el.clientHeight - sh) / 2 };
     setZoom(fitZoom);
     zoomRef.current = fitZoom;
-    setPanOffset(newOffset);
-    panOffsetRef.current = newOffset;
+    if (schemeRef.current === 'classic') {
+      // Classic: scroll to center after React re-renders sizer with new dimensions
+      const scaledW = totalW * fitZoom;
+      const scaledH = totalH * fitZoom;
+      requestAnimationFrame(() => {
+        el.scrollLeft = Math.max(0, (scaledW - el.clientWidth) / 2);
+        el.scrollTop = Math.max(0, (scaledH - el.clientHeight) / 2);
+      });
+    } else {
+      const sw = totalW * fitZoom;
+      const sh = totalH * fitZoom;
+      const newOffset = { x: (el.clientWidth - sw) / 2, y: (el.clientHeight - sh) / 2 };
+      setPanOffset(newOffset);
+      panOffsetRef.current = newOffset;
+    }
   }, []);
 
   // Zoom toward viewport center
@@ -83,16 +94,29 @@ const SceneViewport = ({
     if (!el) return;
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
     const oldZoom = zoomRef.current;
-    const offset = panOffsetRef.current;
-    const cx = (el.clientWidth / 2 - offset.x) / oldZoom;
-    const cy = (el.clientHeight / 2 - offset.y) / oldZoom;
-    const newOffsetX = el.clientWidth / 2 - cx * clamped;
-    const newOffsetY = el.clientHeight / 2 - cy * clamped;
-    setZoom(clamped);
-    zoomRef.current = clamped;
-    const newOffset = { x: newOffsetX, y: newOffsetY };
-    setPanOffset(newOffset);
-    panOffsetRef.current = newOffset;
+    if (schemeRef.current === 'classic') {
+      const cx = el.clientWidth / 2;
+      const cy = el.clientHeight / 2;
+      const canvasX = (cx + el.scrollLeft) / oldZoom;
+      const canvasY = (cy + el.scrollTop) / oldZoom;
+      setZoom(clamped);
+      zoomRef.current = clamped;
+      requestAnimationFrame(() => {
+        el.scrollLeft = canvasX * clamped - cx;
+        el.scrollTop = canvasY * clamped - cy;
+      });
+    } else {
+      const offset = panOffsetRef.current;
+      const cx = (el.clientWidth / 2 - offset.x) / oldZoom;
+      const cy = (el.clientHeight / 2 - offset.y) / oldZoom;
+      const newOffsetX = el.clientWidth / 2 - cx * clamped;
+      const newOffsetY = el.clientHeight / 2 - cy * clamped;
+      setZoom(clamped);
+      zoomRef.current = clamped;
+      const newOffset = { x: newOffsetX, y: newOffsetY };
+      setPanOffset(newOffset);
+      panOffsetRef.current = newOffset;
+    }
   }, []);
 
   // Scroll wheel zoom (toward mouse position)
@@ -100,6 +124,34 @@ const SceneViewport = ({
     const el = viewportRef.current;
     if (!el || !scene) return;
     const handleWheel = (e) => {
+      if (schemeRef.current === 'classic') {
+        if (e.ctrlKey || e.metaKey) {
+          // Classic: Ctrl+scroll = zoom toward cursor
+          e.preventDefault();
+          const delta = -e.deltaY * WHEEL_ZOOM_FACTOR;
+          const oldZoom = zoomRef.current;
+          const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, oldZoom + delta));
+          const rect = el.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          const canvasX = (mouseX + el.scrollLeft) / oldZoom;
+          const canvasY = (mouseY + el.scrollTop) / oldZoom;
+          setZoom(newZoom);
+          zoomRef.current = newZoom;
+          requestAnimationFrame(() => {
+            el.scrollLeft = canvasX * newZoom - mouseX;
+            el.scrollTop = canvasY * newZoom - mouseY;
+          });
+        } else if (e.shiftKey || e.deltaX !== 0) {
+          // Classic: Shift+scroll = horizontal scroll
+          // On macOS browsers convert Shift+wheel to deltaX, so use deltaX when available
+          e.preventDefault();
+          el.scrollLeft += e.deltaX !== 0 ? e.deltaX : e.deltaY;
+        }
+        // Classic: plain scroll = native vertical scroll (no preventDefault)
+        return;
+      }
+      // Modern: scroll = zoom toward cursor
       e.preventDefault();
       const delta = -e.deltaY * WHEEL_ZOOM_FACTOR;
       const oldZoom = zoomRef.current;
@@ -172,7 +224,14 @@ const SceneViewport = ({
   const editingLayerRef = useRef(editingLayer);
   useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
 
+  const schemeRef = useRef(controlScheme);
+  useEffect(() => {
+    schemeRef.current = controlScheme;
+    if (canvasSizeRef.current) handleFit();
+  }, [controlScheme]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleViewportMouseDown = useCallback((e) => {
+    if (schemeRef.current !== 'modern') return;
     if (e.button !== 0 || editingLayerRef.current !== null) return;
     if (e.target.closest('.character-wrapper')) return;
     if (!e.target.closest('.scene-viewport__sizer')) return;
@@ -291,11 +350,14 @@ const SceneViewport = ({
         <div
           ref={viewportRef}
           onMouseDownCapture={handleViewportMouseDown}
-          className={`scene-viewport${isPanning ? ' scene-viewport--grabbing' : editingLayer === null ? ' scene-viewport--grab' : ''}`}
+          className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : (controlScheme === 'modern' && editingLayer === null) ? ' scene-viewport--grab' : ''}`}
         >
           <div
             className="scene-viewport__sizer"
-            style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px)` }}
+            style={controlScheme === 'classic'
+              ? { width: (canvasSize.width + FRAME_SIZE * 2) * zoom, height: (canvasSize.height + FRAME_SIZE * 2) * zoom }
+              : { transform: `translate(${panOffset.x}px, ${panOffset.y}px)` }
+            }
           >
             <div
               className="scene-viewport__transform"

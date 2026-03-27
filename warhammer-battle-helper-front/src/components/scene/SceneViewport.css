@@ -13,6 +13,36 @@
   overflow: hidden;
 }
 
+/* Classic mode — show scrollbars */
+.scene-viewport--classic {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+}
+
+.scene-viewport--classic::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scene-viewport--classic::-webkit-scrollbar-track {
+  background: #e8dcc4;
+}
+
+.scene-viewport--classic::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 4px;
+  border: 2px solid #e8dcc4;
+}
+
+.scene-viewport--classic::-webkit-scrollbar-thumb:hover {
+  background: #a0712d;
+}
+
+.scene-viewport--classic::-webkit-scrollbar-corner {
+  background: #e8dcc4;
+}
+
 /* Grab cursor only over the scene itself, not the surrounding empty space */
 .scene-viewport--grab .scene-viewport__sizer,
 .scene-viewport--grab .scene-viewport__sizer * {

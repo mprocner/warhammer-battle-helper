@@ -456,7 +456,12 @@
     "invite": "Invite",
     "inviteSuccess": "Player invited successfully",
     "inviteNotFound": "No user found with that email",
-    "inviteAlreadyInGame": "Player is already in this game"
+    "inviteAlreadyInGame": "Player is already in this game",
+    "controlScheme": "Scene Controls",
+    "controlSchemeModern": "Modern",
+    "controlSchemeModernDesc": "Scroll → zoom · Drag → pan",
+    "controlSchemeClassic": "Classic",
+    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan"
   },
   "handouts": {
     "title": "Handouts",

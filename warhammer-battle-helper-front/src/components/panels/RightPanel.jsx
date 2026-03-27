@@ -44,6 +44,8 @@ const RightPanel = ({
   onParticipantUpdated,
   rollVisibility = 'all',
   onRollVisibilityChange,
+  controlScheme,
+  onControlSchemeChange,
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -179,6 +181,8 @@ const RightPanel = ({
             playerVolume={playerVolume}
             onPlayerVolumeChange={onPlayerVolumeChange}
             musicState={musicState}
+            controlScheme={controlScheme}
+            onControlSchemeChange={onControlSchemeChange}
           />
         );
       default:

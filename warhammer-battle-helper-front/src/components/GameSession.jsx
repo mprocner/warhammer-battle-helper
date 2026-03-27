@@ -7,6 +7,7 @@ import RightPanel from './panels/RightPanel';
 import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
+import { useControlScheme } from '../hooks/useControlScheme';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 import SceneSelector from './scene/SceneSelector';
@@ -35,6 +36,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [drawingColor, setDrawingColor] = useState('#ff0000');
   const [drawingFontSize, setDrawingFontSize] = useState(16);
   const [rollVisibility, setRollVisibility] = useState('all');
+  const [controlScheme, setControlScheme] = useControlScheme();
 
   // --- Online users ---
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -760,6 +762,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
             game={gameState}
             onlineUserIds={onlineUserIds}
             onParticipantUpdated={fetchGameState}
+            controlScheme={controlScheme}
           />
         </Box>
 
@@ -787,6 +790,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onParticipantUpdated={fetchGameState}
           rollVisibility={rollVisibility}
           onRollVisibilityChange={setRollVisibility}
+          controlScheme={controlScheme}
+          onControlSchemeChange={setControlScheme}
         />
       </Box>
 

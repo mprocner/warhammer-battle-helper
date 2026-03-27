@@ -27,6 +27,10 @@ type UserFolder struct {
 	UpdatedAt time.Time           `bson:"updatedAt" json:"updatedAt"`
 }
 
+type UserSettings struct {
+	SceneControlScheme string `bson:"sceneControlScheme,omitempty" json:"sceneControlScheme,omitempty"`
+}
+
 type User struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Email            string             `bson:"email" json:"email"`
@@ -42,4 +46,5 @@ type User struct {
 	Music            []MusicFile        `bson:"music" json:"music"`
 	MusicFolders     []MusicFolder      `bson:"musicFolders" json:"musicFolders"`
 	Playlists        []Playlist         `bson:"playlists" json:"playlists"`
+	Settings         UserSettings       `bson:"settings,omitempty" json:"settings,omitempty"`
 }
