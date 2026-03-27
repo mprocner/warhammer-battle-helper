@@ -14,6 +14,7 @@ const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 const PING_HOLD_MS = 500;
 
+
 const SceneViewport = ({
   scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing,
@@ -23,12 +24,19 @@ const SceneViewport = ({
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef(null);
-  const [textInputPos, setTextInputPos] = useState(null); // scene coords when text tool is clicked
+  const [textInputPos, setTextInputPos] = useState(null);
   const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
 
+  // Refs so event handlers always see current values without re-registering
+  const zoomRef = useRef(zoom);
+  const panOffsetRef = useRef(panOffset);
+
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { panOffsetRef.current = panOffset; }, [panOffset]);
 
   useEffect(() => {
     onZoomChange?.(zoom);
@@ -38,6 +46,12 @@ const SceneViewport = ({
     () => getCanvasSize(gridWidth, gridHeight),
     [gridWidth, gridHeight]
   );
+
+  // Reset pan offset when switching scenes
+  useEffect(() => {
+    setPanOffset({ x: 0, y: 0 });
+    panOffsetRef.current = { x: 0, y: 0 };
+  }, [scene?.id]);
 
   // Calculate fit-to-screen zoom
   const calcFitZoom = useCallback(() => {
@@ -50,26 +64,28 @@ const SceneViewport = ({
     return Math.min(vw / totalW, vh / totalH, MAX_ZOOM);
   }, [canvasSize]);
 
-
-  // Center-preserving zoom helper
+  // Zoom toward viewport center, clamping pan offset to stay in bounds
   const applyZoom = useCallback((newZoom) => {
     const el = viewportRef.current;
     if (!el) return;
-
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
-    const oldZoom = zoom;
+    const oldZoom = zoomRef.current;
+    const offset = panOffsetRef.current;
 
-    // Center of viewport in canvas coords
-    const cx = (el.scrollLeft + el.clientWidth / 2) / oldZoom;
-    const cy = (el.scrollTop + el.clientHeight / 2) / oldZoom;
+    // Canvas point currently under the viewport center
+    const cx = (el.clientWidth / 2 - offset.x) / oldZoom;
+    const cy = (el.clientHeight / 2 - offset.y) / oldZoom;
+
+    // New offset to keep same canvas point under viewport center
+    const newOffsetX = el.clientWidth / 2 - cx * clamped;
+    const newOffsetY = el.clientHeight / 2 - cy * clamped;
 
     setZoom(clamped);
-
-    requestAnimationFrame(() => {
-      el.scrollLeft = cx * clamped - el.clientWidth / 2;
-      el.scrollTop = cy * clamped - el.clientHeight / 2;
-    });
-  }, [zoom]);
+    zoomRef.current = clamped;
+    const newOffset = { x: newOffsetX, y: newOffsetY };
+    setPanOffset(newOffset);
+    panOffsetRef.current = newOffset;
+  }, []);
 
   // Scroll wheel zoom (toward mouse position)
   useEffect(() => {
@@ -78,61 +94,78 @@ const SceneViewport = ({
 
     const handleWheel = (e) => {
       e.preventDefault();
-
       const delta = -e.deltaY * WHEEL_ZOOM_FACTOR;
-      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom + delta));
+      const oldZoom = zoomRef.current;
+      const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, oldZoom + delta));
 
-      // Zoom toward mouse position
       const rect = el.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      const canvasX = (el.scrollLeft + mouseX) / zoom;
-      const canvasY = (el.scrollTop + mouseY) / zoom;
+      const offset = panOffsetRef.current;
+      // Canvas point currently under mouse
+      const canvasX = (mouseX - offset.x) / oldZoom;
+      const canvasY = (mouseY - offset.y) / oldZoom;
+
+      // New offset so same canvas point stays under mouse
+      const newOffsetX = mouseX - canvasX * newZoom;
+      const newOffsetY = mouseY - canvasY * newZoom;
 
       setZoom(newZoom);
-
-      requestAnimationFrame(() => {
-        el.scrollLeft = canvasX * newZoom - mouseX;
-        el.scrollTop = canvasY * newZoom - mouseY;
-      });
+      zoomRef.current = newZoom;
+      const newOffset = { x: newOffsetX, y: newOffsetY };
+      setPanOffset(newOffset);
+      panOffsetRef.current = newOffset;
     };
 
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [scene, zoom]);
+  }, [scene]);
 
-  const handleZoomIn = () => applyZoom(zoom + ZOOM_STEP);
-  const handleZoomOut = () => applyZoom(zoom - ZOOM_STEP);
-  const handleFit = () => applyZoom(calcFitZoom());
+  const handleZoomIn = () => applyZoom(zoomRef.current + ZOOM_STEP);
+  const handleZoomOut = () => applyZoom(zoomRef.current - ZOOM_STEP);
 
-  // Pan on drag — ref-based, listeners registered once on mount to avoid timing issues
+  const handleFit = useCallback(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const fitZoom = calcFitZoom();
+    const sw = (canvasSize.width + FRAME_SIZE * 2) * fitZoom;
+    const sh = (canvasSize.height + FRAME_SIZE * 2) * fitZoom;
+    // Center the scene in the viewport after fitting
+    const newOffset = { x: (el.clientWidth - sw) / 2, y: (el.clientHeight - sh) / 2 };
+    setZoom(fitZoom);
+    zoomRef.current = fitZoom;
+    setPanOffset(newOffset);
+    panOffsetRef.current = newOffset;
+  }, [calcFitZoom, canvasSize]);
+
+  // Pan on drag — moves scene via translate, clamped to viewport bounds
   const editingLayerRef = useRef(editingLayer);
   useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
 
   const handleViewportMouseDown = useCallback((e) => {
-    const layer = editingLayerRef.current;
-    if (e.button !== 0 || layer !== null) return;
+    if (e.button !== 0 || editingLayerRef.current !== null) return;
     if (e.target.closest('.character-wrapper')) return;
-    const el = viewportRef.current;
-    if (!el) return;
+    if (!e.target.closest('.scene-viewport__sizer')) return;
     panStartRef.current = {
       mouseX: e.clientX,
       mouseY: e.clientY,
-      scrollLeft: el.scrollLeft,
-      scrollTop: el.scrollTop,
+      startX: panOffsetRef.current.x,
+      startY: panOffsetRef.current.y,
     };
     setIsPanning(true);
   }, []);
 
   useEffect(() => {
     const handleMove = (e) => {
+      if (!panStartRef.current) return;
       const el = viewportRef.current;
-      if (!el || !panStartRef.current) return;
+      if (!el) return;
       const dx = e.clientX - panStartRef.current.mouseX;
       const dy = e.clientY - panStartRef.current.mouseY;
-      el.scrollLeft = panStartRef.current.scrollLeft - dx;
-      el.scrollTop = panStartRef.current.scrollTop - dy;
+      const newOffset = { x: panStartRef.current.startX + dx, y: panStartRef.current.startY + dy };
+      setPanOffset(newOffset);
+      panOffsetRef.current = newOffset;
     };
 
     const handleUp = () => {
@@ -153,7 +186,6 @@ const SceneViewport = ({
   const pingTimerRef = useRef(null);
 
   const handleContentMouseDown = useCallback((e) => {
-    // Only primary button, ignore if no sendMessage; ping only in editing mode (pan takes LPM otherwise)
     if (e.button !== 0 || !sendMessage || !scene || (editingLayer !== 'fog' && editingLayer !== 'drawing')) return;
 
     const contentEl = e.currentTarget;
@@ -174,7 +206,6 @@ const SceneViewport = ({
     }
   }, []);
 
-  // Cleanup timer on unmount
   useEffect(() => clearPingTimer, [clearPingTimer]);
 
   const isDrawingMode = editingLayer === 'drawing';
@@ -199,13 +230,11 @@ const SceneViewport = ({
     setTextInputValue('');
   }, [textInputPos, brushSize, drawingColor, drawingFontSize, onDrawingPathComplete]);
 
-  // Filter pings for current scene
   const scenePings = useMemo(
     () => pointerPings.filter(p => p.sceneId === scene?.id),
     [pointerPings, scene?.id]
   );
 
-  // No scene — keep current responsive behavior (no zoom wrapper)
   if (!scene) {
     return <div className="scene-viewport">{children}</div>;
   }
@@ -251,12 +280,11 @@ const SceneViewport = ({
           onMouseDownCapture={handleViewportMouseDown}
           className={`scene-viewport${isPanning ? ' scene-viewport--grabbing' : editingLayer === null ? ' scene-viewport--grab' : ''}`}
         >
-          {/* Sizer — sets scroll extent */}
+          {/* Sizer — translated to pan the scene; overflow:hidden clips outside bounds */}
           <div
             className="scene-viewport__sizer"
             style={{
-              width: (canvasSize.width + FRAME_SIZE * 2) * zoom,
-              height: (canvasSize.height + FRAME_SIZE * 2) * zoom,
+              transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
             }}
           >
             {/* Transform — applies visual scale */}
@@ -321,7 +349,7 @@ const SceneViewport = ({
                   />
                 ))}
 
-                {/* Fog of War layer — GM sees it only when editing fog layer, players only when enabled */}
+                {/* Fog of War layer */}
                 {(isGM ? editingLayer === 'fog' : scene.fogEnabled) && (
                   <FogLayer
                     scene={scene}
@@ -336,7 +364,7 @@ const SceneViewport = ({
                   />
                 )}
 
-                {/* Drawing layer — always visible, interactive only in drawing mode */}
+                {/* Drawing layer */}
                 {scene && (
                   <DrawingLayer
                     scene={scene}

@@ -6,47 +6,26 @@
   min-height: 0;
 }
 
-/* Scene Viewport - scroll container */
+/* Scene Viewport - pan container */
 .scene-viewport {
   width: 100%;
   height: 100%;
-  overflow: auto;
-  /* Scrollbar styling - Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: #c9975b #e8dcc4;
+  overflow: hidden;
 }
 
-/* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
-.scene-viewport::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.scene-viewport::-webkit-scrollbar-track {
-  background: #e8dcc4;
-  border-radius: 4px;
-}
-
-.scene-viewport::-webkit-scrollbar-thumb {
-  background: #c9975b;
-  border-radius: 4px;
-}
-
-.scene-viewport::-webkit-scrollbar-thumb:hover {
-  background: #a67c52;
-}
-
-.scene-viewport--grab,
-.scene-viewport--grab * {
+/* Grab cursor only over the scene itself, not the surrounding empty space */
+.scene-viewport--grab .scene-viewport__sizer,
+.scene-viewport--grab .scene-viewport__sizer * {
   cursor: grab !important;
 }
 
+/* Grabbing cursor everywhere during active pan (mouse moves freely outside scene) */
 .scene-viewport--grabbing,
 .scene-viewport--grabbing * {
   cursor: grabbing !important;
 }
 
-/* Sizer — creates proper scrollbar dimensions (width/height = canvas × zoom) */
+/* Sizer — translated to pan the scene within the viewport */
 .scene-viewport__sizer {
   position: relative;
 }
