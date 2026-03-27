@@ -43,7 +43,7 @@ const SceneViewport = ({
   const panOffsetRef = useRef(panOffset);
   // canvasSizeRef is updated manually before handleFit so it always uses correct dimensions
   const canvasSizeRef = useRef(null);
-  const displayedSceneIdRef = useRef(scene?.id ?? null);
+  const displayedSceneIdRef = useRef(null);
   // pendingSceneRef captures the scene that triggered the cover, used when the setTimeout fires
   const pendingSceneRef = useRef(null);
   const firstSceneLoad = useRef(true);
