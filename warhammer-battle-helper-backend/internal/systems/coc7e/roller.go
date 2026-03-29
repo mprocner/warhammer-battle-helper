@@ -199,6 +199,16 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 		stats.Sanity = stats.SanityMax
 	}
 
+	stats.HPMax = (stats.CON + stats.SIZ) / 10
+	if stats.HP > stats.HPMax {
+		stats.HP = stats.HPMax
+	}
+
+	stats.MPMax = stats.POW / 5
+	if stats.MP > stats.MPMax {
+		stats.MP = stats.MPMax
+	}
+
 	stats.DamageBonus, stats.Build = computeDamageAndBuild(stats.STR, stats.SIZ)
 
 	out, err := bson.Marshal(stats)

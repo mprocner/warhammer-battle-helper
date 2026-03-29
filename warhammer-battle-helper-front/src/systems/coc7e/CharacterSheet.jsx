@@ -495,7 +495,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                   <div className="coc-resource-pair__inputs">
                     <input type="number" value={edited.hp ?? ''} onChange={e => setField('hp', parseInt(e.target.value) || 0)} />
                     <span>/</span>
-                    <input type="number" value={edited.hpMax ?? ''} onChange={e => setField('hpMax', parseInt(e.target.value) || 0)} />
+                    <span className="coc-resource-pair__derived">{edited.hpMax ?? 0}</span>
                   </div>
                 </div>
                 <div className="coc-resource-pair coc-resource-pair--featured">
@@ -503,7 +503,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
                   <div className="coc-resource-pair__inputs">
                     <input type="number" value={edited.mp ?? ''} onChange={e => setField('mp', parseInt(e.target.value) || 0)} />
                     <span>/</span>
-                    <input type="number" value={edited.mpMax ?? ''} onChange={e => setField('mpMax', parseInt(e.target.value) || 0)} />
+                    <span className="coc-resource-pair__derived">{edited.mpMax ?? 0}</span>
                   </div>
                 </div>
                 <div className="coc-resource-pair coc-resource-pair--featured coc-resource-pair--rollable">

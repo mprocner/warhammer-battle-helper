@@ -58,7 +58,7 @@ function CoCCharacterDetails({
   const handleHpChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, hp: Math.max(0, Math.min(stats.hpMax || 20, Number(newValue) || 0)) }
+      stats: { ...stats, hp: Math.max(0, Math.min(stats.hpMax || 0, Number(newValue) || 0)) }
     };
     onCharacterUpdate(updated);
     try {
@@ -84,7 +84,7 @@ function CoCCharacterDetails({
   const handleMpChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, mp: Math.max(0, Math.min(stats.mpMax || 99, Number(newValue) || 0)) }
+      stats: { ...stats, mp: Math.max(0, Math.min(stats.mpMax || 0, Number(newValue) || 0)) }
     };
     onCharacterUpdate(updated);
     try {
@@ -255,8 +255,8 @@ function CoCCharacterDetails({
                 type="number"
                 className="wounds-input"
                 min={0}
-                max={stats.hpMax || 20}
-                value={stats.hp ?? stats.hpMax ?? 0}
+                max={stats.hpMax || 0}
+                value={stats.hp ?? 0}
                 onChange={e => handleHpChange(e.target.value)}
               />
               <span>/ {stats.hpMax || '—'}</span>
@@ -271,8 +271,8 @@ function CoCCharacterDetails({
                 type="number"
                 className="wounds-input"
                 min={0}
-                max={stats.mpMax || 99}
-                value={stats.mp ?? stats.mpMax ?? 0}
+                max={stats.mpMax || 0}
+                value={stats.mp ?? 0}
                 onChange={e => handleMpChange(e.target.value)}
               />
               <span>/ {stats.mpMax || '—'}</span>
