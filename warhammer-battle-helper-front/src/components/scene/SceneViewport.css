@@ -608,6 +608,7 @@
   font-size: 13px;
   color: #4a3728;
   font-family: 'MedievalSharp', serif;
+  text-transform: uppercase;
 }
 
 .scene-selector__popover-row:hover {

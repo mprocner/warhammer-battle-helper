@@ -20,6 +20,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConfirmModal from './common/ConfirmModal';
+import { resolveDisplayName } from '../utils/participants';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -956,7 +957,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                     </div>
                     {isGM && char.createdBy && (
                       <div className="character-owner">
-                        {participants.find(p => p.userId === char.createdBy)?.username || 'GM'}
+                        {(() => { const p = participants.find(p => p.userId === char.createdBy); return p ? (resolveDisplayName(p) || p.username) : 'GM'; })()}
                       </div>
                     )}
                     <div className="character-position">

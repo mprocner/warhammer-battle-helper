@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useTranslation } from 'react-i18next';
 import { createScene, assignPlayerToScene } from '../../api/scenes';
+import { resolveDisplayName } from '../../utils/participants';
 import './SceneViewport.css';
 
 const SceneSelector = ({
@@ -172,7 +173,7 @@ const SceneSelector = ({
                           checked={scene ? isAssigned(scene, p) : false}
                           onChange={() => scene && handleTogglePlayer(scene, p)}
                         />
-                        {p.username}
+                        {resolveDisplayName(p) || p.username}
                       </label>
                     ))}
                     {!allAssigned && (

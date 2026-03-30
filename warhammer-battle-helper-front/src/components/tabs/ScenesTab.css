@@ -249,8 +249,9 @@
   gap: 4px;
 }
 
-.scenes-tab__field label {
-  font-size: 11px;
+.scenes-tab__field label,
+.scenes-tab__music-field > label {
+  font-size: 13px;
   font-weight: 600;
   color: #6b4423;
   text-transform: uppercase;
@@ -450,7 +451,7 @@
 }
 
 .scenes-tab__modal .scenes-tab__field label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b4423;
   text-transform: uppercase;
