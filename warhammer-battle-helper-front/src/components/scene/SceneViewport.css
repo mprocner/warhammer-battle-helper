@@ -528,6 +528,16 @@
   color: #d44a2a;
 }
 
+.scene-selector__music-icon {
+  font-size: 12px !important;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.scene-selector__tab--active .scene-selector__music-icon {
+  opacity: 0.9;
+}
+
 .scene-selector__person-btn {
   width: 28px;
   border: 1px solid #d4a574;

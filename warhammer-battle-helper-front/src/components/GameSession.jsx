@@ -10,6 +10,7 @@ import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
+import { getMusic, playTrack } from '../api/music';
 import SceneSelector from './scene/SceneSelector';
 
 /**
@@ -452,7 +453,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       // Music-related messages
       case 'MUSIC_PLAY': {
         const audio = audioRef.current;
-        const { trackUrl, trackName, position } = message.payload;
+        const { trackUrl, trackName, position, playlistId, trackIndex } = message.payload;
         if (audio.src !== trackUrl) {
           audio.src = trackUrl;
         }
@@ -465,7 +466,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           isPlaying: true,
           trackUrl,
           trackName: trackName || '',
-          position: position || 0
+          position: position || 0,
+          playlistId: playlistId || null,
+          trackIndex: trackIndex || 0,
         }));
         break;
       }
@@ -649,6 +652,29 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     }
   }, [gameId, displayScene]);
 
+  const handleSceneAssignAll = useCallback(async (scene) => {
+    if (!scene.sceneMusicId) return;
+    try {
+      const musicData = await getMusic();
+      const resolveUrl = (url) => url?.startsWith('http') ? url : `${getApiUrl()}${url}`;
+      if (scene.sceneMusicType === 'playlist') {
+        const playlist = (musicData.playlists || []).find(p => p.id === scene.sceneMusicId);
+        if (!playlist) return;
+        const tracks = (playlist.tracks || [])
+          .map(id => (musicData.music || []).find(f => f.id === id))
+          .filter(Boolean);
+        if (tracks.length === 0) return;
+        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0);
+      } else {
+        const file = (musicData.music || []).find(f => f.id === scene.sceneMusicId);
+        if (!file) return;
+        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0);
+      }
+    } catch (err) {
+      console.error('Failed to play scene music:', err);
+    }
+  }, [gameId]);
+
   if (loading) {
     return (
       <Box sx={{
@@ -725,6 +751,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
                 participants={gameState?.participants || []}
                 gameId={gameId}
                 onSceneCreated={setGmViewingSceneId}
+                onAssignAll={handleSceneAssignAll}
               />
             ) : null}
             addLogMessage={addLogMessage}

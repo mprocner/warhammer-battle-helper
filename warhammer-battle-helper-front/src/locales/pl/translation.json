@@ -692,7 +692,14 @@
     "drawingUndo": "Cofnij pociągnięcie",
     "drawingClear": "Wyczyść wszystko",
     "drawingTool_select": "Zaznacz i usuń",
-    "drawingDelete": "Usuń zaznaczony"
+    "drawingDelete": "Usuń zaznaczony",
+    "linkedMusic": "Muzyka sceny",
+    "linkMusic": "Przypisz muzykę...",
+    "noMusicLinked": "Brak muzyki",
+    "unlinkMusic": "Odepnij",
+    "musicLinked": "Muzyka przypisana",
+    "musicSearch": "Szukaj tracków i playlist...",
+    "musicLoadError": "Nie udało się załadować biblioteki muzycznej"
   },
   "files": {
     "title": "Pliki",

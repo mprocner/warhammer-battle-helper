@@ -841,6 +841,15 @@ func (r *GameRepository) UpdateScene(gameID string, sceneID primitive.ObjectID, 
 	if req.GridHeight != nil {
 		setFields["scenes.$.gridHeight"] = *req.GridHeight
 	}
+	if req.SceneMusicId != nil {
+		setFields["scenes.$.sceneMusicId"] = *req.SceneMusicId
+	}
+	if req.SceneMusicType != nil {
+		setFields["scenes.$.sceneMusicType"] = *req.SceneMusicType
+	}
+	if req.SceneMusicName != nil {
+		setFields["scenes.$.sceneMusicName"] = *req.SceneMusicName
+	}
 
 	filter := bson.M{
 		"_id":        objectID,

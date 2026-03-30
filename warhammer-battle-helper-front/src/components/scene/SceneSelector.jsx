@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useTranslation } from 'react-i18next';
 import { createScene, assignPlayerToScene } from '../../api/scenes';
 import './SceneViewport.css';
@@ -13,6 +14,7 @@ const SceneSelector = ({
   participants,
   gameId,
   onSceneCreated,
+  onAssignAll,
 }) => {
   const { t } = useTranslation();
   const [openPopoverSceneId, setOpenPopoverSceneId] = useState(null);
@@ -77,6 +79,7 @@ const SceneSelector = ({
     const unassigned = players.filter(p => !isAssigned(scene, p));
     try {
       await Promise.all(unassigned.map(p => assignPlayerToScene(gameId, scene.id, p.userId, true)));
+      onAssignAll?.(scene);
     } catch (err) {
       console.error('Failed to assign all players', err);
     }
@@ -112,6 +115,9 @@ const SceneSelector = ({
                 onClick={() => onSceneChange(scene.id)}
               >
                 {scene.name}
+                {scene.sceneMusicId && (
+                  <MusicNoteIcon className="scene-selector__music-icon" />
+                )}
                 {assignedCount > 0 && (
                   <span className="scene-selector__badge scene-selector__badge--filled">
                     {assignedCount}

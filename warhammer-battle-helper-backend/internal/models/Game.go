@@ -181,6 +181,9 @@ type Scene struct {
 	FogOpacity      float64              `bson:"fogOpacity" json:"fogOpacity"`
 	RevealPaths     []FogPath            `bson:"revealPaths" json:"revealPaths"`
 	DrawingPaths    []DrawingPath        `bson:"drawingPaths" json:"drawingPaths"`
+	SceneMusicId    string               `bson:"sceneMusicId,omitempty" json:"sceneMusicId,omitempty"`
+	SceneMusicType  string               `bson:"sceneMusicType,omitempty" json:"sceneMusicType,omitempty"`
+	SceneMusicName  string               `bson:"sceneMusicName,omitempty" json:"sceneMusicName,omitempty"`
 	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
 }
@@ -266,10 +269,13 @@ type CreateSceneRequest struct {
 
 // UpdateSceneRequest is the request body for updating a scene
 type UpdateSceneRequest struct {
-	Name        *string `json:"name"`
-	GridVisible *bool   `json:"gridVisible"`
-	GridWidth   *int    `json:"gridWidth"`
-	GridHeight  *int    `json:"gridHeight"`
+	Name           *string `json:"name"`
+	GridVisible    *bool   `json:"gridVisible"`
+	GridWidth      *int    `json:"gridWidth"`
+	GridHeight     *int    `json:"gridHeight"`
+	SceneMusicId   *string `json:"sceneMusicId"`
+	SceneMusicType *string `json:"sceneMusicType"`
+	SceneMusicName *string `json:"sceneMusicName"`
 }
 
 // AssignPlayerToSceneRequest is the request body for assigning a player to a scene

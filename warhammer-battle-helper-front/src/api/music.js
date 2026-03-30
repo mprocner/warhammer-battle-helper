@@ -70,9 +70,9 @@ export const reorderPlaylists = async (playlistIds) => {
 
 // --- Game Playback (GM-only) ---
 
-export const playTrack = async (gameId, trackUrl, trackName, position = 0) => {
+export const playTrack = async (gameId, trackUrl, trackName, position = 0, playlistId = '', trackIndex = 0) => {
   const response = await axiosInstance.post(`/games/${gameId}/music/play`, {
-    trackUrl, trackName, position
+    trackUrl, trackName, position, playlistId, trackIndex
   });
   return response.data;
 };

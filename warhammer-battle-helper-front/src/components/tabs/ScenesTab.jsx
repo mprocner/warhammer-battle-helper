@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
+import { getMusic } from '../../api/music';
 import { resolveDisplayName } from '../../utils/participants';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
 import CloudIcon from '@mui/icons-material/Cloud';
 import EditIcon from '@mui/icons-material/Edit';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import QueueMusicIcon from '@mui/icons-material/QueueMusic';
+import CloseIcon from '@mui/icons-material/Close';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
@@ -25,6 +29,12 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   const [draftGridHeight, setDraftGridHeight] = useState('');
   const [gridSizeError, setGridSizeError] = useState(false);
   const [createGridError, setCreateGridError] = useState(false);
+
+  // Music picker state
+  const [isMusicPickerOpen, setIsMusicPickerOpen] = useState(false);
+  const [musicPickerData, setMusicPickerData] = useState(null);
+  const [musicPickerSearch, setMusicPickerSearch] = useState('');
+  const [musicPickerLoading, setMusicPickerLoading] = useState(false);
 
   // Modal drag & minimize
   const [isMinimized, setIsMinimized] = useState(false);
@@ -69,6 +79,11 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSceneId, selectedScene?.gridWidth, selectedScene?.gridHeight]);
+
+  // Close music picker when switching scenes
+  useEffect(() => {
+    setIsMusicPickerOpen(false);
+  }, [selectedSceneId]);
 
   const participants = gameState?.participants?.filter(p => p.role === 'player') || [];
 
@@ -184,6 +199,47 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
       ));
     } catch (err) {
       console.error('Failed to toggle fog:', err);
+      setError(t('scenes.updateError'));
+    }
+  };
+
+  const handleOpenMusicPicker = async () => {
+    setIsMusicPickerOpen(true);
+    setMusicPickerSearch('');
+    if (musicPickerData) return;
+    setMusicPickerLoading(true);
+    try {
+      const data = await getMusic();
+      setMusicPickerData(data);
+    } catch {
+      setError(t('scenes.musicLoadError'));
+      setIsMusicPickerOpen(false);
+    } finally {
+      setMusicPickerLoading(false);
+    }
+  };
+
+  const handleLinkMusic = async (id, type, name) => {
+    if (!selectedSceneId) return;
+    try {
+      await updateScene(gameId, selectedSceneId, { sceneMusicId: id, sceneMusicType: type, sceneMusicName: name });
+      setScenes(prev => prev.map(s =>
+        s.id === selectedSceneId ? { ...s, sceneMusicId: id, sceneMusicType: type, sceneMusicName: name } : s
+      ));
+      setIsMusicPickerOpen(false);
+    } catch {
+      setError(t('scenes.updateError'));
+    }
+  };
+
+  const handleUnlinkMusic = async () => {
+    if (!selectedSceneId) return;
+    try {
+      await updateScene(gameId, selectedSceneId, { sceneMusicId: '', sceneMusicType: '', sceneMusicName: '' });
+      setScenes(prev => prev.map(s =>
+        s.id === selectedSceneId ? { ...s, sceneMusicId: undefined, sceneMusicType: undefined, sceneMusicName: undefined } : s
+      ));
+    } catch {
       setError(t('scenes.updateError'));
     }
   };
@@ -418,6 +474,70 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 })
               )}
             </div>
+          </div>
+
+          {/* Linked music */}
+          <div className="scenes-tab__music-field">
+            <label>{t('scenes.linkedMusic')}</label>
+            {selectedScene.sceneMusicId ? (
+              <div className="scenes-tab__music-linked">
+                {selectedScene.sceneMusicType === 'playlist'
+                  ? <QueueMusicIcon style={{ fontSize: 16 }} />
+                  : <MusicNoteIcon style={{ fontSize: 16 }} />
+                }
+                <span className="scenes-tab__music-linked-name">{selectedScene.sceneMusicName}</span>
+                <button className="scenes-tab__music-unlink-btn" onClick={handleUnlinkMusic} title={t('scenes.unlinkMusic')}>
+                  <CloseIcon style={{ fontSize: 14 }} />
+                </button>
+              </div>
+            ) : (
+              <div className="scenes-tab__music-empty">
+                <span>{t('scenes.noMusicLinked')}</span>
+                <button className="scenes-tab__btn scenes-tab__btn--sm" onClick={handleOpenMusicPicker}>
+                  {t('scenes.linkMusic')}
+                </button>
+              </div>
+            )}
+            {isMusicPickerOpen && (
+              <div className="scenes-tab__music-picker">
+                <input
+                  className="scenes-tab__music-picker-search"
+                  type="text"
+                  placeholder={t('scenes.musicSearch')}
+                  value={musicPickerSearch}
+                  onChange={e => setMusicPickerSearch(e.target.value)}
+                  autoFocus
+                />
+                {musicPickerLoading ? (
+                  <div className="scenes-tab__music-picker-empty">{t('common.loading')}</div>
+                ) : (
+                  <div className="scenes-tab__music-picker-list">
+                    {(() => {
+                      const search = musicPickerSearch.toLowerCase();
+                      const playlists = (musicPickerData?.playlists || []).filter(p => p.name.toLowerCase().includes(search));
+                      const tracks = (musicPickerData?.music || []).filter(f => f.name.toLowerCase().includes(search));
+                      if (playlists.length === 0 && tracks.length === 0) {
+                        return <div className="scenes-tab__music-picker-empty">{t('common.noResults', 'No results')}</div>;
+                      }
+                      return [
+                        ...playlists.map(p => (
+                          <button key={`pl-${p.id}`} className="scenes-tab__music-picker-item" onClick={() => handleLinkMusic(p.id, 'playlist', p.name)}>
+                            <QueueMusicIcon style={{ fontSize: 14 }} />
+                            <span className="scenes-tab__music-picker-item-name">{p.name}</span>
+                          </button>
+                        )),
+                        ...tracks.map(f => (
+                          <button key={`tr-${f.id}`} className="scenes-tab__music-picker-item" onClick={() => handleLinkMusic(f.id, 'track', f.name)}>
+                            <MusicNoteIcon style={{ fontSize: 14 }} />
+                            <span className="scenes-tab__music-picker-item-name">{f.name}</span>
+                          </button>
+                        )),
+                      ];
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Scene stats */}

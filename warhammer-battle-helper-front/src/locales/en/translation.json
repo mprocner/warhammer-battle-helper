@@ -691,7 +691,14 @@
     "drawingUndo": "Undo stroke",
     "drawingClear": "Clear all",
     "drawingTool_select": "Select & Delete",
-    "drawingDelete": "Delete selected"
+    "drawingDelete": "Delete selected",
+    "linkedMusic": "Linked music",
+    "linkMusic": "Link music...",
+    "noMusicLinked": "No music linked",
+    "unlinkMusic": "Unlink",
+    "musicLinked": "Music linked",
+    "musicSearch": "Search tracks and playlists...",
+    "musicLoadError": "Failed to load music library"
   },
   "files": {
     "title": "Files",

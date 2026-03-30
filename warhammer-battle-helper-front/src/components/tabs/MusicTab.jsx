@@ -448,6 +448,18 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     fetchMusic();
   }, [fetchMusic]);
 
+  // Sync activePlaylist when music was triggered externally with a playlistId (e.g. scene auto-play)
+  useEffect(() => {
+    if (!musicState.playlistId) return;
+    if (activePlaylist?.id === musicState.playlistId) return;
+    const playlist = playlists.find(p => p.id === musicState.playlistId);
+    if (playlist) {
+      setActivePlaylist(playlist);
+      setActiveTrackIndex(musicState.trackIndex ?? 0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [musicState.playlistId, musicState.trackIndex, playlists]);
+
   // Track audio time updates
   useEffect(() => {
     const audio = audioRef.current;

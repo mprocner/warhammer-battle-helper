@@ -5,3 +5,4 @@
 - [GM vs Player Distinctions](gm-vs-player.md) — Role-specific UI surfaces and visibility rules
 - [DrawingToolbar Design](drawing-toolbar.md) — Layer mode tabs, tool filtering, fog vs drawing modes
 - [Known UX Pain Points](ux-pain-points.md) — Identified issues from codebase analysis (2026-03-27)
+- [Scene-Linked Music Design](scene-linked-music.md) — Design decisions for auto-triggering music on scene switch (2026-03-30)

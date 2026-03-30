@@ -62,9 +62,11 @@ type ReorderPlaylistsRequest struct {
 }
 
 type PlayTrackRequest struct {
-	TrackURL  string  `json:"trackUrl" binding:"required"`
-	TrackName string  `json:"trackName"`
-	Position  float64 `json:"position"`
+	TrackURL   string  `json:"trackUrl" binding:"required"`
+	TrackName  string  `json:"trackName"`
+	Position   float64 `json:"position"`
+	PlaylistId string  `json:"playlistId"`
+	TrackIndex int     `json:"trackIndex"`
 }
 
 type PauseTrackRequest struct {
@@ -593,9 +595,11 @@ func (h *MusicHandler) PlayTrack(c *gin.Context) {
 	}
 
 	payload := map[string]interface{}{
-		"trackUrl":  req.TrackURL,
-		"trackName": req.TrackName,
-		"position":  req.Position,
+		"trackUrl":   req.TrackURL,
+		"trackName":  req.TrackName,
+		"position":   req.Position,
+		"playlistId": req.PlaylistId,
+		"trackIndex": req.TrackIndex,
 	}
 
 	if err := h.GameService.BroadcastMusicCommand(gameID, userID, "MUSIC_PLAY", payload); err != nil {

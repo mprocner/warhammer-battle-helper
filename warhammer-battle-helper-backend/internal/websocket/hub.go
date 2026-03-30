@@ -28,12 +28,14 @@ type Message struct {
 
 // MusicState holds the current music playback state for a game
 type MusicState struct {
-	IsPlaying bool      `json:"isPlaying"`
-	TrackURL  string    `json:"trackUrl,omitempty"`
-	TrackName string    `json:"trackName,omitempty"`
-	Position  float64   `json:"position"`
-	Volume    float64   `json:"volume"`
-	StartedAt time.Time // server time when playback started (used to calculate elapsed)
+	IsPlaying  bool      `json:"isPlaying"`
+	TrackURL   string    `json:"trackUrl,omitempty"`
+	TrackName  string    `json:"trackName,omitempty"`
+	Position   float64   `json:"position"`
+	Volume     float64   `json:"volume"`
+	PlaylistId string    `json:"playlistId,omitempty"`
+	TrackIndex int       `json:"trackIndex"`
+	StartedAt  time.Time // server time when playback started (used to calculate elapsed)
 }
 
 // Hub maintains the set of active clients and broadcasts messages to the clients
@@ -108,9 +110,11 @@ func (h *Hub) registerClient(client *Client) {
 			Type:   "MUSIC_PLAY",
 			GameID: client.GameID,
 			Payload: map[string]interface{}{
-				"trackUrl":  ms.TrackURL,
-				"trackName": ms.TrackName,
-				"position":  currentPosition,
+				"trackUrl":   ms.TrackURL,
+				"trackName":  ms.TrackName,
+				"position":   currentPosition,
+				"playlistId": ms.PlaylistId,
+				"trackIndex": ms.TrackIndex,
 			},
 		}
 		msgBytes, err := json.Marshal(msg)
@@ -167,13 +171,23 @@ func (h *Hub) broadcastMessage(message *Message) {
 	switch message.Type {
 	case "MUSIC_PLAY":
 		h.mu.Lock()
+		playlistId := ""
+		if pid, ok := message.Payload["playlistId"]; ok {
+			playlistId = fmt.Sprintf("%v", pid)
+		}
+		trackIndex := 0
+		if ti, ok := message.Payload["trackIndex"]; ok {
+			trackIndex = int(toFloat64(ti))
+		}
 		h.MusicStates[message.GameID] = &MusicState{
-			IsPlaying: true,
-			TrackURL:  fmt.Sprintf("%v", message.Payload["trackUrl"]),
-			TrackName: fmt.Sprintf("%v", message.Payload["trackName"]),
-			Position:  toFloat64(message.Payload["position"]),
-			Volume:    h.getMusicVolume(message.GameID),
-			StartedAt: time.Now(),
+			IsPlaying:  true,
+			TrackURL:   fmt.Sprintf("%v", message.Payload["trackUrl"]),
+			TrackName:  fmt.Sprintf("%v", message.Payload["trackName"]),
+			Position:   toFloat64(message.Payload["position"]),
+			Volume:     h.getMusicVolume(message.GameID),
+			PlaylistId: playlistId,
+			TrackIndex: trackIndex,
+			StartedAt:  time.Now(),
 		}
 		h.mu.Unlock()
 	case "MUSIC_PAUSE":
