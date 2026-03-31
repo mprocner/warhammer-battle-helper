@@ -350,18 +350,12 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 		return
 	}
 
-	// For Warhammer, basicInfo.name is the authoritative display name (edited in sheet).
-	// Use it as the base for clone names; fall back to top-level Name.
+	sys, _ := registry.Get(original.GameSystem)
+
+	// Use the stats-embedded display name if available (e.g. warhammer4e stores it in basicInfo.name).
 	baseName := original.Name
-	if original.GameSystem == "warhammer4e" && len(original.Stats) > 0 {
-		var statsMap bson.M
-		if err := bson.Unmarshal(original.Stats, &statsMap); err == nil {
-			if basicInfo, ok := statsMap["basicInfo"].(bson.M); ok {
-				if n, ok := basicInfo["name"].(string); ok && n != "" {
-					baseName = n
-				}
-			}
-		}
+	if n := sys.GetDisplayName(original.Stats); n != "" {
+		baseName = n
 	}
 
 	clones := make([]*models.Character, 0, req.Count)
@@ -372,24 +366,14 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 		clone.CreatedBy = userObjID
 		clone.VisibleTo = []primitive.ObjectID{userObjID}
 
-		// Keep stats.basicInfo.name in sync with the clone's top-level Name
-		if clone.GameSystem == "warhammer4e" && len(clone.Stats) > 0 {
-			var statsMap bson.M
-			if err := bson.Unmarshal(clone.Stats, &statsMap); err == nil {
-				if basicInfo, ok := statsMap["basicInfo"].(bson.M); ok {
-					basicInfo["name"] = clone.Name
-				}
-				if rawStats, err := bson.Marshal(statsMap); err == nil {
-					clone.Stats = rawStats
-				}
-			}
+		// Keep any stats-embedded name in sync with the clone's top-level Name.
+		if updated, err := sys.SetDisplayName(clone.Stats, clone.Name); err == nil {
+			clone.Stats = updated
 		}
 
 		// Recompute derived stats for the clone
-		if sys, sysErr := registry.Get(clone.GameSystem); sysErr == nil {
-			if derived, derivedErr := sys.ComputeDerived(clone.Stats); derivedErr == nil {
-				clone.Stats = derived
-			}
+		if derived, derivedErr := sys.ComputeDerived(clone.Stats); derivedErr == nil {
+			clone.Stats = derived
 		}
 
 		if err := h.CharacterRepo.Create(&clone); err != nil {

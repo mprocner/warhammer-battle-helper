@@ -59,7 +59,11 @@ func New() *Plugin { return &Plugin{} }
 // DefaultStats returns a zero-value CoC stats document as bson.Raw.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	empty := Stats{
-		Skills: map[string]int{},
+		Skills:            map[string]int{},
+		CustomSkills:      []CustomSkill{},
+		FavoriteSkills:    []string{},
+		DevelopmentSkills: []string{},
+		Weapons:           []CoCWeapon{},
 	}
 	raw, err := bson.Marshal(empty)
 	if err != nil {
@@ -188,6 +192,22 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err
+	}
+
+	if stats.Skills == nil {
+		stats.Skills = map[string]int{}
+	}
+	if stats.CustomSkills == nil {
+		stats.CustomSkills = []CustomSkill{}
+	}
+	if stats.FavoriteSkills == nil {
+		stats.FavoriteSkills = []string{}
+	}
+	if stats.DevelopmentSkills == nil {
+		stats.DevelopmentSkills = []string{}
+	}
+	if stats.Weapons == nil {
+		stats.Weapons = []CoCWeapon{}
 	}
 
 	cthulhuMythos := 0
@@ -474,3 +494,9 @@ func evalDiceFormula(formula string) int {
 	}
 	return total
 }
+
+// GetDisplayName returns "" — CoC does not embed the name inside stats.
+func (p *Plugin) GetDisplayName(_ bson.Raw) string { return "" }
+
+// SetDisplayName returns stats unchanged — CoC does not embed the name inside stats.
+func (p *Plugin) SetDisplayName(stats bson.Raw, _ string) (bson.Raw, error) { return stats, nil }

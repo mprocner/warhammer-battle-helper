@@ -74,7 +74,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
       setImageZoom(1);
       setImagePan({ x: 0, y: 0 });
     }
-  }, [isOpen, handout?.id]);
+  }, [isOpen, handout?.id, index]);
 
   // Wheel zoom for images (passive: false required to preventDefault)
   useEffect(() => {

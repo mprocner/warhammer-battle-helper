@@ -619,7 +619,11 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	plugin, err := registry.Get(game.GameSystem)
+	gameSystem := game.GameSystem
+	if gameSystem == "" {
+		gameSystem = character.GameSystem
+	}
+	plugin, err := registry.Get(gameSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -684,7 +688,11 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 		return nil, fmt.Errorf("character not found: %w", err)
 	}
 
-	plugin, err := registry.Get(game.GameSystem)
+	gameSystem := game.GameSystem
+	if gameSystem == "" {
+		gameSystem = character.GameSystem
+	}
+	plugin, err := registry.Get(gameSystem)
 	if err != nil {
 		return nil, err
 	}

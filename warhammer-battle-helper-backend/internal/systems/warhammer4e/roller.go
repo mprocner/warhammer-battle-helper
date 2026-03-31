@@ -40,7 +40,15 @@ func New() *Plugin {
 
 // DefaultStats returns an empty Warhammer stats document as bson.Raw.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
-	empty := Stats{}
+	empty := Stats{
+		Talents:        []Talent{},
+		Weapons:        []Weapon{},
+		Armour:         []ArmourItem{},
+		Equipment:      []EquipmentItem{},
+		Spells:         []Spell{},
+		BasicSkills:    map[string]int{},
+		AdvancedSkills: map[string]int{},
+	}
 	raw, err := bson.Marshal(empty)
 	if err != nil {
 		return nil, err
@@ -248,6 +256,22 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 		return raw, err
 	}
 
+	if stats.Equipment == nil {
+		stats.Equipment = []EquipmentItem{}
+	}
+	if stats.Spells == nil {
+		stats.Spells = []Spell{}
+	}
+	if stats.Weapons == nil {
+		stats.Weapons = []Weapon{}
+	}
+	if stats.Armour == nil {
+		stats.Armour = []ArmourItem{}
+	}
+	if stats.Talents == nil {
+		stats.Talents = []Talent{}
+	}
+
 	c := stats.Characteristics.Current
 	baseTB := c.T / 10
 	stats.Wounds.SB = c.S / 10
@@ -308,4 +332,42 @@ func rollDamage(formula string, sl int) int {
 		}
 	}
 	return total
+}
+
+// GetDisplayName extracts the character name from stats.basicInfo.name.
+func (p *Plugin) GetDisplayName(stats bson.Raw) string {
+	if len(stats) == 0 {
+		return ""
+	}
+	var statsMap bson.M
+	if err := bson.Unmarshal(stats, &statsMap); err != nil {
+		return ""
+	}
+	basicInfo, ok := statsMap["basicInfo"].(bson.M)
+	if !ok {
+		return ""
+	}
+	name, _ := basicInfo["name"].(string)
+	return name
+}
+
+// SetDisplayName writes name into stats.basicInfo.name and returns updated BSON.
+func (p *Plugin) SetDisplayName(stats bson.Raw, name string) (bson.Raw, error) {
+	if len(stats) == 0 {
+		return stats, nil
+	}
+	var statsMap bson.M
+	if err := bson.Unmarshal(stats, &statsMap); err != nil {
+		return stats, err
+	}
+	basicInfo, ok := statsMap["basicInfo"].(bson.M)
+	if !ok {
+		return stats, nil
+	}
+	basicInfo["name"] = name
+	updated, err := bson.Marshal(statsMap)
+	if err != nil {
+		return stats, err
+	}
+	return updated, nil
 }

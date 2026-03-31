@@ -10,3 +10,12 @@ const systems = { warhammer4e, coc7e };
 export function getSystem(gameSystem) {
   return systems[gameSystem] || warhammer4e;
 }
+
+export function normalizeCharacter(char) {
+  if (!char) return char;
+  return getSystem(char.gameSystem).normalizeCharacter(char);
+}
+
+export function buildPayload(char) {
+  return getSystem(char?.gameSystem).buildPayload(char);
+}

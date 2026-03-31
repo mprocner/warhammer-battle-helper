@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../../api/axios';
 import { getProfile, updateGameParticipant } from '../../api/profile';
-import AvatarUpload from '../character-sheet/AvatarUpload';
+import AvatarUpload from '../common/AvatarUpload';
 import { getAvatarUrl } from '../Avatar';
 import CloseIcon from '@mui/icons-material/Close';
 import './PlayerSettingsPopup.css';

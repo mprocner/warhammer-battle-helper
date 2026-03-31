@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import MapIcon from '@mui/icons-material/Map';
 import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import {
   DndContext,
@@ -13,157 +9,15 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  useDraggable,
-  useDroppable,
 } from '@dnd-kit/core';
 import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
 import { addSceneImage } from '../../api/scenes';
-import { getApiUrl } from '../../api/axios';
 import ConfirmModal from '../common/ConfirmModal';
+import DraggableFileItem from './files/DraggableFileItem';
+import DroppableFolderItem from './files/DroppableFolderItem';
+import DroppableBackButton from './files/DroppableBackButton';
+import { getFileUrl } from './files/getFileUrl';
 import './FilesTab.css';
-
-// Helper to get full URL for file
-const getFileUrl = (fileUrl) => {
-  if (!fileUrl) return '';
-  return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
-};
-
-// Draggable file item component
-const DraggableFileItem = ({ file, onPreview, onDelete, onHover, onAddToScene, t }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `file-${file.id}`,
-    data: { type: 'file', file },
-  });
-
-  const handleMouseEnter = () => {
-    if (!isDragging) onHover(file);
-  };
-
-  const handleMouseLeave = () => {
-    onHover(null);
-  };
-
-  const handleClick = () => {
-    if (!isDragging) {
-      onHover(null);
-      onPreview(file);
-    }
-  };
-
-  const handleDelete = (e) => {
-    e.stopPropagation();
-    onHover(null);
-    onDelete(file);
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`files-tab__item files-tab__item--file ${isDragging ? 'files-tab__item--dragging' : ''}`}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      {...listeners}
-      {...attributes}
-    >
-      <img
-        src={getFileUrl(file.fileUrl)}
-        alt={file.name}
-        className="files-tab__item-thumbnail"
-        draggable={false}
-      />
-      <span className="files-tab__item-name" title={file.name}>
-        {file.name}
-      </span>
-      <div className="files-tab__item-actions">
-        {onAddToScene && (
-          <button
-            className="list-action-btn"
-            onClick={(e) => { e.stopPropagation(); onHover(null); onAddToScene(file); }}
-            title={t('scenes.addToScene')}
-          >
-            <MapIcon fontSize="inherit" />
-          </button>
-        )}
-        <button
-          className="list-action-btn list-action-btn--delete"
-          onClick={handleDelete}
-          title={t('common.delete')}
-        >
-          <CloseIcon fontSize="inherit" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Droppable folder item component
-const DroppableFolderItem = ({ folder, isOver, onNavigate, onRename, onDelete, renamingFolder, renameValue, setRenameValue, setRenamingFolder, handleRenameFolder, t }) => {
-  const { setNodeRef, isOver: isOverCurrent } = useDroppable({
-    id: `folder-${folder.id}`,
-    data: { type: 'folder', folderId: folder.id },
-  });
-
-  const isDropTarget = isOver || isOverCurrent;
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`files-tab__item files-tab__item--folder ${isDropTarget ? 'files-tab__item--drop-target' : ''}`}
-      onClick={() => onNavigate(folder)}
-    >
-      <span className="files-tab__item-icon"><FolderIcon fontSize="inherit" /></span>
-      {renamingFolder?.id === folder.id ? (
-        <form onSubmit={handleRenameFolder} className="files-tab__rename-form">
-          <input
-            type="text"
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onBlur={() => setRenamingFolder(null)}
-            autoFocus
-          />
-        </form>
-      ) : (
-        <span className="files-tab__item-name">{folder.name}</span>
-      )}
-      <div className="files-tab__item-actions">
-        <button
-          className="list-action-btn"
-          onClick={(e) => onRename(folder, e)}
-          title={t('files.renameFolder')}
-        >
-          <EditIcon fontSize="inherit" />
-        </button>
-        <button
-          className="list-action-btn list-action-btn--delete"
-          onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
-          title={t('common.delete')}
-        >
-          <CloseIcon fontSize="inherit" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Droppable back button component
-const DroppableBackButton = ({ parentFolderId, onNavigateUp }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'parent-folder',
-    data: { type: 'parent', folderId: parentFolderId },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`files-tab__item files-tab__item--back ${isOver ? 'files-tab__item--drop-target' : ''}`}
-      onClick={onNavigateUp}
-    >
-      <span className="files-tab__item-icon"><ArrowUpwardIcon fontSize="inherit" /></span>
-      <span className="files-tab__item-name">..</span>
-    </div>
-  );
-};
 
 /**
  * Files tab - manages user's image files repository (GM only)
@@ -613,7 +467,6 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
               setRenameValue={setRenameValue}
               setRenamingFolder={setRenamingFolder}
               handleRenameFolder={handleRenameFolder}
-              t={t}
             />
           ))}
 
@@ -626,7 +479,6 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
               onAddToScene={gameId && currentSceneId ? setAddToSceneFile : null}
-              t={t}
             />
           ))}
 

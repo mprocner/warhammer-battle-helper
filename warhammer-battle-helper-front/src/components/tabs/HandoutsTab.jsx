@@ -9,7 +9,6 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -30,10 +29,11 @@ import {
   reorderHandoutFolders,
 } from '../../api/handouts';
 import HandoutItem from './handouts/HandoutItem';
-import HandoutItemPhantom from './handouts/HandoutItemPhantom';
 import HandoutFolderSection from './handouts/HandoutFolderSection';
 import HandoutCreateModal from './handouts/HandoutCreateModal';
 import HandoutViewerModal from './handouts/HandoutViewerModal';
+import HandoutTabHeader from './handouts/HandoutTabHeader';
+import HandoutUngroupedSection from './handouts/HandoutUngroupedSection';
 import './HandoutsTab.css';
 
 const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
@@ -68,10 +68,6 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     setOpenHandouts((prev) => prev.filter((h) => h.id !== handoutId));
   }, []);
 
-  // Folder creation inline form
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-
   const getUserId = useCallback(() => {
     if (!token) return null;
     try {
@@ -100,22 +96,9 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const { setNodeRef: setUngroupedRef, isOver: isOverUngrouped } = useDroppable({
-    id: 'ungrouped',
-    data: { type: 'folder', folderId: null },
-  });
-
   // Track pointer position during drag to resolve ambiguous drops
   const pointerPosRef = useRef({ x: 0, y: 0 });
   const ungroupedElRef = useRef(null);
-
-  const setUngroupedCombinedRef = useCallback(
-    (el) => {
-      ungroupedElRef.current = el;
-      setUngroupedRef(el);
-    },
-    [setUngroupedRef]
-  );
 
   const handleDragMove = useCallback((event) => {
     const { activatorEvent, delta } = event;
@@ -269,16 +252,11 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
 
   // ─── Folder CRUD ──────────────────────────────────────────────────────────
 
-  const handleCreateFolder = async (e) => {
-    e.preventDefault();
-    const trimmed = newFolderName.trim();
-    if (!trimmed) return;
+  const handleFolderCreated = async (name) => {
     try {
-      const folder = await createHandoutFolder(gameId, trimmed);
+      const folder = await createHandoutFolder(gameId, name);
       setFolders((prev) => [...prev, folder]);
       setExpandedFolders((prev) => new Set([...prev, folder.id]));
-      setNewFolderName('');
-      setIsCreatingFolder(false);
     } catch (err) {
       console.error('Failed to create folder:', err);
       setError(t('handouts.folders.createError'));
@@ -550,50 +528,11 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
 
   return (
     <div className="handouts-tab">
-      {/* Header */}
-      <div className="handouts-tab__header">
-        <h3 className="handouts-tab__title">{t('handouts.title')}</h3>
-        {isGM && (
-          <div className="handouts-tab__header-actions">
-            <button
-              className="handouts-tab__add-btn"
-              onClick={() => setIsCreateModalOpen(true)}
-            >
-              + {t('handouts.addHandout')}
-            </button>
-            <button
-              className="handouts-tab__add-btn"
-              onClick={() => setIsCreatingFolder((v) => !v)}
-            >
-              + {t('handouts.folders.createFolder')}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Inline folder creation form */}
-      {isGM && isCreatingFolder && (
-        <form className="handouts-tab__folder-form" onSubmit={handleCreateFolder}>
-          <input
-            className="handouts-tab__folder-input"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            placeholder={t('handouts.folders.namePlaceholder')}
-            autoFocus
-            onKeyDown={(e) => { if (e.key === 'Escape') setIsCreatingFolder(false); }}
-          />
-          <button className="handouts-tab__folder-submit" type="submit">
-            {t('common.create')}
-          </button>
-          <button
-            className="handouts-tab__folder-cancel"
-            type="button"
-            onClick={() => { setIsCreatingFolder(false); setNewFolderName(''); }}
-          >
-            {t('common.cancel')}
-          </button>
-        </form>
-      )}
+      <HandoutTabHeader
+        isGM={isGM}
+        onOpenCreate={() => setIsCreateModalOpen(true)}
+        onFolderCreated={handleFolderCreated}
+      />
 
       {/* Empty state when there are no handouts AND no folders */}
       {totalVisibleHandouts === 0 && visibleSortedFolders.length === 0 ? (
@@ -642,55 +581,17 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
             </SortableContext>
 
             {/* Ungrouped handouts – flat list below folders, droppable */}
-            {(() => {
-              const ungrouped = handoutsByFolder.get(null) || [];
-              const isEmpty = ungrouped.length === 0;
-              const isDraggingFromFolder = activeHandout !== null && activeFolderId !== null;
-              return (
-                <div
-                  ref={setUngroupedCombinedRef}
-                  className={`handouts-tab__ungrouped${isEmpty ? ' handouts-tab__ungrouped--empty' : ''}${isOverUngrouped ? ' handouts-tab__ungrouped--drag-over' : ''}${isDraggingFromFolder ? ' handouts-tab__ungrouped--active-drag' : ''}`}
-                >
-                  <SortableContext
-                    items={ungrouped.map((h) => h.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {isEmpty ? (
-                      <span className="handouts-tab__ungrouped-placeholder">
-                        {isDraggingFromFolder
-                          ? t('handouts.folders.dropToUngroup')
-                          : t('handouts.folders.emptyPlaceholder')}
-                      </span>
-                    ) : (
-                      <>
-                        {ungrouped.map((handout) => (
-                          <React.Fragment key={handout.id}>
-                            {dragOverState?.targetFolderId === null &&
-                              activeHandout !== null &&
-                              dragOverState?.insertBeforeId === handout.id && (
-                                <HandoutItemPhantom handout={activeHandout} isGM={isGM} />
-                              )}
-                            <HandoutItem
-                              handout={handout}
-                              isGM={isGM}
-                              folderId={null}
-                              onView={handleViewHandout}
-                              onEdit={setEditingHandout}
-                              onDelete={handleDeleteHandout}
-                            />
-                          </React.Fragment>
-                        ))}
-                        {dragOverState?.targetFolderId === null &&
-                          activeHandout !== null &&
-                          dragOverState?.insertBeforeId === null && (
-                            <HandoutItemPhantom handout={activeHandout} isGM={isGM} />
-                          )}
-                      </>
-                    )}
-                  </SortableContext>
-                </div>
-              );
-            })()}
+            <HandoutUngroupedSection
+              ref={ungroupedElRef}
+              handouts={handoutsByFolder.get(null) || []}
+              isGM={isGM}
+              activeHandout={activeHandout}
+              activeFolderId={activeFolderId}
+              dragOverState={dragOverState}
+              onView={handleViewHandout}
+              onEdit={setEditingHandout}
+              onDelete={handleDeleteHandout}
+            />
           </div>
 
           <DragOverlay>

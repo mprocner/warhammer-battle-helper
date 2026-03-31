@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import FightArea from './FightArea';
@@ -14,33 +13,14 @@ import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
 import { CELL_SIZE } from '../constants/scene';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
 import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CloseIcon from '@mui/icons-material/Close';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ConfirmModal from './common/ConfirmModal';
-import { resolveDisplayName } from '../utils/participants';
+import ResizableSplitPane from './common/ResizableSplitPane';
+import CharacterSidebarList from './CharacterSidebarList';
+import { normalizeCharacter } from '../systems/registry';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
 
-/**
- * Normalizes a character received from the API.
- * For Warhammer characters the Warhammer-specific data lives inside `stats`,
- * but the existing CharacterSheetPopup / CharacterDetailsPanel still access
- * fields like character.basicInfo, character.characteristics, etc. directly.
- * We spread stats into the root so old components keep working unchanged.
- */
-function normalizeCharacter(char) {
-  if (!char) return char;
-  // Only flatten for warhammer4e (or legacy chars with no gameSystem)
-  if (char.gameSystem && char.gameSystem !== 'warhammer4e') return char;
-  if (char.stats && typeof char.stats === 'object') {
-    return { ...char.stats, ...char };
-  }
-  return char;
-}
 const generateFightZones = (width, height) => {
   const w = width || DEFAULT_GRID_WIDTH;
   const h = height || DEFAULT_GRID_HEIGHT;
@@ -101,27 +81,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Collapsible character list sections
+  // Collapsible character list sections (kept here so handleAddCharacter/handleAddNPC can expand them)
   const [pcListCollapsed, setPcListCollapsed] = useState(false);
   const [npcListCollapsed, setNpcListCollapsed] = useState(false);
-
-  // Character list button tooltips
-  const [charListTooltip, setCharListTooltip] = useState(null);
-  const charListTooltipTimeout = useRef(null);
-  const showCharTooltip = useCallback((text, el) => {
-    clearTimeout(charListTooltipTimeout.current);
-    const rect = el.getBoundingClientRect();
-    setCharListTooltip({ top: rect.top, left: rect.left + rect.width / 2, text });
-  }, []);
-  const hideCharTooltip = useCallback(() => {
-    charListTooltipTimeout.current = setTimeout(() => setCharListTooltip(null), 100);
-  }, []);
-
-  // Resizable sidebar split
-  const [splitPercent, setSplitPercent] = useState(50);
-  const [isSplitDragging, setIsSplitDragging] = useState(false);
-  const sidebarContentRef = useRef(null);
-  const splitDraggingRef = useRef(false);
 
   const characterTileRefs = useRef({});
 
@@ -812,48 +774,35 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     })
   );
 
-  useEffect(() => {
-    if (isSplitDragging) {
-      document.body.style.cursor = 'ns-resize';
+
+  // Toggle character on/off grid from the sidebar list
+  const handleGridToggle = useCallback(async (char) => {
+    const zones = fightZonesRef.current;
+    const onGrid = zones.some(z => z.character?.id === char.id);
+    if (onGrid) {
+      if (gameId && token) {
+        await handleRemoveCharacter(char.id);
+      } else {
+        setFightZones(prev => prev.map(z => z.character?.id === char.id ? { ...z, character: null } : z));
+      }
     } else {
-      document.body.style.cursor = '';
+      const emptyZoneIndex = zones.findIndex(z => !z.character);
+      if (emptyZoneIndex !== -1) {
+        const targetZone = zones[emptyZoneIndex];
+        if (gameId && token) {
+          await handleAddCharacterToGrid(char.id, targetZone.col, targetZone.row, false);
+        } else {
+          setFightZones(prev => prev.map((z, idx) => idx === emptyZoneIndex ? { ...z, character: char } : z));
+        }
+      } else {
+        addLogMessage('No empty spaces on grid', 'warning');
+      }
     }
-    return () => {
-      document.body.style.cursor = '';
-    };
-  }, [isSplitDragging]);
-
-  const handleResizerMouseDown = useCallback((e) => {
-    e.preventDefault();
-    splitDraggingRef.current = true;
-    setIsSplitDragging(true);
-
-    const onMouseMove = (e) => {
-      if (!splitDraggingRef.current || !sidebarContentRef.current) return;
-      const rect = sidebarContentRef.current.getBoundingClientRect();
-      const relativeY = e.clientY - rect.top;
-      const percent = (relativeY / rect.height) * 100;
-      setSplitPercent(Math.min(85, Math.max(15, percent)));
-    };
-
-    const onMouseUp = () => {
-      splitDraggingRef.current = false;
-      setIsSplitDragging(false);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, []);
+  }, [gameId, token, addLogMessage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <div>Ładowanie postaci...</div>;
   if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
 
-  // Check if character is on grid
-  const isCharacterOnGrid = (charId) => {
-    return fightZones.some(z => z.character?.id === charId);
-  };
 
   return (
     <DndContext
@@ -870,12 +819,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
             <header className="panel-header">
               <h2 className="panel-header__title">{t('leftPanel.title')}</h2>
             </header>
-            <div
-              className="sidebar-resizable-container"
-              ref={sidebarContentRef}
-              style={{ userSelect: isSplitDragging ? 'none' : 'auto' }}
-            >
-              <div className="sidebar-top-section" style={{ height: `${splitPercent}%` }}>
+            <ResizableSplitPane
+              top={
                 <CharacterDetailsPanel
                   character={selectedCharacter}
                   onCharacterUpdate={handleCharacterUpdate}
@@ -888,177 +833,31 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                   onSheetOpened={() => setAutoOpenCharacterSheet(false)}
                   rollVisibility={rollVisibility}
                 />
-              </div>
-
-              <div
-                className={`sidebar-resizer${isSplitDragging ? ' sidebar-resizer--dragging' : ''}`}
-                onMouseDown={handleResizerMouseDown}
-              />
-
-              <div className="sidebar-bottom-section">
-                <div className="characters-list">
-            {(() => {
-              const pcCharacters = (initialCharacters || []).filter(c => !c.isNPC);
-              const npcCharacters = (initialCharacters || []).filter(c => c.isNPC);
-
-              const renderCharacterTile = (char) => {
-                const onGrid = isCharacterOnGrid(char.id);
-                const isSelected = selectedCharacter?.id === char.id;
-
-                const handleGridToggle = async (e) => {
-                  e.stopPropagation();
-
-                  if (onGrid) {
-                    if (gameId && token) {
-                      await handleRemoveCharacter(char.id);
-                    } else {
-                      setFightZones(prev =>
-                        prev.map(zone =>
-                          zone.character?.id === char.id
-                            ? { ...zone, character: null }
-                            : zone
-                        )
-                      );
-                    }
-                  } else {
-                    const emptyZoneIndex = fightZones.findIndex(z => !z.character);
-                    if (emptyZoneIndex !== -1) {
-                      const targetZone = fightZones[emptyZoneIndex];
-
-                      if (gameId && token) {
-                        await handleAddCharacterToGrid(char.id, targetZone.col, targetZone.row, false);
-                      } else {
-                        setFightZones(prev =>
-                          prev.map((zone, idx) =>
-                            idx === emptyZoneIndex
-                              ? { ...zone, character: char }
-                              : zone
-                          )
-                        );
-                      }
-                    } else {
-                      addLogMessage('No empty spaces on grid', 'warning');
-                    }
-                  }
-                };
-
-                return (
-                  <div
-                    key={char.id}
-                    ref={el => { if (el) characterTileRefs.current[char.id] = el; else delete characterTileRefs.current[char.id]; }}
-                    className={`character-tile ${isSelected ? 'selected' : ''} ${onGrid ? 'on-grid' : ''}`}
-                    onClick={() => handleSelectCharacter(char)}
-                  >
-                    <div className="character-tile-header">
-                      <div className="character-name">{char.basicInfo?.name || char.name}</div>
-                      <div className="character-hp">
-                        {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
-                      </div>
-                    </div>
-                    {isGM && char.createdBy && (
-                      <div className="character-owner">
-                        {(() => { const p = participants.find(p => p.userId === char.createdBy); return p ? (resolveDisplayName(p) || p.username) : 'GM'; })()}
-                      </div>
-                    )}
-                    <div className="character-position">
-                      {onGrid ? t('leftPanel.onGrid') : t('leftPanel.available')}
-                      <div className="character-actions">
-                        {isGM && (
-                          <>
-                            <button
-                              className="clone-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCloneTarget(char);
-                              }}
-                              onMouseEnter={e => showCharTooltip(t('character.clone'), e.currentTarget)}
-                              onMouseLeave={hideCharTooltip}
-                            >
-                              <ContentCopyIcon style={{ fontSize: 14 }} aria-hidden />
-                            </button>
-                            <button
-                              className="visibility-btn"
-                              onClick={(e) => { e.stopPropagation(); setVisibilityTarget(char); }}
-                              onMouseEnter={e => showCharTooltip(t('character.manageVisibility'), e.currentTarget)}
-                              onMouseLeave={hideCharTooltip}
-                            >
-                              <VisibilityIcon style={{ fontSize: 14 }} aria-hidden />
-                            </button>
-                          </>
-                        )}
-                        {(isGM || char.createdBy === userId) && (
-                          <button
-                            className="delete-character-btn"
-                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(char); }}
-                            onMouseEnter={e => showCharTooltip(t('character.deleteCharacter'), e.currentTarget)}
-                            onMouseLeave={hideCharTooltip}
-                          >
-                            <CloseIcon style={{ fontSize: 14 }} aria-hidden />
-                          </button>
-                        )}
-                        <button
-                          className="grid-toggle-btn"
-                          onClick={handleGridToggle}
-                          onMouseEnter={e => showCharTooltip(onGrid ? t('leftPanel.removeFromGrid') : t('leftPanel.addToGrid'), e.currentTarget)}
-                          onMouseLeave={hideCharTooltip}
-                        >
-                          {onGrid ? <ArrowBackIcon style={{ fontSize: 14 }} aria-hidden /> : <ArrowForwardIcon style={{ fontSize: 14 }} aria-hidden />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              };
-
-              return (
-                <>
-                  {/* PC Section */}
-                  <div className="characters-list-header">
-                    <div className="characters-list-header-left" onClick={() => setPcListCollapsed(v => !v)}>
-                      <button className="section-collapse-btn">
-                        {pcListCollapsed ? '▶' : '▼'}
-                      </button>
-                      <h3>{t('leftPanel.yourCharacters')}</h3>
-                    </div>
-                    {gameId && (
-                      <button className="add-character-btn" onClick={handleAddCharacter}>
-                        + {t('character.addCharacter')}
-                      </button>
-                    )}
-                  </div>
-                  {!pcListCollapsed && (
-                    <div className="characters-list-content">
-                      {pcCharacters.map(char => renderCharacterTile(char))}
-                    </div>
-                  )}
-
-                  {/* NPC Section (GM only) */}
-                  {isGM && (
-                    <>
-                      <div className="characters-list-header characters-list-header--npc">
-                        <div className="characters-list-header-left" onClick={() => setNpcListCollapsed(v => !v)}>
-                          <button className="section-collapse-btn">
-                            {npcListCollapsed ? '▶' : '▼'}
-                          </button>
-                          <h3>{t('leftPanel.npcList')}</h3>
-                        </div>
-                        <button className="add-character-btn" onClick={handleAddNPC}>
-                          + {t('character.addCharacter')}
-                        </button>
-                      </div>
-                      {!npcListCollapsed && (
-                        <div className="characters-list-content">
-                          {npcCharacters.map(char => renderCharacterTile(char))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </>
-              );
-            })()}
-                </div>
-              </div>
-            </div>
+              }
+              bottom={
+                <CharacterSidebarList
+                  initialCharacters={initialCharacters}
+                  isGM={isGM}
+                  userId={userId}
+                  participants={participants}
+                  selectedCharacter={selectedCharacter}
+                  fightZones={fightZones}
+                  pcListCollapsed={pcListCollapsed}
+                  npcListCollapsed={npcListCollapsed}
+                  onPCCollapseToggle={() => setPcListCollapsed(v => !v)}
+                  onNPCCollapseToggle={() => setNpcListCollapsed(v => !v)}
+                  characterTileRefs={characterTileRefs}
+                  onSelect={handleSelectCharacter}
+                  onGridToggle={handleGridToggle}
+                  onAddCharacter={handleAddCharacter}
+                  onAddNPC={handleAddNPC}
+                  onClone={setCloneTarget}
+                  onVisibility={setVisibilityTarget}
+                  onDelete={setDeleteTarget}
+                  gameId={gameId}
+                />
+              }
+            />
           </div>
           {/* Left Panel Toggle */}
           <button
@@ -1171,14 +970,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           token={token}
           onClose={() => setVisibilityTarget(null)}
         />
-      )}
-
-      {charListTooltip && createPortal(
-        <div className="portal-tooltip portal-tooltip--above" style={{ top: charListTooltip.top, left: charListTooltip.left }}>
-          {charListTooltip.text}
-          <div className="portal-tooltip__arrow" />
-        </div>,
-        document.body
       )}
 
       {/* Delete Character Confirm Modal */}

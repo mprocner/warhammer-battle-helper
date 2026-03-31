@@ -1,24 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import RepeatIcon from '@mui/icons-material/Repeat';
-import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import FolderIcon from '@mui/icons-material/Folder';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile } from '../../api/music';
-import { getApiUrl } from '../../api/axios';
 import {
   DndContext,
   DragOverlay,
@@ -26,309 +19,18 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  useDraggable,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   verticalListSortingStrategy,
-  useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { getFileUrl, formatTime } from './music/utils';
+import DroppableMusicBackButton from './music/DroppableMusicBackButton';
+import DroppableMusicFolderItem from './music/DroppableMusicFolderItem';
+import DraggableMusicItem from './music/DraggableMusicItem';
+import SortablePlaylistItem from './music/SortablePlaylistItem';
 import './MusicTab.css';
-
-const PortalTooltip = ({ text, targetRef }) => {
-  const [pos, setPos] = useState(null);
-  const hideTimeout = useRef(null);
-
-  const show = useCallback(() => {
-    clearTimeout(hideTimeout.current);
-    const el = targetRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setPos({ top: rect.top + rect.height / 2, left: rect.left });
-  }, [targetRef]);
-
-  const hide = useCallback(() => {
-    hideTimeout.current = setTimeout(() => setPos(null), 100);
-  }, []);
-
-  useEffect(() => {
-    const el = targetRef.current;
-    if (!el) return;
-    el.addEventListener('mouseenter', show);
-    el.addEventListener('mouseleave', hide);
-    return () => {
-      el.removeEventListener('mouseenter', show);
-      el.removeEventListener('mouseleave', hide);
-      clearTimeout(hideTimeout.current);
-    };
-  }, [targetRef, show, hide]);
-
-  if (!pos) return null;
-  return createPortal(
-    <div className="music-tab__portal-tooltip" style={{ top: pos.top, left: pos.left }}>
-      {text}
-      <div className="music-tab__portal-tooltip-arrow" />
-    </div>,
-    document.body
-  );
-};
-
-const getFileUrl = (fileUrl) => {
-  if (!fileUrl) return '';
-  return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
-};
-
-const SortableTrackItem = ({ track, index, playlistId, handleRemoveFromPlaylist, handlePlayPlaylistFromTrack, isCurrentTrack, t }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: `${playlistId}-${track.id}` });
-  const nameRef = useRef(null);
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="music-tab__playlist-track">
-      <div className="music-tab__drag-handle" {...attributes} {...listeners}>
-        <DragHandleIcon fontSize="inherit" />
-      </div>
-      <span className="music-tab__playlist-track-num">{index + 1}.</span>
-      <span className="music-tab__playlist-track-name" ref={nameRef}><span className="music-tab__truncate">{track.name}</span></span>
-      <PortalTooltip text={track.name} targetRef={nameRef} />
-      <button
-        className={`list-action-btn music-tab__track-btn--play ${isCurrentTrack ? 'music-tab__track-btn--current' : ''}`}
-        onClick={() => handlePlayPlaylistFromTrack(playlistId, index)}
-        title={t('music.play')}
-      >
-        <PlayArrowIcon fontSize="inherit" />
-      </button>
-      <button
-        className="list-action-btn list-action-btn--delete"
-        onClick={() => handleRemoveFromPlaylist(playlistId, track.id)}
-        title={t('common.delete')}
-      >
-        <CloseIcon fontSize="inherit" />
-      </button>
-    </div>
-  );
-};
-
-const SortablePlaylistItem = ({ playlist, isActive, expandedPlaylists, togglePlaylist, getPlaylistTracks, handlePlayPlaylist, handlePlayPlaylistFromTrack, handleStartEditPlaylist, handleDeletePlaylist, handleRemoveFromPlaylist, sensors, handleTrackDragEnd, activePlaylist, activeTrackIndex, musicState, t }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: playlist.id });
-  const playlistNameRef = useRef(null);
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
-  const tracks = getPlaylistTracks(playlist);
-
-  return (
-    <div ref={setNodeRef} style={style} className={`music-tab__playlist-item ${isActive ? 'music-tab__playlist-item--active' : ''}`}>
-      <div className="music-tab__playlist-header" onClick={() => togglePlaylist(playlist.id)}>
-        <div className="music-tab__drag-handle" {...attributes} {...listeners} onClick={(e) => e.stopPropagation()}>
-          <DragHandleIcon fontSize="inherit" />
-        </div>
-        <span className={`music-tab__chevron ${!expandedPlaylists[playlist.id] ? 'music-tab__chevron--collapsed' : ''}`}>&#9662;</span>
-        <span className="music-tab__playlist-name" ref={playlistNameRef}><span className="music-tab__truncate">{playlist.name} ({tracks.length})</span></span>
-        <PortalTooltip text={playlist.name} targetRef={playlistNameRef} />
-        <div className="music-tab__playlist-actions" onClick={(e) => e.stopPropagation()}>
-          <button
-            className="list-action-btn music-tab__track-btn--play"
-            onClick={() => handlePlayPlaylist(playlist)}
-            disabled={tracks.length === 0}
-            title={t('music.play')}
-          >
-            <PlayArrowIcon fontSize="inherit" />
-          </button>
-          <button
-            className="list-action-btn"
-            onClick={() => handleStartEditPlaylist(playlist)}
-            title={t('music.editPlaylist')}
-          >
-            <EditIcon fontSize="inherit" />
-          </button>
-          <button
-            className="list-action-btn list-action-btn--delete"
-            onClick={() => handleDeletePlaylist(playlist)}
-            title={t('common.delete')}
-          >
-            <CloseIcon fontSize="inherit" />
-          </button>
-        </div>
-      </div>
-      <div className={`music-tab__playlist-tracks ${!expandedPlaylists[playlist.id] ? 'music-tab__playlist-tracks--collapsed' : ''}`}>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => handleTrackDragEnd(playlist.id, event)}>
-          <SortableContext items={tracks.map(track => `${playlist.id}-${track.id}`)} strategy={verticalListSortingStrategy}>
-            {tracks.map((track, index) => (
-              <SortableTrackItem
-                key={`${playlist.id}-${track.id}-${index}`}
-                track={track}
-                index={index}
-                playlistId={playlist.id}
-                handleRemoveFromPlaylist={handleRemoveFromPlaylist}
-                handlePlayPlaylistFromTrack={handlePlayPlaylistFromTrack}
-                isCurrentTrack={activePlaylist?.id === playlist.id && activeTrackIndex === index && musicState.isPlaying}
-                t={t}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
-    </div>
-  );
-};
-
-const TrackName = ({ name }) => {
-  const ref = useRef(null);
-  return (
-    <>
-      <span className="music-tab__track-name" ref={ref}><span className="music-tab__truncate">{name}</span></span>
-      <PortalTooltip text={name} targetRef={ref} />
-    </>
-  );
-};
-
-// Draggable music file item (for moving into folders)
-const DraggableMusicItem = ({ file, onPlay, onPause, onDelete, onAddToPlaylist, isPlaying, playlists, addToPlaylistOpen, setAddToPlaylistOpen, t }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `music-${file.id}`,
-    data: { type: 'music', file },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`music-tab__track-item ${isPlaying ? 'music-tab__track-item--playing' : ''} ${isDragging ? 'music-tab__track-item--dragging' : ''}`}
-      {...listeners}
-      {...attributes}
-    >
-      <div className="music-tab__track-info">
-        <span className="music-tab__track-icon"><MusicNoteIcon fontSize="inherit" /></span>
-        <TrackName name={file.name} />
-      </div>
-      <div className="music-tab__track-actions">
-        {isPlaying ? (
-          <button className="list-action-btn music-tab__track-btn--playback" onClick={(e) => { e.stopPropagation(); onPause(); }} title={t('music.pause')}><PauseIcon fontSize="inherit" /></button>
-        ) : (
-          <button className="list-action-btn music-tab__track-btn--playback music-tab__track-btn--play" onClick={(e) => { e.stopPropagation(); onPlay(file); }} title={t('music.play')}><PlayArrowIcon fontSize="inherit" /></button>
-        )}
-        <div className="music-tab__add-to-playlist-wrapper">
-          <button
-            className="list-action-btn"
-            onClick={(e) => { e.stopPropagation(); setAddToPlaylistOpen(addToPlaylistOpen === file.id ? null : file.id); }}
-            title={t('music.addToPlaylist')}
-          >
-            <PlaylistAddIcon fontSize="inherit" />
-          </button>
-          {addToPlaylistOpen === file.id && playlists.length > 0 && (
-            <div className="music-tab__playlist-dropdown">
-              {playlists.map(pl => (
-                <button
-                  key={pl.id}
-                  className="music-tab__playlist-dropdown-item"
-                  onClick={(e) => { e.stopPropagation(); onAddToPlaylist(pl.id, file.id); }}
-                >
-                  {pl.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button className="list-action-btn list-action-btn--delete" onClick={(e) => { e.stopPropagation(); onDelete(file); }} title={t('common.delete')}><CloseIcon fontSize="inherit" /></button>
-      </div>
-    </div>
-  );
-};
-
-// Droppable music folder item
-const DroppableMusicFolderItem = ({ folder, onNavigate, onDelete, renamingFolder, renameValue, setRenameValue, setRenamingFolder, handleRenameFolder, t }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `folder-${folder.id}`,
-    data: { type: 'folder', folderId: folder.id },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`music-tab__track-item music-tab__folder-item ${isOver ? 'music-tab__folder-item--drop-target' : ''}`}
-      onClick={() => onNavigate(folder)}
-    >
-      <div className="music-tab__track-info">
-        <span className="music-tab__track-icon"><FolderIcon fontSize="inherit" /></span>
-        {renamingFolder?.id === folder.id ? (
-          <form onSubmit={handleRenameFolder} onClick={(e) => e.stopPropagation()}>
-            <input
-              type="text"
-              className="music-tab__input music-tab__input--inline"
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onBlur={() => setRenamingFolder(null)}
-              autoFocus
-            />
-          </form>
-        ) : (
-          <span className="music-tab__track-name"><span className="music-tab__truncate">{folder.name}</span></span>
-        )}
-      </div>
-      <div className="music-tab__track-actions">
-        <button
-          className="list-action-btn"
-          onClick={(e) => { e.stopPropagation(); setRenamingFolder(folder); setRenameValue(folder.name); }}
-          title={t('music.renameFolder')}
-        >
-          <EditIcon fontSize="inherit" />
-        </button>
-        <button
-          className="list-action-btn list-action-btn--delete"
-          onClick={(e) => { e.stopPropagation(); onDelete(folder); }}
-          title={t('music.deleteFolder')}
-        >
-          <CloseIcon fontSize="inherit" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Droppable back button (drop here to move file to parent folder)
-const DroppableMusicBackButton = ({ parentFolderId, onNavigateUp }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'music-parent-folder',
-    data: { type: 'parent', folderId: parentFolderId },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`music-tab__track-item music-tab__folder-item music-tab__back-item ${isOver ? 'music-tab__folder-item--drop-target' : ''}`}
-      onClick={onNavigateUp}
-    >
-      <span className="music-tab__track-icon"><ArrowUpwardIcon fontSize="inherit" /></span>
-      <span className="music-tab__track-name">..</span>
-    </div>
-  );
-};
 
 const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const { t } = useTranslation();
@@ -836,13 +538,6 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     );
   };
 
-  const formatTime = (seconds) => {
-    if (!seconds || isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const isTrackPlaying = (file) => {
     return musicState.isPlaying && musicState.trackUrl === getFileUrl(file.fileUrl);
   };
@@ -1053,7 +748,6 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   setRenameValue={setRenameValue}
                   setRenamingFolder={setRenamingFolder}
                   handleRenameFolder={handleRenameFolder}
-                  t={t}
                 />
               ))}
 
@@ -1070,7 +764,6 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   playlists={playlists}
                   addToPlaylistOpen={addToPlaylistOpen}
                   setAddToPlaylistOpen={setAddToPlaylistOpen}
-                  t={t}
                 />
               ))}
 
@@ -1164,7 +857,6 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                     activePlaylist={activePlaylist}
                     activeTrackIndex={activeTrackIndex}
                     musicState={musicState}
-                    t={t}
                   />
                 ))}
               </div>

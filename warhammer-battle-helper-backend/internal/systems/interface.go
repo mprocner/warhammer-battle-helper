@@ -49,4 +49,12 @@ type GameSystem interface {
 	// ComputeDerived recalculates derived/secondary attributes (wounds, movement, etc.)
 	// from the primary stats and returns the updated BSON.
 	ComputeDerived(stats bson.Raw) (bson.Raw, error)
+
+	// GetDisplayName extracts the human-readable display name from a stats document.
+	// Returns "" if the system does not embed the name in stats.
+	GetDisplayName(stats bson.Raw) string
+
+	// SetDisplayName writes name into the stats document and returns updated BSON.
+	// Systems that do not embed the name return stats unchanged and a nil error.
+	SetDisplayName(stats bson.Raw, name string) (bson.Raw, error)
 }

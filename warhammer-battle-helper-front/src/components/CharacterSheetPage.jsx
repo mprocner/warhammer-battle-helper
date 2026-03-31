@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
-import { getSystem } from '../systems/registry';
-
-function normalizeCharacter(char) {
-    if (!char) return char;
-    if (char.gameSystem && char.gameSystem !== 'warhammer4e') return char;
-    if (char.stats && typeof char.stats === 'object') {
-        return { ...char.stats, ...char };
-    }
-    return char;
-}
+import { getSystem, normalizeCharacter } from '../systems/registry';
 
 function CharacterSheetPage() {
     const [searchParams] = useSearchParams();

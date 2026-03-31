@@ -1,14 +1,12 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SaveIcon from '@mui/icons-material/Save';
-import CheckIcon from '@mui/icons-material/Check';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
-import DraggablePopup from '../common/DraggablePopup';
+import DraggablePopup from '../../components/common/DraggablePopup';
 import ModifierSelectionModal from './ModifierSelectionModal';
 
 import useAutoSave from './hooks/useAutoSave';
+import { getCharacterSaveUrl } from '../shared/characterApi';
+import { usePopOut, useCharacterSheetHeaderButtons } from '../shared/useCharacterSheetActions';
 import useRollActions from './hooks/useRollActions';
 
 import CharacterInfoSection from './sections/CharacterInfoSection';
@@ -38,10 +36,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         scheduleAutoSave
     } = useAutoSave(character, onCharacterUpdate, isGM, gameId);
 
-    const getCharacterSaveUrl = useCallback((charId) => {
-        if (gameId) return `/games/${gameId}/characters/${charId}`;
-        return `/characters/${charId}`;
-    }, [gameId]);
+    const getSaveUrl = useCallback((charId) => getCharacterSaveUrl(charId, gameId), [gameId]);
 
     const {
         showModifierModal,
@@ -119,43 +114,15 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         return current[shortKey] || 0;
     }, [editedCharacter.characteristics]);
 
-    const handlePopOut = useCallback(() => {
-        const params = new URLSearchParams({ characterId: character.id });
-        if (gameId) params.set('gameId', gameId);
-        window.open(`/character-sheet?${params.toString()}`, '_blank', 'width=1400,height=900,noopener');
-    }, [character.id, gameId]);
-
-    const headerButtons = (
-        <>
-            {!isStandalone && (
-                <button
-                    className="pop-out-btn-sheet"
-                    onClick={(e) => { e.stopPropagation(); handlePopOut(); }}
-                    title={t('characterSheet.popOut', 'Open in new window')}
-                >
-                    <OpenInNewIcon style={{ fontSize: 16 }} />
-                </button>
-            )}
-            <button
-                className="save-btn-sheet"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    handleSave();
-                }}
-                disabled={isSaving}
-                title={saveSuccess ? t('common.saved') : t('common.saveCharacter')}
-            >
-                {isSaving ? <HourglassEmptyIcon style={{ fontSize: 16 }} /> : saveSuccess ? <CheckIcon style={{ fontSize: 16 }} /> : <SaveIcon style={{ fontSize: 16 }} />}
-            </button>
-        </>
-    );
+    const handlePopOut = usePopOut(character.id, gameId);
+    const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: handlePopOut, isStandalone, t });
 
     const sharedSkillProps = {
         character: editedCharacter,
         setCharacter: setEditedCharacter,
         scheduleAutoSave,
         onCharacterUpdate,
-        getCharacterSaveUrl,
+        getCharacterSaveUrl: getSaveUrl,
         onSkillClick: handleSkillClick,
         getCharacteristicValue
     };
@@ -182,7 +149,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                     setCharacter={setEditedCharacter}
                     scheduleAutoSave={scheduleAutoSave}
                     onCharacterUpdate={onCharacterUpdate}
-                    getCharacterSaveUrl={getCharacterSaveUrl}
+                    getCharacterSaveUrl={getSaveUrl}
                 />
                 <ArmourSection
                     character={editedCharacter}

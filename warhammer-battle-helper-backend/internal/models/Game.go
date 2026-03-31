@@ -107,7 +107,7 @@ type GameEvent struct {
 // CreateGameRequest is the request body for creating a new game
 type CreateGameRequest struct {
 	Name       string `json:"name" binding:"required"`
-	GameSystem string `json:"gameSystem" binding:"required,oneof=warhammer4e coc7e"`
+	GameSystem string `json:"gameSystem" binding:"required"`
 }
 
 // JoinGameRequest is the request body for joining a game

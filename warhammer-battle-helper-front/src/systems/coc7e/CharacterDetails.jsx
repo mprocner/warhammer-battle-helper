@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import CasinoIcon from '@mui/icons-material/Casino';
-import Avatar from '../../components/Avatar';
+import CharacterHeader from '../shared/CharacterHeader';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CoCCharacterSheet from './CharacterSheet';
 import CoCDiceModOverlay from './CoCDiceModOverlay';
 import skillsData from './skills.json';
+import { getCharacterSaveUrl } from '../shared/characterApi';
 
 const COC_ATTRS = [
   { key: 'str', labelKey: 'coc.attr_str' },
@@ -37,11 +38,6 @@ function CoCCharacterDetails({
 
   const stats = character?.stats || {};
 
-  const getCharacterSaveUrl = (charId) => {
-    if (gameId) return `/games/${gameId}/characters/${charId}`;
-    return `/characters/${charId}`;
-  };
-
   const handleSanityChange = async (newValue) => {
     const updated = {
       ...character,
@@ -49,7 +45,7 @@ function CoCCharacterDetails({
     };
     onCharacterUpdate(updated);
     try {
-      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+      await axiosInstance.put(getCharacterSaveUrl(updated.id, gameId), updated);
     } catch (err) {
       console.error('Error saving sanity:', err);
     }
@@ -62,7 +58,7 @@ function CoCCharacterDetails({
     };
     onCharacterUpdate(updated);
     try {
-      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+      await axiosInstance.put(getCharacterSaveUrl(updated.id, gameId), updated);
     } catch (err) {
       console.error('Error saving HP:', err);
     }
@@ -75,7 +71,7 @@ function CoCCharacterDetails({
     };
     onCharacterUpdate(updated);
     try {
-      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+      await axiosInstance.put(getCharacterSaveUrl(updated.id, gameId), updated);
     } catch (err) {
       console.error('Error saving luck:', err);
     }
@@ -88,7 +84,7 @@ function CoCCharacterDetails({
     };
     onCharacterUpdate(updated);
     try {
-      await axiosInstance.put(getCharacterSaveUrl(updated.id), updated);
+      await axiosInstance.put(getCharacterSaveUrl(updated.id, gameId), updated);
     } catch (err) {
       console.error('Error saving MP:', err);
     }
@@ -188,17 +184,13 @@ function CoCCharacterDetails({
 
   return (
     <div className="character-details coc-details">
-      <div className="character-details-header">
-        <Avatar key={`${character.id}-${character.avatar || 'default'}`} src={character.avatar} />
-        <h2>{character.name || 'Unknown'}</h2>
-        <button className="character-sheet-btn" onClick={() => setShowDetails(true)}>
-          📜
-          <span className="state-tooltip">
-            <span className="state-tooltip-arrow" />
-            {t('character.characterCard')}
-          </span>
-        </button>
-      </div>
+      <CharacterHeader
+        avatarSrc={character.avatar}
+        characterId={character.id}
+        name={character.name}
+        onOpenSheet={() => setShowDetails(true)}
+        t={t}
+      />
 
       {/* HP / Sanity / Luck quick view */}
       <div className="detail-grid">

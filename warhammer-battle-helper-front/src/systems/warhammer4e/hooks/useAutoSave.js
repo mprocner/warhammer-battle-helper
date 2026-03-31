@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axiosInstance from '../../../api/axios';
-import { buildPayload } from '../../../utils/buildPayload';
+import { buildPayload } from '../buildPayload';
+import { getCharacterSaveUrl } from '../../shared/characterApi';
 
-// Spreads stats into root for Warhammer characters so legacy components
-// can still access character.basicInfo, character.characteristics, etc.
 function normalizeCharacter(char) {
     if (!char) return char;
-    if (char.gameSystem && char.gameSystem !== 'warhammer4e') return char;
     if (char.stats && typeof char.stats === 'object') {
         return { ...char.stats, ...char };
     }
@@ -52,13 +50,6 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         };
     }, []);
 
-    const getCharacterSaveUrl = useCallback((charId) => {
-        if (gameId) {
-            return `/games/${gameId}/characters/${charId}`;
-        }
-        return `/characters/${charId}`;
-    }, [gameId]);
-
     editedCharacterRef.current = editedCharacter;
 
 
@@ -66,7 +57,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         setIsSaving(true);
         setSaveSuccess(false);
         try {
-            const response = await axiosInstance.put(getCharacterSaveUrl(charToSave.id), buildPayload(charToSave));
+            const response = await axiosInstance.put(getCharacterSaveUrl(charToSave.id, gameId), buildPayload(charToSave));
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
             if (onCharacterUpdate) {
@@ -79,7 +70,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         } finally {
             setIsSaving(false);
         }
-    }, [getCharacterSaveUrl, onCharacterUpdate]);
+    }, [gameId, onCharacterUpdate]);
 
     const handleSave = useCallback(async () => {
         await save(editedCharacterRef.current);
@@ -118,7 +109,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         setIsSaving(true);
         setSaveSuccess(false);
         try {
-            const response = await axiosInstance.put(getCharacterSaveUrl(updatedChar.id), buildPayload(updatedChar));
+            const response = await axiosInstance.put(getCharacterSaveUrl(updatedChar.id, gameId), buildPayload(updatedChar));
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
             if (onCharacterUpdate) {
@@ -130,7 +121,7 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
         } finally {
             setIsSaving(false);
         }
-    }, [getCharacterSaveUrl, onCharacterUpdate]);
+    }, [gameId, onCharacterUpdate]);
 
     return {
         editedCharacter,

@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/config/helpers"
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
+	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"net/http"
 
@@ -31,6 +32,11 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	var req models.CreateGameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if _, err := registry.Get(req.GameSystem); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported game system"})
 		return
 	}
 

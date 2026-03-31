@@ -3,7 +3,7 @@ import { Box, Button, Alert, CircularProgress, Typography, TextField } from '@mu
 import { Save as SaveIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { getProfile, updateProfile } from '../../api/profile';
-import AvatarUpload from '../character-sheet/AvatarUpload';
+import AvatarUpload from '../common/AvatarUpload';
 
 const AccountSettingsForm = () => {
     const { t } = useTranslation();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import AvatarUpload from '../AvatarUpload';
+import AvatarUpload from '../../../components/common/AvatarUpload';
 
 function CharacterInfoSection({ character, onFieldChange }) {
     const { t } = useTranslation();
@@ -10,8 +10,8 @@ function CharacterInfoSection({ character, onFieldChange }) {
             <h3>{t('characterSheet.characterInformation')}</h3>
             <div className="character-info-with-avatar">
                 <AvatarUpload
-                    currentAvatar={character.basicInfo?.avatar}
-                    onAvatarChange={(url) => onFieldChange('basicInfo.avatar', url)}
+                    currentAvatar={character.avatar}
+                    onAvatarChange={(url) => onFieldChange('avatar', url)}
                 />
                 <div className="character-info-fields">
                     <div className="form-grid">

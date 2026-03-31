@@ -27,7 +27,7 @@ function Character({
 
     // For Warhammer, basicInfo.name is authoritative (edited in sheet); name is fallback for CoC
     const displayName = character.basicInfo?.name || character.name;
-    const displayAvatar = character.basicInfo?.avatar || character.avatar;
+    const displayAvatar = character.avatar || character.basicInfo?.avatar;
     const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo);
     const isDragging = character.id === activeId && !isOverlay;
     const isOtherPlayer = isMultiplayer && !isOwnCharacter;
