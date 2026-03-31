@@ -320,11 +320,11 @@ type AddDrawingPathRequest struct {
 
 // UpdateSceneImageRequest is the request body for updating a scene image
 type UpdateSceneImageRequest struct {
-	X      *float64 `json:"x"`
-	Y      *float64 `json:"y"`
-	Width  *float64 `json:"width"`
-	Height *float64 `json:"height"`
-	ZIndex *int     `json:"zIndex"`
-	Layer  *string  `json:"layer"`
-	Locked *bool    `json:"locked"`
+	X      *float64 `json:"x,omitempty"`
+	Y      *float64 `json:"y,omitempty"`
+	Width  *float64 `json:"width,omitempty"`
+	Height *float64 `json:"height,omitempty"`
+	ZIndex *int     `json:"zIndex,omitempty"`
+	Layer  *string  `json:"layer,omitempty"`
+	Locked *bool    `json:"locked,omitempty"`
 }
