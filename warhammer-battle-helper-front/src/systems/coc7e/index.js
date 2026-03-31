@@ -1,11 +1,13 @@
 import CoCCharacterSheet from './CharacterSheet';
 import { buildPayload } from './buildPayload';
 import CoCCharacterDetails from './CharacterDetails';
+import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
 import CoCSkillRoll from './rolls/SkillRoll';
 import CoCWeaponRoll from './rolls/WeaponRoll';
 import SanityRoll from './rolls/SanityRoll';
 
 const rollComponents = {
+  simple: SimpleDiceRoll,
   skill:  CoCSkillRoll,
   weapon: CoCWeaponRoll,
   sanity: SanityRoll,
@@ -38,6 +40,7 @@ function normalizeCharacter(char) {
 }
 
 const coc7e = {
+  label: 'Call of Cthulhu 7e',
   CharacterSheet:   CoCCharacterSheet,
   CharacterDetails: CoCCharacterDetails,
   getRollComponent,

@@ -19,3 +19,7 @@ export function normalizeCharacter(char) {
 export function buildPayload(char) {
   return getSystem(char?.gameSystem).buildPayload(char);
 }
+
+export function listSystems() {
+  return Object.entries(systems).map(([value, sys]) => ({ value, label: sys.label }));
+}

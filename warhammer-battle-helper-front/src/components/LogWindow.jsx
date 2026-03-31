@@ -1,7 +1,5 @@
 import React, {useEffect, useRef} from 'react';
 import LockIcon from '@mui/icons-material/Lock';
-import SimpleDiceRoll from './log/SimpleDiceRoll';
-import FightResult from './log/FightResult';
 import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
 import './LogWindow.css';
@@ -39,14 +37,6 @@ const LogWindow = ({
             const rollType = msg.data.rollType;
             const isHidden = msg.data.visibility && msg.data.visibility !== 'all';
 
-            if (rollType === 'simple') {
-                return <div key={index} className={isHidden ? 'log-entry--hidden-roll' : ''}>{isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}<SimpleDiceRoll data={msg.data} timestamp={msg.timestamp} /></div>;
-            }
-            if (rollType === 'fight') {
-                return <FightResult key={index} data={msg.data} />;
-            }
-
-            // Dispatch to system plugin for skill/weapon/attribute/sanity rolls
             const RollComponent = system.getRollComponent(rollType);
             if (RollComponent) {
                 return <div key={index} className={isHidden ? 'log-entry--hidden-roll' : ''}>{isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}<RollComponent data={msg.data} timestamp={msg.timestamp} /></div>;

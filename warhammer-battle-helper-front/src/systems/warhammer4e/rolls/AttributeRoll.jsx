@@ -1,55 +1,55 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import WaxSealToken from './WaxSealToken';
-import { getResultColor, isCriticalSuccess, isCriticalFailure, getTranslatedSkillName } from './rollUtils';
-import '../LogWindow.css';
+import WaxSealToken from '../../../components/log/WaxSealToken';
+import { getResultColor, calculateSuccessLevel, isCriticalSuccess, isCriticalFailure } from '../../../components/log/rollUtils';
+import '../../../components/LogWindow.css';
 
-const SkillRoll = ({ data, timestamp }) => {
+const AttributeRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
-    const { outcome, successLevel, roll, target, modifier, characterName, skillKey, skillName: customSkillName } = data;
-    // Map backend field names to component variables
-    const rollValue = roll;
-    const targetValue = target;
-    const SL = successLevel;
-    const success = outcome !== 'failure' && outcome !== 'fumble';
-    const isCritSuccess = isCriticalSuccess(rollValue, success);
-    const isCritFailure = isCriticalFailure(rollValue, success);
+    const rollValue = data.result;
+    const targetValue = data.attributeValue;
+    const successLevel = calculateSuccessLevel(rollValue, targetValue);
+    const isSuccess = rollValue <= targetValue;
+    const isCritSuccess = isCriticalSuccess(rollValue, isSuccess);
+    const isCritFailure = isCriticalFailure(rollValue, isSuccess);
 
-    const skillName = customSkillName || getTranslatedSkillName(t, skillKey, 'skill');
-    const resultColor = getResultColor(isCritSuccess, isCritFailure, success);
+    // Translate attribute short name (WS -> WW in Polish, etc.)
+    const attributeName = t(`attributeShort.${data.attribute}`, { defaultValue: data.attribute });
+
+    const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
 
     const getResultText = () => {
         if (isCritSuccess) return t('log.criticalSuccess');
         if (isCritFailure) return t('log.fumble');
-        return success ? t('log.success') : t('log.failure');
+        return isSuccess ? t('log.success') : t('log.failure');
     };
 
     return (
         <li className="log-list-item">
             <WaxSealToken
-                successLevel={SL}
+                successLevel={successLevel}
                 isCritSuccess={isCritSuccess}
                 isCritFailure={isCritFailure}
-                isSuccess={success}
+                isSuccess={isSuccess}
             />
             <div className="log-list-item__content">
                 <div className="log-list-item__header">
                     <span className="log-list-item__character-name">
-                        {characterName || t('log.character')}
+                        {data.characterName || t('log.character')}
                     </span>
                     {timestamp && (
                         <span className="log-list-item__timestamp">{timestamp}</span>
                     )}
                 </div>
                 <div className="log-list-item__description">
-                    <strong className="log-list-item__character-name">{skillName}</strong>
+                    <strong className="log-list-item__character-name">{attributeName}</strong>
                     {' '}{t('log.test')}: {t('log.rolled')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{rollValue}</strong>
                     {' '}{t('log.vs')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{targetValue}</strong>
-                    {modifier !== 0 && (
+                    {data.attributeModifier !== 0 && (
                         <span className="log-modifier">
-                            {' '}({t('log.modifier')}: {modifier >= 0 ? '+' : ''}{modifier})
+                            {' '}({t('log.modifier')}: {data.attributeModifier >= 0 ? '+' : ''}{data.attributeModifier})
                         </span>
                     )}
                 </div>
@@ -61,4 +61,4 @@ const SkillRoll = ({ data, timestamp }) => {
     );
 };
 
-export default SkillRoll;
+export default AttributeRoll;

@@ -1,23 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import WaxSealToken from './WaxSealToken';
-import { getResultColor, isCriticalSuccess, isCriticalFailure } from './rollUtils';
-import '../LogWindow.css';
+import WaxSealToken from '../../../components/log/WaxSealToken';
+import { getResultColor, isCriticalSuccess, isCriticalFailure, getTranslatedSkillName } from '../../../components/log/rollUtils';
+import '../../../components/LogWindow.css';
 
-const WeaponRoll = ({ data, timestamp }) => {
+const SkillRoll = ({ data, timestamp }) => {
     const { t } = useTranslation();
-    const {
-        outcome,
-        successLevel,
-        roll,
-        target,
-        modifier,
-        characterName,
-        weaponName,
-        damage: damageFormula,
-        damageRoll: damageValue
-    } = data;
-
+    const { outcome, successLevel, roll, target, modifier, characterName, skillKey, skillName: customSkillName } = data;
     // Map backend field names to component variables
     const rollValue = roll;
     const targetValue = target;
@@ -25,6 +14,8 @@ const WeaponRoll = ({ data, timestamp }) => {
     const success = outcome !== 'failure' && outcome !== 'fumble';
     const isCritSuccess = isCriticalSuccess(rollValue, success);
     const isCritFailure = isCriticalFailure(rollValue, success);
+
+    const skillName = customSkillName || getTranslatedSkillName(t, skillKey, 'skill');
     const resultColor = getResultColor(isCritSuccess, isCritFailure, success);
 
     const getResultText = () => {
@@ -51,7 +42,7 @@ const WeaponRoll = ({ data, timestamp }) => {
                     )}
                 </div>
                 <div className="log-list-item__description">
-                    <strong className="log-list-item__character-name">{weaponName}</strong>
+                    <strong className="log-list-item__character-name">{skillName}</strong>
                     {' '}{t('log.test')}: {t('log.rolled')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{rollValue}</strong>
                     {' '}{t('log.vs')}{' '}
@@ -65,17 +56,9 @@ const WeaponRoll = ({ data, timestamp }) => {
                 <div className="log-list-item__result" style={{ color: resultColor }}>
                     {getResultText()}
                 </div>
-                {success && damageFormula && (
-                    <div
-                        className="log-list-item__damage"
-                        title={`${damageFormula} + ${SL} (SL) = ${damageValue}`}
-                    >
-                        {t('log.damage')}: <strong>{damageValue}</strong>
-                    </div>
-                )}
             </div>
         </li>
     );
 };
 
-export default WeaponRoll;
+export default SkillRoll;

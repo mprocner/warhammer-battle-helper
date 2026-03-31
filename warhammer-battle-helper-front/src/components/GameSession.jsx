@@ -145,38 +145,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
                 timestamp,
                 data: { ...event.data }
               };
-            case 'skill_roll':
-              return {
-                message: null,
-                type: 'skill_roll',
-                timestamp,
-                data: {
-                  rollType: 'skill',
-                  ...event.data
-                }
-              };
-            case 'attack':
-              // Check if we have structured fight data
-              if (event.data.result) {
-                return {
-                  message: null,
-                  type: 'fight',
-                  timestamp,
-                  data: {
-                    rollType: 'fight',
-                    ...event.data
-                  }
-                };
-              }
-              // Fallback for old format
-              if (event.data.messages && Array.isArray(event.data.messages)) {
-                return event.data.messages.map(msg => ({
-                  message: msg,
-                  type: 'info',
-                  timestamp
-                }));
-              }
-              return { message: `${event.username} initiated combat`, type: 'warning', timestamp };
             case 'message':
               message = event.data.message || '';
               return { message, type: event.data.type || 'info', timestamp, data: { username: event.username } };
@@ -271,11 +239,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         break;
 
       case 'DICE_ROLLED':
-        // Pass structured data to log
-        addLogMessage(null, 'dice_roll', {
-          rollType: message.payload.attribute ? 'attribute' : 'simple',
-          ...message.payload
-        });
+        addLogMessage(null, 'dice_roll', { ...message.payload });
         break;
 
       case 'SKILL_ROLLED':
@@ -290,16 +254,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         // Pass structured data to log
         addLogMessage(null, 'weapon_roll', {
           rollType: 'weapon',
-          ...message.payload
-        });
-        break;
-
-      case 'FIGHT_RESULT':
-        // Pass structured fight data to log
-        console.log('FIGHT_RESULT received:', message.payload);
-        console.log('FIGHT_RESULT result:', message.payload.result);
-        addLogMessage(null, 'fight', {
-          rollType: 'fight',
           ...message.payload
         });
         break;

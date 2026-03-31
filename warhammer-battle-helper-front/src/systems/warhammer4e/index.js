@@ -4,11 +4,13 @@
 import CharacterSheetPopup from './CharacterSheet';
 import CharacterDetails from './CharacterDetails';
 import { buildPayload } from './buildPayload';
-import SkillRoll from '../../components/log/SkillRoll';
-import WeaponRoll from '../../components/log/WeaponRoll';
-import AttributeRoll from '../../components/log/AttributeRoll';
+import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
+import SkillRoll from './rolls/SkillRoll';
+import WeaponRoll from './rolls/WeaponRoll';
+import AttributeRoll from './rolls/AttributeRoll';
 
 const rollComponents = {
+  simple: SimpleDiceRoll,
   skill: SkillRoll,
   weapon: WeaponRoll,
   attribute: AttributeRoll,
@@ -26,6 +28,7 @@ function normalizeCharacter(char) {
 }
 
 const warhammer4e = {
+  label: 'Warhammer Fantasy Roleplay 4e',
   CharacterSheet: CharacterSheetPopup,
   CharacterDetails,
   getRollComponent,

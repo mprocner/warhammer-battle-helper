@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { getSystem, listSystems } from '../systems/registry';
 import {
   Box,
   Button,
@@ -31,10 +32,6 @@ import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
-const GAME_SYSTEMS = [
-  { value: 'warhammer4e', label: 'Warhammer Fantasy Roleplay 4e' },
-  { value: 'coc7e',       label: 'Call of Cthulhu 7e' },
-];
 
 const GameLobby = ({ onJoinGame, token, userEmail }) => {
   const { t } = useTranslation();
@@ -376,7 +373,7 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
                       />
                       {game.gameSystem && (
                         <Chip
-                          label={GAME_SYSTEMS.find(s => s.value === game.gameSystem)?.label || game.gameSystem}
+                          label={getSystem(game.gameSystem).label || game.gameSystem}
                           variant="outlined"
                           size="small"
                           sx={{ fontFamily: 'Crimson Text, serif' }}
@@ -469,7 +466,7 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
               label={t('game.gameSystem')}
               sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}
             >
-              {GAME_SYSTEMS.map(sys => (
+              {listSystems().map(sys => (
                 <MenuItem key={sys.value} value={sys.value} sx={{ fontFamily: 'Crimson Text, serif' }}>
                   {sys.label}
                 </MenuItem>
