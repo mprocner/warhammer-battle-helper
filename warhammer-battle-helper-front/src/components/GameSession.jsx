@@ -8,10 +8,14 @@ import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useGameMusic } from '../hooks/useGameMusic';
+import { useDrawingTools } from '../hooks/useDrawingTools';
+import { useFogTools } from '../hooks/useFogTools';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
-import { getMusic, playTrack } from '../api/music';
 import SceneSelector from './scene/SceneSelector';
+import { WS_EVENTS } from '../websocket/events';
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -28,43 +32,16 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [leftPanelHidden, setLeftPanelHidden] = useState(false);
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
-  const [editingLayer, setEditingLayer] = useState(null);
-  const [fogCoverMode, setFogCoverMode] = useState(false);
   const [pointerPings, setPointerPings] = useState([]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [activeTool, setActiveTool] = useState('freehand');
-  const [brushSize, setBrushSize] = useState(10);
-  const [drawingColor, setDrawingColor] = useState('#ff0000');
-  const [drawingFontSize, setDrawingFontSize] = useState(16);
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
 
-  // --- Online users ---
+  const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
-
-  // --- Music state ---
-  const audioRef = useRef(new Audio());
-  const [musicState, setMusicState] = useState({
-    isPlaying: false,
-    trackUrl: null,
-    trackName: null,
-    position: 0,
-    gmVolume: 1.0
-  });
-  const [playerVolume, setPlayerVolume] = useState(() => {
-    const saved = localStorage.getItem('playerMusicVolume');
-    return saved !== null ? parseFloat(saved) : 1.0;
-  });
-
-  const onPlayerVolumeChange = useCallback((vol) => {
-    setPlayerVolume(vol);
-    localStorage.setItem('playerMusicVolume', String(vol));
-  }, []);
-
-  // Sync audio volume when gmVolume or playerVolume changes
-  useEffect(() => {
-    audioRef.current.volume = musicState.gmVolume * playerVolume;
-  }, [musicState.gmVolume, playerVolume]);
+  const { audioRef, musicState, playerVolume, onPlayerVolumeChange, handleMusicMessage, handleSceneAssignAll } = useGameMusic(gameId);
+  const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools();
+  const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode } = useFogTools();
 
   // Block browser back button and tab close while in game
   useEffect(() => {
@@ -89,22 +66,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     };
   }, []);
 
-  // Cleanup audio on unmount
-  useEffect(() => {
-    const audio = audioRef.current;
-    return () => {
-      audio.pause();
-      audio.src = '';
-    };
-  }, []);
-
-  // Add log message - Define early so it can be used in callbacks
   const addLogMessage = useCallback((message, type = 'info', data = null) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs((prev) => [...prev, { message, type, timestamp, data }]);
   }, []);
 
-  // Fetch initial game state via REST API
   const fetchGameState = useCallback(async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games/${gameId}`, {
@@ -118,7 +84,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       const game = await response.json();
       setGameState(game);
 
-      // Load historical events into logs (only on initial load)
       if (game.events && Array.isArray(game.events) && !historyLoaded) {
         const historicalLogs = game.events.map(event => {
           let message = '';
@@ -135,10 +100,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
               message = `${event.username} added character to battlefield`;
               return { message, type: 'success', timestamp };
             case 'move':
-              // Don't show movement events in chat
               return null;
             case 'dice_roll':
-              // Use rollType stored in event.data (always present for skill/weapon/simple rolls)
               return {
                 message: null,
                 type: 'dice_roll',
@@ -169,68 +132,121 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     setPointerPings(prev => prev.filter(p => p.id !== pingId));
   }, []);
 
-  // Handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message) => {
-    console.log('GameSession: Received WebSocket message', message);
-    console.log('GameSession: handleWebSocketMessage function ID:', handleWebSocketMessage);
+    // Delegate music events to the dedicated hook
+    if (handleMusicMessage(message)) return;
 
     switch (message.type) {
-      case 'GAME_STATE':
-        // Full game state received
+      case WS_EVENTS.GAME_STATE:
         setGameState(message.payload.game);
         addLogMessage('Game state synchronized', 'info');
         setLoading(false);
         break;
 
-      case 'PARTICIPANT_JOINED':
-        addLogMessage(
-          `${message.payload.username} joined the game`,
-          'success'
-        );
-        // Fetch updated game state
-        fetchGameState();
+      case WS_EVENTS.GAME_DELETED:
+        onLeaveGame();
         break;
 
-      case 'PARTICIPANT_LEFT':
-        addLogMessage(
-          `A player left the game`,
-          'info'
-        );
-        fetchGameState();
+      case WS_EVENTS.PARTICIPANT_JOINED: {
+        const newParticipant = message.payload.participant;
+        addLogMessage(`${newParticipant.username} joined the game`, 'success');
+        setGameState(prev => {
+          if (!prev) return prev;
+          const already = (prev.participants || []).some(p => p.userId === newParticipant.userId);
+          if (already) return prev;
+          return { ...prev, participants: [...(prev.participants || []), newParticipant] };
+        });
+        break;
+      }
+
+      case WS_EVENTS.PARTICIPANT_LEFT:
+        addLogMessage(`A player left the game`, 'info');
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, participants: (prev.participants || []).filter(p => p.userId !== message.payload.userId) };
+        });
         break;
 
-      case 'PARTICIPANT_UPDATED':
-        fetchGameState();
+      case WS_EVENTS.PARTICIPANT_UPDATED: {
+        const { userId: updUserId, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            participants: (prev.participants || []).map(p =>
+              p.userId === updUserId
+                ? { ...p, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature }
+                : p
+            ),
+          };
+        });
         break;
+      }
 
-      case 'CHARACTER_ADDED':
-        addLogMessage(
-          `Character added to the battlefield`,
-          'success'
-        );
-        fetchGameState();
+      case WS_EVENTS.CHARACTER_ADDED:
+        addLogMessage(`Character added to the battlefield`, 'success');
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, characters: [...(prev.characters || []), message.payload.character] };
+        });
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
 
-      case 'CHARACTER_MOVED':
-        // Just update the game state without logging to chat
-        fetchGameState();
+      case WS_EVENTS.CHARACTER_MOVED: {
+        const { characterId, x, y } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            characters: (prev.characters || []).map(c =>
+              c.id === characterId ? { ...c, x, y } : c
+            ),
+          };
+        });
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
+      }
 
-      case 'CHARACTER_REMOVED':
+      case WS_EVENTS.CHARACTER_REMOVED:
         addLogMessage('Character removed from battlefield', 'info');
-        fetchGameState();
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, characters: (prev.characters || []).filter(c => c.id !== message.payload.characterId) };
+        });
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
 
-      case 'CHARACTER_UPDATED':
-      case 'CHARACTER_VISIBILITY_UPDATED':
-        fetchGameState();
+      case WS_EVENTS.CHARACTER_UPDATED: {
+        const updatedChar = message.payload.character;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            characters: (prev.characters || []).map(c =>
+              c.id === updatedChar.id ? updatedChar : c
+            ),
+          };
+        });
         setCharacterDataTrigger(prev => prev + 1);
         break;
+      }
 
-      case 'LOG_MESSAGE':
+      case WS_EVENTS.CHARACTER_VISIBILITY_UPDATED: {
+        const { characterId: visCharId, visibleTo } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            characters: (prev.characters || []).map(c =>
+              c.id === visCharId ? { ...c, visibleTo } : c
+            ),
+          };
+        });
+        setCharacterDataTrigger(prev => prev + 1);
+        break;
+      }
+
+      case WS_EVENTS.LOG_MESSAGE:
         addLogMessage(
           message.payload.message,
           message.payload.type || 'info',
@@ -238,60 +254,235 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         );
         break;
 
-      case 'DICE_ROLLED':
-        addLogMessage(null, 'dice_roll', { ...message.payload });
+      case WS_EVENTS.DICE_ROLLED:
+      case WS_EVENTS.SKILL_ROLLED:
+      case WS_EVENTS.WEAPON_ROLLED:
+        addLogMessage(null, 'roll', { ...message.payload });
         break;
 
-      case 'SKILL_ROLLED':
-        // Pass structured data to log
-        addLogMessage(null, 'skill_roll', {
-          rollType: 'skill',
-          ...message.payload
+      case WS_EVENTS.HANDOUT_CREATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, handouts: [...(prev.handouts || []), message.payload.handout] };
         });
         break;
 
-      case 'WEAPON_ROLLED':
-        // Pass structured data to log
-        addLogMessage(null, 'weapon_roll', {
-          rollType: 'weapon',
-          ...message.payload
+      case WS_EVENTS.HANDOUT_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, handouts: (prev.handouts || []).map(h => h.id === message.payload.handout.id ? message.payload.handout : h) };
         });
         break;
 
-      case 'HANDOUT_CREATED':
-      case 'HANDOUT_UPDATED':
-      case 'HANDOUT_DELETED':
-      case 'HANDOUTS_REORDERED':
-      case 'HANDOUT_MOVED':
-      case 'HANDOUT_FOLDER_CREATED':
-      case 'HANDOUT_FOLDER_UPDATED':
-      case 'HANDOUT_FOLDER_DELETED':
-      case 'HANDOUT_FOLDERS_REORDERED':
-        fetchGameState();
+      case WS_EVENTS.HANDOUT_DELETED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, handouts: (prev.handouts || []).filter(h => h.id !== message.payload.handoutId) };
+        });
         break;
 
-      // Scene-related messages
-      case 'SCENE_CREATED':
-      case 'SCENE_UPDATED':
-      case 'SCENE_DELETED':
-      case 'PLAYER_SCENE_CHANGED':
-        fetchGameState();
+      case WS_EVENTS.HANDOUTS_REORDERED:
+        setGameState(prev => prev ? { ...prev, handouts: message.payload.handouts } : prev);
         break;
 
-      case 'SCENE_CHARACTER_ADDED':
-      case 'SCENE_CHARACTER_MOVED':
-      case 'SCENE_CHARACTER_REMOVED':
-        fetchGameState();
+      case WS_EVENTS.HANDOUT_MOVED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            handouts: (prev.handouts || []).map(h =>
+              h.id === message.payload.handoutId ? { ...h, folderId: message.payload.folderId } : h
+            ),
+          };
+        });
+        break;
+
+      case WS_EVENTS.HANDOUT_FOLDER_CREATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, handoutFolders: [...(prev.handoutFolders || []), message.payload.folder] };
+        });
+        break;
+
+      case WS_EVENTS.HANDOUT_FOLDER_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            handoutFolders: (prev.handoutFolders || []).map(f =>
+              f.id === message.payload.folderId ? { ...f, name: message.payload.name } : f
+            ),
+          };
+        });
+        break;
+
+      case WS_EVENTS.HANDOUT_FOLDER_DELETED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            handouts: message.payload.handouts,
+            handoutFolders: message.payload.folders,
+          };
+        });
+        break;
+
+      case WS_EVENTS.HANDOUT_FOLDERS_REORDERED:
+        setGameState(prev => prev ? { ...prev, handoutFolders: message.payload.folders } : prev);
+        break;
+
+      case WS_EVENTS.SCENE_CREATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, scenes: [...(prev.scenes || []), message.payload.scene] };
+        });
+        break;
+
+      case WS_EVENTS.SCENE_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, scenes: (prev.scenes || []).map(s => s.id === message.payload.scene.id ? message.payload.scene : s) };
+        });
+        break;
+
+      case WS_EVENTS.SCENE_DELETED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, scenes: (prev.scenes || []).filter(s => s.id !== message.payload.sceneId) };
+        });
+        break;
+
+      case WS_EVENTS.PLAYER_SCENE_CHANGED: {
+        const { playerId, sceneId: assignedSceneId, assigned } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s => {
+              if (s.id === assignedSceneId) {
+                const players = s.assignedPlayers || [];
+                return {
+                  ...s,
+                  assignedPlayers: assigned
+                    ? [...players.filter(id => id !== playerId), playerId]
+                    : players.filter(id => id !== playerId),
+                };
+              }
+              if (assigned) {
+                return { ...s, assignedPlayers: (s.assignedPlayers || []).filter(id => id !== playerId) };
+              }
+              return s;
+            }),
+          };
+        });
+        break;
+      }
+
+      case WS_EVENTS.SCENE_CHARACTER_ADDED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, character } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === sceneId
+                ? { ...s, characters: [...(s.characters || []), character] }
+                : s
+            ),
+          };
+        });
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
 
-      case 'SCENE_IMAGE_ADDED':
-      case 'SCENE_IMAGE_UPDATED':
-      case 'SCENE_IMAGE_DELETED':
-        fetchGameState();
+      case WS_EVENTS.SCENE_CHARACTER_MOVED: {
+        const { sceneId: scId, characterId: scCharId, x: scX, y: scY } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === scId
+                ? {
+                    ...s,
+                    characters: (s.characters || []).map(c =>
+                      c.id === scCharId ? { ...c, x: scX, y: scY } : c
+                    ),
+                  }
+                : s
+            ),
+          };
+        });
+        setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+      }
+
+      case WS_EVENTS.SCENE_CHARACTER_REMOVED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId: scRId, characterId: scRCharId } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === scRId
+                ? { ...s, characters: (s.characters || []).filter(c => c.id !== scRCharId) }
+                : s
+            ),
+          };
+        });
+        setCharacterUpdateTrigger(prev => prev + 1);
         break;
 
-      case 'FOG_TOGGLED':
+      case WS_EVENTS.SCENE_IMAGE_ADDED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId: siSceneId, image } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === siSceneId
+                ? { ...s, images: [...(s.images || []), image] }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case WS_EVENTS.SCENE_IMAGE_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId: siuSceneId, imageId, update } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === siuSceneId
+                ? {
+                    ...s,
+                    images: (s.images || []).map(img =>
+                      img.id === imageId ? { ...img, ...update } : img
+                    ),
+                  }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case WS_EVENTS.SCENE_IMAGE_DELETED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId: sidSceneId, imageId: delImageId } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === sidSceneId
+                ? { ...s, images: (s.images || []).filter(img => img.id !== delImageId) }
+                : s
+            ),
+          };
+        });
+        break;
+
+      case WS_EVENTS.FOG_TOGGLED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId, fogEnabled, fogOpacity } = message.payload;
@@ -304,7 +495,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'FOG_PATH_ADDED':
+      case WS_EVENTS.FOG_PATH_ADDED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId, path } = message.payload;
@@ -319,7 +510,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'FOG_PATH_REMOVED':
+      case WS_EVENTS.FOG_PATH_REMOVED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId } = message.payload;
@@ -334,7 +525,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'FOG_CLEARED':
+      case WS_EVENTS.FOG_CLEARED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId } = message.payload;
@@ -347,7 +538,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'FOG_REVEALED_ALL':
+      case WS_EVENTS.FOG_REVEALED_ALL:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId, path } = message.payload;
@@ -360,7 +551,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'DRAWING_PATH_ADDED':
+      case WS_EVENTS.DRAWING_PATH_ADDED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId, path } = message.payload;
@@ -375,7 +566,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'DRAWING_PATH_REMOVED':
+      case WS_EVENTS.DRAWING_PATH_REMOVED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId, pathId } = message.payload;
@@ -390,7 +581,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-      case 'DRAWING_CLEARED':
+      case WS_EVENTS.DRAWING_CLEARED:
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId } = message.payload;
@@ -403,70 +594,14 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         });
         break;
 
-
-      // Music-related messages
-      case 'MUSIC_PLAY': {
-        const audio = audioRef.current;
-        const { trackUrl, trackName, position, playlistId, trackIndex } = message.payload;
-        if (audio.src !== trackUrl) {
-          audio.src = trackUrl;
-        }
-        audio.currentTime = position || 0;
-        audio.play().catch((err) => {
-          console.warn('Autoplay blocked:', err);
-        });
-        setMusicState(prev => ({
-          ...prev,
-          isPlaying: true,
-          trackUrl,
-          trackName: trackName || '',
-          position: position || 0,
-          playlistId: playlistId || null,
-          trackIndex: trackIndex || 0,
-        }));
-        break;
-      }
-
-      case 'MUSIC_PAUSE': {
-        const audio = audioRef.current;
-        audio.pause();
-        setMusicState(prev => ({
-          ...prev,
-          isPlaying: false,
-          position: message.payload.position || audio.currentTime
-        }));
-        break;
-      }
-
-      case 'MUSIC_STOP': {
-        const audio = audioRef.current;
-        audio.pause();
-        audio.currentTime = 0;
-        audio.src = '';
-        setMusicState({
-          isPlaying: false,
-          trackUrl: null,
-          trackName: null,
-          position: 0,
-          gmVolume: musicState.gmVolume
-        });
-        break;
-      }
-
-      case 'MUSIC_VOLUME': {
-        const { volume } = message.payload;
-        setMusicState(prev => ({ ...prev, gmVolume: volume }));
-        break;
-      }
-
-      case 'POINTER_PING': {
+      case WS_EVENTS.POINTER_PING: {
         const { x, y, sceneId } = message.payload;
         const ping = { id: `${Date.now()}-${Math.random()}`, x, y, sceneId };
         setPointerPings(prev => [...prev, ping]);
         break;
       }
 
-      case 'USERS_ONLINE':
+      case WS_EVENTS.USERS_ONLINE:
         handleOnlineUsersMessage(message);
         break;
 
@@ -474,9 +609,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onLeaveGame]);
 
-  // WebSocket connection
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
     token,
@@ -487,7 +621,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     fetchGameState();
   }, [fetchGameState]);
 
-  // Handle leaving the game
   const handleLeaveGame = async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games/${gameId}/leave`, {
@@ -505,18 +638,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     }
   };
 
-  // Compute isGM and displayScene
-  const getUserId = useCallback(() => {
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.user_id;
-    } catch {
-      return null;
-    }
-  }, [token]);
-
-  const userId = getUserId();
   const isGM = gameState?.gameMasterId === userId;
 
   const displayScene = useMemo(() => {
@@ -524,14 +645,12 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     if (scenes.length === 0) return null;
 
     if (isGM) {
-      // GM: use selected scene, fallback to first
       if (gmViewingSceneId) {
         const found = scenes.find(s => s.id === gmViewingSceneId);
         if (found) return found;
       }
       return scenes[0];
     } else {
-      // Player: use assigned scene
       const assignedScene = scenes.find(s =>
         (s.assignedPlayers || []).includes(userId)
       );
@@ -543,8 +662,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     if (!displayScene) return;
     try {
       await addFogPath(gameId, displayScene.id, path);
-      // State update handled by WS FOG_PATH_ADDED — no optimistic update
-      // to avoid duplicates (GM receives its own WS broadcast)
     } catch (err) {
       console.error('Failed to save fog path:', err);
     }
@@ -552,7 +669,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
 
   const handleDrawingPathComplete = useCallback(async (path) => {
     if (!displayScene) return;
-    // Optimistic update
     const tempPath = { ...path, id: `temp-${Date.now()}` };
     setGameState(prev => {
       if (!prev) return prev;
@@ -567,7 +683,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     });
     try {
       await addDrawingPath(gameId, displayScene.id, path);
-      // Remove temp path — WS DRAWING_PATH_ADDED will add the real one
       setGameState(prev => {
         if (!prev) return prev;
         return {
@@ -581,7 +696,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       });
     } catch (err) {
       console.error('Failed to save drawing path:', err);
-      // Rollback optimistic update
       setGameState(prev => {
         if (!prev) return prev;
         return {
@@ -600,34 +714,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
     if (!displayScene || !pathId) return;
     try {
       await deleteDrawingPath(gameId, displayScene.id, pathId);
-      // WS DRAWING_PATH_REMOVED will update state
     } catch (err) {
       console.error('Failed to delete drawing path:', err);
     }
   }, [gameId, displayScene]);
-
-  const handleSceneAssignAll = useCallback(async (scene) => {
-    if (!scene.sceneMusicId) return;
-    try {
-      const musicData = await getMusic();
-      const resolveUrl = (url) => url?.startsWith('http') ? url : `${getApiUrl()}${url}`;
-      if (scene.sceneMusicType === 'playlist') {
-        const playlist = (musicData.playlists || []).find(p => p.id === scene.sceneMusicId);
-        if (!playlist) return;
-        const tracks = (playlist.tracks || [])
-          .map(id => (musicData.music || []).find(f => f.id === id))
-          .filter(Boolean);
-        if (tracks.length === 0) return;
-        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0);
-      } else {
-        const file = (musicData.music || []).find(f => f.id === scene.sceneMusicId);
-        if (!file) return;
-        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0);
-      }
-    } catch (err) {
-      console.error('Failed to play scene music:', err);
-    }
-  }, [gameId]);
 
   if (loading) {
     return (
@@ -680,21 +770,18 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         </Alert>
       )}
 
-      {/* Main Game Area */}
       <Box sx={{
         flexGrow: 1,
         display: 'flex',
         overflow: 'hidden',
         position: 'relative'
       }}>
-        {/* Right Panel Toggle */}
         <PanelToggle
           position="right"
           isHidden={rightPanelHidden}
           onClick={() => setRightPanelHidden(!rightPanelHidden)}
         />
 
-        {/* Battle Grid */}
         <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
           <DragAndDropContext
             sceneSelector={isGM ? (
@@ -747,7 +834,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           />
         </Box>
 
-        {/* Right Panel */}
         <RightPanel
           isHidden={rightPanelHidden}
           logs={logs}

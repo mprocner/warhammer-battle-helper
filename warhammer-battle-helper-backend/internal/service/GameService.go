@@ -3,8 +3,10 @@ package service
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/systems"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -281,10 +283,16 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID.Hex(), "PARTICIPANT_JOINED", map[string]interface{}{
-		"userId":   invitedUser.ID.Hex(),
-		"username": invitedUser.Email,
-		"role":     models.RolePlayer,
+	broadcastParticipant := models.GameParticipant{
+		UserID:           invitedUser.ID,
+		Username:         invitedUser.Email,
+		Email:            invitedUser.Email,
+		Role:             models.RolePlayer,
+		AccountAvatar:    invitedUser.Avatar,
+		AccountSignature: invitedUser.Signature,
+	}
+	s.hub.BroadcastToGame(gameID.Hex(), websocket.EventParticipantJoined, map[string]interface{}{
+		"participant": broadcastParticipant,
 	})
 
 	return nil
@@ -330,11 +338,20 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 	}
 	s.gameRepo.AddEvent(gameID, event)
 
+	// Enrich participant with account-level avatar/signature for the broadcast
+	broadcastParticipant := models.GameParticipant{
+		UserID:   userID,
+		Username: username,
+		Role:     models.RolePlayer,
+	}
+	if joinedUser, userErr := s.userRepo.FindByID(userID); userErr == nil && joinedUser != nil {
+		broadcastParticipant.AccountAvatar = joinedUser.Avatar
+		broadcastParticipant.AccountSignature = joinedUser.Signature
+	}
+
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "PARTICIPANT_JOINED", map[string]interface{}{
-		"userId":   userID.Hex(),
-		"username": username,
-		"role":     models.RolePlayer,
+	s.hub.BroadcastToGame(gameID, websocket.EventParticipantJoined, map[string]interface{}{
+		"participant": broadcastParticipant,
 	})
 
 	return s.gameRepo.GetByID(gameID)
@@ -355,7 +372,7 @@ func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) error
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "GAME_DELETED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventGameDeleted, map[string]interface{}{
 		"gameId": gameID,
 	})
 
@@ -389,7 +406,7 @@ func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, userna
 	s.gameRepo.AddEvent(gameID, event)
 
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "PARTICIPANT_LEFT", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventParticipantLeft, map[string]interface{}{
 		"userId": userID.Hex(),
 	})
 
@@ -415,7 +432,7 @@ func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, tar
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "PARTICIPANT_LEFT", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventParticipantLeft, map[string]interface{}{
 		"userId": targetUserID.Hex(),
 	})
 
@@ -462,7 +479,7 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 	s.gameRepo.AddEvent(gameID, event)
 
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "CHARACTER_ADDED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventCharacterAdded, map[string]interface{}{
 		"character": gameChar,
 	})
 
@@ -489,7 +506,7 @@ func (s *GameService) MoveCharacter(gameID string, characterID primitive.ObjectI
 	s.gameRepo.AddEvent(gameID, event)
 
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "CHARACTER_MOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventCharacterMoved, map[string]interface{}{
 		"characterId": characterID.Hex(),
 		"x":           x,
 		"y":           y,
@@ -517,7 +534,7 @@ func (s *GameService) RemoveCharacter(gameID string, characterID primitive.Objec
 	s.gameRepo.AddEvent(gameID, event)
 
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "CHARACTER_REMOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventCharacterRemoved, map[string]interface{}{
 		"characterId": characterID.Hex(),
 	})
 
@@ -541,13 +558,75 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	}
 
 	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, "LOG_MESSAGE", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventLogMessage, map[string]interface{}{
 		"message":  message,
 		"type":     messageType,
 		"username": username,
 	})
 
 	return nil
+}
+
+// loadRollContext fetches game, character and plugin — shared setup for all system rolls.
+func (s *GameService) loadRollContext(gameID, characterID string) (*models.Game, *models.Character, systems.GameSystem, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("game not found: %w", err)
+	}
+	character, err := s.charRepo.GetByID(characterID)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("character not found: %w", err)
+	}
+	gameSystem := game.GameSystem
+	if gameSystem == "" {
+		gameSystem = character.GameSystem
+	}
+	plugin, err := registry.Get(gameSystem)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return game, character, plugin, nil
+}
+
+// rollResultToMap serialises a RollResult to map via JSON so that all tagged fields
+// are included automatically, then appends the cross-cutting visibility + rollerUserId fields.
+func rollResultToMap(r *systems.RollResult, visibility, rollerUserID string) map[string]interface{} {
+	b, _ := json.Marshal(r)
+	var m map[string]interface{}
+	_ = json.Unmarshal(b, &m)
+	m["visibility"] = visibility
+	m["rollerUserId"] = rollerUserID
+	return m
+}
+
+// executeRoll handles the shared post-roll logic: resolves display name, enriches the result,
+// serialises it, persists a GameEvent and broadcasts to the right audience.
+func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.RollResult, userID primitive.ObjectID, username string, game *models.Game, character *models.Character, visibility string) (map[string]interface{}, error) {
+	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	if visibility == "" {
+		visibility = "all"
+	}
+
+	rollResult.CharacterID = character.ID.Hex()
+	rollResult.CharacterName = character.Name
+	rollResult.Username = displayName
+
+	broadcastData := rollResultToMap(rollResult, visibility, userID.Hex())
+
+	event := models.GameEvent{
+		Type:         models.EventTypeDiceRoll,
+		CreatedBy:    userID,
+		Username:     displayName,
+		Visibility:   visibility,
+		RollerUserID: userID,
+		Data:         broadcastData,
+	}
+	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
+		return nil, err
+	}
+
+	s.broadcastRoll(gameID, eventType, broadcastData, visibility, userID, game.GameMasterID)
+	return broadcastData, nil
 }
 
 // broadcastRoll sends a roll event to the appropriate set of clients based on visibility.
@@ -603,148 +682,34 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 		return 0, err
 	}
 
-	s.broadcastRoll(gameID, "DICE_ROLLED", eventData, visibility, userID, game.GameMasterID)
+	s.broadcastRoll(gameID, websocket.EventDiceRolled, eventData, visibility, userID, game.GameMasterID)
 	return result, nil
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.
 func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, fmt.Errorf("game not found: %w", err)
-	}
-
-	character, err := s.charRepo.GetByID(characterID)
-	if err != nil {
-		return nil, fmt.Errorf("character not found: %w", err)
-	}
-
-	gameSystem := game.GameSystem
-	if gameSystem == "" {
-		gameSystem = character.GameSystem
-	}
-	plugin, err := registry.Get(gameSystem)
+	game, character, plugin, err := s.loadRollContext(gameID, characterID)
 	if err != nil {
 		return nil, err
 	}
-
 	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier, diceMod)
 	if err != nil {
 		return nil, err
 	}
-
-	displayName := s.resolveDisplayNameForUser(game, userID, username)
-	if visibility == "" {
-		visibility = "all"
-	}
-
-	rollResult.CharacterID = characterID
-	rollResult.CharacterName = character.Name
-	rollResult.Username = displayName
-
-	broadcastData := map[string]interface{}{
-		"rollType":      rollResult.RollType,
-		"characterId":   characterID,
-		"characterName": character.Name,
-		"skillKey":      rollResult.SkillKey,
-		"skillName":     rollResult.SkillName,
-		"roll":          rollResult.Roll,
-		"target":        rollResult.Target,
-		"outcome":       rollResult.Outcome,
-		"successLevel":  rollResult.SuccessLevel,
-		"modifier":      modifier,
-		"diceMod":       diceMod,
-		"allRolls":      rollResult.AllRolls,
-		"username":      displayName,
-		"visibility":    visibility,
-		"rollerUserId":  userID.Hex(),
-	}
-
-	event := models.GameEvent{
-		Type:         models.EventTypeDiceRoll,
-		CreatedBy:    userID,
-		Username:     displayName,
-		Visibility:   visibility,
-		RollerUserID: userID,
-		Data:         broadcastData,
-	}
-	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
-		return nil, err
-	}
-
-	s.broadcastRoll(gameID, "SKILL_ROLLED", broadcastData, visibility, userID, game.GameMasterID)
-	return broadcastData, nil
+	return s.executeRoll(gameID, websocket.EventSkillRolled, rollResult, userID, username, game, character, visibility)
 }
 
 // RollWeapon rolls a weapon attack dispatched through the game system registry.
 func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, fmt.Errorf("game not found: %w", err)
-	}
-
-	character, err := s.charRepo.GetByID(characterID)
-	if err != nil {
-		return nil, fmt.Errorf("character not found: %w", err)
-	}
-
-	gameSystem := game.GameSystem
-	if gameSystem == "" {
-		gameSystem = character.GameSystem
-	}
-	plugin, err := registry.Get(gameSystem)
+	game, character, plugin, err := s.loadRollContext(gameID, characterID)
 	if err != nil {
 		return nil, err
 	}
-
 	rollResult, err := plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier, diceMod)
 	if err != nil {
 		return nil, err
 	}
-
-	displayName := s.resolveDisplayNameForUser(game, userID, username)
-	if visibility == "" {
-		visibility = "all"
-	}
-
-	rollResult.CharacterID = characterID
-	rollResult.CharacterName = character.Name
-	rollResult.Username = displayName
-
-	broadcastData := map[string]interface{}{
-		"rollType":        rollResult.RollType,
-		"characterId":     characterID,
-		"characterName":   character.Name,
-		"weaponName":      rollResult.WeaponName,
-		"damage":          rollResult.Damage,
-		"damageRoll":      rollResult.DamageRoll,
-		"damageBreakdown": rollResult.DamageBreakdown,
-		"roll":            rollResult.Roll,
-		"target":          rollResult.Target,
-		"outcome":         rollResult.Outcome,
-		"successLevel":    rollResult.SuccessLevel,
-		"modifier":        modifier,
-		"diceMod":         diceMod,
-		"allRolls":        rollResult.AllRolls,
-		"username":        displayName,
-		"visibility":      visibility,
-		"rollerUserId":    userID.Hex(),
-	}
-
-	event := models.GameEvent{
-		Type:         models.EventTypeDiceRoll,
-		CreatedBy:    userID,
-		Username:     displayName,
-		Visibility:   visibility,
-		RollerUserID: userID,
-		Data:         broadcastData,
-	}
-	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
-		return nil, err
-	}
-
-	s.broadcastRoll(gameID, "WEAPON_ROLLED", broadcastData, visibility, userID, game.GameMasterID)
-	return broadcastData, nil
+	return s.executeRoll(gameID, websocket.EventWeaponRolled, rollResult, userID, username, game, character, visibility)
 }
 
 // UpdateParticipant updates avatar, signature, avatarSize and showSignature for the requesting user in a game
@@ -774,8 +739,14 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature); err != nil {
 		return err
 	}
-	s.hub.BroadcastToGame(gameID, "PARTICIPANT_UPDATED", map[string]interface{}{
-		"userId": userID.Hex(),
+	s.hub.BroadcastToGame(gameID, websocket.EventParticipantUpdated, map[string]interface{}{
+		"userId":            userID.Hex(),
+		"avatar":            avatar,
+		"avatarType":        avatarType,
+		"avatarCharacterId": avatarCharacterId,
+		"signature":         signature,
+		"avatarSize":        avatarSize,
+		"showSignature":     showSignature,
 	})
 	return nil
 }
@@ -810,7 +781,7 @@ func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, re
 	}
 
 	// Broadcast to clients
-	s.hub.BroadcastToGame(gameID, "HANDOUT_CREATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutCreated, map[string]interface{}{
 		"handout": createdHandout,
 	})
 
@@ -840,7 +811,7 @@ func (s *GameService) UpdateHandout(gameID string, handoutID primitive.ObjectID,
 	}
 
 	// Broadcast to clients
-	s.hub.BroadcastToGame(gameID, "HANDOUT_UPDATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutUpdated, map[string]interface{}{
 		"handout": updatedHandout,
 	})
 
@@ -872,7 +843,7 @@ func (s *GameService) DeleteHandout(gameID string, handoutID primitive.ObjectID,
 	}
 
 	// Broadcast to clients
-	s.hub.BroadcastToGame(gameID, "HANDOUT_DELETED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutDeleted, map[string]interface{}{
 		"handoutId": handoutID.Hex(),
 	})
 
@@ -912,7 +883,7 @@ func (s *GameService) ReorderHandouts(gameID string, userID primitive.ObjectID, 
 	}
 
 	// Broadcast to clients
-	s.hub.BroadcastToGame(gameID, "HANDOUTS_REORDERED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutsReordered, map[string]interface{}{
 		"handouts": updatedGame.Handouts,
 	})
 
@@ -1004,7 +975,7 @@ func (s *GameService) CreateHandoutFolder(gameID string, userID primitive.Object
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_CREATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutFolderCreated, map[string]interface{}{
 		"folder": createdFolder,
 	})
 
@@ -1026,7 +997,7 @@ func (s *GameService) RenameHandoutFolder(gameID string, folderID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_UPDATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutFolderUpdated, map[string]interface{}{
 		"folderId": folderID.Hex(),
 		"name":     req.Name,
 	})
@@ -1054,7 +1025,7 @@ func (s *GameService) DeleteHandoutFolder(gameID string, folderID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDER_DELETED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutFolderDeleted, map[string]interface{}{
 		"folderId": folderID.Hex(),
 		"handouts": updatedGame.Handouts,
 		"folders":  updatedGame.HandoutFolders,
@@ -1092,7 +1063,7 @@ func (s *GameService) ReorderHandoutFolders(gameID string, userID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "HANDOUT_FOLDERS_REORDERED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutFoldersReordered, map[string]interface{}{
 		"folders": updatedGame.HandoutFolders,
 	})
 
@@ -1123,7 +1094,7 @@ func (s *GameService) MoveHandout(gameID string, handoutID primitive.ObjectID, u
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "HANDOUT_MOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventHandoutMoved, map[string]interface{}{
 		"handoutId": handoutID.Hex(),
 		"folderId":  req.FolderID,
 	})
@@ -1189,7 +1160,7 @@ func (s *GameService) CreateScene(gameID string, userID primitive.ObjectID, req 
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_CREATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCreated, map[string]interface{}{
 		"scene": createdScene,
 	})
 
@@ -1216,7 +1187,7 @@ func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, use
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_UPDATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneUpdated, map[string]interface{}{
 		"scene": updatedScene,
 	})
 
@@ -1238,7 +1209,7 @@ func (s *GameService) DeleteScene(gameID string, sceneID primitive.ObjectID, use
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_DELETED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneDeleted, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 	})
 
@@ -1274,7 +1245,7 @@ func (s *GameService) AssignPlayerToScene(gameID string, sceneID primitive.Objec
 		}
 	}
 
-	s.hub.BroadcastToGame(gameID, "PLAYER_SCENE_CHANGED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventPlayerSceneChanged, map[string]interface{}{
 		"playerId": playerID.Hex(),
 		"sceneId":  sceneID.Hex(),
 		"assigned": assign,
@@ -1306,7 +1277,7 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_ADDED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterAdded, map[string]interface{}{
 		"sceneId":   sceneID.Hex(),
 		"character": gameChar,
 	})
@@ -1320,7 +1291,7 @@ func (s *GameService) MoveCharacterInScene(gameID string, sceneID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_MOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterMoved, map[string]interface{}{
 		"sceneId":     sceneID.Hex(),
 		"characterId": characterID.Hex(),
 		"x":           x,
@@ -1336,7 +1307,7 @@ func (s *GameService) RemoveCharacterFromScene(gameID string, sceneID primitive.
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_CHARACTER_REMOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterRemoved, map[string]interface{}{
 		"sceneId":     sceneID.Hex(),
 		"characterId": characterID.Hex(),
 	})
@@ -1371,7 +1342,7 @@ func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID,
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_ADDED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"image":   createdImage,
 	})
@@ -1409,7 +1380,7 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_UPDATED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"imageId": imageID.Hex(),
 		"update":  req,
@@ -1433,7 +1404,7 @@ func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "SCENE_IMAGE_DELETED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneImageDeleted, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"imageId": imageID.Hex(),
 	})

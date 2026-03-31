@@ -5,6 +5,7 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
 	"battle-helper/internal/storage"
+	"battle-helper/internal/websocket"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -602,7 +603,7 @@ func (h *MusicHandler) PlayTrack(c *gin.Context) {
 		"trackIndex": req.TrackIndex,
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, "MUSIC_PLAY", payload); err != nil {
+	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicPlay, payload); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -634,7 +635,7 @@ func (h *MusicHandler) PauseTrack(c *gin.Context) {
 		"position": req.Position,
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, "MUSIC_PAUSE", payload); err != nil {
+	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicPause, payload); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -656,7 +657,7 @@ func (h *MusicHandler) StopTrack(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, "MUSIC_STOP", map[string]interface{}{}); err != nil {
+	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicStop, map[string]interface{}{}); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -697,7 +698,7 @@ func (h *MusicHandler) SetVolume(c *gin.Context) {
 		"volume": volume,
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, "MUSIC_VOLUME", payload); err != nil {
+	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicVolume, payload); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}

@@ -41,6 +41,12 @@ const LogWindow = ({
             if (RollComponent) {
                 return <div key={index} className={isHidden ? 'log-entry--hidden-roll' : ''}>{isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}<RollComponent data={msg.data} timestamp={msg.timestamp} /></div>;
             }
+
+            // Unknown rollType for this system — show fallback instead of silently dropping
+            const isKnownType = system.supportedRollTypes?.includes(rollType);
+            if (!isKnownType) {
+                return <SimpleMessage key={index} text={`Roll: ${rollType}`} type="info" timestamp={msg.timestamp} />;
+            }
         }
 
         // Fallback for simple text messages

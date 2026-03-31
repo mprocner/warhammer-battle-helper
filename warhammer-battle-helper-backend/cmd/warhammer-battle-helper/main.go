@@ -113,7 +113,7 @@ func main() {
 	r.GET("/health", handleHealth)
 	r.POST("/roll", handleRoll)
 
-	// --- AUTH ---
+	// --- AUTH (public) ---
 	emailService := email.NewEmailService()
 	authHandler := http.AuthHandler{UserRepo: userRepo, EmailService: emailService}
 	r.POST("/register", authHandler.Register)
@@ -121,133 +121,138 @@ func main() {
 	r.GET("/verify-email", authHandler.VerifyEmail)
 	r.POST("/forgot-password", authHandler.ForgotPassword)
 	r.POST("/reset-password", authHandler.ResetPassword)
-	r.PATCH("/change-password", http.JWTAuthMiddleware(), authHandler.ChangePassword)
-	// --- END AUTH ---
 
-	// --- PROTECTED ---
-	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
+	// Static file serving (no auth)
+	avatarHandler := http.AvatarHandler{Storage: avatarStorage}
+	r.GET("/avatars/:filename", avatarHandler.GetAvatar)
 
-	r.GET("/profile", http.JWTAuthMiddleware(), authHandler.GetProfile)
-	r.PATCH("/profile", http.JWTAuthMiddleware(), authHandler.UpdateProfile)
-	r.GET("/settings", http.JWTAuthMiddleware(), authHandler.GetSettings)
-	r.PATCH("/settings", http.JWTAuthMiddleware(), authHandler.UpdateSettings)
+	fileHandler := http.FileHandler{UserRepo: userRepo, Storage: userFilesStorage, GameRepo: gameRepo, Hub: hub}
+	r.GET("/user-files/:filename", fileHandler.GetFile)
 
-	// --- GAME ROUTES ---
+	musicHandler := http.MusicHandler{UserRepo: userRepo, Storage: musicFilesStorage, GameService: gameService}
+	r.GET("/music-files/:filename", musicHandler.GetMusicFile)
+
+	handoutHandler := http.HandoutHandler{GameService: gameService, Storage: avatarStorage}
+	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
+
+	// GET /games/:id is JWT-optional (event visibility filtering)
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
-
-	// Public game routes (JWT optional — used for event visibility filtering)
 	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
-	// Protected game routes
-	r.GET("/games", http.JWTAuthMiddleware(), gameHandler.GetGames)
-	r.POST("/games", http.JWTAuthMiddleware(), gameHandler.CreateGame)
-	r.DELETE("/games/:id", http.JWTAuthMiddleware(), gameHandler.DeleteGame)
-	r.POST("/games/:id/invite", http.JWTAuthMiddleware(), gameHandler.InvitePlayer)
-	r.POST("/games/:id/join", http.JWTAuthMiddleware(), gameHandler.JoinGame)
-	r.POST("/games/:id/leave", http.JWTAuthMiddleware(), gameHandler.LeaveGame)
-	r.DELETE("/games/:id/participants/:userId", http.JWTAuthMiddleware(), gameHandler.KickPlayer)
-	r.GET("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.GetGameCharacters)
-	r.POST("/games/:id/characters", http.JWTAuthMiddleware(), characterHandler.CreateGameCharacter)
-	r.PUT("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.UpdateGameCharacter)
-	r.DELETE("/games/:id/characters/:charId", http.JWTAuthMiddleware(), characterHandler.DeleteGameCharacter)
-	r.POST("/games/:id/characters/:charId/clone", http.JWTAuthMiddleware(), characterHandler.CloneGameCharacter)
-	r.PUT("/games/:id/characters/:charId/visibility", http.JWTAuthMiddleware(), characterHandler.UpdateCharacterVisibility)
-	r.PATCH("/games/:id/participant", http.JWTAuthMiddleware(), gameHandler.UpdateParticipant)
-	r.POST("/games/:id/roll", http.JWTAuthMiddleware(), gameHandler.RollDice)
-	r.POST("/games/:id/rollSkill", http.JWTAuthMiddleware(), gameHandler.RollSkill)
-	r.POST("/games/:id/rollWeapon", http.JWTAuthMiddleware(), gameHandler.RollWeapon)
-	r.POST("/games/:id/message", http.JWTAuthMiddleware(), gameHandler.SendMessage)
-
-	// WebSocket route
+	// WebSocket (auth handled inside handler via token query param)
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
 
-	// --- SCENE ROUTES ---
+	// --- PROTECTED (JWT required for all routes below) ---
+	auth := r.Group("/").Use(http.JWTAuthMiddleware())
+
+	// Profile & settings
+	auth.PATCH("/change-password", authHandler.ChangePassword)
+	auth.GET("/profile", authHandler.GetProfile)
+	auth.PATCH("/profile", authHandler.UpdateProfile)
+	auth.GET("/settings", authHandler.GetSettings)
+	auth.PATCH("/settings", authHandler.UpdateSettings)
+
+	// Avatar upload
+	auth.POST("/avatars", avatarHandler.UploadAvatar)
+
+	// Games
+	auth.GET("/games", gameHandler.GetGames)
+	auth.POST("/games", gameHandler.CreateGame)
+
+	// Per-game actions
+	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
 	sceneHandler := http.SceneHandler{GameService: gameService}
-	r.GET("/games/:id/scenes", http.JWTAuthMiddleware(), sceneHandler.GetScenes)
-	r.POST("/games/:id/scenes", http.JWTAuthMiddleware(), sceneHandler.CreateScene)
-	r.PUT("/games/:id/scenes/:sceneId", http.JWTAuthMiddleware(), sceneHandler.UpdateScene)
-	r.DELETE("/games/:id/scenes/:sceneId", http.JWTAuthMiddleware(), sceneHandler.DeleteScene)
-	r.PUT("/games/:id/scenes/:sceneId/assign", http.JWTAuthMiddleware(), sceneHandler.AssignPlayerToScene)
-	r.POST("/games/:id/scenes/:sceneId/characters", http.JWTAuthMiddleware(), sceneHandler.AddSceneCharacter)
-	r.PUT("/games/:id/scenes/:sceneId/characters/move", http.JWTAuthMiddleware(), sceneHandler.MoveSceneCharacter)
-	r.DELETE("/games/:id/scenes/:sceneId/characters/:charId", http.JWTAuthMiddleware(), sceneHandler.RemoveSceneCharacter)
-	r.POST("/games/:id/scenes/:sceneId/images", http.JWTAuthMiddleware(), sceneHandler.AddSceneImage)
-	r.PUT("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.UpdateSceneImage)
-	r.DELETE("/games/:id/scenes/:sceneId/images/:imageId", http.JWTAuthMiddleware(), sceneHandler.DeleteSceneImage)
-
-	// --- FOG OF WAR ROUTES ---
 	fogHandler := http.FogHandler{FogService: fogService}
-	r.PATCH("/games/:id/scenes/:sceneId/fog", http.JWTAuthMiddleware(), fogHandler.ToggleFog)
-	r.POST("/games/:id/scenes/:sceneId/fog/path", http.JWTAuthMiddleware(), fogHandler.AddFogPath)
-	r.DELETE("/games/:id/scenes/:sceneId/fog/paths", http.JWTAuthMiddleware(), fogHandler.ClearFogPaths)
-	r.DELETE("/games/:id/scenes/:sceneId/fog/path/last", http.JWTAuthMiddleware(), fogHandler.UndoLastFogPath)
-	r.POST("/games/:id/scenes/:sceneId/fog/reveal-all", http.JWTAuthMiddleware(), fogHandler.RevealAllFog)
-	// --- END FOG OF WAR ROUTES ---
-
-	// --- DRAWING ROUTES ---
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
-	r.POST("/games/:id/scenes/:sceneId/drawing/path", http.JWTAuthMiddleware(), drawingHandler.AddDrawingPath)
-	r.DELETE("/games/:id/scenes/:sceneId/drawing/path/last", http.JWTAuthMiddleware(), drawingHandler.UndoLastDrawingPath)
-	r.DELETE("/games/:id/scenes/:sceneId/drawing/path/:pathId", http.JWTAuthMiddleware(), drawingHandler.DeleteDrawingPath)
-	r.DELETE("/games/:id/scenes/:sceneId/drawing/paths", http.JWTAuthMiddleware(), drawingHandler.ClearDrawingPaths)
-	// --- END DRAWING ROUTES ---
-	// --- END SCENE ROUTES ---
-	// --- END GAME ROUTES ---
 
-	// --- AVATAR ROUTES ---
-	avatarHandler := http.AvatarHandler{Storage: avatarStorage}
-	r.POST("/avatars", http.JWTAuthMiddleware(), avatarHandler.UploadAvatar)
-	r.GET("/avatars/:filename", avatarHandler.GetAvatar)
-	// --- END AVATAR ROUTES ---
+	game := r.Group("/games/:id").Use(http.JWTAuthMiddleware())
 
-	// --- HANDOUT ROUTES ---
-	handoutHandler := http.HandoutHandler{GameService: gameService, Storage: avatarStorage}
-	r.POST("/games/:id/handouts/upload", http.JWTAuthMiddleware(), handoutHandler.UploadHandoutFile)
-	r.POST("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.CreateHandout)
-	r.GET("/games/:id/handouts", http.JWTAuthMiddleware(), handoutHandler.GetHandouts)
-	r.PUT("/games/:id/handouts/reorder", http.JWTAuthMiddleware(), handoutHandler.ReorderHandouts)
-	r.PUT("/games/:id/handouts/:handoutId/move", http.JWTAuthMiddleware(), handoutHandler.MoveHandout)
-	r.PUT("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.UpdateHandout)
-	r.DELETE("/games/:id/handouts/:handoutId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandout)
-	r.POST("/games/:id/handout-folders", http.JWTAuthMiddleware(), handoutHandler.CreateHandoutFolder)
-	r.PUT("/games/:id/handout-folders/reorder", http.JWTAuthMiddleware(), handoutHandler.ReorderHandoutFolders)
-	r.PUT("/games/:id/handout-folders/:folderId", http.JWTAuthMiddleware(), handoutHandler.RenameHandoutFolder)
-	r.DELETE("/games/:id/handout-folders/:folderId", http.JWTAuthMiddleware(), handoutHandler.DeleteHandoutFolder)
-	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
-	// --- END HANDOUT ROUTES ---
+	game.DELETE("", gameHandler.DeleteGame)
+	game.POST("/invite", gameHandler.InvitePlayer)
+	game.POST("/join", gameHandler.JoinGame)
+	game.POST("/leave", gameHandler.LeaveGame)
+	game.DELETE("/participants/:userId", gameHandler.KickPlayer)
+	game.PATCH("/participant", gameHandler.UpdateParticipant)
+	game.POST("/roll", gameHandler.RollDice)
+	game.POST("/rollSkill", gameHandler.RollSkill)
+	game.POST("/rollWeapon", gameHandler.RollWeapon)
+	game.POST("/message", gameHandler.SendMessage)
 
-	// --- USER FILES ROUTES ---
-	fileHandler := http.FileHandler{UserRepo: userRepo, Storage: userFilesStorage, GameRepo: gameRepo, Hub: hub}
-	r.GET("/files", http.JWTAuthMiddleware(), fileHandler.GetFiles)
-	r.POST("/files/upload", http.JWTAuthMiddleware(), fileHandler.UploadFiles)
-	r.DELETE("/files/:fileId", http.JWTAuthMiddleware(), fileHandler.DeleteFile)
-	r.GET("/files/:fileId/usage", http.JWTAuthMiddleware(), fileHandler.GetFileUsage)
-	r.PUT("/files/:fileId/move", http.JWTAuthMiddleware(), fileHandler.MoveFile)
-	r.POST("/folders", http.JWTAuthMiddleware(), fileHandler.CreateFolder)
-	r.PUT("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.RenameFolder)
-	r.DELETE("/folders/:folderId", http.JWTAuthMiddleware(), fileHandler.DeleteFolder)
-	r.GET("/user-files/:filename", fileHandler.GetFile)
-	// --- END USER FILES ROUTES ---
+	// Characters
+	game.GET("/characters", characterHandler.GetGameCharacters)
+	game.POST("/characters", characterHandler.CreateGameCharacter)
+	game.PUT("/characters/:charId", characterHandler.UpdateGameCharacter)
+	game.DELETE("/characters/:charId", characterHandler.DeleteGameCharacter)
+	game.POST("/characters/:charId/clone", characterHandler.CloneGameCharacter)
+	game.PUT("/characters/:charId/visibility", characterHandler.UpdateCharacterVisibility)
 
-	// --- MUSIC ROUTES ---
-	musicHandler := http.MusicHandler{UserRepo: userRepo, Storage: musicFilesStorage, GameService: gameService}
-	r.GET("/music", http.JWTAuthMiddleware(), musicHandler.GetMusic)
-	r.POST("/music/upload", http.JWTAuthMiddleware(), musicHandler.UploadMusic)
-	r.DELETE("/music/:musicId", http.JWTAuthMiddleware(), musicHandler.DeleteMusic)
-	r.PUT("/music/:musicId/move", http.JWTAuthMiddleware(), musicHandler.MoveMusicFile)
-	r.POST("/music/folders", http.JWTAuthMiddleware(), musicHandler.CreateMusicFolder)
-	r.PUT("/music/folders/:folderId", http.JWTAuthMiddleware(), musicHandler.RenameMusicFolder)
-	r.DELETE("/music/folders/:folderId", http.JWTAuthMiddleware(), musicHandler.DeleteMusicFolder)
-	r.GET("/music-files/:filename", musicHandler.GetMusicFile)
-	r.POST("/playlists", http.JWTAuthMiddleware(), musicHandler.CreatePlaylist)
-	r.PUT("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.UpdatePlaylist)
-	r.DELETE("/playlists/:playlistId", http.JWTAuthMiddleware(), musicHandler.DeletePlaylist)
-	r.PUT("/playlists/reorder", http.JWTAuthMiddleware(), musicHandler.ReorderPlaylists)
-	r.POST("/games/:id/music/play", http.JWTAuthMiddleware(), musicHandler.PlayTrack)
-	r.POST("/games/:id/music/pause", http.JWTAuthMiddleware(), musicHandler.PauseTrack)
-	r.POST("/games/:id/music/stop", http.JWTAuthMiddleware(), musicHandler.StopTrack)
-	r.POST("/games/:id/music/volume", http.JWTAuthMiddleware(), musicHandler.SetVolume)
-	// --- END MUSIC ROUTES ---
+	// Scenes
+	game.GET("/scenes", sceneHandler.GetScenes)
+	game.POST("/scenes", sceneHandler.CreateScene)
+	game.PUT("/scenes/:sceneId", sceneHandler.UpdateScene)
+	game.DELETE("/scenes/:sceneId", sceneHandler.DeleteScene)
+	game.PUT("/scenes/:sceneId/assign", sceneHandler.AssignPlayerToScene)
+	game.POST("/scenes/:sceneId/characters", sceneHandler.AddSceneCharacter)
+	game.PUT("/scenes/:sceneId/characters/move", sceneHandler.MoveSceneCharacter)
+	game.DELETE("/scenes/:sceneId/characters/:charId", sceneHandler.RemoveSceneCharacter)
+	game.POST("/scenes/:sceneId/images", sceneHandler.AddSceneImage)
+	game.PUT("/scenes/:sceneId/images/:imageId", sceneHandler.UpdateSceneImage)
+	game.DELETE("/scenes/:sceneId/images/:imageId", sceneHandler.DeleteSceneImage)
+
+	// Fog of war
+	game.PATCH("/scenes/:sceneId/fog", fogHandler.ToggleFog)
+	game.POST("/scenes/:sceneId/fog/path", fogHandler.AddFogPath)
+	game.DELETE("/scenes/:sceneId/fog/paths", fogHandler.ClearFogPaths)
+	game.DELETE("/scenes/:sceneId/fog/path/last", fogHandler.UndoLastFogPath)
+	game.POST("/scenes/:sceneId/fog/reveal-all", fogHandler.RevealAllFog)
+
+	// Drawing
+	game.POST("/scenes/:sceneId/drawing/path", drawingHandler.AddDrawingPath)
+	game.DELETE("/scenes/:sceneId/drawing/path/last", drawingHandler.UndoLastDrawingPath)
+	game.DELETE("/scenes/:sceneId/drawing/path/:pathId", drawingHandler.DeleteDrawingPath)
+	game.DELETE("/scenes/:sceneId/drawing/paths", drawingHandler.ClearDrawingPaths)
+
+	// Handouts
+	game.POST("/handouts/upload", handoutHandler.UploadHandoutFile)
+	game.POST("/handouts", handoutHandler.CreateHandout)
+	game.GET("/handouts", handoutHandler.GetHandouts)
+	game.PUT("/handouts/reorder", handoutHandler.ReorderHandouts)
+	game.PUT("/handouts/:handoutId/move", handoutHandler.MoveHandout)
+	game.PUT("/handouts/:handoutId", handoutHandler.UpdateHandout)
+	game.DELETE("/handouts/:handoutId", handoutHandler.DeleteHandout)
+	game.POST("/handout-folders", handoutHandler.CreateHandoutFolder)
+	game.PUT("/handout-folders/reorder", handoutHandler.ReorderHandoutFolders)
+	game.PUT("/handout-folders/:folderId", handoutHandler.RenameHandoutFolder)
+	game.DELETE("/handout-folders/:folderId", handoutHandler.DeleteHandoutFolder)
+
+	// Music playback (game-scoped)
+	game.POST("/music/play", musicHandler.PlayTrack)
+	game.POST("/music/pause", musicHandler.PauseTrack)
+	game.POST("/music/stop", musicHandler.StopTrack)
+	game.POST("/music/volume", musicHandler.SetVolume)
+
+	// User files
+	auth.GET("/files", fileHandler.GetFiles)
+	auth.POST("/files/upload", fileHandler.UploadFiles)
+	auth.DELETE("/files/:fileId", fileHandler.DeleteFile)
+	auth.GET("/files/:fileId/usage", fileHandler.GetFileUsage)
+	auth.PUT("/files/:fileId/move", fileHandler.MoveFile)
+	auth.POST("/folders", fileHandler.CreateFolder)
+	auth.PUT("/folders/:folderId", fileHandler.RenameFolder)
+	auth.DELETE("/folders/:folderId", fileHandler.DeleteFolder)
+
+	// Music library
+	auth.GET("/music", musicHandler.GetMusic)
+	auth.POST("/music/upload", musicHandler.UploadMusic)
+	auth.DELETE("/music/:musicId", musicHandler.DeleteMusic)
+	auth.PUT("/music/:musicId/move", musicHandler.MoveMusicFile)
+	auth.POST("/music/folders", musicHandler.CreateMusicFolder)
+	auth.PUT("/music/folders/:folderId", musicHandler.RenameMusicFolder)
+	auth.DELETE("/music/folders/:folderId", musicHandler.DeleteMusicFolder)
+	auth.POST("/playlists", musicHandler.CreatePlaylist)
+	auth.PUT("/playlists/:playlistId", musicHandler.UpdatePlaylist)
+	auth.DELETE("/playlists/:playlistId", musicHandler.DeletePlaylist)
+	auth.PUT("/playlists/reorder", musicHandler.ReorderPlaylists)
 	// --- END PROTECTED ---
 
 	httpPort := os.Getenv("PORT")

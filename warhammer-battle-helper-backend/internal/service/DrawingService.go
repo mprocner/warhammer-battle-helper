@@ -84,7 +84,7 @@ func (s *DrawingService) AddDrawingPath(gameID string, sceneID primitive.ObjectI
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "DRAWING_PATH_ADDED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathAdded, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"path":    path,
 	})
@@ -144,7 +144,7 @@ func (s *DrawingService) UndoLastDrawingPath(gameID string, sceneID primitive.Ob
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "DRAWING_PATH_REMOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathRemoved, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"pathId":  pathID.Hex(),
 	})
@@ -185,7 +185,7 @@ func (s *DrawingService) DeleteDrawingPath(gameID string, sceneID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "DRAWING_PATH_REMOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathRemoved, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"pathId":  pathID.Hex(),
 	})
@@ -202,7 +202,7 @@ func (s *DrawingService) ClearDrawingPaths(gameID string, sceneID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "DRAWING_CLEARED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingCleared, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 	})
 	return nil

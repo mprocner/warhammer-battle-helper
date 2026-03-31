@@ -270,8 +270,8 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	}
 
 	if h.Hub != nil {
-		h.Hub.BroadcastToGame(gameID, "CHARACTER_UPDATED", map[string]interface{}{
-			"characterId": charID,
+		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterUpdated, map[string]interface{}{
+			"character": updatedCharacter,
 		})
 	}
 
@@ -430,7 +430,7 @@ func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 	}
 
 	if h.Hub != nil {
-		h.Hub.BroadcastToGame(gameID, "CHARACTER_VISIBILITY_UPDATED", map[string]interface{}{
+		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterVisibilityUpdated, map[string]interface{}{
 			"characterId": charID,
 			"visibleTo":   req.VisibleTo,
 		})

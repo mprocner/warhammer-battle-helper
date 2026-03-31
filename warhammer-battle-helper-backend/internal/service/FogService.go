@@ -47,7 +47,7 @@ func (s *FogService) ToggleFog(gameID string, sceneID primitive.ObjectID, userID
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "FOG_TOGGLED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventFogToggled, map[string]interface{}{
 		"sceneId":    sceneID.Hex(),
 		"fogEnabled": req.Enabled,
 		"fogOpacity": opacity,
@@ -77,7 +77,7 @@ func (s *FogService) AddFogPath(gameID string, sceneID primitive.ObjectID, userI
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "FOG_PATH_ADDED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventFogPathAdded, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"path":    path,
 	})
@@ -94,7 +94,7 @@ func (s *FogService) ClearFogPaths(gameID string, sceneID primitive.ObjectID, us
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "FOG_CLEARED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventFogCleared, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 	})
 	return nil
@@ -116,7 +116,7 @@ func (s *FogService) RevealAllFog(gameID string, sceneID primitive.ObjectID, use
 		Shape:     "rect",
 		Cover:     false,
 	}
-	s.hub.BroadcastToGame(gameID, "FOG_REVEALED_ALL", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventFogRevealedAll, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"path":    fullReveal,
 	})
@@ -133,7 +133,7 @@ func (s *FogService) UndoLastFogPath(gameID string, sceneID primitive.ObjectID, 
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, "FOG_PATH_REMOVED", map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventFogPathRemoved, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 	})
 	return nil
