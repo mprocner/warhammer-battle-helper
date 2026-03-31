@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CoCDiceModOverlay from '../CoCDiceModOverlay';
 import CasinoIcon from '@mui/icons-material/Casino';
 
-function ResourcesSection({ edited, onFieldChange, onRollAttr, gameId }) {
+function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId }) {
   const { t } = useTranslation();
   return (
     <div className="coc-section">
@@ -54,11 +54,11 @@ function ResourcesSection({ edited, onFieldChange, onRollAttr, gameId }) {
         </div>
         <div className="coc-resource-pair">
           <label>{t('coc.damageBonus')}</label>
-          <span className="coc-resource-pair__derived">{edited.damageBonus || '0'}</span>
+          <span className="coc-resource-pair__derived">{combat?.damageBonus || '0'}</span>
         </div>
         <div className="coc-resource-pair">
           <label>{t('coc.build')}</label>
-          <span className="coc-resource-pair__derived">{edited.build ?? 0}</span>
+          <span className="coc-resource-pair__derived">{combat?.build ?? 0}</span>
         </div>
       </div>
     </div>

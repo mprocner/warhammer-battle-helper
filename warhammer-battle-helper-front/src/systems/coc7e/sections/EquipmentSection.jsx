@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-function EquipmentSection({ edited, onFieldChange }) {
+function EquipmentSection({ equipment, finances, onEquipmentChange, onFinancesChange }) {
   const { t } = useTranslation();
   return (
     <div className="coc-section">
@@ -10,8 +10,8 @@ function EquipmentSection({ edited, onFieldChange }) {
           <h4 className="coc-section-title">{t('coc.equipmentSection')}</h4>
           <textarea
             className="coc-equip-textarea"
-            value={edited.equipment || ''}
-            onChange={e => onFieldChange('equipment', e.target.value)}
+            value={equipment || ''}
+            onChange={e => onEquipmentChange(e.target.value)}
           />
         </div>
         <div className="coc-equip-panel">
@@ -19,18 +19,18 @@ function EquipmentSection({ edited, onFieldChange }) {
           <div className="coc-equip-inputs">
             <div className="coc-equip-input-row">
               <label>{t('coc.spendingLevel')}</label>
-              <input value={edited.spendingLevel || ''} onChange={e => onFieldChange('spendingLevel', e.target.value)} />
+              <input value={finances.spendingLevel || ''} onChange={e => onFinancesChange('spendingLevel', e.target.value)} />
             </div>
             <div className="coc-equip-input-row">
               <label>{t('coc.cash')}</label>
-              <input value={edited.cash || ''} onChange={e => onFieldChange('cash', e.target.value)} />
+              <input value={finances.cash || ''} onChange={e => onFinancesChange('cash', e.target.value)} />
             </div>
           </div>
           <label className="coc-bg-label">{t('coc.assets')}</label>
           <textarea
             className="coc-equip-textarea"
-            value={edited.assets || ''}
-            onChange={e => onFieldChange('assets', e.target.value)}
+            value={finances.assets || ''}
+            onChange={e => onFinancesChange('assets', e.target.value)}
           />
         </div>
       </div>

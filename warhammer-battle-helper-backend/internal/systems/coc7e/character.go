@@ -35,17 +35,17 @@ func (f *FlexInt) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 	return nil
 }
 
-// CustomSkill is a user-defined skill entry. Its runtime value lives in Skills[Key].
-type CustomSkill struct {
-	Key  string `bson:"key" json:"key"`
-	Name string `bson:"name" json:"name"`
-	Base int    `bson:"base" json:"base"`
+// BasicInfo holds occupational and personal identity fields.
+type BasicInfo struct {
+	Occupation string `bson:"occupation" json:"occupation"`
+	Age        int    `bson:"age"        json:"age"`
+	Sex        string `bson:"sex"        json:"sex"`
+	Residence  string `bson:"residence"  json:"residence"`
+	Birthplace string `bson:"birthplace" json:"birthplace"`
 }
 
-// Stats holds all Call of Cthulhu 7e character data.
-// It is serialised as BSON and stored in Character.Stats.
-type Stats struct {
-	// Core attributes (base values, e.g. 3d6*5 for STR)
+// Attributes holds the eight core CoC characteristics plus movement.
+type Attributes struct {
 	STR int `bson:"str" json:"str"`
 	CON int `bson:"con" json:"con"`
 	SIZ int `bson:"siz" json:"siz"`
@@ -54,70 +54,80 @@ type Stats struct {
 	INT int `bson:"int" json:"int"`
 	POW int `bson:"pow" json:"pow"`
 	EDU int `bson:"edu" json:"edu"`
-
-	// Movement
 	MOV int `bson:"mov" json:"mov"`
+}
 
-	// Derived / tracked values
-	HP        int `bson:"hp" json:"hp"`
-	HPMax     int `bson:"hpMax" json:"hpMax"`
-	MP        int `bson:"mp" json:"mp"`
-	MPMax     int `bson:"mpMax" json:"mpMax"`
-	Sanity    int `bson:"sanity" json:"sanity"`
+// Resources holds tracked resource pools and their maximums.
+type Resources struct {
+	HP        int `bson:"hp"        json:"hp"`
+	HPMax     int `bson:"hpMax"     json:"hpMax"`
+	MP        int `bson:"mp"        json:"mp"`
+	MPMax     int `bson:"mpMax"     json:"mpMax"`
+	Sanity    int `bson:"sanity"    json:"sanity"`
 	SanityMax int `bson:"sanityMax" json:"sanityMax"`
-	Luck      int `bson:"luck" json:"luck"`
+	Luck      int `bson:"luck"      json:"luck"`
+}
 
-	// Damage Bonus & Build
+// Combat holds fields derived from STR+SIZ.
+type Combat struct {
 	DamageBonus string `bson:"damageBonus" json:"damageBonus"`
-	Build       int    `bson:"build" json:"build"`
+	Build       int    `bson:"build"       json:"build"`
+}
 
-	// Skills: key -> current percentage (e.g. "fighting_brawl" -> 65)
-	Skills map[string]int `bson:"skills" json:"skills"`
-
-	// Custom skills defined by the player (definition only; values live in Skills map)
-	CustomSkills []CustomSkill `bson:"customSkills" json:"customSkills"`
-
-	// Checkbox arrays for skill tracking
-	FavoriteSkills    []string `bson:"favoriteSkills" json:"favoriteSkills"`
-	DevelopmentSkills []string `bson:"developmentSkills" json:"developmentSkills"`
-
-	// Occupational info
-	Occupation string `bson:"occupation" json:"occupation"`
-	Age        int    `bson:"age" json:"age"`
-	Sex        string `bson:"sex" json:"sex"`
-	Residence  string `bson:"residence" json:"residence"`
-	Birthplace string `bson:"birthplace" json:"birthplace"`
-
-	// Weapons: simplified list
-	Weapons []CoCWeapon `bson:"weapons" json:"weapons"`
-
-	// Equipment & cash
-	Equipment     string `bson:"equipment" json:"equipment"`
+// Finances holds monetary fields.
+type Finances struct {
 	SpendingLevel string `bson:"spendingLevel" json:"spendingLevel"`
-	Cash          string `bson:"cash" json:"cash"`
-	Assets        string `bson:"assets" json:"assets"`
+	Cash          string `bson:"cash"          json:"cash"`
+	Assets        string `bson:"assets"        json:"assets"`
+}
 
-	// Background / flavour text
-	PersonalDescription    string `bson:"personalDescription" json:"personalDescription"`
-	Ideology               string `bson:"ideology" json:"ideology"`
-	SignificantPeople      string `bson:"significantPeople" json:"significantPeople"`
-	MeaningfulLocations    string `bson:"meaningfulLocations" json:"meaningfulLocations"`
-	Possessions            string `bson:"possessions" json:"possessions"`
-	Traits                 string `bson:"traits" json:"traits"`
-	InjuriesScars          string `bson:"injuriesScars" json:"injuriesScars"`
-	PhobiasManias          string `bson:"phobiasManias" json:"phobiasManias"`
-	ArcaneTomes            string `bson:"arcaneTomes" json:"arcaneTomes"`
+// Background holds flavour/narrative text fields.
+type Background struct {
+	PersonalDescription    string `bson:"personalDescription"    json:"personalDescription"`
+	Ideology               string `bson:"ideology"               json:"ideology"`
+	SignificantPeople      string `bson:"significantPeople"      json:"significantPeople"`
+	MeaningfulLocations    string `bson:"meaningfulLocations"    json:"meaningfulLocations"`
+	Possessions            string `bson:"possessions"            json:"possessions"`
+	Traits                 string `bson:"traits"                 json:"traits"`
+	InjuriesScars          string `bson:"injuriesScars"          json:"injuriesScars"`
+	PhobiasManias          string `bson:"phobiasManias"          json:"phobiasManias"`
+	ArcaneTomes            string `bson:"arcaneTomes"            json:"arcaneTomes"`
 	EncountersWithEntities string `bson:"encountersWithEntities" json:"encountersWithEntities"`
+}
+
+// CustomSkill is a user-defined skill entry. Value holds the current percentage.
+type CustomSkill struct {
+	Key   string `bson:"key"   json:"key"`
+	Name  string `bson:"name"  json:"name"`
+	Base  int    `bson:"base"  json:"base"`
+	Value int    `bson:"value" json:"value"`
+}
+
+// Stats holds all Call of Cthulhu 7e character data.
+// It is serialised as BSON and stored in Character.Stats.
+type Stats struct {
+	BasicInfo         BasicInfo      `bson:"basicInfo"         json:"basicInfo"`
+	Attributes        Attributes     `bson:"attributes"        json:"attributes"`
+	Resources         Resources      `bson:"resources"         json:"resources"`
+	Combat            Combat         `bson:"combat"            json:"combat"`
+	Finances          Finances       `bson:"finances"          json:"finances"`
+	Equipment         string         `bson:"equipment"         json:"equipment"`
+	Skills            map[string]int `bson:"skills"            json:"skills"`
+	CustomSkills      []CustomSkill  `bson:"customSkills"      json:"customSkills"`
+	FavoriteSkills    []string       `bson:"favoriteSkills"    json:"favoriteSkills"`
+	DevelopmentSkills []string       `bson:"developmentSkills" json:"developmentSkills"`
+	Weapons           []CoCWeapon    `bson:"weapons"           json:"weapons"`
+	Background        Background     `bson:"background"        json:"background"`
 }
 
 // CoCWeapon is a simple CoC weapon entry (damage dice + skill key).
 type CoCWeapon struct {
-	Name        string  `bson:"name" json:"name"`
-	SkillKey    string  `bson:"skillKey" json:"skillKey"` // e.g. "fighting_brawl"
-	Damage      string  `bson:"damage" json:"damage"`     // e.g. "1d3+db"
-	Range       string  `bson:"range" json:"range"`
-	Attacks     FlexInt `bson:"attacks" json:"attacks"`
-	Ammo        FlexInt `bson:"ammo" json:"ammo"`
+	Name        string  `bson:"name"        json:"name"`
+	SkillKey    string  `bson:"skillKey"    json:"skillKey"`
+	Damage      string  `bson:"damage"      json:"damage"`
+	Range       string  `bson:"range"       json:"range"`
+	Attacks     FlexInt `bson:"attacks"     json:"attacks"`
+	Ammo        FlexInt `bson:"ammo"        json:"ammo"`
 	Malfunction FlexInt `bson:"malfunction" json:"malfunction"`
 	IsFavourite bool    `bson:"isFavourite" json:"isFavourite"`
 }

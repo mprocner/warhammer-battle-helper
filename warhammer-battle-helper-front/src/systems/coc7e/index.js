@@ -22,11 +22,17 @@ function normalizeCharacter(char) {
         ...char,
         stats: {
             ...stats,
+            basicInfo:         stats.basicInfo         || {},
+            attributes:        stats.attributes        || {},
+            resources:         stats.resources         || {},
+            combat:            stats.combat            || {},
+            finances:          stats.finances          || {},
+            background:        stats.background        || {},
             skills:            stats.skills            || {},
-            customSkills:      stats.customSkills       || [],
-            favoriteSkills:    stats.favoriteSkills     || [],
-            developmentSkills: stats.developmentSkills  || [],
-            weapons:           stats.weapons            || [],
+            customSkills:      stats.customSkills      || [],
+            favoriteSkills:    stats.favoriteSkills    || [],
+            developmentSkills: stats.developmentSkills || [],
+            weapons:           stats.weapons           || [],
         },
     };
 }

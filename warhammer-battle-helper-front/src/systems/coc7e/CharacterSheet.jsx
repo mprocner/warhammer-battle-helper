@@ -21,14 +21,25 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const stats = character.stats || {};
 
   const [edited, setEdited] = useState(() => {
-    const s = { ...stats };
-    const weps = s.weapons || [];
+    const weps = stats.weapons || [];
     const first = weps[0] || {};
-    s.weapons = [
-      { ...DEFAULT_UNARMED, ...first, name: first.name || DEFAULT_UNARMED.name },
-      ...weps.slice(1)
-    ];
-    return s;
+    return {
+      ...stats,
+      basicInfo:         stats.basicInfo         || {},
+      attributes:        stats.attributes        || {},
+      resources:         stats.resources         || {},
+      combat:            stats.combat            || {},
+      finances:          stats.finances          || {},
+      background:        stats.background        || {},
+      skills:            stats.skills            || {},
+      customSkills:      stats.customSkills      || [],
+      favoriteSkills:    stats.favoriteSkills    || [],
+      developmentSkills: stats.developmentSkills || [],
+      weapons: [
+        { ...DEFAULT_UNARMED, ...first, name: first.name || DEFAULT_UNARMED.name },
+        ...weps.slice(1)
+      ],
+    };
   });
   const [charName, setCharName] = useState(character.name || '');
   const [charAvatar, setCharAvatar] = useState(character.avatar || '');
@@ -37,17 +48,22 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
 
   // Sync resource fields changed from the left panel (CharacterDetails)
   React.useEffect(() => {
+    const r = character.stats?.resources || {};
     setEdited(prev => ({
       ...prev,
-      hp: character.stats?.hp ?? prev.hp,
-      hpMax: character.stats?.hpMax ?? prev.hpMax,
-      sanity: character.stats?.sanity ?? prev.sanity,
-      luck: character.stats?.luck ?? prev.luck,
-      mp: character.stats?.mp ?? prev.mp,
-      mpMax: character.stats?.mpMax ?? prev.mpMax,
+      resources: {
+        ...prev.resources,
+        hp:        r.hp        ?? prev.resources.hp,
+        hpMax:     r.hpMax     ?? prev.resources.hpMax,
+        sanity:    r.sanity    ?? prev.resources.sanity,
+        sanityMax: r.sanityMax ?? prev.resources.sanityMax,
+        luck:      r.luck      ?? prev.resources.luck,
+        mp:        r.mp        ?? prev.resources.mp,
+        mpMax:     r.mpMax     ?? prev.resources.mpMax,
+      },
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character.stats?.hp, character.stats?.hpMax, character.stats?.sanity, character.stats?.luck, character.stats?.mp, character.stats?.mpMax]);
+  }, [character.stats?.resources?.hp, character.stats?.resources?.hpMax, character.stats?.resources?.sanity, character.stats?.resources?.luck, character.stats?.resources?.mp, character.stats?.resources?.mpMax]);
 
   const autoSaveTimer = useRef(null);
   const charNameRef = useRef(character.name || '');
@@ -64,9 +80,18 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       if (updatedStats) {
         setEdited(prev => ({
           ...prev,
-          ...(updatedStats.sanityMax !== undefined && { sanityMax: updatedStats.sanityMax, sanity: updatedStats.sanity }),
-          ...(updatedStats.damageBonus !== undefined && { damageBonus: updatedStats.damageBonus }),
-          ...(updatedStats.build !== undefined && { build: updatedStats.build }),
+          resources: {
+            ...prev.resources,
+            ...(updatedStats.resources?.sanityMax !== undefined && {
+              sanityMax: updatedStats.resources.sanityMax,
+              sanity: updatedStats.resources.sanity,
+            }),
+          },
+          combat: {
+            ...prev.combat,
+            ...(updatedStats.combat?.damageBonus !== undefined && { damageBonus: updatedStats.combat.damageBonus }),
+            ...(updatedStats.combat?.build !== undefined && { build: updatedStats.combat.build }),
+          },
         }));
       }
       setSaveSuccess(true);
@@ -105,16 +130,25 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     saveCharacter({ ...character, name: charNameRef.current, avatar: url, stats: edited });
   }, [character, edited, saveCharacter]);
 
-  const setField = useCallback((key, value) => {
-    setEdited(prev => ({ ...prev, [key]: value }));
+  const setGroup = useCallback((group, field, value) => {
+    setEdited(prev => ({ ...prev, [group]: { ...prev[group], [field]: value } }));
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
   const setSkill = useCallback((skillKey, value) => {
-    setEdited(prev => ({
-      ...prev,
-      skills: { ...(prev.skills || {}), [skillKey]: parseInt(value) || 0 }
-    }));
+    if (skillKey.startsWith('custom_')) {
+      setEdited(prev => ({
+        ...prev,
+        customSkills: prev.customSkills.map(cs =>
+          cs.key === skillKey ? { ...cs, value: parseInt(value) || 0 } : cs
+        ),
+      }));
+    } else {
+      setEdited(prev => ({
+        ...prev,
+        skills: { ...prev.skills, [skillKey]: parseInt(value) || 0 },
+      }));
+    }
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
@@ -135,21 +169,16 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const addCustomSkill = useCallback((key) => {
     setEdited(prev => ({
       ...prev,
-      customSkills: [...(prev.customSkills || []), { key, name: '', base: 0 }]
+      customSkills: [...(prev.customSkills || []), { key, name: '', base: 0, value: 0 }]
     }));
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
   const removeCustomSkill = useCallback((key) => {
-    setEdited(prev => {
-      const skills = { ...(prev.skills || {}) };
-      delete skills[key];
-      return {
-        ...prev,
-        customSkills: (prev.customSkills || []).filter(cs => cs.key !== key),
-        skills,
-      };
-    });
+    setEdited(prev => ({
+      ...prev,
+      customSkills: (prev.customSkills || []).filter(cs => cs.key !== key),
+    }));
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
@@ -260,22 +289,23 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           <CharacterInfoSection
             charName={charName}
             charAvatar={charAvatar}
-            edited={edited}
+            edited={edited.basicInfo}
             onNameChange={handleNameChange}
             onAvatarChange={handleAvatarChange}
-            onFieldChange={setField}
+            onFieldChange={(k, v) => setGroup('basicInfo', k, v)}
           />
           <ResourcesSection
-            edited={edited}
-            onFieldChange={setField}
+            edited={edited.resources}
+            combat={edited.combat}
+            onFieldChange={(k, v) => setGroup('resources', k, v)}
             onRollAttr={rollAttr}
             gameId={gameId}
           />
         </div>
         <div className="coc-col-attrs">
           <AttributesSection
-            edited={edited}
-            onFieldChange={setField}
+            edited={edited.attributes}
+            onFieldChange={(k, v) => setGroup('attributes', k, v)}
             onRollAttr={rollAttr}
             gameId={gameId}
           />
@@ -305,8 +335,16 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
         gameId={gameId}
       />
 
-      <EquipmentSection edited={edited} onFieldChange={setField} />
-      <BackgroundSection edited={edited} onFieldChange={setField} />
+      <EquipmentSection
+        equipment={edited.equipment}
+        finances={edited.finances}
+        onEquipmentChange={(v) => { setEdited(prev => ({ ...prev, equipment: v })); scheduleAutoSave(); }}
+        onFinancesChange={(k, v) => setGroup('finances', k, v)}
+      />
+      <BackgroundSection
+        edited={edited.background}
+        onFieldChange={(k, v) => setGroup('background', k, v)}
+      />
     </div>
   );
 

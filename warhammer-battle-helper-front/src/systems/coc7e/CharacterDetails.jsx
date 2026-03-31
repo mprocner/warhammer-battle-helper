@@ -37,11 +37,19 @@ function CoCCharacterDetails({
   const [showDetails, setShowDetails] = useState(false);
 
   const stats = character?.stats || {};
+  const resources = stats.resources || {};
+  const attributes = stats.attributes || {};
 
   const handleSanityChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, sanity: Math.max(0, Math.min(stats.sanityMax || 99, Number(newValue) || 0)) }
+      stats: {
+        ...stats,
+        resources: {
+          ...resources,
+          sanity: Math.max(0, Math.min(resources.sanityMax || 99, Number(newValue) || 0)),
+        },
+      },
     };
     onCharacterUpdate(updated);
     try {
@@ -54,7 +62,13 @@ function CoCCharacterDetails({
   const handleHpChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, hp: Math.max(0, Math.min(stats.hpMax || 0, Number(newValue) || 0)) }
+      stats: {
+        ...stats,
+        resources: {
+          ...resources,
+          hp: Math.max(0, Math.min(resources.hpMax || 0, Number(newValue) || 0)),
+        },
+      },
     };
     onCharacterUpdate(updated);
     try {
@@ -67,7 +81,13 @@ function CoCCharacterDetails({
   const handleLuckChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, luck: Math.max(0, Math.min(99, Number(newValue) || 0)) }
+      stats: {
+        ...stats,
+        resources: {
+          ...resources,
+          luck: Math.max(0, Math.min(99, Number(newValue) || 0)),
+        },
+      },
     };
     onCharacterUpdate(updated);
     try {
@@ -80,7 +100,13 @@ function CoCCharacterDetails({
   const handleMpChange = async (newValue) => {
     const updated = {
       ...character,
-      stats: { ...stats, mp: Math.max(0, Math.min(stats.mpMax || 0, Number(newValue) || 0)) }
+      stats: {
+        ...stats,
+        resources: {
+          ...resources,
+          mp: Math.max(0, Math.min(resources.mpMax || 0, Number(newValue) || 0)),
+        },
+      },
     };
     onCharacterUpdate(updated);
     try {
@@ -164,8 +190,7 @@ function CoCCharacterDetails({
         }
         const custom = customSkills.find(cs => cs.key === key);
         if (custom) {
-          const val = (stats.skills || {})[key] ?? custom.base ?? 0;
-          return { key, label: custom.name || key, value: val };
+          return { key, label: custom.name || key, value: custom.value ?? custom.base ?? 0 };
         }
         return null;
       })
@@ -203,12 +228,12 @@ function CoCCharacterDetails({
                 className="wounds-input"
                 min={0}
                 max={99}
-                value={stats.luck ?? 0}
+                value={resources.luck ?? 0}
                 onChange={e => handleLuckChange(e.target.value)}
               />
             </div>
             {gameId && (
-              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('luck', stats.luck, d)} disabled={!gameId}>
+              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('luck', resources.luck, d)} disabled={!gameId}>
                 <button className="coc-roll-btn" title={`Roll ${t('coc.luck')}`}>
                   <CasinoIcon fontSize="small" />
                 </button>
@@ -224,14 +249,14 @@ function CoCCharacterDetails({
                 type="number"
                 className="wounds-input"
                 min={0}
-                max={stats.sanityMax || 99}
-                value={stats.sanity ?? stats.sanityMax ?? 0}
+                max={resources.sanityMax || 99}
+                value={resources.sanity ?? resources.sanityMax ?? 0}
                 onChange={e => handleSanityChange(e.target.value)}
               />
-              <span>/ {stats.sanityMax || '—'}</span>
+              <span>/ {resources.sanityMax || '—'}</span>
             </div>
             {gameId && (
-              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('sanity', stats.sanity, d)} disabled={!gameId}>
+              <CoCDiceModOverlay onDiceModRoll={(d) => rollAttr('sanity', resources.sanity, d)} disabled={!gameId}>
                 <button className="coc-roll-btn" title={`Roll ${t('coc.sanity')}`}>
                   <CasinoIcon fontSize="small" />
                 </button>
@@ -247,11 +272,11 @@ function CoCCharacterDetails({
                 type="number"
                 className="wounds-input"
                 min={0}
-                max={stats.hpMax || 0}
-                value={stats.hp ?? 0}
+                max={resources.hpMax || 0}
+                value={resources.hp ?? 0}
                 onChange={e => handleHpChange(e.target.value)}
               />
-              <span>/ {stats.hpMax || '—'}</span>
+              <span>/ {resources.hpMax || '—'}</span>
             </div>
           </div>
         </div>
@@ -263,11 +288,11 @@ function CoCCharacterDetails({
                 type="number"
                 className="wounds-input"
                 min={0}
-                max={stats.mpMax || 0}
-                value={stats.mp ?? 0}
+                max={resources.mpMax || 0}
+                value={resources.mp ?? 0}
                 onChange={e => handleMpChange(e.target.value)}
               />
-              <span>/ {stats.mpMax || '—'}</span>
+              <span>/ {resources.mpMax || '—'}</span>
             </div>
           </div>
         </div>
@@ -276,7 +301,7 @@ function CoCCharacterDetails({
       {/* Attribute mini grid */}
       <div className="characteristics-mini">
         {COC_ATTRS.map(({ key, labelKey }) => {
-          const val = stats[key] || 0;
+          const val = attributes[key] || 0;
           const label = t(labelKey);
           return (
             <CoCDiceModOverlay key={key} onDiceModRoll={(d) => rollAttr(key, val, d)} disabled={!val || !gameId}>

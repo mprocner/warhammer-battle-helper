@@ -42,9 +42,9 @@ func skillBaseValue(stats *Stats, key string) int {
 	}
 	switch def.BaseFormula {
 	case "DEX/2":
-		return stats.DEX / 2
+		return stats.Attributes.DEX / 2
 	case "EDU×5":
-		return stats.EDU * 5
+		return stats.Attributes.EDU * 5
 	default:
 		return def.Base
 	}
@@ -64,6 +64,12 @@ func (p *Plugin) DefaultStats() (bson.Raw, error) {
 		FavoriteSkills:    []string{},
 		DevelopmentSkills: []string{},
 		Weapons:           []CoCWeapon{},
+		BasicInfo:         BasicInfo{},
+		Attributes:        Attributes{},
+		Resources:         Resources{},
+		Combat:            Combat{},
+		Finances:          Finances{},
+		Background:        Background{},
 	}
 	raw, err := bson.Marshal(empty)
 	if err != nil {
@@ -214,22 +220,22 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	if v, ok := stats.Skills["cthulhu_mythos"]; ok {
 		cthulhuMythos = v
 	}
-	stats.SanityMax = 99 - cthulhuMythos
-	if stats.Sanity > stats.SanityMax {
-		stats.Sanity = stats.SanityMax
+	stats.Resources.SanityMax = 99 - cthulhuMythos
+	if stats.Resources.Sanity > stats.Resources.SanityMax {
+		stats.Resources.Sanity = stats.Resources.SanityMax
 	}
 
-	stats.HPMax = (stats.CON + stats.SIZ) / 10
-	if stats.HP > stats.HPMax {
-		stats.HP = stats.HPMax
+	stats.Resources.HPMax = (stats.Attributes.CON + stats.Attributes.SIZ) / 10
+	if stats.Resources.HP > stats.Resources.HPMax {
+		stats.Resources.HP = stats.Resources.HPMax
 	}
 
-	stats.MPMax = stats.POW / 5
-	if stats.MP > stats.MPMax {
-		stats.MP = stats.MPMax
+	stats.Resources.MPMax = stats.Attributes.POW / 5
+	if stats.Resources.MP > stats.Resources.MPMax {
+		stats.Resources.MP = stats.Resources.MPMax
 	}
 
-	stats.DamageBonus, stats.Build = computeDamageAndBuild(stats.STR, stats.SIZ)
+	stats.Combat.DamageBonus, stats.Combat.Build = computeDamageAndBuild(stats.Attributes.STR, stats.Attributes.SIZ)
 
 	out, err := bson.Marshal(stats)
 	if err != nil {
@@ -240,23 +246,24 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 
 // getAttrValue returns the raw attribute value from Stats by lowercase name.
 func getAttrValue(stats *Stats, attrName string) int {
+	a := stats.Attributes
 	switch attrName {
 	case "str":
-		return stats.STR
+		return a.STR
 	case "con":
-		return stats.CON
+		return a.CON
 	case "siz":
-		return stats.SIZ
+		return a.SIZ
 	case "dex":
-		return stats.DEX
+		return a.DEX
 	case "app":
-		return stats.APP
+		return a.APP
 	case "int":
-		return stats.INT
+		return a.INT
 	case "pow":
-		return stats.POW
+		return a.POW
 	case "edu":
-		return stats.EDU
+		return a.EDU
 	}
 	return 0
 }
@@ -301,15 +308,27 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	if strings.HasPrefix(skillKey, "attr_") {
 		attrName := strings.TrimPrefix(skillKey, "attr_")
 		if attrName == "luck" {
-			skillPct = stats.Luck
+			skillPct = stats.Resources.Luck
 			skillName = "Luck"
 		} else if attrName == "sanity" {
-			skillPct = stats.Sanity
+			skillPct = stats.Resources.Sanity
 			skillName = "Sanity"
 		} else {
 			// CoC attributes are stored as percentages already (e.g. STR=65 means 65%)
 			skillPct = getAttrValue(stats, attrName)
 			skillName = attrRollName(attrName)
+		}
+	} else if strings.HasPrefix(skillKey, "custom_") {
+		for _, cs := range stats.CustomSkills {
+			if cs.Key == skillKey {
+				skillPct = cs.Value
+				if cs.Name != "" {
+					skillName = cs.Name
+				} else {
+					skillName = skillKey
+				}
+				break
+			}
 		}
 	} else {
 		val, ok := stats.Skills[skillKey]
@@ -318,14 +337,6 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 		}
 		skillPct = val
 		skillName = skillKey
-		if strings.HasPrefix(skillKey, "custom_") {
-			for _, cs := range stats.CustomSkills {
-				if cs.Key == skillKey && cs.Name != "" {
-					skillName = cs.Name
-					break
-				}
-			}
-		}
 	}
 
 	target := skillPct + modifier
@@ -362,7 +373,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	roll, allRolls := rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
-	damageRoll, damageBreakdown := rollDamage(damage, stats.DamageBonus)
+	damageRoll, damageBreakdown := rollDamage(damage, stats.Combat.DamageBonus)
 
 	return &gsys.RollResult{
 		RollType:        "weapon",
