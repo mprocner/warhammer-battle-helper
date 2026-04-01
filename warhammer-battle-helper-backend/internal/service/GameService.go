@@ -393,6 +393,10 @@ func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, userna
 		}
 	}
 
+	if err := s.gameRepo.RemovePlayerFromAllScenes(gameID, userID); err != nil {
+		return err
+	}
+
 	// Add leave event
 	event := models.GameEvent{
 		Type:      models.EventTypeLeave,
@@ -429,6 +433,10 @@ func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, tar
 	}
 
 	if err := s.gameRepo.RemoveParticipant(gameID, targetUserID); err != nil {
+		return err
+	}
+
+	if err := s.gameRepo.RemovePlayerFromAllScenes(gameID, targetUserID); err != nil {
 		return err
 	}
 

@@ -959,6 +959,30 @@ func (r *GameRepository) RemovePlayerFromScene(gameID string, sceneID primitive.
 	return nil
 }
 
+// RemovePlayerFromAllScenes removes a player ID from assignedPlayers in every scene of the game
+func (r *GameRepository) RemovePlayerFromAllScenes(gameID string, playerID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$pull": bson.M{"scenes.$[].assignedPlayers": playerID},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to remove player from all scenes: %w", err)
+	}
+
+	return nil
+}
+
 // AddSceneCharacter adds a character to a scene
 func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.ObjectID, character models.GameCharacter) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
