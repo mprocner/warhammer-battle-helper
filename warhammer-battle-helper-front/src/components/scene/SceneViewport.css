@@ -190,13 +190,57 @@
   font-size: 11px;
 }
 
-.scene-viewport__zoom-level {
+.scene-viewport__zoom-select {
+  position: relative;
+}
+
+.scene-viewport__zoom-btn--level {
+  width: auto;
+  min-width: 54px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.scene-viewport__zoom-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: linear-gradient(135deg, rgba(42, 34, 24, 0.97) 0%, rgba(28, 22, 14, 0.97) 100%);
+  border: 1.5px solid #7a5c42;
+  border-radius: 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  list-style: none;
+  margin: 0;
+  padding: 3px 0;
+  min-width: 80px;
+}
+
+.scene-viewport__zoom-option {
+  padding: 5px 12px;
   color: #e8dcc4;
   font-size: 12px;
   font-family: 'Cinzel', serif;
-  min-width: 42px;
-  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
   user-select: none;
+  transition: background 0.1s;
+}
+
+.scene-viewport__zoom-option:hover {
+  background: rgba(122, 92, 66, 0.5);
+}
+
+.scene-viewport__zoom-option--active {
+  color: #c9975b;
+  font-weight: 700;
+}
+
+.scene-viewport__zoom-option--active::before {
+  content: '• ';
 }
 
 /* Scene layers */

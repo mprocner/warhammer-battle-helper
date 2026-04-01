@@ -13,6 +13,7 @@ const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 const PING_HOLD_MS = 500;
+const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
   scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children,
@@ -26,6 +27,8 @@ const SceneViewport = ({
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [zoomDropdownOpen, setZoomDropdownOpen] = useState(false);
+  const zoomDropdownRef = useRef(null);
 
   // displayedScene lags behind the scene prop during transitions so the old scene
   // stays rendered while the overlay covers the viewport.
@@ -50,6 +53,17 @@ const SceneViewport = ({
   const firstSceneLoad = useRef(true);
 
   useEffect(() => { onZoomChange?.(zoom); }, [zoom, onZoomChange]);
+
+  useEffect(() => {
+    if (!zoomDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (zoomDropdownRef.current && !zoomDropdownRef.current.contains(e.target)) {
+        setZoomDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [zoomDropdownOpen]);
 
   // canvasSize for rendering — derived from displayedScene so it only updates when the scene swap happens
   const canvasSize = useMemo(
@@ -334,9 +348,39 @@ const SceneViewport = ({
             isCovering=false: opacity 0 with CSS transition (fade out reveal). */}
         <div className={`scene-viewport__overlay${isCovering ? ' scene-viewport__overlay--covering' : ''}`} />
 
-        <div className="scene-viewport__zoom-toolbar">
+        <div className="scene-viewport__zoom-toolbar" ref={zoomDropdownRef}>
           <button className="scene-viewport__zoom-btn" onClick={handleZoomOut} title={t('scenes.zoomOut')}>-</button>
-          <span className="scene-viewport__zoom-level">{Math.round(zoom * 100)}%</span>
+          <div className="scene-viewport__zoom-select">
+            <button
+              className="scene-viewport__zoom-btn scene-viewport__zoom-btn--level"
+              onClick={() => setZoomDropdownOpen(prev => !prev)}
+              title={t('scenes.zoomLevel')}
+            >
+              {Math.round(zoom * 100)}%&nbsp;▾
+            </button>
+            {zoomDropdownOpen && (
+              <ul className="scene-viewport__zoom-dropdown" role="listbox">
+                {ZOOM_PRESETS.map(preset => {
+                  const isActive = Math.round(zoom * 100) === Math.round(preset * 100);
+                  return (
+                    <li
+                      key={preset}
+                      role="option"
+                      aria-selected={isActive}
+                      className={`scene-viewport__zoom-option${isActive ? ' scene-viewport__zoom-option--active' : ''}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyZoom(preset);
+                        setZoomDropdownOpen(false);
+                      }}
+                    >
+                      {Math.round(preset * 100)}%
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
           <button className="scene-viewport__zoom-btn" onClick={handleZoomIn} title={t('scenes.zoomIn')}>+</button>
           <button
             className="scene-viewport__zoom-btn scene-viewport__zoom-btn--fit"
