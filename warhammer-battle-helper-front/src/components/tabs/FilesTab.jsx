@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
+import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, renameFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
 import { addSceneImage } from '../../api/scenes';
 import ConfirmModal from '../common/ConfirmModal';
 import DraggableFileItem from './files/DraggableFileItem';
@@ -40,6 +40,8 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
   const [previewFile, setPreviewFile] = useState(null);
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renamingFile, setRenamingFile] = useState(null);
+  const [renameFileValue, setRenameFileValue] = useState('');
   const [draggingFile, setDraggingFile] = useState(null);
   const [hoveredFile, setHoveredFile] = useState(null);
   const [addToSceneFile, setAddToSceneFile] = useState(null);
@@ -355,6 +357,36 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
     setRenameValue(folder.name);
   };
 
+  // Start renaming a file
+  const startRenameFile = (file, e) => {
+    e.stopPropagation();
+    setRenamingFile(file);
+    setRenameFileValue(file.name);
+  };
+
+  // Confirm file rename
+  const handleRenameFile = async (e) => {
+    e.preventDefault();
+    if (!renameFileValue.trim() || !renamingFile) return;
+    const newName = renameFileValue.trim();
+    const prevFile = renamingFile;
+    setRenamingFile(null);
+    setRenameFileValue('');
+    try {
+      await renameFile(prevFile.id, newName);
+      setFiles(prev => prev.map(f => f.id === prevFile.id ? { ...f, name: newName } : f));
+    } catch (err) {
+      console.error('Failed to rename file:', err);
+      setError(t('files.fileRenameError'));
+    }
+  };
+
+  // Cancel file rename
+  const cancelRenameFile = () => {
+    setRenamingFile(null);
+    setRenameFileValue('');
+  };
+
   // Render loading state
   if (isLoading) {
     return (
@@ -479,6 +511,12 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
               onAddToScene={gameId && currentSceneId ? setAddToSceneFile : null}
+              onRename={startRenameFile}
+              renamingFile={renamingFile}
+              renameFileValue={renameFileValue}
+              setRenameFileValue={setRenameFileValue}
+              onConfirmRename={handleRenameFile}
+              onCancelRename={cancelRenameFile}
             />
           ))}
 

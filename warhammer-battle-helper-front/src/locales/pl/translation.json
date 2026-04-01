@@ -587,6 +587,8 @@
     "folderCreateError": "Nie udało się utworzyć folderu",
     "folderRenameError": "Nie udało się zmienić nazwy folderu",
     "folderDeleteError": "Nie udało się usunąć folderu",
+    "renameFile": "Zmień nazwę utworu",
+    "fileRenameError": "Nie udało się zmienić nazwy utworu",
     "root": "Biblioteka"
   },
   "leftPanel": {
@@ -727,6 +729,8 @@
     "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone tylko obrazy.",
     "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
     "fileMoveError": "Nie udało się przenieść pliku",
+    "renameFile": "Zmień nazwę pliku",
+    "fileRenameError": "Nie udało się zmienić nazwy pliku",
     "root": "Główny"
   },
   "dice": {

@@ -690,6 +690,63 @@ func (r *UserRepository) ReorderPlaylists(userID primitive.ObjectID, playlistIDs
 
 // --- END MUSIC METHODS ---
 
+// RenameFile updates a file's display name in user's files array
+func (r *UserRepository) RenameFile(userID primitive.ObjectID, fileID primitive.ObjectID, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"_id":       userID,
+		"files._id": fileID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"files.$.name":      name,
+			"files.$.updatedAt": time.Now(),
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	return nil
+}
+
+// RenameMusicFile updates a music file's display name in user's music array
+func (r *UserRepository) RenameMusicFile(userID primitive.ObjectID, fileID primitive.ObjectID, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"_id":       userID,
+		"music._id": fileID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"music.$.name": name,
+		},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	return nil
+}
+
 // MoveFile updates a file's folderId to move it to another folder
 func (r *UserRepository) MoveFile(userID primitive.ObjectID, fileID primitive.ObjectID, folderID *primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

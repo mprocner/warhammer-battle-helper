@@ -825,6 +825,34 @@
   opacity: 0.4;
 }
 
+.music-tab__track-item--renaming .music-tab__track-actions {
+  display: flex;
+}
+
+.music-tab__rename-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.music-tab__rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #6b4423;
+  border: 1px solid #c9975b;
+  border-radius: 3px;
+  background: #fff;
+  outline: none;
+}
+
+.music-tab__rename-input:focus {
+  border-color: #7a5c42;
+  box-shadow: 0 0 0 2px rgba(201, 151, 91, 0.25);
+}
+
 .music-tab__drag-overlay {
   display: flex;
   align-items: center;

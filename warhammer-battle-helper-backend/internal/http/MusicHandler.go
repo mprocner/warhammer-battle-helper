@@ -573,6 +573,43 @@ func (h *MusicHandler) ReorderPlaylists(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Playlists reordered successfully"})
 }
 
+// RenameMusicFileRequest is the request body for renaming a music file
+type RenameMusicFileRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// RenameMusicFile handles PUT /music/:musicId/rename - Rename a music file
+func (h *MusicHandler) RenameMusicFile(c *gin.Context) {
+	musicIDStr := c.Param("musicId")
+	musicID, err := primitive.ObjectIDFromHex(musicIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid music file ID"})
+		return
+	}
+
+	var req RenameMusicFileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.UserRepo.RenameMusicFile(userID, musicID, req.Name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Music file not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Music file renamed successfully"})
+}
+
 // --- Game-level endpoints (playback, GM-only) ---
 
 // PlayTrack handles POST /games/:id/music/play - Broadcast MUSIC_PLAY

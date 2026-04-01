@@ -46,6 +46,11 @@ export const moveMusicFile = async (musicId, folderId) => {
   return response.data;
 };
 
+export const renameMusicFile = async (musicId, name) => {
+  const response = await axiosInstance.put(`/music/${musicId}/rename`, { name });
+  return response.data;
+};
+
 // --- Playlists ---
 
 export const createPlaylist = async (name, tracks = []) => {

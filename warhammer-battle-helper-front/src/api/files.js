@@ -95,12 +95,24 @@ export const deleteFolder = async (folderId, deleteContents = false) => {
   return response.data;
 };
 
+/**
+ * Rename a file
+ * @param {string} fileId - The file ID to rename
+ * @param {string} name - New file name
+ * @returns {Promise<Object>} - Response message
+ */
+export const renameFile = async (fileId, name) => {
+  const response = await axiosInstance.put(`/files/${fileId}/rename`, { name });
+  return response.data;
+};
+
 const filesApi = {
   getFiles,
   uploadFiles,
   deleteFile,
   getFileUsage,
   moveFile,
+  renameFile,
   createFolder,
   renameFolder,
   deleteFolder

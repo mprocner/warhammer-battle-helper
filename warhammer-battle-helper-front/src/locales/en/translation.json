@@ -586,6 +586,8 @@
     "folderCreateError": "Failed to create folder",
     "folderRenameError": "Failed to rename folder",
     "folderDeleteError": "Failed to delete folder",
+    "renameFile": "Rename track",
+    "fileRenameError": "Failed to rename track",
     "root": "Library"
   },
   "leftPanel": {
@@ -726,6 +728,8 @@
     "invalidFileType": "Invalid file type. Only images allowed.",
     "fileTooLarge": "File too large. Maximum size is 5MB",
     "fileMoveError": "Failed to move file",
+    "renameFile": "Rename file",
+    "fileRenameError": "Failed to rename file",
     "root": "Root"
   },
   "dice": {

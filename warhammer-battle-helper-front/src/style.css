@@ -3131,6 +3131,15 @@ align-items: center;
   background: #f8d7da;
 }
 
+.list-action-btn--confirm {
+  color: #2e7d32;
+}
+
+.list-action-btn--confirm:hover {
+  border-color: #2e7d32;
+  background: #e8f5e9;
+}
+
 /* Armour Points Section */
 .armour-points-container {
     position: relative;

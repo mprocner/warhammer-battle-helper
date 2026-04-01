@@ -479,6 +479,45 @@ func (h *FileHandler) MoveFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "File moved successfully"})
 }
 
+// RenameFileRequest is the request body for renaming a file
+type RenameFileRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// RenameFile handles PUT /files/:fileId/rename - Rename a file
+func (h *FileHandler) RenameFile(c *gin.Context) {
+	fileIDStr := c.Param("fileId")
+
+	fileID, err := primitive.ObjectIDFromHex(fileIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file ID"})
+		return
+	}
+
+	var req RenameFileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.UserRepo.RenameFile(userID, fileID, req.Name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "File renamed successfully"})
+}
+
 // GetFileUsage handles GET /files/:fileId/usage - Get games where a file is used
 func (h *FileHandler) GetFileUsage(c *gin.Context) {
 	fileIDStr := c.Param("fileId")

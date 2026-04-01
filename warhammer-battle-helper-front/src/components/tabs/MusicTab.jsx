@@ -11,7 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile } from '../../api/music';
+import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
 import {
   DndContext,
   DragOverlay,
@@ -42,6 +42,8 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [renamingFolder, setRenamingFolder] = useState(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renamingMusicFile, setRenamingMusicFile] = useState(null);
+  const [renameMusicFileValue, setRenameMusicFileValue] = useState('');
   const [draggingMusicFile, setDraggingMusicFile] = useState(null);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -468,6 +470,32 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     }
   };
 
+  const startRenameMusicFile = (file, e) => {
+    e.stopPropagation();
+    setRenamingMusicFile(file);
+    setRenameMusicFileValue(file.name);
+  };
+
+  const handleRenameMusicFile = async (e) => {
+    e.preventDefault();
+    if (!renameMusicFileValue.trim() || !renamingMusicFile) return;
+    const newName = renameMusicFileValue.trim();
+    const prevFile = renamingMusicFile;
+    setRenamingMusicFile(null);
+    setRenameMusicFileValue('');
+    try {
+      await renameMusicFile(prevFile.id, newName);
+      setMusicFiles(prev => prev.map(f => f.id === prevFile.id ? { ...f, name: newName } : f));
+    } catch (err) {
+      setError(t('music.fileRenameError'));
+    }
+  };
+
+  const cancelRenameMusicFile = () => {
+    setRenamingMusicFile(null);
+    setRenameMusicFileValue('');
+  };
+
   const handleStartEditPlaylist = (playlist) => {
     setEditingPlaylist(playlist);
     setNewPlaylistName(playlist.name);
@@ -764,6 +792,12 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   playlists={playlists}
                   addToPlaylistOpen={addToPlaylistOpen}
                   setAddToPlaylistOpen={setAddToPlaylistOpen}
+                  onRename={startRenameMusicFile}
+                  renamingFile={renamingMusicFile}
+                  renameFileValue={renameMusicFileValue}
+                  setRenameFileValue={setRenameMusicFileValue}
+                  onConfirmRename={handleRenameMusicFile}
+                  onCancelRename={cancelRenameMusicFile}
                 />
               ))}
 
