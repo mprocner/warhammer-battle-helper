@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import { getSystem, normalizeCharacter } from '../systems/registry';
+import useWebSocket from '../hooks/useWebSocket';
 
 function CharacterSheetPage() {
     const [searchParams] = useSearchParams();
     const characterId = searchParams.get('characterId');
     const gameId = searchParams.get('gameId');
+    const token = localStorage.getItem('token');
 
     const [character, setCharacter] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -29,6 +31,17 @@ function CharacterSheetPage() {
         };
         if (characterId) fetchCharacter();
     }, [characterId, gameId]);
+
+    const handleWsMessage = useCallback((message) => {
+        if (message.type === 'CHARACTER_UPDATED') {
+            const updated = message.payload?.character;
+            if (updated && updated.id === characterId) {
+                setCharacter(normalizeCharacter(updated));
+            }
+        }
+    }, [characterId]);
+
+    useWebSocket(gameId, token, handleWsMessage);
 
     const handleCharacterUpdate = (updated) => {
         setCharacter(normalizeCharacter(updated));

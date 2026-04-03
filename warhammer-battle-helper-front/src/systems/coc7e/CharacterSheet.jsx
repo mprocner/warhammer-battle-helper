@@ -46,24 +46,38 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Sync resource fields changed from the left panel (CharacterDetails)
+  // Sync all fields when character prop changes (external update via WS or left panel)
   React.useEffect(() => {
-    const r = character.stats?.resources || {};
-    setEdited(prev => ({
-      ...prev,
-      resources: {
-        ...prev.resources,
-        hp:        r.hp        ?? prev.resources.hp,
-        hpMax:     r.hpMax     ?? prev.resources.hpMax,
-        sanity:    r.sanity    ?? prev.resources.sanity,
-        sanityMax: r.sanityMax ?? prev.resources.sanityMax,
-        luck:      r.luck      ?? prev.resources.luck,
-        mp:        r.mp        ?? prev.resources.mp,
-        mpMax:     r.mpMax     ?? prev.resources.mpMax,
-      },
-    }));
+    const s = character.stats || {};
+    const weps = s.weapons || [];
+    const first = weps[0] || {};
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+    setEdited({
+      ...s,
+      basicInfo:         s.basicInfo         || {},
+      attributes:        s.attributes        || {},
+      resources:         s.resources         || {},
+      combat:            s.combat            || {},
+      finances:          s.finances          || {},
+      background:        s.background        || {},
+      skills:            s.skills            || {},
+      customSkills:      s.customSkills      || [],
+      favoriteSkills:    s.favoriteSkills    || [],
+      developmentSkills: s.developmentSkills || [],
+      weapons: [
+        { ...DEFAULT_UNARMED, ...first, name: first.name || DEFAULT_UNARMED.name },
+        ...weps.slice(1),
+      ],
+    });
+    setCharName(character.name || '');
+    setCharAvatar(character.avatar || '');
+    charNameRef.current = character.name || '';
+    charAvatarRef.current = character.avatar || '';
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character.stats?.resources?.hp, character.stats?.resources?.hpMax, character.stats?.resources?.sanity, character.stats?.resources?.luck, character.stats?.resources?.mp, character.stats?.resources?.mpMax]);
+  }, [character]);
 
   const autoSaveTimer = useRef(null);
   const charNameRef = useRef(character.name || '');
