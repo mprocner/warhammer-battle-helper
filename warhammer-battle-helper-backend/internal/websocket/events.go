@@ -70,4 +70,5 @@ const (
 	EventMusicPause  = "MUSIC_PAUSE"
 	EventMusicStop   = "MUSIC_STOP"
 	EventMusicVolume = "MUSIC_VOLUME"
+	EventMusicLoop   = "MUSIC_LOOP"
 )

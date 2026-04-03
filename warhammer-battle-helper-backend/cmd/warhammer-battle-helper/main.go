@@ -230,6 +230,8 @@ func main() {
 	game.POST("/music/pause", musicHandler.PauseTrack)
 	game.POST("/music/stop", musicHandler.StopTrack)
 	game.POST("/music/volume", musicHandler.SetVolume)
+	game.POST("/music/next", musicHandler.NextTrack)
+	game.PATCH("/music/loop", musicHandler.SetLoop)
 
 	// User files
 	auth.GET("/files", fileHandler.GetFiles)

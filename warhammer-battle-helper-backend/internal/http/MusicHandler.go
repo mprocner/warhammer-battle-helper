@@ -5,7 +5,7 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
 	"battle-helper/internal/storage"
-	"battle-helper/internal/websocket"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -65,17 +65,23 @@ type ReorderPlaylistsRequest struct {
 type PlayTrackRequest struct {
 	TrackURL   string  `json:"trackUrl" binding:"required"`
 	TrackName  string  `json:"trackName"`
-	Position   float64 `json:"position"`
+	TrackId    string  `json:"trackId"`
 	PlaylistId string  `json:"playlistId"`
 	TrackIndex int     `json:"trackIndex"`
-}
-
-type PauseTrackRequest struct {
-	Position float64 `json:"position"`
+	Loop       bool    `json:"loop"`
+	Position   float64 `json:"position"` // optional: for resume from pause
 }
 
 type SetVolumeRequest struct {
 	Volume float64 `json:"volume"`
+}
+
+type NextTrackRequest struct {
+	Version int64 `json:"version"`
+}
+
+type SetLoopRequest struct {
+	Loop bool `json:"loop"`
 }
 
 // --- User-level endpoints (music library) ---
@@ -96,6 +102,34 @@ func (h *MusicHandler) GetMusic(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get music"})
 		return
+	}
+
+	// Lazy migration: compute and persist duration for files that don't have it yet.
+	// Runs in background so the response is not delayed.
+	missing := make([]models.MusicFile, 0)
+	for _, f := range user.Music {
+		if f.Duration == 0 && (f.MimeType == "audio/mpeg" || f.MimeType == "audio/wav" || f.MimeType == "audio/x-wav") {
+			missing = append(missing, f)
+		}
+	}
+	if len(missing) > 0 {
+		go func(uid primitive.ObjectID, files []models.MusicFile) {
+			for _, f := range files {
+				filename := filepath.Base(f.FileURL)
+				rc, contentType, err := h.Storage.Get(filename)
+				if err != nil {
+					continue
+				}
+				if contentType == "" {
+					contentType = f.MimeType
+				}
+				d := storage.ExtractDuration(rc, contentType, f.Size)
+				rc.Close()
+				if d > 0 {
+					h.UserRepo.UpdateMusicFileDuration(uid, f.ID, d) //nolint:errcheck
+				}
+			}
+		}(userID, missing)
 	}
 
 	c.JSON(http.StatusOK, GetMusicResponse{
@@ -162,6 +196,10 @@ func (h *MusicHandler) UploadMusic(c *gin.Context) {
 			continue
 		}
 
+		// Extract duration by reading the file, then seek back before upload
+		duration := storage.ExtractDuration(file, contentType, header.Size)
+		file.Seek(0, io.SeekStart) //nolint:errcheck
+
 		filename := storage.GenerateFilename(ext)
 
 		url, err := h.Storage.Upload(file, filename, contentType)
@@ -178,6 +216,7 @@ func (h *MusicHandler) UploadMusic(c *gin.Context) {
 			FolderID:  folderID,
 			MimeType:  contentType,
 			Size:      header.Size,
+			Duration:  duration,
 			CreatedAt: time.Now(),
 		}
 
@@ -610,9 +649,9 @@ func (h *MusicHandler) RenameMusicFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Music file renamed successfully"})
 }
 
-// --- Game-level endpoints (playback, GM-only) ---
+// --- Game-level endpoints (playback, GM-only unless noted) ---
 
-// PlayTrack handles POST /games/:id/music/play - Broadcast MUSIC_PLAY
+// PlayTrack handles POST /games/:id/music/play — GM only. Persists + broadcasts MUSIC_PLAY.
 func (h *MusicHandler) PlayTrack(c *gin.Context) {
 	gameID := c.Param("id")
 
@@ -632,15 +671,17 @@ func (h *MusicHandler) PlayTrack(c *gin.Context) {
 		return
 	}
 
-	payload := map[string]interface{}{
-		"trackUrl":   req.TrackURL,
-		"trackName":  req.TrackName,
-		"position":   req.Position,
-		"playlistId": req.PlaylistId,
-		"trackIndex": req.TrackIndex,
+	persist := service.PlayTrackPersistRequest{
+		TrackURL:   req.TrackURL,
+		TrackName:  req.TrackName,
+		TrackId:    req.TrackId,
+		PlaylistId: req.PlaylistId,
+		TrackIndex: req.TrackIndex,
+		Loop:       req.Loop,
+		Position:   req.Position,
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicPlay, payload); err != nil {
+	if err := h.GameService.PlayTrackPersist(gameID, userID, persist); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -648,15 +689,9 @@ func (h *MusicHandler) PlayTrack(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Playing track"})
 }
 
-// PauseTrack handles POST /games/:id/music/pause - Broadcast MUSIC_PAUSE
+// PauseTrack handles POST /games/:id/music/pause — GM only. Persists + broadcasts MUSIC_PAUSE.
 func (h *MusicHandler) PauseTrack(c *gin.Context) {
 	gameID := c.Param("id")
-
-	var req PauseTrackRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
 	token, _ := c.Get("jwt")
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
@@ -668,11 +703,7 @@ func (h *MusicHandler) PauseTrack(c *gin.Context) {
 		return
 	}
 
-	payload := map[string]interface{}{
-		"position": req.Position,
-	}
-
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicPause, payload); err != nil {
+	if err := h.GameService.PauseTrackPersist(gameID, userID); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -680,7 +711,7 @@ func (h *MusicHandler) PauseTrack(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Track paused"})
 }
 
-// StopTrack handles POST /games/:id/music/stop - Broadcast MUSIC_STOP
+// StopTrack handles POST /games/:id/music/stop — GM only. Persists + broadcasts MUSIC_STOP.
 func (h *MusicHandler) StopTrack(c *gin.Context) {
 	gameID := c.Param("id")
 
@@ -694,7 +725,7 @@ func (h *MusicHandler) StopTrack(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicStop, map[string]interface{}{}); err != nil {
+	if err := h.GameService.StopTrackPersist(gameID, userID); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
@@ -702,7 +733,7 @@ func (h *MusicHandler) StopTrack(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Track stopped"})
 }
 
-// SetVolume handles POST /games/:id/music/volume - Broadcast MUSIC_VOLUME
+// SetVolume handles POST /games/:id/music/volume — GM only. Persists + broadcasts MUSIC_VOLUME.
 func (h *MusicHandler) SetVolume(c *gin.Context) {
 	gameID := c.Param("id")
 
@@ -722,7 +753,6 @@ func (h *MusicHandler) SetVolume(c *gin.Context) {
 		return
 	}
 
-	// Clamp volume to 0.0 - 1.0
 	volume := req.Volume
 	if volume < 0 {
 		volume = 0
@@ -731,14 +761,66 @@ func (h *MusicHandler) SetVolume(c *gin.Context) {
 		volume = 1
 	}
 
-	payload := map[string]interface{}{
-		"volume": volume,
-	}
-
-	if err := h.GameService.BroadcastMusicCommand(gameID, userID, websocket.EventMusicVolume, payload); err != nil {
+	if err := h.GameService.SetVolumePersist(gameID, userID, volume); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Volume updated"})
+}
+
+// NextTrack handles POST /games/:id/music/next — any participant. Advances playlist or loops.
+func (h *MusicHandler) NextTrack(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req NextTrackRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.NextTrack(gameID, userID, req.Version); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Next track"})
+}
+
+// SetLoop handles PATCH /games/:id/music/loop — GM only. Persists + broadcasts MUSIC_LOOP.
+func (h *MusicHandler) SetLoop(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req SetLoopRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.SetLoopPersist(gameID, userID, req.Loop); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Loop updated"})
 }

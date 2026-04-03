@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -100,6 +102,9 @@ func (s *GameService) GetGame(gameID string) (*models.Game, error) {
 
 	// Enrich participants with account avatar and signature
 	s.enrichParticipants(game)
+
+	// Compute current music playback position (lazy, no DB write)
+	s.ComputeMusicPosition(game)
 
 	return game, nil
 }
@@ -1420,19 +1425,420 @@ func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID
 	return nil
 }
 
-// BroadcastMusicCommand validates GM and broadcasts a music command to all game clients
-func (s *GameService) BroadcastMusicCommand(gameID string, userID primitive.ObjectID, msgType string, payload map[string]interface{}) error {
+// PlayTrackPersistRequest holds the data for starting playback.
+type PlayTrackPersistRequest struct {
+	TrackURL   string
+	TrackName  string
+	TrackId    string // ObjectID hex of the MusicFile (empty for non-library tracks)
+	PlaylistId string
+	TrackIndex int
+	Loop       bool
+	Position   float64 // Offset in seconds (for resume from paused position)
+}
+
+// PlayTrackPersist validates GM, persists MusicState to DB and broadcasts MUSIC_PLAY.
+func (s *GameService) PlayTrackPersist(gameID string, gmID primitive.ObjectID, req PlayTrackPersistRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("only the game master can control music")
+	}
+
+	// Backdate startedAt so that ComputeMusicPosition returns req.Position immediately
+	startedAt := time.Now().Add(-time.Duration(req.Position * float64(time.Second)))
+
+	state := models.MusicState{
+		IsPlaying:             true,
+		TrackURL:              req.TrackURL,
+		TrackName:             req.TrackName,
+		PlaylistId:            req.PlaylistId,
+		TrackIndex:            req.TrackIndex,
+		Loop:                  req.Loop,
+		Volume:                game.Music.Volume,
+		CurrentTrackStartedAt: startedAt,
+		Version:               game.Music.Version + 1,
+	}
+	if req.TrackId != "" {
+		if oid, err := primitive.ObjectIDFromHex(req.TrackId); err == nil {
+			state.TrackId = oid
+		}
+	}
+	// Carry forward volume default of 1.0 for brand-new games
+	if state.Volume == 0 {
+		state.Volume = 1.0
+	}
+
+	if err := s.gameRepo.UpdateMusicState(gameID, state); err != nil {
+		return fmt.Errorf("failed to persist music state: %w", err)
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventMusicPlay, map[string]interface{}{
+		"trackUrl":   state.TrackURL,
+		"trackName":  state.TrackName,
+		"playlistId": state.PlaylistId,
+		"trackIndex": state.TrackIndex,
+		"loop":       state.Loop,
+		"version":    state.Version,
+		"position":   req.Position,
+	})
+	return nil
+}
+
+// PauseTrackPersist persists the paused state (with current position) and broadcasts MUSIC_PAUSE.
+func (s *GameService) PauseTrackPersist(gameID string, gmID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("only the game master can control music")
+	}
+	if !game.Music.IsPlaying {
+		return nil
+	}
+
+	// Compute and store current position so we know where to resume from
+	elapsed := time.Since(game.Music.CurrentTrackStartedAt).Seconds()
+	if elapsed < 0 {
+		elapsed = 0
+	}
+
+	game.Music.IsPlaying = false
+	game.Music.Position = elapsed
+	game.Music.Version++
+
+	if err := s.gameRepo.UpdateMusicState(gameID, game.Music); err != nil {
+		return fmt.Errorf("failed to persist paused state: %w", err)
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventMusicPause, map[string]interface{}{
+		"position": elapsed,
+		"version":  game.Music.Version,
+	})
+	return nil
+}
+
+// StopTrackPersist clears music state and broadcasts MUSIC_STOP.
+func (s *GameService) StopTrackPersist(gameID string, gmID primitive.ObjectID) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("only the game master can control music")
+	}
+
+	stopped := models.MusicState{
+		IsPlaying: false,
+		Volume:    game.Music.Volume,
+		Version:   game.Music.Version + 1,
+	}
+	if err := s.gameRepo.UpdateMusicState(gameID, stopped); err != nil {
+		return fmt.Errorf("failed to persist stopped state: %w", err)
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventMusicStop, map[string]interface{}{
+		"version": stopped.Version,
+	})
+	return nil
+}
+
+// SetVolumePersist persists the volume change and broadcasts MUSIC_VOLUME.
+func (s *GameService) SetVolumePersist(gameID string, gmID primitive.ObjectID, volume float64) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("only the game master can control music")
+	}
+
+	game.Music.Volume = volume
+	if err := s.gameRepo.UpdateMusicState(gameID, game.Music); err != nil {
+		return fmt.Errorf("failed to persist volume: %w", err)
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventMusicVolume, map[string]interface{}{
+		"volume": volume,
+	})
+	return nil
+}
+
+// SetLoopPersist persists the loop flag change and broadcasts MUSIC_LOOP.
+func (s *GameService) SetLoopPersist(gameID string, gmID primitive.ObjectID, loop bool) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("only the game master can control music")
+	}
+
+	game.Music.Loop = loop
+	game.Music.Version++
+	if err := s.gameRepo.UpdateMusicState(gameID, game.Music); err != nil {
+		return fmt.Errorf("failed to persist loop state: %w", err)
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventMusicLoop, map[string]interface{}{
+		"loop":    loop,
+		"version": game.Music.Version,
+	})
+	return nil
+}
+
+// NextTrack advances to the next track in a playlist (or loops a single track).
+// Any game participant can call this — optimistic lock (version) prevents duplicate advances.
+func (s *GameService) NextTrack(gameID string, userID primitive.ObjectID, version int64) error {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return err
 	}
 
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can control music")
+	// Validate participant
+	isParticipant := false
+	for _, p := range game.Participants {
+		if p.UserID == userID {
+			isParticipant = true
+			break
+		}
+	}
+	if !isParticipant {
+		return fmt.Errorf("user is not a participant in this game")
 	}
 
-	s.hub.BroadcastToGame(gameID, msgType, payload)
+	// Stale version — another client already advanced
+	if game.Music.Version != version {
+		return nil
+	}
+
+	now := time.Now()
+
+	if game.Music.PlaylistId == "" {
+		// Single track: loop or stop
+		if !game.Music.Loop {
+			stopped := models.MusicState{
+				IsPlaying: false,
+				Volume:    game.Music.Volume,
+				Version:   game.Music.Version + 1,
+			}
+			ok, err := s.gameRepo.NextTrackIfVersion(gameID, version, stopped)
+			if err != nil {
+				return err
+			}
+			if ok {
+				s.hub.BroadcastToGame(gameID, websocket.EventMusicStop, map[string]interface{}{
+					"version": stopped.Version,
+				})
+			}
+			return nil
+		}
+		// Loop: restart same track from beginning
+		looped := models.MusicState{
+			IsPlaying:             true,
+			TrackURL:              game.Music.TrackURL,
+			TrackName:             game.Music.TrackName,
+			TrackId:               game.Music.TrackId,
+			Loop:                  true,
+			Volume:                game.Music.Volume,
+			CurrentTrackStartedAt: now,
+			Version:               game.Music.Version + 1,
+		}
+		ok, err := s.gameRepo.NextTrackIfVersion(gameID, version, looped)
+		if err != nil {
+			return err
+		}
+		if ok {
+			s.hub.BroadcastToGame(gameID, websocket.EventMusicPlay, map[string]interface{}{
+				"trackUrl":   looped.TrackURL,
+				"trackName":  looped.TrackName,
+				"playlistId": "",
+				"trackIndex": 0,
+				"loop":       true,
+				"version":    looped.Version,
+				"position":   0,
+			})
+		}
+		return nil
+	}
+
+	// Playlist mode: load GM's playlist
+	gmUser, err := s.userRepo.GetUserWithMusic(game.GameMasterID)
+	if err != nil {
+		return fmt.Errorf("failed to load GM music library: %w", err)
+	}
+
+	var playlist *models.Playlist
+	for i := range gmUser.Playlists {
+		if gmUser.Playlists[i].ID.Hex() == game.Music.PlaylistId {
+			playlist = &gmUser.Playlists[i]
+			break
+		}
+	}
+	if playlist == nil || len(playlist.Tracks) == 0 {
+		return fmt.Errorf("playlist not found or empty")
+	}
+
+	nextIndex := game.Music.TrackIndex + 1
+	if nextIndex >= len(playlist.Tracks) {
+		if !game.Music.Loop {
+			stopped := models.MusicState{
+				IsPlaying: false,
+				Volume:    game.Music.Volume,
+				Version:   game.Music.Version + 1,
+			}
+			ok, err := s.gameRepo.NextTrackIfVersion(gameID, version, stopped)
+			if err != nil {
+				return err
+			}
+			if ok {
+				s.hub.BroadcastToGame(gameID, websocket.EventMusicStop, map[string]interface{}{
+					"version": stopped.Version,
+				})
+			}
+			return nil
+		}
+		nextIndex = 0
+	}
+
+	nextTrackID := playlist.Tracks[nextIndex]
+	nextFiles, err := s.userRepo.GetMusicFilesByIDs(game.GameMasterID, []primitive.ObjectID{nextTrackID})
+	if err != nil || len(nextFiles) == 0 {
+		return fmt.Errorf("failed to load next track")
+	}
+	nextFile := nextFiles[0]
+
+	newState := models.MusicState{
+		IsPlaying:             true,
+		TrackURL:              nextFile.FileURL,
+		TrackName:             nextFile.Name,
+		TrackId:               nextFile.ID,
+		PlaylistId:            game.Music.PlaylistId,
+		TrackIndex:            nextIndex,
+		Loop:                  game.Music.Loop,
+		Volume:                game.Music.Volume,
+		CurrentTrackStartedAt: now,
+		Version:               game.Music.Version + 1,
+	}
+
+	ok, err := s.gameRepo.NextTrackIfVersion(gameID, version, newState)
+	if err != nil {
+		return err
+	}
+	if ok {
+		s.hub.BroadcastToGame(gameID, websocket.EventMusicPlay, map[string]interface{}{
+			"trackUrl":   newState.TrackURL,
+			"trackName":  newState.TrackName,
+			"playlistId": newState.PlaylistId,
+			"trackIndex": newState.TrackIndex,
+			"loop":       newState.Loop,
+			"version":    newState.Version,
+			"position":   0,
+		})
+	}
 	return nil
+}
+
+// ComputeMusicPosition computes the current playback position in-place for the game's music state.
+// This is a lazy computation — no DB writes. Position is overwritten only if IsPlaying=true.
+func (s *GameService) ComputeMusicPosition(game *models.Game) {
+	ms := &game.Music
+	if !ms.IsPlaying || ms.CurrentTrackStartedAt.IsZero() {
+		return
+	}
+
+	elapsed := time.Since(ms.CurrentTrackStartedAt).Seconds()
+	if elapsed < 0 {
+		elapsed = 0
+	}
+
+	if ms.PlaylistId == "" {
+		// Single track
+		if ms.TrackId.IsZero() {
+			ms.Position = elapsed
+			return
+		}
+		files, err := s.userRepo.GetMusicFilesByIDs(game.GameMasterID, []primitive.ObjectID{ms.TrackId})
+		if err != nil || len(files) == 0 || files[0].Duration == 0 {
+			ms.Position = elapsed
+			return
+		}
+		duration := files[0].Duration
+		if elapsed < duration {
+			ms.Position = elapsed
+		} else if ms.Loop {
+			ms.Position = math.Mod(elapsed, duration)
+		} else {
+			ms.IsPlaying = false
+			ms.Position = 0
+		}
+		return
+	}
+
+	// Playlist mode
+	gmUser, err := s.userRepo.GetUserWithMusic(game.GameMasterID)
+	if err != nil {
+		ms.Position = elapsed
+		return
+	}
+	var playlist *models.Playlist
+	for i := range gmUser.Playlists {
+		if gmUser.Playlists[i].ID.Hex() == ms.PlaylistId {
+			playlist = &gmUser.Playlists[i]
+			break
+		}
+	}
+	if playlist == nil || len(playlist.Tracks) == 0 {
+		ms.Position = elapsed
+		return
+	}
+
+	trackFiles, err := s.userRepo.GetMusicFilesByIDs(game.GameMasterID, playlist.Tracks)
+	if err != nil {
+		ms.Position = elapsed
+		return
+	}
+	fileMap := make(map[primitive.ObjectID]float64, len(trackFiles))
+	for _, f := range trackFiles {
+		fileMap[f.ID] = f.Duration
+	}
+
+	remaining := elapsed
+	idx := ms.TrackIndex
+	startIdx := idx
+	for {
+		d := fileMap[playlist.Tracks[idx]]
+		if d == 0 {
+			// Unknown duration — best effort: set position to remaining elapsed
+			ms.Position = remaining
+			ms.TrackIndex = idx
+			return
+		}
+		if remaining < d {
+			ms.Position = remaining
+			ms.TrackIndex = idx
+			return
+		}
+		remaining -= d
+		if idx == len(playlist.Tracks)-1 {
+			if !ms.Loop {
+				ms.IsPlaying = false
+				ms.Position = 0
+				return
+			}
+			idx = 0
+		} else {
+			idx++
+		}
+		// Guard: if we wrapped back to start without resolving, break
+		if idx == startIdx {
+			ms.Position = math.Mod(remaining, fileMap[playlist.Tracks[idx]])
+			ms.TrackIndex = idx
+			return
+		}
+	}
 }
 
 // GetScenes returns all scenes for a game

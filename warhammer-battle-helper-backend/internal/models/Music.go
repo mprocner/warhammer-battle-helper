@@ -14,6 +14,7 @@ type MusicFile struct {
 	FolderID  *primitive.ObjectID `bson:"folderId,omitempty" json:"folderId,omitempty"`
 	MimeType  string              `bson:"mimeType" json:"mimeType"`
 	Size      int64               `bson:"size" json:"size"`
+	Duration  float64             `bson:"duration,omitempty" json:"duration,omitempty"`
 	CreatedAt time.Time           `bson:"createdAt" json:"createdAt"`
 }
 

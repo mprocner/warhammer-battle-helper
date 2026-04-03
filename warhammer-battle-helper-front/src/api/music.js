@@ -73,17 +73,17 @@ export const reorderPlaylists = async (playlistIds) => {
   return response.data;
 };
 
-// --- Game Playback (GM-only) ---
+// --- Game Playback (GM-only unless noted) ---
 
-export const playTrack = async (gameId, trackUrl, trackName, position = 0, playlistId = '', trackIndex = 0) => {
+export const playTrack = async (gameId, trackUrl, trackName, position = 0, playlistId = '', trackIndex = 0, loop = false, trackId = '') => {
   const response = await axiosInstance.post(`/games/${gameId}/music/play`, {
-    trackUrl, trackName, position, playlistId, trackIndex
+    trackUrl, trackName, position, playlistId, trackIndex, loop, trackId
   });
   return response.data;
 };
 
-export const pauseTrack = async (gameId, position) => {
-  const response = await axiosInstance.post(`/games/${gameId}/music/pause`, { position });
+export const pauseTrack = async (gameId) => {
+  const response = await axiosInstance.post(`/games/${gameId}/music/pause`, {});
   return response.data;
 };
 
@@ -94,6 +94,18 @@ export const stopTrack = async (gameId) => {
 
 export const setVolume = async (gameId, volume) => {
   const response = await axiosInstance.post(`/games/${gameId}/music/volume`, { volume });
+  return response.data;
+};
+
+// Any participant — advances playlist or loops single track.
+export const nextTrack = async (gameId, version) => {
+  const response = await axiosInstance.post(`/games/${gameId}/music/next`, { version });
+  return response.data;
+};
+
+// GM-only — toggles loop flag persistently.
+export const setLoop = async (gameId, loop) => {
+  const response = await axiosInstance.patch(`/games/${gameId}/music/loop`, { loop });
   return response.data;
 };
 
@@ -108,7 +120,9 @@ const musicApi = {
   playTrack,
   pauseTrack,
   stopTrack,
-  setVolume
+  setVolume,
+  nextTrack,
+  setLoop,
 };
 
 export default musicApi;

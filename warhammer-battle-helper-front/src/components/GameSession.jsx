@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import ConfirmModal from './common/ConfirmModal';
@@ -39,7 +39,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
-  const { audioRef, musicState, playerVolume, onPlayerVolumeChange, handleMusicMessage, handleSceneAssignAll } = useGameMusic(gameId);
+  const { audioRef, musicState, playerVolume, onPlayerVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
   const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools();
   const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode } = useFogTools();
 
@@ -84,6 +84,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       const game = await response.json();
       setGameState(game);
 
+      // Sync music playback state from the server (handles re-entry, initial load)
+      if (game.music) {
+        syncFromGame(game.music);
+      }
+
       if (game.events && Array.isArray(game.events) && !historyLoaded) {
         const historicalLogs = game.events.map(event => {
           let message = '';
@@ -126,7 +131,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       setError(err.message);
       setLoading(false);
     }
-  }, [gameId, token, historyLoaded]);
+  }, [gameId, token, historyLoaded, syncFromGame]);
 
   const removePing = useCallback((pingId) => {
     setPointerPings(prev => prev.filter(p => p.id !== pingId));

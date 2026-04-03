@@ -23,6 +23,23 @@ const (
 	RolePlayer     ParticipantRole = "player"
 )
 
+// MusicState holds the persistent music playback state for a game session.
+// Stored in MongoDB as part of the Game document.
+type MusicState struct {
+	IsPlaying             bool               `bson:"isPlaying" json:"isPlaying"`
+	TrackURL              string             `bson:"trackUrl,omitempty" json:"trackUrl,omitempty"`
+	TrackName             string             `bson:"trackName,omitempty" json:"trackName,omitempty"`
+	TrackId               primitive.ObjectID `bson:"trackId,omitempty" json:"trackId,omitempty"`
+	PlaylistId            string             `bson:"playlistId,omitempty" json:"playlistId,omitempty"`
+	TrackIndex            int                `bson:"trackIndex" json:"trackIndex"`
+	CurrentTrackStartedAt time.Time          `bson:"currentTrackStartedAt,omitempty" json:"currentTrackStartedAt,omitempty"`
+	Loop                  bool               `bson:"loop" json:"loop"`
+	Volume                float64            `bson:"volume" json:"volume"`
+	Version               int64              `bson:"version" json:"version"`
+	// Position is stored when paused; overwritten on read when IsPlaying=true.
+	Position float64 `bson:"position,omitempty" json:"position,omitempty"`
+}
+
 // Game represents a game session
 type Game struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
@@ -37,6 +54,7 @@ type Game struct {
 	Handouts        []Handout          `bson:"handouts" json:"handouts"`
 	HandoutFolders  []HandoutFolder    `bson:"handoutFolders" json:"handoutFolders"`
 	Scenes          []Scene            `bson:"scenes" json:"scenes"`
+	Music           MusicState         `bson:"music" json:"music"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
 	DeletedAt       *time.Time         `bson:"deletedAt,omitempty" json:"-"`

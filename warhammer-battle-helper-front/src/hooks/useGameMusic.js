@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getApiUrl } from '../api/axios';
-import { getMusic, playTrack } from '../api/music';
+import { getMusic, playTrack, nextTrack } from '../api/music';
 import { WS_EVENTS } from '../websocket/events';
 
 /**
@@ -15,11 +15,21 @@ export function useGameMusic(gameId) {
     trackName: null,
     position: 0,
     gmVolume: 1.0,
+    playlistId: null,
+    trackIndex: 0,
+    loop: false,
+    version: 0,
   });
   const [playerVolume, setPlayerVolume] = useState(() => {
     const saved = localStorage.getItem('playerMusicVolume');
     return saved !== null ? parseFloat(saved) : 1.0;
   });
+
+  // Keep a ref so the 'ended' handler always sees the latest version without re-adding the listener
+  const musicStateRef = useRef(musicState);
+  useEffect(() => {
+    musicStateRef.current = musicState;
+  }, [musicState]);
 
   const onPlayerVolumeChange = useCallback((vol) => {
     setPlayerVolume(vol);
@@ -41,6 +51,54 @@ export function useGameMusic(gameId) {
     };
   }, []);
 
+  // 'ended' handler — any participant detects track end and calls the backend.
+  // Backend uses optimistic lock (version) so only the first caller advances.
+  useEffect(() => {
+    const audio = audioRef.current;
+    const handleEnded = () => {
+      const { version, isPlaying } = musicStateRef.current;
+      if (!isPlaying) return;
+      nextTrack(gameId, version).catch(err => console.error('[music] nextTrack failed:', err));
+    };
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [gameId]);
+
+  // Sync music state from a game object (called by GameSession after fetchGameState).
+  // Only starts/adjusts playback if the track URL changed, so ongoing playback isn't disrupted.
+  const syncFromGame = useCallback((gameMusicState) => {
+    if (!gameMusicState) return;
+    const audio = audioRef.current;
+
+    setMusicState({
+      isPlaying: !!gameMusicState.isPlaying,
+      trackUrl: gameMusicState.trackUrl || null,
+      trackName: gameMusicState.trackName || null,
+      position: gameMusicState.position || 0,
+      gmVolume: gameMusicState.volume || 1.0,
+      playlistId: gameMusicState.playlistId || null,
+      trackIndex: gameMusicState.trackIndex || 0,
+      loop: !!gameMusicState.loop,
+      version: gameMusicState.version || 0,
+    });
+
+    if (gameMusicState.isPlaying && gameMusicState.trackUrl) {
+      const url = gameMusicState.trackUrl;
+      if (audio.src !== url) {
+        audio.src = url;
+        audio.currentTime = gameMusicState.position || 0;
+        audio.play().catch(err => console.warn('[music] Autoplay blocked:', err));
+      }
+      // Same track already playing — don't seek to avoid disruption
+    } else if (!gameMusicState.isPlaying) {
+      if (audio.paused) return; // already stopped
+      audio.pause();
+      if (!gameMusicState.trackUrl) {
+        audio.src = '';
+      }
+    }
+  }, []);
+
   const handleSceneAssignAll = useCallback(async (scene) => {
     if (!scene.sceneMusicId) return;
     try {
@@ -53,14 +111,14 @@ export function useGameMusic(gameId) {
           .map(id => (musicData.music || []).find(f => f.id === id))
           .filter(Boolean);
         if (tracks.length === 0) return;
-        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0);
+        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0, false, tracks[0].id);
       } else {
         const file = (musicData.music || []).find(f => f.id === scene.sceneMusicId);
         if (!file) return;
-        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0);
+        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0, '', 0, false, file.id);
       }
     } catch (err) {
-      console.error('Failed to play scene music:', err);
+      console.error('[music] Failed to play scene music:', err);
     }
   }, [gameId]);
 
@@ -69,13 +127,13 @@ export function useGameMusic(gameId) {
     const audio = audioRef.current;
     switch (message.type) {
       case WS_EVENTS.MUSIC_PLAY: {
-        const { trackUrl, trackName, position, playlistId, trackIndex } = message.payload;
+        const { trackUrl, trackName, position, playlistId, trackIndex, loop, version } = message.payload;
         if (audio.src !== trackUrl) {
           audio.src = trackUrl;
         }
         audio.currentTime = position || 0;
         audio.play().catch((err) => {
-          console.warn('Autoplay blocked:', err);
+          console.warn('[music] Autoplay blocked:', err);
         });
         setMusicState(prev => ({
           ...prev,
@@ -85,6 +143,8 @@ export function useGameMusic(gameId) {
           position: position || 0,
           playlistId: playlistId || null,
           trackIndex: trackIndex || 0,
+          loop: loop != null ? loop : prev.loop,
+          version: version != null ? version : prev.version,
         }));
         return true;
       }
@@ -93,7 +153,8 @@ export function useGameMusic(gameId) {
         setMusicState(prev => ({
           ...prev,
           isPlaying: false,
-          position: message.payload.position || audio.currentTime,
+          position: message.payload.position != null ? message.payload.position : audio.currentTime,
+          version: message.payload.version != null ? message.payload.version : prev.version,
         }));
         return true;
       }
@@ -107,11 +168,23 @@ export function useGameMusic(gameId) {
           trackName: null,
           position: 0,
           gmVolume: prev.gmVolume,
+          playlistId: null,
+          trackIndex: 0,
+          loop: prev.loop,
+          version: message.payload?.version != null ? message.payload.version : prev.version,
         }));
         return true;
       }
       case WS_EVENTS.MUSIC_VOLUME: {
         setMusicState(prev => ({ ...prev, gmVolume: message.payload.volume }));
+        return true;
+      }
+      case WS_EVENTS.MUSIC_LOOP: {
+        setMusicState(prev => ({
+          ...prev,
+          loop: message.payload.loop,
+          version: message.payload.version != null ? message.payload.version : prev.version,
+        }));
         return true;
       }
       default:
@@ -126,5 +199,6 @@ export function useGameMusic(gameId) {
     onPlayerVolumeChange,
     handleMusicMessage,
     handleSceneAssignAll,
+    syncFromGame,
   };
 }

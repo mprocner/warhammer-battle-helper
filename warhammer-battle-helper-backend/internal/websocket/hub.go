@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,25 +25,10 @@ type Message struct {
 	Payload map[string]interface{} `json:"payload"`
 }
 
-// MusicState holds the current music playback state for a game
-type MusicState struct {
-	IsPlaying  bool      `json:"isPlaying"`
-	TrackURL   string    `json:"trackUrl,omitempty"`
-	TrackName  string    `json:"trackName,omitempty"`
-	Position   float64   `json:"position"`
-	Volume     float64   `json:"volume"`
-	PlaylistId string    `json:"playlistId,omitempty"`
-	TrackIndex int       `json:"trackIndex"`
-	StartedAt  time.Time // server time when playback started (used to calculate elapsed)
-}
-
 // Hub maintains the set of active clients and broadcasts messages to the clients
 type Hub struct {
 	// Registered clients per game
 	Games map[string]map[*Client]bool
-
-	// Current music state per game (in-memory, not persisted)
-	MusicStates map[string]*MusicState
 
 	// Register requests from the clients
 	Register chan *Client
@@ -62,11 +46,10 @@ type Hub struct {
 // NewHub creates a new WebSocket hub
 func NewHub() *Hub {
 	return &Hub{
-		Games:       make(map[string]map[*Client]bool),
-		MusicStates: make(map[string]*MusicState),
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		Broadcast:   make(chan *Message, 256),
+		Games:      make(map[string]map[*Client]bool),
+		Register:   make(chan *Client),
+		Unregister: make(chan *Client),
+		Broadcast:  make(chan *Message, 256),
 	}
 }
 
@@ -100,48 +83,6 @@ func (h *Hub) registerClient(client *Client) {
 
 	fmt.Printf("Client %s joined game %s. Total clients in game: %d\n",
 		client.ID.Hex(), client.GameID, len(h.Games[client.GameID]))
-
-	// Send current music state to the newly connected client
-	if ms, ok := h.MusicStates[client.GameID]; ok && ms.IsPlaying {
-		// Calculate current playback position: original position + time elapsed since play started
-		currentPosition := ms.Position + time.Since(ms.StartedAt).Seconds()
-
-		msg := &Message{
-			Type:   "MUSIC_PLAY",
-			GameID: client.GameID,
-			Payload: map[string]interface{}{
-				"trackUrl":   ms.TrackURL,
-				"trackName":  ms.TrackName,
-				"position":   currentPosition,
-				"playlistId": ms.PlaylistId,
-				"trackIndex": ms.TrackIndex,
-			},
-		}
-		msgBytes, err := json.Marshal(msg)
-		if err == nil {
-			select {
-			case client.Send <- msgBytes:
-			default:
-			}
-		}
-		// Also send volume if not default
-		if ms.Volume != 1.0 {
-			volMsg := &Message{
-				Type:   "MUSIC_VOLUME",
-				GameID: client.GameID,
-				Payload: map[string]interface{}{
-					"volume": ms.Volume,
-				},
-			}
-			volBytes, err := json.Marshal(volMsg)
-			if err == nil {
-				select {
-				case client.Send <- volBytes:
-				default:
-				}
-			}
-		}
-	}
 }
 
 // unregisterClient removes a client from a game room
@@ -167,48 +108,6 @@ func (h *Hub) unregisterClient(client *Client) {
 
 // broadcastMessage sends a message to all clients in a game
 func (h *Hub) broadcastMessage(message *Message) {
-	// Track music state changes (needs write lock for MusicStates)
-	switch message.Type {
-	case "MUSIC_PLAY":
-		h.mu.Lock()
-		playlistId := ""
-		if pid, ok := message.Payload["playlistId"]; ok {
-			playlistId = fmt.Sprintf("%v", pid)
-		}
-		trackIndex := 0
-		if ti, ok := message.Payload["trackIndex"]; ok {
-			trackIndex = int(toFloat64(ti))
-		}
-		h.MusicStates[message.GameID] = &MusicState{
-			IsPlaying:  true,
-			TrackURL:   fmt.Sprintf("%v", message.Payload["trackUrl"]),
-			TrackName:  fmt.Sprintf("%v", message.Payload["trackName"]),
-			Position:   toFloat64(message.Payload["position"]),
-			Volume:     h.getMusicVolume(message.GameID),
-			PlaylistId: playlistId,
-			TrackIndex: trackIndex,
-			StartedAt:  time.Now(),
-		}
-		h.mu.Unlock()
-	case "MUSIC_PAUSE":
-		h.mu.Lock()
-		if ms, ok := h.MusicStates[message.GameID]; ok {
-			ms.IsPlaying = false
-			ms.Position = toFloat64(message.Payload["position"])
-		}
-		h.mu.Unlock()
-	case "MUSIC_STOP":
-		h.mu.Lock()
-		delete(h.MusicStates, message.GameID)
-		h.mu.Unlock()
-	case "MUSIC_VOLUME":
-		h.mu.Lock()
-		if ms, ok := h.MusicStates[message.GameID]; ok {
-			ms.Volume = toFloat64(message.Payload["volume"])
-		}
-		h.mu.Unlock()
-	}
-
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -231,30 +130,6 @@ func (h *Hub) broadcastMessage(message *Message) {
 
 		fmt.Printf("Broadcast message type '%s' to %d clients in game %s\n",
 			message.Type, len(clients), message.GameID)
-	}
-}
-
-// getMusicVolume returns the current volume for a game (caller must hold lock)
-func (h *Hub) getMusicVolume(gameID string) float64 {
-	if ms, ok := h.MusicStates[gameID]; ok {
-		return ms.Volume
-	}
-	return 1.0
-}
-
-// toFloat64 safely converts an interface value to float64
-func toFloat64(v interface{}) float64 {
-	switch val := v.(type) {
-	case float64:
-		return val
-	case float32:
-		return float64(val)
-	case int:
-		return float64(val)
-	case int64:
-		return float64(val)
-	default:
-		return 0
 	}
 }
 

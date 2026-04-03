@@ -1324,3 +1324,50 @@ func (r *GameRepository) GetGameNamesByGMAndFileURL(gmID primitive.ObjectID, fil
 
 	return names, nil
 }
+
+// UpdateMusicState replaces the music field of a game document.
+func (r *GameRepository) UpdateMusicState(gameID string, state models.MusicState) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{"$set": bson.M{"music": state, "updatedAt": time.Now()}}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to update music state: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
+// NextTrackIfVersion atomically advances the music state if the stored version matches.
+// Returns (true, nil) if the update succeeded, (false, nil) if the version was stale.
+func (r *GameRepository) NextTrackIfVersion(gameID string, expectedVersion int64, newState models.MusicState) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return false, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{
+		"_id":           objectID,
+		"music.version": expectedVersion,
+	}
+	update := bson.M{"$set": bson.M{"music": newState, "updatedAt": time.Now()}}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return false, fmt.Errorf("failed to advance track: %w", err)
+	}
+	return result.MatchedCount > 0, nil
+}

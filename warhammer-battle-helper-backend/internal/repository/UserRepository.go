@@ -775,3 +775,39 @@ func (r *UserRepository) MoveFile(userID primitive.ObjectID, fileID primitive.Ob
 
 	return nil
 }
+
+// UpdateMusicFileDuration sets the duration field for a specific music file.
+func (r *UserRepository) UpdateMusicFileDuration(userID, musicID primitive.ObjectID, duration float64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": userID, "music._id": musicID}
+	update := bson.M{"$set": bson.M{"music.$.duration": duration}}
+
+	_, err := r.Collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+// GetMusicFilesByIDs returns music files from a user's library that match the given IDs.
+func (r *UserRepository) GetMusicFilesByIDs(userID primitive.ObjectID, ids []primitive.ObjectID) ([]models.MusicFile, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	if err := r.Collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user); err != nil {
+		return nil, err
+	}
+
+	idSet := make(map[primitive.ObjectID]bool, len(ids))
+	for _, id := range ids {
+		idSet[id] = true
+	}
+
+	var result []models.MusicFile
+	for _, f := range user.Music {
+		if idSet[f.ID] {
+			result = append(result, f)
+		}
+	}
+	return result, nil
+}

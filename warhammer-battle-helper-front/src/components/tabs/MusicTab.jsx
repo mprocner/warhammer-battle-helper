@@ -11,7 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
+import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, setLoop, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
 import {
   DndContext,
   DragOverlay,
@@ -57,7 +57,6 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [selectedTracksForPlaylist, setSelectedTracksForPlaylist] = useState([]);
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(null);
-  const [loop, setLoop] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [expandedPlaylists, setExpandedPlaylists] = useState({});
   const [editingPlaylist, setEditingPlaylist] = useState(null);
@@ -164,38 +163,14 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [musicState.playlistId, musicState.trackIndex, playlists]);
 
-  // Track audio time updates
+  // Track audio time and duration updates
   useEffect(() => {
     const audio = audioRef.current;
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleDurationChange = () => setDuration(audio.duration || 0);
-    const handleEnded = () => {
-      if (activePlaylist && activeTrackIndex >= 0) {
-        // Playlist mode
-        const playlistTracks = getPlaylistTracks(activePlaylist);
-        const nextIndex = activeTrackIndex + 1;
-        if (nextIndex < playlistTracks.length) {
-          const nextTrack = playlistTracks[nextIndex];
-          setActiveTrackIndex(nextIndex);
-          playTrack(gameId, getFileUrl(nextTrack.fileUrl), nextTrack.name, 0).catch(console.error);
-        } else if (loop && playlistTracks.length > 0) {
-          // Loop: restart playlist from first track
-          setActiveTrackIndex(0);
-          playTrack(gameId, getFileUrl(playlistTracks[0].fileUrl), playlistTracks[0].name, 0).catch(console.error);
-        } else {
-          setActivePlaylist(null);
-          setActiveTrackIndex(-1);
-          stopTrack(gameId).catch(console.error);
-        }
-      } else if (loop && musicState.trackUrl) {
-        // Single track loop: replay from beginning
-        playTrack(gameId, musicState.trackUrl, musicState.trackName, 0).catch(console.error);
-      }
-    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('ended', handleEnded);
 
     // Sync initial values in case audio was already playing before listeners were attached
     setCurrentTime(audio.currentTime);
@@ -206,10 +181,9 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('ended', handleEnded);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, activePlaylist, activeTrackIndex, musicFiles, loop, musicState.trackUrl, musicState.trackName]);
+  }, []);
 
   const getPlaylistTracks = useCallback((playlist) => {
     if (!playlist) return [];
@@ -360,7 +334,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(null);
     setActiveTrackIndex(-1);
     try {
-      await playTrack(gameId, getFileUrl(file.fileUrl), file.name, 0);
+      await playTrack(gameId, getFileUrl(file.fileUrl), file.name, 0, '', 0, musicState.loop, file.id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -369,7 +343,16 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const handleResume = async () => {
     if (!musicState.trackUrl) return;
     try {
-      await playTrack(gameId, musicState.trackUrl, musicState.trackName, audioRef.current.currentTime);
+      await playTrack(
+        gameId,
+        musicState.trackUrl,
+        musicState.trackName,
+        musicState.position,
+        musicState.playlistId || '',
+        musicState.trackIndex || 0,
+        musicState.loop,
+        musicState.trackId || '',
+      );
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -377,7 +360,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
 
   const handlePause = async () => {
     try {
-      await pauseTrack(gameId, audioRef.current.currentTime);
+      await pauseTrack(gameId);
     } catch (err) {
       setError(t('music.pauseError'));
     }
@@ -409,7 +392,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(playlist);
     setActiveTrackIndex(0);
     try {
-      await playTrack(gameId, getFileUrl(tracks[0].fileUrl), tracks[0].name, 0);
+      await playTrack(gameId, getFileUrl(tracks[0].fileUrl), tracks[0].name, 0, playlist.id, 0, musicState.loop, tracks[0].id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -424,7 +407,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(playlist);
     setActiveTrackIndex(trackIndex);
     try {
-      await playTrack(gameId, getFileUrl(tracks[trackIndex].fileUrl), tracks[trackIndex].name, 0);
+      await playTrack(gameId, getFileUrl(tracks[trackIndex].fileUrl), tracks[trackIndex].name, 0, playlistId, trackIndex, musicState.loop, tracks[trackIndex].id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -437,7 +420,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const nextIndex = (activeTrackIndex + 1) % tracks.length;
       setActiveTrackIndex(nextIndex);
       try {
-        await playTrack(gameId, getFileUrl(tracks[nextIndex].fileUrl), tracks[nextIndex].name, 0);
+        await playTrack(gameId, getFileUrl(tracks[nextIndex].fileUrl), tracks[nextIndex].name, 0, activePlaylist.id, nextIndex, musicState.loop, tracks[nextIndex].id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -445,8 +428,9 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const nextIndex = (currentIndex + 1) % sortedMusicFiles.length;
+      const f = sortedMusicFiles[nextIndex];
       try {
-        await playTrack(gameId, getFileUrl(sortedMusicFiles[nextIndex].fileUrl), sortedMusicFiles[nextIndex].name, 0);
+        await playTrack(gameId, getFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -460,7 +444,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const prevIndex = (activeTrackIndex - 1 + tracks.length) % tracks.length;
       setActiveTrackIndex(prevIndex);
       try {
-        await playTrack(gameId, getFileUrl(tracks[prevIndex].fileUrl), tracks[prevIndex].name, 0);
+        await playTrack(gameId, getFileUrl(tracks[prevIndex].fileUrl), tracks[prevIndex].name, 0, activePlaylist.id, prevIndex, musicState.loop, tracks[prevIndex].id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -468,8 +452,9 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const prevIndex = (currentIndex - 1 + sortedMusicFiles.length) % sortedMusicFiles.length;
+      const f = sortedMusicFiles[prevIndex];
       try {
-        await playTrack(gameId, getFileUrl(sortedMusicFiles[prevIndex].fileUrl), sortedMusicFiles[prevIndex].name, 0);
+        await playTrack(gameId, getFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -611,7 +596,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const clickX = e.clientX - rect.left;
                   const newTime = (clickX / rect.width) * duration;
-                  playTrack(gameId, musicState.trackUrl, musicState.trackName, newTime).catch(console.error);
+                  playTrack(gameId, musicState.trackUrl, musicState.trackName, newTime, musicState.playlistId || '', musicState.trackIndex || 0, musicState.loop, musicState.trackId || '').catch(console.error);
                 }
               }}
             >
@@ -631,8 +616,8 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             )}
             <button className="music-tab__control-btn" onClick={handleStop} title={t('music.stop')}><StopIcon fontSize="inherit" /></button>
             <button
-              className={`music-tab__control-btn ${loop ? 'music-tab__control-btn--active' : ''}`}
-              onClick={() => setLoop(!loop)}
+              className={`music-tab__control-btn ${musicState.loop ? 'music-tab__control-btn--active' : ''}`}
+              onClick={() => setLoop(gameId, !musicState.loop).catch(console.error)}
               title={t('music.loop')}
             >
               <RepeatIcon fontSize="inherit" />
