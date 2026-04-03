@@ -37,6 +37,7 @@ export function useGameMusic(gameId) {
     return () => {
       audio.pause();
       audio.src = '';
+      audio.load();
     };
   }, []);
 

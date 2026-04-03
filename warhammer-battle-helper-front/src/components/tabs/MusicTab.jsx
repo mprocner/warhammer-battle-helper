@@ -197,6 +197,12 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
 
+    // Sync initial values in case audio was already playing before listeners were attached
+    setCurrentTime(audio.currentTime);
+    if (audio.duration && !isNaN(audio.duration)) {
+      setDuration(audio.duration);
+    }
+
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);

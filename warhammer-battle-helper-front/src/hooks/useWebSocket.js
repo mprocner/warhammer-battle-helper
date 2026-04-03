@@ -21,6 +21,7 @@ const useWebSocket = (gameId, token, onMessage) => {
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const instanceId = useRef(Math.random().toString(36).substring(7));
+  const manuallyDisconnectedRef = useRef(false);
 
   const connect = useCallback(() => {
     if (!gameId || !token) {
@@ -33,6 +34,8 @@ const useWebSocket = (gameId, token, onMessage) => {
       console.log('WebSocket: Already connected, skipping connection attempt');
       return;
     }
+
+    manuallyDisconnectedRef.current = false;
 
     try {
       const wsUrl = `${getWsUrl()}/games/${gameId}/ws?token=${token}`;
@@ -69,17 +72,19 @@ const useWebSocket = (gameId, token, onMessage) => {
         console.log('WebSocket: Disconnected');
         setIsConnected(false);
 
-        // Attempt to reconnect
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-          console.log(`WebSocket: Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+        // Attempt to reconnect only if not manually disconnected
+        if (!manuallyDisconnectedRef.current) {
+          if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+            console.log(`WebSocket: Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current += 1;
-            connect();
-          }, delay);
-        } else {
-          setError('Failed to connect after multiple attempts');
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current += 1;
+              connect();
+            }, delay);
+          } else {
+            setError('Failed to connect after multiple attempts');
+          }
         }
       };
 
@@ -91,6 +96,8 @@ const useWebSocket = (gameId, token, onMessage) => {
   }, [gameId, token, onMessage]);
 
   const disconnect = useCallback(() => {
+    manuallyDisconnectedRef.current = true;
+
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
