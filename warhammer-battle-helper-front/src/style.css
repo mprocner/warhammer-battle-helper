@@ -4565,7 +4565,10 @@ align-items: center;
 
 .online-user-bubble--current-user {
   cursor: pointer;
-  overflow: hidden;
+}
+
+.online-user-bubble--current-user .online-user-bubble__dot {
+  z-index: 2;
 }
 
 .online-user-bubble--current-user:hover {
