@@ -281,14 +281,17 @@ const SceneViewport = ({
   }, []);
 
   // Pointer ping — hold detection
+  const PING_MOVE_THRESHOLD = 5;
   const pingTimerRef = useRef(null);
+  const pingOriginRef = useRef(null);
 
   const handleContentMouseDown = useCallback((e) => {
-    if (e.button !== 0 || !sendMessage || !displayedScene || (editingLayer !== 'fog' && editingLayer !== 'drawing')) return;
+    if (e.button !== 0 || !sendMessage || !displayedScene) return;
     const contentEl = e.currentTarget;
     const rect = contentEl.getBoundingClientRect();
     const canvasX = (e.clientX - rect.left) / zoom;
     const canvasY = (e.clientY - rect.top) / zoom;
+    pingOriginRef.current = { x: e.clientX, y: e.clientY };
     pingTimerRef.current = setTimeout(() => {
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
       pingTimerRef.current = null;
@@ -300,7 +303,17 @@ const SceneViewport = ({
       clearTimeout(pingTimerRef.current);
       pingTimerRef.current = null;
     }
+    pingOriginRef.current = null;
   }, []);
+
+  const handleContentMouseMove = useCallback((e) => {
+    if (!pingOriginRef.current || !pingTimerRef.current) return;
+    const dx = e.clientX - pingOriginRef.current.x;
+    const dy = e.clientY - pingOriginRef.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > PING_MOVE_THRESHOLD) {
+      clearPingTimer();
+    }
+  }, [clearPingTimer]);
 
   useEffect(() => clearPingTimer, [clearPingTimer]);
 
@@ -416,7 +429,8 @@ const SceneViewport = ({
                   width: canvasSize.width,
                   height: canvasSize.height,
                 }}
-                onMouseDown={handleContentMouseDown}
+                onMouseDownCapture={handleContentMouseDown}
+                onMouseMove={handleContentMouseMove}
                 onMouseUp={clearPingTimer}
                 onMouseLeave={clearPingTimer}
               >
