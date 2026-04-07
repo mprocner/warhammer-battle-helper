@@ -96,11 +96,13 @@ function SkillsSection({
           return (
             <tr key={skill.key}>
               <td>
-                <input
-                  type="checkbox"
-                  checked={isDev}
-                  onChange={() => onToggleSkillFlag(skill.key, 'developmentSkills')}
-                />
+                {!skill.disable_development && (
+                  <input
+                    type="checkbox"
+                    checked={isDev}
+                    onChange={() => onToggleSkillFlag(skill.key, 'developmentSkills')}
+                  />
+                )}
               </td>
               <td
                 className={`coc-skill-name-cell${isEditing ? ' coc-skill-name-cell--custom' : ''}`}
