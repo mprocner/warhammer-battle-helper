@@ -22,6 +22,8 @@ const useWebSocket = (gameId, token, onMessage) => {
   const maxReconnectAttempts = 5;
   const instanceId = useRef(Math.random().toString(36).substring(7));
   const manuallyDisconnectedRef = useRef(false);
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
 
   const connect = useCallback(() => {
     if (!gameId || !token) {
@@ -55,8 +57,8 @@ const useWebSocket = (gameId, token, onMessage) => {
           const message = JSON.parse(event.data);
           console.log(`WebSocket [${instanceId.current}]: Received message`, message);
 
-          if (onMessage) {
-            onMessage(message);
+          if (onMessageRef.current) {
+            onMessageRef.current(message);
           }
         } catch (err) {
           console.error(`WebSocket [${instanceId.current}]: Failed to parse message`, err);
@@ -93,7 +95,7 @@ const useWebSocket = (gameId, token, onMessage) => {
       console.error('WebSocket: Connection failed', err);
       setError(err.message);
     }
-  }, [gameId, token, onMessage]);
+  }, [gameId, token]);
 
   const disconnect = useCallback(() => {
     manuallyDisconnectedRef.current = true;
