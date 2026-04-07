@@ -51,11 +51,6 @@ function CoCWeaponRoll({ data, timestamp }) {
           <strong className="log-roll-value" style={{ color: resultColor }}>
             {data.target}
           </strong>
-          {data.modifier !== 0 && (
-            <span className="log-modifier">
-              {' '}({t('log.modifier')}: {data.modifier >= 0 ? '+' : ''}{data.modifier})
-            </span>
-          )}
         </div>
 
         <div className="log-list-item__result" style={{ color: resultColor }}>

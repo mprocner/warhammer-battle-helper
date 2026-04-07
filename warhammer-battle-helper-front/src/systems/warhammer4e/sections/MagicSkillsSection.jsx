@@ -4,6 +4,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import skillsData from '../../../data/skills.json';
 import axiosInstance from '../../../api/axios';
+import { buildPayload } from '../buildPayload';
 
 function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl, onSkillClick, getCharacteristicValue }) {
     const { t } = useTranslation(['translation', 'skills']);
@@ -68,7 +69,7 @@ function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onChara
         };
         setCharacter(updatedCharacter);
         try {
-            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
+            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), buildPayload(updatedCharacter));
             if (onCharacterUpdate) onCharacterUpdate(updatedCharacter);
         } catch (error) {
             console.error('Error saving character:', error);

@@ -4,6 +4,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import weaponsData from '../../../data/weapons.json';
 import axiosInstance from '../../../api/axios';
+import { buildPayload } from '../buildPayload';
 
 function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl }) {
     const { t } = useTranslation(['translation', 'skills', 'weapons']);
@@ -96,7 +97,7 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
         setCharacter(updatedCharacter);
 
         try {
-            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), updatedCharacter);
+            await axiosInstance.put(getCharacterSaveUrl(updatedCharacter.id), buildPayload(updatedCharacter));
             if (onCharacterUpdate) onCharacterUpdate(updatedCharacter);
         } catch (error) {
             console.error('Error saving character:', error);

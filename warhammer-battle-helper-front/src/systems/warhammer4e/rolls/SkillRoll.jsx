@@ -47,11 +47,9 @@ const SkillRoll = ({ data, timestamp }) => {
                     <strong className="log-roll-value" style={{ color: resultColor }}>{rollValue}</strong>
                     {' '}{t('log.vs')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{targetValue}</strong>
-                    {modifier !== 0 && (
-                        <span className="log-modifier">
-                            {' '}({t('log.modifier')}: {modifier >= 0 ? '+' : ''}{modifier})
-                        </span>
-                    )}
+                    <span className="log-modifier">
+                        {' '}({t('log.modifier')}: {modifier > 0 ? '+' : ''}{modifier})
+                    </span>
                 </div>
                 <div className="log-list-item__result" style={{ color: resultColor }}>
                     {getResultText()}

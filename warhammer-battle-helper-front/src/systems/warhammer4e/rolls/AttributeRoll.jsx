@@ -47,11 +47,9 @@ const AttributeRoll = ({ data, timestamp }) => {
                     <strong className="log-roll-value" style={{ color: resultColor }}>{rollValue}</strong>
                     {' '}{t('log.vs')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{targetValue}</strong>
-                    {data.attributeModifier !== 0 && (
-                        <span className="log-modifier">
-                            {' '}({t('log.modifier')}: {data.attributeModifier >= 0 ? '+' : ''}{data.attributeModifier})
-                        </span>
-                    )}
+                    <span className="log-modifier">
+                        {' '}({t('log.modifier')}: {data.modifier > 0 ? '+' : ''}{data.modifier})
+                    </span>
                 </div>
                 <div className="log-list-item__result" style={{ color: resultColor }}>
                     {getResultText()}

@@ -17,12 +17,12 @@ type RollResult struct {
 	// Optional skill-specific
 	SkillKey  string `json:"skillKey,omitempty"`
 	SkillName string `json:"skillName,omitempty"`
-	Modifier  int    `json:"modifier,omitempty"`
+	Modifier  int    `json:"modifier"`
 
 	// Optional weapon-specific
 	WeaponName      string `json:"weaponName,omitempty"`
 	Damage          string `json:"damage,omitempty"`
-	DamageRoll      int    `json:"damageRoll,omitempty"`
+	DamageRoll      int    `json:"damageRoll"`
 	DamageBreakdown string `json:"damageBreakdown,omitempty"`
 
 	// Optional sanity-specific (CoC)
