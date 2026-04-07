@@ -56,8 +56,8 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
             <div className={`online-user-bubble__wrapper online-user-bubble__wrapper--${bubbleSize}`}>
                 <div
                     className={`online-user-bubble online-user-bubble--${bubbleSize} ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}${isCurrentUser ? ' online-user-bubble--current-user' : ''}`}
-                    onMouseEnter={isCurrentUser ? undefined : e => showTooltip(tooltipText, e.currentTarget)}
-                    onMouseLeave={isCurrentUser ? undefined : hideTooltip}
+                    onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
+                    onMouseLeave={hideTooltip}
                     onClick={isCurrentUser ? onOpenSettings : undefined}
                 >
                     {avatarUrl ? (
