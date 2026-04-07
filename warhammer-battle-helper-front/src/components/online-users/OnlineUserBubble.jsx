@@ -6,14 +6,16 @@ import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
 
 
-function TooltipAbove({ top, center, text }) {
+function TooltipAbove({ top, left, center, text, alignLeft }) {
+    const modifierClass = alignLeft ? 'portal-tooltip--align-left' : 'portal-tooltip--above';
+    const arrowStyle = alignLeft ? { left: center - left - 6 } : undefined;
     return (
         <div
-            className="portal-tooltip portal-tooltip--above"
-            style={{ top, left: center }}
+            className={`portal-tooltip ${modifierClass}`}
+            style={{ top, left }}
         >
             {text}
-            <span className="portal-tooltip__arrow" />
+            <span className="portal-tooltip__arrow" style={arrowStyle} />
         </div>
     );
 }
@@ -33,10 +35,14 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
     const showTooltip = (text, element) => {
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
         const rect = element.getBoundingClientRect();
+        const center = rect.left + rect.width / 2;
+        const alignLeft = center < 125;
         setTooltip({
             top: rect.top,
-            center: rect.left + rect.width / 2,
+            left: alignLeft ? rect.left : center,
+            center,
             text,
+            alignLeft,
         });
     };
 
@@ -81,7 +87,7 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
                 )}
             </div>
             {tooltip && createPortal(
-                <TooltipAbove top={tooltip.top} center={tooltip.center} text={tooltip.text} />,
+                <TooltipAbove top={tooltip.top} left={tooltip.left} center={tooltip.center} text={tooltip.text} alignLeft={tooltip.alignLeft} />,
                 document.body
             )}
         </>

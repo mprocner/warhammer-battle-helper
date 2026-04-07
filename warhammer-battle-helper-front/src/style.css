@@ -4393,6 +4393,35 @@ align-items: center;
   border-left-color: transparent;
 }
 
+.portal-tooltip--align-left {
+  transform: translateX(0) translateY(-100%);
+  margin-left: 0;
+  margin-top: -10px;
+  animation: portalTooltipAlignLeftFadeIn 0.15s ease-out;
+}
+
+@keyframes portalTooltipAlignLeftFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(0) translateY(-100%) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(-100%) translateY(0);
+  }
+}
+
+.portal-tooltip--align-left .portal-tooltip__arrow {
+  right: auto;
+  top: auto;
+  left: 12px;
+  bottom: -12px;
+  transform: none;
+  border: 6px solid transparent;
+  border-top-color: #c9975b;
+  border-left-color: transparent;
+}
+
 @keyframes portalTooltipFadeIn {
   from {
     opacity: 0;
