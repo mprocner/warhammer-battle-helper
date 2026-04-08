@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getApiUrl } from '../api/axios';
 import { getMusic, playTrack, nextTrack } from '../api/music';
+
 import { WS_EVENTS } from '../websocket/events';
+
+const resolveUrl = (url) => (url && !url.startsWith('http') ? `${getApiUrl()}${url}` : url);
 
 /**
  * Manages all music state: audio playback, GM volume, player volume,
@@ -83,7 +86,7 @@ export function useGameMusic(gameId) {
     });
 
     if (gameMusicState.isPlaying && gameMusicState.trackUrl) {
-      const url = gameMusicState.trackUrl;
+      const url = resolveUrl(gameMusicState.trackUrl);
       if (audio.src !== url) {
         audio.src = url;
         audio.currentTime = gameMusicState.position || 0;
@@ -127,7 +130,8 @@ export function useGameMusic(gameId) {
     const audio = audioRef.current;
     switch (message.type) {
       case WS_EVENTS.MUSIC_PLAY: {
-        const { trackUrl, trackName, position, playlistId, trackIndex, loop, version } = message.payload;
+        const { trackUrl: rawTrackUrl, trackName, position, playlistId, trackIndex, loop, version } = message.payload;
+        const trackUrl = resolveUrl(rawTrackUrl);
         if (audio.src !== trackUrl) {
           audio.src = trackUrl;
         }
