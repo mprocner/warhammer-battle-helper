@@ -1,7 +1,8 @@
 import warhammer4e from './warhammer4e';
 import coc7e from './coc7e';
+import dnd5e from './dnd5e';
 
-const systems = { warhammer4e, coc7e };
+const systems = { warhammer4e, coc7e, dnd5e };
 
 /**
  * Returns the system module for the given game system key.

@@ -1,0 +1,20 @@
+[
+  { "key": "acrobatics",      "ability": "dex", "label": "Acrobatics"      },
+  { "key": "animal_handling", "ability": "wis", "label": "Animal Handling"  },
+  { "key": "arcana",          "ability": "int", "label": "Arcana"           },
+  { "key": "athletics",       "ability": "str", "label": "Athletics"        },
+  { "key": "deception",       "ability": "cha", "label": "Deception"        },
+  { "key": "history",         "ability": "int", "label": "History"          },
+  { "key": "insight",         "ability": "wis", "label": "Insight"          },
+  { "key": "intimidation",    "ability": "cha", "label": "Intimidation"     },
+  { "key": "investigation",   "ability": "int", "label": "Investigation"    },
+  { "key": "medicine",        "ability": "wis", "label": "Medicine"         },
+  { "key": "nature",          "ability": "int", "label": "Nature"           },
+  { "key": "perception",      "ability": "wis", "label": "Perception"       },
+  { "key": "performance",     "ability": "cha", "label": "Performance"      },
+  { "key": "persuasion",      "ability": "cha", "label": "Persuasion"       },
+  { "key": "religion",        "ability": "int", "label": "Religion"         },
+  { "key": "sleight_of_hand", "ability": "dex", "label": "Sleight of Hand"  },
+  { "key": "stealth",         "ability": "dex", "label": "Stealth"          },
+  { "key": "survival",        "ability": "wis", "label": "Survival"         }
+]

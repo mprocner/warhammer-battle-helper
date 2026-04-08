@@ -296,7 +296,7 @@ const SceneViewport = ({
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, displayedScene, zoom, editingLayer]);
+  }, [sendMessage, displayedScene, zoom]);
 
   const clearPingTimer = useCallback(() => {
     if (pingTimerRef.current) {

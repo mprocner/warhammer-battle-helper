@@ -7,3 +7,4 @@
 - [Known UX Pain Points](ux-pain-points.md) — Identified issues from codebase analysis (2026-03-27)
 - [Scene-Linked Music Design](scene-linked-music.md) — Design decisions for auto-triggering music on scene switch (2026-03-30)
 - [Inline Rename Patterns](inline-rename-patterns.md) — Folder rename pattern already exists; design for extending it to file items in Files/Music tabs
+- [D&D 5e System Design](dnd5e-system-design.md) — Sheet layout, ability score display, skill rows, attack log entries, advantage/disadvantage flow (2026-04-07)

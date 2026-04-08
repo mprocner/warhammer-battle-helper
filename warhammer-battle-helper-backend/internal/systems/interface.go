@@ -32,6 +32,13 @@ type RollResult struct {
 	// Optional bonus/penalty dice (CoC)
 	DiceMod  int   `json:"diceMod,omitempty"`  // +1/+2 bonus, -1/-2 penalty
 	AllRolls []int `json:"allRolls,omitempty"` // all candidates; final = Roll
+
+	// D&D 5e specific fields (omitempty — no impact on CoC/Warhammer results)
+	D20Roll        int  `json:"d20Roll,omitempty"`        // raw d20 before modifiers
+	BonusTotal     int  `json:"bonusTotal,omitempty"`     // total modifier applied
+	IsAdvantage    bool `json:"isAdvantage,omitempty"`    // rolled with advantage
+	IsDisadvantage bool `json:"isDisadvantage,omitempty"` // rolled with disadvantage
+	IsCriticalHit  bool `json:"isCriticalHit,omitempty"`  // natural 20 on attack
 }
 
 // GameSystem is the interface every game-system plugin must implement.
