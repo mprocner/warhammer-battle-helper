@@ -95,13 +95,17 @@ func main() {
 	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
 	userRepo := repository.NewUserRepository(db.UsersCollection)
 	gameRepo := repository.NewGameRepository(db.GamesCollection)
+	statsRepo := repository.NewRollStatsRepository(db.RollStatsCollection)
+	if err := statsRepo.EnsureIndexes(); err != nil {
+		fmt.Printf("WARNING: failed to create roll_stats indexes: %v\n", err)
+	}
 
 	// Initialize WebSocket hub
 	hub := websocket.NewHub()
 	go hub.Run()
 
 	// Initialize services
-	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub)
+	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo)
 
 	fogRepo := repository.NewFogRepository(db.GamesCollection)
 	fogService := service.NewFogService(fogRepo, hub)
@@ -137,6 +141,7 @@ func main() {
 
 	// GET /games/:id is JWT-optional (event visibility filtering)
 	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
+	statsHandler := http.StatsHandler{StatsRepo: statsRepo}
 	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// WebSocket (auth handled inside handler via token query param)
@@ -149,6 +154,7 @@ func main() {
 	auth.PATCH("/change-password", authHandler.ChangePassword)
 	auth.GET("/profile", authHandler.GetProfile)
 	auth.PATCH("/profile", authHandler.UpdateProfile)
+	auth.GET("/profile/roll-stats", statsHandler.GetUserStats)
 	auth.GET("/settings", authHandler.GetSettings)
 	auth.PATCH("/settings", authHandler.UpdateSettings)
 
@@ -176,6 +182,7 @@ func main() {
 	game.POST("/roll", gameHandler.RollDice)
 	game.POST("/rollSkill", gameHandler.RollSkill)
 	game.POST("/rollWeapon", gameHandler.RollWeapon)
+	game.GET("/roll-stats", statsHandler.GetGameStats)
 	game.POST("/message", gameHandler.SendMessage)
 
 	// Characters

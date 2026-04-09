@@ -98,7 +98,36 @@
       "errorCurrentPassword": "Aktualne hasło jest nieprawidłowe",
       "errorPasswordTooShort": "Hasło musi mieć co najmniej 8 znaków",
       "errorPasswordMismatch": "Hasła nie są zgodne"
+    },
+    "statistics": {
+      "title": "Statystyki rzutów"
     }
+  },
+  "stats": {
+    "rollStatistics": "Statystyki rzutów",
+    "noRollsYet": "Brak rzutów",
+    "successRate": "Skuteczność umiejętności",
+    "skillSuccessCount": "Udane rzuty na umiejętności",
+    "critSuccesses": "Crity (1)",
+    "fumbles": "Fumble (100)",
+    "totalRolls": "{{count}} rzutów",
+    "totalRollsLabel": "Liczba rzutów",
+    "averageRoll": "Śr.",
+    "averageRollLabel": "Średnia",
+    "lifetimeStats": "Statystyki wszystkich gier",
+    "filterAll": "Wszystkie",
+    "noLifetimeRolls": "Brak zapisanych rzutów. Statystyki pojawią się po pierwszej sesji.",
+    "critSuccessTooltip": "Rzut 1 — krytyczny sukces",
+    "fumbleTooltip": "Rzut 100 — krytyczna porażka",
+    "bucket": "Wyniki {{from}}–{{to}}: {{count}}",
+    "critZone": "Strefa krytyków (1–10)",
+    "fumbleZone": "Strefa fumble (91–100)",
+    "critLabel": "Krytyki",
+    "fumbleLabel": "Fumble",
+    "noRollsForDie": "Brak wyników dla tej kości",
+    "refresh": "Odśwież",
+    "successCount": "{{s}}/{{t}}",
+    "dieType": "k{{sides}}"
   },
   "validation": {
     "required": "To pole jest wymagane",

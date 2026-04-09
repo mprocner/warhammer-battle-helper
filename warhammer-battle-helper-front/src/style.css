@@ -4623,3 +4623,51 @@ align-items: center;
   color: #888;
   font-size: 0.9rem;
 }
+
+/* Roll Statistics Settings */
+.roll-stats-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roll-stats-settings__loading,
+.roll-stats-settings__error {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #8b6914;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-stats-settings__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #8b6914;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.roll-stats-settings__refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid #c9a66b;
+  border-radius: 4px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.8rem;
+  color: #7a5c42;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.roll-stats-settings__refresh-btn:hover {
+  background: rgba(201, 166, 107, 0.15);
+}

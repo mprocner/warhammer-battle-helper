@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import SettingsSidebar from './SettingsSidebar';
 import ChangePasswordForm from './ChangePasswordForm';
 import AccountSettingsForm from './AccountSettingsForm';
+import RollStatisticsSettings from './RollStatisticsSettings';
 
 const SECTION_COMPONENTS = {
     account: <AccountSettingsForm />,
     changePassword: <ChangePasswordForm />,
+    statistics: <RollStatisticsSettings />,
 };
 
 const SettingsPage = () => {

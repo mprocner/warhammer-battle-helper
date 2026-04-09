@@ -183,6 +183,8 @@ const RightPanel = ({
             musicState={musicState}
             controlScheme={controlScheme}
             onControlSchemeChange={onControlSchemeChange}
+            gameId={gameId}
+            token={token}
           />
         );
       default:

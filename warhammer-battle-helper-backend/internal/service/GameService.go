@@ -16,10 +16,11 @@ import (
 )
 
 type GameService struct {
-	gameRepo *repository.GameRepository
-	userRepo *repository.UserRepository
-	charRepo *repository.CharactersRepository
-	hub      *websocket.Hub
+	gameRepo  *repository.GameRepository
+	userRepo  *repository.UserRepository
+	charRepo  *repository.CharactersRepository
+	hub       *websocket.Hub
+	statsRepo *repository.RollStatsRepository
 }
 
 func NewGameService(
@@ -27,12 +28,14 @@ func NewGameService(
 	userRepo *repository.UserRepository,
 	charRepo *repository.CharactersRepository,
 	hub *websocket.Hub,
+	statsRepo *repository.RollStatsRepository,
 ) *GameService {
 	return &GameService{
-		gameRepo: gameRepo,
-		userRepo: userRepo,
-		charRepo: charRepo,
-		hub:      hub,
+		gameRepo:  gameRepo,
+		userRepo:  userRepo,
+		charRepo:  charRepo,
+		hub:       hub,
+		statsRepo: statsRepo,
 	}
 }
 
@@ -638,6 +641,28 @@ func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.
 		return nil, err
 	}
 
+	go func(uID primitive.ObjectID, gID string, r *systems.RollResult) {
+		gameObjID, err := primitive.ObjectIDFromHex(gID)
+		if err != nil {
+			return
+		}
+		var charPtr *primitive.ObjectID
+		if cid, e := primitive.ObjectIDFromHex(r.CharacterID); e == nil {
+			charPtr = &cid
+		}
+		if err := s.statsRepo.Record(&models.RollStat{
+			UserID:      uID,
+			GameID:      &gameObjID,
+			DieType:     100,
+			Result:      r.Roll,
+			RollType:    r.RollType,
+			CharacterID: charPtr,
+			Outcome:     r.Outcome,
+		}); err != nil {
+			log.Printf("roll stats record failed: %v", err)
+		}
+	}(userID, gameID, rollResult)
+
 	s.broadcastRoll(gameID, eventType, broadcastData, visibility, userID, game.GameMasterID)
 	return broadcastData, nil
 }
@@ -694,6 +719,22 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
 		return 0, err
 	}
+
+	go func(uID primitive.ObjectID, gID string, dieType, res int) {
+		gameObjID, err := primitive.ObjectIDFromHex(gID)
+		if err != nil {
+			return
+		}
+		if err := s.statsRepo.Record(&models.RollStat{
+			UserID:   uID,
+			GameID:   &gameObjID,
+			DieType:  dieType,
+			Result:   res,
+			RollType: "generic",
+		}); err != nil {
+			log.Printf("roll stats record failed: %v", err)
+		}
+	}(userID, gameID, sides, result)
 
 	s.broadcastRoll(gameID, websocket.EventDiceRolled, eventData, visibility, userID, game.GameMasterID)
 	return result, nil

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -6,15 +6,19 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
+import RollStatsPanel from './RollStatsPanel';
 import './GeneralTab.css';
 
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange }) => {
+const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [statsOpen, setStatsOpen] = useState(true);
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
@@ -81,6 +85,19 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           </div>
         </section>
       )}
+
+      {/* Roll Statistics Section */}
+      <section className="general-tab__section general-tab__section--collapsible">
+        <button
+          className="general-tab__section-header"
+          onClick={() => setStatsOpen(o => !o)}
+          aria-expanded={statsOpen}
+        >
+          <h4 className="general-tab__section-title">{t('stats.rollStatistics')}</h4>
+          {statsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        </button>
+        {statsOpen && <RollStatsPanel gameId={gameId} token={token} />}
+      </section>
 
       {/* Scene Controls Section */}
       <section className="general-tab__section">

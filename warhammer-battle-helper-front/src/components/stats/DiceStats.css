@@ -1,0 +1,179 @@
+/* =========================================================
+   DiceStats — shared stats components (parchment theme)
+   Used by RollStatsPanel (compact) and RollStatisticsSettings (expanded)
+   ========================================================= */
+
+/* Tab strip */
+.die-tab-strip {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.die-tab-strip__tab {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #c9a66b;
+  background: transparent;
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b4423;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.die-tab-strip__tab:hover {
+  background: rgba(201, 166, 107, 0.2);
+}
+
+.die-tab-strip__tab--active {
+  background: #4a3728;
+  color: #f5ebe0;
+  border-color: #4a3728;
+}
+
+/* Stats block */
+.die-stats-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Stat tiles */
+.die-stats-block__tiles {
+  display: flex;
+  gap: 8px;
+}
+
+.die-stats-block__tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  background: rgba(201, 166, 107, 0.12);
+  border: 1px solid #c9a66b;
+  border-radius: 6px;
+}
+
+.die-stats-block__tile-value {
+  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #4a3728;
+  line-height: 1.2;
+}
+
+.die-stats-block__tile-label {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.75rem;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+  text-align: center;
+}
+
+/* Tile accent variants */
+.die-stats-block__tile--success {
+  border-color: #5a8a5a;
+  background: rgba(90, 138, 90, 0.1);
+}
+
+.die-stats-block__tile--success .die-stats-block__tile-value {
+  color: #3d6b3d;
+}
+
+.die-stats-block__tile--crit {
+  border-color: #b8941f;
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.die-stats-block__tile--crit .die-stats-block__tile-value {
+  color: #8b6914;
+}
+
+.die-stats-block__tile--fumble {
+  border-color: #6b3fa0;
+  background: rgba(107, 63, 160, 0.1);
+}
+
+.die-stats-block__tile--fumble .die-stats-block__tile-value {
+  color: #5a2d8a;
+}
+
+.die-stats-block__tile--zero {
+  opacity: 0.45;
+}
+
+
+/* Histogram */
+.die-histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+}
+
+.die-histogram__bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px 2px 0 0;
+  background: rgba(201, 166, 107, 0.35);
+  border-bottom: 2px solid #c9a66b;
+  transition: height 0.3s ease;
+  cursor: default;
+}
+
+.die-histogram__bar:hover {
+  background: rgba(201, 166, 107, 0.6);
+}
+
+.die-histogram__bar--crit {
+  background: rgba(212, 175, 55, 0.4);
+  border-bottom-color: #8b6914;
+}
+
+.die-histogram__bar--crit:hover {
+  background: rgba(212, 175, 55, 0.65);
+}
+
+.die-histogram__bar--fumble {
+  background: rgba(107, 63, 160, 0.3);
+  border-bottom-color: #3a1a5c;
+}
+
+.die-histogram__bar--fumble:hover {
+  background: rgba(107, 63, 160, 0.5);
+}
+
+/* Axis labels (expanded only) */
+.die-histogram__labels {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.die-histogram__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.6rem;
+  color: #7a5c42;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.die-histogram__label--crit {
+  color: #8b6914;
+  font-weight: 700;
+}
+
+.die-histogram__label--fumble {
+  color: #3a1a5c;
+  font-weight: 700;
+}
+

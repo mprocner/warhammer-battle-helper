@@ -16,6 +16,7 @@ type Database struct {
 	CharactersCollection *mongo.Collection
 	UsersCollection      *mongo.Collection
 	GamesCollection      *mongo.Collection
+	RollStatsCollection  *mongo.Collection
 }
 
 // ConnectDatabase establishes a connection to MongoDB and returns database collections
@@ -56,6 +57,7 @@ func ConnectDatabase() (*Database, error) {
 		CharactersCollection: db.Collection("characters"),
 		UsersCollection:      db.Collection("users"),
 		GamesCollection:      db.Collection("games"),
+		RollStatsCollection:  db.Collection("roll_stats"),
 	}, nil
 }
 
