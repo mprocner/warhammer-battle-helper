@@ -100,7 +100,7 @@
       "errorPasswordMismatch": "Hasła nie są zgodne"
     },
     "statistics": {
-      "title": "Statystyki rzutów"
+      "title": "Statystyki"
     }
   },
   "stats": {
@@ -127,7 +127,12 @@
     "noRollsForDie": "Brak wyników dla tej kości",
     "refresh": "Odśwież",
     "successCount": "{{s}}/{{t}}",
-    "dieType": "k{{sides}}"
+    "dieType": "k{{sides}}",
+    "statistics": "Statystyki",
+    "onlineTime": "Czas online",
+    "totalOnlineTime": "Łączny czas",
+    "sessionCount": "Liczba sesji",
+    "noSessionsYet": "Brak zapisanych sesji"
   },
   "validation": {
     "required": "To pole jest wymagane",

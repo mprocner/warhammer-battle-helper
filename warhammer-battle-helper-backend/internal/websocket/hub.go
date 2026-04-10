@@ -9,6 +9,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// SessionTracker is implemented by OnlineSessionService to avoid import cycles.
+type SessionTracker interface {
+	Open(gameID string, userID primitive.ObjectID)
+	Close(gameID string, userID primitive.ObjectID)
+}
+
 // Client represents a WebSocket client connection
 type Client struct {
 	ID     primitive.ObjectID
@@ -41,6 +47,9 @@ type Hub struct {
 
 	// Mutex for thread-safe operations
 	mu sync.RWMutex
+
+	// SessionTracker tracks online sessions (optional, nil-safe)
+	sessionTracker SessionTracker
 }
 
 // NewHub creates a new WebSocket hub
@@ -51,6 +60,11 @@ func NewHub() *Hub {
 		Unregister: make(chan *Client),
 		Broadcast:  make(chan *Message, 256),
 	}
+}
+
+// SetSessionTracker sets the session tracker for online time tracking.
+func (h *Hub) SetSessionTracker(st SessionTracker) {
+	h.sessionTracker = st
 }
 
 // Run starts the hub's main loop
@@ -83,6 +97,10 @@ func (h *Hub) registerClient(client *Client) {
 
 	fmt.Printf("Client %s joined game %s. Total clients in game: %d\n",
 		client.ID.Hex(), client.GameID, len(h.Games[client.GameID]))
+
+	if h.sessionTracker != nil {
+		go h.sessionTracker.Open(client.GameID, client.ID)
+	}
 }
 
 // unregisterClient removes a client from a game room
@@ -90,47 +108,78 @@ func (h *Hub) unregisterClient(client *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if clients, ok := h.Games[client.GameID]; ok {
-		if _, ok := clients[client]; ok {
-			delete(clients, client)
-			close(client.Send)
+	h.removeClient(client)
+}
 
-			// Remove empty game rooms
-			if len(clients) == 0 {
-				delete(h.Games, client.GameID)
-			}
+// removeClient removes a client and closes its session if no other tabs remain.
+// Must be called with h.mu held (write lock).
+func (h *Hub) removeClient(client *Client) {
+	clients, ok := h.Games[client.GameID]
+	if !ok {
+		return
+	}
+	if _, exists := clients[client]; !exists {
+		return
+	}
 
-			fmt.Printf("Client %s left game %s. Remaining clients: %d\n",
-				client.ID.Hex(), client.GameID, len(clients))
+	delete(clients, client)
+	close(client.Send)
+
+	// Close online session only if user has no other clients in this game
+	if h.sessionTracker != nil && !h.hasOtherClient(client.ID, clients) {
+		go h.sessionTracker.Close(client.GameID, client.ID)
+	}
+
+	// Remove empty game rooms
+	if len(clients) == 0 {
+		delete(h.Games, client.GameID)
+	}
+
+	fmt.Printf("Client %s left game %s. Remaining clients: %d\n",
+		client.ID.Hex(), client.GameID, len(clients))
+}
+
+// hasOtherClient checks if userID has another client connection in the given clients map.
+func (h *Hub) hasOtherClient(userID primitive.ObjectID, clients map[*Client]bool) bool {
+	for c := range clients {
+		if c.ID == userID {
+			return true
 		}
 	}
+	return false
 }
 
 // broadcastMessage sends a message to all clients in a game
 func (h *Hub) broadcastMessage(message *Message) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
-	if clients, ok := h.Games[message.GameID]; ok {
-		messageBytes, err := json.Marshal(message)
-		if err != nil {
-			fmt.Printf("Error marshaling message: %v\n", err)
-			return
-		}
-
-		for client := range clients {
-			select {
-			case client.Send <- messageBytes:
-			default:
-				// Client's send channel is full, close it
-				close(client.Send)
-				delete(clients, client)
-			}
-		}
-
-		fmt.Printf("Broadcast message type '%s' to %d clients in game %s\n",
-			message.Type, len(clients), message.GameID)
+	clients, ok := h.Games[message.GameID]
+	if !ok {
+		return
 	}
+
+	messageBytes, err := json.Marshal(message)
+	if err != nil {
+		fmt.Printf("Error marshaling message: %v\n", err)
+		return
+	}
+
+	var stale []*Client
+	for client := range clients {
+		select {
+		case client.Send <- messageBytes:
+		default:
+			stale = append(stale, client)
+		}
+	}
+
+	for _, client := range stale {
+		h.removeClient(client)
+	}
+
+	fmt.Printf("Broadcast message type '%s' to %d clients in game %s\n",
+		message.Type, len(clients), message.GameID)
 }
 
 // BroadcastToGame sends a message to all clients in a specific game

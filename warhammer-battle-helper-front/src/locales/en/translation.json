@@ -100,7 +100,7 @@
       "errorPasswordMismatch": "Passwords do not match"
     },
     "statistics": {
-      "title": "Roll Statistics"
+      "title": "Statistics"
     }
   },
   "stats": {
@@ -127,7 +127,12 @@
     "noRollsForDie": "No rolls recorded for this die type",
     "refresh": "Refresh",
     "successCount": "{{s}}/{{t}}",
-    "dieType": "d{{sides}}"
+    "dieType": "d{{sides}}",
+    "statistics": "Statistics",
+    "onlineTime": "Online Time",
+    "totalOnlineTime": "Total time",
+    "sessionCount": "Sessions",
+    "noSessionsYet": "No sessions recorded yet"
   },
   "validation": {
     "required": "This field is required",

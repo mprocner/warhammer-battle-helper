@@ -93,7 +93,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           onClick={() => setStatsOpen(o => !o)}
           aria-expanded={statsOpen}
         >
-          <h4 className="general-tab__section-title">{t('stats.rollStatistics')}</h4>
+          <h4 className="general-tab__section-title">{t('stats.statistics')}</h4>
           {statsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
         </button>
         {statsOpen && <RollStatsPanel gameId={gameId} token={token} />}
