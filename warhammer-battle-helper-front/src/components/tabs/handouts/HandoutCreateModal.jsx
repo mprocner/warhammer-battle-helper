@@ -37,7 +37,7 @@ const HandoutCreateModal = ({
     title: '',
     description: '',
     type: 'image',
-    visibility: ['all'],
+    visibility: ['gm-only'],
     fileUrl: ''
   });
 
@@ -66,7 +66,7 @@ const HandoutCreateModal = ({
           title: '',
           description: '',
           type: 'image',
-          visibility: ['all'],
+          visibility: ['gm-only'],
           fileUrl: ''
         });
         setPreviewUrl('');
@@ -304,17 +304,17 @@ const HandoutCreateModal = ({
             <div className="visibility-selector">
               <button
                 type="button"
-                className={`visibility-btn ${isVisibilityAll ? 'visibility-btn--selected' : ''}`}
-                onClick={() => handleVisibilityChange('all')}
-              >
-                {t('handouts.visibleToAll')}
-              </button>
-              <button
-                type="button"
                 className={`visibility-btn ${isVisibilityGMOnly ? 'visibility-btn--selected' : ''}`}
                 onClick={() => handleVisibilityChange('gm-only')}
               >
                 {t('handouts.gmOnly')}
+              </button>
+              <button
+                type="button"
+                className={`visibility-btn ${isVisibilityAll ? 'visibility-btn--selected' : ''}`}
+                onClick={() => handleVisibilityChange('all')}
+              >
+                {t('handouts.visibleToAll')}
               </button>
               {players.length > 0 && (
                 <button

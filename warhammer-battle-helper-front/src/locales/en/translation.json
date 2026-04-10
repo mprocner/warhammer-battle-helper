@@ -98,7 +98,41 @@
       "errorCurrentPassword": "Current password is incorrect",
       "errorPasswordTooShort": "Password must be at least 8 characters",
       "errorPasswordMismatch": "Passwords do not match"
+    },
+    "statistics": {
+      "title": "Statistics"
     }
+  },
+  "stats": {
+    "rollStatistics": "Roll Statistics",
+    "noRollsYet": "No rolls yet",
+    "successRate": "Skill success rate",
+    "skillSuccessCount": "Successful skill rolls",
+    "critSuccesses": "Crits (1)",
+    "fumbles": "Fumbles (100)",
+    "totalRolls": "{{count}} rolls",
+    "totalRollsLabel": "Total rolls",
+    "averageRoll": "Avg",
+    "averageRollLabel": "Average",
+    "lifetimeStats": "Lifetime Roll Statistics",
+    "filterAll": "All",
+    "noLifetimeRolls": "No rolls recorded yet. Stats will appear after your first game session.",
+    "critSuccessTooltip": "Rolls of 1 — critical success",
+    "fumbleTooltip": "Rolls of 100 — critical failure",
+    "bucket": "Results {{from}}–{{to}}: {{count}}",
+    "critZone": "Critical zone (1–10)",
+    "fumbleZone": "Fumble zone (91–100)",
+    "critLabel": "Crits",
+    "fumbleLabel": "Fumbles",
+    "noRollsForDie": "No rolls recorded for this die type",
+    "refresh": "Refresh",
+    "successCount": "{{s}}/{{t}}",
+    "dieType": "d{{sides}}",
+    "statistics": "Statistics",
+    "onlineTime": "Online Time",
+    "totalOnlineTime": "Total time",
+    "sessionCount": "Sessions",
+    "noSessionsYet": "No sessions recorded yet"
   },
   "validation": {
     "required": "This field is required",

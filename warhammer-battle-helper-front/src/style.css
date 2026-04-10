@@ -4624,6 +4624,100 @@ align-items: center;
   font-size: 0.9rem;
 }
 
+/* Roll Statistics Settings */
+.roll-stats-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.roll-stats-settings__loading,
+.roll-stats-settings__error {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #8b6914;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-stats-settings__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #8b6914;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.roll-stats-settings__refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid #c9a66b;
+  border-radius: 4px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.8rem;
+  color: #7a5c42;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.roll-stats-settings__refresh-btn:hover {
+  background: rgba(201, 166, 107, 0.15);
+}
+
+.roll-stats-settings__refresh-btn--subtle {
+  opacity: 0.7;
+  align-self: flex-end;
+}
+
+/* Online Stats (settings page) */
+.roll-stats-settings__online {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #c9a66b;
+}
+
+.roll-stats-settings__online-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin-bottom: 8px;
+}
+
+.roll-stats-settings__online-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.roll-stats-settings__online-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.roll-stats-settings__online-label {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.8rem;
+  color: #7a5c42;
+}
+
+.roll-stats-settings__online-value {
+  font-family: 'Crimson Text', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4a3728;
+}
+
 /* ============================================================
    D&D 5e System Styles
    ============================================================ */
