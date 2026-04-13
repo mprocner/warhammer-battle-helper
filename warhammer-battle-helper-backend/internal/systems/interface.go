@@ -5,6 +5,7 @@ import "go.mongodb.org/mongo-driver/bson"
 // RollResult is the generic result returned by any system's roll function.
 type RollResult struct {
 	// Common fields
+	DiceType      int    `json:"diceType"` // 20 for D&D 5e, 100 for Warhammer/CoC
 	RollType      string `json:"rollType"` // "skill" | "weapon" | "attribute" | "sanity"
 	CharacterID   string `json:"characterId"`
 	CharacterName string `json:"characterName"`

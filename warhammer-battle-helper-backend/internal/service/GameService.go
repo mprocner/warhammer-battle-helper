@@ -650,16 +650,24 @@ func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.
 		if cid, e := primitive.ObjectIDFromHex(r.CharacterID); e == nil {
 			charPtr = &cid
 		}
-		if err := s.statsRepo.Record(&models.RollStat{
-			UserID:      uID,
-			GameID:      &gameObjID,
-			DieType:     100,
-			Result:      r.Roll,
-			RollType:    r.RollType,
-			CharacterID: charPtr,
-			Outcome:     r.Outcome,
-		}); err != nil {
-			log.Printf("roll stats record failed: %v", err)
+		// When multiple dice were rolled (e.g. D&D advantage/disadvantage),
+		// record each raw die result as a separate stat entry.
+		rawResults := r.AllRolls
+		if len(rawResults) == 0 {
+			rawResults = []int{r.Roll}
+		}
+		for _, rawResult := range rawResults {
+			if err := s.statsRepo.Record(&models.RollStat{
+				UserID:      uID,
+				GameID:      &gameObjID,
+				DieType:     r.DiceType,
+				Result:      rawResult,
+				RollType:    r.RollType,
+				CharacterID: charPtr,
+				Outcome:     r.Outcome,
+			}); err != nil {
+				log.Printf("roll stats record failed: %v", err)
+			}
 		}
 	}(userID, gameID, rollResult)
 

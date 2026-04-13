@@ -170,6 +170,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	}
 
 	return &gsys.RollResult{
+		DiceType:       20,
 		RollType:       "skill",
 		Roll:           total,
 		Target:         target,
@@ -257,6 +258,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 	}
 
 	return &gsys.RollResult{
+		DiceType:        20,
 		RollType:        "weapon",
 		Roll:            attackTotal,
 		Target:          targetAC,

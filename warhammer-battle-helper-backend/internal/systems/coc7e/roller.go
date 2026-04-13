@@ -344,6 +344,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	outcome := outcomeCoC(roll, target)
 
 	return &gsys.RollResult{
+		DiceType:  100,
 		RollType:  "skill",
 		Roll:      roll,
 		Target:    target,
@@ -376,6 +377,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	damageRoll, damageBreakdown := rollDamage(damage, stats.Combat.DamageBonus)
 
 	return &gsys.RollResult{
+		DiceType:        100,
 		RollType:        "weapon",
 		Roll:            roll,
 		Target:          target,
