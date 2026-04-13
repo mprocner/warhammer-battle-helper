@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddIcon from '@mui/icons-material/Add';
 import CharacterHeader from '../shared/CharacterHeader';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -156,40 +158,47 @@ function DnD5eCharacterDetails({
         t={t}
       />
 
-      {/* HP quick edit */}
+      {/* Quick combat stats */}
       <div className="detail-grid">
-        <div className="detail-item">
+        <div className="detail-item detail-item--primary dnd-hp-box">
           <div className="detail-label">{t('dnd.hp')}</div>
-          <div className="detail-value modifier-value">
-            <div className="coc-detail-left">
+          <div className="dnd-hp-box__row">
+            <button className="dnd-hp-adjust-btn" onClick={() => handleHpChange(Math.max(0, (resources.hp ?? 0) - 1))}>
+              <RemoveIcon style={{ fontSize: 16 }} />
+            </button>
+            <div className="dnd-hp-box__value">
               <input
                 type="number"
-                className="wounds-input"
+                className="dnd-hp-box__input"
                 min={0}
                 max={resources.hpMax || 0}
                 value={resources.hp ?? 0}
                 onChange={e => handleHpChange(e.target.value)}
               />
-              <span>/ {resources.hpMax || '—'}</span>
+              <span className="dnd-hp-box__sep">/</span>
+              <span className="dnd-hp-box__max">{resources.hpMax || '—'}</span>
             </div>
+            <button className="dnd-hp-adjust-btn" onClick={() => handleHpChange(Math.min(resources.hpMax || 0, (resources.hp ?? 0) + 1))}>
+              <AddIcon style={{ fontSize: 16 }} />
+            </button>
           </div>
         </div>
-        <div className="detail-item">
+        <div className="detail-item detail-item--primary">
           <div className="detail-label">{t('dnd.armorClass')}</div>
           <div className="detail-value">
             <strong>{stats.armorClass ?? 10}</strong>
           </div>
         </div>
         <div className="detail-item">
-          <div className="detail-label">{t('dnd.passivePerception')}</div>
+          <div className="detail-label">{t('dnd.initiative')}</div>
           <div className="detail-value">
-            <strong>{derived.passivePerception ?? 10}</strong>
+            <strong>{formatMod(derived.initiative ?? 0)}</strong>
           </div>
         </div>
         <div className="detail-item">
-          <div className="detail-label">{t('dnd.proficiencyBonus')}</div>
+          <div className="detail-label">{t('dnd.passivePerception')}</div>
           <div className="detail-value">
-            <strong>+{derived.proficiencyBonus ?? 2}</strong>
+            <strong>{derived.passivePerception ?? 10}</strong>
           </div>
         </div>
       </div>

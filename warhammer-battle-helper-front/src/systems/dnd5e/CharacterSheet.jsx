@@ -494,6 +494,7 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
             onFieldChange={handleFieldChange}
             deathSaves={edited.resources}
             onDeathSaveChange={handleDeathSaveChange}
+            level={edited.info?.level || 1}
           />
           <AttacksSection
             weapons={edited.weapons}

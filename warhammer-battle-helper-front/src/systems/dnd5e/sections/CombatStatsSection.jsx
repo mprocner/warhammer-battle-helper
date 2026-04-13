@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 function formatInit(val) {
   const n = val ?? 0;
@@ -24,6 +26,7 @@ function CombatStatsSection({
   resources, derived, armorClass, speed, hitDie, isSpellcaster,
   onResourceChange, onFieldChange,
   deathSaves, onDeathSaveChange,
+  level,
 }) {
   const { t } = useTranslation();
 
@@ -39,7 +42,7 @@ function CombatStatsSection({
     <div className="dnd-section dnd-combat-section">
 
       {/* Row 1: AC | Initiative | Speed */}
-      <div className="dnd-combat-top-strip">
+      <div className="dnd-combat-top-strip dnd-combat-top-strip--primary">
         <div className="dnd-combat-stat-box">
           <div className="dnd-combat-stat-box__label">{t('dnd.ac')}</div>
           <input
@@ -69,7 +72,7 @@ function CombatStatsSection({
       </div>
 
       {/* Row 2: HP/Max HP | Temp HP | Hit Die */}
-      <div className="dnd-combat-top-strip">
+      <div className="dnd-combat-top-strip dnd-combat-top-strip--primary">
         <div className="dnd-combat-stat-box dnd-combat-stat-box--hp">
           <div className="dnd-combat-stat-box__label">{t('dnd.hp')}</div>
           <div className="dnd-hp-inline-row">
@@ -102,13 +105,45 @@ function CombatStatsSection({
             onChange={e => onResourceChange('tempHp', parseInt(e.target.value) || 0)}
           />
         </div>
-        <div className="dnd-combat-stat-box">
+        <div className="dnd-combat-stat-box dnd-hit-dice-box">
           <div className="dnd-combat-stat-box__label">{t('dnd.hitDie')}</div>
           <input
-            className="dnd-combat-stat-box__value"
+            className="dnd-hit-dice-box__type"
             value={hitDie ?? 'd8'}
             onChange={e => onFieldChange('hitDie', e.target.value)}
           />
+          {(level || 1) <= 12 && (
+            <div className="dnd-hit-dice-box__tracker">
+              {Array.from({ length: level || 1 }, (_, i) => {
+                const remaining = (level || 1) - (resources?.hitDiceUsed ?? 0);
+                return (
+                  <span
+                    key={i}
+                    className={`dnd-hit-dice-box__pip${i >= remaining ? ' dnd-hit-dice-box__pip--used' : ''}`}
+                  />
+                );
+              })}
+            </div>
+          )}
+          <div className="dnd-hit-dice-box__controls">
+            <button
+              className="dnd-hit-dice-box__btn"
+              onClick={() => onResourceChange('hitDiceUsed', Math.min(level || 1, (resources?.hitDiceUsed ?? 0) + 1))}
+              disabled={(resources?.hitDiceUsed ?? 0) >= (level || 1)}
+            >
+              <RemoveCircleOutlineIcon style={{ fontSize: 18 }} />
+            </button>
+            <span className="dnd-hit-dice-box__count">
+              {Math.max(0, (level || 1) - (resources?.hitDiceUsed ?? 0))}/{level || 1}
+            </span>
+            <button
+              className="dnd-hit-dice-box__btn"
+              onClick={() => onResourceChange('hitDiceUsed', Math.max(0, (resources?.hitDiceUsed ?? 0) - 1))}
+              disabled={(resources?.hitDiceUsed ?? 0) <= 0}
+            >
+              <AddCircleOutlineIcon style={{ fontSize: 18 }} />
+            </button>
+          </div>
         </div>
       </div>
 
