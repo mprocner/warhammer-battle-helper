@@ -41,10 +41,10 @@ function SkillsSection({ skillProfs, favoriteSkills, derived, onToggleSkillProf,
           onClick={() => onToggleSkillProf(def.key, nextProfLevel(prof))}
           title={profTitle(prof, t)}
         />
-        <DnD5eAdvantageOverlay onAdvRoll={(d) => onRollSkill && onRollSkill(def.key, d)} disabled={!gameId}>
-          <span className="dnd-skill-row__name" title={`${def.label} (${def.ability.toUpperCase()})`}>
-            {def.label}
-            <span className="dnd-skill-row__ability"> ({def.ability.toUpperCase()})</span>
+        <DnD5eAdvantageOverlay onAdvRoll={(d, t) => onRollSkill && onRollSkill(def.key, d, t)} disabled={!gameId} showDC>
+          <span className="dnd-skill-row__name" title={`${t('dnd.skill_' + def.key)} (${t('dnd.' + def.ability).toUpperCase()})`}>
+            {t('dnd.skill_' + def.key)}
+            <span className="dnd-skill-row__ability"> ({t('dnd.' + def.ability).toUpperCase()})</span>
           </span>
         </DnD5eAdvantageOverlay>
         <span className={`dnd-skill-row__value ${prof > 0 ? 'dnd-skill-row__value--proficient' : ''}`}>

@@ -31,7 +31,7 @@ function AbilityScoresSection({ abilities, onAbilityChange, onRollAbility, gameI
         return (
           <div key={key} className="dnd-ability-score">
             <div className="dnd-ability-score__label">{t(labelKey)}</div>
-            <DnD5eAdvantageOverlay onAdvRoll={(d) => onRollAbility && onRollAbility(key, d)} disabled={!gameId}>
+            <DnD5eAdvantageOverlay onAdvRoll={(d, t) => onRollAbility && onRollAbility(key, d, t)} disabled={!gameId} showDC>
               <button className="dnd-ability-score__mod-btn" title={`Roll ${t(labelKey)} check`}>
                 <span className="dnd-ability-score__mod">{formatMod(mod)}</span>
               </button>

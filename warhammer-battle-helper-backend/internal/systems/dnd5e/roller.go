@@ -140,7 +140,8 @@ func abilityLabelByKey(key string) string {
 // RollSkill performs a D&D 5e skill/ability/save check.
 // diceMod=1 → advantage, diceMod=-1 → disadvantage, diceMod=0 → normal.
 // modifier is a flat situational bonus/penalty added to the total.
-func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod int) (*gsys.RollResult, error) {
+// target is the DC (0 = no DC check, just show the total).
+func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod int, target int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err
@@ -154,11 +155,25 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	d20, allRolls := rollWithAdvantage(diceMod)
 	total := d20 + bonus + modifier
 
+	var outcome string
+	switch {
+	case target > 0 && d20 == 20:
+		outcome = "critical_success"
+	case target > 0 && d20 == 1:
+		outcome = "critical_failure"
+	case target > 0 && total >= target:
+		outcome = "success"
+	case target > 0 && total < target:
+		outcome = "failure"
+	default:
+		outcome = "rolled"
+	}
+
 	return &gsys.RollResult{
 		RollType:       "skill",
 		Roll:           total,
-		Target:         0, // D&D: no built-in target; DC is caller's concern
-		Outcome:        "rolled",
+		Target:         target,
+		Outcome:        outcome,
 		SkillKey:       skillKey,
 		SkillName:      skillName,
 		Modifier:       modifier,
@@ -228,7 +243,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 		outcome = "rolled" // no AC provided
 	}
 
-	isHit := outcome == "hit" || outcome == "critical_hit"
+	isHit := outcome == "hit" || outcome == "critical_hit" || outcome == "rolled"
 
 	// Roll damage on hit
 	var damageRoll int

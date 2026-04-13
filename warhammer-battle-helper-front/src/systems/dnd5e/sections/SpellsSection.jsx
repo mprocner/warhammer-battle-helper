@@ -4,6 +4,10 @@ import StarIcon from '@mui/icons-material/Star';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+import CasinoIcon from '@mui/icons-material/Casino';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import DnD5eAdvantageOverlay from '../DnD5eAdvantageOverlay';
 
 const LEVEL_LABELS = ['C', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const LEVEL_COLORS = [
@@ -19,7 +23,7 @@ const LEVEL_COLORS = [
   '#3a6b8e', // 9
 ];
 
-function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onToggleFavourite, onSaveSpell }) {
+function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onToggleFavourite, onSaveSpell, onRollSpell, gameId }) {
   const { t } = useTranslation();
   const [expandedIdx, setExpandedIdx] = useState(null);
 
@@ -31,6 +35,7 @@ function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onTog
       <h4 className="dnd-section-title">{t('dnd.spells')}</h4>
 
       <div className="dnd-spells-header">
+        <span className="dnd-spells-header__expand" />
         <span className="dnd-spells-header__lvl">LVL</span>
         <span className="dnd-spells-header__name">{t('dnd.spellName')}</span>
         <span className="dnd-spells-header__flag" title={t('dnd.prepared')}>P</span>
@@ -45,6 +50,16 @@ function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onTog
         return (
           <div key={idx} className="dnd-spell-row">
             <div className="dnd-spell-row__main">
+              <button
+                className="dnd-spell-row__expand"
+                onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                title={t('dnd.spellDescription')}
+              >
+                {isExpanded
+                  ? <ExpandLessIcon style={{ fontSize: 18 }} />
+                  : <ExpandMoreIcon style={{ fontSize: 18 }} />}
+              </button>
+
               <select
                 className="dnd-spell-row__level"
                 value={spell.level ?? 0}
@@ -61,7 +76,6 @@ function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onTog
                 value={spell.name || ''}
                 placeholder={t('dnd.spellName')}
                 onChange={e => onSpellChange(idx, 'name', e.target.value)}
-                onClick={() => setExpandedIdx(isExpanded ? null : idx)}
               />
 
               <button
@@ -82,29 +96,39 @@ function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onTog
                 title={t('dnd.ritual')}
               >R</button>
 
-              <button
-                className="dnd-spell-row__save"
-                onClick={() => onSaveSpell && onSaveSpell(idx)}
-                title={t('save')}
-              >
-                <SaveIcon style={{ fontSize: 12 }} />
-              </button>
+              <div className="dnd-spell-row__actions">
+                {gameId && (
+                  <DnD5eAdvantageOverlay onAdvRoll={(d) => onRollSpell && onRollSpell(spell, d)} disabled={!spell.name}>
+                    <button className="dnd-spell-row__roll" title={t('dnd.rollSpell')}>
+                      <CasinoIcon style={{ fontSize: 16 }} />
+                    </button>
+                  </DnD5eAdvantageOverlay>
+                )}
 
-              <button
-                className={`dnd-spell-row__fav ${spell.isFavourite ? 'dnd-spell-row__fav--active' : ''}`}
-                onClick={() => onToggleFavourite(idx)}
-                title={spell.isFavourite ? t('removeFavorite') : t('addFavorite')}
-              >
-                <StarIcon style={{ fontSize: 12 }} />
-              </button>
+                <button
+                  className="dnd-spell-row__save"
+                  onClick={() => onSaveSpell && onSaveSpell(idx)}
+                  title={t('save')}
+                >
+                  <SaveIcon style={{ fontSize: 16 }} />
+                </button>
 
-              <button
-                className="dnd-spell-row__delete"
-                onClick={() => onRemoveSpell(idx)}
-                title={t('delete')}
-              >
-                <DeleteIcon style={{ fontSize: 12 }} />
-              </button>
+                <button
+                  className={`dnd-spell-row__fav ${spell.isFavourite ? 'dnd-spell-row__fav--active' : ''}`}
+                  onClick={() => onToggleFavourite(idx)}
+                  title={spell.isFavourite ? t('removeFavorite') : t('addFavorite')}
+                >
+                  <StarIcon style={{ fontSize: 16 }} />
+                </button>
+
+                <button
+                  className="dnd-spell-row__delete"
+                  onClick={() => onRemoveSpell(idx)}
+                  title={t('delete')}
+                >
+                  <DeleteIcon style={{ fontSize: 16 }} />
+                </button>
+              </div>
             </div>
 
             {isExpanded && (
@@ -121,7 +145,7 @@ function SpellsSection({ spells, onSpellChange, onAddSpell, onRemoveSpell, onTog
       })}
 
       <button className="dnd-add-btn" onClick={onAddSpell}>
-        <AddIcon style={{ fontSize: 14 }} /> {t('dnd.addSpell')}
+        <AddIcon style={{ fontSize: 18 }} /> {t('dnd.addSpell')}
       </button>
     </div>
   );

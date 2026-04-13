@@ -10,9 +10,10 @@ const BUTTONS = [
 
 const BUTTON_HEIGHT = 36;
 
-function DnD5eAdvantageModal({ pos, onSelect, onCancel }) {
+function DnD5eAdvantageModal({ pos, onSelect, onCancel, showDC }) {
   const { t } = useTranslation();
   const popupRef = useRef(null);
+  const [dcValue, setDcValue] = useState('');
 
   useEffect(() => {
     const el = popupRef.current;
@@ -34,6 +35,10 @@ function DnD5eAdvantageModal({ pos, onSelect, onCancel }) {
     el.style.left = `${left}px`;
   }, [pos]);
 
+  const handleSelect = (diceMod) => {
+    onSelect(diceMod, dcValue ? parseInt(dcValue, 10) : 0);
+  };
+
   return (
     <div className="dnd-advantage-overlay" onClick={onCancel}>
       <div
@@ -42,11 +47,26 @@ function DnD5eAdvantageModal({ pos, onSelect, onCancel }) {
         style={{ top: pos.y, left: pos.x }}
         onClick={e => e.stopPropagation()}
       >
+        {showDC && (
+          <div className="dnd-advantage-dc">
+            <label className="dnd-advantage-dc__label">{t('dnd.dc')}</label>
+            <input
+              type="number"
+              className="dnd-advantage-dc__input"
+              min={1}
+              max={30}
+              value={dcValue}
+              onChange={e => setDcValue(e.target.value)}
+              placeholder="—"
+              autoFocus
+            />
+          </div>
+        )}
         {BUTTONS.map(({ diceMod, labelKey, type }) => (
           <button
             key={diceMod}
             className={`dnd-advantage-btn dnd-advantage-btn--${type}`}
-            onClick={() => onSelect(diceMod)}
+            onClick={() => handleSelect(diceMod)}
           >
             {t(labelKey)}
           </button>
@@ -59,11 +79,12 @@ function DnD5eAdvantageModal({ pos, onSelect, onCancel }) {
 /**
  * Intercepts clicks on children and shows Advantage / Normal / Disadvantage picker.
  * Props:
- *   onAdvRoll(diceMod) — called with 1, 0, or -1
+ *   onAdvRoll(diceMod, target) — called with diceMod (1, 0, or -1) and target DC (0 = none)
  *   children           — wrapped element
  *   disabled           — skip interception
+ *   showDC             — show optional DC input (default false)
  */
-function DnD5eAdvantageOverlay({ onAdvRoll, children, disabled }) {
+function DnD5eAdvantageOverlay({ onAdvRoll, children, disabled, showDC = false }) {
   const [modalPos, setModalPos] = useState(null);
 
   const handleClickCapture = (e) => {
@@ -75,9 +96,9 @@ function DnD5eAdvantageOverlay({ onAdvRoll, children, disabled }) {
     setModalPos({ x: e.clientX, y: e.clientY });
   };
 
-  const handleSelect = (diceMod) => {
+  const handleSelect = (diceMod, target) => {
     setModalPos(null);
-    onAdvRoll(diceMod);
+    onAdvRoll(diceMod, target);
   };
 
   return (
@@ -88,6 +109,7 @@ function DnD5eAdvantageOverlay({ onAdvRoll, children, disabled }) {
           pos={modalPos}
           onSelect={handleSelect}
           onCancel={() => setModalPos(null)}
+          showDC={showDC}
         />,
         document.body
       )}

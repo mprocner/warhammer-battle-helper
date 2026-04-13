@@ -741,12 +741,12 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.
-func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
+func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, target int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
 	game, character, plugin, err := s.loadRollContext(gameID, characterID)
 	if err != nil {
 		return nil, err
 	}
-	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier, diceMod)
+	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier, diceMod, target)
 	if err != nil {
 		return nil, err
 	}

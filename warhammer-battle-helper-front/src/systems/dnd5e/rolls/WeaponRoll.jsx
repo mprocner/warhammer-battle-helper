@@ -102,7 +102,7 @@ function DnD5eWeaponRoll({ data, timestamp }) {
         )}
 
         {/* Damage on hit */}
-        {isSuccess && data.outcome !== 'rolled' && data.damageRoll != null && data.damageRoll > 0 && (
+        {isSuccess && data.damageRoll != null && data.damageRoll > 0 && (
           <div className="log-list-item__damage">
             {t('dnd.damage')}: <strong style={{ color: resultColor }}>
               {data.damageBreakdown || data.damageRoll}

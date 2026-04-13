@@ -328,6 +328,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 		Skill       string `json:"skill" binding:"required"`
 		Modifier    int    `json:"modifier"`
 		DiceMod     int    `json:"diceMod"`
+		Target      int    `json:"target"`
 		CharacterID string `json:"characterId" binding:"required"`
 		Visibility  string `json:"visibility"`
 	}
@@ -348,7 +349,7 @@ func (h *GameHandler) RollSkill(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.DiceMod, req.CharacterID, userID, username, req.Visibility)
+	result, err := h.GameService.RollSkill(gameID, req.Skill, req.Modifier, req.DiceMod, req.Target, req.CharacterID, userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

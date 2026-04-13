@@ -89,6 +89,18 @@ type CharacterInfo struct {
 	Alignment  string `bson:"alignment"  json:"alignment"`
 }
 
+// Spell represents a single spell entry.
+type Spell struct {
+	Name          string `bson:"name"          json:"name"`
+	Level         int    `bson:"level"         json:"level"`
+	Prepared      bool   `bson:"prepared"      json:"prepared"`
+	Concentration bool   `bson:"concentration" json:"concentration"`
+	Ritual        bool   `bson:"ritual"        json:"ritual"`
+	IsFavourite   bool   `bson:"isFavourite"   json:"isFavourite"`
+	Description   string `bson:"description"   json:"description"`
+	Damage        string `bson:"damage"        json:"damage"`
+}
+
 // Stats is the top-level document stored in Character.Stats for D&D 5e.
 type Stats struct {
 	Info      CharacterInfo `bson:"info"    json:"info"`
@@ -105,12 +117,14 @@ type Stats struct {
 	HitDie              string `bson:"hitDie"              json:"hitDie"`              // "d10"
 	SpellcastingAbility string `bson:"spellcastingAbility" json:"spellcastingAbility"` // "int"|"wis"|"cha"
 	IsSpellcaster       bool   `bson:"isSpellcaster"       json:"isSpellcaster"`
+	Inspiration         bool   `bson:"inspiration"         json:"inspiration"`
 
 	Resources  Resources   `bson:"resources"  json:"resources"`
 	Derived    Derived     `bson:"derived"    json:"derived"`
 	SpellSlots []SpellSlot `bson:"spellSlots" json:"spellSlots"`
 	Weapons    []Weapon    `bson:"weapons"    json:"weapons"`
 	Features   []Feature   `bson:"features"   json:"features"`
+	Spells     []Spell     `bson:"spells"     json:"spells"`
 
 	FavoriteSkills  []string `bson:"favoriteSkills"  json:"favoriteSkills"`
 	FavoriteWeapons []string `bson:"favoriteWeapons" json:"favoriteWeapons"`

@@ -125,6 +125,9 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	if stats.FavoriteWeapons == nil {
 		stats.FavoriteWeapons = []string{}
 	}
+	if stats.Spells == nil {
+		stats.Spells = []Spell{}
+	}
 
 	a := &stats.Abilities
 	pb := proficiencyBonus(stats.Info.Level)

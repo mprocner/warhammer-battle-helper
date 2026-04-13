@@ -44,7 +44,8 @@ type RollResult struct {
 // GameSystem is the interface every game-system plugin must implement.
 type GameSystem interface {
 	// RollSkill performs a skill/characteristic check.
-	RollSkill(stats bson.Raw, skillKey string, modifier int, diceMod int) (*RollResult, error)
+	// target is the DC for D&D 5e (0 = no DC check); Warhammer/CoC ignore it.
+	RollSkill(stats bson.Raw, skillKey string, modifier int, diceMod int, target int) (*RollResult, error)
 
 	// RollWeapon performs a weapon attack roll (hit + damage).
 	RollWeapon(stats bson.Raw, weaponName, weaponSkill, damage string, modifier int, diceMod int) (*RollResult, error)

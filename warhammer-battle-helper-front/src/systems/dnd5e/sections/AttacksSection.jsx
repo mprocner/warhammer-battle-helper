@@ -4,6 +4,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import CasinoIcon from '@mui/icons-material/Casino';
 import DnD5eAdvantageOverlay from '../DnD5eAdvantageOverlay';
 
 const ATTACK_ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha', 'spellcasting'];
@@ -32,18 +33,12 @@ function AttacksSection({ weapons, onWeaponChange, onAddWeapon, onRemoveWeapon, 
           {weapons.map((w, idx) => (
             <tr key={idx} className="dnd-weapons-table__row">
               <td>
-                <DnD5eAdvantageOverlay
-                  onAdvRoll={(d) => onRollWeapon && onRollWeapon(w, d)}
-                  disabled={!gameId || !w.name}
-                >
-                  <input
-                    className="dnd-weapons-table__input"
-                    value={w.name || ''}
-                    onChange={e => onWeaponChange(idx, 'name', e.target.value)}
-                    placeholder={t('dnd.weaponName')}
-                    onClick={e => e.stopPropagation()}
-                  />
-                </DnD5eAdvantageOverlay>
+                <input
+                  className="dnd-weapons-table__input"
+                  value={w.name || ''}
+                  onChange={e => onWeaponChange(idx, 'name', e.target.value)}
+                  placeholder={t('dnd.weaponName')}
+                />
               </td>
               <td>
                 <select
@@ -80,19 +75,26 @@ function AttacksSection({ weapons, onWeaponChange, onAddWeapon, onRemoveWeapon, 
                 />
               </td>
               <td className="dnd-weapons-table__actions">
+                {gameId && (
+                  <DnD5eAdvantageOverlay onAdvRoll={(d) => onRollWeapon && onRollWeapon(w, d)} disabled={!w.name}>
+                    <button className="dnd-weapons-table__roll-btn" title={t('dnd.rollWeapon')}>
+                      <CasinoIcon style={{ fontSize: 18 }} />
+                    </button>
+                  </DnD5eAdvantageOverlay>
+                )}
                 <button
                   className={`dnd-weapons-table__fav-btn ${w.isFavourite ? 'dnd-weapons-table__fav-btn--active' : ''}`}
                   onClick={() => onToggleFavourite && onToggleFavourite(idx)}
                   title={w.isFavourite ? t('removeFavorite') : t('addFavorite')}
                 >
-                  {w.isFavourite ? <StarIcon style={{ fontSize: 14 }} /> : <StarBorderIcon style={{ fontSize: 14 }} />}
+                  {w.isFavourite ? <StarIcon style={{ fontSize: 18 }} /> : <StarBorderIcon style={{ fontSize: 18 }} />}
                 </button>
                 <button
                   className="dnd-weapons-table__del-btn"
                   onClick={() => onRemoveWeapon(idx)}
                   title={t('common.delete')}
                 >
-                  <DeleteIcon style={{ fontSize: 14 }} />
+                  <DeleteIcon style={{ fontSize: 18 }} />
                 </button>
               </td>
             </tr>

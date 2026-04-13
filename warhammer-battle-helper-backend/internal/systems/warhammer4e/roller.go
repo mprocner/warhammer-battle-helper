@@ -140,7 +140,7 @@ var attrShortToChar = map[string]string{
 }
 
 // RollSkill performs a Warhammer skill/characteristic check.
-func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, _ int) (*gsys.RollResult, error) {
+func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, _ int, _ int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err

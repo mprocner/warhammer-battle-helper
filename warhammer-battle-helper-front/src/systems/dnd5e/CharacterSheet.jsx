@@ -330,35 +330,35 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
 
   // ---- Roll handlers ----
 
-  const rollAbility = useCallback(async (abilityKey, diceMod = 0) => {
+  const rollAbility = useCallback(async (abilityKey, diceMod = 0, target = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `ability_${abilityKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
+        body: JSON.stringify({ skill: `ability_${abilityKey}`, modifier: 0, diceMod, target, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) { console.error('Roll error:', err); }
   }, [gameId, token, character.id, rollVisibility]);
 
-  const rollSave = useCallback(async (abilityKey, diceMod = 0) => {
+  const rollSave = useCallback(async (abilityKey, diceMod = 0, target = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `save_${abilityKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
+        body: JSON.stringify({ skill: `save_${abilityKey}`, modifier: 0, diceMod, target, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) { console.error('Roll error:', err); }
   }, [gameId, token, character.id, rollVisibility]);
 
-  const rollSkill = useCallback(async (skillKey, diceMod = 0) => {
+  const rollSkill = useCallback(async (skillKey, diceMod = 0, target = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `skill_${skillKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
+        body: JSON.stringify({ skill: `skill_${skillKey}`, modifier: 0, diceMod, target, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) { console.error('Roll error:', err); }
   }, [gameId, token, character.id, rollVisibility]);
@@ -380,6 +380,25 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
         })
       });
     } catch (err) { console.error('Weapon roll error:', err); }
+  }, [gameId, token, character.id, rollVisibility]);
+
+  const rollSpell = useCallback(async (spell, diceMod = 0) => {
+    if (!gameId || !token) return;
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({
+          weaponName: spell.name,
+          weaponSkill: 'spellcasting',
+          damage: spell.damage || '',
+          modifier: 0,
+          diceMod,
+          characterId: character.id,
+          visibility: rollVisibility
+        })
+      });
+    } catch (err) { console.error('Spell roll error:', err); }
   }, [gameId, token, character.id, rollVisibility]);
 
   const handlePopOut = usePopOut(character.id, gameId);
@@ -501,6 +520,8 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
               onRemoveSpell={handleRemoveSpell}
               onToggleFavourite={handleToggleSpellFavourite}
               onSaveSpell={handleSaveSpell}
+              onRollSpell={rollSpell}
+              gameId={gameId}
             />
           )}
           <div className="dnd-section">

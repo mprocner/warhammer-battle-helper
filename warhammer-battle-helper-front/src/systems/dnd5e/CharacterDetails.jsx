@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CharacterHeader from '../shared/CharacterHeader';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -57,13 +58,13 @@ function DnD5eCharacterDetails({
     catch (err) { console.error('Error saving HP:', err); }
   };
 
-  const rollAbility = async (abilityKey, diceMod = 0) => {
+  const rollAbility = async (abilityKey, diceMod = 0, target = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `ability_${abilityKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
+        body: JSON.stringify({ skill: `ability_${abilityKey}`, modifier: 0, diceMod, target, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) { console.error('Roll error:', err); }
   };
@@ -87,13 +88,13 @@ function DnD5eCharacterDetails({
     } catch (err) { console.error('Weapon roll error:', err); }
   };
 
-  const rollSkill = async (skillKey, diceMod = 0) => {
+  const rollSkill = async (skillKey, diceMod = 0, target = 0) => {
     if (!gameId || !token) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
         method: 'POST',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: `skill_${skillKey}`, modifier: 0, diceMod, characterId: character.id, visibility: rollVisibility })
+        body: JSON.stringify({ skill: `skill_${skillKey}`, modifier: 0, diceMod, target, characterId: character.id, visibility: rollVisibility })
       });
     } catch (err) { console.error('Roll error:', err); }
   };
@@ -102,6 +103,29 @@ function DnD5eCharacterDetails({
     return (stats.weapons || []).filter(w => w.isFavourite && w.name);
   }, [stats.weapons]);
 
+  const favoriteSpells = useMemo(() => {
+    return (stats.spells || []).filter(s => s.isFavourite && s.name);
+  }, [stats.spells]);
+
+  const rollSpell = async (spell, diceMod = 0) => {
+    if (!gameId || !token) return;
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({
+          weaponName: spell.name,
+          weaponSkill: 'spellcasting',
+          damage: spell.damage || '',
+          modifier: 0,
+          diceMod,
+          characterId: character.id,
+          visibility: rollVisibility
+        })
+      });
+    } catch (err) { console.error('Spell roll error:', err); }
+  };
+
   const favoriteSkills = useMemo(() => {
     const favKeys = stats.favoriteSkills || [];
     if (!favKeys.length) return [];
@@ -109,8 +133,8 @@ function DnD5eCharacterDetails({
     return favKeys.map(key => {
       const def = skillsData.find(s => s.key === key);
       if (!def) return null;
-      return { key, label: def.label, value: skillTotals[key] ?? 0 };
-    }).filter(Boolean).sort((a, b) => a.label.localeCompare(b.label));
+      return { key, value: skillTotals[key] ?? 0 };
+    }).filter(Boolean);
   }, [stats.favoriteSkills, derived.skills]);
 
   if (!character) {
@@ -176,7 +200,7 @@ function DnD5eCharacterDetails({
           const score = abilities[key] ?? 10;
           const mod = abilityMod(score);
           return (
-            <DnD5eAdvantageOverlay key={key} onAdvRoll={(d) => rollAbility(key, d)} disabled={!gameId}>
+            <DnD5eAdvantageOverlay key={key} onAdvRoll={(d, t) => rollAbility(key, d, t)} disabled={!gameId} showDC>
               <button className="dnd-ability-box" title={`Roll ${t(labelKey)} check`}>
                 <div className="dnd-ability-box__label">{t(labelKey)}</div>
                 <div className="dnd-ability-box__mod">{formatMod(mod)}</div>
@@ -216,10 +240,30 @@ function DnD5eCharacterDetails({
           </div>
           <div className="favorite-skills-grid">
             {favoriteSkills.map(skill => (
-              <DnD5eAdvantageOverlay key={skill.key} onAdvRoll={(d) => rollSkill(skill.key, d)} disabled={!gameId}>
+              <DnD5eAdvantageOverlay key={skill.key} onAdvRoll={(d, t) => rollSkill(skill.key, d, t)} disabled={!gameId} showDC>
                 <button className="skill-box skill-box-button" disabled={!gameId}>
-                  <div className="skill-box-label">{skill.label}</div>
+                  <div className="skill-box-label">{t('dnd.skill_' + skill.key)}</div>
                   <div className="skill-box-value">{formatMod(skill.value)}</div>
+                </button>
+              </DnD5eAdvantageOverlay>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Favorite Spells */}
+      {favoriteSpells.length > 0 && (
+        <div className="favorite-skills">
+          <div className="favorite-skills-label">
+            <AutoFixHighIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 4 }} />
+            {t('dnd.spells')}
+          </div>
+          <div className="favorite-skills-grid">
+            {favoriteSpells.map((spell, idx) => (
+              <DnD5eAdvantageOverlay key={idx} onAdvRoll={(d) => rollSpell(spell, d)} disabled={!gameId}>
+                <button className="skill-box skill-box-button" disabled={!gameId}>
+                  <div className="skill-box-label">{spell.name}</div>
+                  <div className="skill-box-value">{spell.damage || `L${spell.level ?? 0}`}</div>
                 </button>
               </DnD5eAdvantageOverlay>
             ))}

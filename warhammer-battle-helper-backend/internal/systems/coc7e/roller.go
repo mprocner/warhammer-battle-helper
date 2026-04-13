@@ -296,7 +296,7 @@ func attrRollName(attrName string) string {
 // or use "attr_<name>" prefix for characteristic rolls (e.g. "attr_str" → STR×5).
 // modifier is applied directly to the skill percentage.
 // diceMod: +1/+2 bonus dice (pick lowest), -1/-2 penalty dice (pick highest).
-func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod int) (*gsys.RollResult, error) {
+func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod int, _ int) (*gsys.RollResult, error) {
 	stats, err := decodeStats(raw)
 	if err != nil {
 		return nil, err

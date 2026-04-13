@@ -33,7 +33,7 @@ function SavingThrowsSection({ saveProfs, derived, onToggleSaveProf, onRollSave,
                 onClick={() => onToggleSaveProf(key)}
                 title={isProficient ? t('dnd.proficient') : ''}
               />
-              <DnD5eAdvantageOverlay onAdvRoll={(d) => onRollSave && onRollSave(key, d)} disabled={!gameId}>
+              <DnD5eAdvantageOverlay onAdvRoll={(d, t) => onRollSave && onRollSave(key, d, t)} disabled={!gameId} showDC>
                 <span className="dnd-skill-row__name">{t(labelKey)}</span>
               </DnD5eAdvantageOverlay>
               <span className={`dnd-skill-row__value ${isProficient ? 'dnd-skill-row__value--proficient' : ''}`}>
