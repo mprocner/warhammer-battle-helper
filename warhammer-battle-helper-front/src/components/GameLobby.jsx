@@ -33,7 +33,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 
-const GameLobby = ({ onJoinGame, token, userEmail }) => {
+const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
   const { t } = useTranslation();
   const [games, setGames] = useState([]);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -466,11 +466,13 @@ const GameLobby = ({ onJoinGame, token, userEmail }) => {
               label={t('game.gameSystem')}
               sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}
             >
-              {listSystems().map(sys => (
-                <MenuItem key={sys.value} value={sys.value} sx={{ fontFamily: 'Crimson Text, serif' }}>
-                  {sys.label}
-                </MenuItem>
-              ))}
+              {listSystems()
+                .filter(sys => !allowedSystems || allowedSystems.includes(sys.value))
+                .map(sys => (
+                  <MenuItem key={sys.value} value={sys.value} sx={{ fontFamily: 'Crimson Text, serif' }}>
+                    {sys.label}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </DialogContent>

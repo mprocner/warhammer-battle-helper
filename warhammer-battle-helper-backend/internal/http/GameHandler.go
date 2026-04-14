@@ -2,6 +2,7 @@ package http
 
 import (
 	"battle-helper/internal/config/helpers"
+	"battle-helper/internal/features"
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
 	"battle-helper/internal/systems/registry"
@@ -15,8 +16,9 @@ import (
 )
 
 type GameHandler struct {
-	GameService *service.GameService
-	Hub         *websocket.Hub
+	GameService    *service.GameService
+	Hub            *websocket.Hub
+	FeatureToggles features.FeatureToggles
 }
 
 var upgrader = gorilla.Upgrader{
@@ -45,6 +47,11 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 	userIDStr := claims["user_id"].(string)
 	username := claims["email"].(string)
+
+	if !h.FeatureToggles.IsSystemAllowed(req.GameSystem, username) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "game system not available for your account"})
+		return
+	}
 
 	userID, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
@@ -529,4 +536,15 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 			"game": game,
 		})
 	}
+}
+
+func (h *GameHandler) GetFeatures(c *gin.Context) {
+	email := ""
+	if token, exists := c.Get("jwt"); exists {
+		claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+		email, _ = claims["email"].(string)
+	}
+	allSystems := registry.ListSystems()
+	allowed := h.FeatureToggles.AllowedSystemsFor(allSystems, email)
+	c.JSON(http.StatusOK, gin.H{"allowedSystems": allowed})
 }

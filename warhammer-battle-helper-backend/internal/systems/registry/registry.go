@@ -14,6 +14,8 @@ var registry = map[string]systems.GameSystem{
 	"dnd5e":       dnd5e.New(),
 }
 
+var systemOrder = []string{"warhammer4e", "coc7e", "dnd5e"}
+
 // Get returns the plugin for the given system identifier.
 // Returns an error if the system is unknown.
 func Get(gameSystem string) (systems.GameSystem, error) {
@@ -22,4 +24,15 @@ func Get(gameSystem string) (systems.GameSystem, error) {
 		return nil, fmt.Errorf("unknown game system: %q", gameSystem)
 	}
 	return s, nil
+}
+
+// ListSystems returns all registered system keys in a stable order.
+func ListSystems() []string {
+	out := make([]string, 0, len(systemOrder))
+	for _, k := range systemOrder {
+		if _, ok := registry[k]; ok {
+			out = append(out, k)
+		}
+	}
+	return out
 }

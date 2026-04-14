@@ -29,6 +29,7 @@ function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentGameId, setCurrentGameId] = useState(null);
+    const [allowedSystems, setAllowedSystems] = useState(null);
 
     // Example: Add a new log message
     const addLogMessage = (text, type = 'info') => {
@@ -51,6 +52,14 @@ function App() {
                         email: response.data.email,
                         token
                     });
+
+                    try {
+                        const featuresRes = await axiosInstance.get('/features');
+                        setAllowedSystems(featuresRes.data.allowedSystems);
+                    } catch (e) {
+                        // Features endpoint failed — show all systems, backend will enforce
+                    }
+
                     addLogMessage(`User ${response.data.email} automatically logged in`, 'success');
                 } catch (error) {
                     // Token is invalid, remove it
@@ -64,8 +73,14 @@ function App() {
         checkAuthStatus();
     }, []);
 
-    const handleLogin = (email, token) => {
+    const handleLogin = async (email, token) => {
         setUser({ email, token });
+        try {
+            const featuresRes = await axiosInstance.get('/features');
+            setAllowedSystems(featuresRes.data.allowedSystems);
+        } catch (e) {
+            // Features endpoint failed — show all systems, backend will enforce
+        }
     };
 
     const handleLogout = () => {
@@ -167,6 +182,7 @@ function App() {
                                             onJoinGame={handleJoinGame}
                                             token={user.token}
                                             userEmail={user.email}
+                                            allowedSystems={allowedSystems}
                                         />
                                     )}
                                 </ProtectedRoute>

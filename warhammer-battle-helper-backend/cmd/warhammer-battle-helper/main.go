@@ -5,6 +5,7 @@ import (
 	"battle-helper/internal/config"
 	"battle-helper/internal/config/helpers"
 	"battle-helper/internal/email"
+	"battle-helper/internal/features"
 	"battle-helper/internal/http"
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
@@ -148,9 +149,13 @@ func main() {
 	handoutHandler := http.HandoutHandler{GameService: gameService, Storage: avatarStorage}
 	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
 
+	// --- FEATURE TOGGLES ---
+	ft := features.Load("./feature-toggles.json")
+
 	// GET /games/:id is JWT-optional (event visibility filtering)
-	gameHandler := http.GameHandler{GameService: gameService, Hub: hub}
+	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, FeatureToggles: ft}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
+	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// WebSocket (auth handled inside handler via token query param)
