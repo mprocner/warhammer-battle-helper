@@ -16,6 +16,8 @@ import FeaturesSection         from './sections/FeaturesSection';
 import SpellSlotsSection       from './sections/SpellSlotsSection';
 import SpellsSection           from './sections/SpellsSection';
 import NotesSection            from './sections/NotesSection';
+import PersonalitySection      from './sections/PersonalitySection';
+import BackstorySection        from './sections/BackstorySection';
 
 function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token,
   isGM = false, isStandalone = false, rollVisibility = 'all' }) {
@@ -43,6 +45,15 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
     notes:            s.notes            || '',
     spells:           s.spells           || [],
     inspiration:      s.inspiration      ?? false,
+    personalityTraits:   s.personalityTraits   || '',
+    ideals:              s.ideals              || '',
+    bonds:               s.bonds               || '',
+    flaws:               s.flaws               || '',
+    otherProficiencies:  s.otherProficiencies  || '',
+    appearance:          s.appearance          || {},
+    alliesOrganizations: s.alliesOrganizations || '',
+    backstory:           s.backstory           || '',
+    treasure:            s.treasure            || '',
   });
 
   const [edited, setEdited] = useState(initStats);
@@ -95,6 +106,15 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
       notes:            st.notes            || '',
       spells:           st.spells           || [],
       inspiration:      st.inspiration      ?? false,
+      personalityTraits:   st.personalityTraits   || '',
+      ideals:              st.ideals              || '',
+      bonds:               st.bonds               || '',
+      flaws:               st.flaws               || '',
+      otherProficiencies:  st.otherProficiencies  || '',
+      appearance:          st.appearance          || {},
+      alliesOrganizations: st.alliesOrganizations || '',
+      backstory:           st.backstory           || '',
+      treasure:            st.treasure            || '',
     });
     setCharName(character.name || '');
     setCharAvatar(character.avatar || '');
@@ -173,6 +193,11 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
 
   const handleFieldChange = useCallback((field, value) => {
     setEdited(prev => ({ ...prev, [field]: value }));
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
+
+  const handleAppearanceChange = useCallback((field, value) => {
+    setEdited(prev => ({ ...prev, appearance: { ...prev.appearance, [field]: value } }));
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
@@ -418,9 +443,11 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
             charName={charName}
             charAvatar={charAvatar}
             info={edited.info}
+            appearance={edited.appearance}
             onNameChange={handleNameChange}
             onAvatarChange={handleAvatarChange}
             onInfoChange={handleInfoChange}
+            onAppearanceChange={handleAppearanceChange}
           />
         </div>
         <div className="dnd-sheet__top-abilities">
@@ -540,6 +567,15 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
             onFeatureChange={handleFeatureChange}
             onAddFeature={handleAddFeature}
             onRemoveFeature={handleRemoveFeature}
+          />
+          <PersonalitySection
+            stats={edited}
+            onFieldChange={handleFieldChange}
+          />
+          <BackstorySection
+            stats={edited}
+            onFieldChange={handleFieldChange}
+            onAppearanceChange={handleAppearanceChange}
           />
           <NotesSection
             notes={edited.notes}

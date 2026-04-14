@@ -9,8 +9,8 @@ D&D 5e is the third game system added to the plugin/registry architecture alongs
 ## Character Sheet Layout Decision
 Two-column layout matching Warhammer4e's `two-page-layout` pattern (`.dnd-sheet-layout` with `.dnd-sheet__left` + `.dnd-sheet__right`). NOT tabbed — tabbed navigation adds cognitive cost during live play. Three-tab structure (Stats / Combat / Traits) was rejected in favor of a dense two-column scrollable layout.
 
-Left column: CharacterInfoSection, AbilityScoresSection, SavingThrowsSection, DeathSavesSection, CombatStatsSection, AttacksSection
-Right column: SkillsSection, FeaturesSection, SpellSlotsSection (conditional), EquipmentSection, NotesSection
+Left column (310px): CharacterInfoSection, AbilityScoresSection, SavingThrowsSection, DeathSavesSection, CombatStatsSection, AttacksSection
+Right column (flex): SkillsSection, FeaturesSection, SpellSlotsSection (conditional), SpellsSection (conditional), NotesSection (Equipment + Notes textareas)
 
 ## Ability Score Display
 Classic D&D box: large modifier on top (e.g. +3), small score below (e.g. 16). Modifier is primary because that is what players reference during play. Score is editable inline; modifier is derived (read-only). Click on modifier triggers roll (d20 + ability mod). BEM: `.dnd-ability-score`, `.dnd-ability-score__mod`, `.dnd-ability-score__value`, `.dnd-ability-score__label`.
@@ -35,3 +35,23 @@ D&D roll log components reuse WaxSealToken. Mapping: crit hit (nat 20) = isCritS
 **Why:** The token is a quick-scan element — players scan the log for red/green circles. Showing the raw d20 number inside the token matches CoC's pattern and gives instant information.
 
 **How to apply:** Always pass the d20 roll as the `symbol` prop to WaxSealToken for D&D rolls. Show the full formula (roll + mod = total) in the description line.
+
+## Character Sheet State Shape (in `edited` object)
+Flat top-level fields in `edited`: `info`, `abilities`, `savingThrowProfs`, `skillProfs`, `resources`, `derived`, `armorClass`, `speed`, `hitDie`, `isSpellcaster`, `spellcastingAbility`, `spellSlots`, `weapons`, `features`, `favoriteSkills`, `favoriteWeapons`, `equipment`, `notes`, `spells`, `inspiration`.
+
+New textarea fields are added as additional flat string keys on `edited`.
+
+## Pending Design: Character Flavor Fields (2026-04-14)
+Nine "flavor" text fields from the official D&D 5e sheet are missing:
+- Group A — Character Traits (4 textarea fields, always relevant): `personalityTraits`, `ideals`, `bonds`, `flaws`
+- Group B — Background Flavor (3 textarea fields): `otherProficiencies`, `backstory`, `alliesOrganizations`
+- Group C — Physical Description (1 textarea + 6 small inline fields): `appearance` (textarea) + `age`, `height`, `weight`, `eyes`, `skin`, `hair` (small text inputs inside CharacterInfoSection or a new sub-section)
+- Group D — Treasure (1 textarea): `treasure` (separate from `equipment`)
+
+Design decision: These are organized into TWO new sections appended after NotesSection in the right column:
+1. `PersonalitySection` — Group A (Personality Traits, Ideals, Bonds, Flaws) in a 2x2 grid layout
+2. `BackstorySection` — Groups B+C+D collapsed by default, expand-toggle header using ExpandMoreIcon/ExpandLessIcon pattern from FeaturesSection
+
+Physical appearance sub-fields: six small inputs (Age, Height, Weight, Eyes, Skin, Hair) go inside `CharacterInfoSection` under a collapsible "Appearance" subsection — they are identity fields, not flavor text, so they belong near the other identity fields (class, species, background).
+
+Do NOT add a third column or tabs — keeps the layout consistent with the existing two-column scroll pattern.

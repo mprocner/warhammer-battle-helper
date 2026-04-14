@@ -4748,38 +4748,40 @@ align-items: center;
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
-/* Override ability grid inside top band: 2 rows × 3 columns */
+/* Override ability grid inside top band: 2 rows × 3 columns, stretch to match info height */
 .dnd-sheet__top-abilities .dnd-ability-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 10px;
+  flex: 1;
 }
 
 .dnd-sheet__top-abilities .dnd-ability-score {
-  padding: 4px 6px;
-  gap: 2px;
+  padding: 8px 10px;
+  gap: 6px;
+  justify-content: center;
 }
 
 .dnd-sheet__top-abilities .dnd-ability-score__mod-btn {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
 }
 
 .dnd-sheet__top-abilities .dnd-ability-score__mod {
-  font-size: 17px;
+  font-size: 22px;
 }
 
 .dnd-sheet__top-abilities .dnd-ability-score__label {
-  font-size: 10px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
 }
 
 .dnd-sheet__top-abilities .dnd-ability-score__value {
-  width: 48px;
-  font-size: 12px;
-  padding: 1px 2px;
+  width: 56px;
+  font-size: 14px;
+  padding: 3px 4px;
 }
 
 /* BODY: 2 columns */
@@ -4816,15 +4818,24 @@ align-items: center;
 }
 
 /* Character info grid */
-.dnd-info-grid {
+/* Zone A: avatar + core identity side by side */
+.dnd-info-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.dnd-info-core {
+  flex: 1;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 4px 8px;
+  gap: 3px 8px;
   align-items: center;
   font-size: 13px;
 }
 
-.dnd-info-grid label {
+.dnd-info-core label {
   color: #6b4423;
   font-size: 11px;
   font-weight: 600;
@@ -4832,7 +4843,7 @@ align-items: center;
   white-space: nowrap;
 }
 
-.dnd-info-grid input {
+.dnd-info-core input {
   background: #fff9f0;
   border: 1px solid #c4a882;
   border-radius: 3px;
@@ -4840,9 +4851,47 @@ align-items: center;
   font-size: 13px;
   padding: 2px 4px;
   width: 100%;
+  box-sizing: border-box;
 }
 
-.dnd-info-grid input:focus {
+.dnd-info-core input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* Zone B: species, background, alignment — compact 3-column */
+.dnd-info-context-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 8px;
+  margin-bottom: 6px;
+}
+
+.dnd-info-context-grid__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dnd-info-context-grid__label {
+  font-size: 10px;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dnd-info-context-grid__input {
+  width: 100%;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  background: #fff9f0;
+  color: #3a2f1f;
+  box-sizing: border-box;
+}
+
+.dnd-info-context-grid__input:focus {
   outline: none;
   border-color: #7a5c42;
 }
@@ -6021,6 +6070,101 @@ align-items: center;
 }
 
 .dnd-spell-row__desc:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* ── Personality Section (2×2 grid) ── */
+
+.dnd-personality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.dnd-personality-grid__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dnd-personality-grid__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a5c42;
+}
+
+/* ── Backstory Section (collapsible) ── */
+
+.dnd-backstory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dnd-backstory-header__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7a5c42;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.dnd-backstory-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dnd-backstory-content__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a5c42;
+  margin-bottom: 4px;
+}
+
+/* ── Appearance sub-fields in CharacterInfoSection ── */
+
+.dnd-appearance-subgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 8px;
+}
+
+.dnd-appearance-subgrid__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dnd-appearance-subgrid__label {
+  font-size: 10px;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dnd-appearance-subgrid__input {
+  width: 100%;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  background: #fff9f0;
+  color: #3a2f1f;
+  box-sizing: border-box;
+}
+
+.dnd-appearance-subgrid__input:focus {
   outline: none;
   border-color: #7a5c42;
 }

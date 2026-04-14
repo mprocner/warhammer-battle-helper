@@ -78,6 +78,17 @@ type SpellSlot struct {
 	Used  int `bson:"used"  json:"used"`
 }
 
+// CharacterAppearance holds physical description fields.
+type CharacterAppearance struct {
+	Age         string `bson:"age"         json:"age"`
+	Height      string `bson:"height"      json:"height"`
+	Weight      string `bson:"weight"      json:"weight"`
+	Eyes        string `bson:"eyes"        json:"eyes"`
+	Skin        string `bson:"skin"        json:"skin"`
+	Hair        string `bson:"hair"        json:"hair"`
+	Description string `bson:"description" json:"description"`
+}
+
 // CharacterInfo holds narrative/identity fields.
 type CharacterInfo struct {
 	Class      string `bson:"class"      json:"class"`
@@ -131,4 +142,14 @@ type Stats struct {
 
 	Equipment string `bson:"equipment" json:"equipment"`
 	Notes     string `bson:"notes"     json:"notes"`
+
+	PersonalityTraits   string              `bson:"personalityTraits"   json:"personalityTraits"`
+	Ideals              string              `bson:"ideals"              json:"ideals"`
+	Bonds               string              `bson:"bonds"               json:"bonds"`
+	Flaws               string              `bson:"flaws"               json:"flaws"`
+	OtherProficiencies  string              `bson:"otherProficiencies"  json:"otherProficiencies"`
+	Appearance          CharacterAppearance `bson:"appearance"          json:"appearance"`
+	AlliesOrganizations string              `bson:"alliesOrganizations" json:"alliesOrganizations"`
+	Backstory           string              `bson:"backstory"           json:"backstory"`
+	Treasure            string              `bson:"treasure"            json:"treasure"`
 }
