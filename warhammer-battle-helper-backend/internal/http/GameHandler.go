@@ -7,6 +7,7 @@ import (
 	"battle-helper/internal/service"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -544,7 +545,10 @@ func (h *GameHandler) GetFeatures(c *gin.Context) {
 		claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 		email, _ = claims["email"].(string)
 	}
+	fmt.Printf("[GetFeatures] email=%q, jwt_present=%v, auth_header=%q\n",
+		email, c.GetString("jwt") != "" || email != "", c.GetHeader("Authorization") != "")
 	allSystems := registry.ListSystems()
 	allowed := h.FeatureToggles.AllowedSystemsFor(allSystems, email)
+	fmt.Printf("[GetFeatures] allSystems=%v, allowed=%v\n", allSystems, allowed)
 	c.JSON(http.StatusOK, gin.H{"allowedSystems": allowed})
 }
