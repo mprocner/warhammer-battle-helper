@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import CloseIcon from '@mui/icons-material/Close';
 import skillsData from '../../../data/skills.json';
 import CustomItemModal from '../CustomItemModal';
 import axiosInstance from '../../../api/axios';
@@ -242,7 +243,7 @@ function AdvancedSkillsSection({ character, setCharacter, scheduleAutoSave, onCh
                                             onClick={() => handleRemoveAdvancedSkill(skill.key)}
                                             title={t('common.delete')}
                                         >
-                                            ×
+                                            <CloseIcon fontSize="small" />
                                         </button>
                                     </td>
                                 </tr>

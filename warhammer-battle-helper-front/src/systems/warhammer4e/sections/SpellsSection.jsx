@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 
 function SpellsSection({ character, setCharacter, scheduleAutoSave }) {
     const { t } = useTranslation();
@@ -63,7 +64,7 @@ function SpellsSection({ character, setCharacter, scheduleAutoSave }) {
                                     onClick={() => handleRemoveSpell(idx)}
                                     title={t('common.delete')}
                                 >
-                                    ×
+                                    <CloseIcon fontSize="small" />
                                 </button>
                             </td>
                         </tr>

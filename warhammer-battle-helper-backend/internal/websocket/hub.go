@@ -182,6 +182,28 @@ func (h *Hub) broadcastMessage(message *Message) {
 		message.Type, len(clients), message.GameID)
 }
 
+// BroadcastToGameExcept sends a message to all clients in a game except the specified user.
+func (h *Hub) BroadcastToGameExcept(gameID, messageType string, payload map[string]interface{}, excludeUserID string) {
+	message := Message{Type: messageType, GameID: gameID, Payload: payload}
+	msg, err := json.Marshal(message)
+	if err != nil {
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	sent := 0
+	for client := range h.Games[gameID] {
+		if client.ID.Hex() == excludeUserID {
+			continue
+		}
+		select {
+		case client.Send <- msg:
+			sent++
+		default:
+		}
+	}
+}
+
 // BroadcastToGame sends a message to all clients in a specific game
 func (h *Hub) BroadcastToGame(gameID, messageType string, payload map[string]interface{}) {
 	message := &Message{

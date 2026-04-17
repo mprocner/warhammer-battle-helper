@@ -557,12 +557,34 @@
       "dragToReorder": "Przeciągnij, aby zmienić kolejność folderów"
     }
   },
+  "notes": {
+    "title": "Notatki",
+    "addNote": "Dodaj notatkę",
+    "filterPlaceholder": "Filtruj po tytule...",
+    "noNotes": "Brak notatek",
+    "noNotesHint": "Dodaj swoją pierwszą notatkę powyżej",
+    "newNote": "Nowa notatka",
+    "editNote": "Edytuj notatkę",
+    "titleField": "Tytuł",
+    "titlePlaceholder": "Wpisz tytuł notatki...",
+    "privacy": {
+      "label": "Widoczność",
+      "private": "Prywatna",
+      "public": "Publiczna"
+    },
+    "confirmDelete": "Usunąć notatkę \"{{title}}\"?",
+    "loadError": "Nie udało się załadować notatek",
+    "createError": "Nie udało się utworzyć notatki",
+    "updateError": "Nie udało się zaktualizować notatki",
+    "deleteError": "Nie udało się usunąć notatki"
+  },
   "rightPanel": {
     "title": "Ustawienia",
     "tabs": {
       "chat": "Czat",
       "scenes": "Sceny",
       "handouts": "Handouty",
+      "notes": "Notatki",
       "files": "Pliki",
       "music": "Muzyka",
       "players": "Gracze",

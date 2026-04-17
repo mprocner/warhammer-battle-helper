@@ -9,6 +9,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import CloseIcon from '@mui/icons-material/Close';
+import MinimizeIcon from '@mui/icons-material/Minimize';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
@@ -568,13 +569,13 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                 onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
                 title={isMinimized ? t('common.expand') : t('common.minimize')}
               >
-                {isMinimized ? '▢' : '─'}
+                <MinimizeIcon fontSize="small" />
               </button>
               <button
                 className="scenes-tab__modal-close-btn"
                 onClick={(e) => { e.stopPropagation(); setIsCreateOpen(false); }}
               >
-                ×
+                <CloseIcon fontSize="small" />
               </button>
             </div>
           </div>

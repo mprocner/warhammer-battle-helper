@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 
 function CloneCharacterModal({ character, onConfirm, onCancel }) {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ function CloneCharacterModal({ character, onConfirm, onCancel }) {
       <div className="clone-modal" onClick={(e) => e.stopPropagation()}>
         <div className="clone-modal__header">
           <h2>{t('character.cloneTitle')}</h2>
-          <button className="clone-modal__close" onClick={onCancel}>×</button>
+          <button className="clone-modal__close" onClick={onCancel}><CloseIcon fontSize="small" /></button>
         </div>
         <div className="clone-modal__body">
           <p className="clone-modal__character-name">{character.basicInfo?.name}</p>

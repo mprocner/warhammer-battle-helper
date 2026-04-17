@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { resolveDisplayName } from '../utils/participants';
 
@@ -62,7 +63,7 @@ function CharacterVisibilityModal({ character, participants, gameId, token, onCl
       <div className="clone-modal" onClick={e => e.stopPropagation()}>
         <div className="clone-modal__header">
           <h2>{t('character.manageVisibility')}</h2>
-          <button className="clone-modal__close" onClick={onClose}>×</button>
+          <button className="clone-modal__close" onClick={onClose}><CloseIcon fontSize="small" /></button>
         </div>
         <div className="clone-modal__body">
           <p className="clone-modal__character-name">{character.basicInfo?.name}</p>

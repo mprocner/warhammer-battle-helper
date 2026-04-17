@@ -65,6 +65,11 @@ const (
 	EventDrawingPathRemoved = "DRAWING_PATH_REMOVED"
 	EventDrawingCleared     = "DRAWING_CLEARED"
 
+	// Notes
+	EventNoteCreated = "NOTE_CREATED"
+	EventNoteUpdated = "NOTE_UPDATED"
+	EventNoteDeleted = "NOTE_DELETED"
+
 	// Music
 	EventMusicPlay   = "MUSIC_PLAY"
 	EventMusicPause  = "MUSIC_PAUSE"

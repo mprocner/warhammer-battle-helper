@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import CloseIcon from '@mui/icons-material/Close';
+import MinimizeIcon from '@mui/icons-material/Minimize';
 
 function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400 }) {
     const [isMinimized, setIsMinimized] = useState(false);
@@ -162,7 +164,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
                         }}
                         title={isMinimized ? 'Expand' : 'Minimize'}
                     >
-                        {isMinimized ? '▢' : '─'}
+                        <MinimizeIcon fontSize="small" />
                     </button>
                     <button
                         className="close-btn-sheet"
@@ -171,7 +173,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
                             onClose();
                         }}
                     >
-                        ×
+                        <CloseIcon fontSize="small" />
                     </button>
                 </div>
             </div>

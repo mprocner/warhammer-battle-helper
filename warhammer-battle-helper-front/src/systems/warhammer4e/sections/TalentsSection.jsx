@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 import talentsData from '../../../data/talents.json';
 import CustomItemModal from '../CustomItemModal';
 
@@ -173,7 +174,7 @@ function TalentsSection({ character, setCharacter, scheduleAutoSave }) {
                                             onClick={() => handleRemoveTalent(actualIndex)}
                                             title={t('common.delete')}
                                         >
-                                            ×
+                                            <CloseIcon fontSize="small" />
                                         </button>
                                     </td>
                                 </tr>

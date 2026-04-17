@@ -556,12 +556,34 @@
       "dragToReorder": "Drag to reorder folders"
     }
   },
+  "notes": {
+    "title": "Notes",
+    "addNote": "Add Note",
+    "filterPlaceholder": "Filter by title...",
+    "noNotes": "No notes yet",
+    "noNotesHint": "Add your first note above",
+    "newNote": "New Note",
+    "editNote": "Edit Note",
+    "titleField": "Title",
+    "titlePlaceholder": "Enter note title...",
+    "privacy": {
+      "label": "Visibility",
+      "private": "Private",
+      "public": "Public"
+    },
+    "confirmDelete": "Delete note \"{{title}}\"?",
+    "loadError": "Failed to load notes",
+    "createError": "Failed to create note",
+    "updateError": "Failed to update note",
+    "deleteError": "Failed to delete note"
+  },
   "rightPanel": {
     "title": "Settings",
     "tabs": {
       "chat": "Chat",
       "scenes": "Scenes",
       "handouts": "Handouts",
+      "notes": "Notes",
       "files": "Files",
       "music": "Music",
       "players": "Players",

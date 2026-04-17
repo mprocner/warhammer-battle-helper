@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CoCDiceModOverlay from '../CoCDiceModOverlay';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
+import CloseIcon from '@mui/icons-material/Close';
 
 function WeaponsSection({ weapons, customSkills, onWeaponFieldChange, onRemoveWeapon, onAddWeapon, onToggleFavourite, onRollWeapon, gameId }) {
   const { t } = useTranslation();
@@ -62,7 +63,7 @@ function WeaponsSection({ weapons, customSkills, onWeaponFieldChange, onRemoveWe
                   </CoCDiceModOverlay>
                 )}
                 {i !== 0 && (
-                  <button className="coc-remove-btn" onClick={() => onRemoveWeapon(i)}>✕</button>
+                  <button className="coc-remove-btn" onClick={() => onRemoveWeapon(i)}><CloseIcon fontSize="small" /></button>
                 )}
               </td>
             </tr>

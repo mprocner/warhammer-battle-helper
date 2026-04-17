@@ -123,6 +123,9 @@ func main() {
 	drawingRepo := repository.NewDrawingRepository(db.GamesCollection)
 	drawingService := service.NewDrawingService(drawingRepo, hub)
 
+	noteRepo := repository.NewNoteRepository(db.GamesCollection)
+	noteService := service.NewNoteService(noteRepo, hub)
+
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
 	r.POST("/roll", handleRoll)
@@ -185,6 +188,7 @@ func main() {
 	sceneHandler := http.SceneHandler{GameService: gameService}
 	fogHandler := http.FogHandler{FogService: fogService}
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
+	noteHandler := http.NoteHandler{NoteService: noteService}
 
 	game := r.Group("/games/:id").Use(http.JWTAuthMiddleware())
 
@@ -247,6 +251,12 @@ func main() {
 	game.PUT("/handout-folders/reorder", handoutHandler.ReorderHandoutFolders)
 	game.PUT("/handout-folders/:folderId", handoutHandler.RenameHandoutFolder)
 	game.DELETE("/handout-folders/:folderId", handoutHandler.DeleteHandoutFolder)
+
+	// Notes
+	game.POST("/notes", noteHandler.CreateNote)
+	game.GET("/notes", noteHandler.GetNotes)
+	game.PUT("/notes/:noteId", noteHandler.UpdateNote)
+	game.DELETE("/notes/:noteId", noteHandler.DeleteNote)
 
 	// Music playback (game-scoped)
 	game.POST("/music/play", musicHandler.PlayTrack)

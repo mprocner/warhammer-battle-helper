@@ -7,6 +7,7 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -16,6 +17,7 @@ import FilesTab from '../tabs/FilesTab';
 import MusicTab from '../tabs/MusicTab';
 import GeneralTab from '../tabs/GeneralTab';
 import PlayersTab from '../tabs/PlayersTab';
+import NotesTab from '../tabs/NotesTab';
 import './RightPanel.css';
 
 /**
@@ -116,6 +118,11 @@ const RightPanel = ({
     if (isGM) {
       baseTabs.push({ id: 'files', icon: <FolderOutlinedIcon />, label: t('rightPanel.tabs.files') });
       baseTabs.push({ id: 'music', icon: <LibraryMusicOutlinedIcon />, label: t('rightPanel.tabs.music') });
+    }
+
+    baseTabs.push({ id: 'notes', icon: <StickyNote2OutlinedIcon />, label: t('rightPanel.tabs.notes') });
+
+    if (isGM) {
       baseTabs.push({ id: 'players', icon: <PeopleOutlinedIcon />, label: t('rightPanel.tabs.players') });
     }
 
@@ -148,6 +155,9 @@ const RightPanel = ({
         );
       case 'handouts':
         // HandoutsTab is always mounted below to preserve folder expand state
+        return null;
+      case 'notes':
+        // NotesTab is always mounted below to preserve editor popup across tab switches
         return null;
       case 'files':
         return (
@@ -223,6 +233,15 @@ const RightPanel = ({
             {/* HandoutsTab is always mounted to preserve folder expand/collapse state */}
             <div style={{ display: activeTab === 'handouts' ? 'contents' : 'none' }}>
               <HandoutsTab
+                gameId={gameId}
+                token={token}
+                gameState={gameState}
+                isConnected={isConnected}
+              />
+            </div>
+            {/* NotesTab is always mounted to preserve editor popup across tab switches */}
+            <div style={{ display: activeTab === 'notes' ? 'contents' : 'none' }}>
+              <NotesTab
                 gameId={gameId}
                 token={token}
                 gameState={gameState}

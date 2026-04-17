@@ -178,6 +178,20 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	}
 	game.Events = filteredEvents
 
+	// Filter private notes: only show notes that are public or created by the requesting user
+	if hasUser {
+		service.FilterNotesForUser(game, requestingUserID)
+	} else {
+		// No authenticated user — only show public notes
+		publicNotes := make([]models.Note, 0)
+		for _, n := range game.Notes {
+			if !n.IsPrivate {
+				publicNotes = append(publicNotes, n)
+			}
+		}
+		game.Notes = publicNotes
+	}
+
 	c.JSON(http.StatusOK, game)
 }
 

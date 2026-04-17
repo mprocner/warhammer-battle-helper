@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 import armourData from '../../../data/armour.json';
 
 function ArmourSection({ character, setCharacter, scheduleAutoSave }) {
@@ -93,7 +94,7 @@ function ArmourSection({ character, setCharacter, scheduleAutoSave }) {
                                     onClick={() => handleRemoveArmour(idx)}
                                     title={t('common.delete')}
                                 >
-                                    ×
+                                    <CloseIcon fontSize="small" />
                                 </button>
                             </td>
                         </tr>

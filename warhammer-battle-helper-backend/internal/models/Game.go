@@ -53,6 +53,7 @@ type Game struct {
 	Events          []GameEvent        `bson:"events" json:"events"`
 	Handouts        []Handout          `bson:"handouts" json:"handouts"`
 	HandoutFolders  []HandoutFolder    `bson:"handoutFolders" json:"handoutFolders"`
+	Notes           []Note             `bson:"notes" json:"notes"`
 	Scenes          []Scene            `bson:"scenes" json:"scenes"`
 	Music           MusicState         `bson:"music" json:"music"`
 	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
@@ -276,6 +277,31 @@ type ReorderHandoutFoldersRequest struct {
 type GetHandoutsResponse struct {
 	Handouts       []Handout       `json:"handouts"`
 	HandoutFolders []HandoutFolder `json:"handoutFolders"`
+}
+
+// Note represents a note created by a game participant
+type Note struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title     string             `bson:"title"         json:"title"`
+	Content   string             `bson:"content"       json:"content"`
+	IsPrivate bool               `bson:"isPrivate"     json:"isPrivate"`
+	CreatorID primitive.ObjectID `bson:"creatorId"     json:"creatorId"`
+	CreatedAt time.Time          `bson:"createdAt"     json:"createdAt"`
+	UpdatedAt time.Time          `bson:"updatedAt"     json:"updatedAt"`
+}
+
+// CreateNoteRequest is the request body for creating a new note
+type CreateNoteRequest struct {
+	Title     string `json:"title" binding:"required"`
+	Content   string `json:"content"`
+	IsPrivate bool   `json:"isPrivate"`
+}
+
+// UpdateNoteRequest is the request body for updating a note
+type UpdateNoteRequest struct {
+	Title     *string `json:"title"`
+	Content   *string `json:"content"`
+	IsPrivate *bool   `json:"isPrivate"`
 }
 
 // CreateSceneRequest is the request body for creating a new scene

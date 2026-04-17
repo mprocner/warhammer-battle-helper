@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import CloseIcon from '@mui/icons-material/Close';
 import skillsData from '../../../data/skills.json';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
@@ -132,7 +133,7 @@ function WeaponSkillsSection({ character, setCharacter, scheduleAutoSave, onChar
                             onClick={() => handleRemoveGroupedSkill(skill.key, spec)}
                             title={t('common.delete')}
                         >
-                            ×
+                            <CloseIcon fontSize="small" />
                         </button>
                     )}
                 </td>

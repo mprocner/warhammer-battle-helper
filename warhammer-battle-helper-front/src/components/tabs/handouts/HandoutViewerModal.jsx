@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
+import CloseIcon from '@mui/icons-material/Close';
+import MinimizeIcon from '@mui/icons-material/Minimize';
 import './HandoutViewerModal.css';
 
 /**
@@ -346,7 +348,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
             }}
             title={isMinimized ? t('common.expand') : t('common.minimize')}
           >
-            {isMinimized ? '▢' : '─'}
+            <MinimizeIcon fontSize="small" />
           </button>
           <button
             className="handout-viewer__close"
@@ -355,7 +357,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
               onClose();
             }}
           >
-            ×
+            <CloseIcon fontSize="small" />
           </button>
         </div>
       </div>

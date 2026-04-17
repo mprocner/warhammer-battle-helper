@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import CloseIcon from '@mui/icons-material/Close';
 import weaponsData from '../../../data/weapons.json';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
@@ -166,7 +167,7 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
                                     onClick={() => handleRemoveWeapon(idx)}
                                     title={t('common.delete')}
                                 >
-                                    ×
+                                    <CloseIcon fontSize="small" />
                                 </button>
                             </td>
                         </tr>

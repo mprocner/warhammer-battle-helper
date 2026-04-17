@@ -4,6 +4,8 @@ import { uploadHandoutFile } from '../../../api/handouts';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import CloseIcon from '@mui/icons-material/Close';
+import MinimizeIcon from '@mui/icons-material/Minimize';
 import './HandoutCreateModal.css';
 
 const HANDOUT_TYPES = ['map', 'letter', 'document', 'image', 'clue', 'poster'];
@@ -237,7 +239,7 @@ const HandoutCreateModal = ({
             }}
             title={isMinimized ? t('common.expand') : t('common.minimize')}
           >
-            {isMinimized ? '▢' : '─'}
+            <MinimizeIcon fontSize="small" />
           </button>
           <button
             className="handout-modal__close"
@@ -246,7 +248,7 @@ const HandoutCreateModal = ({
               onClose();
             }}
           >
-            ×
+            <CloseIcon fontSize="small" />
           </button>
         </div>
       </div>

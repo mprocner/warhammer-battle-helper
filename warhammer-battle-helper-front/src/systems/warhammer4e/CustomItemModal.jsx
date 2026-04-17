@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
 
 const CHARACTERISTICS = [
     'WEAPON_SKILL', 'BALLISTIC_SKILL', 'STRENGTH', 'TOUGHNESS', 'INITIATIVE',
@@ -22,7 +23,7 @@ function CustomItemModal({ type, isEditing, form, onChange, onSave, onCancel }) 
             <div className="custom-item-modal" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
                 <div className="custom-item-modal__header">
                     <h2>{title}</h2>
-                    <button className="custom-item-modal__close" onClick={onCancel}>×</button>
+                    <button className="custom-item-modal__close" onClick={onCancel}><CloseIcon fontSize="small" /></button>
                 </div>
 
                 <div className="custom-item-modal__body">

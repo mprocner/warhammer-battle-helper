@@ -336,6 +336,27 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         setGameState(prev => prev ? { ...prev, handoutFolders: message.payload.folders } : prev);
         break;
 
+      case WS_EVENTS.NOTE_CREATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, notes: [...(prev.notes || []), message.payload.note] };
+        });
+        break;
+
+      case WS_EVENTS.NOTE_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, notes: (prev.notes || []).map(n => n.id === message.payload.note.id ? message.payload.note : n) };
+        });
+        break;
+
+      case WS_EVENTS.NOTE_DELETED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          return { ...prev, notes: (prev.notes || []).filter(n => n.id !== message.payload.noteId) };
+        });
+        break;
+
       case WS_EVENTS.SCENE_CREATED:
         setGameState(prev => {
           if (!prev) return prev;
