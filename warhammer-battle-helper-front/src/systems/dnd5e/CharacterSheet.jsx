@@ -15,7 +15,6 @@ import AttacksSection          from './sections/AttacksSection';
 import FeaturesSection         from './sections/FeaturesSection';
 import SpellSlotsSection       from './sections/SpellSlotsSection';
 import SpellsSection           from './sections/SpellsSection';
-import NotesSection            from './sections/NotesSection';
 import PersonalitySection      from './sections/PersonalitySection';
 import BackstorySection        from './sections/BackstorySection';
 
@@ -562,6 +561,20 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
               {' '}{t('dnd.enableSpellcasting')}
             </label>
           </div>
+        </div>
+
+      </div>
+
+      {/* BOTTOM: 2-column layout — features left, rest right */}
+      <div className="dnd-sheet__bottom">
+        <div className="dnd-sheet__bottom-col">
+          <BackstorySection
+            stats={edited}
+            onFieldChange={handleFieldChange}
+            onAppearanceChange={handleAppearanceChange}
+          />
+        </div>
+        <div className="dnd-sheet__bottom-col">
           <FeaturesSection
             features={edited.features}
             onFeatureChange={handleFeatureChange}
@@ -572,19 +585,17 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
             stats={edited}
             onFieldChange={handleFieldChange}
           />
-          <BackstorySection
-            stats={edited}
-            onFieldChange={handleFieldChange}
-            onAppearanceChange={handleAppearanceChange}
-          />
-          <NotesSection
-            notes={edited.notes}
-            equipment={edited.equipment}
-            onNotesChange={(v) => { setEdited(prev => ({ ...prev, notes: v })); scheduleAutoSave(); }}
-            onEquipmentChange={(v) => { setEdited(prev => ({ ...prev, equipment: v })); scheduleAutoSave(); }}
-          />
+          <div className="dnd-section">
+            <h4 className="dnd-section-title">{t('dnd.equipment')}</h4>
+            <textarea
+              className="dnd-notes-textarea"
+              value={edited.equipment || ''}
+              onChange={e => { setEdited(prev => ({ ...prev, equipment: e.target.value })); scheduleAutoSave(); }}
+              rows={6}
+              placeholder={t('dnd.equipmentPlaceholder')}
+            />
+          </div>
         </div>
-
       </div>
     </div>
   );
