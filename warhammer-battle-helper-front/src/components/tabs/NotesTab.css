@@ -168,6 +168,36 @@
   transition: all 0.2s ease;
 }
 
+.note-item--dragging {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.note-item__drag-handle {
+  display: flex;
+  align-items: center;
+  color: #c9975b;
+  cursor: grab;
+  flex-shrink: 0;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 3px;
+}
+
+.note-item:hover .note-item__drag-handle {
+  opacity: 1;
+}
+
+.note-item__drag-handle:hover {
+  color: #7a5c42;
+  background: rgba(201, 151, 91, 0.15);
+}
+
+.note-item__drag-handle:active {
+  cursor: grabbing;
+}
+
 .note-item:hover {
   border-color: #7a5c42;
   transform: translateX(2px);

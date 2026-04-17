@@ -5,6 +5,8 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/websocket"
 	"fmt"
+	"log"
+	"sort"
 	"time"
 
 	"github.com/microcosm-cc/bluemonday"
@@ -108,13 +110,19 @@ func (s *NoteService) CreateNote(gameID string, userID primitive.ObjectID, req m
 		return nil, err
 	}
 
+	// Prepend to creator's note order (non-fatal — note is already created)
+	if orderErr := s.noteRepo.AddNoteToOrder(gameID, userID, note.ID.Hex()); orderErr != nil {
+		log.Printf("warn: failed to add note %s to order for user %s: %v", note.ID.Hex(), userID.Hex(), orderErr)
+	}
+
 	payload := map[string]interface{}{"note": note}
 	s.broadcastNote(gameID, websocket.EventNoteCreated, payload, &note, userID.Hex())
 
 	return &note, nil
 }
 
-// GetNotes returns notes visible to the requesting user
+// GetNotes returns notes visible to the requesting user, sorted by their stored order.
+// Notes not in the stored order appear at the end, sorted by createdAt descending.
 func (s *NoteService) GetNotes(gameID string, userID primitive.ObjectID) ([]models.Note, error) {
 	game, err := s.noteRepo.GetGame(gameID)
 	if err != nil {
@@ -131,7 +139,84 @@ func (s *NoteService) GetNotes(gameID string, userID primitive.ObjectID) ([]mode
 			visible = append(visible, note)
 		}
 	}
-	return visible, nil
+
+	// Find this user's stored note order
+	var noteOrder []string
+	for _, p := range game.Participants {
+		if p.UserID == userID {
+			noteOrder = p.NoteOrder
+			break
+		}
+	}
+
+	if len(noteOrder) == 0 {
+		// No stored order: fallback to createdAt descending (legacy behavior)
+		sort.Slice(visible, func(i, j int) bool {
+			return visible[i].CreatedAt.After(visible[j].CreatedAt)
+		})
+		return visible, nil
+	}
+
+	// Build lookup map for O(1) access
+	noteMap := make(map[string]models.Note, len(visible))
+	for _, n := range visible {
+		noteMap[n.ID.Hex()] = n
+	}
+
+	// Apply stored order; skip IDs no longer in visible (deleted = lazy cleanup)
+	ordered := make([]models.Note, 0, len(visible))
+	seen := make(map[string]bool, len(visible))
+	for _, id := range noteOrder {
+		if n, ok := noteMap[id]; ok {
+			ordered = append(ordered, n)
+			seen[id] = true
+		}
+	}
+
+	// Append notes not yet in stored order (created after last reorder, or by others)
+	unseen := make([]models.Note, 0)
+	for _, n := range visible {
+		if !seen[n.ID.Hex()] {
+			unseen = append(unseen, n)
+		}
+	}
+	sort.Slice(unseen, func(i, j int) bool {
+		return unseen[i].CreatedAt.After(unseen[j].CreatedAt)
+	})
+	ordered = append(ordered, unseen...)
+
+	return ordered, nil
+}
+
+// ReorderNotes persists the user's preferred note order
+func (s *NoteService) ReorderNotes(gameID string, userID primitive.ObjectID, noteIDs []string) error {
+	game, err := s.noteRepo.GetGame(gameID)
+	if err != nil {
+		return err
+	}
+
+	if !s.isParticipant(game, userID) {
+		return fmt.Errorf("user is not a participant of this game")
+	}
+
+	// Build set of visible note IDs for lenient validation
+	visible := make(map[string]bool)
+	for _, note := range game.Notes {
+		if !note.IsPrivate || note.CreatorID == userID {
+			visible[note.ID.Hex()] = true
+		}
+	}
+
+	// Filter out IDs that no longer exist (lenient: skip stale IDs, don't reject)
+	filtered := make([]string, 0, len(noteIDs))
+	for _, id := range noteIDs {
+		if visible[id] {
+			filtered = append(filtered, id)
+		}
+	}
+
+	return s.noteRepo.SaveNoteOrder(gameID, userID, filtered)
+	// No WS broadcast — per-user preference, other clients are unaffected
 }
 
 // UpdateNote updates a note's fields

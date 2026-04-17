@@ -544,12 +544,13 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	go client.WritePump()
 	go client.ReadPump()
 
-	// Send initial game state
+	// Send initial game state only to the connecting client, with notes filtered for them
 	game, err := h.GameService.GetGame(gameID)
 	if err == nil {
-		h.Hub.BroadcastToGame(gameID, "GAME_STATE", map[string]interface{}{
+		service.FilterNotesForUser(game, userID)
+		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
 			"game": game,
-		})
+		}, []string{userID.Hex()})
 	}
 }
 

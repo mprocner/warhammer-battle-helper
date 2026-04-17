@@ -255,6 +255,7 @@ func main() {
 	// Notes
 	game.POST("/notes", noteHandler.CreateNote)
 	game.GET("/notes", noteHandler.GetNotes)
+	game.PUT("/notes/reorder", noteHandler.ReorderNotes)
 	game.PUT("/notes/:noteId", noteHandler.UpdateNote)
 	game.DELETE("/notes/:noteId", noteHandler.DeleteNote)
 

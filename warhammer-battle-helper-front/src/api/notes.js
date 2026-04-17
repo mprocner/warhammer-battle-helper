@@ -19,3 +19,8 @@ export const deleteNote = async (gameId, noteId) => {
   const response = await axiosInstance.delete(`/games/${gameId}/notes/${noteId}`);
   return response.data;
 };
+
+export const reorderNotes = async (gameId, noteIds) => {
+  const response = await axiosInstance.put(`/games/${gameId}/notes/reorder`, { noteIds });
+  return response.data;
+};

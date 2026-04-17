@@ -119,6 +119,38 @@ func (h *NoteHandler) UpdateNote(c *gin.Context) {
 	c.JSON(http.StatusOK, note)
 }
 
+// ReorderNotes handles PUT /games/:id/notes/reorder
+func (h *NoteHandler) ReorderNotes(c *gin.Context) {
+	gameID := c.Param("id")
+
+	var req models.ReorderNotesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.NoteService.ReorderNotes(gameID, userID, req.NoteIDs); err != nil {
+		if strings.Contains(err.Error(), "not a participant") {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Note order saved"})
+}
+
 // DeleteNote handles DELETE /games/:id/notes/:noteId
 func (h *NoteHandler) DeleteNote(c *gin.Context) {
 	gameID := c.Param("id")

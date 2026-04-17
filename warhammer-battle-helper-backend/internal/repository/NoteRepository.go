@@ -78,7 +78,7 @@ func (r *NoteRepository) UpdateNote(gameID string, noteID primitive.ObjectID, fi
 	return nil
 }
 
-// DeleteNote removes a note from the game's notes array
+// DeleteNote removes a note from the game's notes array and cleans it from all participants' noteOrder
 func (r *NoteRepository) DeleteNote(gameID string, noteID primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -90,8 +90,11 @@ func (r *NoteRepository) DeleteNote(gameID string, noteID primitive.ObjectID) er
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{
-		"$pull": bson.M{"notes": bson.M{"_id": noteID}},
-		"$set":  bson.M{"updatedAt": time.Now()},
+		"$pull": bson.M{
+			"notes":                      bson.M{"_id": noteID},
+			"participants.$[].noteOrder": noteID.Hex(),
+		},
+		"$set": bson.M{"updatedAt": time.Now()},
 	}
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
@@ -100,6 +103,67 @@ func (r *NoteRepository) DeleteNote(gameID string, noteID primitive.ObjectID) er
 	}
 	if result.MatchedCount == 0 {
 		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
+// SaveNoteOrder persists the ordered list of note IDs for a specific participant
+func (r *NoteRepository) SaveNoteOrder(gameID string, userID primitive.ObjectID, noteIDs []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$set": bson.M{
+			"participants.$[elem].noteOrder": noteIDs,
+			"updatedAt":                      time.Now(),
+		},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem.userId": userID}},
+	})
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to save note order: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
+// AddNoteToOrder prepends a note ID to a participant's noteOrder
+func (r *NoteRepository) AddNoteToOrder(gameID string, userID primitive.ObjectID, noteID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{
+		"$push": bson.M{
+			"participants.$[elem].noteOrder": bson.M{
+				"$each":     []string{noteID},
+				"$position": 0,
+			},
+		},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"elem.userId": userID}},
+	})
+
+	_, err = r.Collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to add note to order: %w", err)
 	}
 	return nil
 }

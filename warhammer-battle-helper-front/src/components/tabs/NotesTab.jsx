@@ -1,12 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import NoteItem from './notes/NoteItem';
+import SortableNoteItem from './notes/SortableNoteItem';
 import NoteEditorModal from './notes/NoteEditorModal';
 import ConfirmModal from '../common/ConfirmModal';
-import { getNotes, createNote, updateNote, deleteNote } from '../../api/notes';
+import { getNotes, createNote, updateNote, deleteNote, reorderNotes } from '../../api/notes';
 import './NotesTab.css';
 
 const NotesTab = ({ gameId, token, gameState, isConnected }) => {
@@ -19,6 +35,7 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   const [error, setError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeDragNote, setActiveDragNote] = useState(null);
 
   // Get current user ID from token
   const userId = useMemo(() => {
@@ -31,7 +48,9 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
     }
   }, [token]);
 
-  // Initial fetch
+  const isFilterActive = filterText.trim().length > 0;
+
+  // Initial fetch — backend returns notes pre-sorted by user's stored order
   useEffect(() => {
     const fetchNotes = async () => {
       try {
@@ -50,42 +69,41 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   }, [gameId, t]);
 
   // Sync from gameState (WS updates from other users).
-  // Merge instead of overwrite: keep local version if it's newer (the sender is excluded
-  // from WS echoes, so gameState.notes permanently lags behind local saves).
+  // Build from prev as base to preserve local drag order.
+  // Only update note content from incoming; never reset positions.
   useEffect(() => {
     if (gameState?.notes === undefined) return;
     setNotes(prev => {
-      const incoming = gameState.notes || [];
+      const incoming = (gameState.notes || []).filter(n => !n.isPrivate || n.creatorId === userId);
       const prevById = new Map(prev.map(n => [n.id, n]));
-      const incomingIds = new Set(incoming.map(n => n.id));
+      const incomingById = new Map(incoming.map(n => [n.id, n]));
 
-      const merged = incoming.map(n => {
-        const local = prevById.get(n.id);
-        if (local && new Date(local.updatedAt) >= new Date(n.updatedAt)) {
-          return local; // keep locally-saved version — it's newer
-        }
-        return n;
-      });
+      // Update existing notes content; remove notes deleted remotely
+      const merged = prev
+        .map(n => {
+          const remote = incomingById.get(n.id);
+          if (!remote) return null; // deleted remotely
+          if (new Date(n.updatedAt) >= new Date(remote.updatedAt)) return n; // local is newer
+          return remote; // remote is newer (updated by another user)
+        })
+        .filter(Boolean);
 
-      // Keep notes that exist locally but aren't in incoming yet
-      // (e.g. just created, gameState snapshot predates the create)
-      for (const [id, note] of prevById) {
-        if (!incomingIds.has(id)) merged.push(note);
+      // Append notes that appeared remotely but aren't in local state yet
+      for (const n of incoming) {
+        if (!prevById.has(n.id)) merged.push(n);
       }
 
       return merged;
     });
-  }, [gameState?.notes]);
+  }, [gameState?.notes, userId]);
 
-  // Auto-refresh editing note from WS updates (changes by other users).
-  // Only replace editingNote if the incoming version is strictly newer.
+  // Auto-refresh editing note from WS updates
   useEffect(() => {
     if (editingNote && gameState?.notes) {
       const updated = gameState.notes.find(n => n.id === editingNote.id);
       if (updated && new Date(updated.updatedAt) > new Date(editingNote.updatedAt)) {
         setEditingNote(updated);
       }
-      // If the note was deleted while editing
       if (editingNote.id && !gameState.notes.find(n => n.id === editingNote.id)) {
         setIsEditorOpen(false);
         setEditingNote(null);
@@ -93,13 +111,46 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
     }
   }, [gameState?.notes, editingNote]);
 
-  // Filter and sort
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragStart = useCallback((event) => {
+    setActiveDragNote(notes.find(n => n.id === event.active.id) || null);
+  }, [notes]);
+
+  const handleDragEnd = useCallback((event) => {
+    const { active, over } = event;
+    setActiveDragNote(null);
+
+    if (!over || active.id === over.id) return;
+
+    setNotes(prev => {
+      const oldIndex = prev.findIndex(n => n.id === active.id);
+      const newIndex = prev.findIndex(n => n.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+
+      // Fire-and-forget inside updater to avoid stale closure over `notes`
+      reorderNotes(gameId, reordered.map(n => n.id)).catch(err => {
+        console.error('Failed to save note order:', err);
+      });
+
+      return reordered;
+    });
+  }, [gameId]);
+
+  // Filtered list — only used when filter is active (drag disabled in that mode)
   const filteredNotes = useMemo(() => {
+    if (!isFilterActive) return notes;
     const lower = filterText.toLowerCase();
-    return [...notes]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .filter(n => !filterText || n.title.toLowerCase().includes(lower));
-  }, [notes, filterText]);
+    return notes.filter(n => n.title.toLowerCase().includes(lower));
+  }, [notes, filterText, isFilterActive]);
+
+  const sortableIds = useMemo(() => notes.map(n => n.id), [notes]);
 
   // CRUD handlers
   const handleCreate = useCallback(() => {
@@ -123,10 +174,10 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
         const updated = await updateNote(gameId, editingNote.id, data);
         setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
       } else {
-        // Create mode — transition to edit mode with the new note
         const created = await createNote(gameId, data);
         setEditingNote(created);
-        setNotes(prev => [...prev, created]);
+        // Prepend locally — consistent with backend AddNoteToOrder ($position: 0)
+        setNotes(prev => [created, ...prev]);
       }
     } catch (err) {
       console.error('Failed to save note:', err);
@@ -143,9 +194,7 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
     try {
       setIsDeleting(true);
       await deleteNote(gameId, deleteTarget.id);
-      // Update local state (sender doesn't receive own WS echo)
       setNotes(prev => prev.filter(n => n.id !== deleteTarget.id));
-      // If deleting the note we're editing, close editor
       if (editingNote?.id === deleteTarget.id) {
         setIsEditorOpen(false);
         setEditingNote(null);
@@ -165,6 +214,14 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   if (error) {
     return <div className="notes-tab notes-tab--error">{error}</div>;
   }
+
+  const emptyState = (
+    <div className="notes-tab__empty">
+      <EditNoteOutlinedIcon className="notes-tab__empty-icon" />
+      <p className="notes-tab__empty-text">{t('notes.noNotes')}</p>
+      <p className="notes-tab__empty-hint">{t('notes.noNotesHint')}</p>
+    </div>
+  );
 
   return (
     <div className="notes-tab">
@@ -192,25 +249,55 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
       )}
 
       {/* List */}
-      <div className="notes-tab__list">
-        {filteredNotes.length === 0 ? (
-          <div className="notes-tab__empty">
-            <EditNoteOutlinedIcon className="notes-tab__empty-icon" />
-            <p className="notes-tab__empty-text">{t('notes.noNotes')}</p>
-            <p className="notes-tab__empty-hint">{t('notes.noNotesHint')}</p>
-          </div>
-        ) : (
-          filteredNotes.map(note => (
+      {isFilterActive ? (
+        /* Filter active: plain list, drag disabled */
+        <div className="notes-tab__list">
+          {filteredNotes.length === 0 ? emptyState : filteredNotes.map(note => (
             <NoteItem
               key={note.id}
               note={note}
               isOwner={note.creatorId === userId}
               onEdit={() => handleEdit(note)}
               onDelete={() => handleDeleteClick(note)}
+              isFilterActive={true}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        /* No filter: sortable drag list */
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+            <div className="notes-tab__list">
+              {notes.length === 0 ? emptyState : notes.map(note => (
+                <SortableNoteItem
+                  key={note.id}
+                  note={note}
+                  isOwner={note.creatorId === userId}
+                  onEdit={() => handleEdit(note)}
+                  onDelete={() => handleDeleteClick(note)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+
+          <DragOverlay>
+            {activeDragNote ? (
+              <NoteItem
+                note={activeDragNote}
+                isOwner={activeDragNote.creatorId === userId}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                isFilterActive={false}
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       {/* Editor Modal */}
       <NoteEditorModal

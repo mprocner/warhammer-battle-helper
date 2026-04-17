@@ -77,6 +77,7 @@ type GameParticipant struct {
 	ShowSignature      bool               `bson:"showSignature,omitempty" json:"showSignature,omitempty"`
 	AccountAvatar      string             `bson:"-" json:"accountAvatar,omitempty"`
 	AccountSignature   string             `bson:"-" json:"accountSignature,omitempty"`
+	NoteOrder          []string           `bson:"noteOrder,omitempty" json:"noteOrder,omitempty"`
 }
 
 // InvitePlayerRequest is the request body for inviting a player to a game
@@ -302,6 +303,11 @@ type UpdateNoteRequest struct {
 	Title     *string `json:"title"`
 	Content   *string `json:"content"`
 	IsPrivate *bool   `json:"isPrivate"`
+}
+
+// ReorderNotesRequest is the request body for reordering notes
+type ReorderNotesRequest struct {
+	NoteIDs []string `json:"noteIds" binding:"required"`
 }
 
 // CreateSceneRequest is the request body for creating a new scene
