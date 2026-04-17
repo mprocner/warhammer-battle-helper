@@ -9,6 +9,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
+import { resolveDisplayName } from '../../utils/participants';
 import RollStatsPanel from './RollStatsPanel';
 import './GeneralTab.css';
 
@@ -44,7 +45,7 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           <div className="general-tab__info-row">
             <span className="general-tab__label">{t('settings.gameMaster')}:</span>
             <span className="general-tab__value">
-              {gameState?.gameMasterEmail || t('common.unknown')}
+              {resolveDisplayName(gameState?.participants?.find(p => p.userId === gameState.gameMasterId)) || gameState?.gameMasterEmail || t('common.unknown')}
             </span>
           </div>
           <div className="general-tab__info-row">
