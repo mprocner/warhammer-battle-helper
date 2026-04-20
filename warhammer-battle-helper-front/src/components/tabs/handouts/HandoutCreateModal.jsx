@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { uploadHandoutFile } from '../../../api/handouts';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
+import ModalHeader from '../../common/ModalHeader';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import CloseIcon from '@mui/icons-material/Close';
-import MinimizeIcon from '@mui/icons-material/Minimize';
 import './HandoutCreateModal.css';
 
 const HANDOUT_TYPES = ['map', 'letter', 'document', 'image', 'clue', 'poster'];
@@ -81,7 +80,7 @@ const HandoutCreateModal = ({
 
   // Drag handlers
   const handleMouseDown = (e) => {
-    if (e.target.closest('.handout-modal__header') && !e.target.closest('.handout-modal__header-buttons')) {
+    if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
       setDragOffset({
@@ -225,33 +224,16 @@ const HandoutCreateModal = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      <div
-        className="handout-modal__header"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <h2>{editHandout ? t('handouts.editHandout') : t('handouts.createHandout')}</h2>
-        <div className="handout-modal__header-buttons">
-          <button
-            className="handout-modal__minimize-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMinimized(!isMinimized);
-            }}
-            title={isMinimized ? t('common.expand') : t('common.minimize')}
-          >
-            <MinimizeIcon fontSize="small" />
-          </button>
-          <button
-            className="handout-modal__close"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </button>
-        </div>
-      </div>
+      <ModalHeader
+        title={editHandout ? t('handouts.editHandout') : t('handouts.createHandout')}
+        onClose={onClose}
+        isMinimized={isMinimized}
+        onToggleMinimize={() => setIsMinimized(v => !v)}
+        isDragging={isDragging}
+        draggable
+        minimizeTitle={t('common.minimize')}
+        expandTitle={t('common.expand')}
+      />
 
       {!isMinimized && (
         <form onSubmit={handleSubmit} className="handout-modal__form">

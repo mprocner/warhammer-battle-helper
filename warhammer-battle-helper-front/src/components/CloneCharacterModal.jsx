@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import CloseIcon from '@mui/icons-material/Close';
+import ModalHeader from './common/ModalHeader';
 
 function CloneCharacterModal({ character, onConfirm, onCancel }) {
   const { t } = useTranslation();
   const [count, setCount] = useState(1);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   const handleConfirm = () => {
     onConfirm(count);
@@ -12,11 +13,15 @@ function CloneCharacterModal({ character, onConfirm, onCancel }) {
 
   return (
     <div className="clone-modal-overlay" onClick={onCancel}>
-      <div className="clone-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="clone-modal__header">
-          <h2>{t('character.cloneTitle')}</h2>
-          <button className="clone-modal__close" onClick={onCancel}><CloseIcon fontSize="small" /></button>
-        </div>
+      <div className={`clone-modal ${isMinimized ? 'clone-modal--minimized' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <ModalHeader
+          title={t('character.cloneTitle')}
+          onClose={onCancel}
+          isMinimized={isMinimized}
+          onToggleMinimize={() => setIsMinimized(v => !v)}
+          minimizeTitle={t('common.minimize')}
+          expandTitle={t('common.expand')}
+        />
         <div className="clone-modal__body">
           <p className="clone-modal__character-name">{character.basicInfo?.name}</p>
           <label className="clone-modal__label">

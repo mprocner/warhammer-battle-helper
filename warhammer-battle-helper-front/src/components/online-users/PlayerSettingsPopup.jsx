@@ -5,7 +5,7 @@ import axiosInstance from '../../api/axios';
 import { getProfile, updateGameParticipant } from '../../api/profile';
 import AvatarUpload from '../common/AvatarUpload';
 import { getAvatarUrl } from '../Avatar';
-import CloseIcon from '@mui/icons-material/Close';
+import ModalHeader from '../common/ModalHeader';
 import './PlayerSettingsPopup.css';
 
 const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticipantUpdated }) => {
@@ -25,6 +25,7 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
   const [playerSaving, setPlayerSaving] = useState(false);
   const [playerSaveSuccess, setPlayerSaveSuccess] = useState(false);
   const [playerSaveError, setPlayerSaveError] = useState('');
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -124,13 +125,15 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
 
   return createPortal(
     <div className="player-settings-popup__overlay" onClick={onClose}>
-      <div className="player-settings-popup" onClick={e => e.stopPropagation()}>
-        <div className="player-settings-popup__header">
-          <h2 className="player-settings-popup__title">{t('game.player.title')}</h2>
-          <button className="player-settings-popup__close" onClick={onClose}>
-            <CloseIcon fontSize="small" />
-          </button>
-        </div>
+      <div className={`player-settings-popup ${isMinimized ? 'player-settings-popup--minimized' : ''}`} onClick={e => e.stopPropagation()}>
+        <ModalHeader
+          title={t('game.player.title')}
+          onClose={onClose}
+          isMinimized={isMinimized}
+          onToggleMinimize={() => setIsMinimized(v => !v)}
+          minimizeTitle={t('common.minimize')}
+          expandTitle={t('common.expand')}
+        />
 
         <div className="player-settings-popup__body">
           <div className="player-settings-popup__field-label">{t('game.player.avatar')}</div>

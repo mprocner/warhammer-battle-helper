@@ -8,8 +8,8 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import EditIcon from '@mui/icons-material/Edit';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
+import ModalHeader from '../common/ModalHeader';
 import CloseIcon from '@mui/icons-material/Close';
-import MinimizeIcon from '@mui/icons-material/Minimize';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
@@ -247,7 +247,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
 
   // Modal drag handlers
   const handleModalMouseDown = (e) => {
-    if (e.target.closest('.scenes-tab__modal-header') && !e.target.closest('.scenes-tab__modal-header-buttons')) {
+    if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = modalRef.current.getBoundingClientRect();
       setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -558,27 +558,16 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
           style={{ left: `${modalPos.x}px`, top: `${modalPos.y}px` }}
           onMouseDown={handleModalMouseDown}
         >
-          <div
-            className="scenes-tab__modal-header"
-            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-          >
-            <h4>{t('scenes.createScene')}</h4>
-            <div className="scenes-tab__modal-header-buttons">
-              <button
-                className="scenes-tab__modal-minimize-btn"
-                onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
-                title={isMinimized ? t('common.expand') : t('common.minimize')}
-              >
-                <MinimizeIcon fontSize="small" />
-              </button>
-              <button
-                className="scenes-tab__modal-close-btn"
-                onClick={(e) => { e.stopPropagation(); setIsCreateOpen(false); }}
-              >
-                <CloseIcon fontSize="small" />
-              </button>
-            </div>
-          </div>
+          <ModalHeader
+            title={t('scenes.createScene')}
+            onClose={() => setIsCreateOpen(false)}
+            isMinimized={isMinimized}
+            onToggleMinimize={() => setIsMinimized(v => !v)}
+            isDragging={isDragging}
+            draggable
+            minimizeTitle={t('common.minimize')}
+            expandTitle={t('common.expand')}
+          />
           {!isMinimized && (
             <form onSubmit={handleCreateScene}>
               <div className="scenes-tab__field">

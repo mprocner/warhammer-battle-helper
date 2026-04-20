@@ -24,44 +24,9 @@
   overflow: hidden;
 }
 
-.player-settings-popup__header {
-  background: linear-gradient(90deg, #c9975b 0%, #a67c52 100%);
-  padding: 10px 12px;
-  border-bottom: 3px solid #7a5c42;
-  border-radius: 5px 5px 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.player-settings-popup__title {
-  margin: 0;
-  font-size: 16px;
-  font-family: 'Cinzel', serif;
-  color: #fff9f0;
-  text-shadow: 1px 1px 3px rgba(58, 47, 31, 0.6);
-  letter-spacing: 1px;
-}
-
-.player-settings-popup__close {
-  background: rgba(139, 36, 36, 0.5);
-  border: 1px solid #8b2424;
-  border-radius: 4px;
-  color: #fff9f0;
-  cursor: pointer;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  padding: 0;
-}
-
-.player-settings-popup__close:hover {
-  background: rgba(201, 42, 42, 0.7);
-  border-color: #c92a2a;
+.player-settings-popup--minimized .player-settings-popup__body,
+.player-settings-popup--minimized .player-settings-popup__footer {
+  display: none;
 }
 
 .player-settings-popup__body {

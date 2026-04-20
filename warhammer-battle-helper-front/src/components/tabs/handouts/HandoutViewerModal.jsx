@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
-import CloseIcon from '@mui/icons-material/Close';
-import MinimizeIcon from '@mui/icons-material/Minimize';
+import ModalHeader from '../../common/ModalHeader';
 import './HandoutViewerModal.css';
 
 /**
@@ -113,7 +112,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
 
   // Modal drag handlers
   const handleMouseDown = (e) => {
-    if (e.target.closest('.handout-viewer__header') && !e.target.closest('.handout-viewer__header-buttons')) {
+    if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
       setDragOffset({
@@ -331,36 +330,17 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
       }}
       onMouseDown={handleMouseDown}
     >
-      <div
-        className="handout-viewer__header"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <div className="handout-viewer__title-section">
-          <HandoutTypeIcon type={handout.type} className="handout-viewer__type-icon" />
-          <h2 className="handout-viewer__title">{handout.title}</h2>
-        </div>
-        <div className="handout-viewer__header-buttons">
-          <button
-            className="handout-viewer__minimize-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsMinimized(!isMinimized);
-            }}
-            title={isMinimized ? t('common.expand') : t('common.minimize')}
-          >
-            <MinimizeIcon fontSize="small" />
-          </button>
-          <button
-            className="handout-viewer__close"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </button>
-        </div>
-      </div>
+      <ModalHeader
+        title={handout.title}
+        onClose={onClose}
+        isMinimized={isMinimized}
+        onToggleMinimize={() => setIsMinimized(v => !v)}
+        icon={<HandoutTypeIcon type={handout.type} className="handout-viewer__type-icon" />}
+        isDragging={isDragging}
+        draggable
+        minimizeTitle={t('common.minimize')}
+        expandTitle={t('common.expand')}
+      />
 
       {!isMinimized && (
         <>

@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import CloseIcon from '@mui/icons-material/Close';
-import MinimizeIcon from '@mui/icons-material/Minimize';
+import { useTranslation } from 'react-i18next';
+import ModalHeader from './ModalHeader';
 
 function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400 }) {
+    const { t } = useTranslation();
     const [isMinimized, setIsMinimized] = useState(false);
     const [position, setPosition] = useState(() => ({
         x: Math.min(0, window.innerWidth - 600),
@@ -35,7 +36,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
     }, []);
 
     const handleMouseDown = (e) => {
-        if (e.target.closest('.sheet-header') && !e.target.closest('.sheet-header-buttons')) {
+        if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
             setIsDragging(true);
             const rect = popupRef.current.getBoundingClientRect();
             setDragOffset({
@@ -152,31 +153,17 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
                 </>
             )}
 
-            <div className="sheet-header" style={{ cursor: isDragging ? 'grabbing' : 'grab' }}>
-                <h2 style={{ fontSize: isMinimized ? '14px' : undefined }}>{title}</h2>
-                <div className="sheet-header-buttons">
-                    {!isMinimized && headerButtons}
-                    <button
-                        className="minimize-btn"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsMinimized(!isMinimized);
-                        }}
-                        title={isMinimized ? 'Expand' : 'Minimize'}
-                    >
-                        <MinimizeIcon fontSize="small" />
-                    </button>
-                    <button
-                        className="close-btn-sheet"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClose();
-                        }}
-                    >
-                        <CloseIcon fontSize="small" />
-                    </button>
-                </div>
-            </div>
+            <ModalHeader
+                title={title}
+                onClose={onClose}
+                isMinimized={isMinimized}
+                onToggleMinimize={() => setIsMinimized(v => !v)}
+                extraButtons={headerButtons}
+                isDragging={isDragging}
+                draggable
+                minimizeTitle={t('common.minimize')}
+                expandTitle={t('common.expand')}
+            />
 
             {!isMinimized && (
                 <div className="sheet-content" style={{ maxHeight: `${size.height - 80}px` }}>

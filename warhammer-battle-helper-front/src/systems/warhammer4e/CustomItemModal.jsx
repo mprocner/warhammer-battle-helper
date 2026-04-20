@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import CloseIcon from '@mui/icons-material/Close';
+import ModalHeader from '../../components/common/ModalHeader';
 
 const CHARACTERISTICS = [
     'WEAPON_SKILL', 'BALLISTIC_SKILL', 'STRENGTH', 'TOUGHNESS', 'INITIATIVE',
@@ -9,6 +9,7 @@ const CHARACTERISTICS = [
 
 function CustomItemModal({ type, isEditing, form, onChange, onSave, onCancel }) {
     const { t } = useTranslation();
+    const [isMinimized, setIsMinimized] = useState(false);
 
     const title = type === 'skill'
         ? (isEditing ? t('characterSheet.editCustomSkillModalTitle') : t('characterSheet.customSkillModalTitle'))
@@ -20,11 +21,15 @@ function CustomItemModal({ type, isEditing, form, onChange, onSave, onCancel }) 
 
     return (
         <div className="custom-item-modal-overlay" onClick={onCancel}>
-            <div className="custom-item-modal" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
-                <div className="custom-item-modal__header">
-                    <h2>{title}</h2>
-                    <button className="custom-item-modal__close" onClick={onCancel}><CloseIcon fontSize="small" /></button>
-                </div>
+            <div className={`custom-item-modal ${isMinimized ? 'custom-item-modal--minimized' : ''}`} onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+                <ModalHeader
+                    title={title}
+                    onClose={onCancel}
+                    isMinimized={isMinimized}
+                    onToggleMinimize={() => setIsMinimized(v => !v)}
+                    minimizeTitle={t('common.minimize')}
+                    expandTitle={t('common.expand')}
+                />
 
                 <div className="custom-item-modal__body">
                     <label className="custom-item-modal__label">

@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import CloseIcon from '@mui/icons-material/Close';
-import MinimizeIcon from '@mui/icons-material/Minimize';
+import ModalHeader from '../../common/ModalHeader';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
@@ -139,7 +138,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
 
   // Drag handlers
   const handleMouseDown = useCallback((e) => {
-    if (e.target.closest('.note-editor__header') && !e.target.closest('.note-editor__header-buttons')) {
+    if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
       setDragOffset({
@@ -231,18 +230,16 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Header */}
-      <div className="note-editor__header">
-        <h2 className="note-editor__title">{modalTitle}</h2>
-        <div className="note-editor__header-buttons">
-          <button className="note-editor__minimize-btn" onClick={() => setIsMinimized(v => !v)}>
-            <MinimizeIcon fontSize="small" />
-          </button>
-          <button className="note-editor__close-btn" onClick={onClose}>
-            <CloseIcon fontSize="small" />
-          </button>
-        </div>
-      </div>
+      <ModalHeader
+        title={modalTitle}
+        onClose={onClose}
+        isMinimized={isMinimized}
+        onToggleMinimize={() => setIsMinimized(v => !v)}
+        isDragging={isDragging}
+        draggable
+        minimizeTitle={t('common.minimize')}
+        expandTitle={t('common.expand')}
+      />
 
       {/* Body */}
       {!isMinimized && (
