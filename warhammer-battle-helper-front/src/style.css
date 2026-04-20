@@ -5053,6 +5053,15 @@ align-items: center;
   line-height: 1.2;
 }
 
+.dnd-combat-stat-box__value::-webkit-inner-spin-button,
+.dnd-combat-stat-box__value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.dnd-combat-stat-box__value[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .dnd-combat-stat-box__value--readonly {
   display: block;
 }
