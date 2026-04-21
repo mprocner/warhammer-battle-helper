@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DndContext,
@@ -36,6 +36,8 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeDragNote, setActiveDragNote] = useState(null);
+  const editingNoteConfirmedInWSRef = useRef(false);
+  const lastEditingNoteIdRef = useRef(null);
 
   // Get current user ID from token
   const userId = useMemo(() => {
@@ -99,15 +101,23 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
 
   // Auto-refresh editing note from WS updates
   useEffect(() => {
-    if (editingNote && gameState?.notes) {
-      const updated = gameState.notes.find(n => n.id === editingNote.id);
-      if (updated && new Date(updated.updatedAt) > new Date(editingNote.updatedAt)) {
+    if (!editingNote || !gameState?.notes) return;
+
+    if (editingNote.id !== lastEditingNoteIdRef.current) {
+      lastEditingNoteIdRef.current = editingNote.id;
+      editingNoteConfirmedInWSRef.current = false;
+    }
+
+    const updated = gameState.notes.find(n => n.id === editingNote.id);
+    if (updated) {
+      editingNoteConfirmedInWSRef.current = true;
+      if (new Date(updated.updatedAt) > new Date(editingNote.updatedAt)) {
         setEditingNote(updated);
       }
-      if (editingNote.id && !gameState.notes.find(n => n.id === editingNote.id)) {
-        setIsEditorOpen(false);
-        setEditingNote(null);
-      }
+    } else if (editingNoteConfirmedInWSRef.current) {
+      // Note was previously confirmed in WS state — it was deleted remotely
+      setIsEditorOpen(false);
+      setEditingNote(null);
     }
   }, [gameState?.notes, editingNote]);
 

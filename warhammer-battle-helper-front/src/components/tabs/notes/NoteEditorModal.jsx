@@ -25,9 +25,10 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
   const [saveError, setSaveError] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 50 });
-  const [size, setSize] = useState({ width: 500, height: 500 });
+  const [size, setSize] = useState({ width: 900, height: 700 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [, forceUpdate] = useState(0);
 
   // Refs for auto-save (avoid stale closures)
   const autoSaveTimerRef = useRef(null);
@@ -47,10 +48,11 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
     ],
     content: '',
     onUpdate: () => {
-      // Only schedule auto-save for user typing, not programmatic setContent
+      forceUpdate(n => n + 1);
       if (isProgrammaticUpdateRef.current) return;
       scheduleAutoSave();
     },
+    onSelectionUpdate: () => forceUpdate(n => n + 1),
   });
 
   const editorRef = useRef(editor);
@@ -110,7 +112,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       prevNoteIdRef.current = note.id;
 
       if (isNewNote) {
-        setPosition({ x: Math.max(50, window.innerWidth / 2 - 250), y: 50 });
+        setPosition({ x: Math.max(50, window.innerWidth / 2 - 450), y: 50 });
         setIsMinimized(false);
       }
 
@@ -132,7 +134,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       setEditorContent('');
       setSaveError('');
       setIsMinimized(false);
-      setPosition({ x: Math.max(50, window.innerWidth / 2 - 250), y: 50 });
+      setPosition({ x: Math.max(50, window.innerWidth / 2 - 450), y: 50 });
     }
   }, [isOpen, note, editor, setEditorContent]);
 
