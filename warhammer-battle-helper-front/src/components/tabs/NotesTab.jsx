@@ -36,8 +36,8 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeDragNote, setActiveDragNote] = useState(null);
-  const editingNoteConfirmedInWSRef = useRef(false);
-  const lastEditingNoteIdRef = useRef(null);
+  const confirmedNoteIdsRef = useRef(new Set());
+  const deletedNoteIdsRef = useRef(new Set());
 
   // Get current user ID from token
   const userId = useMemo(() => {
@@ -59,6 +59,9 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
         setIsLoading(true);
         const data = await getNotes(gameId);
         setNotes(data || []);
+        for (const n of (data || [])) {
+          confirmedNoteIdsRef.current.add(n.id);
+        }
         setError('');
       } catch (err) {
         console.error('Failed to fetch notes:', err);
@@ -80,19 +83,30 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
       const prevById = new Map(prev.map(n => [n.id, n]));
       const incomingById = new Map(incoming.map(n => [n.id, n]));
 
+      // Mark all incoming notes as confirmed by server
+      for (const n of incoming) {
+        confirmedNoteIdsRef.current.add(n.id);
+      }
+
       // Update existing notes content; remove notes deleted remotely
       const merged = prev
         .map(n => {
           const remote = incomingById.get(n.id);
-          if (!remote) return null; // deleted remotely
+          if (!remote) {
+            // Only remove if previously confirmed by server — it was deleted remotely.
+            // If never confirmed, it's a pending optimistic update — keep it.
+            if (confirmedNoteIdsRef.current.has(n.id)) return null;
+            return n;
+          }
           if (new Date(n.updatedAt) >= new Date(remote.updatedAt)) return n; // local is newer
           return remote; // remote is newer (updated by another user)
         })
         .filter(Boolean);
 
-      // Append notes that appeared remotely but aren't in local state yet
+      // Append notes that appeared remotely but aren't in local state yet.
+      // Skip notes locally deleted — gameState.notes may be stale (sender excluded from own broadcast).
       for (const n of incoming) {
-        if (!prevById.has(n.id)) merged.push(n);
+        if (!prevById.has(n.id) && !deletedNoteIdsRef.current.has(n.id)) merged.push(n);
       }
 
       return merged;
@@ -103,19 +117,13 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   useEffect(() => {
     if (!editingNote || !gameState?.notes) return;
 
-    if (editingNote.id !== lastEditingNoteIdRef.current) {
-      lastEditingNoteIdRef.current = editingNote.id;
-      editingNoteConfirmedInWSRef.current = false;
-    }
-
     const updated = gameState.notes.find(n => n.id === editingNote.id);
     if (updated) {
-      editingNoteConfirmedInWSRef.current = true;
       if (new Date(updated.updatedAt) > new Date(editingNote.updatedAt)) {
         setEditingNote(updated);
       }
-    } else if (editingNoteConfirmedInWSRef.current) {
-      // Note was previously confirmed in WS state — it was deleted remotely
+    } else if (confirmedNoteIdsRef.current.has(editingNote.id)) {
+      // Note was confirmed by server before — now it's gone, so it was deleted remotely
       setIsEditorOpen(false);
       setEditingNote(null);
     }
@@ -204,6 +212,7 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
     try {
       setIsDeleting(true);
       await deleteNote(gameId, deleteTarget.id);
+      deletedNoteIdsRef.current.add(deleteTarget.id);
       setNotes(prev => prev.filter(n => n.id !== deleteTarget.id));
       if (editingNote?.id === deleteTarget.id) {
         setIsEditorOpen(false);
