@@ -14,7 +14,10 @@ import { useDrawingTools } from '../hooks/useDrawingTools';
 import { useFogTools } from '../hooks/useFogTools';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
+import { getMinigameState } from '../api/minigame';
 import SceneSelector from './scene/SceneSelector';
+import YahtzeeBoardModal from './minigame/YahtzeeBoardModal';
+import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
 
 /**
@@ -36,6 +39,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
+  const [minigameState, setMinigameState] = useState(null);
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -88,6 +92,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       if (game.music) {
         syncFromGame(game.music);
       }
+
+      // Rehydrate minigame state on reconnect
+      getMinigameState(game.id || gameId).then(mg => {
+        if (mg) setMinigameState(mg);
+      });
 
       if (game.events && Array.isArray(game.events) && !historyLoaded) {
         const historicalLogs = game.events.map(event => {
@@ -631,6 +640,15 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         handleOnlineUsersMessage(message);
         break;
 
+      case WS_EVENTS.MINIGAME_STARTED:
+      case WS_EVENTS.MINIGAME_STATE_UPDATED:
+        setMinigameState(message.payload.game);
+        break;
+
+      case WS_EVENTS.MINIGAME_ENDED:
+        setMinigameState({ ended: true, gameType: message.payload.gameType, players: message.payload.players });
+        break;
+
       default:
         console.warn('Unknown message type:', message.type);
     }
@@ -885,8 +903,29 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onRollVisibilityChange={setRollVisibility}
           controlScheme={controlScheme}
           onControlSchemeChange={setControlScheme}
+          minigameState={minigameState}
+          onReopenMinigameBoard={() => setMinigameState(prev => prev)}
         />
       </Box>
+
+      {minigameState && minigameState.gameType === 'yahtzee' && (
+        <YahtzeeBoardModal
+          state={minigameState}
+          gameId={gameId}
+          userId={userId}
+          isGM={isGM}
+          onClose={() => setMinigameState(null)}
+        />
+      )}
+      {minigameState && minigameState.gameType === 'dicepoker' && (
+        <DicePokerBoardModal
+          state={minigameState}
+          gameId={gameId}
+          userId={userId}
+          isGM={isGM}
+          onClose={() => setMinigameState(null)}
+        />
+      )}
 
       <ConfirmModal
         isOpen={showLeaveConfirm}

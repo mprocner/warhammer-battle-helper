@@ -8,6 +8,7 @@ import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
+import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -18,6 +19,7 @@ import MusicTab from '../tabs/MusicTab';
 import GeneralTab from '../tabs/GeneralTab';
 import PlayersTab from '../tabs/PlayersTab';
 import NotesTab from '../tabs/NotesTab';
+import MinigameTab from '../tabs/MinigameTab';
 import './RightPanel.css';
 
 /**
@@ -48,6 +50,8 @@ const RightPanel = ({
   onRollVisibilityChange,
   controlScheme,
   onControlSchemeChange,
+  minigameState = null,
+  onReopenMinigameBoard,
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('chat');
@@ -124,6 +128,7 @@ const RightPanel = ({
 
     if (isGM) {
       baseTabs.push({ id: 'players', icon: <PeopleOutlinedIcon />, label: t('rightPanel.tabs.players') });
+      baseTabs.push({ id: 'minigames', icon: <CasinoOutlinedIcon />, label: t('rightPanel.tabs.minigames') });
     }
 
     baseTabs.push({ id: 'general', icon: <SettingsOutlinedIcon />, label: t('rightPanel.tabs.general') });
@@ -178,6 +183,16 @@ const RightPanel = ({
             gameState={gameState}
             onlineUserIds={onlineUserIds}
             onParticipantUpdated={onParticipantUpdated}
+          />
+        );
+      case 'minigames':
+        return (
+          <MinigameTab
+            gameState={gameState}
+            onlineUserIds={onlineUserIds}
+            userId={userId}
+            minigameState={minigameState}
+            onReopenBoard={onReopenMinigameBoard}
           />
         );
       case 'general':

@@ -126,6 +126,9 @@ func main() {
 	noteRepo := repository.NewNoteRepository(db.GamesCollection)
 	noteService := service.NewNoteService(noteRepo, hub)
 
+	yahtzeeService := service.NewYahtzeeService(gameRepo, hub)
+	dicePokerService := service.NewDicePokerService(gameRepo, hub)
+
 	r.GET("/", handleHome)
 	r.GET("/health", handleHealth)
 	r.POST("/roll", handleRoll)
@@ -189,6 +192,7 @@ func main() {
 	fogHandler := http.FogHandler{FogService: fogService}
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
 	noteHandler := http.NoteHandler{NoteService: noteService}
+	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
 
 	game := r.Group("/games/:id").Use(http.JWTAuthMiddleware())
 
@@ -258,6 +262,16 @@ func main() {
 	game.PUT("/notes/reorder", noteHandler.ReorderNotes)
 	game.PUT("/notes/:noteId", noteHandler.UpdateNote)
 	game.DELETE("/notes/:noteId", noteHandler.DeleteNote)
+
+	// Minigames
+	game.POST("/minigame/start", minigameHandler.Start)
+	game.DELETE("/minigame", minigameHandler.End)
+	game.GET("/minigame", minigameHandler.GetState)
+	game.POST("/minigame/roll", minigameHandler.Roll)
+	game.PATCH("/minigame/held", minigameHandler.SetHeld)
+	game.POST("/minigame/score", minigameHandler.Score)
+	game.POST("/minigame/confirm", minigameHandler.Confirm)
+	game.POST("/minigame/next-round", minigameHandler.NextRound)
 
 	// Music playback (game-scoped)
 	game.POST("/music/play", musicHandler.PlayTrack)

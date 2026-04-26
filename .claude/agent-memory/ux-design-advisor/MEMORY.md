@@ -11,3 +11,5 @@
 - [UI Conventions & Visual Language](project_ui_conventions.md) — Icons, tooltips, BEM CSS, i18n, parchment palette, wax seal tokens, typography (detailed palette values)
 - [D&D 5e System Design](dnd5e-system-design.md) — Sheet layout, ability score display, skill rows, attack log entries, advantage/disadvantage flow (2026-04-07)
 - [Notes Tab Design](notes-tab-design.md) — Privacy model, list layout (title-only), WYSIWYG placement, conflict banner, Tiptap recommendation (2026-04-15)
+- [Mini-games Tab Design](minigames-tab-design.md) — DraggablePopup board modal, Yahtzee setup form, scorecard multi-player layout, dice states (2026-04-24)
+- [Dice Poker Board Design](dice-poker-design.md) — Hidden dice mechanic, reveal phase animation, NPC name inputs, round tally layout (2026-04-25)

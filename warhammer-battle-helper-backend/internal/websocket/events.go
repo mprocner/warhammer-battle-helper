@@ -76,4 +76,9 @@ const (
 	EventMusicStop   = "MUSIC_STOP"
 	EventMusicVolume = "MUSIC_VOLUME"
 	EventMusicLoop   = "MUSIC_LOOP"
+
+	// Minigames
+	EventMinigameStarted      = "MINIGAME_STARTED"
+	EventMinigameStateUpdated = "MINIGAME_STATE_UPDATED"
+	EventMinigameEnded        = "MINIGAME_ENDED"
 )
