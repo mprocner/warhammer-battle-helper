@@ -267,10 +267,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         return fresh || null;
       });
 
-      // Filter out characters currently on the grid and grid-only tokens (no sidebar access)
+      // Filter out characters currently on the grid
       setCharacters(() => {
         if (!fightZonesRef.current || !Array.isArray(fightZonesRef.current)) {
-          return charactersData.filter(c => !c.gridOnly);
+          return charactersData;
         }
 
         const characterIdsOnGrid = new Set(
@@ -280,7 +280,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         );
 
         return charactersData.filter(
-          char => !char.gridOnly && !characterIdsOnGrid.has(char.id)
+          char => !characterIdsOnGrid.has(char.id)
         );
       });
 
@@ -531,10 +531,12 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           );
           if (zoneIndex !== -1) {
             const fullChar = allCharacters.find(c => c.id === gameChar.characterId);
-            if (fullChar) {
-              clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: normalizeCharacter(fullChar) };
-              characterIdsOnGrid.add(gameChar.characterId);
-            }
+            // Use full character data if accessible; otherwise fall back to scene token data
+            const charData = fullChar
+              ? normalizeCharacter(fullChar)
+              : { id: gameChar.characterId, name: gameChar.name, avatar: gameChar.avatar, isEnemy: gameChar.isEnemy, stats: {}, gridOnly: true };
+            clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: charData };
+            characterIdsOnGrid.add(gameChar.characterId);
           }
         });
 
