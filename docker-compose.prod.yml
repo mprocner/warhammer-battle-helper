@@ -37,7 +37,6 @@ services:
       - ./warhammer-battle-helper-backend/keys:/app/keys:ro
       - backend-avatars:/app/avatars
       - backend-user-files:/app/user-files
-      - backend-handouts:/app/handouts
       - backend-music-files:/app/music-files
     depends_on:
       - mongo
@@ -70,5 +69,4 @@ volumes:
   mongo-data:
   backend-avatars:
   backend-user-files:
-  backend-handouts:
   backend-music-files:

@@ -57,12 +57,15 @@ fi
 
 # Backup volumes before deployment
 VOLUMES_BACKUP_DIR="$HOME/volume-backups"
-for vol in avatars user-files handouts music-files; do
+BACKUP_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+for vol in avatars user-files music-files; do
     MOUNTPOINT=$(docker volume inspect "warhammer-battle-helper_backend-$vol" --format '{{.Mountpoint}}' 2>/dev/null)
     if [ -n "$MOUNTPOINT" ]; then
         log_info "Backing up volume $vol..."
-        mkdir -p "$VOLUMES_BACKUP_DIR/$vol"
-        sudo rsync -a --delete "$MOUNTPOINT/" "$VOLUMES_BACKUP_DIR/$vol/"
+        DEST="$VOLUMES_BACKUP_DIR/$vol/$BACKUP_TIMESTAMP"
+        mkdir -p "$DEST"
+        sudo rsync -a "$MOUNTPOINT/" "$DEST/"
+        ls -dt "$VOLUMES_BACKUP_DIR/$vol"/[0-9]* 2>/dev/null | tail -n +6 | xargs -r sudo rm -rf
     fi
 done
 
