@@ -54,6 +54,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
   const gridVisible = currentScene?.gridVisible !== false;
   const sceneId = currentScene?.id || null;
+  const sceneIdRef = useRef(sceneId);
+  useEffect(() => { sceneIdRef.current = sceneId; }, [sceneId]);
 
   const fightZonesRef = useRef(generateFightZones(gridWidth, gridHeight));
   const [fightZones, setFightZones] = useState(fightZonesRef.current);
@@ -143,8 +145,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const handleAddCharacterToGrid = async (characterId, positionX, positionY, isEnemy) => {
     if (!gameId || !token) return;
 
-    const url = sceneId
-      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters`
+    const sid = sceneIdRef.current;
+    const url = sid
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sid}/characters`
       : `${getApiUrl()}/games/${gameId}/characters`;
 
     try {
@@ -178,8 +181,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const handleMoveCharacter = async (characterId, positionX, positionY) => {
     if (!gameId || !token) return;
 
-    const url = sceneId
-      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters/move`
+    const sid = sceneIdRef.current;
+    const url = sid
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/move`
       : `${getApiUrl()}/games/${gameId}/characters/move`;
 
     try {
@@ -212,8 +216,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const handleRemoveCharacter = async (characterId) => {
     if (!gameId || !token) return;
 
-    const url = sceneId
-      ? `${getApiUrl()}/games/${gameId}/scenes/${sceneId}/characters/${characterId}`
+    const sid = sceneIdRef.current;
+    const url = sid
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`
       : `${getApiUrl()}/games/${gameId}/characters/${characterId}`;
 
     try {
