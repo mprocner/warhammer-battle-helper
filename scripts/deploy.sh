@@ -38,6 +38,23 @@ fi
 
 log_info "Starting deployment in $PROJECT_DIR"
 
+# Backup database before deployment
+BACKUP_DIR="$HOME/mongo-backups"
+BACKUP_FILE="$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).archive"
+mkdir -p "$BACKUP_DIR"
+
+log_info "Backing up database to $BACKUP_FILE..."
+if docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps mongo | grep -q "Up"; then
+    docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" exec -T mongo \
+        mongodump --uri "mongodb://$(grep MONGO_USER "$ENV_FILE" | cut -d= -f2):$(grep MONGO_PASSWORD "$ENV_FILE" | cut -d= -f2)@localhost:27017/?authSource=admin" \
+        --archive > "$BACKUP_FILE"
+    log_info "Backup saved to $BACKUP_FILE"
+    # Keep only last 7 backups
+    ls -t "$BACKUP_DIR"/*.archive 2>/dev/null | tail -n +8 | xargs -r rm
+else
+    log_warn "Mongo not running, skipping backup"
+fi
+
 # Pull latest changes
 log_info "Pulling latest changes from git..."
 git pull origin main

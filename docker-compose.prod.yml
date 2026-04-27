@@ -52,6 +52,20 @@ services:
       - mongo-data:/data/db
     # Not exposing port externally in production
 
+  mongo-express:
+    image: mongo-express:1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_USER:-root}:${MONGO_PASSWORD:-example}@mongo:27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_BASICAUTH=false
+      - ME_CONFIG_SITE_BASEURL=/mongo-admin/
+      - ME_CONFIG_SITE_SESSIONSECRET=${MONGO_EXPRESS_SECRET:-changeme}
+    depends_on:
+      - mongo
+
 volumes:
   mongo-data:
   backend-avatars:
