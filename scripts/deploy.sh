@@ -55,6 +55,17 @@ else
     log_warn "Mongo not running, skipping backup"
 fi
 
+# Backup volumes before deployment
+VOLUMES_BACKUP_DIR="$HOME/volume-backups"
+for vol in avatars user-files handouts music-files; do
+    MOUNTPOINT=$(docker volume inspect "warhammer-battle-helper_backend-$vol" --format '{{.Mountpoint}}' 2>/dev/null)
+    if [ -n "$MOUNTPOINT" ]; then
+        log_info "Backing up volume $vol..."
+        mkdir -p "$VOLUMES_BACKUP_DIR/$vol"
+        sudo rsync -a --delete "$MOUNTPOINT/" "$VOLUMES_BACKUP_DIR/$vol/"
+    fi
+done
+
 # Pull latest changes
 log_info "Pulling latest changes from git..."
 git pull origin main
