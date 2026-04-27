@@ -102,16 +102,17 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 		if isGM {
 			result = append(result, char)
 		} else {
-			visible := gridCharIDs[char.ID]
-			if !visible {
-				for _, visID := range char.VisibleTo {
-					if visID == userObjID {
-						visible = true
-						break
-					}
+			inVisibleTo := false
+			for _, visID := range char.VisibleTo {
+				if visID == userObjID {
+					inVisibleTo = true
+					break
 				}
 			}
-			if visible {
+			if inVisibleTo {
+				result = append(result, char)
+			} else if gridCharIDs[char.ID] {
+				char.GridOnly = true
 				result = append(result, char)
 			}
 		}

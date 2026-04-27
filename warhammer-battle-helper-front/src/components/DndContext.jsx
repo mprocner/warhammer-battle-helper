@@ -267,10 +267,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         return fresh || null;
       });
 
-      // Filter out characters currently on the grid
+      // Filter out characters currently on the grid and grid-only tokens (no sidebar access)
       setCharacters(() => {
         if (!fightZonesRef.current || !Array.isArray(fightZonesRef.current)) {
-          return charactersData;
+          return charactersData.filter(c => !c.gridOnly);
         }
 
         const characterIdsOnGrid = new Set(
@@ -280,7 +280,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         );
 
         return charactersData.filter(
-          char => !characterIdsOnGrid.has(char.id)
+          char => !char.gridOnly && !characterIdsOnGrid.has(char.id)
         );
       });
 

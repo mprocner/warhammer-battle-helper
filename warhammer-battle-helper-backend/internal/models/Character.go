@@ -25,6 +25,9 @@ type Character struct {
 	States    []CharacterState `bson:"states,omitempty" json:"states,omitempty"`
 	CreatedAt time.Time        `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time        `bson:"updatedAt" json:"updatedAt"`
+	// GridOnly is a transient flag (not persisted) set when a player can see this
+	// character only because it is placed as a token on an accessible scene.
+	GridOnly bool `bson:"-" json:"gridOnly,omitempty"`
 }
 
 // MarshalJSON overrides default serialisation so that Stats (bson.Raw) is
@@ -56,6 +59,7 @@ func (ch Character) MarshalJSON() ([]byte, error) {
 		States     []CharacterState     `json:"states,omitempty"`
 		CreatedAt  time.Time            `json:"createdAt"`
 		UpdatedAt  time.Time            `json:"updatedAt"`
+		GridOnly   bool                 `json:"gridOnly,omitempty"`
 	}{
 		ID:         ch.ID,
 		GameID:     ch.GameID,
@@ -69,6 +73,7 @@ func (ch Character) MarshalJSON() ([]byte, error) {
 		States:     ch.States,
 		CreatedAt:  ch.CreatedAt,
 		UpdatedAt:  ch.UpdatedAt,
+		GridOnly:   ch.GridOnly,
 	})
 }
 
