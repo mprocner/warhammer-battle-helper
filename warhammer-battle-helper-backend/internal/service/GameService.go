@@ -106,10 +106,51 @@ func (s *GameService) GetGame(gameID string) (*models.Game, error) {
 	// Enrich participants with account avatar and signature
 	s.enrichParticipants(game)
 
+	// Enrich scene tokens with current avatar and name from Character documents
+	s.enrichSceneCharacters(game)
+
 	// Compute current music playback position (lazy, no DB write)
 	s.ComputeMusicPosition(game)
 
 	return game, nil
+}
+
+// enrichSceneCharacters overwrites Name and Avatar on every GameCharacter in all scenes
+// with the current values from the Character document, so tokens are always up to date.
+func (s *GameService) enrichSceneCharacters(game *models.Game) {
+	if len(game.Scenes) == 0 {
+		return
+	}
+
+	// Collect all unique character IDs across scenes
+	idSet := make(map[primitive.ObjectID]bool)
+	for _, scene := range game.Scenes {
+		for _, gc := range scene.Characters {
+			idSet[gc.CharacterID] = true
+		}
+	}
+	if len(idSet) == 0 {
+		return
+	}
+
+	chars, err := s.charRepo.GetByGameID(game.ID.Hex())
+	if err != nil {
+		return
+	}
+	charMap := make(map[primitive.ObjectID]*models.Character, len(chars))
+	for i := range chars {
+		charMap[chars[i].ID] = &chars[i]
+	}
+
+	for si := range game.Scenes {
+		for ci := range game.Scenes[si].Characters {
+			gc := &game.Scenes[si].Characters[ci]
+			if ch, ok := charMap[gc.CharacterID]; ok {
+				gc.Name = ch.Name
+				gc.Avatar = ch.Avatar
+			}
+		}
+	}
 }
 
 // EnsureGMParticipant adds the GM to the participants array if missing (backward compat for older games)
