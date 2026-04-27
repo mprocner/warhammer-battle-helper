@@ -46,7 +46,8 @@ type UpdateVisibilityRequest struct {
 }
 
 // GetGameCharacters returns characters for a game.
-// GM gets all characters; player gets only characters where their userId is in VisibleTo.
+// GM gets all characters; player gets characters where their userId is in VisibleTo,
+// plus all characters placed as tokens on scenes they are assigned to.
 func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 	gameID := c.Param("id")
 
@@ -70,6 +71,25 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 		return
 	}
 
+	// Collect IDs of characters placed as tokens on scenes this player is assigned to.
+	gridCharIDs := make(map[primitive.ObjectID]bool)
+	if !isGM {
+		for _, scene := range game.Scenes {
+			playerAssigned := false
+			for _, pid := range scene.AssignedPlayers {
+				if pid == userObjID {
+					playerAssigned = true
+					break
+				}
+			}
+			if playerAssigned {
+				for _, gc := range scene.Characters {
+					gridCharIDs[gc.CharacterID] = true
+				}
+			}
+		}
+	}
+
 	var result []models.Character
 	for _, char := range characters {
 		// Recompute derived stats (wounds bonuses, movement) before returning
@@ -82,11 +102,17 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 		if isGM {
 			result = append(result, char)
 		} else {
-			for _, visID := range char.VisibleTo {
-				if visID == userObjID {
-					result = append(result, char)
-					break
+			visible := gridCharIDs[char.ID]
+			if !visible {
+				for _, visID := range char.VisibleTo {
+					if visID == userObjID {
+						visible = true
+						break
+					}
 				}
+			}
+			if visible {
+				result = append(result, char)
 			}
 		}
 	}
