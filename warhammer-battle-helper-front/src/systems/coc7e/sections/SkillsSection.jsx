@@ -6,10 +6,10 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
-import skillsData from '../skills.json';
 import { half, fifth, skillVal } from '../utils';
 
 function SkillsSection({
+  skills = [],
   edited,
   onSetSkill,
   onToggleSkillFlag,
@@ -27,7 +27,7 @@ function SkillsSection({
   const pendingFocusKey = useRef(null);
   const editingOriginalNames = useRef({});
 
-  const skills = useMemo(() => {
+  const allSkills = useMemo(() => {
     const custom = (edited.customSkills || []).map(cs => {
       const editing = editingCustomSkills.has(cs.key);
       const isNew = newCustomSkills.has(cs.key);
@@ -36,15 +36,14 @@ function SkillsSection({
         : cs.name || '';
       return { key: cs.key, labelKey: null, label: cs.name || '', sortLabel, base: cs.base || 0, custom: true, editing, isNew };
     });
-    return [...skillsData, ...custom].sort((a, b) => {
+    return [...skills, ...custom].sort((a, b) => {
       if (a.isNew && !b.isNew) return 1;
       if (!a.isNew && b.isNew) return -1;
       const labelA = a.labelKey ? t(a.labelKey, { defaultValue: a.label }) : (a.sortLabel ?? a.label);
       const labelB = b.labelKey ? t(b.labelKey, { defaultValue: b.label }) : (b.sortLabel ?? b.label);
       return labelA.localeCompare(labelB);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, edited.customSkills, editingCustomSkills, newCustomSkills]);
+  }, [skills, t, edited.customSkills, editingCustomSkills, newCustomSkills]);
 
   const handleAddCustomSkill = () => {
     const key = `custom_${Date.now()}`;
@@ -91,7 +90,9 @@ function SkillsSection({
           const isFav = (edited.favoriteSkills || []).includes(skill.key);
           const isDev = (edited.developmentSkills || []).includes(skill.key);
           const baseDisplay = skill.baseLabelKey ? t(skill.baseLabelKey) : `${skill.base}%`;
-          const skillLabel = skill.custom ? skill.label : t(skill.labelKey, { defaultValue: skill.label });
+          const skillLabel = skill.custom
+            ? skill.label
+            : (skill.labelKey ? t(skill.labelKey, { defaultValue: skill.label }) : skill.label);
           const isEditing = skill.editing;
           return (
             <tr key={skill.key}>
@@ -197,9 +198,9 @@ function SkillsSection({
     </table>
   );
 
-  const half1 = Math.ceil(skills.length / 2);
-  const skillsLeft = skills.slice(0, half1);
-  const skillsRight = skills.slice(half1);
+  const half1 = Math.ceil(allSkills.length / 2);
+  const skillsLeft = allSkills.slice(0, half1);
+  const skillsRight = allSkills.slice(half1);
 
   return (
     <div className="coc-section">

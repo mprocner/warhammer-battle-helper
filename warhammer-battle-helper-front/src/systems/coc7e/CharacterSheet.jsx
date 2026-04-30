@@ -16,7 +16,7 @@ import BackgroundSection from './sections/BackgroundSection';
 
 const DEFAULT_UNARMED = { name: 'nieuzbrojony', damage: '1K3 + MO', range: '', attacks: 1, ammo: '', malfunction: '', skillKey: 'fighting_brawl' };
 
-function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all' }) {
+function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all', skills = [], weaponSkills = [] }) {
   const { t } = useTranslation();
   const stats = character.stats || {};
 
@@ -327,6 +327,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       </div>
 
       <SkillsSection
+        skills={skills}
         edited={edited}
         onSetSkill={setSkill}
         onToggleSkillFlag={handleToggleSkillFlag}
@@ -341,6 +342,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       <WeaponsSection
         weapons={edited.weapons || []}
         customSkills={edited.customSkills || []}
+        weaponSkills={weaponSkills}
         onWeaponFieldChange={handleWeaponFieldChange}
         onRemoveWeapon={handleRemoveWeapon}
         onAddWeapon={handleAddWeapon}

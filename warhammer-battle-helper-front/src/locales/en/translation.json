@@ -953,9 +953,28 @@
     "cash": "Cash",
     "assets": "Possessions"
   },
+  "coc_da": {
+    "skill_animal_handling":     "Animal Handling",
+    "skill_art_craft":           "Art / Craft",
+    "skill_drive_horses_oxen":   "Drive (Horses/Oxen)",
+    "skill_fighting_custom":     "Fighting (custom)",
+    "skill_insight":             "Insight",
+    "skill_other_kingdoms":      "Other Kingdoms",
+    "skill_other_language":      "Other Language",
+    "skill_own_kingdom":         "Own Kingdom",
+    "skill_own_language":        "Own Language",
+    "skill_pilot_boat":          "Pilot Boat",
+    "skill_ranged_weapon":       "Ranged Weapon",
+    "skill_read_write_language": "Read/Write Language",
+    "skill_religion":            "Religion",
+    "skill_repair_devise":       "Repair/Devise",
+    "skill_ride_horse":          "Ride Horse",
+    "skill_status":              "Status"
+  },
   "gameSystems": {
     "warhammer4e": "Warhammer Fantasy 4e",
     "coc7e": "Call of Cthulhu 7e",
+    "coc7e_dark_ages": "Call of Cthulhu: Dark Ages",
     "dnd5e": "D&D 5e"
   },
   "dnd": {

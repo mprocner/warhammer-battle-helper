@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
-import skillsData from '../skills.json';
+import defaultSkillsData from '../skills.json';
 import '../../../components/LogWindow.css';
 
 // Maps CoC outcome keys to WaxSealToken props + translation key
@@ -29,22 +29,29 @@ const ATTR_I18N = {
   luck: 'coc.luck',
 };
 
-function getSkillDisplayName(t, skillKey, skillName) {
-  if (skillKey?.startsWith('attr_')) {
-    const attrKey = skillKey.slice(5);
-    const i18nKey = ATTR_I18N[attrKey];
-    return i18nKey ? t(i18nKey) : (skillName || skillKey);
-  }
-  const found = skillsData.find(s => s.key === skillKey);
-  if (found) return t(found.labelKey, { defaultValue: found.label });
-  // Fallback: format key like fighting_brawl → Fighting Brawl
-  return (skillName || skillKey || '')
-    .split('_')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+function makeGetSkillDisplayName(skillsData) {
+  return function getSkillDisplayName(t, skillKey, skillName) {
+    if (skillKey?.startsWith('attr_')) {
+      const attrKey = skillKey.slice(5);
+      const i18nKey = ATTR_I18N[attrKey];
+      return i18nKey ? t(i18nKey) : (skillName || skillKey);
+    }
+    const found = skillsData.find(s => s.key === skillKey);
+    if (found) {
+      return found.labelKey ? t(found.labelKey, { defaultValue: found.label }) : found.label;
+    }
+    // Fallback: format key like fighting_brawl → Fighting Brawl
+    return (skillName || skillKey || '')
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
 }
 
-function CoCSkillRoll({ data, timestamp }) {
+export function createSkillRoll(skillsData) {
+  const getSkillDisplayName = makeGetSkillDisplayName(skillsData);
+
+  function CoCSkillRoll({ data, timestamp }) {
   const { t } = useTranslation();
   const cfg = OUTCOME_MAP[data.outcome] || OUTCOME_MAP.failure;
   const { isCritSuccess, isCritFailure, isSuccess, label } = cfg;
@@ -119,4 +126,7 @@ function CoCSkillRoll({ data, timestamp }) {
   );
 }
 
-export default CoCSkillRoll;
+  return CoCSkillRoll;
+}
+
+export default createSkillRoll(defaultSkillsData);

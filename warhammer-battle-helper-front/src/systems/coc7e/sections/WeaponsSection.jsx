@@ -5,7 +5,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import CloseIcon from '@mui/icons-material/Close';
 
-function WeaponsSection({ weapons, customSkills, onWeaponFieldChange, onRemoveWeapon, onAddWeapon, onToggleFavourite, onRollWeapon, gameId }) {
+function WeaponsSection({ weapons, customSkills, weaponSkills = [], onWeaponFieldChange, onRemoveWeapon, onAddWeapon, onToggleFavourite, onRollWeapon, gameId }) {
   const { t } = useTranslation();
   return (
     <div className="coc-section">
@@ -46,9 +46,11 @@ function WeaponsSection({ weapons, customSkills, onWeaponFieldChange, onRemoveWe
                   value={w.skillKey || 'fighting_brawl'}
                   onChange={e => onWeaponFieldChange(i, 'skillKey', e.target.value)}
                 >
-                  <option value="fighting_brawl">{t('coc.skill_fighting_brawl')}</option>
-                  <option value="firearms_handgun">{t('coc.skill_firearms_handgun')}</option>
-                  <option value="firearms_rifle">{t('coc.skill_firearms_rifle')}</option>
+                  {weaponSkills.map(ws => (
+                    <option key={ws.key} value={ws.key}>
+                      {ws.labelKey ? t(ws.labelKey, { defaultValue: ws.label }) : ws.label}
+                    </option>
+                  ))}
                   {customSkills.filter(cs => cs.name).map(cs => (
                     <option key={cs.key} value={cs.key}>{cs.name}</option>
                   ))}

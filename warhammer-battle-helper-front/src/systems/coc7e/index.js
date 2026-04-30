@@ -1,10 +1,34 @@
+import React from 'react';
 import CoCCharacterSheet from './CharacterSheet';
 import { buildPayload } from './buildPayload';
 import CoCCharacterDetails from './CharacterDetails';
 import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
-import CoCSkillRoll from './rolls/SkillRoll';
+import { createSkillRoll } from './rolls/SkillRoll';
 import CoCWeaponRoll from './rolls/WeaponRoll';
 import SanityRoll from './rolls/SanityRoll';
+import skillsData from './skills.json';
+
+export const weaponSkills = [
+  { key: 'fighting_brawl',   label: 'Fighting (Brawl)',   labelKey: 'coc.skill_fighting_brawl'   },
+  { key: 'firearms_handgun', label: 'Firearms (Handgun)', labelKey: 'coc.skill_firearms_handgun' },
+  { key: 'firearms_rifle',   label: 'Firearms (Rifle)',   labelKey: 'coc.skill_firearms_rifle'   },
+];
+
+export function createCharacterSheet(skills, ws) {
+  return function BoundCoCCharacterSheet(props) {
+    return <CoCCharacterSheet {...props} skills={skills} weaponSkills={ws} />;
+  };
+}
+
+export function createCharacterDetails(skills, ws) {
+  return function BoundCoCCharacterDetails(props) {
+    return <CoCCharacterDetails {...props} skills={skills} weaponSkills={ws} />;
+  };
+}
+
+export { createSkillRoll };
+
+const CoCSkillRoll = createSkillRoll(skillsData);
 
 const rollComponents = {
   simple: SimpleDiceRoll,
@@ -42,8 +66,8 @@ function normalizeCharacter(char) {
 const coc7e = {
   label: 'Call of Cthulhu 7e',
   supportedRollTypes: Object.keys(rollComponents),
-  CharacterSheet:   CoCCharacterSheet,
-  CharacterDetails: CoCCharacterDetails,
+  CharacterSheet:   createCharacterSheet(skillsData, weaponSkills),
+  CharacterDetails: createCharacterDetails(skillsData, weaponSkills),
   getRollComponent,
   normalizeCharacter,
   buildPayload,

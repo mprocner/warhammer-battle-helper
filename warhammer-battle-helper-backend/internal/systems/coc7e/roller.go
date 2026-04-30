@@ -21,22 +21,32 @@ type skillDef struct {
 	BaseFormula string `json:"baseFormula"`
 }
 
-var skillDefaults map[string]skillDef
-
-func init() {
+func parseSkills(data []byte) map[string]skillDef {
 	var defs []skillDef
-	if err := json.Unmarshal(skillsJSON, &defs); err != nil {
+	if err := json.Unmarshal(data, &defs); err != nil {
 		panic("coc7e: failed to parse skills.json: " + err.Error())
 	}
-	skillDefaults = make(map[string]skillDef, len(defs))
+	m := make(map[string]skillDef, len(defs))
 	for _, d := range defs {
-		skillDefaults[d.Key] = d
+		m[d.Key] = d
 	}
+	return m
 }
 
+// Plugin implements the systems.GameSystem interface for Call of Cthulhu 7e.
+type Plugin struct {
+	skillDefaults map[string]skillDef
+}
+
+// New returns an initialised CoC 7e plugin.
+func New() *Plugin { return &Plugin{skillDefaults: parseSkills(skillsJSON)} }
+
+// NewWithSkills returns a CoC plugin using the provided skills JSON (for system variants).
+func NewWithSkills(data []byte) *Plugin { return &Plugin{skillDefaults: parseSkills(data)} }
+
 // skillBaseValue returns the base percentage for a skill when not stored on the character.
-func skillBaseValue(stats *Stats, key string) int {
-	def, ok := skillDefaults[key]
+func (p *Plugin) skillBaseValue(stats *Stats, key string) int {
+	def, ok := p.skillDefaults[key]
 	if !ok {
 		return 0
 	}
@@ -49,12 +59,6 @@ func skillBaseValue(stats *Stats, key string) int {
 		return def.Base
 	}
 }
-
-// Plugin implements the systems.GameSystem interface for Call of Cthulhu 7e.
-type Plugin struct{}
-
-// New returns an initialised CoC 7e plugin.
-func New() *Plugin { return &Plugin{} }
 
 // DefaultStats returns a zero-value CoC stats document as bson.Raw.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
@@ -333,7 +337,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	} else {
 		val, ok := stats.Skills[skillKey]
 		if !ok {
-			val = skillBaseValue(stats, skillKey)
+			val = p.skillBaseValue(stats, skillKey)
 		}
 		skillPct = val
 		skillName = skillKey
@@ -367,7 +371,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 
 	skillPct, ok := stats.Skills[weaponSkillKey]
 	if !ok {
-		skillPct = skillBaseValue(stats, weaponSkillKey)
+		skillPct = p.skillBaseValue(stats, weaponSkillKey)
 	}
 
 	target := skillPct + modifier

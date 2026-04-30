@@ -8,7 +8,7 @@ import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CoCCharacterSheet from './CharacterSheet';
 import CoCDiceModOverlay from './CoCDiceModOverlay';
-import skillsData from './skills.json';
+import defaultSkillsData from './skills.json';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 
 const COC_ATTRS = [
@@ -32,6 +32,8 @@ function CoCCharacterDetails({
   autoOpenSheet = false,
   onSheetOpened = null,
   rollVisibility = 'all',
+  skills = defaultSkillsData,
+  weaponSkills = [],
 }) {
   const { t } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
@@ -170,12 +172,14 @@ function CoCCharacterDetails({
     return weapons
       .filter(w => w.isFavourite && w.name)
       .map(w => {
-        const skillDef = skillsData.find(s => s.key === w.skillKey);
+        const skillDef = skills.find(s => s.key === w.skillKey);
         const val = (stats.skills || {})[w.skillKey] ?? skillDef?.base ?? 0;
-        const skillLabel = skillDef ? t(skillDef.labelKey, { defaultValue: skillDef.label }) : w.skillKey;
+        const skillLabel = skillDef
+          ? (skillDef.labelKey ? t(skillDef.labelKey, { defaultValue: skillDef.label }) : skillDef.label)
+          : w.skillKey;
         return { name: w.name, skillKey: w.skillKey, damage: w.damage, value: val, skillLabel };
       });
-  }, [stats.weapons, stats.skills, t]);
+  }, [stats.weapons, stats.skills, skills, t]);
 
   const favoriteSkills = useMemo(() => {
     const favKeys = stats.favoriteSkills || [];
@@ -183,10 +187,11 @@ function CoCCharacterDetails({
     const customSkills = stats.customSkills || [];
     return favKeys
       .map(key => {
-        const def = skillsData.find(s => s.key === key);
+        const def = skills.find(s => s.key === key);
         if (def) {
           const val = (stats.skills || {})[key] ?? def.base;
-          return { key, label: t(def.labelKey, { defaultValue: def.label }), value: val };
+          const label = def.labelKey ? t(def.labelKey, { defaultValue: def.label }) : def.label;
+          return { key, label, value: val };
         }
         const custom = customSkills.find(cs => cs.key === key);
         if (custom) {
@@ -196,7 +201,7 @@ function CoCCharacterDetails({
       })
       .filter(Boolean)
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [stats.favoriteSkills, stats.skills, stats.customSkills, t]);
+  }, [stats.favoriteSkills, stats.skills, stats.customSkills, skills, t]);
 
   if (!character) {
     return (
@@ -370,6 +375,8 @@ function CoCCharacterDetails({
           token={token}
           isGM={isGM}
           rollVisibility={rollVisibility}
+          skills={skills}
+          weaponSkills={weaponSkills}
         />
       )}
     </div>

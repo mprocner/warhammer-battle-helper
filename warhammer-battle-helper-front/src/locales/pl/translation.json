@@ -954,9 +954,28 @@
     "cash": "Gotówka",
     "assets": "Dobytek"
   },
+  "coc_da": {
+    "skill_animal_handling":     "Tresura Zwierząt",
+    "skill_art_craft":           "Sztuka/Rzemiosło",
+    "skill_drive_horses_oxen":   "Powożenie (Konie/Woły)",
+    "skill_fighting_custom":     "Walka Wręcz (inne)",
+    "skill_insight":             "Wnikliwość",
+    "skill_other_kingdoms":      "Inne Królestwa",
+    "skill_other_language":      "Inny Język",
+    "skill_own_kingdom":         "Własne Królestwo",
+    "skill_own_language":        "Język Ojczysty",
+    "skill_pilot_boat":          "Żegluga",
+    "skill_ranged_weapon":       "Broń Miotająca",
+    "skill_read_write_language": "Czytanie/Pisanie",
+    "skill_religion":            "Religia",
+    "skill_repair_devise":       "Naprawa/Konstruowanie",
+    "skill_ride_horse":          "Jeździectwo",
+    "skill_status":              "Status"
+  },
   "gameSystems": {
     "warhammer4e": "Warhammer Fantasy 4e",
     "coc7e": "Zew Cthulhu 7e",
+    "coc7e_dark_ages": "Zew Cthulhu: Mroczne Wieki",
     "dnd5e": "D&D 5e"
   },
   "dnd": {
