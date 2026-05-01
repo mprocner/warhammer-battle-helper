@@ -100,6 +100,14 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
               sanityMax: updatedStats.resources.sanityMax,
               sanity: updatedStats.resources.sanity,
             }),
+            ...(updatedStats.resources?.hpMax !== undefined && {
+              hpMax: updatedStats.resources.hpMax,
+              hp: updatedStats.resources.hp,
+            }),
+            ...(updatedStats.resources?.mpMax !== undefined && {
+              mpMax: updatedStats.resources.mpMax,
+              mp: updatedStats.resources.mp,
+            }),
           },
           combat: {
             ...prev.combat,
@@ -110,7 +118,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       }
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
-      if (onCharacterUpdate) onCharacterUpdate(payload);
+      if (onCharacterUpdate) onCharacterUpdate(response.data || payload);
     } catch (err) {
       console.error('Error saving CoC character:', err);
     } finally {

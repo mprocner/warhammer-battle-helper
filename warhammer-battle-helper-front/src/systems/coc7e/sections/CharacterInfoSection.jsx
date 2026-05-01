@@ -18,7 +18,7 @@ function CharacterInfoSection({ charName, charAvatar, edited, onNameChange, onAv
           <label>{t('coc.occupation')}</label>
           <input value={edited.occupation || ''} onChange={e => onFieldChange('occupation', e.target.value)} />
           <label>{t('coc.age')}</label>
-          <input type="number" value={edited.age || ''} onChange={e => onFieldChange('age', parseInt(e.target.value) || '')} style={{ width: 60 }} />
+          <input type="number" value={edited.age || ''} onChange={e => onFieldChange('age', parseInt(e.target.value, 10) || 0)} style={{ width: 60 }} />
           <label>{t('coc.sex')}</label>
           <input value={edited.sex || ''} onChange={e => onFieldChange('sex', e.target.value)} />
           <label>{t('coc.residence')}</label>

@@ -37,11 +37,11 @@ func (f *FlexInt) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 
 // BasicInfo holds occupational and personal identity fields.
 type BasicInfo struct {
-	Occupation string `bson:"occupation" json:"occupation"`
-	Age        int    `bson:"age"        json:"age"`
-	Sex        string `bson:"sex"        json:"sex"`
-	Residence  string `bson:"residence"  json:"residence"`
-	Birthplace string `bson:"birthplace" json:"birthplace"`
+	Occupation string  `bson:"occupation" json:"occupation"`
+	Age        FlexInt `bson:"age"        json:"age"`
+	Sex        string  `bson:"sex"        json:"sex"`
+	Residence  string  `bson:"residence"  json:"residence"`
+	Birthplace string  `bson:"birthplace" json:"birthplace"`
 }
 
 // Attributes holds the eight core CoC characteristics plus movement.
