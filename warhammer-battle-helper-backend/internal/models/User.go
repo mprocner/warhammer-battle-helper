@@ -39,7 +39,7 @@ type User struct {
 	Active           bool               `bson:"active" json:"-"`
 	ActivationToken  string             `bson:"activationToken" json:"-"`
 	ResetToken       string             `bson:"resetToken,omitempty" json:"-"`
-	ResetTokenExpiry time.Time          `bson:"resetTokenExpiry,omitempty" json:"-"`
+	ResetTokenExpiry *time.Time         `bson:"resetTokenExpiry,omitempty" json:"-"`
 	Avatar           string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
 	Signature        string             `bson:"signature,omitempty" json:"signature,omitempty"`
 	Files            []UserFile         `bson:"files" json:"files"`
@@ -48,4 +48,7 @@ type User struct {
 	MusicFolders     []MusicFolder      `bson:"musicFolders" json:"musicFolders"`
 	Playlists        []Playlist         `bson:"playlists" json:"playlists"`
 	Settings         UserSettings       `bson:"settings,omitempty" json:"settings,omitempty"`
+	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ActivatedAt      *time.Time         `bson:"activatedAt,omitempty" json:"activatedAt,omitempty"`
 }

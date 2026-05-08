@@ -50,9 +50,10 @@ func (r *UserRepository) FindByActivationToken(token string) (*models.User, erro
 func (r *UserRepository) ActivateUser(id primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	now := time.Now()
 	_, err := r.Collection.UpdateOne(ctx,
 		bson.M{"_id": id},
-		bson.M{"$set": bson.M{"active": true, "activationToken": ""}},
+		bson.M{"$set": bson.M{"active": true, "activationToken": "", "activatedAt": now, "updatedAt": now}},
 	)
 	return err
 }

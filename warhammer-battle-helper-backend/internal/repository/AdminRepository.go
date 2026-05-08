@@ -23,14 +23,17 @@ func NewAdminRepository(users, games, onlineSessions *mongo.Collection) *AdminRe
 
 // AdminUserSummary is a lightweight user record for admin list view.
 type AdminUserSummary struct {
-	ID         primitive.ObjectID `bson:"_id" json:"id"`
-	Email      string             `bson:"email" json:"email"`
-	IsAdmin    bool               `bson:"isAdmin" json:"isAdmin"`
-	Active     bool               `bson:"active" json:"active"`
-	FilesBytes int64              `json:"filesBytes"`
-	MusicBytes int64              `json:"musicBytes"`
-	FilesCount int                `json:"filesCount"`
-	MusicCount int                `json:"musicCount"`
+	ID          primitive.ObjectID `bson:"_id" json:"id"`
+	Email       string             `bson:"email" json:"email"`
+	IsAdmin     bool               `bson:"isAdmin" json:"isAdmin"`
+	Active      bool               `bson:"active" json:"active"`
+	FilesBytes  int64              `json:"filesBytes"`
+	MusicBytes  int64              `json:"musicBytes"`
+	FilesCount  int                `json:"filesCount"`
+	MusicCount  int                `json:"musicCount"`
+	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ActivatedAt *time.Time         `bson:"activatedAt,omitempty" json:"activatedAt,omitempty"`
 }
 
 // AdminUserDetail extends AdminUserSummary with per-game info.

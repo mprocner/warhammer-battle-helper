@@ -71,12 +71,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation error"})
 		return
 	}
+	now := time.Now()
 	user := &models.User{
 		Email:           req.Email,
 		Password:        string(hash),
 		Active:          false,
 		ActivationToken: token,
 		Signature:       req.Signature,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 	if err := h.UserRepo.Create(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
@@ -177,7 +180,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	if time.Now().After(user.ResetTokenExpiry) {
+	if user.ResetTokenExpiry == nil || time.Now().After(*user.ResetTokenExpiry) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token."})
 		return
 	}
