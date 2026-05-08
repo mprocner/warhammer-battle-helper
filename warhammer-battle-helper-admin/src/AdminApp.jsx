@@ -16,17 +16,12 @@ import { GameShow } from "./games/GameShow";
 import StorageDashboard from "./stats/StorageDashboard";
 import SessionAnalytics from "./stats/SessionAnalytics";
 
-// REACT_APP_BASENAME=/admin when served behind nginx at /admin/
-// Leave unset (default "/") when accessed directly on port 3001
-const basename = process.env.REACT_APP_BASENAME || "/";
-
 export default function AdminApp() {
   return (
     <Admin
       authProvider={authProvider}
       dataProvider={dataProvider}
       title="Battle Helper Admin"
-      basename={basename}
     >
       <Resource
         name="users"
