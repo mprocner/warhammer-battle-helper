@@ -31,11 +31,12 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func generateJWT(userID string, email string) (string, error) {
+func generateJWT(userID string, email string, isAdmin bool) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
-		"email":   email,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"user_id":  userID,
+		"email":    email,
+		"is_admin": isAdmin,
+		"exp":      time.Now().Add(24 * time.Hour).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	return token.SignedString(helpers.PrivateKey)
@@ -103,12 +104,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
-	// Legacy users (created before email verification) have no activationToken — allow login
-	if !user.Active && user.ActivationToken != "" {
+	// Unverified email — has activation token pending
+	if user.ActivationToken != "" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Please confirm your email address before logging in"})
 		return
 	}
-	token, err := generateJWT(user.ID.Hex(), user.Email)
+	// Deactivated by admin
+	if !user.Active {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Account has been deactivated"})
+		return
+	}
+	token, err := generateJWT(user.ID.Hex(), user.Email, user.IsAdmin)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation error"})
 		return

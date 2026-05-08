@@ -34,6 +34,7 @@ type UserSettings struct {
 type User struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Email            string             `bson:"email" json:"email"`
+	IsAdmin          bool               `bson:"isAdmin,omitempty" json:"isAdmin,omitempty"`
 	Password         string             `bson:"password" json:"-"`
 	Active           bool               `bson:"active" json:"-"`
 	ActivationToken  string             `bson:"activationToken" json:"-"`

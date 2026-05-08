@@ -41,6 +41,19 @@ services:
     depends_on:
       - mongo
 
+  admin:
+    build:
+      context: ./warhammer-battle-helper-admin
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
+        REACT_APP_BASENAME: ${ADMIN_BASENAME:-/admin}
+    ports:
+      - "127.0.0.1:3001:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
   mongo:
     image: mongo:7
     restart: unless-stopped

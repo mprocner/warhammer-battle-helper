@@ -74,7 +74,7 @@ func main() {
 	r := gin.Default()
 
 	// Build allowed origins from environment + defaults
-	allowedOrigins := []string{"http://localhost:3000", "https://*.ngrok-free.dev", "https://*.loca.lt"}
+	allowedOrigins := []string{"http://localhost:3000", "http://localhost:3001", "https://*.ngrok-free.dev", "https://*.loca.lt"}
 	if extraOrigins := os.Getenv("ALLOWED_ORIGINS"); extraOrigins != "" {
 		for _, origin := range strings.Split(extraOrigins, ",") {
 			origin = strings.TrimSpace(origin)
@@ -305,7 +305,20 @@ func main() {
 	auth.PUT("/playlists/:playlistId", musicHandler.UpdatePlaylist)
 	auth.DELETE("/playlists/:playlistId", musicHandler.DeletePlaylist)
 	auth.PUT("/playlists/reorder", musicHandler.ReorderPlaylists)
-	// --- END PROTECTED ---
+	// --- ADMIN (JWT + isAdmin required) ---
+	adminRepo := repository.NewAdminRepository(db.UsersCollection, db.GamesCollection, db.OnlineSessionsCollection)
+	adminHandler := http.AdminHandler{AdminRepo: adminRepo}
+	admin := r.Group("/admin").Use(http.JWTAuthMiddleware(), http.AdminAuthMiddleware())
+	admin.GET("/users", adminHandler.ListUsers)
+	admin.GET("/users/:id", adminHandler.GetUser)
+	admin.PATCH("/users/:id", adminHandler.UpdateUser)
+	admin.DELETE("/users/:id", adminHandler.DeleteUser)
+	admin.GET("/games", adminHandler.ListGames)
+	admin.GET("/games/:id", adminHandler.GetGame)
+	admin.DELETE("/games/:id", adminHandler.DeleteGame)
+	admin.GET("/stats/storage", adminHandler.StorageStats)
+	admin.GET("/stats/sessions", adminHandler.SessionStats)
+	// --- END ADMIN ---
 
 	httpPort := os.Getenv("PORT")
 	if httpPort == "" {

@@ -2,10 +2,11 @@ package http
 
 import (
 	"battle-helper/internal/config/helpers"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // JWTOptionalMiddleware parses the JWT if present and sets it in context, but does not abort if missing.
@@ -53,6 +54,29 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 		c.Set("jwt", token)
+		c.Next()
+	}
+}
+
+// AdminAuthMiddleware verifies that the JWT is present and contains is_admin: true.
+// Must be used after JWTAuthMiddleware.
+func AdminAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		raw, exists := c.Get("jwt")
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		claims, ok := raw.(*jwt.Token).Claims.(jwt.MapClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid token claims"})
+			return
+		}
+		isAdmin, _ := claims["is_admin"].(bool)
+		if !isAdmin {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
 		c.Next()
 	}
 }

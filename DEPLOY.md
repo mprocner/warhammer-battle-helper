@@ -1,15 +1,17 @@
 # Deployment Guide
 
-This guide covers deploying Warhammer Battle Helper to a VPS using Docker.
+Production deployment on VPS using Docker + nginx.
+
+---
 
 ## Prerequisites
 
-- VPS with Ubuntu (20.04+)
-- Docker and Docker Compose installed
-- Nginx installed (as reverse proxy)
-- Domain pointing to your VPS (optional but recommended)
+- Ubuntu 20.04+ VPS
+- Domain pointing to the VPS
+- Docker and Docker Compose
+- nginx + Certbot
 
-### Install Docker (if not installed)
+### Install Docker
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -17,45 +19,43 @@ sudo usermod -aG docker $USER
 # Log out and back in for group changes to take effect
 ```
 
-## Deployment Steps
-
-### 1. Clone the Repository
+### Install nginx + Certbot
 
 ```bash
-# Using SSH (requires SSH key added to GitHub)
+sudo apt install nginx certbot python3-certbot-nginx
+```
+
+---
+
+## First-time setup
+
+### 1. Clone the repository
+
+```bash
 sudo git clone git@github.com:mprocner/warhammer-battle-helper.git /opt/warhammer-battle-helper
 sudo chown -R $USER:$USER /opt/warhammer-battle-helper
-
-# Or using HTTPS
-sudo git clone https://github.com/mprocner/warhammer-battle-helper.git /opt/warhammer-battle-helper
-sudo chown -R $USER:$USER /opt/warhammer-battle-helper
-
 cd /opt/warhammer-battle-helper
 ```
 
-### 2. Create Environment File
+### 2. Create environment file
 
 ```bash
 cp .env.prod.example .env.prod
 nano .env.prod
 ```
 
-Update the values:
+Key values to update:
 
 ```env
-# Your domain (used by frontend to call API)
 REACT_APP_API_URL=https://yourdomain.com/api
-
-# MongoDB credentials (CHANGE THESE!)
 MONGO_USER=root
 MONGO_PASSWORD=your-secure-password-here
 MONGO_DB_NAME=battle_helper
-
-# CORS - your domain(s)
 ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+ADMIN_BASENAME=/admin
 ```
 
-### 3. Generate JWT Keys
+### 3. Generate JWT keys
 
 ```bash
 mkdir -p warhammer-battle-helper-backend/keys
@@ -64,28 +64,16 @@ openssl rsa -in warhammer-battle-helper-backend/keys/private.pem -pubout \
   -out warhammer-battle-helper-backend/keys/public.pem
 ```
 
-### 4. Build and Run with Docker Compose
-
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-```
-
-Verify containers are running:
-
-```bash
-docker compose -f docker-compose.prod.yml ps
-```
-
-### 5. Configure Nginx (Host)
-
-Copy the example config:
+### 4. Configure nginx
 
 ```bash
 sudo cp nginx.vps.conf.example /etc/nginx/sites-available/warhammer
 sudo nano /etc/nginx/sites-available/warhammer
 ```
 
-Update `server_name` with your domain, then enable:
+Update:
+- `server_name` — your domain(s)
+- `YOUR_IP` in `/admin/` and `/mongo-admin/` blocks — your home IP (whitelist)
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/warhammer /etc/nginx/sites-enabled/
@@ -93,14 +81,43 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 6. SSL Certificate (Recommended)
+### 5. SSL certificate
 
 ```bash
-sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 ```
 
-## Updating the Application
+Certbot edits the nginx config automatically. Do not manually edit the SSL section afterwards.
+
+### 6. Build and start containers
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+### 7. Set up first admin account
+
+After registering and activating your account:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec mongo \
+  mongosh "mongodb://$(grep MONGO_USER .env.prod | cut -d= -f2):$(grep MONGO_PASSWORD .env.prod | cut -d= -f2)@localhost:27017/$(grep MONGO_DB_NAME .env.prod | cut -d= -f2)?authSource=admin"
+```
+
+```js
+db.users.updateOne(
+  { email: "your@email.com" },
+  { $set: { isAdmin: true } }
+)
+```
+
+Log out and log in again — the new JWT will carry `is_admin: true`. Admin panel is at `https://yourdomain.com/admin/`.
+
+---
+
+## Updating the application
+
+For a single manual update:
 
 ```bash
 cd /opt/warhammer-battle-helper
@@ -108,89 +125,147 @@ git pull
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
-## Auto-Deploy (Optional)
+---
 
-A watcher script (`scripts/autopull.sh`) checks for new commits every 5 minutes and automatically runs `scripts/deploy.sh` when changes are detected.
+## Automated deployment
 
-### Setup as a systemd service
+### deploy.sh
+
+`scripts/deploy.sh` handles:
+- MongoDB database backup (keeps last 7)
+- Volume backups for avatars, user-files, music-files (keeps last 5)
+- `git pull`
+- `docker compose build --no-cache` + restart
+- Docker image and build cache cleanup
+
+Run manually:
 
 ```bash
-# Copy the service file (edit paths inside if your project isn't at /root/warhammer-battle-helper)
-sudo cp scripts/autopull.service /etc/systemd/system/
+cd /opt/warhammer-battle-helper
+bash scripts/deploy.sh
+```
 
-# Enable and start
+Or set `PROJECT_DIR` if running from elsewhere:
+
+```bash
+PROJECT_DIR=/opt/warhammer-battle-helper bash scripts/deploy.sh
+```
+
+### autopull (auto-deploy on push)
+
+`scripts/autopull.sh` polls git every 5 minutes. If new commits are detected on `main`, it runs `deploy.sh` automatically.
+
+Set up as a systemd service:
+
+```bash
+# Edit the path inside the file if project is not at /root/warhammer-battle-helper
+sudo cp scripts/autopull.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable autopull
 sudo systemctl start autopull
 ```
 
-### Managing the service
+Manage the service:
 
 ```bash
-sudo systemctl status autopull       # check status
-sudo journalctl -u autopull -f       # follow logs
-sudo systemctl restart autopull      # restart
-sudo systemctl stop autopull         # stop
+sudo systemctl status autopull
+sudo journalctl -u autopull -f     # live logs
+sudo systemctl restart autopull
+sudo systemctl stop autopull
 ```
 
-## Useful Commands
+---
+
+## Useful commands
 
 ```bash
-# View logs
-docker compose -f docker-compose.prod.yml logs -f
+# Status
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 
-# View specific service logs
-docker compose -f docker-compose.prod.yml logs -f backend
-docker compose -f docker-compose.prod.yml logs -f frontend
+# Logs — all
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f
 
-# Restart services
-docker compose -f docker-compose.prod.yml restart
+# Logs — specific service
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f backend
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f frontend
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f admin
 
-# Stop all services
-docker compose -f docker-compose.prod.yml down
+# Restart all
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart
 
-# Stop and remove volumes (WARNING: deletes data)
-docker compose -f docker-compose.prod.yml down -v
+# Restart single service
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart backend
+
+# Stop all
+docker compose -f docker-compose.prod.yml --env-file .env.prod down
+
+# Stop and remove volumes (WARNING: deletes uploaded files and DB data)
+docker compose -f docker-compose.prod.yml --env-file .env.prod down -v
 ```
+
+---
+
+## Backups
+
+### Database backup (manual)
+
+```bash
+BACKUP_FILE="$HOME/mongo-backups/backup-$(date +%Y%m%d-%H%M%S).archive"
+mkdir -p "$HOME/mongo-backups"
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T mongo \
+  mongodump --uri "mongodb://USER:PASS@localhost:27017/?authSource=admin" \
+  --archive > "$BACKUP_FILE"
+```
+
+### Database restore
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T mongo \
+  mongorestore --uri "mongodb://USER:PASS@localhost:27017/?authSource=admin" \
+  --archive < backup.archive
+```
+
+---
 
 ## Troubleshooting
 
-### Check if containers are running
-
+**Backend not starting**
 ```bash
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs backend
+# Check JWT keys exist:
+ls warhammer-battle-helper-backend/keys/
 ```
 
-### Check container logs for errors
-
+**CORS errors**
 ```bash
-docker compose -f docker-compose.prod.yml logs backend
-docker compose -f docker-compose.prod.yml logs frontend
+# Verify ALLOWED_ORIGINS in .env.prod includes your domain
+grep ALLOWED_ORIGINS .env.prod
 ```
 
-### Test backend health
+**Admin panel 403**
+- Make sure you logged out and back in after setting `isAdmin: true` — old JWT won't have the claim
+- Check your IP is in the nginx whitelist in `/etc/nginx/sites-available/warhammer`
 
+**nginx test fails**
 ```bash
-curl http://localhost:8080/health
+sudo nginx -t    # shows exact error with line number
 ```
 
-### Test frontend
+---
 
-```bash
-curl http://localhost:3000/health
-```
+## Ports
 
-### MongoDB connection issues
+| Service       | Container port | Host port          | Description              |
+|---------------|----------------|--------------------|--------------------------|
+| Frontend      | 80             | 3000               | React app (nginx)        |
+| Admin panel   | 80             | 127.0.0.1:3001     | React Admin (nginx)      |
+| Backend       | 8080           | 8080               | Go API + WebSocket       |
+| MongoDB       | 27017          | —                  | Internal only            |
+| Mongo Express | 8081           | 127.0.0.1:8081     | DB UI (internal only)    |
 
-Ensure MongoDB is running and credentials match:
+Admin and Mongo Express ports are bound to `127.0.0.1` — not accessible from outside, only through nginx (with IP whitelist) or SSH tunnel.
 
-```bash
-docker compose -f docker-compose.prod.yml logs mongo
-```
-
-### CORS errors
-
-Make sure `ALLOWED_ORIGINS` in `.env.prod` includes your domain.
+---
 
 ## Architecture
 
@@ -198,31 +273,19 @@ Make sure `ALLOWED_ORIGINS` in `.env.prod` includes your domain.
 Internet
     │
     ▼
-┌─────────────────┐
-│  Nginx (Host)   │  :80/:443
-│  Reverse Proxy  │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌───────┐ ┌───────┐
-│Frontend│ │Backend│
-│ :3000  │ │ :8080 │
-│ (nginx)│ │ (Go)  │
-└───────┘ └───┬───┘
-              │
-              ▼
-         ┌───────┐
-         │MongoDB│
-         │ :27017│
-         └───────┘
+┌─────────────────────┐
+│   nginx (host)      │  :80 → HTTPS redirect
+│   reverse proxy     │  :443
+└──────┬──────────────┘
+       │
+  ┌────┼──────────┬──────────────┐
+  ▼    ▼          ▼              ▼
+:3000 :3001     :8080          :8081
+Frontend  Admin  Backend      Mongo Express
+(React)  (React  (Go + WS)   (IP whitelist)
+         Admin)      │
+                     ▼
+                  :27017
+                 MongoDB
+                (internal)
 ```
-
-## Ports
-
-| Service  | Internal Port | Exposed Port | Description          |
-|----------|---------------|--------------|----------------------|
-| Frontend | 80            | 3000         | React app via nginx  |
-| Backend  | 8080          | 8080         | Go API + WebSocket   |
-| MongoDB  | 27017         | -            | Database (internal)  |

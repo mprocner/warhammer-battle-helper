@@ -1,21 +1,37 @@
 # VPS Nginx Configuration
-# Place this in /etc/nginx/sites-available/warhammer and symlink to sites-enabled
-# SSL is managed by Certbot: sudo certbot --nginx -d rollhammer.online -d www.rollhammer.online
+# Place this in /etc/nginx/sites-available/warhammer and symlink to sites-enabled:
+#   sudo ln -s /etc/nginx/sites-available/warhammer /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# SSL managed by Certbot:
+#   sudo certbot --nginx -d rollhammer.online -d www.rollhammer.online
 
 server {
-    server_name rollhammer.online www.rollhammer.online;
+    server_name rollhammer.online www.rollhammer.online playrpg.net www.playrpg.net;
 
-    # Allow larger file uploads (adjust as needed)
     client_max_body_size 50M;
 
-    # Frontend (served from Docker container on port 3000)
-    # HTTP Basic Authentication - only for frontend
-    # Generate password file: htpasswd -c /etc/nginx/.htpasswd <username>
+    # Frontend (Docker port 3000)
+    # Protected by HTTP Basic Auth — generate with: htpasswd -c /etc/nginx/.htpasswd <username>
     location / {
         auth_basic "Restricted Access";
         auth_basic_user_file /etc/nginx/.htpasswd;
 
         proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Admin panel (Docker port 3001)
+    # Protected by IP whitelist + JWT is_admin check inside the app
+    location /admin/ {
+        allow YOUR_IP;
+        deny all;
+
+        proxy_pass http://127.0.0.1:3001/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -34,7 +50,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # WebSocket for games (needs special headers)
+    # WebSocket (needs Upgrade headers)
     location ~ ^/api/games/.*/ws$ {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://127.0.0.1:8080;
@@ -46,31 +62,40 @@ server {
         proxy_read_timeout 86400;
     }
 
-    # Static files (avatars, handouts, user-files) - served directly from backend
-    location ~ ^/(avatars|handouts|user-files)/ {
+    # Static files served by backend
+    location ~ ^/(avatars|handouts|user-files|music-files)/ {
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/rollhammer.online/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/rollhammer.online/privkey.pem; # managed by Certbot
-    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    # Mongo Express (Docker port 8081) — IP whitelist only
+    location /mongo-admin/ {
+        auth_basic "DB Admin";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
+        allow YOUR_IP;
+        deny all;
+
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # SSL managed by Certbot — do not edit manually
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/rollhammer.online/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/rollhammer.online/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
 
-# HTTP to HTTPS redirect (managed by Certbot)
+# HTTP → HTTPS redirect
 server {
-    if ($host = www.rollhammer.online) {
-        return 301 https://$host$request_uri;
-    }
-
-    if ($host = rollhammer.online) {
-        return 301 https://$host$request_uri;
-    }
-
     listen 80;
-    server_name rollhammer.online www.rollhammer.online;
-    return 404;
+    server_name rollhammer.online www.rollhammer.online playrpg.net www.playrpg.net;
+    return 301 https://$host$request_uri;
 }
