@@ -1,6 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import AdminApp from "./AdminApp";
 
+const basename = process.env.REACT_APP_BASENAME || "/";
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<AdminApp />);
+root.render(
+  <BrowserRouter basename={basename}>
+    <AdminApp />
+  </BrowserRouter>
+);
