@@ -42,6 +42,14 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:8080
 
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9999:8080"
+    restart: "no"
+
   mongo-express:
     image: mongo-express:1.0.2
     restart: always

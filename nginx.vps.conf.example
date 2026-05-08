@@ -69,6 +69,27 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
+    # Dozzle — log viewer (Docker port 9999)
+    # SSE requires disabled buffering
+    location /logs/ {
+        auth_basic "Logs";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
+        allow YOUR_IP;
+        deny all;
+
+        proxy_pass http://127.0.0.1:9999/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # Server-Sent Events — must disable buffering
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header X-Accel-Buffering no;
+        proxy_read_timeout 3600s;
+    }
+
     # Mongo Express (Docker port 8081) — IP whitelist only
     location /mongo-admin/ {
         auth_basic "DB Admin";
