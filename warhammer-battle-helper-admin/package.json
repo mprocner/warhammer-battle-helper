@@ -2,6 +2,7 @@
   "name": "warhammer-battle-helper-admin",
   "version": "1.0.0",
   "private": true,
+  "homepage": "/admin",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
