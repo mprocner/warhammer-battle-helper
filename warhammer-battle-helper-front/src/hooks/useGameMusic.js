@@ -114,11 +114,11 @@ export function useGameMusic(gameId) {
           .map(id => (musicData.music || []).find(f => f.id === id))
           .filter(Boolean);
         if (tracks.length === 0) return;
-        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0, false, tracks[0].id);
+        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0, scene.sceneMusicLoop !== false, tracks[0].id);
       } else {
         const file = (musicData.music || []).find(f => f.id === scene.sceneMusicId);
         if (!file) return;
-        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0, '', 0, false, file.id);
+        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0, '', 0, scene.sceneMusicLoop !== false, file.id);
       }
     } catch (err) {
       console.error('[music] Failed to play scene music:', err);

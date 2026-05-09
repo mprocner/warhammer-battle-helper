@@ -757,7 +757,8 @@
     "unlinkMusic": "Unlink",
     "musicLinked": "Music linked",
     "musicSearch": "Search tracks and playlists...",
-    "musicLoadError": "Failed to load music library"
+    "musicLoadError": "Failed to load music library",
+    "musicLoop": "Loop"
   },
   "files": {
     "title": "Files",

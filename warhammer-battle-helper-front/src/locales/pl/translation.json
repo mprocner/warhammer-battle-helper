@@ -758,7 +758,8 @@
     "unlinkMusic": "Odepnij",
     "musicLinked": "Muzyka przypisana",
     "musicSearch": "Szukaj tracków i playlist...",
-    "musicLoadError": "Nie udało się załadować biblioteki muzycznej"
+    "musicLoadError": "Nie udało się załadować biblioteki muzycznej",
+    "musicLoop": "Zapętlenie"
   },
   "files": {
     "title": "Pliki",

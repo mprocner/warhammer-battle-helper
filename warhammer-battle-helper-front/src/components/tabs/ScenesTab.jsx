@@ -223,9 +223,9 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   const handleLinkMusic = async (id, type, name) => {
     if (!selectedSceneId) return;
     try {
-      await updateScene(gameId, selectedSceneId, { sceneMusicId: id, sceneMusicType: type, sceneMusicName: name });
+      await updateScene(gameId, selectedSceneId, { sceneMusicId: id, sceneMusicType: type, sceneMusicName: name, sceneMusicLoop: true });
       setScenes(prev => prev.map(s =>
-        s.id === selectedSceneId ? { ...s, sceneMusicId: id, sceneMusicType: type, sceneMusicName: name } : s
+        s.id === selectedSceneId ? { ...s, sceneMusicId: id, sceneMusicType: type, sceneMusicName: name, sceneMusicLoop: true } : s
       ));
       setIsMusicPickerOpen(false);
     } catch {
@@ -481,16 +481,32 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
           <div className="scenes-tab__music-field">
             <label>{t('scenes.linkedMusic')}</label>
             {selectedScene.sceneMusicId ? (
-              <div className="scenes-tab__music-linked">
-                {selectedScene.sceneMusicType === 'playlist'
-                  ? <QueueMusicIcon style={{ fontSize: 16 }} />
-                  : <MusicNoteIcon style={{ fontSize: 16 }} />
-                }
-                <span className="scenes-tab__music-linked-name">{selectedScene.sceneMusicName}</span>
-                <button className="scenes-tab__music-unlink-btn" onClick={handleUnlinkMusic} title={t('scenes.unlinkMusic')}>
-                  <CloseIcon style={{ fontSize: 14 }} />
-                </button>
-              </div>
+              <>
+                <div className="scenes-tab__music-linked">
+                  {selectedScene.sceneMusicType === 'playlist'
+                    ? <QueueMusicIcon style={{ fontSize: 16 }} />
+                    : <MusicNoteIcon style={{ fontSize: 16 }} />
+                  }
+                  <span className="scenes-tab__music-linked-name">{selectedScene.sceneMusicName}</span>
+                  <button className="scenes-tab__music-unlink-btn" onClick={handleUnlinkMusic} title={t('scenes.unlinkMusic')}>
+                    <CloseIcon style={{ fontSize: 14 }} />
+                  </button>
+                </div>
+                <label className="scenes-tab__music-loop">
+                  <input
+                    type="checkbox"
+                    checked={selectedScene.sceneMusicLoop !== false}
+                    onChange={async (e) => {
+                      const loop = e.target.checked;
+                      setScenes(prev => prev.map(s =>
+                        s.id === selectedSceneId ? { ...s, sceneMusicLoop: loop } : s
+                      ));
+                      await updateScene(gameId, selectedSceneId, { sceneMusicLoop: loop });
+                    }}
+                  />
+                  {t('scenes.musicLoop')}
+                </label>
+              </>
             ) : (
               <div className="scenes-tab__music-empty">
                 <span>{t('scenes.noMusicLinked')}</span>

@@ -850,6 +850,9 @@ func (r *GameRepository) UpdateScene(gameID string, sceneID primitive.ObjectID, 
 	if req.SceneMusicName != nil {
 		setFields["scenes.$.sceneMusicName"] = *req.SceneMusicName
 	}
+	if req.SceneMusicLoop != nil {
+		setFields["scenes.$.sceneMusicLoop"] = *req.SceneMusicLoop
+	}
 
 	filter := bson.M{
 		"_id":        objectID,

@@ -204,6 +204,7 @@ type Scene struct {
 	SceneMusicId    string               `bson:"sceneMusicId,omitempty" json:"sceneMusicId,omitempty"`
 	SceneMusicType  string               `bson:"sceneMusicType,omitempty" json:"sceneMusicType,omitempty"`
 	SceneMusicName  string               `bson:"sceneMusicName,omitempty" json:"sceneMusicName,omitempty"`
+	SceneMusicLoop  bool                 `bson:"sceneMusicLoop" json:"sceneMusicLoop"`
 	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
 	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
 }
@@ -326,6 +327,7 @@ type UpdateSceneRequest struct {
 	SceneMusicId   *string `json:"sceneMusicId"`
 	SceneMusicType *string `json:"sceneMusicType"`
 	SceneMusicName *string `json:"sceneMusicName"`
+	SceneMusicLoop *bool   `json:"sceneMusicLoop"`
 }
 
 // AssignPlayerToSceneRequest is the request body for assigning a player to a scene
