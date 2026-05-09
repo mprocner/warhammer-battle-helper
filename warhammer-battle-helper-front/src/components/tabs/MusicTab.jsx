@@ -62,7 +62,19 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   const [editingPlaylist, setEditingPlaylist] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastPlayedTrack, setLastPlayedTrack] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (musicState.trackUrl) {
+      setLastPlayedTrack({
+        trackUrl: musicState.trackUrl,
+        trackName: musicState.trackName,
+        playlistId: musicState.playlistId,
+        trackIndex: musicState.trackIndex,
+      });
+    }
+  }, [musicState.trackUrl, musicState.trackName, musicState.playlistId, musicState.trackIndex]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -341,17 +353,19 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   };
 
   const handleResume = async () => {
-    if (!musicState.trackUrl) return;
+    const url = musicState.trackUrl || lastPlayedTrack?.trackUrl;
+    if (!url) return;
+    const isStopped = !musicState.trackUrl;
     try {
       await playTrack(
         gameId,
-        musicState.trackUrl,
-        musicState.trackName,
-        musicState.position,
-        musicState.playlistId || '',
-        musicState.trackIndex || 0,
+        url,
+        musicState.trackName || lastPlayedTrack?.trackName,
+        isStopped ? 0 : musicState.position,
+        musicState.playlistId || lastPlayedTrack?.playlistId || '',
+        musicState.trackIndex ?? lastPlayedTrack?.trackIndex ?? 0,
         musicState.loop,
-        musicState.trackId || '',
+        '',
       );
     } catch (err) {
       setError(t('music.playError'));
@@ -425,7 +439,8 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
         setError(t('music.playError'));
       }
     } else {
-      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
+      const currentUrl = musicState.trackUrl || lastPlayedTrack?.trackUrl;
+      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === currentUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const nextIndex = (currentIndex + 1) % sortedMusicFiles.length;
       const f = sortedMusicFiles[nextIndex];
@@ -449,7 +464,8 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
         setError(t('music.playError'));
       }
     } else {
-      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === musicState.trackUrl);
+      const currentUrl = musicState.trackUrl || lastPlayedTrack?.trackUrl;
+      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === currentUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const prevIndex = (currentIndex - 1 + sortedMusicFiles.length) % sortedMusicFiles.length;
       const f = sortedMusicFiles[prevIndex];
@@ -579,13 +595,17 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       )}
 
       {/* Now Playing */}
-      {musicState.trackName && (
+      {lastPlayedTrack && (
         <section className="music-tab__section music-tab__now-playing">
           <div className="music-tab__now-playing-info">
             <span className="music-tab__now-playing-label">
-              {musicState.isPlaying ? t('music.nowPlaying') : t('music.paused')}:
+              {musicState.isPlaying
+                ? t('music.nowPlaying')
+                : musicState.trackUrl
+                  ? t('music.paused')
+                  : t('music.finished')}:
             </span>
-            <span className="music-tab__now-playing-name">{musicState.trackName}</span>
+            <span className="music-tab__now-playing-name">{musicState.trackName || lastPlayedTrack?.trackName}</span>
           </div>
           <div className="music-tab__progress">
             <span className="music-tab__time">{formatTime(currentTime)}</span>

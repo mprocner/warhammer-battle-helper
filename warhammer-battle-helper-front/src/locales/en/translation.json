@@ -613,6 +613,7 @@
     "loop": "Loop",
     "nowPlaying": "Now Playing",
     "paused": "Paused",
+    "finished": "Finished",
     "gmVolume": "GM Volume",
     "playerVolume": "Music Volume",
     "playlists": "Playlists",
