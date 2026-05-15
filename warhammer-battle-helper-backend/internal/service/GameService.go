@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/systems"
+	"battle-helper/internal/systems/custom"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"encoding/json"
@@ -39,13 +40,16 @@ func NewGameService(
 	}
 }
 
-// CreateGame creates a new game session
-func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive.ObjectID, username string) (*models.Game, error) {
+// CreateGame creates a new game session.
+// For gameSystem="custom", template must be non-nil and is embedded in the game document.
+func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive.ObjectID, username string, template *models.SystemTemplate) (*models.Game, error) {
 	game := &models.Game{
-		Name:         name,
-		GameSystem:   gameSystem,
-		GameMasterID: gameMasterID,
-		Status:       models.GameStatusActive,
+		Name:                 name,
+		GameSystem:           gameSystem,
+		GameMasterID:         gameMasterID,
+		CustomSystemTemplate: template,
+		TemplateSourceID:     templateSourceID(template),
+		Status:               models.GameStatusActive,
 		Participants: []models.GameParticipant{
 			{
 				UserID:   gameMasterID,
@@ -790,12 +794,23 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.
+// For custom systems, RollWithTemplate is used so the plugin can access field definitions.
 func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, diceMod int, target int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
 	game, character, plugin, err := s.loadRollContext(gameID, characterID)
 	if err != nil {
 		return nil, err
 	}
-	rollResult, err := plugin.RollSkill(character.Stats, skillKey, modifier, diceMod, target)
+
+	var rollResult *systems.RollResult
+	if game.GameSystem == "custom" {
+		if game.CustomSystemTemplate == nil {
+			return nil, fmt.Errorf("custom game has no system template configured")
+		}
+		customPlugin := plugin.(*custom.Plugin)
+		rollResult, err = customPlugin.RollWithTemplate(character.Stats, game.CustomSystemTemplate, skillKey, modifier)
+	} else {
+		rollResult, err = plugin.RollSkill(character.Stats, skillKey, modifier, diceMod, target)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -1939,4 +1954,39 @@ func (s *GameService) GetScenes(gameID string) ([]models.Scene, error) {
 	}
 
 	return game.Scenes, nil
+}
+
+// SyncTemplate re-fetches the source template and updates the game's embedded copy.
+func (s *GameService) SyncTemplate(gameID string, gmID primitive.ObjectID, templateFetcher interface {
+	Get(id string) (*models.SystemTemplate, error)
+}) (*models.SystemTemplate, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("game not found")
+	}
+	if game.GameMasterID != gmID {
+		return nil, fmt.Errorf("not authorized")
+	}
+	if game.GameSystem != "custom" {
+		return nil, fmt.Errorf("game does not use a custom system")
+	}
+	if game.TemplateSourceID.IsZero() {
+		return nil, fmt.Errorf("no source template linked to this game")
+	}
+	tmpl, err := templateFetcher.Get(game.TemplateSourceID.Hex())
+	if err != nil {
+		return nil, fmt.Errorf("source template not found")
+	}
+	if err := s.gameRepo.SetCustomTemplate(gameID, tmpl); err != nil {
+		return nil, err
+	}
+	return tmpl, nil
+}
+
+// templateSourceID extracts the ObjectID from a SystemTemplate (nil-safe).
+func templateSourceID(t *models.SystemTemplate) primitive.ObjectID {
+	if t == nil {
+		return primitive.NilObjectID
+	}
+	return t.ID
 }

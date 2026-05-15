@@ -12,12 +12,13 @@ import (
 
 // Database holds database connections and collections
 type Database struct {
-	Client                   *mongo.Client
-	CharactersCollection     *mongo.Collection
-	UsersCollection          *mongo.Collection
-	GamesCollection          *mongo.Collection
-	RollStatsCollection      *mongo.Collection
-	OnlineSessionsCollection *mongo.Collection
+	Client                    *mongo.Client
+	CharactersCollection      *mongo.Collection
+	UsersCollection           *mongo.Collection
+	GamesCollection           *mongo.Collection
+	RollStatsCollection       *mongo.Collection
+	OnlineSessionsCollection  *mongo.Collection
+	SystemTemplatesCollection *mongo.Collection
 }
 
 // ConnectDatabase establishes a connection to MongoDB and returns database collections
@@ -54,12 +55,13 @@ func ConnectDatabase() (*Database, error) {
 	db := client.Database(dbName)
 
 	return &Database{
-		Client:                   client,
-		CharactersCollection:     db.Collection("characters"),
-		UsersCollection:          db.Collection("users"),
-		GamesCollection:          db.Collection("games"),
-		RollStatsCollection:      db.Collection("roll_stats"),
-		OnlineSessionsCollection: db.Collection("online_sessions"),
+		Client:                    client,
+		CharactersCollection:      db.Collection("characters"),
+		UsersCollection:           db.Collection("users"),
+		GamesCollection:           db.Collection("games"),
+		RollStatsCollection:       db.Collection("roll_stats"),
+		OnlineSessionsCollection:  db.Collection("online_sessions"),
+		SystemTemplatesCollection: db.Collection("system_templates"),
 	}, nil
 }
 

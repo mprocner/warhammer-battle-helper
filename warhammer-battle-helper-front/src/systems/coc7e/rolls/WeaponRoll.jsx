@@ -20,7 +20,7 @@ function CoCWeaponRoll({ data, timestamp }) {
   const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
 
   return (
-    <li className="log-list-item">
+    <>
       <WaxSealToken
         symbol={data.roll}
         isCritSuccess={isCritSuccess}
@@ -81,7 +81,7 @@ function CoCWeaponRoll({ data, timestamp }) {
           </div>
         )}
       </div>
-    </li>
+    </>
   );
 }
 

@@ -1,0 +1,77 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import WaxSealToken from '../../../components/log/WaxSealToken';
+import { getResultColor } from '../../../components/log/rollUtils';
+import '../../../components/LogWindow.css';
+
+const OUTCOME_MAP = {
+  critical_success: { isCritSuccess: true,  isCritFailure: false, isSuccess: true,  symbol: '★' },
+  regular_success:  { isCritSuccess: false, isCritFailure: false, isSuccess: true,  symbol: '●' },
+  failure:          { isCritSuccess: false, isCritFailure: false, isSuccess: false, symbol: '✕' },
+  fumble:           { isCritSuccess: false, isCritFailure: true,  isSuccess: false, symbol: '☠' },
+};
+
+function CustomRoll({ data, timestamp }) {
+  const { t } = useTranslation();
+
+  const outcome = OUTCOME_MAP[data.outcome];
+  const isRaw = !outcome;
+
+  const isCritSuccess = outcome?.isCritSuccess || false;
+  const isCritFailure = outcome?.isCritFailure || false;
+  const isSuccess     = outcome?.isSuccess     || false;
+  const symbol        = String(data.roll);
+
+  const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
+
+  const skillLabel = data.skillName || data.skillKey || '';
+  const diceLabel  = data.diceType ? `D${data.diceType}` : '';
+
+  const outcomeLabel = isRaw
+    ? data.outcome
+    : t(`combat.${data.outcome}`, { defaultValue: data.outcome });
+
+  const modifierText = data.modifier && data.modifier !== 0
+    ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
+    : '';
+
+  return (
+    <>
+      <WaxSealToken
+        isCritSuccess={isCritSuccess}
+        isCritFailure={isCritFailure}
+        isSuccess={isSuccess}
+        symbol={symbol}
+      />
+      <div className="log-list-item__content">
+        <div className="log-list-item__header">
+          <span className="log-list-item__character-name">
+            {data.characterName || t('log.character')}
+          </span>
+          {timestamp && (
+            <span className="log-list-item__timestamp">{timestamp}</span>
+          )}
+        </div>
+        <div className="log-list-item__description">
+          {skillLabel && <strong className="log-list-item__character-name">{skillLabel}</strong>}
+          {skillLabel && ' '}
+          {!data.formulaBreakdown && diceLabel && <span>{diceLabel}</span>}
+          {!data.formulaBreakdown && diceLabel && ' → '}
+          <strong className="log-roll-value" style={{ color: resultColor }}>{data.roll}</strong>
+          {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
+          {!data.formulaBreakdown && modifierText && <span className="log-modifier">{modifierText}</span>}
+        </div>
+        {data.formulaBreakdown && (
+          <div className="log-formula-breakdown">{data.formulaBreakdown}</div>
+        )}
+        {!isRaw && (
+          <div className="log-list-item__result" style={{ color: resultColor }}>
+            {outcomeLabel}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default CustomRoll;

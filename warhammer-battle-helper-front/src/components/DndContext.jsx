@@ -839,6 +839,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                   autoOpenSheet={autoOpenCharacterSheet}
                   onSheetOpened={() => setAutoOpenCharacterSheet(false)}
                   rollVisibility={rollVisibility}
+                  game={game}
                 />
               }
               bottom={

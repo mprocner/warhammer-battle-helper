@@ -57,7 +57,7 @@ function DnD5eWeaponRoll({ data, timestamp }) {
       : null;
 
   return (
-    <li className="log-list-item">
+    <>
       <WaxSealToken
         symbol={data.d20Roll ?? data.roll}
         isCritSuccess={isCritSuccess}
@@ -113,7 +113,7 @@ function DnD5eWeaponRoll({ data, timestamp }) {
           </div>
         )}
       </div>
-    </li>
+    </>
   );
 }
 

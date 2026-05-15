@@ -61,7 +61,7 @@ export function createSkillRoll(skillsData) {
   const displayName = getSkillDisplayName(t, data.skillKey, data.skillName);
 
   return (
-    <li className="log-list-item">
+    <>
       <WaxSealToken
         symbol={data.roll}
         isCritSuccess={isCritSuccess}
@@ -122,7 +122,7 @@ export function createSkillRoll(skillsData) {
           {t('coc.extreme')}: {Math.floor(data.target / 5)}
         </div>
       </div>
-    </li>
+    </>
   );
 }
 

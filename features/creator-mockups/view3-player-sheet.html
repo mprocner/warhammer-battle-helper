@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kroniki Eteru — Karta Postaci</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment-base:   #f5ede0;
+  --parchment-mid:    #ede0c8;
+  --parchment-deep:   #e2d0b0;
+  --parchment-dark:   #c8b090;
+  --parchment-ink:    #2a1e10;
+  --parchment-ink2:   #4a3520;
+  --parchment-ink3:   #6a5030;
+
+  --amber:            #8a5a00;
+  --amber-rich:       #b07000;
+  --amber-bright:     #d4900a;
+  --gold:             #9a6800;
+  --gold-light:       #c8900a;
+
+  --crimson:          #7a1a1a;
+  --crimson-light:    #a03020;
+  --forest:           #1a4a2a;
+  --forest-light:     #2a6a3a;
+  --midnight:         #1a1a3a;
+  --midnight-light:   #2a2a5a;
+
+  --shadow-sm:   0 1px 4px rgba(42,30,16,0.15);
+  --shadow-md:   0 4px 16px rgba(42,30,16,0.2);
+  --shadow-lg:   0 8px 32px rgba(42,30,16,0.25);
+
+  --border-ink:  rgba(42,30,16,0.2);
+  --border-mid:  rgba(42,30,16,0.12);
+  --border-soft: rgba(42,30,16,0.07);
+
+  --font-display:  'Cinzel Decorative', serif;
+  --font-title:    'Cinzel', serif;
+  --font-body:     'Cormorant Garamond', serif;
+  --font-ui:       'DM Sans', sans-serif;
+
+  --radius-sm:   3px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(139,90,0,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(26,26,58,0.06) 0%, transparent 60%),
+    #2a1e10;
+  font-family: var(--font-body);
+  color: var(--parchment-ink);
+  padding: 32px 16px 60px;
+  overflow-x: hidden;
+}
+
+/* ===== SHEET WRAPPER ===== */
+.sheet {
+  max-width: 900px;
+  margin: 0 auto;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, var(--parchment-base) 0%, var(--parchment-mid) 40%, var(--parchment-deep) 70%, var(--parchment-dark) 100%);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 1px rgba(42,30,16,0.12),
+    0 8px 40px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  overflow: hidden;
+}
+
+/* ===== SHEET HEADER ===== */
+.sheet-top-ornament {
+  height: 6px;
+  background: linear-gradient(90deg, var(--crimson) 0%, var(--amber-rich) 25%, var(--gold) 50%, var(--amber-rich) 75%, var(--crimson) 100%);
+}
+
+.sheet-header {
+  padding: 28px 36px 24px;
+  border-bottom: 2px solid var(--border-ink);
+  position: relative;
+  background: linear-gradient(180deg, rgba(42,30,16,0.04) 0%, transparent 100%);
+}
+
+.sheet-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 36px; right: 36px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber-rich) 20%, var(--gold) 50%, var(--amber-rich) 80%, transparent);
+  opacity: 0.5;
+}
+
+.header-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.system-name-block {
+  flex: 1;
+}
+
+.system-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--parchment-ink);
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+}
+
+.system-subtitle {
+  font-family: var(--font-title);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+.header-ornament {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--amber-bright);
+  opacity: 0.5;
+  font-size: 13px;
+  letter-spacing: 6px;
+}
+
+.portrait-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.portrait {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  border: 2px solid var(--border-ink);
+  background: linear-gradient(135deg, var(--parchment-deep), var(--parchment-dark));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--parchment-ink3);
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 8px rgba(42,30,16,0.2), 0 2px 8px rgba(0,0,0,0.2);
+  overflow: hidden;
+  position: relative;
+}
+.portrait::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15), transparent 60%);
+}
+.portrait:hover { border-color: var(--amber-rich); }
+.portrait-label {
+  text-align: center; margin-top: 6px;
+  font-family: var(--font-title); font-size: 9px;
+  letter-spacing: 0.1em; color: var(--parchment-ink3); opacity: 0.7;
+}
+
+/* HEADER FIELDS */
+.header-fields {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px 24px;
+}
+
+.hfield {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.hfield:last-child { border-bottom: none; }
+.hfield-label {
+  font-family: var(--font-title);
+  font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--parchment-ink3);
+  opacity: 0.7; white-space: nowrap; min-width: 60px;
+}
+.hfield-value {
+  font-family: var(--font-body);
+  font-size: 15px; font-weight: 500;
+  color: var(--parchment-ink);
+  line-height: 1.2;
+}
+
+/* ===== SHEET BODY ===== */
+.sheet-body { padding: 28px 36px; }
+
+/* ===== SECTION ===== */
+.sheet-section { margin-bottom: 28px; }
+.section-heading {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px;
+}
+.section-heading-text {
+  font-family: var(--font-title);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--parchment-ink);
+  white-space: nowrap;
+}
+.section-heading-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-ink), transparent);
+}
+.section-heading-ornament {
+  color: var(--amber);
+  font-size: 10px;
+  opacity: 0.6;
+  letter-spacing: 3px;
+}
+
+/* ===== ATTRIBUTES GRID ===== */
+.attr-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.attr-block {
+  background: linear-gradient(180deg, rgba(42,30,16,0.04) 0%, rgba(42,30,16,0.02) 100%);
+  border: 1px solid var(--border-ink);
+  border-radius: var(--radius-md);
+  padding: 12px 8px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.attr-block::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber) 0%, var(--gold-light) 100%);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.attr-block:hover { border-color: var(--amber-rich); box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.3); }
+.attr-block:hover::before { opacity: 1; }
+
+.attr-abbr {
+  font-family: var(--font-title);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+.attr-value {
+  font-family: var(--font-body);
+  font-size: 30px; font-weight: 600;
+  color: var(--parchment-ink);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.attr-name {
+  font-family: var(--font-body);
+  font-size: 10px; font-style: italic;
+  color: var(--parchment-ink3);
+  opacity: 0.8;
+}
+.attr-roll-btn {
+  position: absolute;
+  bottom: 6px; right: 6px;
+  width: 18px; height: 18px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--parchment-ink3);
+  cursor: pointer; transition: all 0.2s;
+  opacity: 0.6;
+}
+.attr-block:hover .attr-roll-btn {
+  opacity: 1; background: var(--amber-bright);
+  border-color: var(--amber-rich); color: white;
+  box-shadow: 0 2px 6px rgba(138,90,0,0.3);
+}
+
+/* ===== SKILLS ===== */
+.skills-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+}
+
+.skill-row {
+  display: flex; align-items: center;
+  gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--border-soft);
+  cursor: pointer; transition: all 0.15s;
+}
+.skill-row:hover { padding-left: 6px; }
+.skill-row:last-child { border-bottom: none; }
+
+.skill-name {
+  flex: 1; font-family: var(--font-body);
+  font-size: 15px; color: var(--parchment-ink);
+}
+
+.dots {
+  display: flex; gap: 3px; align-items: center;
+}
+.dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--amber-rich);
+  transition: all 0.15s;
+}
+.dot.filled { background: var(--amber); border-color: var(--amber-rich); }
+.skill-row:hover .dot.filled { background: var(--amber-rich); box-shadow: 0 0 4px rgba(138,90,0,0.4); }
+
+.skill-attr {
+  font-family: var(--font-title);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 5px;
+  border-radius: 2px;
+  background: rgba(42,30,16,0.06);
+  color: var(--parchment-ink3);
+  border: 1px solid var(--border-mid);
+}
+
+.skill-roll {
+  width: 20px; height: 20px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--parchment-ink3);
+  cursor: pointer; transition: all 0.2s;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.skill-row:hover .skill-roll {
+  opacity: 1; background: var(--amber);
+  border-color: var(--amber-rich); color: white;
+}
+
+/* ===== RESOURCES ===== */
+.resources-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.resource-block {
+  background: linear-gradient(180deg, rgba(42,30,16,0.05) 0%, rgba(42,30,16,0.02) 100%);
+  border: 1px solid var(--border-ink);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.resource-label {
+  font-family: var(--font-title);
+  font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--parchment-ink3);
+  opacity: 0.8; margin-bottom: 8px;
+}
+
+.resource-tracker {
+  display: flex; align-items: center;
+  gap: 6px; justify-content: center;
+}
+.resource-btn {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-ink);
+  background: linear-gradient(135deg, var(--parchment-mid), var(--parchment-deep));
+  color: var(--parchment-ink2); font-size: 14px;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.resource-btn:hover { background: linear-gradient(135deg, var(--parchment-deep), var(--parchment-dark)); border-color: var(--amber-rich); }
+.resource-btn:active { transform: scale(0.95); }
+
+.resource-current {
+  font-family: var(--font-title); font-size: 24px; font-weight: 700;
+  color: var(--parchment-ink); line-height: 1;
+}
+.resource-sep { font-family: var(--font-title); font-size: 16px; color: var(--parchment-ink3); opacity: 0.4; }
+.resource-max { font-family: var(--font-title); font-size: 16px; color: var(--parchment-ink3); opacity: 0.6; }
+
+/* STRESS BAR */
+.stress-bar-wrap { margin-top: 8px; }
+.stress-bar-track {
+  height: 8px; background: rgba(42,30,16,0.1);
+  border-radius: 4px; overflow: hidden;
+  border: 1px solid var(--border-mid);
+  margin-bottom: 4px;
+}
+.stress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--forest-light) 0%, var(--amber-bright) 60%, var(--crimson-light) 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.stress-levels { display: flex; justify-content: space-between; }
+.stress-level-label {
+  font-family: var(--font-title); font-size: 8px;
+  letter-spacing: 0.08em; color: var(--parchment-ink3); opacity: 0.6;
+}
+
+/* ===== EQUIPMENT TABLE ===== */
+.equip-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.equip-table th {
+  font-family: var(--font-title);
+  font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--parchment-ink3);
+  text-align: left; padding: 6px 10px;
+  border-bottom: 2px solid var(--border-ink);
+  opacity: 0.8;
+}
+.equip-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  font-family: var(--font-body); font-size: 15px;
+  color: var(--parchment-ink);
+  vertical-align: top;
+}
+.equip-table tr:hover td { background: rgba(42,30,16,0.03); }
+
+.equip-effect {
+  font-style: italic; color: var(--parchment-ink3);
+  font-size: 14px;
+}
+.equip-weight {
+  font-family: var(--font-title); font-size: 11px;
+  color: var(--parchment-ink3); opacity: 0.7;
+  text-align: center;
+}
+
+.add-item-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; width: 100%;
+  background: transparent; border: none;
+  border-top: 1px dashed var(--border-mid);
+  color: var(--parchment-ink3); opacity: 0.6;
+  font-family: var(--font-body); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+  text-align: left;
+}
+.add-item-btn:hover { opacity: 1; color: var(--amber-rich); }
+
+/* ===== BOTTOM ORNAMENT ===== */
+.sheet-footer {
+  padding: 16px 36px 24px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px;
+  border-top: 1px solid var(--border-mid);
+  color: var(--parchment-ink3); opacity: 0.5;
+}
+.footer-ornament {
+  font-family: var(--font-title); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.footer-hr { flex: 1; height: 1px; background: var(--border-soft); }
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(8,6,4,0.78);
+  backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background:
+    linear-gradient(160deg, var(--parchment-base) 0%, var(--parchment-mid) 60%, var(--parchment-deep) 100%);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 1px rgba(42,30,16,0.15),
+    0 24px 80px rgba(0,0,0,0.7);
+  overflow: hidden;
+  width: 340px;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-top {
+  height: 5px;
+  background: linear-gradient(90deg, var(--crimson), var(--amber-rich), var(--gold), var(--amber-rich), var(--crimson));
+}
+
+.modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border-ink);
+  display: flex; align-items: center; gap: 10px;
+  position: relative;
+}
+.modal-title {
+  font-family: var(--font-title); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--parchment-ink2); flex: 1;
+}
+.modal-close {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
+  background: rgba(42,30,16,0.08);
+  border: 1px solid var(--border-mid);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px;
+  color: var(--parchment-ink3); transition: all 0.15s;
+}
+.modal-close:hover { background: rgba(122,26,26,0.15); color: var(--crimson); border-color: rgba(122,26,26,0.3); }
+
+.modal-body { padding: 24px 20px; text-align: center; }
+
+.modal-dice-wrap {
+  position: relative; width: 100px; height: 100px;
+  margin: 0 auto 20px;
+}
+.modal-dice-wrap svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.modal-dice-num {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-title); font-size: 36px;
+  font-weight: 700; color: var(--parchment-ink);
+  line-height: 1;
+}
+
+.modal-formula {
+  font-family: var(--font-body); font-size: 15px;
+  color: var(--parchment-ink2); margin-bottom: 16px;
+  line-height: 1.5;
+}
+.modal-formula strong { font-weight: 600; color: var(--amber); }
+
+.modal-verdict {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px;
+  border-radius: 30px;
+  font-family: var(--font-title); font-size: 14px;
+  font-weight: 700; letter-spacing: 0.12em;
+}
+.modal-verdict.success {
+  background: rgba(26,74,42,0.15);
+  color: var(--forest-light);
+  border: 1.5px solid rgba(42,106,58,0.4);
+}
+.modal-verdict.fail {
+  background: rgba(122,26,26,0.12);
+  color: var(--crimson-light);
+  border: 1.5px solid rgba(122,26,26,0.35);
+}
+
+.modal-footer {
+  padding: 12px 20px 20px;
+  display: flex; justify-content: center;
+}
+.modal-reroll-btn {
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--amber), var(--gold-light));
+  border: none; color: white;
+  font-family: var(--font-title); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(138,90,0,0.3);
+}
+.modal-reroll-btn:hover { box-shadow: 0 4px 16px rgba(138,90,0,0.4); transform: translateY(-1px); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sheet-section {
+  animation: fade-up 0.4s ease both;
+}
+.sheet-section:nth-child(1) { animation-delay: 0.05s; }
+.sheet-section:nth-child(2) { animation-delay: 0.1s; }
+.sheet-section:nth-child(3) { animation-delay: 0.15s; }
+.sheet-section:nth-child(4) { animation-delay: 0.2s; }
+
+@keyframes roll-spin {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.5; }
+  30% { transform: rotate(120deg) scale(1.15); opacity: 1; }
+  60% { transform: rotate(300deg) scale(0.9); }
+  80% { transform: rotate(340deg) scale(1.05); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.dice-rolling svg { animation: roll-spin 0.65s ease-out forwards; }
+
+/* Resource editing */
+.resource-current[contenteditable="true"] {
+  outline: none;
+  border-bottom: 2px solid var(--amber);
+}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div class="sheet-top-ornament"></div>
+
+  <!-- HEADER -->
+  <header class="sheet-header">
+    <div class="header-top">
+      <div class="system-name-block">
+        <div class="system-name">Kroniki Eteru</div>
+        <div class="system-subtitle">Karta Postaci — wersja 1.0</div>
+        <div class="header-ornament">✦ ✦ ✦</div>
+      </div>
+      <div class="portrait-wrap">
+        <div class="portrait" title="Kliknij, aby zmienić portret">🧑</div>
+        <div class="portrait-label">Portret</div>
+      </div>
+    </div>
+
+    <div class="header-fields">
+      <div class="hfield">
+        <span class="hfield-label">Imię</span>
+        <span class="hfield-value">Jan Kowalski</span>
+      </div>
+      <div class="hfield">
+        <span class="hfield-label">Klasa</span>
+        <span class="hfield-value">Mechanik</span>
+      </div>
+      <div class="hfield">
+        <span class="hfield-label">Rasa</span>
+        <span class="hfield-value">Człowiek</span>
+      </div>
+      <div class="hfield">
+        <span class="hfield-label">Poziom</span>
+        <span class="hfield-value">3</span>
+      </div>
+      <div class="hfield">
+        <span class="hfield-label">Gracz</span>
+        <span class="hfield-value">Mateusz</span>
+      </div>
+      <div class="hfield">
+        <span class="hfield-label">Doświadczenie</span>
+        <span class="hfield-value">1 450 / 2 400</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <div class="sheet-body">
+
+    <!-- ATRYBUTY -->
+    <div class="sheet-section">
+      <div class="section-heading">
+        <span class="section-heading-text">Atrybuty Podstawowe</span>
+        <div class="section-heading-line"></div>
+        <span class="section-heading-ornament">✦</span>
+      </div>
+
+      <div class="attr-grid">
+
+        <div class="attr-block" onclick="openRollModal('Siła', 'SIŁ', 12)">
+          <div class="attr-abbr">SIŁ</div>
+          <div class="attr-value">12</div>
+          <div class="attr-name">Siła</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+        <div class="attr-block" onclick="openRollModal('Zręczność', 'ZRE', 16)">
+          <div class="attr-abbr">ZRE</div>
+          <div class="attr-value">16</div>
+          <div class="attr-name">Zręczność</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+        <div class="attr-block" onclick="openRollModal('Kondycja', 'KON', 10)">
+          <div class="attr-abbr">KON</div>
+          <div class="attr-value">10</div>
+          <div class="attr-name">Kondycja</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+        <div class="attr-block" onclick="openRollModal('Inteligencja', 'INT', 14)">
+          <div class="attr-abbr">INT</div>
+          <div class="attr-value">14</div>
+          <div class="attr-name">Inteligencja</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+        <div class="attr-block" onclick="openRollModal('Charyzma', 'CHA', 8)">
+          <div class="attr-abbr">CHA</div>
+          <div class="attr-value">8</div>
+          <div class="attr-name">Charyzma</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+        <div class="attr-block" onclick="openRollModal('Magia', 'MAG', 6)">
+          <div class="attr-abbr">MAG</div>
+          <div class="attr-value">6</div>
+          <div class="attr-name">Magia</div>
+          <button class="attr-roll-btn">⚄</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- UMIEJĘTNOŚCI -->
+    <div class="sheet-section">
+      <div class="section-heading">
+        <span class="section-heading-text">Umiejętności</span>
+        <div class="section-heading-line"></div>
+        <span class="section-heading-ornament">✦</span>
+      </div>
+
+      <div class="skills-grid">
+
+        <div class="skill-row" onclick="openRollModal('Skradanie', 'SKR', 3)">
+          <span class="skill-name">Skradanie</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span class="skill-attr">ZRE</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+        <div class="skill-row" onclick="openRollModal('Walka wręcz', 'WAL', 4)">
+          <span class="skill-name">Walka wręcz</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot"></div>
+          </div>
+          <span class="skill-attr">SIŁ</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+        <div class="skill-row" onclick="openRollModal('Mechanika', 'MEC', 5)">
+          <span class="skill-name">Mechanika</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+          </div>
+          <span class="skill-attr">INT</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+        <div class="skill-row" onclick="openRollModal('Percepcja', 'PER', 2)">
+          <span class="skill-name">Percepcja</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span class="skill-attr">INT</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+        <div class="skill-row" onclick="openRollModal('Magia', 'MAG', 1)">
+          <span class="skill-name">Magia</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span class="skill-attr">MAG</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+        <div class="skill-row" onclick="openRollModal('Perswazja', 'PRS', 3)">
+          <span class="skill-name">Perswazja</span>
+          <div class="dots">
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot filled"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span class="skill-attr">CHA</span>
+          <button class="skill-roll">⚄</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ZASOBY -->
+    <div class="sheet-section">
+      <div class="section-heading">
+        <span class="section-heading-text">Zasoby</span>
+        <div class="section-heading-line"></div>
+        <span class="section-heading-ornament">✦</span>
+      </div>
+
+      <div class="resources-grid">
+
+        <div class="resource-block">
+          <div class="resource-label">Punkty Życia</div>
+          <div class="resource-tracker">
+            <button class="resource-btn" onclick="changeResource('hp', -1)">−</button>
+            <span id="hp" class="resource-current">18</span>
+            <span class="resource-sep">/</span>
+            <span class="resource-max">24</span>
+            <button class="resource-btn" onclick="changeResource('hp', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="resource-block">
+          <div class="resource-label">Punkty Many</div>
+          <div class="resource-tracker">
+            <button class="resource-btn" onclick="changeResource('mana', -1)">−</button>
+            <span id="mana" class="resource-current">6</span>
+            <span class="resource-sep">/</span>
+            <span class="resource-max">10</span>
+            <button class="resource-btn" onclick="changeResource('mana', 1)">+</button>
+          </div>
+        </div>
+
+        <div class="resource-block">
+          <div class="resource-label">Stres</div>
+          <div class="stress-bar-wrap" style="margin-top:8px;">
+            <div class="stress-bar-track">
+              <div class="stress-bar-fill" id="stressBar" style="width: 35%"></div>
+            </div>
+            <div class="stress-levels">
+              <span class="stress-level-label">Spokojny</span>
+              <span class="stress-level-label">Zdenerwowany</span>
+              <span class="stress-level-label">Panika</span>
+            </div>
+          </div>
+          <div style="text-align:center; margin-top:8px; font-family: var(--font-title); font-size: 13px; font-weight: 600; color: var(--forest); opacity: 0.8;">
+            7 / 20
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EKWIPUNEK -->
+    <div class="sheet-section">
+      <div class="section-heading">
+        <span class="section-heading-text">Ekwipunek</span>
+        <div class="section-heading-line"></div>
+        <span class="section-heading-ornament">✦</span>
+      </div>
+
+      <table class="equip-table">
+        <thead>
+          <tr>
+            <th>Przedmiot</th>
+            <th style="width:60px; text-align:center;">Ciężar</th>
+            <th>Efekt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Klucz eteryczny</td>
+            <td class="equip-weight">0.5 kg</td>
+            <td class="equip-effect">+2 do Mechaniki przy urządzeniach eterycznych</td>
+          </tr>
+          <tr>
+            <td>Pistolet parowy (×12 nabojów)</td>
+            <td class="equip-weight">2 kg</td>
+            <td class="equip-effect">Obrażenia 1d8, zasięg 15m, przeładowanie 1 akcja</td>
+          </tr>
+          <tr>
+            <td>Zbroja lekka z miedzi</td>
+            <td class="equip-weight">8 kg</td>
+            <td class="equip-effect">Pancerz +3, odporność na elektryczność</td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="add-item-btn">＋ Dodaj przedmiot</button>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="sheet-footer">
+    <div class="footer-hr"></div>
+    <span class="footer-ornament">Kroniki Eteru · Karta Postaci</span>
+    <div class="footer-hr"></div>
+  </div>
+
+</div>
+
+<!-- ROLL MODAL -->
+<div class="modal-overlay" id="rollModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-top"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Rzut: Skradanie</span>
+      <button class="modal-close" onclick="document.getElementById('rollModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-dice-wrap" id="modalDiceWrap">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 95,27 95,73 50,95 5,73 5,27"
+            stroke="rgba(42,30,16,0.4)" stroke-width="1.5" fill="rgba(42,30,16,0.04)"/>
+          <polygon points="50,5 95,27 50,40" stroke="rgba(42,30,16,0.15)" stroke-width="0.8" fill="rgba(42,30,16,0.03)"/>
+          <polygon points="95,27 95,73 50,40" stroke="rgba(42,30,16,0.15)" stroke-width="0.8" fill="rgba(42,30,16,0.02)"/>
+          <polygon points="50,40 95,73 50,95 5,73 5,27 50,40" stroke="rgba(42,30,16,0.12)" stroke-width="0.8" fill="none"/>
+        </svg>
+        <div class="modal-dice-num" id="modalDiceNum">14</div>
+      </div>
+
+      <div class="modal-formula" id="modalFormula">
+        <strong>ZRE (16) × 5 = 80</strong>, wynik: <strong>14</strong>
+      </div>
+
+      <div class="modal-verdict success" id="modalVerdict">
+        ✓ SUKCES
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-reroll-btn" onclick="reroll()">⚄ &nbsp;Rzuć ponownie</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const resources = { hp: 18, mana: 6 };
+const resMax    = { hp: 24, mana: 10 };
+
+function changeResource(type, delta) {
+  resources[type] = Math.max(0, Math.min(resMax[type], resources[type] + delta));
+  document.getElementById(type).textContent = resources[type];
+}
+
+let currentRoll = null;
+
+function openRollModal(skillName, abbr, skillValue) {
+  currentRoll = { skillName, abbr, skillValue };
+  document.getElementById('modalTitle').textContent = 'Rzut: ' + skillName;
+  rollDice(skillValue, skillName);
+  document.getElementById('rollModal').classList.add('open');
+}
+
+function rollDice(skillValue, skillName) {
+  const wrap = document.getElementById('modalDiceWrap');
+  wrap.classList.add('dice-rolling');
+  document.getElementById('modalDiceNum').textContent = '?';
+
+  setTimeout(() => {
+    wrap.classList.remove('dice-rolling');
+    const roll = Math.floor(Math.random() * 20) + 1;
+    const threshold = skillValue * 5;
+    const success = roll <= threshold;
+
+    document.getElementById('modalDiceNum').textContent = roll;
+    document.getElementById('modalFormula').innerHTML =
+      `<strong>${currentRoll.abbr} (${skillValue}) × 5 = ${threshold}</strong>, wynik: <strong>${roll}</strong>`;
+
+    const verdict = document.getElementById('modalVerdict');
+    if (roll === 1) {
+      verdict.className = 'modal-verdict success';
+      verdict.textContent = '✦ KRYTYCZNY SUKCES';
+    } else if (roll >= 19) {
+      verdict.className = 'modal-verdict fail';
+      verdict.textContent = '✕ KRYTYCZNA PORAŻKA';
+    } else if (success) {
+      verdict.className = 'modal-verdict success';
+      verdict.textContent = '✓ SUKCES';
+    } else {
+      verdict.className = 'modal-verdict fail';
+      verdict.textContent = '✕ PORAŻKA';
+    }
+  }, 680);
+}
+
+function reroll() {
+  if (currentRoll) rollDice(currentRoll.skillValue, currentRoll.skillName);
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('rollModal')) {
+    document.getElementById('rollModal').classList.remove('open');
+  }
+}
+</script>
+</body>
+</html>

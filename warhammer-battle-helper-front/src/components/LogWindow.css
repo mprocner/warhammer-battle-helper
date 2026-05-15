@@ -534,6 +534,15 @@
   font-weight: 600;
 }
 
+/* ================== FORMULA BREAKDOWN ================== */
+.log-formula-breakdown {
+  font-size: 11px;
+  color: #8a7355;
+  font-family: var(--log-font-display);
+  letter-spacing: 0.01em;
+  margin-top: 2px;
+}
+
 /* ================== MESSAGE ICONS ================== */
 .log-icon {
   font-size: 1.2rem;

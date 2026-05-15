@@ -2,8 +2,9 @@ import warhammer4e from './warhammer4e';
 import coc7e from './coc7e';
 import coc7e_dark_ages from './coc7e_dark_ages';
 import dnd5e from './dnd5e';
+import custom from './custom';
 
-const systems = { warhammer4e, coc7e, coc7e_dark_ages, dnd5e };
+const systems = { warhammer4e, coc7e, coc7e_dark_ages, dnd5e, custom };
 
 /**
  * Returns the system module for the given game system key.

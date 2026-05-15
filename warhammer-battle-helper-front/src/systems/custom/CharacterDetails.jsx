@@ -1,0 +1,193 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import CasinoIcon from '@mui/icons-material/Casino';
+import CharacterHeader from '../shared/CharacterHeader';
+import { getApiUrl, getApiHeaders } from '../../api/axios';
+import { getCharacterSaveUrl } from '../shared/characterApi';
+import CustomCharacterSheet from './CharacterSheet';
+
+function CustomCharacterDetails({
+  character,
+  onCharacterUpdate,
+  addLogMessage,
+  gameId = null,
+  token = null,
+  isGM = false,
+  autoOpenSheet = false,
+  onSheetOpened = null,
+  rollVisibility = 'all',
+  game = null,
+}) {
+  const { t } = useTranslation();
+  const [showSheet,  setShowSheet]  = useState(false);
+  const [rollModal,  setRollModal]  = useState(null); // { skillKey, label }
+  const [modifier,   setModifier]   = useState(0);
+
+  const template   = game?.customSystemTemplate;
+  const stats      = character?.stats || {};
+  const attributes = stats.attributes || {};
+  const progress   = stats.progress   || {};
+
+  useEffect(() => {
+    if (autoOpenSheet && character) {
+      setShowSheet(true);
+      onSheetOpened?.();
+    }
+  }, [autoOpenSheet, character, onSheetOpened]);
+
+  const handleRoll = async (skillKey, mod = 0) => {
+    if (!gameId || !character) return;
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ skill: skillKey, modifier: mod, characterId: character.id, visibility: rollVisibility }),
+      });
+    } catch {
+      addLogMessage?.(t('combat.rollFailed'), 'error');
+    }
+    setRollModal(null);
+    setModifier(0);
+  };
+
+  const handleProgressDelta = useCallback(async (fieldKey, delta) => {
+    const s = character?.stats || {};
+    const prog = s.progress || {};
+    const cur = prog[fieldKey] || { current: 0, max: 0 };
+    const newCurrent = Math.max(0, Math.min(cur.max || 9999, (cur.current || 0) + delta));
+    const updated = {
+      ...character,
+      stats: {
+        ...s,
+        progress: { ...prog, [fieldKey]: { ...cur, current: newCurrent } },
+      },
+    };
+    onCharacterUpdate(updated);
+    try {
+      await fetch(`${getApiUrl()}${getCharacterSaveUrl(updated.id, gameId)}`, {
+        method: 'PUT',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify(updated),
+      });
+    } catch { /* silent */ }
+  }, [character, gameId, token, onCharacterUpdate]);
+
+  const allFields = template?.sections?.flatMap(s => s.fields || []) || [];
+  const rollableFields = allFields.filter(f => f.type === 'attr' && f.rollable);
+  const progressFields = allFields.filter(f => f.type === 'progress');
+
+  return (
+    <div className="character-details custom-character-details">
+      <CharacterHeader
+        avatarSrc={character?.avatar}
+        characterId={character?.id}
+        name={character?.name}
+        onOpenSheet={() => setShowSheet(true)}
+        t={t}
+      />
+
+      {/* Progress fields (HP, MP, …) */}
+      {progressFields.length > 0 && (
+        <div className="custom-character-details__resources">
+          {progressFields.map(field => {
+            const val = progress[field.key] || { current: 0, max: 0 };
+            return (
+              <div key={field.key} className="custom-character-details__resource">
+                <span className="custom-character-details__resource-label">
+                  {field.abbr || field.label}
+                </span>
+                <div className="custom-character-details__resource-track">
+                  <button
+                    className="custom-character-details__resource-btn"
+                    onClick={() => handleProgressDelta(field.key, -1)}
+                  >−</button>
+                  <span className="custom-character-details__resource-val">
+                    {val.current}<span className="custom-character-details__resource-max">/{val.max}</span>
+                  </span>
+                  <button
+                    className="custom-character-details__resource-btn"
+                    onClick={() => handleProgressDelta(field.key, +1)}
+                  >+</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Rollable number attributes (max 6 in compact panel) */}
+      {rollableFields.length > 0 && (
+        <div className="custom-character-details__attrs">
+          {rollableFields.slice(0, 6).map(field => (
+            <div key={field.key} className="custom-character-details__attr">
+              <span className="custom-character-details__attr-abbr">
+                {field.abbr || field.label}
+              </span>
+              <span className="custom-character-details__attr-val">
+                {attributes[field.key] ?? 0}
+              </span>
+              <button
+                className="custom-character-details__roll-btn"
+                onClick={() => setRollModal({ skillKey: field.key, label: field.label })}
+              >
+                <CasinoIcon style={{ fontSize: 14 }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modifier overlay */}
+      {rollModal && (
+        <div className="custom-roll-overlay">
+          <div className="custom-roll-overlay__backdrop" onClick={() => { setRollModal(null); setModifier(0); }} />
+          <div className="custom-roll-overlay__card">
+            <div className="custom-roll-overlay__title">
+              {t('combat.rollFor')}: <strong>{rollModal.label}</strong>
+            </div>
+            <div className="custom-roll-overlay__row">
+              <label className="custom-roll-overlay__label">{t('combat.modifier')}</label>
+              <input
+                type="number"
+                className="custom-roll-overlay__input"
+                value={modifier}
+                onChange={e => setModifier(Number(e.target.value))}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleRoll(rollModal.skillKey, modifier);
+                  if (e.key === 'Escape') { setRollModal(null); setModifier(0); }
+                }}
+              />
+            </div>
+            <div className="custom-roll-overlay__actions">
+              <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
+                {t('common.cancel')}
+              </button>
+              <button className="custom-roll-overlay__btn--roll" onClick={() => handleRoll(rollModal.skillKey, modifier)}>
+                <CasinoIcon style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }} />
+                {t('combat.roll')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full sheet popup */}
+      {showSheet && (
+        <CustomCharacterSheet
+          character={character}
+          onClose={() => setShowSheet(false)}
+          onCharacterUpdate={onCharacterUpdate}
+          addLogMessage={addLogMessage}
+          gameId={gameId}
+          token={token}
+          isGM={isGM}
+          rollVisibility={rollVisibility}
+          game={game}
+        />
+      )}
+    </div>
+  );
+}
+
+export default CustomCharacterDetails;

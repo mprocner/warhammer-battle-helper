@@ -8,7 +8,7 @@ const SimpleDiceRoll = ({ data, timestamp }) => {
     const { result, sides, username } = data;
 
     return (
-        <li className="log-list-item">
+        <>
             <DiceResultToken result={result} sides={sides} />
             <div className="log-list-item__content">
                 <div className="log-list-item__header">
@@ -23,7 +23,7 @@ const SimpleDiceRoll = ({ data, timestamp }) => {
                     {t('log.rolledDice', { sides, result })}
                 </div>
             </div>
-        </li>
+        </>
     );
 };
 

@@ -25,7 +25,7 @@ const AttributeRoll = ({ data, timestamp }) => {
     };
 
     return (
-        <li className="log-list-item">
+        <>
             <WaxSealToken
                 successLevel={successLevel}
                 isCritSuccess={isCritSuccess}
@@ -55,7 +55,7 @@ const AttributeRoll = ({ data, timestamp }) => {
                     {getResultText()}
                 </div>
             </div>
-        </li>
+        </>
     );
 };
 

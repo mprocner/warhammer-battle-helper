@@ -25,7 +25,7 @@ const SkillRoll = ({ data, timestamp }) => {
     };
 
     return (
-        <li className="log-list-item">
+        <>
             <WaxSealToken
                 successLevel={SL}
                 isCritSuccess={isCritSuccess}
@@ -55,7 +55,7 @@ const SkillRoll = ({ data, timestamp }) => {
                     {getResultText()}
                 </div>
             </div>
-        </li>
+        </>
     );
 };
 

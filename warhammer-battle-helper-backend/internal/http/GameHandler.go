@@ -17,9 +17,10 @@ import (
 )
 
 type GameHandler struct {
-	GameService    *service.GameService
-	Hub            *websocket.Hub
-	FeatureToggles features.FeatureToggles
+	GameService     *service.GameService
+	TemplateService *service.TemplateService
+	Hub             *websocket.Hub
+	FeatureToggles  features.FeatureToggles
 }
 
 var upgrader = gorilla.Upgrader{
@@ -60,7 +61,21 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.GameService.CreateGame(req.Name, req.GameSystem, userID, username)
+	var template *models.SystemTemplate
+	if req.GameSystem == "custom" {
+		if req.CustomTemplateID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "customTemplateId is required for custom game system"})
+			return
+		}
+		t, err := h.TemplateService.Get(req.CustomTemplateID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "template not found"})
+			return
+		}
+		template = t
+	}
+
+	game, err := h.GameService.CreateGame(req.Name, req.GameSystem, userID, username, template)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -552,6 +567,23 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 			"game": game,
 		}, []string{userID.Hex()})
 	}
+}
+
+// SyncTemplate re-fetches the source template and updates the game's embedded copy.
+func (h *GameHandler) SyncTemplate(c *gin.Context) {
+	userID := mustUserID(c)
+	tmpl, err := h.GameService.SyncTemplate(c.Param("id"), userID, h.TemplateService)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "not authorized" {
+			status = http.StatusForbidden
+		} else if err.Error() == "game not found" || err.Error() == "source template not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tmpl)
 }
 
 func (h *GameHandler) GetFeatures(c *gin.Context) {

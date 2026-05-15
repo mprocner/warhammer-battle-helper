@@ -40,6 +40,9 @@ type RollResult struct {
 	IsAdvantage    bool `json:"isAdvantage,omitempty"`    // rolled with advantage
 	IsDisadvantage bool `json:"isDisadvantage,omitempty"` // rolled with disadvantage
 	IsCriticalHit  bool `json:"isCriticalHit,omitempty"`  // natural 20 on attack
+
+	// Custom formula breakdown — e.g. "d6+STR+2 = 3+8+2 = 13"
+	FormulaBreakdown string `json:"formulaBreakdown,omitempty"`
 }
 
 // GameSystem is the interface every game-system plugin must implement.

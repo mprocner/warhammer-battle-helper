@@ -39,7 +39,12 @@ const LogWindow = ({
 
             const RollComponent = system.getRollComponent(rollType);
             if (RollComponent) {
-                return <div key={index} className={isHidden ? 'log-entry--hidden-roll' : ''}>{isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}<RollComponent data={msg.data} timestamp={msg.timestamp} /></div>;
+                return (
+                    <li key={index} className={`log-list-item${isHidden ? ' log-entry--hidden-roll' : ''}`}>
+                        {isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}
+                        <RollComponent data={msg.data} timestamp={msg.timestamp} />
+                    </li>
+                );
             }
 
             // Unknown rollType for this system — show fallback instead of silently dropping

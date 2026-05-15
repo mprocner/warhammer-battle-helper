@@ -12,7 +12,8 @@ function CharacterDetailsPanel({
     gameSystem = 'warhammer4e',
     autoOpenSheet = false,
     onSheetOpened = null,
-    rollVisibility = 'all'
+    rollVisibility = 'all',
+    game = null,
 }) {
     const { t } = useTranslation();
     const system = getSystem(gameSystem);
@@ -40,6 +41,7 @@ function CharacterDetailsPanel({
                 autoOpenSheet={autoOpenSheet}
                 onSheetOpened={onSheetOpened}
                 rollVisibility={rollVisibility}
+                game={game}
             />
         );
     }

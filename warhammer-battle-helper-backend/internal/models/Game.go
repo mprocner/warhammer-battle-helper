@@ -42,23 +42,25 @@ type MusicState struct {
 
 // Game represents a game session
 type Game struct {
-	ID              primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name            string             `bson:"name" json:"name"`
-	GameSystem      string             `bson:"gameSystem" json:"gameSystem"` // "warhammer4e" | "coc7e"
-	GameMasterID    primitive.ObjectID `bson:"gameMasterId" json:"gameMasterId"`
-	GameMasterEmail string             `bson:"-" json:"gameMasterEmail,omitempty"`
-	Status          GameStatus         `bson:"status" json:"status"`
-	Participants    []GameParticipant  `bson:"participants" json:"participants"`
-	Characters      []GameCharacter    `bson:"characters" json:"characters"`
-	Events          []GameEvent        `bson:"events" json:"events"`
-	Handouts        []Handout          `bson:"handouts" json:"handouts"`
-	HandoutFolders  []HandoutFolder    `bson:"handoutFolders" json:"handoutFolders"`
-	Notes           []Note             `bson:"notes" json:"notes"`
-	Scenes          []Scene            `bson:"scenes" json:"scenes"`
-	Music           MusicState         `bson:"music" json:"music"`
-	CreatedAt       time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt       time.Time          `bson:"updatedAt" json:"updatedAt"`
-	DeletedAt       *time.Time         `bson:"deletedAt,omitempty" json:"-"`
+	ID                   primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name                 string             `bson:"name" json:"name"`
+	GameSystem           string             `bson:"gameSystem" json:"gameSystem"` // "warhammer4e" | "coc7e"
+	GameMasterID         primitive.ObjectID `bson:"gameMasterId" json:"gameMasterId"`
+	GameMasterEmail      string             `bson:"-" json:"gameMasterEmail,omitempty"`
+	Status               GameStatus         `bson:"status" json:"status"`
+	Participants         []GameParticipant  `bson:"participants" json:"participants"`
+	Characters           []GameCharacter    `bson:"characters" json:"characters"`
+	Events               []GameEvent        `bson:"events" json:"events"`
+	Handouts             []Handout          `bson:"handouts" json:"handouts"`
+	HandoutFolders       []HandoutFolder    `bson:"handoutFolders" json:"handoutFolders"`
+	Notes                []Note             `bson:"notes" json:"notes"`
+	Scenes               []Scene            `bson:"scenes" json:"scenes"`
+	Music                MusicState         `bson:"music" json:"music"`
+	CustomSystemTemplate *SystemTemplate    `bson:"customSystemTemplate,omitempty" json:"customSystemTemplate,omitempty"`
+	TemplateSourceID     primitive.ObjectID `bson:"templateSourceId,omitempty" json:"templateSourceId,omitempty"`
+	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt"`
+	DeletedAt            *time.Time         `bson:"deletedAt,omitempty" json:"-"`
 }
 
 // GameParticipant represents a user participating in a game
@@ -126,8 +128,9 @@ type GameEvent struct {
 
 // CreateGameRequest is the request body for creating a new game
 type CreateGameRequest struct {
-	Name       string `json:"name" binding:"required"`
-	GameSystem string `json:"gameSystem" binding:"required"`
+	Name             string `json:"name" binding:"required"`
+	GameSystem       string `json:"gameSystem" binding:"required"`
+	CustomTemplateID string `json:"customTemplateId,omitempty"` // required when gameSystem="custom"
 }
 
 // JoinGameRequest is the request body for joining a game

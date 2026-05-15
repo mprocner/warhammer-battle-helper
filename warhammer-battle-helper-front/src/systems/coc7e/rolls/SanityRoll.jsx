@@ -10,7 +10,7 @@ function SanityRoll({ data, timestamp }) {
   const resultColor = getResultColor(false, !isSuccess, isSuccess);
 
   return (
-    <li className="log-list-item">
+    <>
       <WaxSealToken
         symbol={data.roll}
         isCritSuccess={false}
@@ -58,7 +58,7 @@ function SanityRoll({ data, timestamp }) {
           </div>
         )}
       </div>
-    </li>
+    </>
   );
 }
 

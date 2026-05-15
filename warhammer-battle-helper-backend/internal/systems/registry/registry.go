@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/systems"
 	"battle-helper/internal/systems/coc7e"
 	coc7e_dark_ages "battle-helper/internal/systems/coc7e_dark_ages"
+	"battle-helper/internal/systems/custom"
 	"battle-helper/internal/systems/dnd5e"
 	"battle-helper/internal/systems/warhammer4e"
 	"fmt"
@@ -14,9 +15,10 @@ var registry = map[string]systems.GameSystem{
 	"coc7e":           coc7e.New(),
 	"coc7e_dark_ages": coc7e_dark_ages.New(),
 	"dnd5e":           dnd5e.New(),
+	"custom":          custom.New(),
 }
 
-var systemOrder = []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "dnd5e"}
+var systemOrder = []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "dnd5e", "custom"}
 
 // Get returns the plugin for the given system identifier.
 // Returns an error if the system is unknown.

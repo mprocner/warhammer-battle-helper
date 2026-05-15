@@ -96,6 +96,9 @@ func main() {
 	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
 	userRepo := repository.NewUserRepository(db.UsersCollection)
 	gameRepo := repository.NewGameRepository(db.GamesCollection)
+	templateRepo := repository.NewTemplateRepository(db.SystemTemplatesCollection)
+	templateService := service.NewTemplateService(templateRepo)
+	templateHandler := http.TemplateHandler{TemplateService: templateService}
 	statsRepo := repository.NewRollStatsRepository(db.RollStatsCollection)
 	if err := statsRepo.EnsureIndexes(); err != nil {
 		fmt.Printf("WARNING: failed to create roll_stats indexes: %v\n", err)
@@ -159,7 +162,7 @@ func main() {
 	ft := features.Load("./feature-toggles.json")
 
 	// GET /games/:id is JWT-optional (event visibility filtering)
-	gameHandler := http.GameHandler{GameService: gameService, Hub: hub, FeatureToggles: ft}
+	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
@@ -181,6 +184,13 @@ func main() {
 
 	// Avatar upload
 	auth.POST("/avatars", avatarHandler.UploadAvatar)
+
+	// System templates (custom creator)
+	auth.GET("/templates", templateHandler.ListTemplates)
+	auth.POST("/templates", templateHandler.CreateTemplate)
+	auth.GET("/templates/:id", templateHandler.GetTemplate)
+	auth.PATCH("/templates/:id", templateHandler.UpdateTemplate)
+	auth.DELETE("/templates/:id", templateHandler.DeleteTemplate)
 
 	// Games
 	auth.GET("/games", gameHandler.GetGames)
@@ -205,6 +215,7 @@ func main() {
 	game.POST("/roll", gameHandler.RollDice)
 	game.POST("/rollSkill", gameHandler.RollSkill)
 	game.POST("/rollWeapon", gameHandler.RollWeapon)
+	game.POST("/syncTemplate", gameHandler.SyncTemplate)
 	game.GET("/roll-stats", statsHandler.GetGameStats)
 	game.GET("/online-stats", statsHandler.GetOnlineStats)
 	game.POST("/message", gameHandler.SendMessage)

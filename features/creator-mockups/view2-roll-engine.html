@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kreator Kart — Mechanika Rzutów</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void:       #080c12;
+  --bg-deep:       #0d1117;
+  --bg-panel:      #111720;
+  --bg-raised:     #19222f;
+  --bg-card:       #1e2b3c;
+  --bg-hover:      #243346;
+
+  --amber:         #f0a500;
+  --amber-glow:    rgba(240, 165, 0, 0.15);
+  --amber-dim:     #9a6a00;
+  --gold:          #d4a017;
+  --gold-light:    #e8c060;
+
+  --text-primary:  #e8e2d4;
+  --text-secondary:#8b9ab5;
+  --text-muted:    #4a5568;
+  --text-label:    #c8b89a;
+
+  --border-subtle: rgba(240, 165, 0, 0.08);
+  --border-dim:    rgba(240, 165, 0, 0.18);
+  --border-active: rgba(240, 165, 0, 0.55);
+  --border-card:   rgba(255,255,255,0.06);
+
+  --success:       #2d6b4a;
+  --success-light: #5ab882;
+  --success-bg:    rgba(45,107,74,0.2);
+  --danger:        #8b3a3a;
+  --danger-light:  #e05555;
+  --danger-bg:     rgba(139,58,58,0.2);
+
+  --blue:          #3a7abf;
+  --blue-light:    #5b9fd6;
+  --blue-bg:       rgba(58,122,191,0.15);
+  --purple:        #7a5abf;
+  --purple-light:  #a07fd6;
+  --purple-bg:     rgba(122,90,191,0.15);
+
+  --font-display:  'Cinzel Decorative', serif;
+  --font-title:    'Cinzel', serif;
+  --font-body:     'Cormorant Garamond', serif;
+  --font-ui:       'DM Sans', sans-serif;
+
+  --radius-sm:     4px;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--amber-dim); border-radius: 2px; }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ===== TOPBAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 20px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-dim);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+.topbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber) 30%, var(--gold) 50%, var(--amber) 70%, transparent);
+  opacity: 0.4;
+}
+.topbar-brand {
+  display: flex; align-items: center; gap: 10px;
+  flex: 0 0 220px;
+}
+.brand-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--amber), var(--gold));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 12px rgba(240,165,0,0.3);
+}
+.brand-name {
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-label);
+  text-transform: uppercase;
+}
+.topbar-steps {
+  flex: 1; display: flex; justify-content: center; align-items: center; gap: 0;
+}
+.step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px;
+  font-family: var(--font-title);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.step-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--font-ui); font-weight: 600;
+  transition: all 0.2s;
+}
+.step.active { color: var(--amber); }
+.step.active .step-num {
+  background: var(--amber); border-color: var(--amber);
+  color: var(--bg-deep); box-shadow: 0 0 10px rgba(240,165,0,0.4);
+}
+.step.done { color: var(--success-light); }
+.step.done .step-num {
+  background: var(--success); border-color: var(--success-light); color: white;
+}
+.step-arrow { color: var(--text-muted); font-size: 10px; opacity: 0.4; margin: 0 2px; }
+.topbar-actions {
+  flex: 0 0 280px; display: flex; align-items: center;
+  justify-content: flex-end; gap: 8px;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-family: var(--font-ui); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.04em; cursor: pointer; border: none;
+  transition: all 0.2s; white-space: nowrap;
+}
+.btn-ghost {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border-card);
+}
+.btn-ghost:hover { background: var(--bg-raised); color: var(--text-primary); border-color: var(--border-dim); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--amber), var(--gold));
+  color: var(--bg-deep); font-weight: 600;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold-light), var(--amber));
+  box-shadow: 0 0 16px rgba(240,165,0,0.35); transform: translateY(-1px);
+}
+.btn-outline {
+  background: transparent; color: var(--amber);
+  border: 1px solid var(--amber-dim);
+}
+.btn-outline:hover { background: var(--amber-glow); border-color: var(--amber); }
+
+/* ===== WORKSPACE ===== */
+.workspace { display: flex; flex: 1; overflow: hidden; }
+
+/* ===== LEFT: FIELDS LIST ===== */
+.fields-list {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.panel-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.panel-title {
+  font-family: var(--font-title);
+  font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-label);
+}
+.panel-subtitle {
+  font-size: 11px; color: var(--text-muted); margin-top: 3px;
+}
+.panel-scroll { overflow-y: auto; flex: 1; padding: 10px; }
+
+.field-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+.field-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--text-muted);
+  transition: all 0.2s;
+}
+.field-row:hover { background: var(--bg-hover); border-color: var(--border-dim); }
+.field-row.active {
+  background: rgba(240,165,0,0.06);
+  border-color: var(--border-active);
+}
+.field-row.active::before { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.field-row.has-formula::before { background: var(--success-light); }
+
+.field-row-icon {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-title); font-size: 11px; font-weight: 700;
+  color: var(--text-label);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.field-row.active .field-row-icon {
+  background: rgba(240,165,0,0.1);
+  border-color: var(--amber-dim);
+  color: var(--amber);
+}
+.field-row.has-formula .field-row-icon {
+  background: rgba(45,107,74,0.15);
+  border-color: rgba(90,184,130,0.25);
+  color: var(--success-light);
+}
+
+.field-row-info { flex: 1; min-width: 0; }
+.field-row-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.field-row-type { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+.formula-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+.formula-badge.has { background: rgba(45,107,74,0.25); color: var(--success-light); border: 1px solid rgba(90,184,130,0.2); }
+.formula-badge.none { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-card); }
+
+/* ===== CENTER: FORMULA BUILDER ===== */
+.formula-builder {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-deep);
+  padding: 24px;
+  position: relative;
+}
+
+.formula-builder::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(240,165,0,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,165,0,0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.section-title-row {
+  display: flex; align-items: baseline; gap: 10px;
+  margin-bottom: 20px;
+}
+.section-main-title {
+  font-family: var(--font-title);
+  font-size: 16px; font-weight: 600;
+  letter-spacing: 0.06em; color: var(--text-primary);
+}
+.section-main-title span { color: var(--amber); }
+
+.builder-section {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.builder-section-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  display: flex; align-items: center; gap: 10px;
+}
+.builder-section-title {
+  font-family: var(--font-title);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-label);
+  flex: 1;
+}
+.builder-section-hint {
+  font-size: 10px; color: var(--text-muted);
+}
+
+.builder-section-body { padding: 14px 16px; }
+
+/* DICE BUTTONS */
+.dice-row {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.dice-btn {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+  min-width: 48px;
+  position: relative;
+  overflow: hidden;
+}
+.dice-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 120%, rgba(240,165,0,0.15), transparent 70%);
+  opacity: 0; transition: opacity 0.2s;
+}
+.dice-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--amber-dim);
+  color: var(--amber);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.dice-btn:hover::before { opacity: 1; }
+.dice-btn:active { transform: translateY(0) scale(0.96); }
+.dice-btn.used {
+  border-color: rgba(240,165,0,0.3);
+  background: rgba(240,165,0,0.08);
+  color: var(--amber);
+}
+.dice-icon { font-size: 16px; margin-bottom: 2px; }
+
+/* OPERATOR BUTTONS */
+.op-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.op-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 16px; font-weight: 300;
+  cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; justify-content: center;
+}
+.op-btn:hover { background: var(--bg-hover); border-color: var(--blue-light); color: var(--blue-light); }
+
+/* FIELD CHIPS */
+.chips-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  font-size: 11px; font-family: var(--font-title);
+  letter-spacing: 0.08em; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.18s;
+  font-weight: 600;
+}
+.chip:hover {
+  border-color: var(--purple-light);
+  background: var(--purple-bg);
+  color: var(--purple-light);
+}
+.chip.used {
+  border-color: rgba(160,127,214,0.4);
+  background: rgba(122,90,191,0.12);
+  color: var(--purple-light);
+}
+
+/* CONST INPUT */
+.const-row { display: flex; gap: 8px; align-items: center; }
+.const-input {
+  width: 80px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: var(--font-ui); font-size: 13px;
+  color: var(--text-primary); outline: none;
+  transition: all 0.2s;
+  text-align: center;
+}
+.const-input:focus { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(240,165,0,0.1); }
+.add-const-btn {
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-dim);
+  background: transparent; color: var(--amber);
+  font-family: var(--font-ui); font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.add-const-btn:hover { background: var(--amber-glow); }
+
+/* FORMULA TRACK */
+.formula-track-section {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(240,165,0,0.07);
+}
+.formula-track-header {
+  padding: 10px 16px;
+  background: rgba(240,165,0,0.06);
+  border-bottom: 1px solid var(--border-dim);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.formula-track-label {
+  font-family: var(--font-title);
+  font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber);
+}
+.formula-clear-btn {
+  font-size: 10px; color: var(--text-muted);
+  background: none; border: none; cursor: pointer;
+  transition: color 0.2s;
+}
+.formula-clear-btn:hover { color: var(--danger-light); }
+
+.formula-track {
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap; min-height: 56px;
+}
+.formula-block {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600;
+  position: relative;
+}
+.formula-block .remove-block {
+  position: absolute; top: -6px; right: -6px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: white; font-size: 8px;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; border: none;
+  transition: all 0.15s;
+}
+.formula-block:hover .remove-block { display: flex; }
+.formula-block:hover .remove-block:hover { background: var(--danger-light); transform: scale(1.1); }
+
+.fblock-const { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-card); }
+.fblock-dice { background: rgba(240,165,0,0.12); color: var(--amber); border: 1px solid rgba(240,165,0,0.25); }
+.fblock-op { background: var(--bg-raised); color: var(--blue-light); border: 1px solid rgba(91,159,214,0.2); font-size: 16px; }
+.fblock-field { background: rgba(122,90,191,0.12); color: var(--purple-light); border: 1px solid rgba(160,127,214,0.25); font-family: var(--font-title); font-size: 12px; letter-spacing: 0.06em; }
+
+.formula-preview {
+  padding: 8px 16px;
+  background: var(--bg-deep);
+  border-top: 1px solid var(--border-subtle);
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+.formula-preview span { color: var(--amber); }
+
+/* SUCCESS CONDITIONS */
+.success-section { margin-bottom: 16px; }
+
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.form-select {
+  width: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: var(--font-ui); font-size: 12px;
+  color: var(--text-primary); outline: none;
+  cursor: pointer; transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b9ab5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.form-select:focus { border-color: var(--amber); }
+
+.threshold-row {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-raised);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  margin-bottom: 10px;
+}
+.threshold-label { font-size: 11px; color: var(--text-secondary); flex: 1; }
+.threshold-val {
+  font-family: var(--font-title); font-size: 13px;
+  font-weight: 600; color: var(--amber);
+}
+
+.checkbox-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.checkbox-row:last-child { border-bottom: none; }
+.custom-checkbox {
+  width: 16px; height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-dim);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.2s;
+  background: transparent;
+}
+.custom-checkbox.checked {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 6px rgba(240,165,0,0.3);
+}
+.custom-checkbox.checked::after {
+  content: '✓';
+  font-size: 10px;
+  color: var(--bg-deep);
+  font-weight: 700;
+}
+.checkbox-text { font-size: 12px; color: var(--text-primary); }
+
+/* ROLL TYPE */
+.roll-type-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.roll-type-opt {
+  padding: 10px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-raised);
+  text-align: center; cursor: pointer;
+  transition: all 0.2s;
+}
+.roll-type-opt.selected {
+  border-color: var(--amber);
+  background: rgba(240,165,0,0.08);
+}
+.roll-type-opt:hover:not(.selected) {
+  border-color: var(--border-dim);
+  background: var(--bg-hover);
+}
+.roll-type-icon { font-size: 18px; margin-bottom: 4px; }
+.roll-type-name { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+.roll-type-desc { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+
+/* ===== RIGHT: SIMULATOR ===== */
+.simulator {
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.sim-header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.sim-title {
+  font-family: var(--font-title);
+  font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-label);
+}
+
+.sim-body {
+  flex: 1; padding: 16px;
+  display: flex; flex-direction: column; gap: 14px;
+  overflow-y: auto;
+}
+
+/* DICE DISPLAY */
+.dice-display-wrap {
+  display: flex; justify-content: center; align-items: center;
+  padding: 20px 0;
+  position: relative;
+}
+.dice-d20 {
+  width: 90px; height: 90px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.dice-d20 svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  animation: dice-idle 4s ease-in-out infinite;
+}
+@keyframes dice-idle {
+  0%, 100% { transform: rotate(0deg); filter: drop-shadow(0 0 6px rgba(240,165,0,0.2)); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); filter: drop-shadow(0 0 12px rgba(240,165,0,0.35)); }
+}
+@keyframes dice-roll {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(180deg) scale(1.1); }
+  40% { transform: rotate(270deg) scale(0.95); }
+  60% { transform: rotate(360deg) scale(1.05); }
+  80% { transform: rotate(380deg) scale(1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.dice-d20.rolling svg { animation: dice-roll 0.7s ease-out forwards; }
+.dice-number {
+  font-family: var(--font-title);
+  font-size: 28px; font-weight: 700;
+  color: var(--amber);
+  position: relative; z-index: 1;
+  text-shadow: 0 0 20px rgba(240,165,0,0.5);
+  line-height: 1;
+}
+.dice-number.question { color: var(--text-muted); font-size: 24px; }
+
+/* MODIFIER */
+.modifier-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.modifier-label { font-size: 11px; color: var(--text-secondary); flex: 1; }
+.modifier-ctrl {
+  display: flex; align-items: center; gap: 4px;
+}
+.mod-btn {
+  width: 22px; height: 22px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-raised);
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.mod-btn:hover { background: var(--bg-hover); color: var(--amber); border-color: var(--amber-dim); }
+.mod-val {
+  width: 32px; text-align: center;
+  font-family: var(--font-title); font-size: 13px;
+  font-weight: 600; color: var(--text-primary);
+}
+
+/* ROLL BUTTON */
+.roll-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--amber), var(--gold));
+  border: none; border-radius: var(--radius-md);
+  color: var(--bg-deep); font-family: var(--font-title);
+  font-size: 14px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.roll-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.2), transparent 60%);
+}
+.roll-btn:hover {
+  box-shadow: 0 0 24px rgba(240,165,0,0.45), 0 4px 16px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+.roll-btn:active { transform: translateY(1px) scale(0.98); }
+
+/* RESULT */
+.result-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  transition: all 0.3s;
+}
+.result-card.fail { border-color: rgba(224,85,85,0.35); background: rgba(139,58,58,0.1); }
+.result-card.success { border-color: rgba(90,184,130,0.35); background: rgba(45,107,74,0.1); }
+
+.result-main {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+}
+.result-label { font-size: 11px; color: var(--text-muted); }
+.result-value {
+  font-family: var(--font-title); font-size: 22px;
+  font-weight: 700; color: var(--text-primary);
+}
+
+.result-threshold {
+  font-size: 11px; color: var(--text-secondary);
+  margin-bottom: 8px; line-height: 1.4;
+}
+.result-threshold em { color: var(--text-label); font-style: normal; }
+
+.result-verdict {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: var(--font-title); font-size: 11px;
+  font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.verdict-fail { background: rgba(139,58,58,0.3); color: var(--danger-light); border: 1px solid rgba(224,85,85,0.25); }
+.verdict-success { background: rgba(45,107,74,0.3); color: var(--success-light); border: 1px solid rgba(90,184,130,0.25); }
+
+/* HISTORY */
+.history-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.history-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.history-chip {
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 11px; font-family: var(--font-title);
+  font-weight: 600;
+}
+.history-chip.f { background: rgba(139,58,58,0.2); color: var(--danger-light); border: 1px solid rgba(224,85,85,0.2); }
+.history-chip.s { background: rgba(45,107,74,0.2); color: var(--success-light); border: 1px solid rgba(90,184,130,0.2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">⚄</div>
+      <span class="brand-name">Kreator Kart</span>
+    </div>
+    <nav class="topbar-steps">
+      <div class="step done"><span class="step-num">✓</span> Pola</div>
+      <span class="step-arrow">›</span>
+      <div class="step active"><span class="step-num">2</span> Rzuty</div>
+      <span class="step-arrow">›</span>
+      <div class="step"><span class="step-num">3</span> Podgląd</div>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost">← Wstecz</button>
+      <button class="btn btn-outline">⤓ &nbsp;Zapisz</button>
+      <button class="btn btn-primary">Podgląd &nbsp;→</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+
+    <!-- LEFT: FIELDS -->
+    <aside class="fields-list">
+      <div class="panel-header">
+        <div class="panel-title">Pola z rzutami</div>
+        <div class="panel-subtitle">6 pól oznaczonych jako rzucalne</div>
+      </div>
+      <div class="panel-scroll">
+
+        <div class="field-row" onclick="selectField(this)">
+          <div class="field-row-icon">SIŁ</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Siła</div>
+            <div class="field-row-type">Liczba · Atrybut</div>
+          </div>
+          <span class="formula-badge none">brak formuły</span>
+        </div>
+
+        <div class="field-row" onclick="selectField(this)">
+          <div class="field-row-icon">ZRE</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Zręczność</div>
+            <div class="field-row-type">Liczba · Atrybut</div>
+          </div>
+          <span class="formula-badge none">brak formuły</span>
+        </div>
+
+        <div class="field-row" onclick="selectField(this)">
+          <div class="field-row-icon">KON</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Kondycja</div>
+            <div class="field-row-type">Liczba · Atrybut</div>
+          </div>
+          <span class="formula-badge none">brak formuły</span>
+        </div>
+
+        <div class="field-row active has-formula" onclick="selectField(this)">
+          <div class="field-row-icon">SKR</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Skradanie</div>
+            <div class="field-row-type">Liczba · Umiejętność</div>
+          </div>
+          <span class="formula-badge has">1×d20+ZRE</span>
+        </div>
+
+        <div class="field-row has-formula" onclick="selectField(this)">
+          <div class="field-row-icon">WAL</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Walka wręcz</div>
+            <div class="field-row-type">Liczba · Umiejętność</div>
+          </div>
+          <span class="formula-badge has">1×d20+SIŁ</span>
+        </div>
+
+        <div class="field-row" onclick="selectField(this)">
+          <div class="field-row-icon">MAG</div>
+          <div class="field-row-info">
+            <div class="field-row-name">Magia</div>
+            <div class="field-row-type">Liczba · Atrybut</div>
+          </div>
+          <span class="formula-badge none">brak formuły</span>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- CENTER: BUILDER -->
+    <main class="formula-builder">
+
+      <div class="section-title-row">
+        <div class="section-main-title">Formuła rzutu dla: <span>SKRADANIE</span></div>
+      </div>
+
+      <!-- FORMULA TRACK -->
+      <div class="formula-track-section">
+        <div class="formula-track-header">
+          <span class="formula-track-label">Zbudowana formuła</span>
+          <button class="formula-clear-btn">✕ Wyczyść</button>
+        </div>
+        <div class="formula-track">
+          <div class="formula-block fblock-const">
+            1
+            <button class="remove-block">✕</button>
+          </div>
+          <div class="formula-block fblock-op">
+            ×
+            <button class="remove-block">✕</button>
+          </div>
+          <div class="formula-block fblock-dice">
+            ⚄ d20
+            <button class="remove-block">✕</button>
+          </div>
+          <div class="formula-block fblock-op">
+            +
+            <button class="remove-block">✕</button>
+          </div>
+          <div class="formula-block fblock-field">
+            ZRE
+            <button class="remove-block">✕</button>
+          </div>
+        </div>
+        <div class="formula-preview">
+          Wynik = <span>1 × rzut(d20) + ZRE</span>
+        </div>
+      </div>
+
+      <!-- KOŚCI -->
+      <div class="builder-section">
+        <div class="builder-section-header">
+          <span class="builder-section-title">Kości</span>
+          <span class="builder-section-hint">Kliknij, aby dodać do formuły</span>
+        </div>
+        <div class="builder-section-body">
+          <div class="dice-row">
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d4')">
+              <span class="dice-icon">⬡</span>d4
+            </button>
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d6')">
+              <span class="dice-icon">⚄</span>d6
+            </button>
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d8')">
+              <span class="dice-icon">◇</span>d8
+            </button>
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d10')">
+              <span class="dice-icon">⬠</span>d10
+            </button>
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d12')">
+              <span class="dice-icon">⬡</span>d12
+            </button>
+            <button class="dice-btn used" onclick="addToFormula(this, 'fblock-dice', '⚄ d20')">
+              <span class="dice-icon">⚄</span>d20
+            </button>
+            <button class="dice-btn" onclick="addToFormula(this, 'fblock-dice', '⚄ d100')">
+              <span class="dice-icon">○</span>d100
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPERATORY + POLA + STAŁE -->
+      <div class="builder-section">
+        <div class="builder-section-header">
+          <span class="builder-section-title">Operatory i wartości</span>
+        </div>
+        <div class="builder-section-body">
+          <div class="form-label" style="margin-bottom:8px">Operatory</div>
+          <div class="op-row" style="margin-bottom:16px">
+            <button class="op-btn used" onclick="addToFormula(this, 'fblock-op', '+')">+</button>
+            <button class="op-btn" onclick="addToFormula(this, 'fblock-op', '−')">−</button>
+            <button class="op-btn used" onclick="addToFormula(this, 'fblock-op', '×')">×</button>
+            <button class="op-btn" onclick="addToFormula(this, 'fblock-op', '÷')">÷</button>
+          </div>
+
+          <div class="form-label" style="margin-bottom:8px">Pola postaci</div>
+          <div class="chips-row" style="margin-bottom:16px">
+            <span class="chip" onclick="addChip(this, 'SIŁ')">SIŁ</span>
+            <span class="chip used" onclick="addChip(this, 'ZRE')">ZRE</span>
+            <span class="chip" onclick="addChip(this, 'KON')">KON</span>
+            <span class="chip" onclick="addChip(this, 'INT')">INT</span>
+            <span class="chip" onclick="addChip(this, 'CHA')">CHA</span>
+            <span class="chip" onclick="addChip(this, 'MAG')">MAG</span>
+            <span class="chip" onclick="addChip(this, 'SKR')">SKR</span>
+          </div>
+
+          <div class="form-label" style="margin-bottom:8px">Stała wartość</div>
+          <div class="const-row">
+            <input class="const-input" type="number" value="2" min="0">
+            <button class="add-const-btn">＋ Dodaj</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- WARUNKI SUKCESU -->
+      <div class="builder-section">
+        <div class="builder-section-header">
+          <span class="builder-section-title">Warunki sukcesu</span>
+        </div>
+        <div class="builder-section-body">
+          <div class="form-group">
+            <label class="form-label">Typ warunku</label>
+            <select class="form-select">
+              <option>Wynik powyżej progu</option>
+              <option>Wynik poniżej progu (roll-under)</option>
+              <option>Wynik >= wartości pola</option>
+              <option>Zlicz sukcesy (≥ próg)</option>
+            </select>
+          </div>
+
+          <div class="form-label" style="margin-bottom:8px">Formuła progu</div>
+          <div class="threshold-row">
+            <span class="threshold-label">ZRE × 5 + modyfikator</span>
+            <span class="threshold-val">~16</span>
+          </div>
+
+          <div class="checkbox-row" onclick="toggleCheck(this)">
+            <div class="custom-checkbox checked"></div>
+            <span class="checkbox-text">Krytyczny sukces (wynik ≥ próg × 2)</span>
+          </div>
+          <div class="checkbox-row" onclick="toggleCheck(this)">
+            <div class="custom-checkbox checked"></div>
+            <span class="checkbox-text">Krytyczna porażka (wynik ≤ 5)</span>
+          </div>
+          <div class="checkbox-row" onclick="toggleCheck(this)">
+            <div class="custom-checkbox"></div>
+            <span class="checkbox-text">Automatyczny sukces (wynik = max)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TYP RZUTU -->
+      <div class="builder-section">
+        <div class="builder-section-header">
+          <span class="builder-section-title">Typ rzutu</span>
+        </div>
+        <div class="builder-section-body">
+          <div class="roll-type-grid">
+            <div class="roll-type-opt selected" onclick="selectRollType(this)">
+              <div class="roll-type-icon">⚄</div>
+              <div class="roll-type-name">Standardowy</div>
+              <div class="roll-type-desc">Jeden rzut</div>
+            </div>
+            <div class="roll-type-opt" onclick="selectRollType(this)">
+              <div class="roll-type-icon">⚄⚄</div>
+              <div class="roll-type-name">Przewaga</div>
+              <div class="roll-type-desc">2 rzuty, wyższy</div>
+            </div>
+            <div class="roll-type-opt" onclick="selectRollType(this)">
+              <div class="roll-type-icon">↓⚄</div>
+              <div class="roll-type-name">Utrudnienie</div>
+              <div class="roll-type-desc">2 rzuty, niższy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT: SIMULATOR -->
+    <aside class="simulator">
+      <div class="sim-header">
+        <div class="sim-title">Symulator rzutu</div>
+      </div>
+      <div class="sim-body">
+
+        <div class="dice-display-wrap">
+          <div class="dice-d20" id="diceDisplay">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="50,5 95,27 95,73 50,95 5,73 5,27"
+                stroke="rgba(240,165,0,0.6)" stroke-width="1.5" fill="rgba(240,165,0,0.04)"/>
+              <polygon points="50,5 95,27 50,40" stroke="rgba(240,165,0,0.25)" stroke-width="0.8" fill="rgba(240,165,0,0.03)"/>
+              <polygon points="95,27 95,73 50,40" stroke="rgba(240,165,0,0.25)" stroke-width="0.8" fill="rgba(240,165,0,0.02)"/>
+              <polygon points="50,40 95,73 50,95 5,73 5,27 50,40" stroke="rgba(240,165,0,0.2)" stroke-width="0.8" fill="none"/>
+            </svg>
+            <span class="dice-number question" id="diceNum">?</span>
+          </div>
+        </div>
+
+        <div class="modifier-row">
+          <span class="modifier-label">Modyfikator</span>
+          <div class="modifier-ctrl">
+            <button class="mod-btn" onclick="changeMod(-1)">−</button>
+            <span class="mod-val" id="modVal">+0</span>
+            <button class="mod-btn" onclick="changeMod(1)">+</button>
+          </div>
+        </div>
+
+        <button class="roll-btn" onclick="simulateRoll()">⚄ &nbsp; Rzuć!</button>
+
+        <div class="result-card fail" id="resultCard">
+          <div class="result-main">
+            <span class="result-label">Wynik:</span>
+            <span class="result-value" id="resultValue">14</span>
+          </div>
+          <div class="result-threshold" id="resultThreshold">
+            Próg: <em>ZRE (3) × 5 + 1 = 16</em>
+          </div>
+          <span class="result-verdict verdict-fail" id="resultVerdict">✕ PORAŻKA</span>
+        </div>
+
+        <div>
+          <div class="history-label">Historia</div>
+          <div class="history-chips" id="historyChips">
+            <span class="history-chip f">14</span>
+            <span class="history-chip s">19</span>
+            <span class="history-chip f">7</span>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script>
+let modifier = 0;
+let history = [
+  { val: 14, success: false },
+  { val: 19, success: true },
+  { val: 7, success: false }
+];
+
+function selectField(el) {
+  document.querySelectorAll('.field-row').forEach(r => r.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleCheck(row) {
+  const cb = row.querySelector('.custom-checkbox');
+  cb.classList.toggle('checked');
+}
+
+function selectRollType(el) {
+  document.querySelectorAll('.roll-type-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function changeMod(delta) {
+  modifier += delta;
+  document.getElementById('modVal').textContent = (modifier >= 0 ? '+' : '') + modifier;
+}
+
+function addToFormula(btn, type, label) {
+  btn.classList.toggle('used');
+}
+
+function addChip(chip, label) {
+  chip.classList.toggle('used');
+}
+
+function simulateRoll() {
+  const dice = document.getElementById('diceDisplay');
+  const numEl = document.getElementById('diceNum');
+  numEl.textContent = '?';
+  numEl.className = 'dice-number question';
+  dice.classList.add('rolling');
+  setTimeout(() => dice.classList.remove('rolling'), 700);
+
+  setTimeout(() => {
+    const roll = Math.floor(Math.random() * 20) + 1 + modifier;
+    const threshold = Math.floor(Math.random() * 6) + 14;
+    const success = roll >= threshold;
+
+    numEl.textContent = roll;
+    numEl.className = 'dice-number';
+
+    const card = document.getElementById('resultCard');
+    card.className = 'result-card ' + (success ? 'success' : 'fail');
+    document.getElementById('resultValue').textContent = roll;
+    document.getElementById('resultThreshold').innerHTML =
+      `Próg: <em>ZRE (3) × 5 + 1 = ${threshold}</em>`;
+
+    const verdict = document.getElementById('resultVerdict');
+    verdict.className = 'result-verdict ' + (success ? 'verdict-success' : 'verdict-fail');
+    verdict.textContent = success ? '✓ SUKCES' : '✕ PORAŻKA';
+
+    history.unshift({ val: roll, success });
+    if (history.length > 5) history.pop();
+    renderHistory();
+  }, 720);
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyChips');
+  el.innerHTML = history.map(h =>
+    `<span class="history-chip ${h.success ? 's' : 'f'}">${h.val}</span>`
+  ).join('');
+}
+</script>
+</body>
+</html>

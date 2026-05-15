@@ -34,7 +34,7 @@ const WeaponRoll = ({ data, timestamp }) => {
     };
 
     return (
-        <li className="log-list-item">
+        <>
             <WaxSealToken
                 successLevel={SL}
                 isCritSuccess={isCritSuccess}
@@ -72,7 +72,7 @@ const WeaponRoll = ({ data, timestamp }) => {
                     </div>
                 )}
             </div>
-        </li>
+        </>
     );
 };
 

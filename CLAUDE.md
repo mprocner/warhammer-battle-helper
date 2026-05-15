@@ -62,6 +62,21 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
 - Ikony: zawsze używaj ikon z `@mui/icons-material` (Material UI Icons), nigdy SVG inline ani innych bibliotek ikon
 - Tooltipy: nigdy MUI `<Tooltip>`. Używaj custom portal tooltip z `createPortal` do `document.body`. Stan: `useState(null)` dla `{top, left, text}`. Globalne klasy CSS: `.portal-tooltip` + `.portal-tooltip__arrow` w `style.css`. Wzorzec: `onMouseEnter={e => showTooltip(text, e.currentTarget)}` + `onMouseLeave={hideTooltip}` z `useRef` dla timeout. Tooltip pozycjonowany na lewo od elementu (`translateX(-100%)`), strzałka po prawej stronie.
 
+### Schemat kolorów — karty postaci (jasne tło)
+Popup `.character-sheet-popup` ma jasne kremowe tło: `linear-gradient(135deg, #f4e8d8, #e8dcc4)`.
+Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na jasnym tle** — nigdy jasnego tekstu (`#e8d5b7`) bezpośrednio w popupie.
+
+| Rola | Kolor |
+|---|---|
+| Tło inputów | `#fff9f0` — ciepła biel |
+| Tekst w inputach / główny tekst | `#3a2f1f` — ciemny brąz |
+| Ramki inputów (normal) | `#c4a882` — jasny złoty brąz |
+| Ramki inputów (focus) / border popup | `#7a5c42` — ciemny brąz |
+| Etykiety pól / kategorie | `#7a5c42` — ciemny brąz |
+| Akcenty / sekcje / ikony | `#c9975b` — złoty |
+| Tło popupu | `linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)` |
+| Border popupu | `#7a5c42` |
+
 ### Kluczowe konwencje
 - `Character.Stats` = `bson.Raw` — surowe dane systemu, nie ma pól Warhammer-specyficznych w modelu
 - `ComputeDerived` wywoływane na: GET list, Create, Update, Clone
