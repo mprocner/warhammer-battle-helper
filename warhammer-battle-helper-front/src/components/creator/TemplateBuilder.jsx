@@ -501,8 +501,6 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
 function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, onMoveUp, onMoveDown, isFirst, isLast }) {
   const { t } = useTranslation();
   const ti = typeInfo(field.type);
-  const isWide = field.type === 'text_long' || field.type === 'skill_table' || field.type === 'skill_tree';
-
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const dndStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
 
@@ -510,7 +508,7 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
     <div
       ref={setNodeRef}
       style={dndStyle}
-      className={`creator__canvas-field${isSelected ? ' creator__canvas-field--selected' : ''}${isWide ? ' creator__canvas-field--wide' : ''}${isDuplicateKey ? ' creator__canvas-field--error' : ''}`}
+      className={`creator__canvas-field${isSelected ? ' creator__canvas-field--selected' : ''}${isDuplicateKey ? ' creator__canvas-field--error' : ''}`}
       onClick={e => { e.stopPropagation(); onClick(); }}
     >
       <div className="creator__canvas-field-drag" {...attributes} {...listeners}>
