@@ -79,7 +79,7 @@ function blockLabel(b) {
 
 // ── FormulaBuilder ────────────────────────────────────────────────────────────
 
-function FormulaBuilder({ formula, onChange, numberFields }) {
+function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
   const [constDraft,   setConstDraft]   = useState('');
   const [diceAttrOpen, setDiceAttrOpen] = useState(false);
   const [diceAttrKey,  setDiceAttrKey]  = useState('');
@@ -172,13 +172,15 @@ function FormulaBuilder({ formula, onChange, numberFields }) {
                 <span className="fb__dice-icon">⚄</span>=Atrybut
               </button>
             )}
-            <button
-              className="fb__dice-btn fb__dice-btn--skill-attr"
-              onClick={() => add({ type: 'dice_skill_attr' })}
-              title="Kość o liczbie ścian = wartość atrybutu + wartość umiejętności"
-            >
-              <span className="fb__dice-icon">⚄</span>Attr+Umiej.
-            </button>
+            {fieldType !== 'attr' && (
+              <button
+                className="fb__dice-btn fb__dice-btn--skill-attr"
+                onClick={() => add({ type: 'dice_skill_attr' })}
+                title="Kość o liczbie ścian = wartość atrybutu + wartość umiejętności"
+              >
+                <span className="fb__dice-icon">⚄</span>Attr+Umiej.
+              </button>
+            )}
           </div>
 
           {diceAttrOpen && (
@@ -231,23 +233,27 @@ function FormulaBuilder({ formula, onChange, numberFields }) {
             </>
           )}
 
-          <div className="fb__subsection-label">Tokeny umiejętności</div>
-          <div className="fb__attr-chips">
-            <button
-              className="fb__attr-chip fb__attr-chip--skill"
-              onClick={() => add({ type: 'skill' })}
-              title="Wartość aktualnie rzucanej umiejętności"
-            >
-              Wartość umiejętności
-            </button>
-            <button
-              className="fb__attr-chip fb__attr-chip--attr-linked"
-              onClick={() => add({ type: 'attr_linked' })}
-              title="Wartość atrybutu przypisanego do tej umiejętności"
-            >
-              Powiązany atrybut
-            </button>
-          </div>
+          {fieldType !== 'attr' && (
+            <>
+              <div className="fb__subsection-label">Tokeny umiejętności</div>
+              <div className="fb__attr-chips">
+                <button
+                  className="fb__attr-chip fb__attr-chip--skill"
+                  onClick={() => add({ type: 'skill' })}
+                  title="Wartość aktualnie rzucanej umiejętności"
+                >
+                  Wartość umiejętności
+                </button>
+                <button
+                  className="fb__attr-chip fb__attr-chip--attr-linked"
+                  onClick={() => add({ type: 'attr_linked' })}
+                  title="Wartość atrybutu przypisanego do tej umiejętności"
+                >
+                  Powiązany atrybut
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="fb__subsection-label">Stała wartość</div>
           <div className="fb__const-row">

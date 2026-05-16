@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, IconButton, Typography, Box,
@@ -252,7 +253,7 @@ function defaultRollConfig() {
   return { formula: [], successType: 'below_threshold', threshold: 'skill', critSuccess: false, critFail: true, rollAdvType: 'standard' };
 }
 
-function RollConfigEditor({ config, onChange, numberFields }) {
+function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
   const up = patch => onChange({ ...config, ...patch });
   return (
     <div className="creator__roll-config">
@@ -264,6 +265,7 @@ function RollConfigEditor({ config, onChange, numberFields }) {
         formula={config.formula || []}
         onChange={formula => up({ formula })}
         numberFields={numberFields}
+        fieldType={fieldType}
       />
 
       <Divider sx={{ my: 1.5 }} />
@@ -411,7 +413,7 @@ function PropertyPanel({ field, onChange, numberFields }) {
       )}
 
       {field.rollable && field.rollConfig && (field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
-        <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} />
+        <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} fieldType={field.type} />
       )}
 
       {field.type === 'skill_tree' && (
@@ -440,7 +442,7 @@ function PropertyPanel({ field, onChange, numberFields }) {
 function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSections, onMove }) {
   return (
     <div className="creator__props-panel">
-      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.75rem' }}>
+      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.85rem' }}>
         Właściwości sekcji
       </Typography>
 
@@ -451,11 +453,11 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
         value={section.title}
         onChange={e => onChange({ title: e.target.value })}
         sx={{ mb: 2 }}
-        InputProps={{ sx: { fontFamily: 'Cinzel, serif', fontSize: '0.85rem' } }}
+        InputProps={{ sx: { fontFamily: 'Cinzel, serif', fontSize: '0.95rem' } }}
       />
 
       <div style={{ marginBottom: 16 }}>
-        <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 0.75 }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 0.75, fontSize: '0.8rem' }}>
           Liczba kolumn
         </Typography>
         <div className="creator__layout-options">
@@ -969,6 +971,22 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
+  const [paletteTooltip, setPaletteTooltip] = useState(null);
+  const paletteTooltipTimer = useRef(null);
+
+  const showPaletteTooltip = (text, el) => {
+    clearTimeout(paletteTooltipTimer.current);
+    paletteTooltipTimer.current = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      setPaletteTooltip({ top: rect.top + rect.height / 2, left: rect.right, text });
+    }, 300);
+  };
+
+  const hidePaletteTooltip = () => {
+    clearTimeout(paletteTooltipTimer.current);
+    setPaletteTooltip(null);
+  };
+
   const numberFields = sections.flatMap(s => s.fields).filter(f => f.type === 'attr');
   const selectedSection = selected !== null ? sections[selected.sectionIdx] : null;
   const selectedField   = selectedSection && selected.fieldIdx !== null
@@ -1054,6 +1072,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                     <button
                       key={ft.type}
                       className="creator__palette-card"
+                      onMouseEnter={e => showPaletteTooltip(t(ft.desc, { defaultValue: ft.type }), e.currentTarget)}
+                      onMouseLeave={hidePaletteTooltip}
                       onClick={() => {
                         if (selected !== null) {
                           addField(selected.sectionIdx, ft.type);
@@ -1155,6 +1175,17 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
         </>}
       </DialogContent>
+
+      {paletteTooltip && createPortal(
+        <div
+          className="portal-tooltip portal-tooltip--right"
+          style={{ top: paletteTooltip.top, left: paletteTooltip.left }}
+        >
+          {paletteTooltip.text}
+          <span className="portal-tooltip__arrow" />
+        </div>,
+        document.body
+      )}
     </Dialog>
   );
 }
