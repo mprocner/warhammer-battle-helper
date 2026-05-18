@@ -95,10 +95,10 @@ const FIELD_TYPES = [
 ];
 
 const PALETTE_GROUPS = [
-  { label: 'Statystyki', types: ['attr', 'number', 'progress'] },
-  { label: 'Tekst',      types: ['text_short', 'text_long'] },
-  { label: 'Wybór',      types: ['checkbox', 'select'] },
-  { label: 'Tabele',     types: ['skill_table', 'skill_tree'] },
+  { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
+  { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long'] },
+  { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
+  { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'skill_tree'] },
 ];
 
 function makeDefaultField(type) {
@@ -130,6 +130,7 @@ function typeInfo(type) {
 // ── SkillTreeEditor ──────────────────────────────────────────────────────────
 
 function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = false }) {
+  const { t } = useTranslation();
   const renderNode = (node, path, depth) => {
     return (
       <div key={path.join('-')} style={{ paddingLeft: depth * 16 }}>
@@ -138,7 +139,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
             className="creator__tree-node-input"
             value={node.label}
             onChange={e => onChange(updateTreeAtPath(tree, path, n => ({ ...n, label: e.target.value, key: n.key || labelToKey(e.target.value) || n.key })))}
-            placeholder="Nazwa węzła"
+            placeholder={t('creator.treeNodePlaceholder')}
           />
           {assignAttrToSkill && (
             <select
@@ -146,11 +147,11 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
               value={node.linkedAttr || ''}
               onChange={e => onChange(updateTreeAtPath(tree, path, n => ({ ...n, linkedAttr: e.target.value })))}
             >
-              <option value="">— cecha —</option>
+              <option value="">{t('creator.treeAttrSelect')}</option>
               {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
             </select>
           )}
-          <button className="creator__tree-btn creator__tree-btn--add" onClick={() => onChange(addChildAtPath(tree, path))} title="Dodaj węzeł podrzędny">
+          <button className="creator__tree-btn creator__tree-btn--add" onClick={() => onChange(addChildAtPath(tree, path))} title={t('creator.treeAddNode')}>
             <AddIcon style={{ fontSize: 14 }} />
           </button>
           {path.length > 0 && (
@@ -162,7 +163,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
                 if (parentNode.children.length <= 1 && path.length === 1) return;
                 onChange(removeAtPath(tree, path));
               }}
-              title="Usuń węzeł"
+              title={t('creator.treeRemoveNode')}
             >
               <DeleteIcon style={{ fontSize: 14 }} />
             </button>
@@ -177,7 +178,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
     <div className="creator__skill-tree-editor">
       {(tree.children || []).map((child, i) => renderNode(child, [i], 0))}
       <button className="creator__tree-add-root" onClick={() => onChange(addChildAtPath(tree, []))}>
-        <AddIcon style={{ fontSize: 14 }} /> Dodaj kategorię
+        <AddIcon style={{ fontSize: 14 }} /> {t('creator.treeAddCategory')}
       </button>
     </div>
   );
@@ -186,6 +187,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
 // ── OptionsEditor ────────────────────────────────────────────────────────────
 
 function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, numberFields = [] }) {
+  const { t } = useTranslation();
   const [draftLabel, setDraftLabel] = useState('');
   const [draftAttr,  setDraftAttr]  = useState('');
 
@@ -216,7 +218,7 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
                   n[i] = { label: optLabel, attr: e.target.value };
                   onChange(n);
                 }}>
-                  <option value="">— brak —</option>
+                  <option value="">{t('creator.optionsNoAttr')}</option>
                   {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
                 </select>
               )}
@@ -231,7 +233,7 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
           value={draftLabel}
           onChange={e => setDraftLabel(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') commit(); }}
-          placeholder="Dodaj pozycję…"
+          placeholder={t('creator.optionsAddPlaceholder')}
         />
         {assignAttrToSkill && (
           <select className="creator__option-attr-select" value={draftAttr} onChange={e => setDraftAttr(e.target.value)}>
@@ -254,11 +256,12 @@ function defaultRollConfig() {
 }
 
 function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
+  const { t } = useTranslation();
   const up = patch => onChange({ ...config, ...patch });
   return (
     <div className="creator__roll-config">
       <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Mechanika rzutu
+        {t('creator.rollMechanics')}
       </Typography>
 
       <FormulaBuilder
@@ -271,24 +274,24 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
       <Divider sx={{ my: 1.5 }} />
 
       <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-        <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>Warunek sukcesu</InputLabel>
-        <Select value={config.successType || 'below_threshold'} label="Warunek sukcesu" onChange={e => up({ successType: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
-          <MenuItem value="below_threshold">Wynik ≤ próg</MenuItem>
-          <MenuItem value="above_threshold">Wynik ≥ próg</MenuItem>
-          <MenuItem value="raw">Surowy wynik</MenuItem>
+        <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
+        <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+          <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
+          <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
+          <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
         </Select>
       </FormControl>
       {config.successType !== 'raw' && (
-        <TextField size="small" fullWidth label="Próg (formuła)" value={config.threshold || ''}
+        <TextField size="small" fullWidth label={t('creator.rollThresholdLabel')} value={config.threshold || ''}
           onChange={e => up({ threshold: e.target.value })}
-          helperText={<span style={{ fontSize: '0.72rem' }}>Tokeny: <code>skill</code>, <code>attr</code>. Np. "skill*5", "attr+10"</span>}
+          helperText={<span style={{ fontSize: '0.72rem' }}>{t('creator.rollThresholdHint')}</span>}
           sx={{ mb: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' } }} />
       )}
       <Box sx={{ display: 'flex', gap: 1 }}>
         <FormControlLabel control={<Switch size="small" checked={!!config.critSuccess} onChange={e => up({ critSuccess: e.target.checked })} />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>Krit sukces</Typography>} />
+          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>{t('creator.rollCritSuccess')}</Typography>} />
         <FormControlLabel control={<Switch size="small" checked={!!config.critFail} onChange={e => up({ critFail: e.target.checked })} />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>Fumble</Typography>} />
+          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>{t('creator.rollFumble')}</Typography>} />
       </Box>
     </div>
   );
@@ -351,15 +354,15 @@ function PropertyPanel({ field, onChange, numberFields }) {
         <>
           <FormControlLabel
             control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
-            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>Rozwinięcia</Typography>}
+            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
             sx={{ mb: 0.5 }}
           />
           {field.hasAdvances && (
             <TextField
               size="small"
               fullWidth
-              label="Etykieta rozwinięcia"
-              value={field.advancesLabel ?? 'Rozwinięcie'}
+              label={t('creator.fieldAdvancesLabel')}
+              value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
               onChange={e => up({ advancesLabel: e.target.value })}
               sx={{ mb: 1.5 }}
               InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
@@ -387,7 +390,7 @@ function PropertyPanel({ field, onChange, numberFields }) {
               }}
             />
           }
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>Przypisz atrybut do umiejętności</Typography>}
+          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
           sx={{ mb: 1, display: 'block' }}
         />
       )}
@@ -440,16 +443,17 @@ function PropertyPanel({ field, onChange, numberFields }) {
 // ── SectionPropertyPanel ─────────────────────────────────────────────────────
 
 function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSections, onMove }) {
+  const { t } = useTranslation();
   return (
     <div className="creator__props-panel">
       <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.85rem' }}>
-        Właściwości sekcji
+        {t('creator.sectionProperties')}
       </Typography>
 
       <TextField
         size="small"
         fullWidth
-        label="Tytuł sekcji"
+        label={t('creator.sectionTitleLabel')}
         value={section.title}
         onChange={e => onChange({ title: e.target.value })}
         sx={{ mb: 2 }}
@@ -458,7 +462,7 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
 
       <div style={{ marginBottom: 16 }}>
         <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 0.75, fontSize: '0.8rem' }}>
-          Liczba kolumn
+          {t('creator.sectionColumns')}
         </Typography>
         <div className="creator__layout-options">
           {[1, 2, 3].map(n => {
@@ -474,7 +478,7 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
                     <div key={i} className="creator__layout-bar" style={{ width: barWidth }} />
                   ))}
                 </div>
-                <div className="creator__layout-label">{n} kol.</div>
+                <div className="creator__layout-label">{n} {t('creator.colSuffix')}</div>
               </button>
             );
           })}
@@ -484,13 +488,13 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
       <Divider sx={{ my: 1.5 }} />
 
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, -1)} disabled={sectionIdx === 0} title="Przesuń sekcję w górę">
+        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, -1)} disabled={sectionIdx === 0} title={t('creator.sectionMoveUp')}>
           <ArrowUpwardIcon style={{ fontSize: 14 }} />
         </button>
-        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, +1)} disabled={sectionIdx === totalSections - 1} title="Przesuń sekcję w dół">
+        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, +1)} disabled={sectionIdx === totalSections - 1} title={t('creator.sectionMoveDown')}>
           <ArrowDownwardIcon style={{ fontSize: 14 }} />
         </button>
-        <button className="creator__section-action-btn creator__section-action-btn--danger" onClick={onDelete} title="Usuń sekcję" style={{ marginLeft: 'auto' }}>
+        <button className="creator__section-action-btn creator__section-action-btn--danger" onClick={onDelete} title={t('creator.sectionDelete')} style={{ marginLeft: 'auto' }}>
           <DeleteIcon style={{ fontSize: 14 }} />
         </button>
       </Box>
@@ -527,7 +531,7 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
       )}
       {field.rollable && <div className="creator__canvas-field-roll-badge">⚄</div>}
       {field.showOnShortCard && <div className="creator__canvas-field-short-badge" title={t('creator.showOnShortCard')}>▤</div>}
-      {isDuplicateKey && <div className="creator__canvas-field-dupe-warn" title="Duplikat klucza — zmień key">⚠ dup</div>}
+      {isDuplicateKey && <div className="creator__canvas-field-dupe-warn" title={t('creator.duplicateKeyWarn')}>⚠ dup</div>}
       <div className="creator__canvas-field-actions">
         <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst}><ArrowUpwardIcon style={{ fontSize: 11 }} /></button>
         <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveDown(); }} disabled={isLast}><ArrowDownwardIcon style={{ fontSize: 11 }} /></button>
@@ -566,15 +570,15 @@ function SectionCanvas({
       >
         <span className="creator__section-drag" {...attributes} {...listeners}><DragHandleIcon style={{ fontSize: 16 }} /></span>
         <span className="creator__section-title-label">
-          {section.title || <em style={{ opacity: 0.45 }}>Nazwa sekcji…</em>}
+          {section.title || <em style={{ opacity: 0.45 }}>{t('creator.sectionNoName')}</em>}
         </span>
-        <span className="creator__section-cols-badge">{cols} kol.</span>
+        <span className="creator__section-cols-badge">{cols} {t('creator.colSuffix')}</span>
         <div className="creator__section-actions">
           <button
             className="creator__section-action-btn"
             onClick={e => { e.stopPropagation(); onMoveSection(sectionIdx, -1); }}
             disabled={sectionIdx === 0}
-            title="Przesuń w górę"
+            title={t('creator.sectionMoveUpShort')}
           >
             <ArrowUpwardIcon style={{ fontSize: 13 }} />
           </button>
@@ -582,21 +586,21 @@ function SectionCanvas({
             className="creator__section-action-btn"
             onClick={e => { e.stopPropagation(); onMoveSection(sectionIdx, +1); }}
             disabled={sectionIdx === totalSections - 1}
-            title="Przesuń w dół"
+            title={t('creator.sectionMoveDownShort')}
           >
             <ArrowDownwardIcon style={{ fontSize: 13 }} />
           </button>
           <button
             className="creator__section-action-btn"
             onClick={e => { e.stopPropagation(); onSelectSection(sectionIdx); }}
-            title="Edytuj sekcję"
+            title={t('creator.sectionEdit')}
           >
             <ViewColumnIcon style={{ fontSize: 13 }} />
           </button>
           <button
             className="creator__section-action-btn creator__section-action-btn--danger"
             onClick={e => { e.stopPropagation(); onRemoveSection(sectionIdx); }}
-            title="Usuń sekcję"
+            title={t('creator.sectionDelete')}
           >
             <DeleteIcon style={{ fontSize: 13 }} />
           </button>
@@ -629,7 +633,7 @@ function SectionCanvas({
                 className="creator__add-field-btn"
                 onClick={() => onToggleAdding(sectionIdx)}
               >
-                <AddIcon style={{ fontSize: 14 }} /> Dodaj pole
+                <AddIcon style={{ fontSize: 14 }} /> {t('creator.addField')}
               </button>
             )}
           </div>
@@ -658,10 +662,11 @@ function SectionCanvas({
 // ── EmptyDropZone ─────────────────────────────────────────────────────────────
 
 function EmptyDropZone({ sectionId }) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useSortable({ id: `__drop__${sectionId}` });
   return (
     <div ref={setNodeRef} className={`creator__empty-drop-zone${isOver ? ' creator__empty-drop-zone--over' : ''}`}>
-      Upuść pole tutaj
+      {t('creator.dropZone')}
     </div>
   );
 }
@@ -669,11 +674,12 @@ function EmptyDropZone({ sectionId }) {
 // ── TemplatePreview ───────────────────────────────────────────────────────────
 
 function TemplatePreview({ sections, name }) {
+  const { t } = useTranslation();
   if (sections.length === 0) {
     return (
       <div className="creator__preview">
         <div className="creator__prev-empty">
-          Brak sekcji — przejdź do zakładki <strong>Pola</strong>, aby dodać treść
+          {t('creator.previewNoSections')}
         </div>
       </div>
     );
@@ -684,8 +690,8 @@ function TemplatePreview({ sections, name }) {
       <div className="creator__prev-sheet">
         <div className="creator__prev-sheet-top" />
         <div className="creator__prev-sheet-header">
-          <div className="creator__prev-system-name">{name || 'Nowy System RPG'}</div>
-          <div className="creator__prev-system-label">Karta Postaci — Podgląd</div>
+          <div className="creator__prev-system-name">{name || t('creator.previewDefaultName')}</div>
+          <div className="creator__prev-system-label">{t('creator.previewSubtitle')}</div>
         </div>
         <div className="creator__prev-body">
           <CustomSheetBody sections={sections} />
@@ -1018,7 +1024,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               onClick={() => setActiveTab('fields')}
             >
               <span className="creator__tab-num">1</span>
-              Pola
+              {t('creator.tabFields')}
             </button>
             <span className="creator__tab-arrow">›</span>
             <button
@@ -1026,12 +1032,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               onClick={() => setActiveTab('preview')}
             >
               <span className="creator__tab-num">2</span>
-              Podgląd
+              {t('creator.tabPreview')}
             </button>
           </nav>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
-              {sections.length} sekcje · {totalFieldCount} {t('creator.fields')}
+              {sections.length} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
             </Typography>
             {isSaving
               ? <HourglassEmptyIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -1054,11 +1060,11 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             <div className="creator__palette-title">{t('creator.components')}</div>
             {selected !== null ? (
               <div className="creator__palette-hint">
-                → {sections[selected.sectionIdx]?.title || 'Sekcja bez nazwy'}
+                → {sections[selected.sectionIdx]?.title || t('creator.sectionUnnamed')}
               </div>
             ) : sections.length > 0 ? (
               <div className="creator__palette-hint creator__palette-hint--warn">
-                Zaznacz sekcję
+                {t('creator.paletteSelectSection')}
               </div>
             ) : null}
           </div>
@@ -1066,8 +1072,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             {PALETTE_GROUPS.map(group => {
               const groupTypes = FIELD_TYPES.filter(ft => group.types.includes(ft.type));
               return (
-                <div key={group.label} className="creator__palette-group">
-                  <div className="creator__palette-group-label">{group.label}</div>
+                <div key={group.labelKey} className="creator__palette-group">
+                  <div className="creator__palette-group-label">{t(group.labelKey)}</div>
                   {groupTypes.map(ft => (
                     <button
                       key={ft.type}
@@ -1107,10 +1113,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             <div className="creator__canvas-empty">
               <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: '#7a5c42' }} />
               <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontStyle: 'italic', opacity: 0.5, color: '#3d2b1a' }}>
-                Kliknij „+ Dodaj sekcję" poniżej, aby rozpocząć
+                {t('creator.canvasStart')}
               </Typography>
               <button className="creator__add-section-btn" style={{ marginTop: 24 }} onClick={e => { e.stopPropagation(); addSection(); }}>
-                <AddIcon style={{ fontSize: 16 }} /> Dodaj sekcję
+                <AddIcon style={{ fontSize: 16 }} /> {t('creator.addSection')}
               </button>
             </div>
           ) : (
@@ -1141,7 +1147,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 </SortableContext>
               </DndKitContext>
               <button className="creator__add-section-btn" onClick={addSection}>
-                <AddIcon style={{ fontSize: 16 }} /> Dodaj sekcję
+                <AddIcon style={{ fontSize: 16 }} /> {t('creator.addSection')}
               </button>
             </div>
           )}
@@ -1167,7 +1173,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           ) : (
             <div className="creator__props-empty">
               <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic', textAlign: 'center' }}>
-                Kliknij sekcję lub pole, aby je skonfigurować
+                {t('creator.propsClickHint')}
               </Typography>
             </div>
           )}

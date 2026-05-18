@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -13,43 +14,49 @@ const BLOCK_IS_VALUE = b => b.type !== 'op';
 
 // ── exports ───────────────────────────────────────────────────────────────────
 
+// Returns { valid, errorKey, errorParams } — translate errorKey with t(errorKey, errorParams)
 export function validateFormula(blocks, numberFields) {
-  if (!blocks || blocks.length === 0) return { valid: false, error: 'Formuła jest pusta' };
+  if (!blocks || blocks.length === 0)
+    return { valid: false, errorKey: 'creator.formula.errorEmpty' };
 
   const knownKeys = new Set((numberFields || []).map(f => f.key));
 
   if (!BLOCK_IS_VALUE(blocks[0]))
-    return { valid: false, error: 'Formuła nie może zaczynać się od operatora' };
+    return { valid: false, errorKey: 'creator.formula.errorStartsWithOp' };
   if (!BLOCK_IS_VALUE(blocks[blocks.length - 1]))
-    return { valid: false, error: 'Formuła nie może kończyć się operatorem' };
+    return { valid: false, errorKey: 'creator.formula.errorEndsWithOp' };
 
   for (let i = 0; i < blocks.length - 1; i++) {
     const a = blocks[i], b = blocks[i + 1];
     if (!BLOCK_IS_VALUE(a) && !BLOCK_IS_VALUE(b))
-      return { valid: false, error: 'Dwa operatory pod rząd' };
+      return { valid: false, errorKey: 'creator.formula.errorTwoOps' };
     if (BLOCK_IS_VALUE(a) && BLOCK_IS_VALUE(b))
-      return { valid: false, error: 'Brak operatora między wartościami' };
+      return { valid: false, errorKey: 'creator.formula.errorNoOp' };
   }
 
   for (const b of blocks) {
     if ((b.type === 'attr' || b.type === 'dice_attr') && !knownKeys.has(b.key))
-      return { valid: false, error: `Atrybut "${b.label || b.key}" nie istnieje w szablonie` };
+      return { valid: false, errorKey: 'creator.formula.errorAttrNotFound', errorParams: { label: b.label || b.key } };
   }
 
-  return { valid: true, error: null };
+  return { valid: true, errorKey: null };
 }
 
-export function formulaToString(blocks) {
+export function formulaToString(blocks, t) {
+  const sk  = t ? t('creator.formula.skillAbbr')      : 'skill';
+  const la  = t ? t('creator.formula.linkedAttrAbbr') : 'l.attr';
+  const ask = t ? t('creator.formula.attrSkillAbbr')  : 'attr+skill';
+
   if (!blocks || blocks.length === 0) return '—';
   return blocks.map(b => {
-    if (b.type === 'dice')           return `⚄${b.value}`;
-    if (b.type === 'dice_attr')      return `⚄(${b.label || b.key})`;
-    if (b.type === 'dice_skill_attr') return '⚄(attr+umiej.)';
-    if (b.type === 'op')             return ` ${OP_DISPLAY[b.value] || b.value} `;
-    if (b.type === 'attr')           return b.label || b.key;
-    if (b.type === 'skill')          return 'umiej.';
-    if (b.type === 'attr_linked')    return 'attr.pow.';
-    if (b.type === 'const')          return String(b.num ?? b.value ?? '?');
+    if (b.type === 'dice')            return `⚄${b.value}`;
+    if (b.type === 'dice_attr')       return `⚄(${b.label || b.key})`;
+    if (b.type === 'dice_skill_attr') return `⚄(${ask})`;
+    if (b.type === 'op')              return ` ${OP_DISPLAY[b.value] || b.value} `;
+    if (b.type === 'attr')            return b.label || b.key;
+    if (b.type === 'skill')           return sk;
+    if (b.type === 'attr_linked')     return la;
+    if (b.type === 'const')           return String(b.num ?? b.value ?? '?');
     return '?';
   }).join('');
 }
@@ -65,21 +72,10 @@ const BLOCK_CLASS = {
   const:          'fb__block--const',
 };
 
-function blockLabel(b) {
-  if (b.type === 'dice')           return `⚄ ${b.value}`;
-  if (b.type === 'dice_attr')      return `⚄ ${b.label || b.key}`;
-  if (b.type === 'dice_skill_attr') return '⚄ Attr+Umiej.';
-  if (b.type === 'op')             return OP_DISPLAY[b.value] || b.value;
-  if (b.type === 'attr')           return b.label || b.key;
-  if (b.type === 'skill')          return 'Umiej.';
-  if (b.type === 'attr_linked')    return 'Attr. pow.';
-  if (b.type === 'const')          return String(b.num ?? b.value ?? '?');
-  return '?';
-}
-
 // ── FormulaBuilder ────────────────────────────────────────────────────────────
 
 function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
+  const { t } = useTranslation();
   const [constDraft,   setConstDraft]   = useState('');
   const [diceAttrOpen, setDiceAttrOpen] = useState(false);
   const [diceAttrKey,  setDiceAttrKey]  = useState('');
@@ -117,45 +113,57 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
     return f ? (f.abbr || f.label || f.key) : '?';
   })();
 
+  const blockLabel = (b) => {
+    if (b.type === 'dice')            return `⚄ ${b.value}`;
+    if (b.type === 'dice_attr')       return `⚄ ${b.label || b.key}`;
+    if (b.type === 'dice_skill_attr') return `⚄ ${t('creator.formula.diceAttrSkillBtn')}`;
+    if (b.type === 'op')              return OP_DISPLAY[b.value] || b.value;
+    if (b.type === 'attr')            return b.label || b.key;
+    if (b.type === 'skill')           return t('creator.formula.skillAbbr');
+    if (b.type === 'attr_linked')     return t('creator.formula.linkedAttrAbbr');
+    if (b.type === 'const')           return String(b.num ?? b.value ?? '?');
+    return '?';
+  };
+
   return (
     <div className="fb__root">
 
-      {/* ── Tor formuły ───────────────────────────────────────────────────── */}
+      {/* ── Formula track ─────────────────────────────────────────────────── */}
       <div className="fb__track">
         <div className="fb__track-header">
-          <span className="fb__track-label">Formuła rzutu</span>
+          <span className="fb__track-label">{t('creator.formula.track')}</span>
           {blocks.length > 0 && (
-            <button className="fb__track-clear" onClick={clear}>✕ Wyczyść</button>
+            <button className="fb__track-clear" onClick={clear}>{t('creator.formula.clear')}</button>
           )}
         </div>
 
         <div className="fb__track-body">
           {blocks.length === 0 ? (
-            <span className="fb__track-empty">Kliknij bloki poniżej, aby zbudować formułę…</span>
+            <span className="fb__track-empty">{t('creator.formula.empty')}</span>
           ) : blocks.map(b => (
             <div key={b.id} className={`fb__block ${BLOCK_CLASS[b.type] || ''}`}>
               <span className="fb__block-label">{blockLabel(b)}</span>
-              <button className="fb__block-remove" onClick={() => remove(b.id)} title="Usuń blok">✕</button>
+              <button className="fb__block-remove" onClick={() => remove(b.id)} title={t('creator.formula.removeBlock')}>✕</button>
             </div>
           ))}
         </div>
 
         <div className={`fb__track-preview${blocks.length > 0 && !validation.valid ? ' fb__track-preview--err' : ''}`}>
           {blocks.length === 0 ? (
-            <span className="fb__preview-hint">Wynik = —</span>
+            <span className="fb__preview-hint">{t('creator.formula.resultEmpty')}</span>
           ) : validation.valid ? (
-            <><span className="fb__preview-ok">✓</span> Wynik = <em>{formulaToString(blocks)}</em></>
+            <><span className="fb__preview-ok">✓</span> {t('creator.formula.result')}<em>{formulaToString(blocks, t)}</em></>
           ) : (
-            <><span className="fb__preview-err">⚠</span> {validation.error}</>
+            <><span className="fb__preview-err">⚠</span> {t(validation.errorKey, validation.errorParams)}</>
           )}
         </div>
       </div>
 
-      {/* ── Kości ─────────────────────────────────────────────────────────── */}
+      {/* ── Dice ──────────────────────────────────────────────────────────── */}
       <div className="fb__section">
         <div className="fb__section-header">
-          <span className="fb__section-title">Kości</span>
-          <span className="fb__section-hint">kliknij, aby dodać</span>
+          <span className="fb__section-title">{t('creator.formula.sectionDice')}</span>
+          <span className="fb__section-hint">{t('creator.formula.sectionDiceHint')}</span>
         </div>
         <div className="fb__section-body">
           <div className="fb__dice-row">
@@ -169,16 +177,16 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
                 className={`fb__dice-btn fb__dice-btn--attr${diceAttrOpen ? ' fb__dice-btn--attr-open' : ''}`}
                 onClick={openDiceAttr}
               >
-                <span className="fb__dice-icon">⚄</span>=Atrybut
+                <span className="fb__dice-icon">⚄</span>{t('creator.formula.diceAttrBtn')}
               </button>
             )}
             {fieldType !== 'attr' && (
               <button
                 className="fb__dice-btn fb__dice-btn--skill-attr"
                 onClick={() => add({ type: 'dice_skill_attr' })}
-                title="Kość o liczbie ścian = wartość atrybutu + wartość umiejętności"
+                title={t('creator.formula.diceAttrSkillTitle')}
               >
-                <span className="fb__dice-icon">⚄</span>Attr+Umiej.
+                <span className="fb__dice-icon">⚄</span>{t('creator.formula.diceAttrSkillBtn')}
               </button>
             )}
           </div>
@@ -204,14 +212,14 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
         </div>
       </div>
 
-      {/* ── Operatory i wartości ──────────────────────────────────────────── */}
+      {/* ── Operators & values ────────────────────────────────────────────── */}
       <div className="fb__section">
         <div className="fb__section-header">
-          <span className="fb__section-title">Operatory i wartości</span>
+          <span className="fb__section-title">{t('creator.formula.sectionOpsValues')}</span>
         </div>
         <div className="fb__section-body">
 
-          <div className="fb__subsection-label">Operatory</div>
+          <div className="fb__subsection-label">{t('creator.formula.subsectionOps')}</div>
           <div className="fb__op-row">
             {['+', '-', '*', '/'].map(op => (
               <button key={op} className="fb__op-btn" onClick={() => addOp(op)}>
@@ -222,7 +230,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
 
           {numberFields.length > 0 && (
             <>
-              <div className="fb__subsection-label">Atrybuty postaci</div>
+              <div className="fb__subsection-label">{t('creator.formula.subsectionAttrs')}</div>
               <div className="fb__attr-chips">
                 {numberFields.map(f => (
                   <button key={f.key} className="fb__attr-chip" onClick={() => addAttr(f)}>
@@ -235,27 +243,27 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
 
           {fieldType !== 'attr' && (
             <>
-              <div className="fb__subsection-label">Tokeny umiejętności</div>
+              <div className="fb__subsection-label">{t('creator.formula.subsectionSkillTokens')}</div>
               <div className="fb__attr-chips">
                 <button
                   className="fb__attr-chip fb__attr-chip--skill"
                   onClick={() => add({ type: 'skill' })}
-                  title="Wartość aktualnie rzucanej umiejętności"
+                  title={t('creator.formula.skillValueTitle')}
                 >
-                  Wartość umiejętności
+                  {t('creator.formula.skillValueBtn')}
                 </button>
                 <button
                   className="fb__attr-chip fb__attr-chip--attr-linked"
                   onClick={() => add({ type: 'attr_linked' })}
-                  title="Wartość atrybutu przypisanego do tej umiejętności"
+                  title={t('creator.formula.linkedAttrTitle')}
                 >
-                  Powiązany atrybut
+                  {t('creator.formula.linkedAttrBtn')}
                 </button>
               </div>
             </>
           )}
 
-          <div className="fb__subsection-label">Stała wartość</div>
+          <div className="fb__subsection-label">{t('creator.formula.subsectionConst')}</div>
           <div className="fb__const-row">
             <input
               type="number"
@@ -265,7 +273,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
               onKeyDown={e => { if (e.key === 'Enter') addConst(); }}
               placeholder="0"
             />
-            <button className="fb__const-add" onClick={addConst}>+ Dodaj</button>
+            <button className="fb__const-add" onClick={addConst}>{t('creator.formula.addConst')}</button>
           </div>
 
         </div>
