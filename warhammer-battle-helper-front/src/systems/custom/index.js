@@ -19,7 +19,6 @@ function normalizeCharacter(char) {
     ...char,
     stats: {
       attributes:       s.attributes       || {},
-      advances:         s.advances         || {},
       skills:           s.skills           || {},
       texts:            s.texts            || {},
       progress:         s.progress         || {},

@@ -1,5 +1,13 @@
 package custom
 
+// AttrValue stores base, advances, and computed current for an attribute field.
+// current = base + advances, always recomputed by ComputeDerived.
+type AttrValue struct {
+	Base     int `bson:"base"     json:"base"`
+	Advances int `bson:"advances" json:"advances"`
+	Current  int `bson:"current"  json:"current"`
+}
+
 // CustomSkillNode holds metadata for a player-added skill inside a skill_tree field.
 type CustomSkillNode struct {
 	Label      string `bson:"label" json:"label"`
@@ -10,8 +18,7 @@ type CustomSkillNode struct {
 // Keys in Attributes and Skills match the field keys defined in the SystemTemplate.
 // Skill keys for tree nodes use dot-path notation: "bron_biala.jednorecz.miecz".
 type Stats struct {
-	Attributes       map[string]int             `bson:"attributes"              json:"attributes"`
-	Advances         map[string]int             `bson:"advances,omitempty"      json:"advances,omitempty"`
+	Attributes       map[string]AttrValue       `bson:"attributes"              json:"attributes"`
 	Skills           map[string]int             `bson:"skills"                  json:"skills"`
 	Texts            map[string]string          `bson:"texts,omitempty"         json:"texts,omitempty"`
 	Progress         map[string]ProgressValue   `bson:"progress,omitempty"      json:"progress,omitempty"`

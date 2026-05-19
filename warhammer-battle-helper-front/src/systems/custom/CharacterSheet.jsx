@@ -25,7 +25,6 @@ function CustomCharacterSheet({
 
   const [edited, setEdited] = useState({
     attributes:       stats.attributes        || {},
-    advances:         stats.advances          || {},
     skills:           stats.skills            || {},
     texts:            stats.texts             || {},
     progress:         stats.progress          || {},
@@ -45,7 +44,6 @@ function CustomCharacterSheet({
     const s = character?.stats || {};
     setEdited({
       attributes:       s.attributes        || {},
-      advances:         s.advances          || {},
       skills:           s.skills            || {},
       texts:            s.texts             || {},
       progress:         s.progress          || {},
@@ -64,7 +62,6 @@ function CustomCharacterSheet({
       name,
       stats: {
         attributes:       currentEdited.attributes,
-        advances:         currentEdited.advances,
         skills:           currentEdited.skills,
         texts:            currentEdited.texts,
         progress:         currentEdited.progress,
@@ -95,13 +92,19 @@ function CustomCharacterSheet({
   }, [saveCharacter]);
 
   const updateAttr = (key, value) => {
-    const ne = { ...edited, attributes: { ...edited.attributes, [key]: Number(value) || 0 } };
+    const prev = edited.attributes[key] || { base: 0, advances: 0, current: 0 };
+    const base = Number(value) || 0;
+    const updated = { ...prev, base, current: base + prev.advances };
+    const ne = { ...edited, attributes: { ...edited.attributes, [key]: updated } };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
   };
 
   const updateAdvances = (key, value) => {
-    const ne = { ...edited, advances: { ...edited.advances, [key]: Number(value) || 0 } };
+    const prev = edited.attributes[key] || { base: 0, advances: 0, current: 0 };
+    const advances = Number(value) || 0;
+    const updated = { ...prev, advances, current: prev.base + advances };
+    const ne = { ...edited, attributes: { ...edited.attributes, [key]: updated } };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
   };

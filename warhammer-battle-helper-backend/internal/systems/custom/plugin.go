@@ -20,7 +20,7 @@ func New() *Plugin { return &Plugin{} }
 // DefaultStats returns an empty custom stats document.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	empty := Stats{
-		Attributes: map[string]int{},
+		Attributes: map[string]AttrValue{},
 		Skills:     map[string]int{},
 		Texts:      map[string]string{},
 		Progress:   map[string]ProgressValue{},
@@ -32,9 +32,21 @@ func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	return raw, nil
 }
 
-// ComputeDerived returns stats unchanged — custom systems have no hardcoded derived fields.
-func (p *Plugin) ComputeDerived(stats bson.Raw) (bson.Raw, error) {
-	return stats, nil
+// ComputeDerived recomputes current = base + advances for every attribute.
+func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
+	s, err := decodeStats(raw)
+	if err != nil {
+		return raw, err
+	}
+	for key, av := range s.Attributes {
+		av.Current = av.Base + av.Advances
+		s.Attributes[key] = av
+	}
+	out, err := bson.Marshal(s)
+	if err != nil {
+		return raw, err
+	}
+	return out, nil
 }
 
 // GetDisplayName returns "" — name is stored on Character, not in stats.
@@ -89,7 +101,7 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 		return nil, fmt.Errorf("custom: failed to decode stats: %w", err)
 	}
 	if s.Attributes == nil {
-		s.Attributes = map[string]int{}
+		s.Attributes = map[string]AttrValue{}
 	}
 	if s.Skills == nil {
 		s.Skills = map[string]int{}

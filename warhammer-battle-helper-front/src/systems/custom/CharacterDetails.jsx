@@ -124,7 +124,7 @@ function CustomCharacterDetails({
                 {field.abbr || field.label}
               </span>
               <span className="custom-character-details__attr-val">
-                {attributes[field.key] ?? 0}
+                {attributes[field.key]?.current ?? 0}
               </span>
               <button
                 className="custom-character-details__roll-btn"

@@ -37,7 +37,7 @@ func rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, li
 		breakdown = fmt.Sprintf("%s = %s = %d", labelStr, valueStr, finalRoll)
 	}
 
-	attrValue := stats.Attributes[linkedAttr]
+	attrValue := stats.Attributes[linkedAttr].Current
 	sv := skillValue(stats, skillKey)
 	threshold := evalThreshold(cfg.Threshold, attrValue, sv)
 	outcome := evalOutcome(cfg, finalRoll, threshold)
@@ -93,7 +93,7 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			valueParts = append(valueParts, strconv.Itoa(rolled))
 			pendingOp = ""
 		case "dice_attr":
-			sides := stats.Attributes[b.Key]
+			sides := stats.Attributes[b.Key].Current
 			if sides < 1 {
 				sides = 1
 			}
@@ -110,7 +110,7 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			valueParts = append(valueParts, strconv.Itoa(rolled))
 			pendingOp = ""
 		case "dice_skill_attr":
-			av := stats.Attributes[linkedAttr]
+			av := stats.Attributes[linkedAttr].Current
 			sv := stats.Skills[skillKey]
 			sides := av + sv
 			if sides < 1 {
@@ -129,7 +129,7 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			valueParts = append(valueParts, strconv.Itoa(rolled))
 			pendingOp = ""
 		case "attr":
-			val := stats.Attributes[b.Key]
+			val := stats.Attributes[b.Key].Current
 			segments = append(segments, segment{op: pendingOp, val: val})
 			lbl := b.Label
 			if lbl == "" {
@@ -145,7 +145,7 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			valueParts = append(valueParts, strconv.Itoa(sv))
 			pendingOp = ""
 		case "attr_linked":
-			av := stats.Attributes[linkedAttr]
+			av := stats.Attributes[linkedAttr].Current
 			segments = append(segments, segment{op: pendingOp, val: av})
 			if linkedAttr == "" {
 				labelParts = append(labelParts, "0")
@@ -223,7 +223,7 @@ func diceNotationToSides(notation string) int {
 // The larger the attribute + skill, the bigger the die — and therefore
 // the wider the range of outcomes.
 func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr]
+	attrValue := stats.Attributes[linkedAttr].Current
 	skillValue := skillValue(stats, skillKey)
 
 	diceSize := attrValue + skillValue
@@ -253,7 +253,7 @@ func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, 
 
 // rollFixedD100 implements a classic d100 roll-under mechanic.
 func rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr]
+	attrValue := stats.Attributes[linkedAttr].Current
 	sv := skillValue(stats, skillKey)
 
 	roll := rand.Intn(100) + 1
@@ -280,7 +280,7 @@ func rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, link
 
 // rollFixedD20 implements a d20 + modifier roll.
 func rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr]
+	attrValue := stats.Attributes[linkedAttr].Current
 	sv := skillValue(stats, skillKey)
 
 	roll := rand.Intn(20) + 1

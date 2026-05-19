@@ -23,7 +23,6 @@ function CustomSheetBody({
   onUpdateCustomSkill = null,
 }) {
   const attrs    = values.attributes || {};
-  const advances = values.advances   || {};
   const skills   = values.skills     || {};
   const texts    = values.texts      || {};
   const progress = values.progress   || {};
@@ -274,8 +273,8 @@ function CustomSheetBody({
     switch (field.type) {
       case 'attr': {
         if (field.hasAdvances) {
-          const base = attrs[field.key] ?? 0;
-          const adv  = advances[field.key] ?? 0;
+          const base = attrs[field.key]?.base     ?? 0;
+          const adv  = attrs[field.key]?.advances ?? 0;
           return (
             <div key={field.key} className="custom-sheet__field custom-sheet__field--number-advances">
               <label className="custom-sheet__field-label">{field.label}</label>
@@ -305,7 +304,7 @@ function CustomSheetBody({
                 </div>
                 <div className="custom-sheet__advances-cell custom-sheet__advances-cell--sum">
                   <span className="custom-sheet__advances-sublabel">∑</span>
-                  <span className="custom-sheet__advances-sum">{base + adv}</span>
+                  <span className="custom-sheet__advances-sum">{attrs[field.key]?.current ?? (base + adv)}</span>
                 </div>
                 {field.rollable && onRoll && (
                   <button
@@ -325,7 +324,7 @@ function CustomSheetBody({
             <input
               type="number"
               className="custom-sheet__number-input"
-              value={attrs[field.key] ?? ''}
+              value={attrs[field.key]?.base ?? ''}
               onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
               readOnly={readOnly}
               min={field.min ?? undefined}
@@ -416,7 +415,7 @@ function CustomSheetBody({
             <label className="custom-sheet__checkbox-label">
               <input
                 type="checkbox"
-                checked={!!(attrs[field.key])}
+                checked={!!(attrs[field.key]?.base)}
                 onChange={onChange ? e => onChange.attr(field.key, e.target.checked ? 1 : 0) : undefined}
                 disabled={readOnly}
               />
