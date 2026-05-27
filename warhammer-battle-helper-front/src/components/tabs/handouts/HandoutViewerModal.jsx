@@ -88,7 +88,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [handout?.fileUrl]);
+  }, [handout?.fileUrl, isMinimized]);
 
   const resetImageView = useCallback(() => {
     setImageZoom(1);
