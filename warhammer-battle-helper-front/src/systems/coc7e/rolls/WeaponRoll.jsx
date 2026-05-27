@@ -1,23 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
-import { getResultColor } from '../../../components/log/rollUtils';
+import { getOutcomeConfig } from '../utils';
 import '../../../components/LogWindow.css';
-
-const OUTCOME_MAP = {
-  critical_success: { isCritSuccess: true,  isCritFailure: false, isSuccess: true,  symbol: '★', label: 'coc.criticalSuccess' },
-  extreme_success:  { isCritSuccess: true,  isCritFailure: false, isSuccess: true,  symbol: '◆', label: 'coc.extremeSuccess'  },
-  hard_success:     { isCritSuccess: false, isCritFailure: false, isSuccess: true,  symbol: '▲', label: 'coc.hardSuccess'      },
-  regular_success:  { isCritSuccess: false, isCritFailure: false, isSuccess: true,  symbol: '●', label: 'coc.regularSuccess'   },
-  failure:          { isCritSuccess: false, isCritFailure: false, isSuccess: false, symbol: '✕', label: 'coc.failure'          },
-  fumble:           { isCritSuccess: false, isCritFailure: true,  isSuccess: false, symbol: '☠', label: 'coc.fumble'           },
-};
 
 function CoCWeaponRoll({ data, timestamp }) {
   const { t } = useTranslation();
-  const cfg = OUTCOME_MAP[data.outcome] || OUTCOME_MAP.failure;
-  const { isCritSuccess, isCritFailure, isSuccess, label } = cfg;
-  const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
+  const { isCritSuccess, isCritFailure, isSuccess, label, color: resultColor, sealColor } = getOutcomeConfig(data.outcome);
 
   return (
     <li className="log-list-item">
@@ -27,6 +16,7 @@ function CoCWeaponRoll({ data, timestamp }) {
         isCritFailure={isCritFailure}
         isSuccess={isSuccess}
         successLevel={0}
+        overrideColor={sealColor}
       />
       <div className="log-list-item__content">
         <div className="log-list-item__header">

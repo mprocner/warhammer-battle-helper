@@ -369,9 +369,20 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 		return nil, err
 	}
 
-	skillPct, ok := stats.Skills[weaponSkillKey]
-	if !ok {
-		skillPct = p.skillBaseValue(stats, weaponSkillKey)
+	var skillPct int
+	if strings.HasPrefix(weaponSkillKey, "custom_") {
+		for _, cs := range stats.CustomSkills {
+			if cs.Key == weaponSkillKey {
+				skillPct = cs.Value
+				break
+			}
+		}
+	} else {
+		val, ok := stats.Skills[weaponSkillKey]
+		if !ok {
+			val = p.skillBaseValue(stats, weaponSkillKey)
+		}
+		skillPct = val
 	}
 
 	target := skillPct + modifier

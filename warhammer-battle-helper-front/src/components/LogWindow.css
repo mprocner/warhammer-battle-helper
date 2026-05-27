@@ -37,6 +37,9 @@
   --log-purple-light: #9b6fd0;
   --log-purple: var(--log-purple-medium);
 
+  /* Blue/Hard Success (CoC tiered success) */
+  --log-blue: #4a7fa5;
+
   /* Backgrounds */
   --log-bg-parchment: #f9f3e8;
   --log-bg-parchment-dark: #ece3d4;
