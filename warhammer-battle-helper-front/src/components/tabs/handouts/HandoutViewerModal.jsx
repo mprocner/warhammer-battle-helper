@@ -30,6 +30,8 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
   const [isImagePanning, setIsImagePanning] = useState(false);
   const popupRef = useRef(null);
   const imageContainerRef = useRef(null);
+  const imageRef = useRef(null);
+  const imageZoomRef = useRef(1);
   const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
 
   const fetchTextContent = useCallback(async () => {
@@ -84,11 +86,31 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     const handleWheel = (e) => {
       e.preventDefault();
       const factor = e.deltaY > 0 ? 0.9 : 1.1;
-      setImageZoom(prev => Math.max(0.2, Math.min(5, prev * factor)));
+      const newZoom = Math.max(0.2, Math.min(5, imageZoomRef.current * factor));
+      setImageZoom(newZoom);
+      setImagePan(prev => clampImagePan(prev.x, prev.y, newZoom));
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handout?.fileUrl, isMinimized]);
+
+  useEffect(() => { imageZoomRef.current = imageZoom; }, [imageZoom]);
+
+  const clampImagePan = useCallback((panX, panY, zoom) => {
+    const container = imageContainerRef.current;
+    const img = imageRef.current;
+    if (!container || !img) return { x: panX, y: panY };
+
+    const scaledW = img.offsetWidth * zoom;
+    const scaledH = img.offsetHeight * zoom;
+    const maxPanX = Math.max(0, (scaledW - container.clientWidth) / 2);
+    const maxPanY = Math.max(0, (scaledH - container.clientHeight) / 2);
+
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, panY)),
+    };
+  }, []);
 
   const resetImageView = useCallback(() => {
     setImageZoom(1);
@@ -186,10 +208,11 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
       if (isImagePanning) {
         const dx = e.clientX - panStartRef.current.mouseX;
         const dy = e.clientY - panStartRef.current.mouseY;
-        setImagePan({
-          x: panStartRef.current.panX + dx,
-          y: panStartRef.current.panY + dy,
-        });
+        setImagePan(clampImagePan(
+          panStartRef.current.panX + dx,
+          panStartRef.current.panY + dy,
+          imageZoomRef.current,
+        ));
       }
     };
 
@@ -209,7 +232,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, isImagePanning, clampPosition]);
+  }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, isImagePanning, clampPosition, clampImagePan]);
 
   if (!isOpen || !handout) return null;
 
@@ -243,6 +266,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
             onMouseDown={handleImageMouseDown}
           >
             <img
+              ref={imageRef}
               src={fileUrl}
               alt={handout.title}
               className="handout-viewer__image"
@@ -257,7 +281,11 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
           <div className="handout-viewer__image-controls">
             <button
               className="handout-viewer__zoom-btn"
-              onClick={() => setImageZoom(prev => Math.max(0.2, prev * 0.9))}
+              onClick={() => {
+                const newZoom = Math.max(0.2, imageZoom * 0.9);
+                setImageZoom(newZoom);
+                setImagePan(prev => clampImagePan(prev.x, prev.y, newZoom));
+              }}
               title="Zoom out"
             >−</button>
             <button
@@ -269,7 +297,11 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
             </button>
             <button
               className="handout-viewer__zoom-btn"
-              onClick={() => setImageZoom(prev => Math.min(5, prev * 1.1))}
+              onClick={() => {
+                const newZoom = Math.min(5, imageZoom * 1.1);
+                setImageZoom(newZoom);
+                setImagePan(prev => clampImagePan(prev.x, prev.y, newZoom));
+              }}
               title="Zoom in"
             >+</button>
           </div>
