@@ -58,6 +58,7 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 		Handouts:       []models.Handout{},
 		HandoutFolders: []models.HandoutFolder{},
 		Scenes:         []models.Scene{},
+		Notes:          []models.Note{},
 	}
 
 	if err := s.gameRepo.Create(game); err != nil {
