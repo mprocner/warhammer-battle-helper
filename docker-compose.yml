@@ -4,6 +4,8 @@ services:
     ports:
       - "3000:3000"
     restart: "no"
+    environment:
+      - WATCHPACK_POLLING=true
     volumes:
       - ./warhammer-battle-helper-front:/app
       - /app/node_modules  # prevent overwriting node_modules

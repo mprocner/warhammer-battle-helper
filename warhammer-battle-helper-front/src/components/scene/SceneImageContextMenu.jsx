@@ -64,16 +64,18 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
 
       <div className="scene-context-menu__divider" />
 
-      {/* Resize to Grid */}
-      <button
-        className="scene-context-menu__item"
-        onClick={onResizeToGrid}
-        disabled={image.locked}
-      >
-        {t('scenes.resizeToGrid')}
-      </button>
-
-      <div className="scene-context-menu__divider" />
+      {/* Resize to Grid — hidden when image is locked */}
+      {!image.locked && (
+        <>
+          <button
+            className="scene-context-menu__item"
+            onClick={onResizeToGrid}
+          >
+            {t('scenes.resizeToGrid')}
+          </button>
+          <div className="scene-context-menu__divider" />
+        </>
+      )}
 
       {/* Lock / Unlock */}
       <button

@@ -19,6 +19,19 @@ import DroppableBackButton from './files/DroppableBackButton';
 import { getFileUrl } from './files/getFileUrl';
 import './FilesTab.css';
 
+const getImageDimensions = (url) => new Promise((resolve) => {
+  const img = new Image();
+  img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+  img.onerror = () => resolve({ width: 200, height: 200 });
+  img.src = url;
+});
+
+const fitToScene = (imgW, imgH, sceneW, sceneH) => {
+  if (imgW <= sceneW && imgH <= sceneH) return { width: imgW, height: imgH };
+  const scale = Math.min(sceneW / imgW, sceneH / imgH);
+  return { width: Math.round(imgW * scale), height: Math.round(imgH * scale) };
+};
+
 /**
  * Files tab - manages user's image files repository (GM only)
  */
@@ -44,22 +57,36 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
   const [renameFileValue, setRenameFileValue] = useState('');
   const [draggingFile, setDraggingFile] = useState(null);
   const [hoveredFile, setHoveredFile] = useState(null);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
   const [addToSceneFile, setAddToSceneFile] = useState(null);
   const [addToSceneLayer, setAddToSceneLayer] = useState('background');
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, file: null, message: '', isLoading: false });
+
+  useEffect(() => {
+    if (!draggingFile) return;
+    const track = (e) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('pointermove', track);
+    return () => window.removeEventListener('pointermove', track);
+  }, [draggingFile]);
 
   const handleAddToScene = async () => {
     if (!addToSceneFile || !gameId || !currentSceneId) return;
 
     try {
+      const sceneEl = document.querySelector('.scene-viewport__content');
+      const sceneW = sceneEl ? sceneEl.offsetWidth : 1000;
+      const sceneH = sceneEl ? sceneEl.offsetHeight : 1000;
+      const { width: natW, height: natH } = await getImageDimensions(getFileUrl(addToSceneFile.fileUrl));
+      const { width, height } = fitToScene(natW, natH, sceneW, sceneH);
+
       await addSceneImage(gameId, currentSceneId, {
         fileUrl: addToSceneFile.fileUrl,
         fileName: addToSceneFile.name,
         layer: addToSceneLayer,
         x: 0,
         y: 0,
-        width: 200,
-        height: 200,
+        width,
+        height,
       });
       setAddToSceneFile(null);
       setAddToSceneLayer('background');
@@ -153,13 +180,44 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
     if (active.data.current?.type === 'file') {
       setDraggingFile(active.data.current.file);
       setHoveredFile(null);
+      document.body.classList.add('files-dragging');
     }
   };
 
-  // Handle drag end - move file to folder
+  // Handle drag end - move file to folder or drop onto scene
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     setDraggingFile(null);
+    document.body.classList.remove('files-dragging');
+
+    // Scene drop: file dragged outside any folder drop zone
+    if (!over && active.data.current?.type === 'file' && gameId && currentSceneId) {
+      const file = active.data.current.file;
+      const { x: dropX, y: dropY } = lastPointerRef.current;
+      const sceneEl = document.querySelector('.scene-viewport__content');
+      if (sceneEl) {
+        const rect = sceneEl.getBoundingClientRect();
+        if (dropX >= rect.left && dropX <= rect.right && dropY >= rect.top && dropY <= rect.bottom) {
+          const zoom = rect.width / sceneEl.offsetWidth;
+          try {
+            const { width: natW, height: natH } = await getImageDimensions(getFileUrl(file.fileUrl));
+            const { width, height } = fitToScene(natW, natH, sceneEl.offsetWidth, sceneEl.offsetHeight);
+            const x = Math.max(0, (dropX - rect.left) / zoom - width / 2);
+            const y = Math.max(0, (dropY - rect.top) / zoom - height / 2);
+            await addSceneImage(gameId, currentSceneId, {
+              fileUrl: file.fileUrl,
+              fileName: file.name,
+              layer: 'background',
+              x, y, width, height,
+            });
+          } catch (err) {
+            console.error('Failed to add image to scene:', err);
+            setError(t('scenes.addImageError'));
+          }
+          return;
+        }
+      }
+    }
 
     if (!over || !active.data.current?.file) return;
 

@@ -55,6 +55,11 @@
   cursor: grabbing !important;
 }
 
+.files-dragging .scene-viewport {
+  outline: 2px dashed #d4a574;
+  outline-offset: -2px;
+}
+
 /* Sizer — translated to pan the scene within the viewport */
 .scene-viewport__sizer {
   position: relative;

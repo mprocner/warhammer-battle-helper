@@ -518,12 +518,7 @@
 }
 
 .files-tab__drag-overlay {
-  padding: 8px;
-  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
-  border: 2px solid #c9975b;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .files-tab__drag-preview {
@@ -531,6 +526,7 @@
   height: 64px;
   object-fit: cover;
   border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* Hover preview - positioned to left of right panel */
