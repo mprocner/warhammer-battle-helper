@@ -169,17 +169,19 @@ function CoCCharacterDetails({
 
   const favoriteWeapons = useMemo(() => {
     const weapons = stats.weapons || [];
+    const customSkills = stats.customSkills || [];
     return weapons
       .filter(w => w.isFavourite && w.name)
       .map(w => {
         const skillDef = skills.find(s => s.key === w.skillKey);
-        const val = (stats.skills || {})[w.skillKey] ?? skillDef?.base ?? 0;
+        const customSkillDef = customSkills.find(cs => cs.key === w.skillKey);
+        const val = (stats.skills || {})[w.skillKey] ?? customSkillDef?.value ?? skillDef?.base ?? 0;
         const skillLabel = skillDef
           ? (skillDef.labelKey ? t(skillDef.labelKey, { defaultValue: skillDef.label }) : skillDef.label)
-          : w.skillKey;
+          : (customSkillDef?.name || w.skillKey);
         return { name: w.name, skillKey: w.skillKey, damage: w.damage, value: val, skillLabel };
       });
-  }, [stats.weapons, stats.skills, skills, t]);
+  }, [stats.weapons, stats.skills, stats.customSkills, skills, t]);
 
   const favoriteSkills = useMemo(() => {
     const favKeys = stats.favoriteSkills || [];
