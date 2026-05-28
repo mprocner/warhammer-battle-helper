@@ -362,6 +362,34 @@
   width: 8px; height: 8px;
 }
 
+.scene-image__rotate-handle {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  background: rgba(201, 151, 91, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  color: #fff;
+  z-index: 10;
+}
+
+.scene-image:hover .scene-image__rotate-handle {
+  opacity: 1;
+}
+
+.scene-image__rotate-handle:active {
+  cursor: grabbing;
+}
+
 /* Context Menu */
 .scene-context-menu {
   background: #faf3e8;

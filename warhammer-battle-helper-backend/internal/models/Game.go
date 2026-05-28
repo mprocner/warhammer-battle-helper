@@ -162,6 +162,7 @@ type SceneImage struct {
 	Height    float64            `bson:"height" json:"height"`
 	ZIndex    int                `bson:"zIndex" json:"zIndex"`
 	Locked    bool               `bson:"locked" json:"locked"`
+	Rotation  float64            `bson:"rotation" json:"rotation"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
@@ -372,11 +373,12 @@ type AddDrawingPathRequest struct {
 
 // UpdateSceneImageRequest is the request body for updating a scene image
 type UpdateSceneImageRequest struct {
-	X      *float64 `json:"x,omitempty"`
-	Y      *float64 `json:"y,omitempty"`
-	Width  *float64 `json:"width,omitempty"`
-	Height *float64 `json:"height,omitempty"`
-	ZIndex *int     `json:"zIndex,omitempty"`
-	Layer  *string  `json:"layer,omitempty"`
-	Locked *bool    `json:"locked,omitempty"`
+	X        *float64 `json:"x,omitempty"`
+	Y        *float64 `json:"y,omitempty"`
+	Width    *float64 `json:"width,omitempty"`
+	Height   *float64 `json:"height,omitempty"`
+	ZIndex   *int     `json:"zIndex,omitempty"`
+	Layer    *string  `json:"layer,omitempty"`
+	Locked   *bool    `json:"locked,omitempty"`
+	Rotation *float64 `json:"rotation,omitempty"`
 }

@@ -722,6 +722,8 @@
     "fitToScreen": "Fit",
     "zoomLevel": "Zoom Level",
     "gmBadge": "GM",
+    "rotateImage": "Rotate image",
+    "resetRotation": "Reset rotation",
     "fogEnabled": "Enable Fog of War",
     "fogTool": "Tool",
     "fogToolFreehand": "Freehand",

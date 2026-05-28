@@ -1474,7 +1474,7 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 			if img.ID != imageID {
 				continue
 			}
-			if img.Locked && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil) {
+			if img.Locked && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil || req.Rotation != nil) {
 				return fmt.Errorf("image is locked")
 			}
 		}
