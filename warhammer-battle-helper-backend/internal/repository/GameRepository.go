@@ -1161,6 +1161,9 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	if req.Locked != nil {
 		setFields["scenes.$[scene].images.$[img].locked"] = *req.Locked
 	}
+	if req.Rotation != nil {
+		setFields["scenes.$[scene].images.$[img].rotation"] = *req.Rotation
+	}
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{"$set": setFields}

@@ -62,6 +62,7 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 		Handouts:       []models.Handout{},
 		HandoutFolders: []models.HandoutFolder{},
 		Scenes:         []models.Scene{},
+		Notes:          []models.Note{},
 	}
 
 	if err := s.gameRepo.Create(game); err != nil {
@@ -1488,7 +1489,7 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 			if img.ID != imageID {
 				continue
 			}
-			if img.Locked && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil || req.ZIndex != nil || req.Layer != nil) {
+			if img.Locked && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil || req.Rotation != nil) {
 				return fmt.Errorf("image is locked")
 			}
 		}

@@ -5,6 +5,7 @@ import { getApiUrl } from '../../api/axios';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
 
 const getFileUrl = (fileUrl) => {
   if (!fileUrl) return '';
@@ -20,16 +21,21 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
   const [size, setSize] = useState({ width: image.width, height: image.height });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotation, setRotation] = useState(image.rotation || 0);
   const [contextMenu, setContextMenu] = useState(null);
 
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
+  const rotateStartRef = useRef(null);
   const justFinishedDraggingRef = useRef(false);
   const justFinishedResizingRef = useRef(false);
+  const justFinishedRotatingRef = useRef(false);
+  const containerRef = useRef(null);
 
   // Sync with props when image updates from server
   useEffect(() => {
-    if (!isDragging && !isResizing) {
+    if (!isDragging && !isResizing && !isRotating) {
       if (justFinishedDraggingRef.current) {
         justFinishedDraggingRef.current = false;
         return;
@@ -38,10 +44,15 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
         justFinishedResizingRef.current = false;
         return;
       }
+      if (justFinishedRotatingRef.current) {
+        justFinishedRotatingRef.current = false;
+        return;
+      }
       setPos({ x: image.x, y: image.y });
       setSize({ width: image.width, height: image.height });
+      setRotation(image.rotation || 0);
     }
-  }, [image.x, image.y, image.width, image.height, isDragging, isResizing]);
+  }, [image.x, image.y, image.width, image.height, image.rotation, isDragging, isResizing, isRotating]);
 
   const savePosition = useCallback(async (newX, newY, newWidth, newHeight) => {
     try {
@@ -117,38 +128,63 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
       startW: size.width,
       startH: size.height,
       z: zoom,
+      rad: rotation * Math.PI / 180,
     };
-  }, [isGM, pos, size, zoom, image.locked]);
+  }, [isGM, pos, size, zoom, image.locked, rotation]);
 
   useEffect(() => {
     if (!isResizing) return;
 
+    const computeResize = (e) => {
+      const { handle, mouseX, mouseY, startX, startY, startW, startH, z, rad } = resizeStartRef.current;
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+      const dxScreen = (e.clientX - mouseX) / z;
+      const dyScreen = (e.clientY - mouseY) / z;
+      // Project screen-space delta onto image local axes
+      const dx = dxScreen * cosR + dyScreen * sinR;
+      const dy = -dxScreen * sinR + dyScreen * cosR;
+
+      let newW = startW, newH = startH;
+      // dcx/dcy: how much the image center must move in scene space
+      // so that the opposite edge stays fixed (CSS rotates around center)
+      let dcx = 0, dcy = 0;
+
+      if (handle.includes('e')) {
+        newW = Math.max(20, startW + dx);
+        const dw = newW - startW;
+        dcx += dw / 2 * cosR; dcy += dw / 2 * sinR;
+      }
+      if (handle.includes('w')) {
+        newW = Math.max(20, startW - dx);
+        const dw = newW - startW;
+        dcx -= dw / 2 * cosR; dcy -= dw / 2 * sinR;
+      }
+      if (handle.includes('s')) {
+        newH = Math.max(20, startH + dy);
+        const dh = newH - startH;
+        dcx += dh / 2 * (-sinR); dcy += dh / 2 * cosR;
+      }
+      if (handle.includes('n')) {
+        newH = Math.max(20, startH - dy);
+        const dh = newH - startH;
+        dcx -= dh / 2 * (-sinR); dcy -= dh / 2 * cosR;
+      }
+
+      // New top-left = new center − half the new size
+      const newX = startX + startW / 2 + dcx - newW / 2;
+      const newY = startY + startH / 2 + dcy - newH / 2;
+      return { newX, newY, newW, newH };
+    };
+
     const handleMouseMove = (e) => {
-      const { handle, mouseX, mouseY, startX, startY, startW, startH, z } = resizeStartRef.current;
-      const dx = (e.clientX - mouseX) / z;
-      const dy = (e.clientY - mouseY) / z;
-
-      let newX = startX, newY = startY, newW = startW, newH = startH;
-
-      if (handle.includes('e')) newW = Math.max(20, startW + dx);
-      if (handle.includes('w')) { newW = Math.max(20, startW - dx); newX = startX + dx; }
-      if (handle.includes('s')) newH = Math.max(20, startH + dy);
-      if (handle.includes('n')) { newH = Math.max(20, startH - dy); newY = startY + dy; }
-
+      const { newX, newY, newW, newH } = computeResize(e);
       setPos({ x: newX, y: newY });
       setSize({ width: newW, height: newH });
     };
 
     const handleMouseUp = (e) => {
-      const { handle, mouseX, mouseY, startX, startY, startW, startH, z } = resizeStartRef.current;
-      const dx = (e.clientX - mouseX) / z;
-      const dy = (e.clientY - mouseY) / z;
-
-      let newX = startX, newY = startY, newW = startW, newH = startH;
-      if (handle.includes('e')) newW = Math.max(20, startW + dx);
-      if (handle.includes('w')) { newW = Math.max(20, startW - dx); newX = startX + dx; }
-      if (handle.includes('s')) newH = Math.max(20, startH + dy);
-      if (handle.includes('n')) { newH = Math.max(20, startH - dy); newY = startY + dy; }
+      const { newX, newY, newW, newH } = computeResize(e);
 
       setPos({ x: newX, y: newY });
       setSize({ width: newW, height: newH });
@@ -164,6 +200,54 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isResizing, savePosition]);
+
+  // --- Rotate ---
+  const saveRotation = useCallback(async (newRotation) => {
+    try {
+      await updateSceneImage(gameId, sceneId, image.id, { rotation: newRotation });
+    } catch (err) {
+      console.error('Failed to update scene image rotation:', err);
+    }
+  }, [gameId, sceneId, image.id]);
+
+  const handleRotateStart = useCallback((e) => {
+    if (!isGM || image.locked) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+    rotateStartRef.current = { centerX, centerY, startAngle, startRotation: rotation };
+    setIsRotating(true);
+  }, [isGM, image.locked, rotation]);
+
+  useEffect(() => {
+    if (!isRotating) return;
+
+    const onMove = (e) => {
+      const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+      setRotation(startRotation + (currentAngle - startAngle));
+    };
+
+    const onUp = (e) => {
+      const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+      const finalRotation = startRotation + (currentAngle - startAngle);
+      setRotation(finalRotation);
+      justFinishedRotatingRef.current = true;
+      setIsRotating(false);
+      saveRotation(finalRotation);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [isRotating, saveRotation]);
 
   // --- Context menu ---
   const handleContextMenu = useCallback((e) => {
@@ -209,6 +293,12 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
     setContextMenu(null);
   };
 
+  const handleResetRotation = async () => {
+    setRotation(0);
+    await saveRotation(0);
+    setContextMenu(null);
+  };
+
   const handleResizeToGrid = () => {
     const newX = 0;
     const newY = 0;
@@ -231,6 +321,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
   return (
     <>
       <div
+        ref={containerRef}
         className={`scene-image ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${image.locked ? 'scene-image--locked' : ''}`}
         style={{
           position: 'absolute',
@@ -241,6 +332,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
           cursor: isGM && !image.locked && editingLayer === 'grid' ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}
@@ -268,8 +360,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           <span className="scene-image__lock-badge">🔒</span>
         )}
 
-        {/* Resize handles (GM only, only when unlocked) */}
-        {isGM && !image.locked && RESIZE_HANDLES.map(handle => (
+        {/* Resize handles (GM only, only when unlocked, only in grid/image layer) */}
+        {isGM && !image.locked && editingLayer === 'grid' && RESIZE_HANDLES.map(handle => (
           <div
             key={handle}
             className={`scene-image__handle scene-image__handle--${handle}`}
@@ -277,6 +369,17 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
             onMouseDown={(e) => handleResizeStart(e, handle)}
           />
         ))}
+
+        {/* Rotate handle (GM only, only when unlocked, only in grid/image layer) */}
+        {isGM && !image.locked && editingLayer === 'grid' && (
+          <div
+            className="scene-image__rotate-handle"
+            onMouseDown={handleRotateStart}
+            title={t('scenes.rotateImage')}
+          >
+            <RotateRightIcon style={{ fontSize: 14 }} />
+          </div>
+        )}
       </div>
 
       {/* Context menu */}
@@ -289,6 +392,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           onLayerChange={handleLayerChange}
           onDelete={handleDelete}
           onResizeToGrid={handleResizeToGrid}
+          onResetRotation={handleResetRotation}
           onLockToggle={handleLockToggle}
           onClose={() => setContextMenu(null)}
         />

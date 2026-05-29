@@ -71,7 +71,8 @@ done
 
 # Pull latest changes
 log_info "Pulling latest changes from git..."
-git pull origin main
+git fetch origin
+git reset --hard origin/main
 
 # Build and restart containers
 log_info "Building and restarting containers..."

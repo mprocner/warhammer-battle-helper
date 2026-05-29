@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
-const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onLockToggle, onDelete, onClose }) => {
+const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onResetRotation, onLockToggle, onDelete, onClose }) => {
   const { t } = useTranslation();
   const [zIndex, setZIndex] = useState(image.zIndex || 0);
   const menuRef = useRef(null);
@@ -64,16 +64,24 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
 
       <div className="scene-context-menu__divider" />
 
-      {/* Resize to Grid */}
-      <button
-        className="scene-context-menu__item"
-        onClick={onResizeToGrid}
-        disabled={image.locked}
-      >
-        {t('scenes.resizeToGrid')}
-      </button>
-
-      <div className="scene-context-menu__divider" />
+      {/* Resize to Grid + Reset rotation — hidden when image is locked */}
+      {!image.locked && (
+        <>
+          <button
+            className="scene-context-menu__item"
+            onClick={onResizeToGrid}
+          >
+            {t('scenes.resizeToGrid')}
+          </button>
+          <button
+            className="scene-context-menu__item"
+            onClick={onResetRotation}
+          >
+            {t('scenes.resetRotation')}
+          </button>
+          <div className="scene-context-menu__divider" />
+        </>
+      )}
 
       {/* Lock / Unlock */}
       <button
