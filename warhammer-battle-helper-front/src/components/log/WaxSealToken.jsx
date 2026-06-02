@@ -1,10 +1,11 @@
 import React from 'react';
 import '../LogWindow.css';
 
-const WaxSealToken = ({ successLevel, isCritSuccess, isCritFailure, isSuccess, symbol, overrideColor }) => {
+const WaxSealToken = ({ successLevel, isCritSuccess, isCritFailure, isSuccess, isNeutral, symbol, overrideColor }) => {
     const getTokenClass = () => {
         if (isCritSuccess) return 'wax-seal-token--crit-success';
         if (isCritFailure) return 'wax-seal-token--crit-failure';
+        if (isNeutral) return 'wax-seal-token--neutral';
         if (isSuccess) return 'wax-seal-token--success';
         return 'wax-seal-token--failure';
     };

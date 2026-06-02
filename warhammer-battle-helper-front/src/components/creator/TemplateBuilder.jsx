@@ -252,7 +252,7 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
 // ── RollConfigEditor ─────────────────────────────────────────────────────────
 
 function defaultRollConfig() {
-  return { formula: [], successType: 'below_threshold', threshold: 'skill', critSuccess: false, critFail: true, rollAdvType: 'standard' };
+  return { formula: [], successType: 'below_threshold', rollAdvType: 'standard' };
 }
 
 function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
@@ -281,18 +281,6 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
           <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
         </Select>
       </FormControl>
-      {config.successType !== 'raw' && (
-        <TextField size="small" fullWidth label={t('creator.rollThresholdLabel')} value={config.threshold || ''}
-          onChange={e => up({ threshold: e.target.value })}
-          helperText={<span style={{ fontSize: '0.72rem' }}>{t('creator.rollThresholdHint')}</span>}
-          sx={{ mb: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' } }} />
-      )}
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <FormControlLabel control={<Switch size="small" checked={!!config.critSuccess} onChange={e => up({ critSuccess: e.target.checked })} />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>{t('creator.rollCritSuccess')}</Typography>} />
-        <FormControlLabel control={<Switch size="small" checked={!!config.critFail} onChange={e => up({ critFail: e.target.checked })} />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem' }}>{t('creator.rollFumble')}</Typography>} />
-      </Box>
     </div>
   );
 }

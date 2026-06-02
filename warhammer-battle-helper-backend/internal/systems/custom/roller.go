@@ -14,11 +14,12 @@ import (
 // rollFromFormula evaluates a visual formula ([]FormulaBlock) against the
 // character's stats and returns a RollResult.
 func rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+	fmt.Println("[ROLL] Rolling from formula ")
 	result, diceType, labelStr, valueStr, err := evalFormula(cfg.Formula, stats, skillKey, linkedAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
-
+	fmt.Printf("[ROLL] %v %v\n", result)
 	finalRoll := result + modifier
 
 	if modifier != 0 {
@@ -38,8 +39,18 @@ func rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, li
 	}
 
 	attrValue := stats.Attributes[linkedAttr].Current
+	fmt.Printf("[ROLL] Attribute value: %v, linked: %v", attrValue, linkedAttr)
 	sv := skillValue(stats, skillKey)
-	threshold := evalThreshold(cfg.Threshold, attrValue, sv)
+	threshold := evalThreshold(cfg.Threshold)
+	fmt.Printf("[ROLL] Threshold eval: %v, skill: %v, attribute: %v", threshold, sv, attrValue)
+	if threshold == 0 {
+		if sv > 0 {
+			threshold = sv
+		} else {
+			threshold = attrValue
+		}
+	}
+	fmt.Println("[ROLL] Final threshold:", threshold)
 	outcome := evalOutcome(cfg, finalRoll, threshold)
 	skillLabel := resolveSkillLabel(template, skillKey)
 
@@ -234,7 +245,10 @@ func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, 
 	roll := rand.Intn(diceSize) + 1
 	finalRoll := roll + modifier
 
-	threshold := evalThreshold(cfg.Threshold, attrValue, skillValue)
+	threshold := evalThreshold(cfg.Threshold)
+	if threshold == 0 {
+		threshold = skillValue
+	}
 	outcome := evalOutcome(cfg, finalRoll, threshold)
 
 	skillLabel := resolveSkillLabel(template, skillKey)
@@ -257,7 +271,7 @@ func rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, link
 	sv := skillValue(stats, skillKey)
 
 	roll := rand.Intn(100) + 1
-	threshold := evalThreshold(cfg.Threshold, attrValue, sv)
+	threshold := evalThreshold(cfg.Threshold)
 	if threshold == 0 {
 		threshold = attrValue + sv
 	}
@@ -287,7 +301,10 @@ func rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linke
 	bonus := attrModifier(attrValue) + sv + modifier
 	finalRoll := roll + bonus
 
-	threshold := evalThreshold(cfg.Threshold, attrValue, sv)
+	threshold := evalThreshold(cfg.Threshold)
+	if threshold == 0 {
+		threshold = attrValue
+	}
 	outcome := evalOutcome(cfg, finalRoll, threshold)
 
 	skillLabel := resolveSkillLabel(template, skillKey)
@@ -308,6 +325,7 @@ func rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linke
 
 // skillValue returns the character's value for the given skill key.
 func skillValue(stats *Stats, key string) int {
+	fmt.Printf("[ROLL] Resolving skill value for key %v, stats: %v\n", key, stats.Skills)
 	return stats.Skills[key]
 }
 
@@ -316,74 +334,27 @@ func attrModifier(attr int) int {
 	return (attr - 10) / 2
 }
 
-// evalThreshold parses a simple threshold expression and returns its integer value.
-// Supported tokens: "skill" (skill value), "attr" (attribute value), integer literals,
-// operators: *, +, -.
-func evalThreshold(expr string, attrValue, skillVal int) int {
-	if expr == "" {
-		return 0
-	}
-	expr = strings.TrimSpace(expr)
-	expr = strings.ReplaceAll(expr, "skill", strconv.Itoa(skillVal))
-	expr = strings.ReplaceAll(expr, "attr", strconv.Itoa(attrValue))
-
-	// Simple left-to-right evaluation: handles "14*5", "16+4", "20-2"
-	for _, op := range []string{"*", "+", "-"} {
-		parts := strings.SplitN(expr, op, 2)
-		if len(parts) != 2 {
-			continue
-		}
-		a, errA := strconv.Atoi(strings.TrimSpace(parts[0]))
-		b, errB := strconv.Atoi(strings.TrimSpace(parts[1]))
-		if errA != nil || errB != nil {
-			continue
-		}
-		switch op {
-		case "*":
-			return a * b
-		case "+":
-			return a + b
-		case "-":
-			return a - b
-		}
-	}
-
-	v, _ := strconv.Atoi(expr)
+// evalThreshold parses a numeric threshold override. Returns 0 if empty.
+func evalThreshold(expr string) int {
+	v, _ := strconv.Atoi(strings.TrimSpace(expr))
 	return v
 }
 
-// evalOutcome determines the outcome string from roll, threshold and config.
+// evalOutcome determines the outcome string from roll and threshold.
 func evalOutcome(cfg *models.RollConfig, roll, threshold int) string {
 	if cfg.SuccessType == "raw" || threshold == 0 {
 		return fmt.Sprintf("%d", roll)
 	}
 
-	var success bool
 	switch cfg.SuccessType {
 	case "below_threshold":
-		success = roll <= threshold
+		if roll <= threshold {
+			return "regular_success"
+		}
 	default: // "above_threshold"
-		success = roll >= threshold
-	}
-
-	if cfg.CritFail && roll <= 1 {
-		return "fumble"
-	}
-	if cfg.CritSuccess && success {
-		var critThreshold int
-		if cfg.SuccessType == "below_threshold" {
-			critThreshold = threshold / 5
-		} else {
-			critThreshold = threshold * 2
+		if roll >= threshold {
+			return "regular_success"
 		}
-		if (cfg.SuccessType == "below_threshold" && roll <= critThreshold) ||
-			(cfg.SuccessType != "below_threshold" && roll >= critThreshold) {
-			return "critical_success"
-		}
-	}
-
-	if success {
-		return "regular_success"
 	}
 	return "failure"
 }

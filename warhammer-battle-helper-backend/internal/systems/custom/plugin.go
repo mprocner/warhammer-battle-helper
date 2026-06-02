@@ -74,9 +74,13 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 		return nil, err
 	}
 
-	rollCfg, linkedAttr, err := resolveRollConfig(template, stats, skillKey)
+	rollCfg, linkedAttr, fieldType, err := resolveRollConfig(template, stats, skillKey)
 	if err != nil {
 		return nil, err
+	}
+
+	if fieldType == "attr" {
+		linkedAttr = skillKey
 	}
 
 	if len(rollCfg.Formula) > 0 {
@@ -110,11 +114,12 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 }
 
 // resolveRollConfig finds the RollConfig for the given skillKey by scanning all section fields.
+// Returns cfg, linkedAttr, fieldType ("attr" | "skill_table" | "skill_tree" | …), error.
 // For skill_tree fields the frontend stores keys as "fieldKey.node_xxx.node_yyy…", so we iterate
 // the root's Children with field.Key as the starting prefix (skipping the root node itself).
 // Custom player-added skills are not in the template tree; they fall back to the field-level RollConfig,
 // but use their individual LinkedAttr from stats.CustomSkillNodes if available.
-func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey string) (*models.RollConfig, string, error) {
+func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey string) (*models.RollConfig, string, string, error) {
 	for _, section := range template.Sections {
 		for _, field := range section.Fields {
 			if field.Type == "skill_tree" && field.Tree != nil {
@@ -125,13 +130,13 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 							cfg = field.RollConfig
 						}
 						if cfg == nil {
-							return nil, "", fmt.Errorf("custom: skill tree leaf %q has no roll config", skillKey)
+							return nil, "", "", fmt.Errorf("custom: skill tree leaf %q has no roll config", skillKey)
 						}
 						linkedAttr := attr
 						if linkedAttr == "" {
 							linkedAttr = cfg.LinkedAttr
 						}
-						return cfg, linkedAttr, nil
+						return cfg, linkedAttr, "skill_tree", nil
 					}
 				}
 				// Fallback for player-added custom skills (not in template tree).
@@ -142,16 +147,16 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 							linkedAttr = node.LinkedAttr
 						}
 					}
-					return field.RollConfig, linkedAttr, nil
+					return field.RollConfig, linkedAttr, "skill_tree", nil
 				}
 				continue
 			}
 			if field.Key == skillKey && field.Rollable && field.RollConfig != nil {
-				return field.RollConfig, field.RollConfig.LinkedAttr, nil
+				return field.RollConfig, field.RollConfig.LinkedAttr, field.Type, nil
 			}
 		}
 	}
-	return nil, "", fmt.Errorf("custom: no roll config found for skill key %q", skillKey)
+	return nil, "", "", fmt.Errorf("custom: no roll config found for skill key %q", skillKey)
 }
 
 // findLeafConfig recursively searches the tree for a node with the matching full dot-path key.

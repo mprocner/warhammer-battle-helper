@@ -22,14 +22,14 @@ function CustomRoll({ data, timestamp }) {
   const isSuccess     = outcome?.isSuccess     || false;
   const symbol        = String(data.roll);
 
-  const resultColor = getResultColor(isCritSuccess, isCritFailure, isSuccess);
+  const resultColor = isRaw ? 'var(--log-brown-muted)' : getResultColor(isCritSuccess, isCritFailure, isSuccess);
 
   const skillLabel = data.skillName || data.skillKey || '';
   const diceLabel  = data.diceType ? `D${data.diceType}` : '';
 
   const outcomeLabel = isRaw
     ? data.outcome
-    : t(`combat.${data.outcome}`, { defaultValue: data.outcome });
+    : t(`customRoll.${data.outcome}`, { defaultValue: data.outcome });
 
   const modifierText = data.modifier && data.modifier !== 0
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
@@ -41,6 +41,7 @@ function CustomRoll({ data, timestamp }) {
         isCritSuccess={isCritSuccess}
         isCritFailure={isCritFailure}
         isSuccess={isSuccess}
+        isNeutral={isRaw}
         symbol={symbol}
       />
       <div className="log-list-item__content">

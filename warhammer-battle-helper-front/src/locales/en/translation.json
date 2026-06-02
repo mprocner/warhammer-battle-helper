@@ -391,6 +391,12 @@
     "ROW": "Row",
     "STEALTH": "Stealth"
   },
+  "customRoll": {
+    "critical_success": "Critical success!",
+    "regular_success": "Success!",
+    "failure": "Failure!",
+    "fumble": "Critical failure!"
+  },
   "combat": {
     "roll": "Roll",
     "modifier": "Modifier",
@@ -1049,8 +1055,8 @@
     "fieldAssignAttr": "Assign attribute to skill",
     "rollMechanics": "Roll mechanics",
     "rollSuccessCondition": "Success condition",
-    "rollBelowThreshold": "Result ≤ threshold",
-    "rollAboveThreshold": "Result ≥ threshold",
+    "rollBelowThreshold": "Result ≤ attribute",
+    "rollAboveThreshold": "Result ≥ attribute",
     "rollRaw": "Raw result",
     "rollThresholdLabel": "Threshold (formula)",
     "rollThresholdHint": "Tokens: skill, attr. E.g. \"skill*5\", \"attr+10\"",
