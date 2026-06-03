@@ -1126,7 +1126,8 @@
       "addConst": "+ Add",
       "skillAbbr": "skill",
       "linkedAttrAbbr": "l.attr",
-      "attrSkillAbbr": "attr+skill"
+      "attrSkillAbbr": "attr+skill",
+      "opDicePool": "Dice pool (NdX) — roll N times and sum"
     }
   },
   "dnd": {

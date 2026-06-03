@@ -90,18 +90,33 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 	for _, b := range blocks {
 		switch b.Type {
 		case "op":
-			labelParts = append(labelParts, b.Value)
-			valueParts = append(valueParts, b.Value)
+			if b.Value != "d" {
+				labelParts = append(labelParts, b.Value)
+				valueParts = append(valueParts, b.Value)
+			}
 			pendingOp = b.Value
 		case "dice":
 			sides := diceNotationToSides(b.Value)
 			if diceType == 0 {
 				diceType = sides
 			}
-			rolled := rand.Intn(sides) + 1
-			segments = append(segments, segment{op: pendingOp, val: rolled})
-			labelParts = append(labelParts, b.Value)
-			valueParts = append(valueParts, strconv.Itoa(rolled))
+			if pendingOp == "d" && len(segments) > 0 {
+				count := segments[len(segments)-1].val
+				prevOp := segments[len(segments)-1].op
+				countLabel := labelParts[len(labelParts)-1]
+				segments = segments[:len(segments)-1]
+				labelParts = labelParts[:len(labelParts)-1]
+				valueParts = valueParts[:len(valueParts)-1]
+				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				segments = append(segments, segment{op: prevOp, val: total})
+				labelParts = append(labelParts, fmt.Sprintf("%s%s", countLabel, b.Value))
+				valueParts = append(valueParts, strings.Join(rollParts, "+"))
+			} else {
+				rolled := rand.Intn(sides) + 1
+				segments = append(segments, segment{op: pendingOp, val: rolled})
+				labelParts = append(labelParts, b.Value)
+				valueParts = append(valueParts, strconv.Itoa(rolled))
+			}
 			pendingOp = ""
 		case "dice_attr":
 			sides := stats.Attributes[b.Key].Current
@@ -111,14 +126,27 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			if diceType == 0 {
 				diceType = sides
 			}
-			rolled := rand.Intn(sides) + 1
-			segments = append(segments, segment{op: pendingOp, val: rolled})
 			lbl := b.Label
 			if lbl == "" {
 				lbl = b.Key
 			}
-			labelParts = append(labelParts, "d("+lbl+")")
-			valueParts = append(valueParts, strconv.Itoa(rolled))
+			if pendingOp == "d" && len(segments) > 0 {
+				count := segments[len(segments)-1].val
+				prevOp := segments[len(segments)-1].op
+				countLabel := labelParts[len(labelParts)-1]
+				segments = segments[:len(segments)-1]
+				labelParts = labelParts[:len(labelParts)-1]
+				valueParts = valueParts[:len(valueParts)-1]
+				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				segments = append(segments, segment{op: prevOp, val: total})
+				labelParts = append(labelParts, fmt.Sprintf("%sd(%s)", countLabel, lbl))
+				valueParts = append(valueParts, strings.Join(rollParts, "+"))
+			} else {
+				rolled := rand.Intn(sides) + 1
+				segments = append(segments, segment{op: pendingOp, val: rolled})
+				labelParts = append(labelParts, "d("+lbl+")")
+				valueParts = append(valueParts, strconv.Itoa(rolled))
+			}
 			pendingOp = ""
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
@@ -130,14 +158,29 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 			if diceType == 0 {
 				diceType = sides
 			}
-			rolled := rand.Intn(sides) + 1
-			segments = append(segments, segment{op: pendingOp, val: rolled})
+			var diceLabel string
 			if linkedAttr == "" {
-				labelParts = append(labelParts, fmt.Sprintf("d(%d)", sv))
+				diceLabel = fmt.Sprintf("d(%d)", sv)
 			} else {
-				labelParts = append(labelParts, fmt.Sprintf("d(%d+%d)", av, sv))
+				diceLabel = fmt.Sprintf("d(%d+%d)", av, sv)
 			}
-			valueParts = append(valueParts, strconv.Itoa(rolled))
+			if pendingOp == "d" && len(segments) > 0 {
+				count := segments[len(segments)-1].val
+				prevOp := segments[len(segments)-1].op
+				countLabel := labelParts[len(labelParts)-1]
+				segments = segments[:len(segments)-1]
+				labelParts = labelParts[:len(labelParts)-1]
+				valueParts = valueParts[:len(valueParts)-1]
+				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				segments = append(segments, segment{op: prevOp, val: total})
+				labelParts = append(labelParts, countLabel+diceLabel)
+				valueParts = append(valueParts, strings.Join(rollParts, "+"))
+			} else {
+				rolled := rand.Intn(sides) + 1
+				segments = append(segments, segment{op: pendingOp, val: rolled})
+				labelParts = append(labelParts, diceLabel)
+				valueParts = append(valueParts, strconv.Itoa(rolled))
+			}
 			pendingOp = ""
 		case "attr":
 			val := stats.Attributes[b.Key].Current
@@ -201,6 +244,20 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 	}
 
 	return res, diceType, strings.Join(labelParts, ""), strings.Join(valueParts, ""), nil
+}
+
+// evalDicePool rolls count dice using rollFn and returns the total and individual roll strings.
+// count is clamped to a minimum of 1.
+func evalDicePool(count int, rollFn func() int) (total int, parts []string) {
+	if count < 1 {
+		count = 1
+	}
+	for i := 0; i < count; i++ {
+		r := rollFn()
+		total += r
+		parts = append(parts, strconv.Itoa(r))
+	}
+	return
 }
 
 func diceNotationToSides(notation string) int {

@@ -1123,7 +1123,8 @@
       "addConst": "+ Dodaj",
       "skillAbbr": "umiej.",
       "linkedAttrAbbr": "attr.pow.",
-      "attrSkillAbbr": "attr+umiej."
+      "attrSkillAbbr": "attr+umiej.",
+      "opDicePool": "Pula kości (NdK) — rzuć N razy i zsumuj"
     }
   },
   "dnd": {

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const OP_DISPLAY = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+const OP_DISPLAY = { '+': '+', '-': '−', '*': '×', '/': '÷', 'd': 'd' };
 const DICE_VALUES = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'];
 
 function makeId() {
@@ -48,17 +48,25 @@ export function formulaToString(blocks, t) {
   const ask = t ? t('creator.formula.attrSkillAbbr')  : 'attr+skill';
 
   if (!blocks || blocks.length === 0) return '—';
-  return blocks.map(b => {
-    if (b.type === 'dice')            return `⚄${b.value}`;
-    if (b.type === 'dice_attr')       return `⚄(${b.label || b.key})`;
-    if (b.type === 'dice_skill_attr') return `⚄(${ask})`;
-    if (b.type === 'op')              return ` ${OP_DISPLAY[b.value] || b.value} `;
-    if (b.type === 'attr')            return b.label || b.key;
-    if (b.type === 'skill')           return sk;
-    if (b.type === 'attr_linked')     return la;
-    if (b.type === 'const')           return String(b.num ?? b.value ?? '?');
-    return '?';
-  }).join('');
+  const parts = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    const afterPool = blocks[i - 1]?.type === 'op' && blocks[i - 1]?.value === 'd';
+    if (b.type === 'op') {
+      parts.push(b.value === 'd' ? 'd' : ` ${OP_DISPLAY[b.value] || b.value} `);
+    } else if (b.type === 'dice') {
+      parts.push(afterPool ? b.value.replace(/^d/, '') : `⚄${b.value}`);
+    } else if (b.type === 'dice_attr') {
+      parts.push(afterPool ? `(${b.label || b.key})` : `⚄(${b.label || b.key})`);
+    } else if (b.type === 'dice_skill_attr') {
+      parts.push(afterPool ? `(${ask})` : `⚄(${ask})`);
+    } else if (b.type === 'attr')        { parts.push(b.label || b.key); }
+    else if (b.type === 'skill')         { parts.push(sk); }
+    else if (b.type === 'attr_linked')   { parts.push(la); }
+    else if (b.type === 'const')         { parts.push(String(b.num ?? b.value ?? '?')); }
+    else                                 { parts.push('?'); }
+  }
+  return parts.join('');
 }
 
 const BLOCK_CLASS = {
@@ -226,6 +234,10 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
                 {OP_DISPLAY[op]}
               </button>
             ))}
+            <span className="fb__op-separator" />
+            <button className="fb__op-btn fb__op-btn--pool" onClick={() => addOp('d')} title={t('creator.formula.opDicePool')}>
+              d
+            </button>
           </div>
 
           {numberFields.length > 0 && (
