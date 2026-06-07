@@ -43,6 +43,11 @@ type RollResult struct {
 
 	// Custom formula breakdown — e.g. "d6+STR+2 = 3+8+2 = 13"
 	FormulaBreakdown string `json:"formulaBreakdown,omitempty"`
+
+	// Dice-pool mode results (only present when rolled in dice_pool mode).
+	PoolRolls            []int  `json:"poolRolls,omitempty"`
+	PoolSuccesses        int    `json:"poolSuccesses,omitempty"`
+	PoolSuccessCondition string `json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
 }
 
 // GameSystem is the interface every game-system plugin must implement.

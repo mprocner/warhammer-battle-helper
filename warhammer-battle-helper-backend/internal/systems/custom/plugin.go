@@ -151,6 +151,20 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 				}
 				continue
 			}
+			if field.Type == "skill_table" && strings.HasPrefix(skillKey, field.Key+".") && field.Rollable && field.RollConfig != nil {
+				linkedAttr := field.RollConfig.LinkedAttr
+				if field.AssignAttrToSkill {
+					suffix := skillKey[len(field.Key)+1:]
+					for _, opt := range field.Options {
+						normalized := strings.ToLower(strings.ReplaceAll(opt.Label, " ", "_"))
+						if normalized == suffix {
+							linkedAttr = opt.Attr
+							break
+						}
+					}
+				}
+				return field.RollConfig, linkedAttr, "skill_table", nil
+			}
 			if field.Key == skillKey && field.Rollable && field.RollConfig != nil {
 				return field.RollConfig, field.RollConfig.LinkedAttr, field.Type, nil
 			}

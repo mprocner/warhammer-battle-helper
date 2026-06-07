@@ -252,35 +252,79 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
 // ── RollConfigEditor ─────────────────────────────────────────────────────────
 
 function defaultRollConfig() {
-  return { formula: [], successType: 'below_threshold', rollAdvType: 'standard' };
+  return {
+    rollMode: 'traditional',
+    formula: [],
+    successType: 'below_threshold',
+    rollAdvType: 'standard',
+    poolSuccessThreshold: 6,
+    poolSuccessCondition: 'gte',
+  };
 }
 
 function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
   const { t } = useTranslation();
   const up = patch => onChange({ ...config, ...patch });
+  const rollMode = config.rollMode || 'traditional';
+
   return (
     <div className="creator__roll-config">
       <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {t('creator.rollMechanics')}
       </Typography>
 
+      <div className="creator__roll-mode-toggle">
+        {['traditional', 'dice_pool'].map(mode => (
+          <button
+            key={mode}
+            className={`creator__roll-mode-opt${rollMode === mode ? ' creator__roll-mode-opt--active' : ''}`}
+            onClick={() => up({ rollMode: mode })}
+          >
+            {t(mode === 'traditional' ? 'creator.rollModeTraditional' : 'creator.rollModeDicePool')}
+          </button>
+        ))}
+      </div>
+
       <FormulaBuilder
         formula={config.formula || []}
         onChange={formula => up({ formula })}
         numberFields={numberFields}
         fieldType={fieldType}
+        hideOperators={rollMode === 'dice_pool' ? ['/'] : []}
       />
 
       <Divider sx={{ my: 1.5 }} />
 
-      <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-        <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
-        <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
-          <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
-          <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
-          <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
-        </Select>
-      </FormControl>
+      {rollMode === 'traditional' ? (
+        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+          <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
+          <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+            <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
+            <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
+            <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
+          </Select>
+        </FormControl>
+      ) : (
+        <>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.dicePoolSuccessCondition')}</InputLabel>
+            <Select value={config.poolSuccessCondition || 'gte'} label={t('creator.dicePoolSuccessCondition')} onChange={e => up({ poolSuccessCondition: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+              <MenuItem value="gte">{t('creator.dicePoolConditionGte')}</MenuItem>
+              <MenuItem value="eq">{t('creator.dicePoolConditionEq')}</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            label={t('creator.dicePoolSuccessThreshold')}
+            value={config.poolSuccessThreshold ?? 6}
+            onChange={e => up({ poolSuccessThreshold: parseInt(e.target.value, 10) || 1 })}
+            sx={{ mb: 1 }}
+            InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }, inputProps: { min: 1 } }}
+          />
+        </>
+      )}
     </div>
   );
 }

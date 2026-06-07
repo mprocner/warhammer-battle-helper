@@ -82,7 +82,7 @@ const BLOCK_CLASS = {
 
 // ── FormulaBuilder ────────────────────────────────────────────────────────────
 
-function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
+function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperators = [] }) {
   const { t } = useTranslation();
   const [constDraft,   setConstDraft]   = useState('');
   const [diceAttrOpen, setDiceAttrOpen] = useState(false);
@@ -229,7 +229,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType }) {
 
           <div className="fb__subsection-label">{t('creator.formula.subsectionOps')}</div>
           <div className="fb__op-row">
-            {['+', '-', '*', '/'].map(op => (
+            {['+', '-', '*', '/'].filter(op => !hideOperators.includes(op)).map(op => (
               <button key={op} className="fb__op-btn" onClick={() => addOp(op)}>
                 {OP_DISPLAY[op]}
               </button>

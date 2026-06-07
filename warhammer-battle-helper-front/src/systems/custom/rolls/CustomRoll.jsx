@@ -62,9 +62,25 @@ function CustomRoll({ data, timestamp }) {
           {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
           {!data.formulaBreakdown && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
-        {data.formulaBreakdown && (
+        {data.poolRolls && data.poolRolls.length > 0 ? (
+          <div className="custom-pool-dice">
+            {data.poolRolls.map((roll, i) => {
+              const isSuccess = data.poolSuccessCondition === 'eq'
+                ? roll === data.target
+                : roll >= data.target;
+              return (
+                <span key={i} className={`custom-pool-die${isSuccess ? ' custom-pool-die--success' : ''}`}>
+                  {roll}
+                </span>
+              );
+            })}
+            <span className="custom-pool-success-count">
+              {t('customRoll.poolSuccesses', { count: data.poolSuccesses })}
+            </span>
+          </div>
+        ) : data.formulaBreakdown ? (
           <div className="log-formula-breakdown">{data.formulaBreakdown}</div>
-        )}
+        ) : null}
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {outcomeLabel}

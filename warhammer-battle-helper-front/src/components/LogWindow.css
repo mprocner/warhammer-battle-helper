@@ -546,6 +546,44 @@
   margin-top: 2px;
 }
 
+/* ================== DICE POOL RESULT ================== */
+.custom-pool-dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.custom-pool-die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(58, 47, 31, 0.08);
+  color: #8a7355;
+  border: 1px solid rgba(122, 92, 66, 0.2);
+}
+
+.custom-pool-die--success {
+  background: rgba(201, 151, 91, 0.2);
+  color: #7a4e1a;
+  border-color: #c9975b;
+}
+
+.custom-pool-success-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7a5c42;
+  margin-left: 3px;
+  font-family: var(--log-font-display);
+}
+
 /* ================== MESSAGE ICONS ================== */
 .log-icon {
   font-size: 1.2rem;

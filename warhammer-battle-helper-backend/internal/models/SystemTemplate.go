@@ -153,12 +153,20 @@ type RollConfig struct {
 	// as built by the visual FormulaBuilder in the template creator.
 	Formula []FormulaBlock `bson:"formula,omitempty" json:"formula,omitempty"`
 
+	// RollMode selects the evaluation strategy: "traditional" (sum formula, compare to threshold)
+	// or "dice_pool" (roll dice individually, count successes).
+	RollMode string `bson:"rollMode,omitempty" json:"rollMode,omitempty"`
+
 	SuccessType string `bson:"successType" json:"successType"` // "above_threshold"|"below_threshold"|"raw"
 	// Threshold is a simple formula string evaluated at roll time, e.g. "skill*5".
 	Threshold   string `bson:"threshold,omitempty" json:"threshold,omitempty"`
 	CritSuccess bool   `bson:"critSuccess" json:"critSuccess"`
 	CritFail    bool   `bson:"critFail" json:"critFail"`
 	RollAdvType string `bson:"rollAdvType" json:"rollAdvType"` // "standard"|"advantage"|"disadvantage"
+
+	// Dice-pool mode fields (only used when RollMode == "dice_pool").
+	PoolSuccessThreshold int    `bson:"poolSuccessThreshold,omitempty" json:"poolSuccessThreshold,omitempty"`
+	PoolSuccessCondition string `bson:"poolSuccessCondition,omitempty" json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
 
 	// Deprecated: superseded by Formula. Kept for backward compat with existing roller logic.
 	FormulaType string `bson:"formulaType,omitempty" json:"formulaType,omitempty"`

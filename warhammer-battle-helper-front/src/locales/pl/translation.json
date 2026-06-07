@@ -396,7 +396,8 @@
     "critical_success": "Krytyczny sukces!",
     "regular_success": "Sukces!",
     "failure": "Porażka!",
-    "fumble": "Krytyczna porażka!"
+    "fumble": "Krytyczna porażka!",
+    "poolSuccesses": "{{count}} sukces(ów)"
   },
   "combat": {
     "roll": "Rzuć",
@@ -1051,10 +1052,16 @@
     "fieldAdvancesDefault": "Rozwinięcie",
     "fieldAssignAttr": "Przypisz atrybut do umiejętności",
     "rollMechanics": "Mechanika rzutu",
+    "rollModeTraditional": "Tradycyjny",
+    "rollModeDicePool": "Pula kości",
     "rollSuccessCondition": "Warunek sukcesu",
     "rollBelowThreshold": "Wynik ≤ atrybut",
     "rollAboveThreshold": "Wynik ≥ atrybut",
     "rollRaw": "Surowy wynik",
+    "dicePoolSuccessCondition": "Warunek sukcesu",
+    "dicePoolConditionGte": "≥ (większe lub równe)",
+    "dicePoolConditionEq": "= (dokładnie)",
+    "dicePoolSuccessThreshold": "Wartość progu",
     "rollThresholdLabel": "Próg (formuła)",
     "rollThresholdHint": "Tokeny: skill, attr. Np. \"skill*5\", \"attr+10\"",
     "rollCritSuccess": "Krit sukces",

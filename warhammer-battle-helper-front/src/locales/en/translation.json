@@ -395,7 +395,8 @@
     "critical_success": "Critical success!",
     "regular_success": "Success!",
     "failure": "Failure!",
-    "fumble": "Critical failure!"
+    "fumble": "Critical failure!",
+    "poolSuccesses": "{{count}} success(es)"
   },
   "combat": {
     "roll": "Roll",
@@ -1054,10 +1055,16 @@
     "fieldAdvancesDefault": "Advance",
     "fieldAssignAttr": "Assign attribute to skill",
     "rollMechanics": "Roll mechanics",
+    "rollModeTraditional": "Traditional",
+    "rollModeDicePool": "Dice Pool",
     "rollSuccessCondition": "Success condition",
     "rollBelowThreshold": "Result ≤ attribute",
     "rollAboveThreshold": "Result ≥ attribute",
     "rollRaw": "Raw result",
+    "dicePoolSuccessCondition": "Success condition",
+    "dicePoolConditionGte": "≥ (greater or equal)",
+    "dicePoolConditionEq": "= (exactly)",
+    "dicePoolSuccessThreshold": "Success threshold",
     "rollThresholdLabel": "Threshold (formula)",
     "rollThresholdHint": "Tokens: skill, attr. E.g. \"skill*5\", \"attr+10\"",
     "rollCritSuccess": "Crit success",
