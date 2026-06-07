@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
+import StarIcon from '@mui/icons-material/Star';
 
 function labelToKey(label) {
   return label
@@ -21,6 +22,8 @@ function CustomSheetBody({
   onAddCustomSkill = null,
   onRemoveCustomSkill = null,
   onUpdateCustomSkill = null,
+  favoriteSkills = [],
+  onToggleFavorite = null,
 }) {
   const attrs    = values.attributes || {};
   const skills   = values.skills     || {};
@@ -174,6 +177,14 @@ function CustomSheetBody({
                   readOnly={readOnly}
                   min={0}
                 />
+                {onToggleFavorite && (
+                  <button
+                    className={`coc-star-btn${favoriteSkills.includes(key) ? ' coc-star-btn--active' : ''}`}
+                    onClick={() => onToggleFavorite(key)}
+                  >
+                    <StarIcon style={{ fontSize: 12 }} />
+                  </button>
+                )}
                 {fieldRollable && onRoll && (
                   <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey: key, label: node.label })}>
                     <CasinoIcon style={{ fontSize: 14 }} />
@@ -245,6 +256,14 @@ function CustomSheetBody({
             readOnly={readOnly}
             min={0}
           />
+          {onToggleFavorite && (
+            <button
+              className={`coc-star-btn${favoriteSkills.includes(path) ? ' coc-star-btn--active' : ''}`}
+              onClick={() => onToggleFavorite(path)}
+            >
+              <StarIcon style={{ fontSize: 12 }} />
+            </button>
+          )}
           {fieldRollable && onRoll && (
             <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey: path, label: node.label })}>
               <CasinoIcon style={{ fontSize: 14 }} />
@@ -467,6 +486,14 @@ function CustomSheetBody({
                       readOnly={readOnly}
                       min={0}
                     />
+                    {onToggleFavorite && (
+                      <button
+                        className={`coc-star-btn${favoriteSkills.includes(skillKey) ? ' coc-star-btn--active' : ''}`}
+                        onClick={() => onToggleFavorite(skillKey)}
+                      >
+                        <StarIcon style={{ fontSize: 12 }} />
+                      </button>
+                    )}
                     {field.rollable && onRoll && (
                       <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey, label: skillName })}>
                         <CasinoIcon style={{ fontSize: 14 }} />

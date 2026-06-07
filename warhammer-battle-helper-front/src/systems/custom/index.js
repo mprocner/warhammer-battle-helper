@@ -22,7 +22,9 @@ function normalizeCharacter(char) {
       skills:           s.skills           || {},
       texts:            s.texts            || {},
       progress:         s.progress         || {},
+      numbers:          s.numbers          || {},
       customSkillNodes: s.customSkillNodes || {},
+      favoriteSkills:   s.favoriteSkills   || [],
     },
   };
 }

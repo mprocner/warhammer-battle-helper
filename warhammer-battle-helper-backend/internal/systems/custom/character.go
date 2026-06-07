@@ -18,11 +18,13 @@ type CustomSkillNode struct {
 // Keys in Attributes and Skills match the field keys defined in the SystemTemplate.
 // Skill keys for tree nodes use dot-path notation: "bron_biala.jednorecz.miecz".
 type Stats struct {
-	Attributes       map[string]AttrValue       `bson:"attributes"              json:"attributes"`
-	Skills           map[string]int             `bson:"skills"                  json:"skills"`
-	Texts            map[string]string          `bson:"texts,omitempty"         json:"texts,omitempty"`
-	Progress         map[string]ProgressValue   `bson:"progress,omitempty"      json:"progress,omitempty"`
+	Attributes       map[string]AttrValue       `bson:"attributes"                json:"attributes"`
+	Skills           map[string]int             `bson:"skills"                    json:"skills"`
+	Texts            map[string]string          `bson:"texts,omitempty"           json:"texts,omitempty"`
+	Progress         map[string]ProgressValue   `bson:"progress,omitempty"        json:"progress,omitempty"`
+	Numbers          map[string]int             `bson:"numbers,omitempty"         json:"numbers,omitempty"`
 	CustomSkillNodes map[string]CustomSkillNode `bson:"customSkillNodes,omitempty" json:"customSkillNodes,omitempty"`
+	FavoriteSkills   []string                   `bson:"favoriteSkills,omitempty"  json:"favoriteSkills,omitempty"`
 }
 
 // ProgressValue stores current/max for progress-type fields (e.g. HP).

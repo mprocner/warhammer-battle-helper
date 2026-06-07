@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
+import StarIcon from '@mui/icons-material/Star';
 import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
@@ -76,6 +77,49 @@ function CustomCharacterDetails({
   const rollableFields = allFields.filter(f => f.type === 'attr' && f.rollable);
   const progressFields = allFields.filter(f => f.type === 'progress');
 
+  const favoriteSkillsData = useMemo(() => {
+    const favKeys = stats.favoriteSkills || [];
+    if (!favKeys.length) return [];
+    const allSkills = stats.skills || {};
+    const customNodes = stats.customSkillNodes || {};
+    const fields = template?.sections?.flatMap(s => s.fields || []) || [];
+
+    const findNodeLabel = (nodes, targetPath, currentPrefix) => {
+      for (const node of (nodes || [])) {
+        const nodePath = currentPrefix ? `${currentPrefix}.${node.key}` : node.key;
+        if (nodePath === targetPath) return node.label;
+        const found = findNodeLabel(node.children || [], targetPath, nodePath);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    return favKeys.map(key => {
+      // 1. Custom node
+      if (customNodes[key]?.label) return { skillKey: key, label: customNodes[key].label, value: allSkills[key] ?? 0 };
+      // 2. Skill table / Skill tree
+      for (const f of fields) {
+        if (f.type === 'skill_table' && key.startsWith(f.key + '.')) {
+          const suffix = key.slice(f.key.length + 1);
+          const opt = (f.options || []).find(o => {
+            const lbl = typeof o === 'string' ? o : o.label;
+            return lbl.toLowerCase().replace(/\s+/g, '_') === suffix;
+          });
+          if (opt) return { skillKey: key, label: typeof opt === 'string' ? opt : opt.label, value: allSkills[key] ?? 0 };
+        }
+        if (f.type === 'skill_tree') {
+          const treeRoot = f.tree;
+          const children = treeRoot?.children || (treeRoot ? [treeRoot] : []);
+          const found = findNodeLabel(children, key, treeRoot?.children ? f.key : '');
+          if (found) return { skillKey: key, label: found, value: allSkills[key] ?? 0 };
+        }
+      }
+      // 3. Fallback: prettify last key segment
+      const label = key.split('.').pop().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      return { skillKey: key, label, value: allSkills[key] ?? 0 };
+    });
+  }, [stats, template]);
+
   return (
     <div className="character-details custom-character-details">
       <CharacterHeader
@@ -133,6 +177,27 @@ function CustomCharacterDetails({
                 <CasinoIcon style={{ fontSize: 14 }} />
               </button>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Favourite skills */}
+      {favoriteSkillsData.length > 0 && (
+        <div className="custom-character-details__favorites">
+          <div className="custom-character-details__favorites-label">
+            <StarIcon style={{ fontSize: 11, verticalAlign: 'middle', marginRight: 4 }} />
+            {t('character.favoriteSkills')}
+          </div>
+          {favoriteSkillsData.map(s => (
+            <button
+              key={s.skillKey}
+              className="custom-character-details__favorite-item"
+              onClick={() => setRollModal({ skillKey: s.skillKey, label: s.label })}
+              disabled={!gameId}
+            >
+              <span className="custom-character-details__favorite-label">{s.label}</span>
+              <span className="custom-character-details__favorite-value">{s.value}</span>
+            </button>
           ))}
         </div>
       )}

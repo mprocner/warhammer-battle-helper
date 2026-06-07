@@ -30,6 +30,7 @@ function CustomCharacterSheet({
     progress:         stats.progress          || {},
     numbers:          stats.numbers           || {},
     customSkillNodes: stats.customSkillNodes  || {},
+    favoriteSkills:   stats.favoriteSkills    || [],
   });
   const [charName,   setCharName]   = useState(character?.name   || '');
   const [isSaving,   setIsSaving]   = useState(false);
@@ -49,6 +50,7 @@ function CustomCharacterSheet({
       progress:         s.progress          || {},
       numbers:          s.numbers           || {},
       customSkillNodes: s.customSkillNodes  || {},
+      favoriteSkills:   s.favoriteSkills    || [],
     });
     setCharName(character?.name || '');
     charNameRef.current = character?.name || '';
@@ -67,6 +69,7 @@ function CustomCharacterSheet({
         progress:         currentEdited.progress,
         numbers:          currentEdited.numbers,
         customSkillNodes: currentEdited.customSkillNodes,
+        favoriteSkills:   currentEdited.favoriteSkills,
       },
     };
     try {
@@ -162,6 +165,18 @@ function CustomCharacterSheet({
     triggerAutoSave(ne, charNameRef.current);
   };
 
+  const toggleFavoriteSkill = (skillKey) => {
+    setEdited(prev => {
+      const favs = prev.favoriteSkills || [];
+      const next = favs.includes(skillKey)
+        ? favs.filter(k => k !== skillKey)
+        : [...favs, skillKey];
+      const ne = { ...prev, favoriteSkills: next };
+      saveCharacter(ne, charNameRef.current);
+      return ne;
+    });
+  };
+
   const handleRoll = async (skillKey, mod = 0) => {
     if (!gameId) return;
     try {
@@ -202,6 +217,8 @@ function CustomCharacterSheet({
     onAddCustomSkill={addCustomSkillNode}
     onUpdateCustomSkill={updateCustomSkillNode}
     onRemoveCustomSkill={removeCustomSkillNode}
+    favoriteSkills={edited.favoriteSkills}
+    onToggleFavorite={toggleFavoriteSkill}
   />;
 
   return (

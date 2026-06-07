@@ -7401,6 +7401,58 @@ align-items: center;
     color: #7a5c42;
 }
 
+.custom-character-details__favorites {
+    margin-top: 10px;
+}
+
+.custom-character-details__favorites-label {
+    font-size: 10px;
+    color: #7a5c42;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-character-details__favorite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 4px 8px;
+    margin-bottom: 3px;
+    background: rgba(201, 151, 91, 0.12);
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #3a2f1f;
+    font-size: 12px;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.custom-character-details__favorite-item:hover:not(:disabled) {
+    background: rgba(201, 151, 91, 0.25);
+    border-color: #7a5c42;
+    transform: translateY(-1px);
+}
+
+.custom-character-details__favorite-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.custom-character-details__favorite-label {
+    flex: 1;
+}
+
+.custom-character-details__favorite-value {
+    font-weight: 700;
+    color: #c9975b;
+    margin-left: 8px;
+}
+
 /* --- Roll modifier overlay (shared by details + sheet) --- */
 
 .custom-roll-overlay {
