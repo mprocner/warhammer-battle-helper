@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import ConfirmModal from './common/ConfirmModal';
@@ -19,6 +19,10 @@ import SceneSelector from './scene/SceneSelector';
 import YahtzeeBoardModal from './minigame/YahtzeeBoardModal';
 import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
+import ToastStack from './ToastStack';
+import { useToastQueue } from '../hooks/useToastQueue';
+
+const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -40,6 +44,10 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
   const [minigameState, setMinigameState] = useState(null);
+  const [activeTab, setActiveTab] = useState('chat');
+
+  const { toasts, pushToast, dismissToast, pauseAll, resumeAll } = useToastQueue();
+  const isGMRef = useRef(false);
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -149,6 +157,14 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const handleWebSocketMessage = useCallback((message) => {
     // Delegate music events to the dedicated hook
     if (handleMusicMessage(message)) return;
+
+    // Push roll notifications — skip gm_only rolls for non-GM users
+    if (TOAST_ROLL_EVENTS.has(message.type)) {
+      const vis = message.payload?.visibility;
+      if (!vis || vis === 'all' || isGMRef.current) {
+        pushToast(message.payload);
+      }
+    }
 
     switch (message.type) {
       case WS_EVENTS.GAME_STATE:
@@ -653,7 +669,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onLeaveGame]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onLeaveGame, pushToast]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
@@ -683,6 +699,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   };
 
   const isGM = gameState?.gameMasterId === userId;
+  isGMRef.current = isGM;
 
   const displayScene = useMemo(() => {
     const scenes = gameState?.scenes || [];
@@ -905,6 +922,8 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onControlSchemeChange={setControlScheme}
           minigameState={minigameState}
           onReopenMinigameBoard={() => setMinigameState(prev => prev)}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
       </Box>
 
@@ -926,6 +945,15 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           onClose={() => setMinigameState(null)}
         />
       )}
+
+      <ToastStack
+        toasts={toasts}
+        onDismiss={dismissToast}
+        onNavigateToLog={() => setActiveTab('chat')}
+        onPauseAll={pauseAll}
+        onResumeAll={resumeAll}
+        gameSystem={gameState?.gameSystem}
+      />
 
       <ConfirmModal
         isOpen={showLeaveConfirm}

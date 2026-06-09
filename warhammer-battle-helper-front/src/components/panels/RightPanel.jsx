@@ -52,9 +52,13 @@ const RightPanel = ({
   onControlSchemeChange,
   minigameState = null,
   onReopenMinigameBoard,
+  activeTab: externalActiveTab,
+  onTabChange,
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('chat');
+  const [internalActiveTab, setInternalActiveTab] = useState('chat');
+  const activeTab = externalActiveTab ?? internalActiveTab;
+  const setActiveTab = onTabChange ?? setInternalActiveTab;
 
   // Get current user ID from token
   const getUserId = useCallback(() => {
