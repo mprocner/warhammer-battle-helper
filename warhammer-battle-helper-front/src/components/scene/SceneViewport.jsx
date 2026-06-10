@@ -443,7 +443,10 @@ const SceneViewport = ({
                   editingLayer={editingLayer}
                 />
 
-                <div className="scene-viewport__grid-layer" style={{ pointerEvents: 'none' }}>
+                <div
+                  className={`scene-viewport__grid-layer${isDrawingMode ? ' scene-viewport__grid-layer--drawing' : ''}`}
+                  style={{ pointerEvents: 'none' }}
+                >
                   {children}
                 </div>
 
