@@ -26,6 +26,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   const [newSceneHeight, setNewSceneHeight] = useState('20');
 
   // Draft states for grid dimension inputs (updated on blur, not on every keystroke)
+  const [draftName, setDraftName] = useState('');
   const [draftGridWidth, setDraftGridWidth] = useState('');
   const [draftGridHeight, setDraftGridHeight] = useState('');
   const [gridSizeError, setGridSizeError] = useState(false);
@@ -75,11 +76,12 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   // Sync draft grid inputs when selected scene changes or its data loads
   useEffect(() => {
     if (selectedScene) {
+      setDraftName(selectedScene.name);
       setDraftGridWidth(String(selectedScene.gridWidth));
       setDraftGridHeight(String(selectedScene.gridHeight));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSceneId, selectedScene?.gridWidth, selectedScene?.gridHeight]);
+  }, [selectedSceneId, selectedScene?.name, selectedScene?.gridWidth, selectedScene?.gridHeight]);
 
   // Close music picker when switching scenes
   useEffect(() => {
@@ -374,8 +376,16 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             <label>{t('scenes.name')}</label>
             <input
               type="text"
-              value={selectedScene.name}
-              onChange={(e) => handleUpdateScene('name', e.target.value)}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onBlur={() => {
+                const trimmed = draftName.trim();
+                if (trimmed && trimmed !== selectedScene.name) {
+                  handleUpdateScene('name', trimmed);
+                } else {
+                  setDraftName(selectedScene.name); // przywróć poprzednią, gdy puste
+                }
+              }}
             />
           </div>
 
