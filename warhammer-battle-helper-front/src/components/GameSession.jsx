@@ -79,8 +79,9 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   }, []);
 
   const addLogMessage = useCallback((message, type = 'info', data = null) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setLogs((prev) => [...prev, { message, type, timestamp, data }]);
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString();
+    setLogs((prev) => [...prev, { id: crypto.randomUUID(), createdAt: now.getTime(), message, type, timestamp, data }]);
   }, []);
 
   const fetchGameState = useCallback(async () => {
@@ -109,22 +110,24 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       if (game.events && Array.isArray(game.events) && !historyLoaded) {
         const historicalLogs = game.events.map(event => {
           let message = '';
+          const createdAt = new Date(event.createdAt).getTime();
           const timestamp = new Date(event.createdAt).toLocaleTimeString();
 
           switch (event.type) {
             case 'join':
               message = `${event.username} joined the game`;
-              return { message, type: 'success', timestamp };
+              return { createdAt, message, type: 'success', timestamp };
             case 'leave':
               message = `${event.username} left the game`;
-              return { message, type: 'info', timestamp };
+              return { createdAt, message, type: 'info', timestamp };
             case 'character_add':
               message = `${event.username} added character to battlefield`;
-              return { message, type: 'success', timestamp };
+              return { createdAt, message, type: 'success', timestamp };
             case 'move':
               return null;
             case 'dice_roll':
               return {
+                createdAt,
                 message: null,
                 type: 'dice_roll',
                 timestamp,
@@ -132,11 +135,11 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
               };
             case 'message':
               message = event.data.message || '';
-              return { message, type: event.data.type || 'info', timestamp, data: { username: event.username } };
+              return { createdAt, message, type: event.data.type || 'info', timestamp, data: { username: event.username, userId: event.createdBy } };
             default:
               return null;
           }
-        }).flat().filter(log => log !== null);
+        }).flat().filter(log => log !== null).map(log => ({ id: crypto.randomUUID(), ...log }));
 
         setLogs(historicalLogs);
         setHistoryLoaded(true);
@@ -280,7 +283,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         addLogMessage(
           message.payload.message,
           message.payload.type || 'info',
-          { username: message.payload.username }
+          { username: message.payload.username, userId: message.payload.userId }
         );
         break;
 

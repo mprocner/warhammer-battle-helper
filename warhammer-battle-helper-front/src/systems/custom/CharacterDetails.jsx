@@ -25,7 +25,7 @@ function CustomCharacterDetails({
   const [modifier,   setModifier]   = useState(0);
 
   const template   = game?.customSystemTemplate;
-  const stats      = character?.stats || {};
+  const stats      = useMemo(() => character?.stats || {}, [character?.stats]);
   const attributes = stats.attributes || {};
   const progress   = stats.progress   || {};
 

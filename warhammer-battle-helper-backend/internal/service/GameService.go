@@ -624,6 +624,7 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 		"message":  message,
 		"type":     messageType,
 		"username": username,
+		"userId":   userID.Hex(),
 	})
 
 	return nil

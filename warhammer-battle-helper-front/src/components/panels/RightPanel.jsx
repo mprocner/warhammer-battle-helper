@@ -147,6 +147,7 @@ const RightPanel = ({
           <LogWindow
             logs={logs}
             gameSystem={gameState?.gameSystem}
+            currentUserId={userId}
           />
         );
       case 'scenes':

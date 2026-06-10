@@ -31,9 +31,9 @@ const getMessageTypeClass = (type) => {
     }
 };
 
-const SimpleMessage = ({ text, type, timestamp, username }) => {
+const SimpleMessage = ({ text, type, timestamp, username, isMine = false, isNew = false }) => {
     return (
-        <li className={`log-simple-message ${getMessageTypeClass(type)}`}>
+        <li className={`log-simple-message ${getMessageTypeClass(type)}${isMine ? ' log-simple-message--mine' : ''}${isNew ? ' log-simple-message--new' : ''}`}>
             <div className="log-simple-message__content">
                 {getMessageIcon(type)}
                 <div>

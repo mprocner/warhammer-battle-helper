@@ -131,6 +131,8 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px;
+  /* Lewy padding wyrównuje tokeny ze wpisami "moje" (1px border + 12px = 5px border + 8px). */
+  padding-left: 12px;
   margin-bottom: 10px;
   background: var(--log-bg-item);
   border: 1px solid var(--log-brown-light);
@@ -274,6 +276,63 @@
 
 .log-simple-message--info {
   border-left-color: var(--log-info);
+}
+
+/* ================== CURRENT USER'S OWN ENTRIES ================== */
+/* Gruby złoty pasek z lewej + złoty gradient tła zanikający w prawo. */
+.log-list-item--mine {
+  border-left: 5px solid var(--log-gold-light);
+  /* Mniejszy lewy padding — gruby złoty border już odpycha treść (5px + 8px = 1px + 12px). */
+  padding-left: 8px;
+  background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, var(--log-bg-item) 40%);
+}
+
+.log-list-item--mine:hover {
+  background: linear-gradient(to right, rgba(212, 175, 55, 0.18) 0%, var(--log-bg-item-hover) 40%);
+}
+
+/* Wiadomości proste mają już 4px lewy border — zmieniamy jego kolor na złoty + delikatny tint.
+   Reguła po modyfikatorach typu (--info/--success/...), więc wygrywa kolejnością źródła. */
+.log-simple-message--mine {
+  border-left-color: var(--log-gold-light);
+  background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, rgba(255, 255, 255, 0.70) 40%);
+}
+
+/* ================== NEW MESSAGE HIGHLIGHT ================== */
+/* Bursztynowy "żar" — jedyny ciepły kolor nie zajęty semantycznie
+   (złoto = "moje", zielony = sukces, czerwony = porażka, fiolet = krytyk).
+   Poświata leży na box-shadow, więc nie koliduje z lewym borderem ("moje"/typ). */
+:root {
+  --log-new-glow: #c07028;
+  --log-new-glow-rgb: 192, 112, 40;
+}
+
+@keyframes log-new-highlight-fade {
+  /* 0%–15% (0–4,5 s): pełna poświata — natychmiast + przytrzymanie.
+     15%–100%: liniowy zanik do zera przez resztę 30 s. */
+  0%, 15% {
+    box-shadow: 0 0 0 2px var(--log-new-glow),
+                0 0 10px 2px rgba(var(--log-new-glow-rgb), 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(var(--log-new-glow-rgb), 0),
+                0 0 0 0 rgba(var(--log-new-glow-rgb), 0);
+  }
+}
+
+.log-list-item--new,
+.log-simple-message--new {
+  animation: log-new-highlight-fade 30s ease-out forwards;
+}
+
+/* Dostępność: bez ruchu — statyczna poświata zamiast zaniku.
+   Klasa i tak jest zdejmowana po 30 s przez JS, więc poświata zniknie. */
+@media (prefers-reduced-motion: reduce) {
+  .log-list-item--new,
+  .log-simple-message--new {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--log-new-glow);
+  }
 }
 
 .log-simple-message__content {
