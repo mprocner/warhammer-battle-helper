@@ -745,28 +745,46 @@ func (s *GameService) broadcastRoll(gameID, eventType string, payload map[string
 	}
 }
 
-// RollDice rolls dice and logs the result (simple die roll, no character lookup)
-func (s *GameService) RollDice(gameID string, sides int, userID primitive.ObjectID, username string, visibility string) (int, error) {
+// RollDice rolls one or more dice and logs the result (simple die roll, no character lookup)
+func (s *GameService) RollDice(gameID string, sides int, count int, userID primitive.ObjectID, username string, visibility string) ([]int, int, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
-		return 0, fmt.Errorf("game not found: %w", err)
+		return nil, 0, fmt.Errorf("game not found: %w", err)
 	}
 
 	dice := Dice{Sizes: sides}
-	result := dice.Roll()
+	results := dice.RollMany(count)
+	sum := 0
+	for _, r := range results {
+		sum += r
+	}
 
 	displayName := s.resolveDisplayNameForUser(game, userID, username)
 	if visibility == "" {
 		visibility = "all"
 	}
 
-	eventData := map[string]interface{}{
-		"rollType":     "simple",
-		"sides":        sides,
-		"result":       result,
-		"username":     displayName,
-		"visibility":   visibility,
-		"rollerUserId": userID.Hex(),
+	var eventData map[string]interface{}
+	if count > 1 {
+		eventData = map[string]interface{}{
+			"rollType":     "multi",
+			"sides":        sides,
+			"count":        count,
+			"results":      results,
+			"sum":          sum,
+			"username":     displayName,
+			"visibility":   visibility,
+			"rollerUserId": userID.Hex(),
+		}
+	} else {
+		eventData = map[string]interface{}{
+			"rollType":     "simple",
+			"sides":        sides,
+			"result":       results[0],
+			"username":     displayName,
+			"visibility":   visibility,
+			"rollerUserId": userID.Hex(),
+		}
 	}
 
 	event := models.GameEvent{
@@ -779,27 +797,29 @@ func (s *GameService) RollDice(gameID string, sides int, userID primitive.Object
 	}
 
 	if err := s.gameRepo.AddEvent(gameID, event); err != nil {
-		return 0, err
+		return nil, 0, err
 	}
 
-	go func(uID primitive.ObjectID, gID string, dieType, res int) {
+	go func(uID primitive.ObjectID, gID string, dieType int, res []int) {
 		gameObjID, err := primitive.ObjectIDFromHex(gID)
 		if err != nil {
 			return
 		}
-		if err := s.statsRepo.Record(&models.RollStat{
-			UserID:   uID,
-			GameID:   &gameObjID,
-			DieType:  dieType,
-			Result:   res,
-			RollType: "generic",
-		}); err != nil {
-			log.Printf("roll stats record failed: %v", err)
+		for _, r := range res {
+			if err := s.statsRepo.Record(&models.RollStat{
+				UserID:   uID,
+				GameID:   &gameObjID,
+				DieType:  dieType,
+				Result:   r,
+				RollType: "generic",
+			}); err != nil {
+				log.Printf("roll stats record failed: %v", err)
+			}
 		}
-	}(userID, gameID, sides, result)
+	}(userID, gameID, sides, results)
 
 	s.broadcastRoll(gameID, websocket.EventDiceRolled, eventData, visibility, userID, game.GameMasterID)
-	return result, nil
+	return results, sum, nil
 }
 
 // RollSkill rolls a skill/attribute check dispatched through the game system registry.

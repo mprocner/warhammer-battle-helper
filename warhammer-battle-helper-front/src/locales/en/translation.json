@@ -446,6 +446,8 @@
   },
   "log": {
     "rolledDice": "Rolled K{{sides}}: {{result}}",
+    "rolledMultiDice": "{{count}}D{{sides}}",
+    "sum": "Sum",
     "character": "Character",
     "test": "Test",
     "rolled": "rolled",
@@ -811,6 +813,9 @@
     "roll": "Roll",
     "chatPlaceholder": "Send a message...",
     "send": "Send",
+    "dieNotation": "D",
+    "numberOfDice": "Number of dice",
+    "numberOfSides": "Number of sides",
     "visibility": {
       "all": "Everyone",
       "gmAndRoller": "GM + Player",

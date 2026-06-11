@@ -13,3 +13,4 @@
 - [Notes Tab Design](notes-tab-design.md) — Privacy model, list layout (title-only), WYSIWYG placement, conflict banner, Tiptap recommendation (2026-04-15)
 - [Mini-games Tab Design](minigames-tab-design.md) — DraggablePopup board modal, Yahtzee setup form, scorecard multi-player layout, dice states (2026-04-24)
 - [Dice Poker Board Design](dice-poker-design.md) — Hidden dice mechanic, reveal phase animation, NPC name inputs, round tally layout (2026-04-25)
+- [Custom Dice Roll Design](custom-dice-roll-design.md) — XdY popup, drop-down vs flyout, multiplier badges, MultiDiceRoll log entry layout (2026-06-11)

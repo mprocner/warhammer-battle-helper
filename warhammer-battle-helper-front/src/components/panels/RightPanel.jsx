@@ -91,15 +91,19 @@ const RightPanel = ({
     }
   }, [gameId, token, addLogMessage]);
 
-  const rollDice = useCallback(async (sides) => {
+  const rollDice = useCallback(async (sides, count = 1) => {
     try {
       if (gameId && token) {
         const response = await fetch(`${getApiUrl()}/games/${gameId}/roll`, {
           method: 'POST',
           headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-          body: JSON.stringify({ sides, visibility: rollVisibility })
+          body: JSON.stringify({ sides, count, visibility: rollVisibility })
         });
         if (!response.ok) throw new Error('Failed to roll dice');
+      } else if (count > 1) {
+        const results = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+        const sum = results.reduce((acc, r) => acc + r, 0);
+        addLogMessage(`Rolled ${count}d${sides}: ${results.join(', ')} (sum ${sum})`, 'success');
       } else {
         const result = Math.floor(Math.random() * sides) + 1;
         addLogMessage(`Rolled d${sides}: ${result}`, 'success');

@@ -5,12 +5,14 @@ import CharacterSheetPopup from './CharacterSheet';
 import CharacterDetails from './CharacterDetails';
 import { buildPayload } from './buildPayload';
 import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
+import MultiDiceRoll from '../../components/log/MultiDiceRoll';
 import SkillRoll from './rolls/SkillRoll';
 import WeaponRoll from './rolls/WeaponRoll';
 import AttributeRoll from './rolls/AttributeRoll';
 
 const rollComponents = {
   simple: SimpleDiceRoll,
+  multi: MultiDiceRoll,
   skill: SkillRoll,
   weapon: WeaponRoll,
   attribute: AttributeRoll,

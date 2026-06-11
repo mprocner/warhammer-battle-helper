@@ -446,6 +446,8 @@
   },
   "log": {
     "rolledDice": "Rzucono K{{sides}}: {{result}}",
+    "rolledMultiDice": "{{count}}K{{sides}}",
+    "sum": "Suma",
     "character": "Postać",
     "test": "Test",
     "rolled": "rzucono",
@@ -811,6 +813,9 @@
     "roll": "Rzuć",
     "chatPlaceholder": "Wyślij wiadomość...",
     "send": "Wyślij",
+    "dieNotation": "K",
+    "numberOfDice": "Liczba kości",
+    "numberOfSides": "Liczba ścian",
     "visibility": {
       "all": "Wszyscy",
       "gmAndRoller": "MG + Gracz",

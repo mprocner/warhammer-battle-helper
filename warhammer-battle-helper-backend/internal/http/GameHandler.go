@@ -329,11 +329,20 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 
 	var req struct {
 		Sides      int    `json:"sides" binding:"required"`
+		Count      int    `json:"count"`
 		Visibility string `json:"visibility"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	count := req.Count
+	if count <= 0 {
+		count = 1
+	}
+	if count > 20 {
+		count = 20
 	}
 
 	// Get user from JWT
@@ -348,13 +357,13 @@ func (h *GameHandler) RollDice(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollDice(gameID, req.Sides, userID, username, req.Visibility)
+	results, sum, err := h.GameService.RollDice(gameID, req.Sides, count, userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"result": result, "sides": req.Sides})
+	c.JSON(http.StatusOK, gin.H{"results": results, "sum": sum, "sides": req.Sides, "count": count})
 }
 
 // RollSkill rolls a skill check in the game context and broadcasts to all players

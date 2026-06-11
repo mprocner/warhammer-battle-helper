@@ -3,6 +3,7 @@ import CoCCharacterSheet from './CharacterSheet';
 import { buildPayload } from './buildPayload';
 import CoCCharacterDetails from './CharacterDetails';
 import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
+import MultiDiceRoll from '../../components/log/MultiDiceRoll';
 import { createSkillRoll } from './rolls/SkillRoll';
 import CoCWeaponRoll from './rolls/WeaponRoll';
 import SanityRoll from './rolls/SanityRoll';
@@ -32,6 +33,7 @@ const CoCSkillRoll = createSkillRoll(skillsData);
 
 const rollComponents = {
   simple: SimpleDiceRoll,
+  multi:  MultiDiceRoll,
   skill:  CoCSkillRoll,
   weapon: CoCWeaponRoll,
   sanity: SanityRoll,

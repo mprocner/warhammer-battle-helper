@@ -9,7 +9,7 @@ const SimpleDiceRoll = ({ data, timestamp }) => {
 
     return (
         <>
-            <DiceResultToken result={result} sides={sides} />
+            <DiceResultToken result={result} sides={sides} colored={false} />
             <div className="log-list-item__content">
                 <div className="log-list-item__header">
                     <span className="log-list-item__character-name">

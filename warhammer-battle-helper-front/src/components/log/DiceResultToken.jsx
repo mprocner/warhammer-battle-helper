@@ -1,7 +1,7 @@
 import React from 'react';
 import '../LogWindow.css';
 
-const DiceResultToken = ({ result, sides }) => {
+const DiceResultToken = ({ result, sides, colored = true }) => {
     // Determine special roll status (for d100 or any dice)
     const isNatural1 = result === 1;
     const isNatural100 = result === sides && sides >= 100;
@@ -9,6 +9,7 @@ const DiceResultToken = ({ result, sides }) => {
     const isHighSpecial = result >= 96 && result <= (sides - 1) && sides >= 100;
 
     const getTokenClass = () => {
+        if (!colored) return 'wax-seal-token--neutral';
         if (isNatural1) return 'wax-seal-token--crit-success';
         if (isNatural100) return 'wax-seal-token--crit-failure';
         if (isLowSpecial) return 'wax-seal-token--success';
