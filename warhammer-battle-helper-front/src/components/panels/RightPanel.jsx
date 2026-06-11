@@ -32,7 +32,6 @@ const RightPanel = ({
   gameId,
   token,
   onLogout,
-  onLeaveGame,
   onGoToGameList,
   gameState,
   isConnected,
@@ -204,7 +203,6 @@ const RightPanel = ({
         return (
           <GeneralTab
             onLogout={onLogout}
-            onLeaveGame={onLeaveGame}
             onGoToGameList={onGoToGameList}
             gameState={gameState}
             isConnected={isConnected}

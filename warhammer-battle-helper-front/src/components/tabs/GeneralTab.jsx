@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
@@ -16,7 +15,7 @@ import './GeneralTab.css';
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token }) => {
+const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [statsOpen, setStatsOpen] = useState(true);
@@ -130,13 +129,6 @@ const GeneralTab = ({ onLogout, onLeaveGame, onGoToGameList, gameState, isConnec
           >
             <ArrowBackIcon fontSize="small" />
             {t('settings.backToGameList')}
-          </button>
-          <button
-            className="general-tab__action-btn general-tab__action-btn--leave"
-            onClick={onLeaveGame}
-          >
-            <ExitToAppIcon fontSize="small" />
-            {t('settings.leaveGame')}
           </button>
           <button
             className="general-tab__action-btn general-tab__action-btn--logout"

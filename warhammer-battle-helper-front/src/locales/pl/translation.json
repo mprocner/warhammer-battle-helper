@@ -493,6 +493,7 @@
     "polish": "Polski",
     "actions": "Akcje",
     "backToGameList": "Wróć do listy gier",
+    "backToGameListConfirm": "Czy na pewno chcesz wrócić do listy gier?",
     "leaveGame": "Opuść Grę",
     "leaveGameConfirm": "Czy na pewno chcesz opuścić trwającą sesję?",
     "logout": "Wyloguj",

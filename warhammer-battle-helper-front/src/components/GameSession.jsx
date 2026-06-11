@@ -27,7 +27,7 @@ const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
  */
-const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
+const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
   const { t } = useTranslation();
   const [gameState, setGameState] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -40,7 +40,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [pointerPings, setPointerPings] = useState([]);
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
   const [minigameState, setMinigameState] = useState(null);
@@ -61,7 +61,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
 
     const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
-      setShowLeaveConfirm(true);
+      setShowBackConfirm(true);
     };
 
     const handleBeforeUnload = (e) => {
@@ -177,7 +177,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         break;
 
       case WS_EVENTS.GAME_DELETED:
-        onLeaveGame();
+        onGoToGameList();
         break;
 
       case WS_EVENTS.PARTICIPANT_JOINED: {
@@ -672,7 +672,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onLeaveGame, pushToast]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onGoToGameList, pushToast]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
@@ -683,23 +683,6 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
   useEffect(() => {
     fetchGameState();
   }, [fetchGameState]);
-
-  const handleLeaveGame = async () => {
-    try {
-      const response = await fetch(`${getApiUrl()}/games/${gameId}/leave`, {
-        method: 'POST',
-        headers: getApiHeaders({
-          'Authorization': `Bearer ${token}`
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to leave game');
-
-      onLeaveGame();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   const isGM = gameState?.gameMasterId === userId;
   isGMRef.current = isGM;
@@ -813,7 +796,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <Button variant="contained" onClick={onLeaveGame}>
+        <Button variant="contained" onClick={onGoToGameList}>
           Back to Lobby
         </Button>
       </Box>
@@ -905,8 +888,7 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
           gameId={gameId}
           token={token}
           onLogout={onLogout}
-          onLeaveGame={() => setShowLeaveConfirm(true)}
-          onGoToGameList={onLeaveGame}
+          onGoToGameList={onGoToGameList}
           gameState={gameState}
           isConnected={isConnected}
           currentSceneId={displayScene?.id}
@@ -959,11 +941,14 @@ const GameSession = ({ gameId, token, onLeaveGame, onLogout }) => {
       />
 
       <ConfirmModal
-        isOpen={showLeaveConfirm}
-        message={t('settings.leaveGameConfirm')}
-        confirmLabel={t('settings.leaveGame')}
-        onConfirm={handleLeaveGame}
-        onCancel={() => setShowLeaveConfirm(false)}
+        isOpen={showBackConfirm}
+        message={t('settings.backToGameListConfirm')}
+        confirmLabel={t('settings.backToGameList')}
+        onConfirm={() => {
+          setShowBackConfirm(false);
+          onGoToGameList();
+        }}
+        onCancel={() => setShowBackConfirm(false)}
       />
     </Box>
   );

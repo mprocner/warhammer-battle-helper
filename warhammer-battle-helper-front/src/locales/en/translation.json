@@ -493,6 +493,7 @@
     "polish": "Polski",
     "actions": "Actions",
     "backToGameList": "Back to Game List",
+    "backToGameListConfirm": "Are you sure you want to go back to the game list?",
     "leaveGame": "Leave Game",
     "leaveGameConfirm": "Are you sure you want to leave the ongoing session?",
     "logout": "Logout",

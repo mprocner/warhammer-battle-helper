@@ -98,9 +98,9 @@ function App() {
         addLogMessage(`Joining game ${gameId}`, 'info');
     };
 
-    const handleLeaveGame = () => {
+    const handleGoToGameList = () => {
         setCurrentGameId(null);
-        addLogMessage('Left game', 'info');
+        addLogMessage('Returned to game list', 'info');
     };
 
     // Show loading spinner while checking auth status
@@ -174,7 +174,7 @@ function App() {
                                         <GameSession
                                             gameId={currentGameId}
                                             token={user.token}
-                                            onLeaveGame={handleLeaveGame}
+                                            onGoToGameList={handleGoToGameList}
                                             onLogout={handleLogout}
                                         />
                                     ) : (
