@@ -57,6 +57,7 @@ const RightPanel = ({
   const { t } = useTranslation();
   const [internalActiveTab, setInternalActiveTab] = useState('chat');
   const activeTab = externalActiveTab ?? internalActiveTab;
+  const [onlyMyRolls, setOnlyMyRolls] = useState(false);
   const setActiveTab = onTabChange ?? setInternalActiveTab;
 
   // Get current user ID from token
@@ -151,6 +152,7 @@ const RightPanel = ({
             logs={logs}
             gameSystem={gameState?.gameSystem}
             currentUserId={userId}
+            onlyMine={onlyMyRolls}
           />
         );
       case 'scenes':
@@ -283,7 +285,7 @@ const RightPanel = ({
             )}
           </div>
 
-          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} />
+          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} />
         </div>
       </div>
     </aside>

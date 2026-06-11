@@ -13,7 +13,8 @@ const LogWindow = ({
     maxMessages = 100,
     autoScroll = true,
     gameSystem = 'warhammer4e',
-    currentUserId = null
+    currentUserId = null,
+    onlyMine = false
 }) => {
     const system = getSystem(gameSystem);
     const logEndRef = useRef(null);
@@ -30,7 +31,14 @@ const LogWindow = ({
           }))
         : messages;
 
-    const trimmedMessages = allMessages.slice(-maxMessages);
+    const filteredMessages = onlyMine
+        ? allMessages.filter(msg => {
+            const authorId = msg.data?.rollerUserId || msg.data?.userId || null;
+            return Boolean(currentUserId && authorId && authorId === currentUserId);
+          })
+        : allMessages;
+
+    const trimmedMessages = filteredMessages.slice(-maxMessages);
 
     useEffect(() => {
         if (autoScroll && logEndRef.current) {

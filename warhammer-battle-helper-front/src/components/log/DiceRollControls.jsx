@@ -7,7 +7,7 @@ import '../LogWindow.css';
 const DICE = [4, 6, 8, 10, 12, 20, 100];
 const MAX_DICE_COUNT = 20;
 
-const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange }) => {
+const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls }) => {
     const { t } = useTranslation();
     const [chatMessage, setChatMessage] = useState('');
     const [isCustomPopupOpen, setIsCustomPopupOpen] = useState(false);
@@ -101,6 +101,14 @@ const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVis
                         </button>
                     </div>
                 )}
+                <button
+                    type="button"
+                    className={`dice-controls__my-rolls-toggle${onlyMyRolls ? ' dice-controls__my-rolls-toggle--active' : ''}`}
+                    onClick={() => onToggleOnlyMyRolls && onToggleOnlyMyRolls(!onlyMyRolls)}
+                    aria-pressed={onlyMyRolls}
+                >
+                    {t('dice.myRolls')}
+                </button>
                 <select
                     className="dice-controls__visibility-select"
                     value={rollVisibility}

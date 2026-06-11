@@ -816,6 +816,7 @@
     "dieNotation": "D",
     "numberOfDice": "Number of dice",
     "numberOfSides": "Number of sides",
+    "myRolls": "My rolls",
     "visibility": {
       "all": "Everyone",
       "gmAndRoller": "GM + Player",

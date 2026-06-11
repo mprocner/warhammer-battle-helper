@@ -816,6 +816,7 @@
     "dieNotation": "K",
     "numberOfDice": "Liczba kości",
     "numberOfSides": "Liczba ścian",
+    "myRolls": "Moje rzuty",
     "visibility": {
       "all": "Wszyscy",
       "gmAndRoller": "MG + Gracz",

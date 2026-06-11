@@ -672,6 +672,35 @@
   background: rgba(201, 151, 91, 0.15);
 }
 
+.dice-controls__my-rolls-toggle {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--log-brown-light);
+  border-radius: 4px;
+  color: var(--log-brown-text);
+  font-family: var(--log-font-body);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dice-controls__my-rolls-toggle:hover {
+  border-color: #a67c52;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.dice-controls__my-rolls-toggle--active,
+.dice-controls__my-rolls-toggle--active:hover {
+  background: var(--log-brown-accent);
+  border-color: var(--log-brown-accent);
+  color: #2a1f14;
+}
+
+.dice-controls__my-rolls-toggle--active:hover {
+  filter: brightness(0.92);
+}
+
 .dice-controls__visibility-select {
   flex: 1;
   min-width: 0;
