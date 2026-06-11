@@ -605,10 +605,17 @@ func (s *GameService) RemoveCharacter(gameID string, characterID primitive.Objec
 
 // AddLogMessage adds a message to the game log
 func (s *GameService) AddLogMessage(gameID string, message string, messageType string, userID primitive.ObjectID, username string) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return fmt.Errorf("game not found: %w", err)
+	}
+
+	displayName := s.resolveDisplayNameForUser(game, userID, username)
+
 	event := models.GameEvent{
 		Type:      models.EventTypeMessage,
 		CreatedBy: userID,
-		Username:  username,
+		Username:  displayName,
 		Data: map[string]interface{}{
 			"message": message,
 			"type":    messageType,
@@ -623,7 +630,7 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	s.hub.BroadcastToGame(gameID, websocket.EventLogMessage, map[string]interface{}{
 		"message":  message,
 		"type":     messageType,
-		"username": username,
+		"username": displayName,
 		"userId":   userID.Hex(),
 	})
 
