@@ -97,6 +97,12 @@ type TemplateSettings struct {
 	DiceButtons []int `bson:"diceButtons,omitempty" json:"diceButtons,omitempty"`
 }
 
+// DefaultDiceButtons is the dice set pre-populated on newly created templates,
+// matching the client-side fallback in DiceRollControls.
+func DefaultDiceButtons() []int {
+	return []int{4, 6, 8, 10, 12, 20, 100}
+}
+
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`

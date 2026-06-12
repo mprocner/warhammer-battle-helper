@@ -24,6 +24,7 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 		OwnerID:  ownerID,
 		Name:     req.Name,
 		Sections: req.Sections,
+		Settings: models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
 	}
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
