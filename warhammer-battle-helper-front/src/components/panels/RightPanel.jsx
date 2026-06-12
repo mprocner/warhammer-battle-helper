@@ -285,7 +285,7 @@ const RightPanel = ({
             )}
           </div>
 
-          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} />
+          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} />
         </div>
       </div>
     </aside>

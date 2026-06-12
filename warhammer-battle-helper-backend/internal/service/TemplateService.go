@@ -55,7 +55,7 @@ func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req mode
 	if t.OwnerID != ownerID {
 		return nil, fmt.Errorf("not authorized")
 	}
-	if err := s.repo.Update(id, req.Name, req.Sections); err != nil {
+	if err := s.repo.Update(id, req.Name, req.Sections, req.Settings); err != nil {
 		return nil, err
 	}
 	return s.repo.GetByID(id)

@@ -41,6 +41,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import FormulaBuilder from './FormulaBuilder';
+import DiceConfigBuilder from './DiceConfigBuilder';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -751,19 +752,23 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const { t } = useTranslation();
   const [sections,    setSections]    = useState(template?.sections || []);
   const [name,        setName]        = useState(template?.name     || '');
+  const [settings,    setSettings]    = useState(template?.settings || { diceButtons: [] });
   const [selected,    setSelected]    = useState(null); // { sectionIdx, fieldIdx: number|null }
   const [addingToSection, setAddingToSection] = useState(null); // sectionIdx | null
   const [isSaving,    setIsSaving]    = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab,   setActiveTab]   = useState('fields');
+  const [activeTab,   setActiveTab]   = useState('general');
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
   const saveTimer = useRef(null);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
 
   useEffect(() => {
     setSections(template?.sections || []);
     setName(template?.name || '');
+    setSettings(template?.settings || { diceButtons: [] });
     setSelected(null);
     setAddingToSection(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -776,7 +781,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
         method: 'PATCH',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ name: currentName, sections: currentSections }),
+        body: JSON.stringify({ name: currentName, sections: currentSections, settings: settingsRef.current }),
       });
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
@@ -876,6 +881,13 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const setNameAndSave = (newName) => {
     setName(newName);
     triggerSave(sections, newName);
+  };
+
+  const updateSettings = (patch) => {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    settingsRef.current = next; // sync so the debounced save reads fresh settings
+    triggerSave(sections, name);
   };
 
   // ── DnD ───────────────────────────────────────────────────────────────────
@@ -1052,10 +1064,18 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           </Box>
           <nav className="creator__tab-nav">
             <button
+              className={`creator__tab${activeTab === 'general' ? ' creator__tab--active' : ''}`}
+              onClick={() => setActiveTab('general')}
+            >
+              <span className="creator__tab-num">1</span>
+              {t('creator.tabGeneral')}
+            </button>
+            <span className="creator__tab-arrow">›</span>
+            <button
               className={`creator__tab${activeTab === 'fields' ? ' creator__tab--active' : ''}`}
               onClick={() => setActiveTab('fields')}
             >
-              <span className="creator__tab-num">1</span>
+              <span className="creator__tab-num">2</span>
               {t('creator.tabFields')}
             </button>
             <span className="creator__tab-arrow">›</span>
@@ -1063,7 +1083,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               className={`creator__tab${activeTab === 'preview' ? ' creator__tab--active' : ''}`}
               onClick={() => setActiveTab('preview')}
             >
-              <span className="creator__tab-num">2</span>
+              <span className="creator__tab-num">3</span>
               {t('creator.tabPreview')}
             </button>
           </nav>
@@ -1084,7 +1104,22 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       </DialogTitle>
 
       <DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
-        {activeTab === 'preview' ? <TemplatePreview sections={sections} name={name} /> : <>
+        {activeTab === 'general' ? (
+          <div className="creator__general">
+            <div className="creator__settings-card">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.diceTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.diceHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <DiceConfigBuilder
+                  dice={settings.diceButtons || []}
+                  onChange={d => updateSettings({ diceButtons: d })}
+                />
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'preview' ? <TemplatePreview sections={sections} name={name} /> : <>
 
         {/* Left: palette */}
         <aside className="creator__palette">

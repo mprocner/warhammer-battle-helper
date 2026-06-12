@@ -4,10 +4,11 @@ import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import '../LogWindow.css';
 
-const DICE = [4, 6, 8, 10, 12, 20, 100];
+const DEFAULT_DICE = [4, 6, 8, 10, 12, 20, 100];
 const MAX_DICE_COUNT = 20;
 
-const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls }) => {
+const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList }) => {
+    const DICE = (Array.isArray(diceList) && diceList.length) ? diceList : DEFAULT_DICE;
     const { t } = useTranslation();
     const [chatMessage, setChatMessage] = useState('');
     const [isCustomPopupOpen, setIsCustomPopupOpen] = useState(false);

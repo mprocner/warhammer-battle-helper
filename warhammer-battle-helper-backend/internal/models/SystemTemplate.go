@@ -89,6 +89,14 @@ type SectionDef struct {
 	Fields  []FieldDef `bson:"fields" json:"fields"`
 }
 
+// TemplateSettings holds template-wide options configured in the "General" tab
+// of the template creator (as opposed to per-field config).
+type TemplateSettings struct {
+	// DiceButtons is the ordered list of die face counts shown under the chat
+	// in the game session. Empty/nil means the client falls back to defaults.
+	DiceButtons []int `bson:"diceButtons,omitempty" json:"diceButtons,omitempty"`
+}
+
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
@@ -96,6 +104,7 @@ type SystemTemplate struct {
 	Name      string             `bson:"name" json:"name"`
 	Version   int                `bson:"version" json:"version"`
 	Sections  []SectionDef       `bson:"sections" json:"sections"`
+	Settings  TemplateSettings   `bson:"settings,omitempty" json:"settings"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
@@ -181,6 +190,7 @@ type CreateTemplateRequest struct {
 
 // UpdateTemplateRequest is the request body for PATCH /templates/:id.
 type UpdateTemplateRequest struct {
-	Name     *string      `json:"name"`
-	Sections []SectionDef `json:"sections"`
+	Name     *string           `json:"name"`
+	Sections []SectionDef      `json:"sections"`
+	Settings *TemplateSettings `json:"settings"`
 }

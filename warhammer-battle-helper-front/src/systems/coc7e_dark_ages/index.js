@@ -1,5 +1,6 @@
 import { buildPayload } from '../coc7e/buildPayload';
 import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
+import MultiDiceRoll from '../../components/log/MultiDiceRoll';
 import { createCharacterSheet, createCharacterDetails, createSkillRoll } from '../coc7e';
 import CoCWeaponRoll from '../coc7e/rolls/WeaponRoll';
 import SanityRoll from '../coc7e/rolls/SanityRoll';
@@ -15,6 +16,7 @@ const DarkAgesSkillRoll = createSkillRoll(skillsData);
 
 const rollComponents = {
   simple: SimpleDiceRoll,
+  multi:  MultiDiceRoll,
   skill:  DarkAgesSkillRoll,
   weapon: CoCWeaponRoll,
   sanity: SanityRoll,

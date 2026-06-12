@@ -66,7 +66,7 @@ func (r *TemplateRepository) ListByOwner(ownerID primitive.ObjectID) ([]models.S
 	return templates, nil
 }
 
-func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef) error {
+func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -81,6 +81,9 @@ func (r *TemplateRepository) Update(id string, name *string, sections []models.S
 	}
 	if sections != nil {
 		update["$set"].(bson.M)["sections"] = sections
+	}
+	if settings != nil {
+		update["$set"].(bson.M)["settings"] = *settings
 	}
 
 	res, err := r.collection.UpdateOne(ctx, bson.M{"_id": objID}, update)

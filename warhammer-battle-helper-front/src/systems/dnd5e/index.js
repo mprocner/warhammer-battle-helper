@@ -2,11 +2,13 @@ import DnD5eCharacterSheet   from './CharacterSheet';
 import DnD5eCharacterDetails from './CharacterDetails';
 import { buildPayload }       from './buildPayload';
 import SimpleDiceRoll         from '../../components/log/SimpleDiceRoll';
+import MultiDiceRoll          from '../../components/log/MultiDiceRoll';
 import DnD5eSkillRoll         from './rolls/SkillRoll';
 import DnD5eWeaponRoll        from './rolls/WeaponRoll';
 
 const rollComponents = {
   simple: SimpleDiceRoll,
+  multi:  MultiDiceRoll,
   skill:  DnD5eSkillRoll,
   weapon: DnD5eWeaponRoll,
 };
