@@ -500,8 +500,8 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
           {t('creator.sectionColumns')}
         </Typography>
         <div className="creator__layout-options">
-          {[1, 2, 3].map(n => {
-            const barWidth = n === 1 ? 36 : n === 2 ? 16 : 10;
+          {[1, 2, 3, 4, 5, 6].map(n => {
+            const barWidth = Math.max(3, Math.round((36 - (n - 1) * 2) / n));
             return (
               <button
                 key={n}
