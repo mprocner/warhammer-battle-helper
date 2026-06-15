@@ -3,7 +3,6 @@ package dnd5e
 import (
 	gsys "battle-helper/internal/systems"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -11,10 +10,12 @@ import (
 )
 
 // Plugin implements the systems.GameSystem interface for D&D 5e.
-type Plugin struct{}
+type Plugin struct {
+	rng gsys.Roller
+}
 
 // New returns an initialised D&D 5e plugin.
-func New() *Plugin { return &Plugin{} }
+func New() *Plugin { return &Plugin{rng: gsys.DefaultRoller()} }
 
 // DefaultStats returns a zero-value D&D 5e stats document as bson.Raw.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
@@ -47,19 +48,19 @@ func (p *Plugin) GetDisplayName(_ bson.Raw) string { return "" }
 // SetDisplayName returns stats unchanged — D&D 5e does not embed the name inside stats.
 func (p *Plugin) SetDisplayName(stats bson.Raw, _ string) (bson.Raw, error) { return stats, nil }
 
-func rollD20() int { return rand.Intn(20) + 1 }
+func (p *Plugin) rollD20() int { return p.rng.Intn(20) + 1 }
 
 // rollWithAdvantage rolls one or two d20s based on diceMod.
 // diceMod=1 → advantage (roll 2d20, take highest)
 // diceMod=-1 → disadvantage (roll 2d20, take lowest)
 // diceMod=0 → normal (roll 1d20)
 // Returns the final roll and all rolls made.
-func rollWithAdvantage(diceMod int) (int, []int) {
-	r1 := rollD20()
+func (p *Plugin) rollWithAdvantage(diceMod int) (int, []int) {
+	r1 := p.rollD20()
 	if diceMod == 0 {
 		return r1, []int{r1}
 	}
-	r2 := rollD20()
+	r2 := p.rollD20()
 	if diceMod > 0 {
 		// advantage: take higher
 		if r2 > r1 {
@@ -152,7 +153,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 		return nil, err
 	}
 
-	d20, allRolls := rollWithAdvantage(diceMod)
+	d20, allRolls := p.rollWithAdvantage(diceMod)
 	total := d20 + bonus + modifier
 
 	var outcome string
@@ -222,7 +223,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 		attackBonus += pb
 	}
 
-	d20, allRolls := rollWithAdvantage(diceMod)
+	d20, allRolls := p.rollWithAdvantage(diceMod)
 	attackTotal := d20 + attackBonus
 
 	isCrit := d20 == 20
@@ -251,9 +252,9 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 	var damageBreakdown string
 	if isHit && damage != "" {
 		if isCrit {
-			damageRoll, damageBreakdown = rollDamage(damage, abilityBonus, true)
+			damageRoll, damageBreakdown = p.rollDamage(damage, abilityBonus, true)
 		} else {
-			damageRoll, damageBreakdown = rollDamage(damage, abilityBonus, false)
+			damageRoll, damageBreakdown = p.rollDamage(damage, abilityBonus, false)
 		}
 	}
 
@@ -280,7 +281,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 
 // rollDamage rolls a damage formula like "1d8", "2d6", "1d4+2".
 // abilityMod is added to the total. On critical hit, all dice are doubled.
-func rollDamage(formula string, abilityMod int, isCrit bool) (int, string) {
+func (p *Plugin) rollDamage(formula string, abilityMod int, isCrit bool) (int, string) {
 	formula = strings.TrimSpace(strings.ToLower(formula))
 	if formula == "" {
 		return 0, ""
@@ -307,7 +308,7 @@ func rollDamage(formula string, abilityMod int, isCrit bool) (int, string) {
 				partTotal := 0
 				var diceResults []string
 				for i := 0; i < rolls; i++ {
-					r := rand.Intn(sides) + 1
+					r := p.rng.Intn(sides) + 1
 					partTotal += r
 					diceResults = append(diceResults, strconv.Itoa(r))
 				}

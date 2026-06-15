@@ -12,10 +12,12 @@ import (
 // Plugin implements systems.GameSystem for custom template-driven game systems.
 // Generic interface methods (RollSkill, RollWeapon) return an error directing
 // callers to use RollWithTemplate instead — the GameService handles this dispatch.
-type Plugin struct{}
+type Plugin struct {
+	rng gsys.Roller
+}
 
 // New returns an initialised custom plugin.
-func New() *Plugin { return &Plugin{} }
+func New() *Plugin { return &Plugin{rng: gsys.DefaultRoller()} }
 
 // DefaultStats returns an empty custom stats document.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
@@ -84,16 +86,16 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 	}
 
 	if len(rollCfg.Formula) > 0 {
-		return rollFromFormula(stats, template, skillKey, linkedAttr, rollCfg, modifier)
+		return p.rollFromFormula(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 	}
 
 	switch rollCfg.FormulaType {
 	case "attr_plus_skill_die":
-		return rollAttrPlusSkill(stats, template, skillKey, linkedAttr, rollCfg, modifier)
+		return p.rollAttrPlusSkill(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 	case "fixed_d100":
-		return rollFixedD100(stats, template, skillKey, linkedAttr, rollCfg, modifier)
+		return p.rollFixedD100(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 	case "fixed_d20_plus_mod":
-		return rollFixedD20(stats, template, skillKey, linkedAttr, rollCfg, modifier)
+		return p.rollFixedD20(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 	default:
 		return nil, fmt.Errorf("custom: unknown formulaType %q", rollCfg.FormulaType)
 	}

@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -36,13 +35,18 @@ func parseSkills(data []byte) map[string]skillDef {
 // Plugin implements the systems.GameSystem interface for Call of Cthulhu 7e.
 type Plugin struct {
 	skillDefaults map[string]skillDef
+	rng           gsys.Roller
 }
 
 // New returns an initialised CoC 7e plugin.
-func New() *Plugin { return &Plugin{skillDefaults: parseSkills(skillsJSON)} }
+func New() *Plugin {
+	return &Plugin{skillDefaults: parseSkills(skillsJSON), rng: gsys.DefaultRoller()}
+}
 
 // NewWithSkills returns a CoC plugin using the provided skills JSON (for system variants).
-func NewWithSkills(data []byte) *Plugin { return &Plugin{skillDefaults: parseSkills(data)} }
+func NewWithSkills(data []byte) *Plugin {
+	return &Plugin{skillDefaults: parseSkills(data), rng: gsys.DefaultRoller()}
+}
 
 // skillBaseValue returns the base percentage for a skill when not stored on the character.
 func (p *Plugin) skillBaseValue(stats *Stats, key string) int {
@@ -90,17 +94,17 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 	return &stats, nil
 }
 
-func rollD100() int { return rand.Intn(100) + 1 }
+func (p *Plugin) rollD100() int { return p.rng.Intn(100) + 1 }
 
 // rollWithDiceMod rolls a D100 applying CoC 7e bonus/penalty dice mechanics.
 // diceMod > 0 = bonus dice (pick lowest), diceMod < 0 = penalty dice (pick highest).
 // Returns the final roll and all candidate values.
-func rollWithDiceMod(diceMod int) (int, []int) {
-	main := rollD100()
+func (p *Plugin) rollWithDiceMod(diceMod int) (int, []int) {
+	main := p.rollD100()
 	units := main % 10
 	alts := []int{main}
 	for i := 0; i < abs(diceMod); i++ {
-		extraTens := rand.Intn(10) // 0–9
+		extraTens := p.rng.Intn(10) // 0–9
 		alt := extraTens*10 + units
 		if alt == 0 {
 			alt = 100 // 00+0 = 100 (fumble)
@@ -344,7 +348,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	}
 
 	target := skillPct + modifier
-	roll, allRolls := rollWithDiceMod(diceMod)
+	roll, allRolls := p.rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
 	return &gsys.RollResult{
@@ -386,10 +390,10 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	}
 
 	target := skillPct + modifier
-	roll, allRolls := rollWithDiceMod(diceMod)
+	roll, allRolls := p.rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
-	damageRoll, damageBreakdown := rollDamage(damage, stats.Combat.DamageBonus)
+	damageRoll, damageBreakdown := p.rollDamage(damage, stats.Combat.DamageBonus)
 
 	return &gsys.RollResult{
 		DiceType:        100,
@@ -409,7 +413,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 
 // rollDamage parses a CoC damage formula like "1d3+db", "1K3+MO", "1d10", "2d6+1".
 // Returns the total damage and a human-readable breakdown, e.g. "1K3(2) + MO(1) = 3".
-func rollDamage(formula, damageBonus string) (int, string) {
+func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
 	if formula == "" {
 		return 0, ""
 	}
@@ -426,7 +430,7 @@ func rollDamage(formula, damageBonus string) (int, string) {
 			continue
 		}
 		if seg == "db" {
-			dbVal := rollDamageBonus(damageBonus)
+			dbVal := p.rollDamageBonus(damageBonus)
 			breakParts = append(breakParts, formatDamageBonusPart(damageBonus, dbVal))
 			total += dbVal
 		} else if strings.Contains(seg, "d") {
@@ -437,7 +441,7 @@ func rollDamage(formula, damageBonus string) (int, string) {
 			if _, err := fmt.Sscanf(seg, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				partTotal := 0
 				for i := 0; i < num; i++ {
-					partTotal += rand.Intn(sides) + 1
+					partTotal += p.rng.Intn(sides) + 1
 				}
 				breakParts = append(breakParts, fmt.Sprintf("%dK%d(%d)", num, sides, partTotal))
 				total += partTotal
@@ -459,7 +463,7 @@ func rollDamage(formula, damageBonus string) (int, string) {
 }
 
 // rollDamageBonus evaluates the character's damage bonus string (e.g. "+1d4", "-1", "0").
-func rollDamageBonus(db string) int {
+func (p *Plugin) rollDamageBonus(db string) int {
 	if db == "" || db == "0" || db == "None" {
 		return 0
 	}
@@ -472,7 +476,7 @@ func rollDamageBonus(db string) int {
 	} else if strings.HasPrefix(db, "+") {
 		db = db[1:]
 	}
-	return sign * evalDiceFormula(strings.ToLower(db))
+	return sign * p.evalDiceFormula(strings.ToLower(db))
 }
 
 // formatDamageBonusPart returns a human-readable label for the damage bonus component,
@@ -498,7 +502,7 @@ func formatDamageBonusPart(db string, result int) string {
 	return strconv.Itoa(result)
 }
 
-func evalDiceFormula(formula string) int {
+func (p *Plugin) evalDiceFormula(formula string) int {
 	total := 0
 	parts := strings.Split(formula, "+")
 	for _, part := range parts {
@@ -511,7 +515,7 @@ func evalDiceFormula(formula string) int {
 			var num, sides int
 			if _, err := fmt.Sscanf(part, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				for i := 0; i < num; i++ {
-					total += rand.Intn(sides) + 1
+					total += p.rng.Intn(sides) + 1
 				}
 			}
 		} else {

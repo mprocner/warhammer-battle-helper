@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# Pre-push hook: run the backend Go test suite before allowing a push.
+# A non-zero exit aborts the push. Bypass in an emergency with:
+#     git push --no-verify
+#
+# Activated repo-wide via: git config core.hooksPath .githooks
+
+set -u
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BACKEND_DIR="$REPO_ROOT/warhammer-battle-helper-backend"
+
+echo "▶ pre-push: running backend Go tests..."
+
+cd "$BACKEND_DIR" || {
+	echo "✗ pre-push: cannot enter $BACKEND_DIR"
+	exit 1
+}
+
+if ! go test ./...; then
+	echo "✗ pre-push: backend tests failed — push aborted."
+	echo "  (bypass with 'git push --no-verify' if you really must)"
+	exit 1
+fi
+
+echo "✓ pre-push: all backend tests passed."

@@ -4,7 +4,6 @@ import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -13,13 +12,13 @@ import (
 
 // rollFromFormula evaluates a visual formula ([]FormulaBlock) against the
 // character's stats and returns a RollResult.
-func rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	if cfg.RollMode == "dice_pool" {
-		return rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, cfg, modifier)
+		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, cfg, modifier)
 	}
 
 	fmt.Println("[ROLL] Rolling from formula ")
-	result, diceType, labelStr, valueStr, err := evalFormula(cfg.Formula, stats, skillKey, linkedAttr)
+	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
@@ -76,7 +75,7 @@ func rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, li
 //   - diceType: faces of the first die rolled (for display)
 //   - labelStr: formula notation string, e.g. "d6+STR+2"
 //   - valueStr: resolved values string, e.g. "3+8+2"
-func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (result, diceType int, labelStr, valueStr string, err error) {
+func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (result, diceType int, labelStr, valueStr string, err error) {
 	if len(blocks) == 0 {
 		return 0, 0, "", "", fmt.Errorf("formula is empty")
 	}
@@ -111,12 +110,12 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
 				valueParts = valueParts[:len(valueParts)-1]
-				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				total, rollParts := evalDicePool(count, func() int { return p.rng.Intn(sides) + 1 })
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, fmt.Sprintf("%s%s", countLabel, b.Value))
 				valueParts = append(valueParts, strings.Join(rollParts, "+"))
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, b.Value)
 				valueParts = append(valueParts, strconv.Itoa(rolled))
@@ -141,12 +140,12 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
 				valueParts = valueParts[:len(valueParts)-1]
-				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				total, rollParts := evalDicePool(count, func() int { return p.rng.Intn(sides) + 1 })
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, fmt.Sprintf("%sd(%s)", countLabel, lbl))
 				valueParts = append(valueParts, strings.Join(rollParts, "+"))
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, "d("+lbl+")")
 				valueParts = append(valueParts, strconv.Itoa(rolled))
@@ -175,12 +174,12 @@ func evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAtt
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
 				valueParts = valueParts[:len(valueParts)-1]
-				total, rollParts := evalDicePool(count, func() int { return rand.Intn(sides) + 1 })
+				total, rollParts := evalDicePool(count, func() int { return p.rng.Intn(sides) + 1 })
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, countLabel+diceLabel)
 				valueParts = append(valueParts, strings.Join(rollParts, "+"))
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, diceLabel)
 				valueParts = append(valueParts, strconv.Itoa(rolled))
@@ -277,8 +276,8 @@ func evalDicePoolInts(count int, rollFn func() int) []int {
 }
 
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
-func rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	allRolls, diceType, labelStr, err := evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr)
+func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+	allRolls, diceType, labelStr, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval (pool): %w", err)
 	}
@@ -328,7 +327,7 @@ func rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skil
 // evalFormulaDicePool evaluates the formula for dice-pool mode.
 // Returns all individual dice results, die type, and a display label string.
 // For "d" operations it collects individual dice; arithmetic ops still work as die-count modifiers.
-func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (allRolls []int, diceType int, labelStr string, err error) {
+func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (allRolls []int, diceType int, labelStr string, err error) {
 	if len(blocks) == 0 {
 		return nil, 0, "", fmt.Errorf("formula is empty")
 	}
@@ -360,7 +359,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				countLabel := labelParts[len(labelParts)-1]
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return rand.Intn(sides) + 1 })
+				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
 				allRolls = append(allRolls, rolls...)
 				total := 0
 				for _, r := range rolls {
@@ -369,7 +368,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, fmt.Sprintf("%s%s", countLabel, b.Value))
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				allRolls = append(allRolls, rolled)
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, b.Value)
@@ -393,7 +392,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				countLabel := labelParts[len(labelParts)-1]
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return rand.Intn(sides) + 1 })
+				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
 				allRolls = append(allRolls, rolls...)
 				total := 0
 				for _, r := range rolls {
@@ -402,7 +401,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, fmt.Sprintf("%sd(%s)", countLabel, lbl))
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				allRolls = append(allRolls, rolled)
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, "d("+lbl+")")
@@ -430,7 +429,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				countLabel := labelParts[len(labelParts)-1]
 				segments = segments[:len(segments)-1]
 				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return rand.Intn(sides) + 1 })
+				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
 				allRolls = append(allRolls, rolls...)
 				total := 0
 				for _, r := range rolls {
@@ -439,7 +438,7 @@ func evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, l
 				segments = append(segments, segment{op: prevOp, val: total})
 				labelParts = append(labelParts, countLabel+diceLabel)
 			} else {
-				rolled := rand.Intn(sides) + 1
+				rolled := p.rng.Intn(sides) + 1
 				allRolls = append(allRolls, rolled)
 				segments = append(segments, segment{op: pendingOp, val: rolled})
 				labelParts = append(labelParts, diceLabel)
@@ -512,7 +511,7 @@ func diceNotationToSides(notation string) int {
 //
 // The larger the attribute + skill, the bigger the die — and therefore
 // the wider the range of outcomes.
-func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	attrValue := stats.Attributes[linkedAttr].Current
 	skillValue := skillValue(stats, skillKey)
 
@@ -521,7 +520,7 @@ func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, 
 		diceSize = 1
 	}
 
-	roll := rand.Intn(diceSize) + 1
+	roll := p.rng.Intn(diceSize) + 1
 	finalRoll := roll + modifier
 
 	threshold := evalThreshold(cfg.Threshold)
@@ -545,11 +544,11 @@ func rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, 
 }
 
 // rollFixedD100 implements a classic d100 roll-under mechanic.
-func rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	attrValue := stats.Attributes[linkedAttr].Current
 	sv := skillValue(stats, skillKey)
 
-	roll := rand.Intn(100) + 1
+	roll := p.rng.Intn(100) + 1
 	threshold := evalThreshold(cfg.Threshold)
 	if threshold == 0 {
 		threshold = attrValue + sv
@@ -572,11 +571,11 @@ func rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, link
 }
 
 // rollFixedD20 implements a d20 + modifier roll.
-func rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	attrValue := stats.Attributes[linkedAttr].Current
 	sv := skillValue(stats, skillKey)
 
-	roll := rand.Intn(20) + 1
+	roll := p.rng.Intn(20) + 1
 	bonus := attrModifier(attrValue) + sv + modifier
 	finalRoll := roll + bonus
 

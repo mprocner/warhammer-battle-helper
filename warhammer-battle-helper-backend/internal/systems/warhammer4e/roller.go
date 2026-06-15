@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -27,6 +26,7 @@ type skillDef struct {
 // Plugin implements the systems.GameSystem interface for Warhammer 4e.
 type Plugin struct {
 	skills []skillDef
+	rng    gsys.Roller
 }
 
 // New returns an initialised Warhammer4e plugin.
@@ -35,7 +35,7 @@ func New() *Plugin {
 	if err := json.Unmarshal(skillsJSON, &skills); err != nil {
 		panic("warhammer4e: failed to parse skills.json: " + err.Error())
 	}
-	return &Plugin{skills: skills}
+	return &Plugin{skills: skills, rng: gsys.DefaultRoller()}
 }
 
 // DefaultStats returns an empty Warhammer stats document as bson.Raw.
@@ -66,7 +66,7 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 }
 
 // rollD100 returns a value in [1, 100].
-func rollD100() int { return rand.Intn(100) + 1 }
+func (p *Plugin) rollD100() int { return p.rng.Intn(100) + 1 }
 
 // findSkill looks up the skill definition by key or parent key (for compound keys like "MELEE_BASIC").
 func (p *Plugin) findSkill(skillKey string) *skillDef {
@@ -186,7 +186,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, _ int, _
 
 	skillValue := charValue + advances
 	target := skillValue + modifier
-	roll := rollD100()
+	roll := p.rollD100()
 	success := roll <= target
 	sl := (target / 10) - (roll / 10)
 
@@ -229,12 +229,12 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 
 	skillValue := charValue + advances
 	target := skillValue + modifier
-	roll := rollD100()
+	roll := p.rollD100()
 	success := roll <= target
 	sl := (target / 10) - (roll / 10)
 
 	// Parse and roll damage dice (e.g. "+4", "1d6+3", "2d10")
-	damageRoll := rollDamage(damage, sl)
+	damageRoll := p.rollDamage(damage, sl)
 
 	return &gsys.RollResult{
 		DiceType:     100,
@@ -305,7 +305,7 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 // rollDamage parses a WFRP damage string and returns the total rolled value.
 // Damage formulas can be "+SL", "1d10+SL", "1d6+3" etc.
 // SL is passed in so we can substitute it.
-func rollDamage(formula string, sl int) int {
+func (p *Plugin) rollDamage(formula string, sl int) int {
 	if formula == "" {
 		return 0
 	}
@@ -324,7 +324,7 @@ func rollDamage(formula string, sl int) int {
 			var num, sides int
 			if _, err := fmt.Sscanf(part, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				for i := 0; i < num; i++ {
-					total += rand.Intn(sides) + 1
+					total += p.rng.Intn(sides) + 1
 				}
 			}
 		} else {

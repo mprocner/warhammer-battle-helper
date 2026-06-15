@@ -601,7 +601,7 @@ func (h *GameHandler) GetFeatures(c *gin.Context) {
 		claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
 		email, _ = claims["email"].(string)
 	}
-	fmt.Printf("[GetFeatures] email=%q, jwt_present=%v, auth_header=%q\n",
+	fmt.Printf("[GetFeatures] email=%q, jwt_present=%v, auth_header=%v\n",
 		email, c.GetString("jwt") != "" || email != "", c.GetHeader("Authorization") != "")
 	allSystems := registry.ListSystems()
 	allowed := h.FeatureToggles.AllowedSystemsFor(allSystems, email)
