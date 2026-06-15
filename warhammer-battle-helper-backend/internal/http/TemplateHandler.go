@@ -71,6 +71,26 @@ func (h *TemplateHandler) UpdateTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, updated)
 }
 
+// CloneTemplate creates a private copy of a visible template for the authenticated user.
+func (h *TemplateHandler) CloneTemplate(c *gin.Context) {
+	var req models.CloneTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userID := mustUserID(c)
+	clone, err := h.TemplateService.Clone(c.Param("id"), userID, req.Name)
+	if err != nil {
+		if err.Error() == "not authorized" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, clone)
+}
+
 // DeleteTemplate deletes a template owned by the authenticated user.
 func (h *TemplateHandler) DeleteTemplate(c *gin.Context) {
 	userID := mustUserID(c)

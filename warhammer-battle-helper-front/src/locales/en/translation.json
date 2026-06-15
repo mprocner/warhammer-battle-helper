@@ -1024,6 +1024,10 @@
     "deleteConfirm": "Delete template \"{{name}}\"?",
     "createTemplate": "Create template",
     "editTemplate": "Edit template",
+    "cloneTemplate": "Clone template",
+    "copySuffix": "(copy)",
+    "publicBadge": "Public",
+    "sharedTemplate": "shared by another player",
     "templateCreated": "Template created",
     "noTemplate": "No template defined for this game",
     "syncTemplate": "Sync template to game",
@@ -1052,7 +1056,12 @@
     "tabPreview": "Preview",
     "general": {
       "diceTitle": "Dice Buttons",
-      "diceHint": "Choose which dice appear under the chat during play."
+      "diceHint": "Choose which dice appear under the chat during play.",
+      "visibilityTitle": "Visibility",
+      "visibilityHint": "Public templates can be used by anyone creating a game, but only you can edit them.",
+      "makePublic": "Public template",
+      "publicDesc": "Everyone can use this template to create a game (read-only for others).",
+      "privateDesc": "Only you can see and use this template."
     },
     "addSection": "Add section",
     "addField": "Add field",

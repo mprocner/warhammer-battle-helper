@@ -105,14 +105,22 @@ func DefaultDiceButtons() []int {
 
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	OwnerID   primitive.ObjectID `bson:"ownerId" json:"ownerId"`
-	Name      string             `bson:"name" json:"name"`
-	Version   int                `bson:"version" json:"version"`
-	Sections  []SectionDef       `bson:"sections" json:"sections"`
-	Settings  TemplateSettings   `bson:"settings,omitempty" json:"settings"`
-	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	OwnerID  primitive.ObjectID `bson:"ownerId" json:"ownerId"`
+	Name     string             `bson:"name" json:"name"`
+	Version  int                `bson:"version" json:"version"`
+	Sections []SectionDef       `bson:"sections" json:"sections"`
+	Settings TemplateSettings   `bson:"settings,omitempty" json:"settings"`
+	// IsPublic exposes the template to everyone creating a game (read-only for non-owners).
+	IsPublic bool `bson:"isPublic" json:"isPublic"`
+	// OriginTemplateID points to the template this one was cloned from (zero/absent for originals).
+	OriginTemplateID primitive.ObjectID `bson:"originTemplateId,omitempty" json:"originTemplateId,omitempty"`
+	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
+
+	// IsOwner is computed per-request (not persisted): true when the requesting
+	// user owns this template. The client uses it to gate edit/delete actions.
+	IsOwner bool `bson:"-" json:"isOwner"`
 }
 
 // FieldDef describes one field in a custom character sheet.
@@ -199,4 +207,10 @@ type UpdateTemplateRequest struct {
 	Name     *string           `json:"name"`
 	Sections []SectionDef      `json:"sections"`
 	Settings *TemplateSettings `json:"settings"`
+	IsPublic *bool             `json:"isPublic"`
+}
+
+// CloneTemplateRequest is the request body for POST /templates/:id/clone.
+type CloneTemplateRequest struct {
+	Name string `json:"name"` // full localized name (with "(copy)" suffix); optional
 }

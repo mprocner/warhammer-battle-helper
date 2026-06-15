@@ -1021,6 +1021,10 @@
     "deleteConfirm": "Czy na pewno chcesz usunąć szablon \"{{name}}\"?",
     "createTemplate": "Utwórz szablon",
     "editTemplate": "Edytuj szablon",
+    "cloneTemplate": "Sklonuj szablon",
+    "copySuffix": "(kopia)",
+    "publicBadge": "Publiczny",
+    "sharedTemplate": "udostępniony przez innego gracza",
     "templateCreated": "Szablon utworzony",
     "noTemplate": "Brak szablonu dla tej gry",
     "syncTemplate": "Synchronizuj szablon z grą",
@@ -1049,7 +1053,12 @@
     "tabPreview": "Podgląd",
     "general": {
       "diceTitle": "Kości pod czatem",
-      "diceHint": "Wybierz, które kości pojawiają się pod czatem w grze."
+      "diceHint": "Wybierz, które kości pojawiają się pod czatem w grze.",
+      "visibilityTitle": "Widoczność",
+      "visibilityHint": "Publiczne szablony może wykorzystać każdy przy tworzeniu gry, ale edytować możesz je tylko Ty.",
+      "makePublic": "Szablon publiczny",
+      "publicDesc": "Każdy może użyć tego szablonu do stworzenia gry (dla innych tylko do odczytu).",
+      "privateDesc": "Tylko Ty widzisz i możesz użyć tego szablonu."
     },
     "addSection": "Dodaj sekcję",
     "addField": "Dodaj pole",

@@ -23,6 +23,8 @@ import ListIcon from '@mui/icons-material/List';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import PublicIcon from '@mui/icons-material/Public';
+import LockIcon from '@mui/icons-material/Lock';
 import {
   DndContext as DndKitContext,
   closestCenter,
@@ -753,6 +755,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [sections,    setSections]    = useState(template?.sections || []);
   const [name,        setName]        = useState(template?.name     || '');
   const [settings,    setSettings]    = useState(template?.settings || { diceButtons: [] });
+  const [isPublic,    setIsPublic]    = useState(template?.isPublic || false);
   const [selected,    setSelected]    = useState(null); // { sectionIdx, fieldIdx: number|null }
   const [addingToSection, setAddingToSection] = useState(null); // sectionIdx | null
   const [isSaving,    setIsSaving]    = useState(false);
@@ -764,11 +767,14 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   sectionsRef.current = sections;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const isPublicRef = useRef(isPublic);
+  isPublicRef.current = isPublic;
 
   useEffect(() => {
     setSections(template?.sections || []);
     setName(template?.name || '');
     setSettings(template?.settings || { diceButtons: [] });
+    setIsPublic(template?.isPublic || false);
     setSelected(null);
     setAddingToSection(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -781,7 +787,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
         method: 'PATCH',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ name: currentName, sections: currentSections, settings: settingsRef.current }),
+        body: JSON.stringify({ name: currentName, sections: currentSections, settings: settingsRef.current, isPublic: isPublicRef.current }),
       });
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
@@ -887,6 +893,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     const next = { ...settings, ...patch };
     setSettings(next);
     settingsRef.current = next; // sync so the debounced save reads fresh settings
+    triggerSave(sections, name);
+  };
+
+  const setPublicAndSave = (value) => {
+    setIsPublic(value);
+    isPublicRef.current = value; // sync so the debounced save reads the fresh value
     triggerSave(sections, name);
   };
 
@@ -1106,6 +1118,30 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       <DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
         {activeTab === 'general' ? (
           <div className="creator__general">
+            <div className="creator__settings-card">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.visibilityTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.visibilityHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <FormControlLabel
+                  control={<Switch checked={isPublic} onChange={e => setPublicAndSave(e.target.checked)} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      {isPublic
+                        ? <PublicIcon sx={{ fontSize: 18, color: '#c9975b' }} />
+                        : <LockIcon sx={{ fontSize: 18, color: '#7a5c42' }} />}
+                      <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem', color: '#3a2f1f' }}>
+                        {t('creator.general.makePublic')}
+                      </Typography>
+                    </Box>
+                  }
+                />
+                <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', mt: 0.5, ml: 0.5 }}>
+                  {isPublic ? t('creator.general.publicDesc') : t('creator.general.privateDesc')}
+                </Typography>
+              </div>
+            </div>
             <div className="creator__settings-card">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.diceTitle')}</span>

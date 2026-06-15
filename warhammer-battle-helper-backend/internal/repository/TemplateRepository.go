@@ -49,11 +49,17 @@ func (r *TemplateRepository) GetByID(id string) (*models.SystemTemplate, error) 
 	return &t, nil
 }
 
-func (r *TemplateRepository) ListByOwner(ownerID primitive.ObjectID) ([]models.SystemTemplate, error) {
+// ListVisibleToUser returns templates the user may use when creating a game:
+// their own templates plus every public template, newest first.
+func (r *TemplateRepository) ListVisibleToUser(ownerID primitive.ObjectID) ([]models.SystemTemplate, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := r.collection.Find(ctx, bson.M{"ownerId": ownerID}, options.Find().SetSort(bson.M{"createdAt": -1}))
+	filter := bson.M{"$or": bson.A{
+		bson.M{"ownerId": ownerID},
+		bson.M{"isPublic": true},
+	}}
+	cursor, err := r.collection.Find(ctx, filter, options.Find().SetSort(bson.M{"createdAt": -1}))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +72,7 @@ func (r *TemplateRepository) ListByOwner(ownerID primitive.ObjectID) ([]models.S
 	return templates, nil
 }
 
-func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings) error {
+func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings, isPublic *bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -84,6 +90,9 @@ func (r *TemplateRepository) Update(id string, name *string, sections []models.S
 	}
 	if settings != nil {
 		update["$set"].(bson.M)["settings"] = *settings
+	}
+	if isPublic != nil {
+		update["$set"].(bson.M)["isPublic"] = *isPublic
 	}
 
 	res, err := r.collection.UpdateOne(ctx, bson.M{"_id": objID}, update)

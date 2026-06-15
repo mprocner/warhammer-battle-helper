@@ -40,6 +40,8 @@ import TuneIcon from '@mui/icons-material/Tune';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import SyncIcon from '@mui/icons-material/Sync';
+import PublicIcon from '@mui/icons-material/Public';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
   const { t } = useTranslation();
@@ -230,6 +232,19 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
     } catch { /* ignore */ } finally {
       setConfirmDeleteTemplate(null);
     }
+  };
+
+  const handleCloneTemplate = async (tmpl) => {
+    try {
+      const res = await fetch(`${getApiUrl()}/templates/${tmpl.id}/clone`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ name: `${tmpl.name} ${t('creator.copySuffix')}` }),
+      });
+      if (!res.ok) throw new Error('clone failed');
+      const clone = await res.json();
+      setTemplates(prev => [clone, ...prev]);
+    } catch { /* ignore */ }
   };
 
   const handleSelectTemplate = (template) => {
@@ -491,21 +506,39 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
                     '&:hover': { background: 'rgba(255,255,255,0.7)' } }}
                   onClick={() => handleSelectTemplate(tmpl)}>
                   <ListItemText
-                    primary={<Typography sx={{ fontFamily: 'Cinzel, serif', fontWeight: 600, fontSize: '0.95rem', color: 'primary.main', px: 1.5, py: 0.5 }}>{tmpl.name}</Typography>}
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.5 }}>
+                        <Typography sx={{ fontFamily: 'Cinzel, serif', fontWeight: 600, fontSize: '0.95rem', color: 'primary.main' }}>{tmpl.name}</Typography>
+                        {tmpl.isPublic && (
+                          <Chip icon={<PublicIcon sx={{ fontSize: '0.9rem !important' }} />} label={t('creator.publicBadge')} size="small"
+                            sx={{ height: 20, fontFamily: 'Crimson Text, serif', fontSize: '0.7rem', color: 'primary.main', borderColor: 'primary.light' }}
+                            variant="outlined" />
+                        )}
+                      </Box>
+                    }
                     secondary={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', px: 1.5, pb: 0.5 }}>
-                      v{tmpl.version} · {tmpl.fields?.length || 0} {t('creator.fields')}
+                      v{tmpl.version} · {tmpl.fields?.length || 0} {t('creator.fields')}{!tmpl.isOwner && ` · ${t('creator.sharedTemplate')}`}
                     </Typography>}
                   />
                   <ListItemSecondaryAction>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditingTemplate(tmpl); setOpenCreatorDialog(false); }}
-                      onMouseEnter={e => showTooltip(t('creator.editTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleCloneTemplate(tmpl); }}
+                      onMouseEnter={e => showTooltip(t('creator.cloneTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
                       sx={{ color: 'primary.main', mr: 0.5 }}>
-                      <EditIcon fontSize="small" />
+                      <ContentCopyIcon fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setConfirmDeleteTemplate(tmpl); }}
-                      sx={{ color: 'error.light' }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    {tmpl.isOwner && (
+                      <>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditingTemplate(tmpl); setOpenCreatorDialog(false); }}
+                          onMouseEnter={e => showTooltip(t('creator.editTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
+                          sx={{ color: 'primary.main', mr: 0.5 }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setConfirmDeleteTemplate(tmpl); }}
+                          sx={{ color: 'error.light' }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
                   </ListItemSecondaryAction>
                 </ListItem>
               ))}

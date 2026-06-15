@@ -190,6 +190,7 @@ func main() {
 	auth.POST("/templates", templateHandler.CreateTemplate)
 	auth.GET("/templates/:id", templateHandler.GetTemplate)
 	auth.PATCH("/templates/:id", templateHandler.UpdateTemplate)
+	auth.POST("/templates/:id/clone", templateHandler.CloneTemplate)
 	auth.DELETE("/templates/:id", templateHandler.DeleteTemplate)
 
 	// Games
