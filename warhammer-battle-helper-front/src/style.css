@@ -8052,52 +8052,98 @@ align-items: center;
 }
 
 
-.custom-sheet__field--number-advances {
+/* Attribute field — vertical layout: header (label + dice) then stacked
+   label|value rows. Narrow by design so it survives multi-column sections. */
+.custom-sheet__attr {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: 4px;
+    padding: 8px 10px;
+    background: rgba(255, 249, 240, 0.55);
+    border: 1px solid #c4a882;
+    border-radius: 6px;
 }
 
-.custom-sheet__advances-row {
+.custom-sheet__attr-header {
     display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(201, 151, 91, 0.4);
 }
 
-.custom-sheet__advances-cell {
+.custom-sheet__attr-rows {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    gap: 3px;
 }
 
-.custom-sheet__advances-sublabel {
-    font-size: 0.68rem;
+.custom-sheet__attr-row {
+    display: grid;
+    grid-template-columns: 1fr 52px;
+    align-items: center;
+    gap: 6px;
+}
+
+.custom-sheet__attr-row-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
     color: #7a5c42;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.custom-sheet__advances-sum {
+/* Base input — highlighted (the prominent editable number). */
+.custom-sheet__attr-input {
+    background: #fff9f0;
+    border: 2px solid #7a5c42;
+    color: #3a2f1f;
+    border-radius: 4px;
+    padding: 3px 6px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    transition: border-color 0.15s;
+}
+
+.custom-sheet__attr-input:focus {
+    outline: none;
+    border-color: #c9975b;
+}
+
+/* Advances input — muted secondary modifier. */
+.custom-sheet__attr-input--adv {
+    border: 1px solid #c4a882;
+    color: #6b4423;
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+/* Total — read-only "engraved plate", clearly not an input. */
+.custom-sheet__attr-total {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 72px;
-    height: 30px;
-    background: #f0e6d2;
-    border: 1px solid #c4a882;
+    width: 100%;
+    padding: 3px 6px;
+    background: #e8dcc4;
+    border: 1px solid #c9975b;
     border-radius: 4px;
-    font-size: 1rem;
-    font-weight: 700;
+    box-shadow: inset 0 1px 2px rgba(122, 92, 66, 0.35);
     color: #3a2f1f;
+    font-size: 0.95rem;
+    font-weight: 700;
     letter-spacing: 0.02em;
 }
 
-.custom-sheet__roll-btn--advances {
-    align-self: flex-end;
-    margin-bottom: 2px;
+/* No-advances mode — single highlighted value next to the label/dice. */
+.custom-sheet__attr--simple .custom-sheet__attr-input {
+    max-width: 64px;
 }
 
 /* ===================== END CUSTOM SYSTEM ===================== */

@@ -1007,6 +1007,11 @@
     "dnd5e": "D&D 5e",
     "custom": "Własny system"
   },
+  "customSheet": {
+    "base": "Bazowa",
+    "advances": "Rozwinięcia",
+    "total": "Suma"
+  },
   "creator": {
     "tileTitle": "Kreator systemów",
     "tileDesc": "Zaprojektuj własny system RPG",

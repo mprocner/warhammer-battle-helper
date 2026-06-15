@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
@@ -25,6 +26,7 @@ function CustomSheetBody({
   favoriteSkills = [],
   onToggleFavorite = null,
 }) {
+  const { t } = useTranslation();
   const attrs    = values.attributes || {};
   const skills   = values.skills     || {};
   const texts    = values.texts      || {};
@@ -291,18 +293,31 @@ function CustomSheetBody({
   const renderField = (field) => {
     switch (field.type) {
       case 'attr': {
+        const rollBtn = field.rollable && onRoll && (
+          <button
+            className="custom-sheet__roll-btn"
+            onClick={() => onRoll({ skillKey: field.key, label: field.label })}
+          >
+            <CasinoIcon style={{ fontSize: 14 }} />
+          </button>
+        );
+
         if (field.hasAdvances) {
           const base = attrs[field.key]?.base     ?? 0;
           const adv  = attrs[field.key]?.advances ?? 0;
+          const total = attrs[field.key]?.current ?? (base + adv);
           return (
-            <div key={field.key} className="custom-sheet__field custom-sheet__field--number-advances">
-              <label className="custom-sheet__field-label">{field.label}</label>
-              <div className="custom-sheet__advances-row">
-                <div className="custom-sheet__advances-cell">
-                  <span className="custom-sheet__advances-sublabel">Bazowa</span>
+            <div key={field.key} className="custom-sheet__attr">
+              <div className="custom-sheet__attr-header">
+                <label className="custom-sheet__field-label">{field.label}</label>
+                {rollBtn}
+              </div>
+              <div className="custom-sheet__attr-rows">
+                <div className="custom-sheet__attr-row">
+                  <span className="custom-sheet__attr-row-label">{t('customSheet.base')}</span>
                   <input
                     type="number"
-                    className="custom-sheet__number-input"
+                    className="custom-sheet__attr-input"
                     value={base || ''}
                     onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
                     readOnly={readOnly}
@@ -310,50 +325,40 @@ function CustomSheetBody({
                     max={field.max ?? undefined}
                   />
                 </div>
-                <div className="custom-sheet__advances-cell">
-                  <span className="custom-sheet__advances-sublabel">{field.advancesLabel || 'Rozwinięcie'}</span>
+                <div className="custom-sheet__attr-row">
+                  <span className="custom-sheet__attr-row-label">{field.advancesLabel || t('customSheet.advances')}</span>
                   <input
                     type="number"
-                    className="custom-sheet__number-input"
+                    className="custom-sheet__attr-input custom-sheet__attr-input--adv"
                     value={adv || ''}
                     onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
                     readOnly={readOnly}
                     min={0}
                   />
                 </div>
-                <div className="custom-sheet__advances-cell custom-sheet__advances-cell--sum">
-                  <span className="custom-sheet__advances-sublabel">∑</span>
-                  <span className="custom-sheet__advances-sum">{attrs[field.key]?.current ?? (base + adv)}</span>
+                <div className="custom-sheet__attr-row">
+                  <span className="custom-sheet__attr-row-label">{t('customSheet.total')}</span>
+                  <span className="custom-sheet__attr-total">{total}</span>
                 </div>
-                {field.rollable && onRoll && (
-                  <button
-                    className="custom-sheet__roll-btn custom-sheet__roll-btn--advances"
-                    onClick={() => onRoll({ skillKey: field.key, label: field.label })}
-                  >
-                    <CasinoIcon style={{ fontSize: 14 }} />
-                  </button>
-                )}
               </div>
             </div>
           );
         }
         return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--number">
-            <label className="custom-sheet__field-label">{field.label}</label>
+          <div key={field.key} className="custom-sheet__attr custom-sheet__attr--simple">
+            <div className="custom-sheet__attr-header">
+              <label className="custom-sheet__field-label">{field.label}</label>
+              {rollBtn}
+            </div>
             <input
               type="number"
-              className="custom-sheet__number-input"
+              className="custom-sheet__attr-input"
               value={attrs[field.key]?.base ?? ''}
               onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
               readOnly={readOnly}
               min={field.min ?? undefined}
               max={field.max ?? undefined}
             />
-            {field.rollable && onRoll && (
-              <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey: field.key, label: field.label })}>
-                <CasinoIcon style={{ fontSize: 14 }} />
-              </button>
-            )}
           </div>
         );
       }

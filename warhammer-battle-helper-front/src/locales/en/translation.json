@@ -1010,6 +1010,11 @@
     "dnd5e": "D&D 5e",
     "custom": "Custom System"
   },
+  "customSheet": {
+    "base": "Base",
+    "advances": "Advances",
+    "total": "Total"
+  },
   "creator": {
     "tileTitle": "System Creator",
     "tileDesc": "Design your own RPG system",
