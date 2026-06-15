@@ -226,6 +226,7 @@ function CustomCharacterSheet({
       title={template ? `${template.name} — ${charName || character?.name}` : (character?.name || '')}
       onClose={onClose}
       headerButtons={headerButtons}
+      initialWidth={900}
     >
       <div className="custom-sheet">
         {/* Roll modifier modal */}
