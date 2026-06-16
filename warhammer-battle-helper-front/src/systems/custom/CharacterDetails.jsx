@@ -96,7 +96,7 @@ function CustomCharacterDetails({
 
     return favKeys.map(key => {
       // 1. Custom node
-      if (customNodes[key]?.label) return { skillKey: key, label: customNodes[key].label, value: allSkills[key] ?? 0 };
+      if (customNodes[key]?.label) return { skillKey: key, label: customNodes[key].label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
       // 2. Skill table / Skill tree
       for (const f of fields) {
         if (f.type === 'skill_table' && key.startsWith(f.key + '.')) {
@@ -105,18 +105,18 @@ function CustomCharacterDetails({
             const lbl = typeof o === 'string' ? o : o.label;
             return lbl.toLowerCase().replace(/\s+/g, '_') === suffix;
           });
-          if (opt) return { skillKey: key, label: typeof opt === 'string' ? opt : opt.label, value: allSkills[key] ?? 0 };
+          if (opt) return { skillKey: key, label: typeof opt === 'string' ? opt : opt.label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
         }
         if (f.type === 'skill_tree') {
           const treeRoot = f.tree;
           const children = treeRoot?.children || (treeRoot ? [treeRoot] : []);
           const found = findNodeLabel(children, key, treeRoot?.children ? f.key : '');
-          if (found) return { skillKey: key, label: found, value: allSkills[key] ?? 0 };
+          if (found) return { skillKey: key, label: found, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
         }
       }
       // 3. Fallback: prettify last key segment
       const label = key.split('.').pop().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      return { skillKey: key, label, value: allSkills[key] ?? 0 };
+      return { skillKey: key, label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
     });
   }, [stats, template]);
 

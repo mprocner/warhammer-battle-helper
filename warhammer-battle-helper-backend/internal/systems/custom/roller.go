@@ -153,7 +153,7 @@ func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKe
 			pendingOp = ""
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
-			sv := stats.Skills[skillKey]
+			sv := skillValue(stats, skillKey)
 			sides := av + sv
 			if sides < 1 {
 				sides = 1
@@ -196,7 +196,7 @@ func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKe
 			valueParts = append(valueParts, strconv.Itoa(val))
 			pendingOp = ""
 		case "skill":
-			sv := stats.Skills[skillKey]
+			sv := skillValue(stats, skillKey)
 			segments = append(segments, segment{op: pendingOp, val: sv})
 			labelParts = append(labelParts, "umiej.")
 			valueParts = append(valueParts, strconv.Itoa(sv))
@@ -409,7 +409,7 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 			pendingOp = ""
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
-			sv := stats.Skills[skillKey]
+			sv := skillValue(stats, skillKey)
 			sides := av + sv
 			if sides < 1 {
 				sides = 1
@@ -454,7 +454,7 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 			labelParts = append(labelParts, lbl)
 			pendingOp = ""
 		case "skill":
-			sv := stats.Skills[skillKey]
+			sv := skillValue(stats, skillKey)
 			segments = append(segments, segment{op: pendingOp, val: sv})
 			labelParts = append(labelParts, "umiej.")
 			pendingOp = ""
@@ -601,10 +601,15 @@ func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, ski
 	}, nil
 }
 
-// skillValue returns the character's value for the given skill key.
+// skillValue returns the character's effective value for the given skill key:
+// the computed current (base + advances), falling back to base when current
+// has not been derived yet. Skills without advances have current == base.
 func skillValue(stats *Stats, key string) int {
-	fmt.Printf("[ROLL] Resolving skill value for key %v, stats: %v\n", key, stats.Skills)
-	return stats.Skills[key]
+	v := stats.Skills[key]
+	if v.Current != 0 {
+		return v.Current
+	}
+	return v.Base
 }
 
 // attrModifier converts a raw attribute value to a D&D-style modifier (attr-10)/2.

@@ -174,7 +174,7 @@ function CustomSheetBody({
                 <input
                   type="number"
                   className="custom-sheet__skill-val-input"
-                  value={skills[key] ?? 0}
+                  value={skills[key]?.base ?? 0}
                   onChange={onChange ? e => onChange.skill(key, e.target.value) : undefined}
                   readOnly={readOnly}
                   min={0}
@@ -253,7 +253,7 @@ function CustomSheetBody({
           <input
             type="number"
             className="custom-sheet__skill-val-input"
-            value={skills[path] ?? 0}
+            value={skills[path]?.base ?? 0}
             onChange={onChange ? e => onChange.skill(path, e.target.value) : undefined}
             readOnly={readOnly}
             min={0}
@@ -468,10 +468,20 @@ function CustomSheetBody({
 
       case 'skill_table': {
         const rows = field.options || [];
+        const hasAdv = !!field.hasAdvances;
+        const advLabel = field.advancesLabel || t('customSheet.advances');
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--skill-table">
             <div className="custom-sheet__section-title">{field.label}</div>
             <div className="custom-sheet__skill-table">
+              {hasAdv && (
+                <div className="custom-sheet__skill-table-header">
+                  <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--name" />
+                  <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--base">{t('customSheet.base')}</span>
+                  <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--adv">{advLabel}</span>
+                  <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--total">{t('customSheet.total')}</span>
+                </div>
+              )}
               {rows.map((opt, idx) => {
                 const skillName = typeof opt === 'string' ? opt : opt.label;
                 const skillAttrKey = typeof opt === 'string' ? null : opt.attr;
@@ -480,17 +490,34 @@ function CustomSheetBody({
                 const displayName = attrInfo
                   ? `${skillName} (${attrInfo.abbr || attrInfo.label})`
                   : skillName;
+                const sv = skills[skillKey] || {};
+                const base = sv.base ?? 0;
+                const adv = sv.advances ?? 0;
+                const total = sv.current ?? (base + adv);
                 return (
-                  <div key={skillKey} className="custom-sheet__skill-row">
+                  <div key={skillKey} className={`custom-sheet__skill-row${hasAdv ? ' custom-sheet__skill-row--advances' : ''}`}>
                     <span className="custom-sheet__skill-name">{displayName}</span>
                     <input
                       type="number"
-                      className="custom-sheet__skill-val-input"
-                      value={skills[skillKey] ?? 0}
+                      className={`custom-sheet__skill-val-input${hasAdv ? ' custom-sheet__skill-val-input--base' : ''}`}
+                      value={hasAdv ? (base || '') : base}
                       onChange={onChange ? e => onChange.skill(skillKey, e.target.value) : undefined}
                       readOnly={readOnly}
                       min={0}
                     />
+                    {hasAdv && (
+                      <>
+                        <input
+                          type="number"
+                          className="custom-sheet__skill-val-input custom-sheet__skill-val-input--adv"
+                          value={adv || ''}
+                          onChange={onChange ? e => onChange.skillAdvances(skillKey, e.target.value) : undefined}
+                          readOnly={readOnly}
+                          min={0}
+                        />
+                        <span className="custom-sheet__skill-val-total">{total}</span>
+                      </>
+                    )}
                     {onToggleFavorite && (
                       <button
                         className={`coc-star-btn${favoriteSkills.includes(skillKey) ? ' coc-star-btn--active' : ''}`}

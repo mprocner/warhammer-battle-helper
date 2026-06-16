@@ -17,9 +17,12 @@ type CustomSkillNode struct {
 // Stats holds character values for a custom-system character.
 // Keys in Attributes and Skills match the field keys defined in the SystemTemplate.
 // Skill keys for tree nodes use dot-path notation: "bron_biala.jednorecz.miecz".
+// Skills reuse AttrValue so the same base/advances/current mechanic drives skill_table
+// (with optional advances) and skill_tree (base only, current == base). Rolls read current,
+// falling back to base when current is not yet computed.
 type Stats struct {
 	Attributes       map[string]AttrValue       `bson:"attributes"                json:"attributes"`
-	Skills           map[string]int             `bson:"skills"                    json:"skills"`
+	Skills           map[string]AttrValue       `bson:"skills"                    json:"skills"`
 	Texts            map[string]string          `bson:"texts,omitempty"           json:"texts,omitempty"`
 	Progress         map[string]ProgressValue   `bson:"progress,omitempty"        json:"progress,omitempty"`
 	Numbers          map[string]int             `bson:"numbers,omitempty"         json:"numbers,omitempty"`

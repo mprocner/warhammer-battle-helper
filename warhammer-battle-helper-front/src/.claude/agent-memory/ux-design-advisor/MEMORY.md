@@ -1,0 +1,2 @@
+- [Custom system data model conventions](custom-system-data-model.md) — Stats uses per-type maps (Attributes/Skills/Numbers/...); AttrValue {base,advances,current} is the reusable pattern for any "advances" feature
+- [Skill table advances design (2026-06-15)](skill-table-advances-design.md) — compact grid layout for skill_table rows with base/advances/total columns

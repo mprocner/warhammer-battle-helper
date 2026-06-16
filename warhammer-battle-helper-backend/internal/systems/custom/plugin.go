@@ -23,7 +23,7 @@ func New() *Plugin { return &Plugin{rng: gsys.DefaultRoller()} }
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	empty := Stats{
 		Attributes: map[string]AttrValue{},
-		Skills:     map[string]int{},
+		Skills:     map[string]AttrValue{},
 		Texts:      map[string]string{},
 		Progress:   map[string]ProgressValue{},
 	}
@@ -34,7 +34,8 @@ func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	return raw, nil
 }
 
-// ComputeDerived recomputes current = base + advances for every attribute.
+// ComputeDerived recomputes current = base + advances for every attribute and skill.
+// Skills without advances (skill_tree nodes, plain skill_table rows) simply get current == base.
 func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	s, err := decodeStats(raw)
 	if err != nil {
@@ -43,6 +44,10 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	for key, av := range s.Attributes {
 		av.Current = av.Base + av.Advances
 		s.Attributes[key] = av
+	}
+	for key, sv := range s.Skills {
+		sv.Current = sv.Base + sv.Advances
+		s.Skills[key] = sv
 	}
 	out, err := bson.Marshal(s)
 	if err != nil {
@@ -110,7 +115,7 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 		s.Attributes = map[string]AttrValue{}
 	}
 	if s.Skills == nil {
-		s.Skills = map[string]int{}
+		s.Skills = map[string]AttrValue{}
 	}
 	return &s, nil
 }

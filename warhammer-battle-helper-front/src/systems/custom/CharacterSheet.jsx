@@ -113,7 +113,19 @@ function CustomCharacterSheet({
   };
 
   const updateSkill = (key, value) => {
-    const ne = { ...edited, skills: { ...edited.skills, [key]: Number(value) || 0 } };
+    const prev = edited.skills[key] || { base: 0, advances: 0, current: 0 };
+    const base = Number(value) || 0;
+    const updated = { ...prev, base, current: base + (prev.advances || 0) };
+    const ne = { ...edited, skills: { ...edited.skills, [key]: updated } };
+    setEdited(ne);
+    triggerAutoSave(ne, charNameRef.current);
+  };
+
+  const updateSkillAdvances = (key, value) => {
+    const prev = edited.skills[key] || { base: 0, advances: 0, current: 0 };
+    const advances = Number(value) || 0;
+    const updated = { ...prev, advances, current: (prev.base || 0) + advances };
+    const ne = { ...edited, skills: { ...edited.skills, [key]: updated } };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
   };
@@ -122,7 +134,7 @@ function CustomCharacterSheet({
     const ne = {
       ...edited,
       customSkillNodes: { ...edited.customSkillNodes, [path]: nodeData },
-      skills: { ...edited.skills, [path]: 0 },
+      skills: { ...edited.skills, [path]: { base: 0, advances: 0, current: 0 } },
     };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
@@ -205,9 +217,10 @@ function CustomCharacterSheet({
     sections={template.sections}
     values={edited}
     onChange={{
-      attr:     (key, val)        => updateAttr(key, val),
-      advances: (key, val)        => updateAdvances(key, val),
-      skill:    (key, val)        => updateSkill(key, val),
+      attr:          (key, val)        => updateAttr(key, val),
+      advances:      (key, val)        => updateAdvances(key, val),
+      skill:         (key, val)        => updateSkill(key, val),
+      skillAdvances: (key, val)        => updateSkillAdvances(key, val),
       text:     (key, val)        => updateText(key, val),
       progress: (key, which, val) => updateProgress(key, which, val),
       number:   (key, val)        => updateNumber(key, val),

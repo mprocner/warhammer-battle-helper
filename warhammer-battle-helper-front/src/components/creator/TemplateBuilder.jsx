@@ -117,7 +117,7 @@ function makeDefaultField(type) {
   if (type === 'number') return { ...base, min: 0, max: 100, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: false };
   if (type === 'select') return { ...base, options: [] };
-  if (type === 'skill_table') return { ...base, options: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false };
+  if (type === 'skill_table') return { ...base, options: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'skill_tree') return { ...base, tree: { key: `tree_${Date.now()}`, label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
   return base;
 }
@@ -428,6 +428,27 @@ function PropertyPanel({ field, onChange, numberFields }) {
           label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
           sx={{ mb: 1, display: 'block' }}
         />
+      )}
+
+      {field.type === 'skill_table' && (
+        <>
+          <FormControlLabel
+            control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
+            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
+            sx={{ mb: 0.5, display: 'block' }}
+          />
+          {field.hasAdvances && (
+            <TextField
+              size="small"
+              fullWidth
+              label={t('creator.fieldAdvancesLabel')}
+              value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
+              onChange={e => up({ advancesLabel: e.target.value })}
+              sx={{ mb: 1.5 }}
+              InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+            />
+          )}
+        </>
       )}
 
       {(field.type === 'select' || field.type === 'skill_table') && (

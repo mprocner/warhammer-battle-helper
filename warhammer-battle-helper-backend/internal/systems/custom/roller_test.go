@@ -41,7 +41,7 @@ func opBlock(o string) models.FormulaBlock   { return models.FormulaBlock{Type: 
 func sampleStats() *Stats {
 	return &Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 8}, "dex": {Current: 5}},
-		Skills:     map[string]int{"atk": 10},
+		Skills:     map[string]AttrValue{"atk": {Current: 10}},
 	}
 }
 
@@ -113,7 +113,7 @@ func TestEvalOutcome(t *testing.T) {
 }
 
 func TestSkillValue(t *testing.T) {
-	stats := &Stats{Skills: map[string]int{"atk": 10}}
+	stats := &Stats{Skills: map[string]AttrValue{"atk": {Current: 10}}}
 	if got := skillValue(stats, "atk"); got != 10 {
 		t.Errorf("skillValue(atk) = %d, want 10", got)
 	}
@@ -413,7 +413,7 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 func TestRollAttrPlusSkill(t *testing.T) {
 	stats := &Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 5}},
-		Skills:     map[string]int{"atk": 10},
+		Skills:     map[string]AttrValue{"atk": {Current: 10}},
 	}
 	cfg := &models.RollConfig{SuccessType: "above_threshold"}
 	// diceSize = attr 5 + skill 10 = 15; Intn(15)=7 -> roll 8.
@@ -433,7 +433,7 @@ func TestRollAttrPlusSkill(t *testing.T) {
 func TestRollFixedD100(t *testing.T) {
 	stats := &Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 30}},
-		Skills:     map[string]int{"atk": 25},
+		Skills:     map[string]AttrValue{"atk": {Current: 25}},
 	}
 	cfg := &models.RollConfig{SuccessType: "below_threshold"}
 	// threshold = attr 30 + skill 25 = 55; +modifier 5 -> target 60. Intn(100)=39 -> roll 40.
@@ -450,7 +450,7 @@ func TestRollFixedD100(t *testing.T) {
 func TestRollFixedD20(t *testing.T) {
 	stats := &Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 14}},
-		Skills:     map[string]int{"atk": 3},
+		Skills:     map[string]AttrValue{"atk": {Current: 3}},
 	}
 	cfg := &models.RollConfig{SuccessType: "above_threshold"}
 	// bonus = attrModifier(14)=2 + skill 3 + modifier 2 = 7; Intn(20)=9 -> roll 10; final 17.
@@ -476,7 +476,7 @@ func TestRollWithTemplate(t *testing.T) {
 	}
 	stats := Stats{
 		Attributes: map[string]AttrValue{"agility": {Current: 14}},
-		Skills:     map[string]int{"stealth": 3},
+		Skills:     map[string]AttrValue{"stealth": {Current: 3}},
 	}
 	raw, err := bson.Marshal(stats)
 	if err != nil {
@@ -781,7 +781,7 @@ func TestRollWithTemplate_FormulaPath(t *testing.T) {
 	}
 	stats := Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 8}},
-		Skills:     map[string]int{"atk": 4},
+		Skills:     map[string]AttrValue{"atk": {Current: 4}},
 	}
 	raw, _ := bson.Marshal(stats)
 
