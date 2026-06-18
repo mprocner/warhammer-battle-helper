@@ -1017,8 +1017,10 @@
     "damage": "Damage",
     "weapon": "Weapon",
     "addWeapon": "Add weapon",
+    "addWeaponFromList": "Add from list",
     "removeWeapon": "Remove weapon",
-    "weaponDamageIncomplete": "Fill in all damage values before rolling"
+    "weaponDamageIncomplete": "Fill in all damage values before rolling",
+    "weaponPresetLocked": "GM weapon — always on the sheet, read-only"
   },
   "creator": {
     "tileTitle": "System Creator",
@@ -1064,6 +1066,12 @@
     "weaponColTypeSelect": "Dropdown",
     "weaponColFromSkills": "Options from skills",
     "weaponAddColumn": "Add column",
+    "weaponPresetsButton": "Preset weapons ({{count}})",
+    "weaponPresetsTitle": "Preset weapons",
+    "weaponPresetsHint": "Define weapons the GM provides. \"Always on the sheet\" weapons appear read-only on every character; the rest form a list players can add from.",
+    "weaponPresetsNoColumns": "Add at least one column above before defining preset weapons.",
+    "weaponPresetAlwaysOn": "Always on the sheet",
+    "weaponPresetAdd": "Add preset weapon",
     "weaponAttackRoll": "Attack roll",
     "damageFormula": "Damage formula",
     "damageFormulaHint": "Numbers (dice count, faces, constants) become inputs the player fills per weapon; attributes are read from the character.",

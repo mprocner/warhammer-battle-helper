@@ -55,7 +55,7 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 	}
 	fmt.Println("[ROLL] Final threshold:", threshold)
 	outcome := evalOutcome(cfg, finalRoll, threshold)
-	skillLabel := resolveSkillLabel(template, skillKey)
+	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
 		DiceType:         diceType,
@@ -306,7 +306,7 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		outcome = "regular_success"
 	}
 
-	skillLabel := resolveSkillLabel(template, skillKey)
+	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
 		DiceType:             diceType,
@@ -518,7 +518,7 @@ func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate
 	}
 	outcome := evalOutcome(cfg, finalRoll, threshold)
 
-	skillLabel := resolveSkillLabel(template, skillKey)
+	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
 		DiceType:  diceSize,
@@ -545,7 +545,7 @@ func (p *Plugin) rollFixedD100(stats *Stats, template *models.SystemTemplate, sk
 	target := threshold + modifier
 	outcome := evalOutcome(cfg, roll, target)
 
-	skillLabel := resolveSkillLabel(template, skillKey)
+	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
 		DiceType:  100,
@@ -574,7 +574,7 @@ func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, ski
 	}
 	outcome := evalOutcome(cfg, finalRoll, threshold)
 
-	skillLabel := resolveSkillLabel(template, skillKey)
+	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
 		DiceType:   20,
@@ -631,18 +631,33 @@ func evalOutcome(cfg *models.RollConfig, roll, threshold int) string {
 	return "failure"
 }
 
-// resolveSkillLabel walks all section fields to find the human-readable label for a skill key.
-func resolveSkillLabel(template *models.SystemTemplate, skillKey string) string {
+// resolveSkillLabel finds the human-readable label for a skill key, checking template-defined
+// fields/skills/tree-nodes first, then player-added custom skill nodes (which live only in
+// stats, keyed by their opaque full path). Falls back to the raw key if nothing matches.
+func resolveSkillLabel(template *models.SystemTemplate, stats *Stats, skillKey string) string {
 	for _, section := range template.Sections {
 		for _, field := range section.Fields {
 			if field.Key == skillKey {
 				return field.Label
+			}
+			if field.Type == "skill_table" && strings.HasPrefix(skillKey, field.Key+".") {
+				suffix := skillKey[len(field.Key)+1:]
+				for _, opt := range field.Skills {
+					if opt.ID == suffix {
+						return opt.Label
+					}
+				}
 			}
 			if field.Type == "skill_tree" && field.Tree != nil {
 				if label, ok := findLeafLabel(field.Tree, skillKey, ""); ok {
 					return label
 				}
 			}
+		}
+	}
+	if stats != nil {
+		if node, ok := stats.CustomSkillNodes[skillKey]; ok && node.Label != "" {
+			return node.Label
 		}
 	}
 	return skillKey

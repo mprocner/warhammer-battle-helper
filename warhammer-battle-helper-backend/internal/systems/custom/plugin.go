@@ -165,9 +165,8 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 				linkedAttr := field.RollConfig.LinkedAttr
 				if field.AssignAttrToSkill {
 					suffix := skillKey[len(field.Key)+1:]
-					for _, opt := range field.Options {
-						normalized := strings.ToLower(strings.ReplaceAll(opt.Label, " ", "_"))
-						if normalized == suffix {
+					for _, opt := range field.Skills {
+						if opt.ID == suffix {
 							linkedAttr = opt.Attr
 							break
 						}

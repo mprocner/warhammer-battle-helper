@@ -25,7 +25,7 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 	if !ok {
 		return nil, fmt.Errorf("custom: weapons_table field %q not found", fieldKey)
 	}
-	row, ok := findWeaponRow(stats, fieldKey, rowID)
+	row, ok := resolveWeaponRow(stats, field, fieldKey, rowID)
 	if !ok {
 		return nil, fmt.Errorf("custom: weapon row %q not found", rowID)
 	}
@@ -132,6 +132,23 @@ func findWeaponField(template *models.SystemTemplate, fieldKey string) (*models.
 		}
 	}
 	return nil, false
+}
+
+// resolveWeaponRow finds the weapon to roll, looking first among the player's own rows in
+// stats and then — falling back — among the field's GM-authored presets (AlwaysOn weapons
+// live only in the template, never in stats, so a GM edit reaches every player). A matched
+// preset is synthesized into a WeaponRow so the rest of the roll path treats both identically.
+func resolveWeaponRow(stats *Stats, field *models.FieldDef, fieldKey, rowID string) (WeaponRow, bool) {
+	if row, ok := findWeaponRow(stats, fieldKey, rowID); ok {
+		return row, true
+	}
+	for i := range field.PresetWeapons {
+		p := field.PresetWeapons[i]
+		if p.ID == rowID {
+			return WeaponRow{ID: p.ID, Cells: p.Cells, Damage: p.Damage}, true
+		}
+	}
+	return WeaponRow{}, false
 }
 
 func findWeaponRow(stats *Stats, fieldKey, rowID string) (WeaponRow, bool) {

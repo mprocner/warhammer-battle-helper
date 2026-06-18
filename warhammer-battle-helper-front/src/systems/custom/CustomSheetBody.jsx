@@ -4,12 +4,11 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 
-function labelToKey(label) {
-  return label
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+// genId mints a stable, opaque key for a player-added skill node — never derived from the
+// typed name, so two skills can share a name and renaming never affects the key. Matches the
+// surrogate-key convention used GM-side in TemplateBuilder.
+function genId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 }
 
 const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
@@ -29,18 +28,17 @@ function weaponRowLabel(field, row, t) {
 
 // collectSkillOptions gathers {key, label} for every skill the character has, so a
 // weapons_table "from skills" select can offer them. Keys must match how rolls resolve:
-// skill_table rows use `${field.key}.${name lowercased, spaces→_}`, skill_tree nodes use
-// the dot-path `${field.key}.${node.key}…`, and player-added nodes are keyed directly.
-function collectSkillOptions(sections, customSkillNodes) {
+// skill_table rows use `${field.key}.${opt.id}` (stable id, not the label), skill_tree nodes
+// use the dot-path `${field.key}.${node.key}…`, and player-added nodes are keyed directly.
+export function collectSkillOptions(sections, customSkillNodes) {
   const out = [];
   const seen = new Set();
   const push = (key, label) => { if (key && !seen.has(key)) { seen.add(key); out.push({ key, label: label || key }); } };
   for (const s of (sections || [])) {
     for (const f of (s.fields || [])) {
       if (f.type === 'skill_table') {
-        for (const opt of (f.options || [])) {
-          const name = typeof opt === 'string' ? opt : opt.label;
-          if (name) push(`${f.key}.${name.toLowerCase().replace(/\s+/g, '_')}`, name);
+        for (const opt of (f.skills || [])) {
+          if (opt.label) push(`${f.key}.${opt.id}`, opt.label);
         }
       } else if (f.type === 'skill_tree' && f.tree) {
         const walk = (node, prefix) => {
@@ -58,14 +56,14 @@ function collectSkillOptions(sections, customSkillNodes) {
 
 // diceFaces returns a dice block's fixed face count (e.g. 10 for "d10"), or null when the
 // block is a "generic" die ("d" with no number) that the player fills in per weapon.
-function diceFaces(b) {
+export function diceFaces(b) {
   const n = Number(String(b.value || '').replace(/^d/, ''));
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 // isPlayerDie reports whether a dice block is filled by the player on the sheet (generic die)
 // rather than fixed by the GM. Only player dice are editable and validated before a roll.
-function isPlayerDie(b) {
+export function isPlayerDie(b) {
   return b.type === 'dice' && diceFaces(b) === null;
 }
 
@@ -91,7 +89,7 @@ function weaponDamageIncomplete(blocks, row) {
 // renderDamageFormula renders a weapon's damage skeleton inline. Numeric blocks (const
 // values, die faces) become editable inputs bound to row.damage[block.id]; attribute and
 // skill tokens are static — the backend resolves them from stats at roll time.
-function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t) {
+export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t) {
   const dmg = row.damage || {};
   const onDmg = (blockId, val) => onChange && onChange.weaponDamage(fieldKey, row.id, blockId, val);
   return (blocks || []).map(b => {
@@ -168,6 +166,7 @@ function CustomSheetBody({
   onRemoveCustomSkill = null,
   onUpdateCustomSkill = null,
   favoriteSkills = [],
+  favoriteWeapons = [],
   onToggleFavorite = null,
 }) {
   const { t } = useTranslation();
@@ -193,9 +192,8 @@ function CustomSheetBody({
 
   const confirmAdd = (parentPath) => {
     const trimmed = addingLabel.trim();
-    if (!trimmed || !labelToKey(trimmed)) return;
-    const key = `${parentPath}.${labelToKey(trimmed)}`;
-    if (customSkillNodes[key]) return;
+    if (!trimmed) return;
+    const key = `${parentPath}.${genId('skill')}`;
     onAddCustomSkill(key, { label: trimmed, ...(addingAttr ? { linkedAttr: addingAttr } : {}) });
     setAddingLabel('');
     setAddingAttr('');
@@ -612,7 +610,7 @@ function CustomSheetBody({
         );
 
       case 'skill_table': {
-        const rows = field.options || [];
+        const rows = field.skills || [];
         const hasAdv = !!field.hasAdvances;
         const advLabel = field.advancesLabel || t('customSheet.advances');
         return (
@@ -627,10 +625,10 @@ function CustomSheetBody({
                   <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--total">{t('customSheet.total')}</span>
                 </div>
               )}
-              {rows.map((opt, idx) => {
-                const skillName = typeof opt === 'string' ? opt : opt.label;
-                const skillAttrKey = typeof opt === 'string' ? null : opt.attr;
-                const skillKey = `${field.key}.${skillName.toLowerCase().replace(/\s+/g, '_')}`;
+              {rows.map((opt) => {
+                const skillName = opt.label;
+                const skillAttrKey = opt.attr;
+                const skillKey = `${field.key}.${opt.id}`;
                 const attrInfo = skillAttrKey ? attrByKey[skillAttrKey] : null;
                 const displayName = attrInfo
                   ? `${skillName} (${attrInfo.abbr || attrInfo.label})`
@@ -692,6 +690,19 @@ function CustomSheetBody({
         const skillOptions = cols.some(c => c.type === 'select' && c.optionsFromSkills)
           ? collectSkillOptions(sections, customSkillNodes)
           : [];
+        const presets = field.presetWeapons || [];
+        const alwaysOnPresets = presets.filter(p => p.alwaysOn);
+        const catalogPresets  = presets.filter(p => !p.alwaysOn);
+
+        // Resolves a select cell to its display label (skill name or option label).
+        const cellLabel = (c, val) => {
+          if (c.type !== 'select') return val;
+          const opts = c.optionsFromSkills
+            ? skillOptions
+            : (c.options || []).map(o => ({ key: o, label: o }));
+          return opts.find(o => o.key === val)?.label || val;
+        };
+
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--weapon-table">
             <div className="custom-sheet__section-title">{field.label}</div>
@@ -704,6 +715,48 @@ function CustomSheetBody({
                 {hasDamage && <span className="custom-sheet__weapon-col-label">{t('customSheet.damage')}</span>}
                 <span className="custom-sheet__weapon-col--actions" />
               </div>
+
+              {/* GM "always on" weapons — read-only, rendered straight from the template so a
+                  GM edit reaches every player; rolled by preset id, never copied into stats. */}
+              {alwaysOnPresets.map(preset => {
+                const incomplete = hasDamage && weaponDamageIncomplete(dmgBlocks, preset);
+                return (
+                  <div key={preset.id} className="custom-sheet__weapon-row custom-sheet__weapon-row--preset">
+                    {onToggleFavorite && (
+                      <button
+                        className={`coc-star-btn${favoriteWeapons.includes(preset.id) ? ' coc-star-btn--active' : ''}`}
+                        onClick={() => onChange && onChange.weaponPresetFavorite(preset.id)}
+                        disabled={readOnly}
+                      >
+                        <StarIcon style={{ fontSize: 12 }} />
+                      </button>
+                    )}
+                    {cols.map(c => (
+                      <span key={c.key} className="custom-sheet__weapon-cell-static">
+                        {cellLabel(c, (preset.cells && preset.cells[c.key]) || '') || '—'}
+                      </span>
+                    ))}
+                    {hasDamage && (
+                      <div className="custom-sheet__weapon-damage">
+                        {renderDamageFormula(dmgBlocks, preset, field.key, null, true, t)}
+                      </div>
+                    )}
+                    <div className="custom-sheet__weapon-actions">
+                      {field.rollable && onRoll && (
+                        <button
+                          className="custom-sheet__roll-btn"
+                          onClick={() => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: preset.id, label: weaponRowLabel(field, preset, t) })}
+                          disabled={incomplete}
+                          title={incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
+                        >
+                          <CasinoIcon style={{ fontSize: 14 }} />
+                        </button>
+                      )}
+                      <span className="custom-sheet__weapon-lock" title={t('customSheet.weaponPresetLocked')}>🔒</span>
+                    </div>
+                  </div>
+                );
+              })}
 
               {rows.map(row => (
                 <div key={row.id} className="custom-sheet__weapon-row">
@@ -722,10 +775,7 @@ function CustomSheetBody({
                     if (c.type === 'select') {
                       const opts = c.optionsFromSkills
                         ? skillOptions
-                        : (c.options || []).map(o => {
-                            const label = typeof o === 'string' ? o : o.label;
-                            return { key: label, label };
-                          });
+                        : (c.options || []).map(o => ({ key: o, label: o }));
                       return (
                         <select
                           key={c.key}
@@ -785,9 +835,26 @@ function CustomSheetBody({
               ))}
 
               {onChange && (
-                <button className="custom-sheet__weapon-add-btn" onClick={() => onChange.weaponAdd(field.key)}>
-                  + {t('customSheet.addWeapon')}
-                </button>
+                <div className="custom-sheet__weapon-add-row">
+                  <button className="custom-sheet__weapon-add-btn" onClick={() => onChange.weaponAdd(field.key)}>
+                    + {t('customSheet.addWeapon')}
+                  </button>
+                  {catalogPresets.length > 0 && (
+                    <select
+                      className="custom-sheet__weapon-preset-picker"
+                      value=""
+                      onChange={e => {
+                        const preset = catalogPresets.find(p => p.id === e.target.value);
+                        if (preset) onChange.weaponAddFromPreset(field.key, preset);
+                      }}
+                    >
+                      <option value="">+ {t('customSheet.addWeaponFromList')}</option>
+                      {catalogPresets.map(p => (
+                        <option key={p.id} value={p.id}>{weaponRowLabel(field, p, t)}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               )}
             </div>
           </div>

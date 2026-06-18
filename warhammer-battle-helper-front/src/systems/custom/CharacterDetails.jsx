@@ -101,11 +101,8 @@ function CustomCharacterDetails({
       for (const f of fields) {
         if (f.type === 'skill_table' && key.startsWith(f.key + '.')) {
           const suffix = key.slice(f.key.length + 1);
-          const opt = (f.options || []).find(o => {
-            const lbl = typeof o === 'string' ? o : o.label;
-            return lbl.toLowerCase().replace(/\s+/g, '_') === suffix;
-          });
-          if (opt) return { skillKey: key, label: typeof opt === 'string' ? opt : opt.label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
+          const opt = (f.skills || []).find(o => o.id === suffix);
+          if (opt) return { skillKey: key, label: opt.label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
         }
         if (f.type === 'skill_tree') {
           const treeRoot = f.tree;

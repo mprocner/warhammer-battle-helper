@@ -32,6 +32,7 @@ function CustomCharacterSheet({
     customSkillNodes: stats.customSkillNodes  || {},
     favoriteSkills:   stats.favoriteSkills    || [],
     weapons:          stats.weapons           || {},
+    favoriteWeapons:  stats.favoriteWeapons   || [],
   });
   const [charName,   setCharName]   = useState(character?.name   || '');
   const [isSaving,   setIsSaving]   = useState(false);
@@ -53,6 +54,7 @@ function CustomCharacterSheet({
       customSkillNodes: s.customSkillNodes  || {},
       favoriteSkills:   s.favoriteSkills    || [],
       weapons:          s.weapons           || {},
+      favoriteWeapons:  s.favoriteWeapons   || [],
     });
     setCharName(character?.name || '');
     charNameRef.current = character?.name || '';
@@ -73,6 +75,7 @@ function CustomCharacterSheet({
         customSkillNodes: currentEdited.customSkillNodes,
         favoriteSkills:   currentEdited.favoriteSkills,
         weapons:          currentEdited.weapons,
+        favoriteWeapons:  currentEdited.favoriteWeapons,
       },
     };
     try {
@@ -204,6 +207,21 @@ function CustomCharacterSheet({
     triggerAutoSave(ne, charNameRef.current);
   };
 
+  // Copies a GM catalog preset into a new editable player row (snapshot — later GM edits
+  // to the catalog do not touch the copy; the player owns it and may edit/remove it).
+  const addWeaponFromPreset = (fieldKey, preset) => {
+    const list = edited.weapons[fieldKey] || [];
+    const row = {
+      id: genWeaponId(),
+      cells: { ...(preset.cells || {}) },
+      damage: { ...(preset.damage || {}) },
+      favorite: false,
+    };
+    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
+    setEdited(ne);
+    triggerAutoSave(ne, charNameRef.current);
+  };
+
   const removeWeaponRow = (fieldKey, rowId) => {
     const list = (edited.weapons[fieldKey] || []).filter(r => r.id !== rowId);
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
@@ -226,6 +244,18 @@ function CustomCharacterSheet({
 
   const toggleWeaponFavorite = (fieldKey, rowId) =>
     mapWeaponRow(fieldKey, rowId, r => ({ ...r, favorite: !r.favorite }));
+
+  // GM preset weapons live in the template, not in stats, so their "favorite" is a per-player
+  // list of preset ids rather than a flag on the row.
+  const toggleWeaponPresetFavorite = (presetId) => {
+    setEdited(prev => {
+      const favs = prev.favoriteWeapons || [];
+      const next = favs.includes(presetId) ? favs.filter(k => k !== presetId) : [...favs, presetId];
+      const ne = { ...prev, favoriteWeapons: next };
+      saveCharacter(ne, charNameRef.current);
+      return ne;
+    });
+  };
 
   const handleRoll = async (skillKey, mod = 0) => {
     if (!gameId) return;
@@ -287,12 +317,15 @@ function CustomCharacterSheet({
       progress: (key, which, val) => updateProgress(key, which, val),
       number:   (key, val)        => updateNumber(key, val),
       weaponAdd:      (fieldKey)                     => addWeaponRow(fieldKey),
+      weaponAddFromPreset: (fieldKey, preset)        => addWeaponFromPreset(fieldKey, preset),
       weaponRemove:   (fieldKey, rowId)              => removeWeaponRow(fieldKey, rowId),
       weaponCell:     (fieldKey, rowId, colKey, val) => updateWeaponCell(fieldKey, rowId, colKey, val),
       weaponDamage:   (fieldKey, rowId, blockId, val) => updateWeaponDamage(fieldKey, rowId, blockId, val),
       weaponFavorite: (fieldKey, rowId)              => toggleWeaponFavorite(fieldKey, rowId),
+      weaponPresetFavorite: (presetId)               => toggleWeaponPresetFavorite(presetId),
     }}
     onRoll={setRollModal}
+    favoriteWeapons={edited.favoriteWeapons}
     customSkillNodes={edited.customSkillNodes}
     onAddCustomSkill={addCustomSkillNode}
     onUpdateCustomSkill={updateCustomSkillNode}

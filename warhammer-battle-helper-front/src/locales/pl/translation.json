@@ -1014,8 +1014,10 @@
     "damage": "Obrażenia",
     "weapon": "Broń",
     "addWeapon": "Dodaj broń",
+    "addWeaponFromList": "Dodaj z listy",
     "removeWeapon": "Usuń broń",
-    "weaponDamageIncomplete": "Uzupełnij wszystkie wartości obrażeń przed rzutem"
+    "weaponDamageIncomplete": "Uzupełnij wszystkie wartości obrażeń przed rzutem",
+    "weaponPresetLocked": "Broń MG — zawsze na karcie, tylko do odczytu"
   },
   "creator": {
     "tileTitle": "Kreator systemów",
@@ -1061,6 +1063,12 @@
     "weaponColTypeSelect": "Lista",
     "weaponColFromSkills": "Opcje z umiejętności",
     "weaponAddColumn": "Dodaj kolumnę",
+    "weaponPresetsButton": "Predefiniowane bronie ({{count}})",
+    "weaponPresetsTitle": "Predefiniowane bronie",
+    "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Bronie „zawsze na karcie\" pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
+    "weaponPresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować bronie.",
+    "weaponPresetAlwaysOn": "Zawsze na karcie",
+    "weaponPresetAdd": "Dodaj broń",
     "weaponAttackRoll": "Rzut na atak",
     "damageFormula": "Formuła obrażeń",
     "damageFormulaHint": "Liczby (liczba kości, ścianki, stałe) stają się polami, które gracz wypełnia dla każdej broni; atrybuty są pobierane z postaci.",

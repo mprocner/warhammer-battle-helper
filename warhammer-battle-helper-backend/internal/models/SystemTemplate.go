@@ -1,84 +1,19 @@
 package models
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
-// FlexOption is a skill option that is either a plain label string or a {label, attr} object.
-// Plain strings are used by "select" field types; objects are used by "skill_table" when
-// assignAttrToSkill is enabled. JSON and BSON marshaling preserve whichever form was stored.
-type FlexOption struct {
-	Label string
-	Attr  string // empty when the option was stored as a plain string
-}
-
-func (f FlexOption) MarshalJSON() ([]byte, error) {
-	if f.Attr == "" {
-		return json.Marshal(f.Label)
-	}
-	return json.Marshal(struct {
-		Label string `json:"label"`
-		Attr  string `json:"attr,omitempty"`
-	}{Label: f.Label, Attr: f.Attr})
-}
-
-func (f *FlexOption) UnmarshalJSON(data []byte) error {
-	if len(data) > 0 && data[0] == '"' {
-		return json.Unmarshal(data, &f.Label)
-	}
-	var obj struct {
-		Label string `json:"label"`
-		Attr  string `json:"attr,omitempty"`
-	}
-	if err := json.Unmarshal(data, &obj); err != nil {
-		return err
-	}
-	f.Label = obj.Label
-	f.Attr = obj.Attr
-	return nil
-}
-
-func (f FlexOption) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	if f.Attr == "" {
-		return bson.TypeString, bsoncore.AppendString(nil, f.Label), nil
-	}
-	idx, doc := bsoncore.AppendDocumentStart(nil)
-	doc = bsoncore.AppendStringElement(doc, "label", f.Label)
-	doc = bsoncore.AppendStringElement(doc, "attr", f.Attr)
-	doc, err := bsoncore.AppendDocumentEnd(doc, idx)
-	if err != nil {
-		return 0, nil, err
-	}
-	return bson.TypeEmbeddedDocument, doc, nil
-}
-
-func (f *FlexOption) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
-	switch t {
-	case bson.TypeString:
-		s, _, ok := bsoncore.ReadString(data)
-		if !ok {
-			return fmt.Errorf("invalid BSON string for FlexOption")
-		}
-		f.Label = s
-	case bson.TypeEmbeddedDocument:
-		doc := bsoncore.Document(data)
-		if v, err := doc.LookupErr("label"); err == nil {
-			f.Label, _ = v.StringValueOK()
-		}
-		if v, err := doc.LookupErr("attr"); err == nil {
-			f.Attr, _ = v.StringValueOK()
-		}
-	default:
-		return fmt.Errorf("unsupported BSON type for FlexOption: %v", t)
-	}
-	return nil
+// SkillOption is one skill row of a "skill_table" field. ID is a stable, GM-opaque key
+// generated once when the option is created; it never derives from Label, so renaming a
+// skill does not orphan the value a player stored under "<fieldKey>.<id>". Attr links the
+// skill to an attribute (empty unless the field has assignAttrToSkill enabled).
+type SkillOption struct {
+	ID    string `bson:"id" json:"id"`
+	Label string `bson:"label" json:"label"`
+	Attr  string `bson:"attr,omitempty" json:"attr,omitempty"`
 }
 
 // SectionDef groups related fields under a titled section with a column layout.
@@ -136,7 +71,8 @@ type FieldDef struct {
 	Rollable           bool           `bson:"rollable" json:"rollable"`
 	HasAdvances        bool           `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
 	AdvancesLabel      string         `bson:"advancesLabel,omitempty" json:"advancesLabel,omitempty"`
-	Options            []FlexOption   `bson:"options,omitempty" json:"options,omitempty"` // for type="select" and "skill_table"
+	Options            []string       `bson:"options,omitempty" json:"options,omitempty"` // for type="select"
+	Skills             []SkillOption  `bson:"skills,omitempty" json:"skills,omitempty"`   // for type="skill_table"
 	AssignAttrToSkill  bool           `bson:"assignAttrToSkill,omitempty" json:"assignAttrToSkill,omitempty"`
 	RollConfig         *RollConfig    `bson:"rollConfig,omitempty" json:"rollConfig,omitempty"`
 	Tree               *SkillTreeNode `bson:"tree,omitempty" json:"tree,omitempty"` // only for type="skill_tree"
@@ -145,6 +81,23 @@ type FieldDef struct {
 	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
 	Columns       []WeaponColumn `bson:"columns,omitempty" json:"columns,omitempty"`
 	DamageFormula []FormulaBlock `bson:"damageFormula,omitempty" json:"damageFormula,omitempty"`
+	// PresetWeapons are GM-authored weapons attached to the template (weapons_table only).
+	// An AlwaysOn preset is shown read-only on every character sheet and is never copied
+	// into the character's stats — it is rendered and rolled straight from the template,
+	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
+	// player can copy into an editable weapon row of their own.
+	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
+}
+
+// PresetWeapon is a GM-authored weapon template attached to a weapons_table field.
+// Cells and Damage mirror WeaponRow exactly (column key → value, damage block id → number),
+// so a preset is just a "row template": copying it to a player row is a plain value copy,
+// and rolling an AlwaysOn preset reuses the same WeaponRow-based roll path.
+type PresetWeapon struct {
+	ID       string             `bson:"id" json:"id"`
+	Cells    map[string]string  `bson:"cells,omitempty" json:"cells,omitempty"`
+	Damage   map[string]float64 `bson:"damage,omitempty" json:"damage,omitempty"`
+	AlwaysOn bool               `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
 }
 
 // WeaponColumn defines one GM-authored column of a weapons_table field.
@@ -152,11 +105,11 @@ type FieldDef struct {
 // Options (manual list), unless OptionsFromSkills is true — then the choices are the
 // character's skills and the picked skill drives the weapon's attack roll.
 type WeaponColumn struct {
-	Key               string       `bson:"key" json:"key"`
-	Label             string       `bson:"label" json:"label"`
-	Type              string       `bson:"type" json:"type"` // "text"|"number"|"select"
-	Options           []FlexOption `bson:"options,omitempty" json:"options,omitempty"`
-	OptionsFromSkills bool         `bson:"optionsFromSkills,omitempty" json:"optionsFromSkills,omitempty"`
+	Key               string   `bson:"key" json:"key"`
+	Label             string   `bson:"label" json:"label"`
+	Type              string   `bson:"type" json:"type"` // "text"|"number"|"select"
+	Options           []string `bson:"options,omitempty" json:"options,omitempty"`
+	OptionsFromSkills bool     `bson:"optionsFromSkills,omitempty" json:"optionsFromSkills,omitempty"`
 }
 
 // SkillTreeNode is a recursive tree node for hierarchical skill definitions.

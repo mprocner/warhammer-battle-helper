@@ -30,6 +30,10 @@ type Stats struct {
 	FavoriteSkills   []string                   `bson:"favoriteSkills,omitempty"  json:"favoriteSkills,omitempty"`
 	// Weapons holds the player-added rows of each weapons_table field, keyed by field key.
 	Weapons map[string][]WeaponRow `bson:"weapons,omitempty" json:"weapons,omitempty"`
+	// FavoriteWeapons holds the ids of GM preset weapons (PresetWeapon.ID) the player has
+	// starred. Preset weapons live only in the template, so this per-player preference cannot
+	// be stored on the weapon itself — unlike player-added rows, which carry WeaponRow.Favorite.
+	FavoriteWeapons []string `bson:"favoriteWeapons,omitempty" json:"favoriteWeapons,omitempty"`
 }
 
 // WeaponRow is one player-added weapon in a weapons_table field.

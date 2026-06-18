@@ -42,18 +42,17 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
-import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import CustomSheetBody, { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function labelToKey(label) {
-  return label
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
+// genId mints a stable, opaque identifier used as the durable key for fields and skill
+// options. It is generated once and never derived from a label, so renaming never orphans
+// the data stored under "<key>" / "<fieldKey>.<optionId>".
+function genId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 }
 
 function updateTreeAtPath(node, path, updater) {
@@ -70,7 +69,7 @@ function updateTreeAtPath(node, path, updater) {
 function addChildAtPath(node, path) {
   if (path.length === 0) {
     const children = node.children || [];
-    return { ...node, children: [...children, { key: `node_${Date.now()}`, label: 'Węzeł', children: [], linkedAttr: '' }] };
+    return { ...node, children: [...children, { key: genId('node'), label: 'Węzeł', children: [], linkedAttr: '' }] };
   }
   const idx = path[0];
   return { ...node, children: node.children.map((c, i) => i === idx ? addChildAtPath(c, path.slice(1)) : c) };
@@ -108,7 +107,7 @@ const PALETTE_GROUPS = [
 
 function makeDefaultField(type) {
   const base = {
-    key: `${type}_${Date.now()}`,
+    key: genId(type),
     type,
     label: '',
     abbr: '',
@@ -119,14 +118,14 @@ function makeDefaultField(type) {
   if (type === 'number') return { ...base, min: 0, max: 100, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: false };
   if (type === 'select') return { ...base, options: [] };
-  if (type === 'skill_table') return { ...base, options: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
-  if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [] };
-  if (type === 'skill_tree') return { ...base, tree: { key: `tree_${Date.now()}`, label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
+  if (type === 'skill_table') return { ...base, skills: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
+  if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
   return base;
 }
 
 function makeDefaultSection() {
-  return { id: `section_${Date.now()}`, title: '', columns: 3, fields: [] };
+  return { id: genId('section'), title: '', columns: 3, fields: [] };
 }
 
 function typeInfo(type) {
@@ -144,7 +143,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
           <input
             className="creator__tree-node-input"
             value={node.label}
-            onChange={e => onChange(updateTreeAtPath(tree, path, n => ({ ...n, label: e.target.value, key: n.key || labelToKey(e.target.value) || n.key })))}
+            onChange={e => onChange(updateTreeAtPath(tree, path, n => ({ ...n, label: e.target.value, key: n.key || genId('node') })))}
             placeholder={t('creator.treeNodePlaceholder')}
           />
           {assignAttrToSkill && (
@@ -192,46 +191,83 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
 
 // ── OptionsEditor ────────────────────────────────────────────────────────────
 
-function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, numberFields = [] }) {
+// Plain-string options editor for "select" fields and weapon select-columns. The stored
+// value IS the label (no stable id needed — a select stores the chosen text verbatim).
+function OptionsEditor({ label, options, onChange }) {
   const { t } = useTranslation();
   const [draftLabel, setDraftLabel] = useState('');
-  const [draftAttr,  setDraftAttr]  = useState('');
 
   const commit = () => {
     if (!draftLabel.trim()) return;
-    const newOpt = assignAttrToSkill ? { label: draftLabel.trim(), attr: draftAttr } : draftLabel.trim();
-    onChange([...(options || []), newOpt]);
-    setDraftLabel(''); setDraftAttr('');
+    onChange([...(options || []), draftLabel.trim()]);
+    setDraftLabel('');
   };
 
   return (
     <div className="creator__options-editor">
       <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
       <div className="creator__options-list">
-        {(options || []).map((opt, i) => {
-          const optLabel = typeof opt === 'string' ? opt : opt.label;
-          const optAttr  = typeof opt === 'string' ? '' : (opt.attr || '');
-          return (
-            <div key={i} className="creator__option-row">
-              <input className="creator__option-input" value={optLabel} onChange={e => {
-                const n = [...options];
-                n[i] = assignAttrToSkill ? { label: e.target.value, attr: optAttr } : e.target.value;
-                onChange(n);
-              }} />
-              {assignAttrToSkill && (
-                <select className="creator__option-attr-select" value={optAttr} onChange={e => {
-                  const n = [...options];
-                  n[i] = { label: optLabel, attr: e.target.value };
-                  onChange(n);
-                }}>
-                  <option value="">{t('creator.optionsNoAttr')}</option>
-                  {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
-                </select>
-              )}
-              <button className="creator__option-del" onClick={() => onChange((options || []).filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
-            </div>
-          );
-        })}
+        {(options || []).map((opt, i) => (
+          <div key={i} className="creator__option-row">
+            <input className="creator__option-input" value={opt} onChange={e => {
+              const n = [...options];
+              n[i] = e.target.value;
+              onChange(n);
+            }} />
+            <button className="creator__option-del" onClick={() => onChange((options || []).filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
+          </div>
+        ))}
+      </div>
+      <div className="creator__options-add">
+        <input
+          className="creator__option-input"
+          value={draftLabel}
+          onChange={e => setDraftLabel(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') commit(); }}
+          placeholder={t('creator.optionsAddPlaceholder')}
+        />
+        <button className="creator__option-add-btn" onClick={commit}>
+          <AddIcon style={{ fontSize: 13 }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── SkillOptionsEditor ───────────────────────────────────────────────────────
+
+// Skill rows for a "skill_table" field. Each row is { id, label, attr? }: id is a stable key
+// minted once (never derived from label), so renaming a skill keeps the player's stored value
+// under "<fieldKey>.<id>". attr is only edited when the field has assignAttrToSkill enabled.
+function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false, numberFields = [] }) {
+  const { t } = useTranslation();
+  const [draftLabel, setDraftLabel] = useState('');
+  const [draftAttr,  setDraftAttr]  = useState('');
+  const list = skills || [];
+
+  const commit = () => {
+    if (!draftLabel.trim()) return;
+    onChange([...list, { id: genId('skill'), label: draftLabel.trim(), attr: assignAttrToSkill ? draftAttr : '' }]);
+    setDraftLabel(''); setDraftAttr('');
+  };
+  const update = (i, patch) => onChange(list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+
+  return (
+    <div className="creator__options-editor">
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
+      <div className="creator__options-list">
+        {list.map((opt, i) => (
+          <div key={opt.id} className="creator__option-row">
+            <input className="creator__option-input" value={opt.label} onChange={e => update(i, { label: e.target.value })} />
+            {assignAttrToSkill && (
+              <select className="creator__option-attr-select" value={opt.attr || ''} onChange={e => update(i, { attr: e.target.value })}>
+                <option value="">{t('creator.optionsNoAttr')}</option>
+                {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
+              </select>
+            )}
+            <button className="creator__option-del" onClick={() => onChange(list.filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
+          </div>
+        ))}
       </div>
       <div className="creator__options-add">
         <input
@@ -243,7 +279,7 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
         />
         {assignAttrToSkill && (
           <select className="creator__option-attr-select" value={draftAttr} onChange={e => setDraftAttr(e.target.value)}>
-            <option value="">— brak —</option>
+            <option value="">{t('creator.optionsNoAttr')}</option>
             {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
           </select>
         )}
@@ -398,10 +434,118 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
   );
 }
 
+// ── WeaponPresetsModal ───────────────────────────────────────────────────────
+
+// GM editor for a weapons_table field's preset weapons. Each preset is a "row template":
+// the GM fills the same column cells and damage blocks a player would, plus an "always on
+// the sheet" switch. AlwaysOn presets are shown read-only on every sheet (a GM edit
+// propagates); the rest form a catalog the player can copy into their own editable rows.
+// Lives in its own dialog so it never crowds the field property panel on the right.
+function WeaponPresetsModal({ open, onClose, field, sections, onChange }) {
+  const { t } = useTranslation();
+  const presets   = field.presetWeapons || [];
+  const cols      = field.columns || [];
+  const dmgBlocks = field.damageFormula || [];
+  const hasDamage = dmgBlocks.length > 0;
+  // "from skills" columns resolve to the skills defined in the template (no character yet).
+  const skillOptions = cols.some(c => c.type === 'select' && c.optionsFromSkills)
+    ? collectSkillOptions(sections, {})
+    : [];
+
+  const update = (i, patch) => onChange(presets.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  const updateCell   = (i, colKey, val)   => update(i, { cells:  { ...(presets[i].cells  || {}), [colKey]: val } });
+  const updateDamage = (i, blockId, val)  => update(i, { damage: { ...(presets[i].damage || {}), [blockId]: Number(val) || 0 } });
+  const remove = (i) => onChange(presets.filter((_, j) => j !== i));
+  const add = () => onChange([
+    ...presets,
+    { id: genId('preset'), cells: {}, damage: {}, alwaysOn: false },
+  ]);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
+      PaperProps={{ sx: { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)' } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Cinzel, serif', color: '#7a5c42', fontSize: '1rem' }}>
+        <GavelIcon fontSize="small" />
+        {t('creator.weaponPresetsTitle')}
+        <IconButton onClick={onClose} size="small" sx={{ ml: 'auto' }}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
+          {t('creator.weaponPresetsHint')}
+        </Typography>
+
+        {cols.length === 0 ? (
+          <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', py: 2 }}>
+            {t('creator.weaponPresetsNoColumns')}
+          </Typography>
+        ) : (
+          <div className="creator__weapon-presets">
+            {presets.map((preset, i) => (
+              <div key={preset.id} className="creator__weapon-preset">
+                <div className="creator__weapon-preset-fields">
+                  {cols.map(c => {
+                    const val = (preset.cells && preset.cells[c.key]) || '';
+                    if (c.type === 'select') {
+                      const opts = c.optionsFromSkills
+                        ? skillOptions
+                        : (c.options || []).map(o => ({ key: o, label: o }));
+                      return (
+                        <label key={c.key} className="creator__weapon-preset-field">
+                          <span className="creator__weapon-preset-field-label">{c.label}</span>
+                          <select className="custom-sheet__weapon-cell-select" value={val}
+                            onChange={e => updateCell(i, c.key, e.target.value)}>
+                            <option value="">—</option>
+                            {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                          </select>
+                        </label>
+                      );
+                    }
+                    return (
+                      <label key={c.key} className="creator__weapon-preset-field">
+                        <span className="creator__weapon-preset-field-label">{c.label}</span>
+                        <input type={c.type === 'number' ? 'number' : 'text'} className="custom-sheet__weapon-cell-input"
+                          value={val} onChange={e => updateCell(i, c.key, e.target.value)} />
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {hasDamage && (
+                  <div className="creator__weapon-preset-damage">
+                    <span className="creator__weapon-preset-field-label">{t('customSheet.damage')}</span>
+                    <div className="custom-sheet__weapon-damage">
+                      {renderDamageFormula(dmgBlocks, preset, field.key,
+                        { weaponDamage: (_fk, _rowId, blockId, val) => updateDamage(i, blockId, val) }, false, t)}
+                    </div>
+                  </div>
+                )}
+
+                <div className="creator__weapon-preset-actions">
+                  <FormControlLabel
+                    control={<Switch size="small" checked={!!preset.alwaysOn} onChange={e => update(i, { alwaysOn: e.target.checked })} />}
+                    label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponPresetAlwaysOn')}</Typography>}
+                  />
+                  <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}>
+                    <DeleteIcon style={{ fontSize: 14 }} />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button className="creator__tree-add-root" onClick={add}>
+              <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponPresetAdd')}
+            </button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── PropertyPanel (field) ────────────────────────────────────────────────────
 
-function PropertyPanel({ field, onChange, numberFields }) {
+function PropertyPanel({ field, onChange, numberFields, sections }) {
   const { t } = useTranslation();
+  const [presetsOpen, setPresetsOpen] = useState(false);
   if (!field) {
     return (
       <div className="creator__props-empty">
@@ -420,14 +564,11 @@ function PropertyPanel({ field, onChange, numberFields }) {
         {t('creator.fieldProperties')}
       </Typography>
 
+      {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
+          so renaming a field never orphans player data stored under it. Not shown to the GM. */}
       <TextField size="small" fullWidth label={t('creator.fieldLabel')} value={field.label}
-        onChange={e => up({ label: e.target.value, key: field._keyEdited ? field.key : labelToKey(e.target.value) || field.key })}
+        onChange={e => up({ label: e.target.value })}
         sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
-
-      <TextField size="small" fullWidth label={t('creator.fieldKey')} value={field.key}
-        onChange={e => up({ key: e.target.value, _keyEdited: true })}
-        sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' } }}
-        helperText={t('creator.fieldKeyHint')} />
 
       {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
         <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
@@ -478,17 +619,7 @@ function PropertyPanel({ field, onChange, numberFields }) {
             <Switch
               size="small"
               checked={!!field.assignAttrToSkill}
-              onChange={e => {
-                const checked = e.target.checked;
-                if (field.type === 'skill_table') {
-                  const convertedOptions = checked
-                    ? (field.options || []).map(o => typeof o === 'string' ? { label: o, attr: '' } : o)
-                    : (field.options || []).map(o => typeof o === 'object' ? o.label : o);
-                  up({ assignAttrToSkill: checked, options: convertedOptions });
-                } else {
-                  up({ assignAttrToSkill: checked });
-                }
-              }}
+              onChange={e => up({ assignAttrToSkill: e.target.checked })}
             />
           }
           label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
@@ -517,13 +648,21 @@ function PropertyPanel({ field, onChange, numberFields }) {
         </>
       )}
 
-      {(field.type === 'select' || field.type === 'skill_table') && (
+      {field.type === 'select' && (
         <OptionsEditor
-          label={field.type === 'select' ? t('creator.selectOptions') : t('creator.skillTableSkills')}
+          label={t('creator.selectOptions')}
           options={field.options || []}
           onChange={opts => up({ options: opts })}
-          assignAttrToSkill={field.type === 'skill_table' && !!field.assignAttrToSkill}
-          numberFields={field.type === 'skill_table' ? numberFields : []}
+        />
+      )}
+
+      {field.type === 'skill_table' && (
+        <SkillOptionsEditor
+          label={t('creator.skillTableSkills')}
+          skills={field.skills || []}
+          onChange={skills => up({ skills })}
+          assignAttrToSkill={!!field.assignAttrToSkill}
+          numberFields={numberFields}
         />
       )}
 
@@ -555,6 +694,19 @@ function PropertyPanel({ field, onChange, numberFields }) {
             numberFields={numberFields}
             fieldType={field.type}
             damageMode
+          />
+
+          <Divider sx={{ my: 1.5 }} />
+          <button className="creator__weapon-presets-btn" onClick={() => setPresetsOpen(true)}>
+            <GavelIcon style={{ fontSize: 15 }} />
+            {t('creator.weaponPresetsButton', { count: (field.presetWeapons || []).length })}
+          </button>
+          <WeaponPresetsModal
+            open={presetsOpen}
+            onClose={() => setPresetsOpen(false)}
+            field={field}
+            sections={sections}
+            onChange={presetWeapons => up({ presetWeapons })}
           />
         </>
       )}
@@ -1382,6 +1534,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               field={selectedField}
               onChange={patch => updateField(selected.sectionIdx, selected.fieldIdx, patch)}
               numberFields={numberFields}
+              sections={sections}
             />
           ) : selectedSection ? (
             <SectionPropertyPanel

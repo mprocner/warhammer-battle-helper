@@ -170,11 +170,11 @@ func TestResolveSkillLabel(t *testing.T) {
 			Fields: []models.FieldDef{{Key: "atk", Label: "Attack"}},
 		}},
 	}
-	if got := resolveSkillLabel(template, "atk"); got != "Attack" {
+	if got := resolveSkillLabel(template, nil, "atk"); got != "Attack" {
 		t.Errorf("resolveSkillLabel(atk) = %q, want Attack", got)
 	}
 	// Fallback to the key when not found.
-	if got := resolveSkillLabel(template, "unknown"); got != "unknown" {
+	if got := resolveSkillLabel(template, nil, "unknown"); got != "unknown" {
 		t.Errorf("resolveSkillLabel(unknown) = %q, want unknown", got)
 	}
 }
@@ -726,15 +726,15 @@ func TestResolveRollConfig_SkillTableAssignsAttr(t *testing.T) {
 			Fields: []models.FieldDef{{
 				Type: "skill_table", Key: "spells", Rollable: true, RollConfig: cfg,
 				AssignAttrToSkill: true,
-				Options: []models.FlexOption{
-					{Label: "Fire Bolt", Attr: "int"},
+				Skills: []models.SkillOption{
+					{ID: "opt_fire", Label: "Fire Bolt", Attr: "int"},
 				},
 			}},
 		}},
 	}
 
-	// AssignAttrToSkill maps the matching option's Attr over the field default.
-	_, linkedAttr, fieldType, err := resolveRollConfig(template, &Stats{}, "spells.fire_bolt")
+	// AssignAttrToSkill maps the matching option's Attr (matched by stable id) over the field default.
+	_, linkedAttr, fieldType, err := resolveRollConfig(template, &Stats{}, "spells.opt_fire")
 	if err != nil {
 		t.Fatalf("resolveRollConfig() error: %v", err)
 	}
@@ -757,7 +757,7 @@ func TestResolveSkillLabel_SkillTree(t *testing.T) {
 			}},
 		}},
 	}
-	if got := resolveSkillLabel(template, "weapons.sword"); got != "Sword" {
+	if got := resolveSkillLabel(template, nil, "weapons.sword"); got != "Sword" {
 		t.Errorf("resolveSkillLabel(weapons.sword) = %q, want Sword", got)
 	}
 }

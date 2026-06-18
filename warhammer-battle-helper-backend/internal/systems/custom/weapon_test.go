@@ -108,6 +108,34 @@ func TestRollWeaponWithTemplate_FailureSkipsDamage(t *testing.T) {
 	}
 }
 
+func TestRollWeaponWithTemplate_AlwaysOnPresetRollsFromTemplate(t *testing.T) {
+	template, raw := weaponTemplate()
+	// Attach an AlwaysOn preset that does NOT exist in stats.Weapons. Rolling it must resolve
+	// the row straight from the template, proving GM-owned weapons need no per-player copy.
+	template.Sections[0].Fields[0].PresetWeapons = []models.PresetWeapon{{
+		ID:       "preset_fists",
+		Cells:    map[string]string{"name": "Fists", "skill": "atk"},
+		Damage:   map[string]float64{"c1": 1, "d1": 4}, // 1d4
+		AlwaysOn: true,
+	}}
+	// attack d20 Intn=2 -> roll 3 (<=10 => success); damage 1d4: Intn 2 -> 3; + STR 8 => 11.
+	p := newTestPlugin(2, 2)
+
+	res, err := p.RollWeaponWithTemplate(raw, template, "weapons", "preset_fists", 0)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate() error: %v", err)
+	}
+	if res.WeaponName != "Fists" {
+		t.Errorf("WeaponName = %q, want Fists", res.WeaponName)
+	}
+	if !strings.Contains(res.Outcome, "success") {
+		t.Errorf("Outcome = %q, want a success", res.Outcome)
+	}
+	if res.DamageRoll != 11 {
+		t.Errorf("DamageRoll = %d, want 11 (1d4=3 + STR 8)", res.DamageRoll)
+	}
+}
+
 func TestRollWeaponWithTemplate_Errors(t *testing.T) {
 	template, raw := weaponTemplate()
 	p := newTestPlugin()
