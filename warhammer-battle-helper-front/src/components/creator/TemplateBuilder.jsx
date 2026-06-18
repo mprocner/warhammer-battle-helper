@@ -22,6 +22,7 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import ListIcon from '@mui/icons-material/List';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import GavelIcon from '@mui/icons-material/Gavel';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
@@ -93,15 +94,16 @@ const FIELD_TYPES = [
   { type: 'text_long',   labelKey: 'creator.fieldType.textLong',    icon: <SubjectIcon fontSize="small" />,    desc: 'creator.fieldType.textLongDesc' },
   { type: 'checkbox',    labelKey: 'creator.fieldType.checkbox',    icon: <CheckBoxIcon fontSize="small" />,   desc: 'creator.fieldType.checkboxDesc' },
   { type: 'select',      labelKey: 'creator.fieldType.select',      icon: <ListIcon fontSize="small" />,       desc: 'creator.fieldType.selectDesc' },
-  { type: 'skill_table', labelKey: 'creator.fieldType.skillTable',  icon: <TableRowsIcon fontSize="small" />,  desc: 'creator.fieldType.skillTableDesc' },
-  { type: 'skill_tree',  labelKey: 'creator.fieldType.skillTree',   icon: <AccountTreeIcon fontSize="small" />, desc: 'creator.fieldType.skillTreeDesc' },
+  { type: 'skill_table',   labelKey: 'creator.fieldType.skillTable',    icon: <TableRowsIcon fontSize="small" />,  desc: 'creator.fieldType.skillTableDesc' },
+  { type: 'weapons_table', labelKey: 'creator.fieldType.weaponsTable',  icon: <GavelIcon fontSize="small" />,      desc: 'creator.fieldType.weaponsTableDesc' },
+  { type: 'skill_tree',    labelKey: 'creator.fieldType.skillTree',     icon: <AccountTreeIcon fontSize="small" />, desc: 'creator.fieldType.skillTreeDesc' },
 ];
 
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
-  { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'skill_tree'] },
+  { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'skill_tree'] },
 ];
 
 function makeDefaultField(type) {
@@ -118,6 +120,7 @@ function makeDefaultField(type) {
   if (type === 'progress') return { ...base, showOnShortCard: false };
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, options: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [] };
   if (type === 'skill_tree') return { ...base, tree: { key: `tree_${Date.now()}`, label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
   return base;
 }
@@ -248,6 +251,69 @@ function OptionsEditor({ label, options, onChange, assignAttrToSkill = false, nu
           <AddIcon style={{ fontSize: 13 }} />
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── WeaponColumnsEditor ──────────────────────────────────────────────────────
+
+// Editor for the GM-defined columns of a weapons_table field. Each column has a
+// stable key, a label, a type (text/number/select), and — for select columns —
+// either a manual options list or "options from the character's skills".
+function WeaponColumnsEditor({ columns, onChange }) {
+  const { t } = useTranslation();
+  const cols = columns || [];
+  const update = (i, patch) => onChange(cols.map((c, j) => (j === i ? { ...c, ...patch } : c)));
+  const remove = (i) => onChange(cols.filter((_, j) => j !== i));
+  const move = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= cols.length) return;
+    const next = [...cols];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  const add = () => onChange([...cols, { key: `col_${Date.now()}`, label: '', type: 'text', options: [], optionsFromSkills: false }]);
+
+  return (
+    <div className="creator__weapon-columns">
+      <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {t('creator.weaponColumns')}
+      </Typography>
+      {cols.map((col, i) => (
+        <div key={col.key} className="creator__weapon-col">
+          <div className="creator__weapon-col-head">
+            <input
+              className="creator__option-input"
+              value={col.label}
+              placeholder={t('creator.weaponColumnLabel')}
+              onChange={e => update(i, { label: e.target.value })}
+            />
+            <select className="creator__option-attr-select" value={col.type} onChange={e => update(i, { type: e.target.value })}>
+              <option value="text">{t('creator.weaponColTypeText')}</option>
+              <option value="number">{t('creator.weaponColTypeNumber')}</option>
+              <option value="select">{t('creator.weaponColTypeSelect')}</option>
+            </select>
+            <button className="creator__option-del" onClick={() => move(i, -1)} disabled={i === 0} title={t('creator.sectionMoveUp')}><ArrowUpwardIcon style={{ fontSize: 13 }} /></button>
+            <button className="creator__option-del" onClick={() => move(i, +1)} disabled={i === cols.length - 1} title={t('creator.sectionMoveDown')}><ArrowDownwardIcon style={{ fontSize: 13 }} /></button>
+            <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}><DeleteIcon style={{ fontSize: 13 }} /></button>
+          </div>
+          {col.type === 'select' && (
+            <div className="creator__weapon-col-select">
+              <FormControlLabel
+                control={<Switch size="small" checked={!!col.optionsFromSkills} onChange={e => update(i, { optionsFromSkills: e.target.checked })} />}
+                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponColFromSkills')}</Typography>}
+                sx={{ display: 'block' }}
+              />
+              {!col.optionsFromSkills && (
+                <OptionsEditor label={t('creator.selectOptions')} options={col.options || []} onChange={opts => update(i, { options: opts })} />
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+      <button className="creator__tree-add-root" onClick={add}>
+        <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponAddColumn')}
+      </button>
     </div>
   );
 }
@@ -459,6 +525,38 @@ function PropertyPanel({ field, onChange, numberFields }) {
           assignAttrToSkill={field.type === 'skill_table' && !!field.assignAttrToSkill}
           numberFields={field.type === 'skill_table' ? numberFields : []}
         />
+      )}
+
+      {field.type === 'weapons_table' && (
+        <>
+          <WeaponColumnsEditor columns={field.columns || []} onChange={cols => up({ columns: cols })} />
+
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('creator.weaponAttackRoll')}
+          </Typography>
+          <RollConfigEditor
+            config={field.rollConfig || defaultRollConfig()}
+            onChange={cfg => up({ rollConfig: cfg })}
+            numberFields={numberFields}
+            fieldType={field.type}
+          />
+
+          <Divider sx={{ my: 1.5 }} />
+          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('creator.damageFormula')}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
+            {t('creator.damageFormulaHint')}
+          </Typography>
+          <FormulaBuilder
+            formula={field.damageFormula || []}
+            onChange={f => up({ damageFormula: f })}
+            numberFields={numberFields}
+            fieldType={field.type}
+            damageMode
+          />
+        </>
       )}
 
       <Divider sx={{ my: 1.5 }} />

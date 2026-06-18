@@ -117,6 +117,9 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 	if s.Skills == nil {
 		s.Skills = map[string]AttrValue{}
 	}
+	if s.Weapons == nil {
+		s.Weapons = map[string][]WeaponRow{}
+	}
 	return &s, nil
 }
 

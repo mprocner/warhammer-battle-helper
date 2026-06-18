@@ -481,25 +481,14 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 	return allRolls, diceType, strings.Join(labelParts, ""), nil
 }
 
+// diceNotationToSides parses a "dN" notation into the number of faces. It accepts
+// any positive N (not just the standard set), so a weapon damage formula can use a
+// player-supplied die such as "d7". Falls back to 6 on a malformed notation.
 func diceNotationToSides(notation string) int {
-	switch notation {
-	case "d4":
-		return 4
-	case "d6":
-		return 6
-	case "d8":
-		return 8
-	case "d10":
-		return 10
-	case "d12":
-		return 12
-	case "d20":
-		return 20
-	case "d100":
-		return 100
-	default:
-		return 6
+	if sides, err := strconv.Atoi(strings.TrimPrefix(notation, "d")); err == nil && sides > 0 {
+		return sides
 	}
+	return 6
 }
 
 // ── Legacy formula types ──────────────────────────────────────────────────────

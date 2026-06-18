@@ -126,7 +126,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key                string         `bson:"key" json:"key"`
-	Type               string         `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"
+	Type               string         `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"
 	Label              string         `bson:"label" json:"label"`
 	Abbr               string         `bson:"abbr,omitempty" json:"abbr,omitempty"`
 	Min                *int           `bson:"min,omitempty" json:"min,omitempty"`
@@ -141,6 +141,22 @@ type FieldDef struct {
 	RollConfig         *RollConfig    `bson:"rollConfig,omitempty" json:"rollConfig,omitempty"`
 	Tree               *SkillTreeNode `bson:"tree,omitempty" json:"tree,omitempty"` // only for type="skill_tree"
 	PlayerCanAddSkills bool           `bson:"playerCanAddSkills,omitempty" json:"playerCanAddSkills,omitempty"`
+
+	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
+	Columns       []WeaponColumn `bson:"columns,omitempty" json:"columns,omitempty"`
+	DamageFormula []FormulaBlock `bson:"damageFormula,omitempty" json:"damageFormula,omitempty"`
+}
+
+// WeaponColumn defines one GM-authored column of a weapons_table field.
+// Type is "text" | "number" | "select". For a select column the player picks from
+// Options (manual list), unless OptionsFromSkills is true — then the choices are the
+// character's skills and the picked skill drives the weapon's attack roll.
+type WeaponColumn struct {
+	Key               string       `bson:"key" json:"key"`
+	Label             string       `bson:"label" json:"label"`
+	Type              string       `bson:"type" json:"type"` // "text"|"number"|"select"
+	Options           []FlexOption `bson:"options,omitempty" json:"options,omitempty"`
+	OptionsFromSkills bool         `bson:"optionsFromSkills,omitempty" json:"optionsFromSkills,omitempty"`
 }
 
 // SkillTreeNode is a recursive tree node for hierarchical skill definitions.

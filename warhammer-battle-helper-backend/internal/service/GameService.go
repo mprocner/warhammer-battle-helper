@@ -847,12 +847,24 @@ func (s *GameService) RollSkill(gameID string, skillKey string, modifier int, di
 }
 
 // RollWeapon rolls a weapon attack dispatched through the game system registry.
-func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string) (map[string]interface{}, error) {
+// For custom systems the attack is driven by a weapons_table field (fieldKey) and a
+// player-added weapon row (weaponRowID) stored in the character's stats.
+func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill string, damage string, modifier int, diceMod int, characterID string, userID primitive.ObjectID, username string, visibility string, fieldKey string, weaponRowID string) (map[string]interface{}, error) {
 	game, character, plugin, err := s.loadRollContext(gameID, characterID)
 	if err != nil {
 		return nil, err
 	}
-	rollResult, err := plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier, diceMod)
+
+	var rollResult *systems.RollResult
+	if game.GameSystem == "custom" {
+		if game.CustomSystemTemplate == nil {
+			return nil, fmt.Errorf("custom game has no system template configured")
+		}
+		customPlugin := plugin.(*custom.Plugin)
+		rollResult, err = customPlugin.RollWeaponWithTemplate(character.Stats, game.CustomSystemTemplate, fieldKey, weaponRowID, modifier)
+	} else {
+		rollResult, err = plugin.RollWeapon(character.Stats, weaponName, weaponSkill, damage, modifier, diceMod)
+	}
 	if err != nil {
 		return nil, err
 	}

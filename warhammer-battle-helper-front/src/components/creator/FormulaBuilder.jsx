@@ -55,7 +55,8 @@ export function formulaToString(blocks, t) {
     if (b.type === 'op') {
       parts.push(b.value === 'd' ? 'd' : ` ${OP_DISPLAY[b.value] || b.value} `);
     } else if (b.type === 'dice') {
-      parts.push(afterPool ? b.value.replace(/^d/, '') : `⚄${b.value}`);
+      const f = String(b.value || '').replace(/^d/, '');
+      parts.push(afterPool ? (f || '?') : `⚄d${f || '?'}`);
     } else if (b.type === 'dice_attr') {
       parts.push(afterPool ? `(${b.label || b.key})` : `⚄(${b.label || b.key})`);
     } else if (b.type === 'dice_skill_attr') {
@@ -64,6 +65,7 @@ export function formulaToString(blocks, t) {
     else if (b.type === 'skill')         { parts.push(sk); }
     else if (b.type === 'attr_linked')   { parts.push(la); }
     else if (b.type === 'const')         { parts.push(String(b.num ?? b.value ?? '?')); }
+    else if (b.type === 'const_input')   { parts.push('▢'); }
     else                                 { parts.push('?'); }
   }
   return parts.join('');
@@ -78,11 +80,12 @@ const BLOCK_CLASS = {
   skill:          'fb__block--skill',
   attr_linked:    'fb__block--attr-linked',
   const:          'fb__block--const',
+  const_input:    'fb__block--const',
 };
 
 // ── FormulaBuilder ────────────────────────────────────────────────────────────
 
-function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperators = [] }) {
+function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperators = [], damageMode = false }) {
   const { t } = useTranslation();
   const [constDraft,   setConstDraft]   = useState('');
   const [diceAttrOpen, setDiceAttrOpen] = useState(false);
@@ -102,6 +105,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperat
     const v = parseFloat(constDraft);
     if (!isNaN(v) && constDraft !== '') { add({ type: 'const', num: v }); setConstDraft(''); }
   };
+  const addConstInput = () => add({ type: 'const_input' });
   const addDiceAttr = () => {
     const f = numberFields.find(f => f.key === diceAttrKey);
     if (f) {
@@ -122,7 +126,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperat
   })();
 
   const blockLabel = (b) => {
-    if (b.type === 'dice')            return `⚄ ${b.value}`;
+    if (b.type === 'dice') { const f = String(b.value || '').replace(/^d/, ''); return `⚄ d${f || '?'}`; }
     if (b.type === 'dice_attr')       return `⚄ ${b.label || b.key}`;
     if (b.type === 'dice_skill_attr') return `⚄ ${t('creator.formula.diceAttrSkillBtn')}`;
     if (b.type === 'op')              return OP_DISPLAY[b.value] || b.value;
@@ -130,6 +134,7 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperat
     if (b.type === 'skill')           return t('creator.formula.skillAbbr');
     if (b.type === 'attr_linked')     return t('creator.formula.linkedAttrAbbr');
     if (b.type === 'const')           return String(b.num ?? b.value ?? '?');
+    if (b.type === 'const_input')     return '▢?';
     return '?';
   };
 
@@ -180,6 +185,13 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperat
                 <span className="fb__dice-icon">⚄</span>{d}
               </button>
             ))}
+            {/* Damage formulas only: a "generic" die the player fills per weapon on the sheet.
+                The fixed dice above stay constant for every weapon. */}
+            {damageMode && (
+              <button className="fb__dice-btn fb__dice-btn--generic" onClick={() => addDice('d')} title={t('creator.formula.diceGenericTitle')}>
+                <span className="fb__dice-icon">⚄</span>{t('creator.formula.diceGenericBtn')}
+              </button>
+            )}
             {numberFields.length > 0 && (
               <button
                 className={`fb__dice-btn fb__dice-btn--attr${diceAttrOpen ? ' fb__dice-btn--attr-open' : ''}`}
@@ -286,6 +298,12 @@ function FormulaBuilder({ formula, onChange, numberFields, fieldType, hideOperat
               placeholder="0"
             />
             <button className="fb__const-add" onClick={addConst}>{t('creator.formula.addConst')}</button>
+            {/* Damage formulas only: a flat number the player fills per weapon on the sheet. */}
+            {damageMode && (
+              <button className="fb__const-add fb__const-add--input" onClick={addConstInput} title={t('creator.formula.constInputTitle')}>
+                {t('creator.formula.constInputBtn')}
+              </button>
+            )}
           </div>
 
         </div>

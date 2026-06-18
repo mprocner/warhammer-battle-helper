@@ -7802,6 +7802,17 @@ align-items: center;
     background: rgba(122, 92, 66, 0.1);
 }
 
+.custom-sheet__roll-btn:disabled {
+    color: #cbb89a;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.custom-sheet__roll-btn:disabled:hover {
+    background: none;
+    color: #cbb89a;
+}
+
 .custom-sheet__section-title {
     font-size: 0.72rem;
     font-weight: 700;
@@ -7915,6 +7926,190 @@ align-items: center;
 .custom-sheet__skill-row--advances .coc-star-btn,
 .custom-sheet__skill-row--advances .custom-sheet__roll-btn {
     justify-self: center;
+}
+
+/* Weapons table — GM-defined columns, player-added rows. */
+
+.custom-sheet__weapon-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.custom-sheet__weapon-table-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px 2px;
+}
+
+.custom-sheet__weapon-col-label {
+    flex: 1;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.custom-sheet__weapon-col--star {
+    flex: 0 0 22px;
+}
+
+.custom-sheet__weapon-col--actions {
+    flex: 0 0 52px;
+}
+
+.custom-sheet__weapon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 4px;
+    border-radius: 3px;
+    transition: background 0.12s;
+}
+
+.custom-sheet__weapon-row:hover {
+    background: rgba(201, 151, 91, 0.12);
+}
+
+.custom-sheet__weapon-cell-input,
+.custom-sheet__weapon-cell-select {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    color: #3a2f1f;
+    font-size: 0.85rem;
+}
+
+.custom-sheet__weapon-cell-input:focus,
+.custom-sheet__weapon-cell-select:focus {
+    outline: none;
+    border-color: #7a5c42;
+}
+
+/* Damage skeleton rendered inline — tokens read-only, numbers editable. */
+.custom-sheet__weapon-damage {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px;
+    font-size: 0.85rem;
+    color: #3a2f1f;
+}
+
+.custom-sheet__weapon-dmg-dice {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    color: #7a5c42;
+    font-weight: 600;
+}
+
+.custom-sheet__weapon-dmg-input {
+    width: 52px;
+    box-sizing: border-box;
+    padding: 2px 4px;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    color: #3a2f1f;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Keep the number spinners from eating the visible digits. */
+.custom-sheet__weapon-dmg-input::-webkit-outer-spin-button,
+.custom-sheet__weapon-dmg-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.custom-sheet__weapon-dmg-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.custom-sheet__weapon-dmg-input:focus {
+    outline: none;
+    border-color: #c9975b;
+}
+
+/* Empty damage input — signals the player must fill it before the roll is allowed. */
+.custom-sheet__weapon-dmg-input--missing {
+    border-color: #c0392b;
+    background: #fdecea;
+}
+
+.custom-sheet__weapon-dmg-input--missing::placeholder {
+    color: #c0392b;
+}
+
+.custom-sheet__weapon-dmg-op {
+    color: #7a5c42;
+    font-weight: 700;
+}
+
+/* GM-fixed value (constant or fixed die) — read-only, same for every weapon. */
+.custom-sheet__weapon-dmg-fixed {
+    color: #3a2f1f;
+    font-weight: 700;
+}
+
+.custom-sheet__weapon-dmg-token {
+    padding: 1px 5px;
+    background: #e8dcc4;
+    border: 1px solid #c9975b;
+    border-radius: 4px;
+    color: #6b4423;
+    font-weight: 600;
+}
+
+.custom-sheet__weapon-actions {
+    flex: 0 0 52px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.custom-sheet__weapon-remove {
+    border: none;
+    background: transparent;
+    color: #a05a44;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.custom-sheet__weapon-remove:hover {
+    background: rgba(160, 90, 68, 0.15);
+}
+
+.custom-sheet__weapon-add-btn {
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px dashed #c9975b;
+    border-radius: 4px;
+    color: #7a5c42;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.custom-sheet__weapon-add-btn:hover {
+    background: rgba(201, 151, 91, 0.12);
+    border-color: #7a5c42;
 }
 
 /* Skill tree */
@@ -8923,6 +9118,30 @@ align-items: center;
 
 .creator__options-editor {
     margin-bottom: 12px;
+}
+
+/* Weapons table — column editor in the field property panel. */
+.creator__weapon-columns {
+    margin-bottom: 12px;
+}
+
+.creator__weapon-col {
+    margin-bottom: 8px;
+    padding: 6px;
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.creator__weapon-col-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.creator__weapon-col-select {
+    margin-top: 6px;
+    padding-left: 4px;
 }
 
 .creator__options-list {

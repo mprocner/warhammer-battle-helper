@@ -1,11 +1,13 @@
 import CustomCharacterSheet from './CharacterSheet';
 import CustomCharacterDetails from './CharacterDetails';
 import CustomRoll from './rolls/CustomRoll';
+import CustomWeaponRoll from './rolls/CustomWeaponRoll';
 import SimpleDiceRoll from '../../components/log/SimpleDiceRoll';
 import MultiDiceRoll from '../../components/log/MultiDiceRoll';
 
 const rollComponents = {
   skill: CustomRoll,
+  weapon: CustomWeaponRoll,
   simple: SimpleDiceRoll,
   multi: MultiDiceRoll,
 };
@@ -27,6 +29,7 @@ function normalizeCharacter(char) {
       numbers:          s.numbers          || {},
       customSkillNodes: s.customSkillNodes || {},
       favoriteSkills:   s.favoriteSkills   || [],
+      weapons:          s.weapons          || {},
     },
   };
 }

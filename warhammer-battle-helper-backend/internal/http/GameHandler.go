@@ -410,12 +410,16 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 
 	var req struct {
 		WeaponName  string `json:"weaponName"`
-		WeaponSkill string `json:"weaponSkill" binding:"required"`
+		WeaponSkill string `json:"weaponSkill"`
 		Damage      string `json:"damage"`
 		Modifier    int    `json:"modifier"`
 		DiceMod     int    `json:"diceMod"`
 		CharacterID string `json:"characterId" binding:"required"`
 		Visibility  string `json:"visibility"`
+		// Custom systems (weapons_table): the attack references a player-added weapon row
+		// already stored in the character's stats, identified by field key + row id.
+		FieldKey    string `json:"fieldKey"`
+		WeaponRowID string `json:"weaponRowId"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -434,7 +438,7 @@ func (h *GameHandler) RollWeapon(c *gin.Context) {
 		return
 	}
 
-	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.DiceMod, req.CharacterID, userID, username, req.Visibility)
+	result, err := h.GameService.RollWeapon(gameID, req.WeaponName, req.WeaponSkill, req.Damage, req.Modifier, req.DiceMod, req.CharacterID, userID, username, req.Visibility, req.FieldKey, req.WeaponRowID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

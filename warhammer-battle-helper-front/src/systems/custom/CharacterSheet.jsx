@@ -31,6 +31,7 @@ function CustomCharacterSheet({
     numbers:          stats.numbers           || {},
     customSkillNodes: stats.customSkillNodes  || {},
     favoriteSkills:   stats.favoriteSkills    || [],
+    weapons:          stats.weapons           || {},
   });
   const [charName,   setCharName]   = useState(character?.name   || '');
   const [isSaving,   setIsSaving]   = useState(false);
@@ -51,6 +52,7 @@ function CustomCharacterSheet({
       numbers:          s.numbers           || {},
       customSkillNodes: s.customSkillNodes  || {},
       favoriteSkills:   s.favoriteSkills    || [],
+      weapons:          s.weapons           || {},
     });
     setCharName(character?.name || '');
     charNameRef.current = character?.name || '';
@@ -70,6 +72,7 @@ function CustomCharacterSheet({
         numbers:          currentEdited.numbers,
         customSkillNodes: currentEdited.customSkillNodes,
         favoriteSkills:   currentEdited.favoriteSkills,
+        weapons:          currentEdited.weapons,
       },
     };
     try {
@@ -189,6 +192,41 @@ function CustomCharacterSheet({
     });
   };
 
+  // ---------- weapons_table handlers ----------
+
+  const genWeaponId = () => `w_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+
+  const addWeaponRow = (fieldKey) => {
+    const list = edited.weapons[fieldKey] || [];
+    const row = { id: genWeaponId(), cells: {}, damage: {}, favorite: false };
+    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
+    setEdited(ne);
+    triggerAutoSave(ne, charNameRef.current);
+  };
+
+  const removeWeaponRow = (fieldKey, rowId) => {
+    const list = (edited.weapons[fieldKey] || []).filter(r => r.id !== rowId);
+    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
+    setEdited(ne);
+    triggerAutoSave(ne, charNameRef.current);
+  };
+
+  const mapWeaponRow = (fieldKey, rowId, updater) => {
+    const list = (edited.weapons[fieldKey] || []).map(r => (r.id === rowId ? updater(r) : r));
+    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
+    setEdited(ne);
+    triggerAutoSave(ne, charNameRef.current);
+  };
+
+  const updateWeaponCell = (fieldKey, rowId, colKey, value) =>
+    mapWeaponRow(fieldKey, rowId, r => ({ ...r, cells: { ...r.cells, [colKey]: value } }));
+
+  const updateWeaponDamage = (fieldKey, rowId, blockId, value) =>
+    mapWeaponRow(fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
+
+  const toggleWeaponFavorite = (fieldKey, rowId) =>
+    mapWeaponRow(fieldKey, rowId, r => ({ ...r, favorite: !r.favorite }));
+
   const handleRoll = async (skillKey, mod = 0) => {
     if (!gameId) return;
     try {
@@ -202,6 +240,30 @@ function CustomCharacterSheet({
     }
     setRollModal(null);
     setModifier(0);
+  };
+
+  const handleRollWeapon = async (fieldKey, rowId, mod = 0) => {
+    if (!gameId) return;
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility }),
+      });
+    } catch {
+      addLogMessage?.(t('combat.rollFailed'), 'error');
+    }
+    setRollModal(null);
+    setModifier(0);
+  };
+
+  // Dispatches the modifier modal's confirm to a skill or weapon roll.
+  const confirmRoll = (mod) => {
+    if (rollModal?.weaponFieldKey) {
+      handleRollWeapon(rollModal.weaponFieldKey, rollModal.weaponRowId, mod);
+    } else {
+      handleRoll(rollModal.skillKey, mod);
+    }
   };
 
   const handlePopOut = usePopOut(character?.id, gameId);
@@ -224,6 +286,11 @@ function CustomCharacterSheet({
       text:     (key, val)        => updateText(key, val),
       progress: (key, which, val) => updateProgress(key, which, val),
       number:   (key, val)        => updateNumber(key, val),
+      weaponAdd:      (fieldKey)                     => addWeaponRow(fieldKey),
+      weaponRemove:   (fieldKey, rowId)              => removeWeaponRow(fieldKey, rowId),
+      weaponCell:     (fieldKey, rowId, colKey, val) => updateWeaponCell(fieldKey, rowId, colKey, val),
+      weaponDamage:   (fieldKey, rowId, blockId, val) => updateWeaponDamage(fieldKey, rowId, blockId, val),
+      weaponFavorite: (fieldKey, rowId)              => toggleWeaponFavorite(fieldKey, rowId),
     }}
     onRoll={setRollModal}
     customSkillNodes={edited.customSkillNodes}
@@ -258,14 +325,14 @@ function CustomCharacterSheet({
                   value={modifier}
                   onChange={e => setModifier(Number(e.target.value))}
                   autoFocus
-                  onKeyDown={e => { if (e.key === 'Enter') handleRoll(rollModal.skillKey, modifier); if (e.key === 'Escape') { setRollModal(null); setModifier(0); } }}
+                  onKeyDown={e => { if (e.key === 'Enter') confirmRoll(modifier); if (e.key === 'Escape') { setRollModal(null); setModifier(0); } }}
                 />
               </div>
               <div className="custom-roll-overlay__actions">
                 <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
                   {t('common.cancel')}
                 </button>
-                <button className="custom-roll-overlay__btn--roll" onClick={() => handleRoll(rollModal.skillKey, modifier)}>
+                <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
                   <CasinoIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />
                   {t('combat.roll')}
                 </button>
