@@ -11,7 +11,7 @@
 //
 // Usage:
 //
-//	MONGO_URI=mongodb://localhost:27017 MONGO_DB=warhammer go run ./cmd/migrate-skill-options/
+//	MONGO_URI=mongodb://localhost:27018 MONGO_DB=warhammer go run ./cmd/migrate-skill-options/
 //
 // Idempotent: a skill_table field already carrying `skills` (no `options`) and select/column
 // options already plain strings are left untouched.
@@ -142,7 +142,7 @@ func normalizeSections(sections bson.A) bool {
 func main() {
 	uri := os.Getenv("MONGO_URI")
 	if uri == "" {
-		uri = "mongodb://localhost:27017"
+		uri = "mongodb://localhost:27018"
 	}
 	dbName := os.Getenv("MONGO_DB")
 	if dbName == "" {

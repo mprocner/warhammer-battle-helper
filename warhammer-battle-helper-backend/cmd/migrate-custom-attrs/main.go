@@ -6,7 +6,7 @@
 //
 // Usage:
 //
-//	MONGO_URI=mongodb://localhost:27017 MONGO_DB=warhammer go run ./cmd/migrate-custom-attrs/
+//	MONGO_URI=mongodb://localhost:27018 MONGO_DB=warhammer go run ./cmd/migrate-custom-attrs/
 //
 // The script is idempotent: documents whose first attribute value is already
 // a subdocument (has a "base" key) are skipped without modification.
@@ -28,7 +28,7 @@ import (
 func main() {
 	uri := os.Getenv("MONGO_URI")
 	if uri == "" {
-		uri = "mongodb://localhost:27017"
+		uri = "mongodb://localhost:27018"
 	}
 	dbName := os.Getenv("MONGO_DB")
 	if dbName == "" {
