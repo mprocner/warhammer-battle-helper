@@ -24,9 +24,6 @@ const CharacterTile = ({
     >
       <div className="character-tile-header">
         <div className="character-name">{char.basicInfo?.name || char.name}</div>
-        <div className="character-hp">
-          {char.secondaryAttributes?.wounds?.current || '-'}/{char.secondaryAttributes?.wounds?.max || '-'} HP
-        </div>
       </div>
       {isGM && char.createdBy && (
         <div className="character-owner">
