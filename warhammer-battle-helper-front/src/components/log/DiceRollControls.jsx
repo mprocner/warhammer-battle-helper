@@ -6,6 +6,7 @@ import '../LogWindow.css';
 
 const DEFAULT_DICE = [4, 6, 8, 10, 12, 20, 100];
 const MAX_DICE_COUNT = 20;
+const MAX_DICE_SIDES = 10000;
 
 const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList }) => {
     const DICE = (Array.isArray(diceList) && diceList.length) ? diceList : DEFAULT_DICE;
@@ -40,8 +41,9 @@ const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVis
     };
 
     const handleCustomRoll = () => {
-        const sides = parseInt(customSides, 10);
-        if (!sides || sides < 1) return;
+        const parsed = parseInt(customSides, 10);
+        if (!parsed || parsed < 1) return;
+        const sides = Math.min(parsed, MAX_DICE_SIDES);
         onRoll(sides, getCustomCount());
         setIsCustomPopupOpen(false);
     };
@@ -78,6 +80,7 @@ const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVis
                         <input
                             type="number"
                             min="1"
+                            max={MAX_DICE_SIDES}
                             className="dice-controls__custom-popup-input"
                             value={customSides}
                             onChange={e => setCustomSides(e.target.value)}
