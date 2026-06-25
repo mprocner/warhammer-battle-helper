@@ -228,7 +228,8 @@
     "noParticipants": "Brak graczy w tej grze",
     "confirmDeleteCharacter": "Czy na pewno chcesz usunąć \"{{name}}\"? Tej operacji nie można cofnąć.",
     "deleteError": "Nie udało się usunąć postaci",
-    "favoriteSkills": "Ulubione Umiejętności"
+    "favoriteSkills": "Ulubione Umiejętności",
+    "favoriteWeapons": "Ulubione Bronie"
   },
   "characterSheet": {
     "title": "Karta Postaci",

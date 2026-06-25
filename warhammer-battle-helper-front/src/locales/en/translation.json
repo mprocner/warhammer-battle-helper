@@ -228,7 +228,8 @@
     "noParticipants": "No players in this game",
     "confirmDeleteCharacter": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
     "deleteError": "Failed to delete character",
-    "favoriteSkills": "Favourite Skills"
+    "favoriteSkills": "Favourite Skills",
+    "favoriteWeapons": "Favourite Weapons"
   },
   "characterSheet": {
     "title": "Character Sheet",

@@ -6,6 +6,7 @@ import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import CustomCharacterSheet from './CharacterSheet';
+import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
 
 function CustomCharacterDetails({
   character,
@@ -49,6 +50,30 @@ function CustomCharacterDetails({
     }
     setRollModal(null);
     setModifier(0);
+  };
+
+  const handleRollWeapon = async (fieldKey, rowId, mod = 0) => {
+    if (!gameId || !character) return;
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility }),
+      });
+    } catch {
+      addLogMessage?.(t('combat.rollFailed'), 'error');
+    }
+    setRollModal(null);
+    setModifier(0);
+  };
+
+  // Dispatches the modifier modal's confirm to a skill/attribute or a weapon roll.
+  const confirmRoll = (mod) => {
+    if (rollModal?.weaponFieldKey) {
+      handleRollWeapon(rollModal.weaponFieldKey, rollModal.weaponRowId, mod);
+    } else {
+      handleRoll(rollModal.skillKey, mod);
+    }
   };
 
   const handleProgressDelta = useCallback(async (fieldKey, delta) => {
@@ -116,6 +141,33 @@ function CustomCharacterDetails({
       return { skillKey: key, label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
     });
   }, [stats, template]);
+
+  // Favourite weapons are stored as a flat list of weapon ids covering both player-added rows
+  // (in stats.weapons) and GM presets (in the template). We resolve each id to its owning
+  // weapons_table field so a roll can carry the {fieldKey, rowId} the backend expects.
+  const favoriteWeaponsData = useMemo(() => {
+    const favSet = new Set(stats.favoriteWeapons || []);
+    if (!favSet.size) return [];
+    const playerWeapons = stats.weapons || {};
+    const fields = template?.sections?.flatMap(s => s.fields || []) || [];
+    const out = [];
+    for (const f of fields) {
+      if (f.type !== 'weapons_table') continue;
+      const dmgBlocks = f.damageFormula || [];
+      const collect = (row) => {
+        if (!favSet.has(row.id)) return;
+        out.push({
+          fieldKey: f.key,
+          rowId: row.id,
+          label: weaponRowLabel(f, row, t),
+          incomplete: dmgBlocks.length > 0 && weaponDamageIncomplete(dmgBlocks, row),
+        });
+      };
+      (playerWeapons[f.key] || []).forEach(collect);
+      (f.presetWeapons || []).forEach(collect);
+    }
+    return out;
+  }, [stats, template, t]);
 
   return (
     <div className="character-details custom-character-details">
@@ -199,6 +251,28 @@ function CustomCharacterDetails({
         </div>
       )}
 
+      {/* Favourite weapons */}
+      {favoriteWeaponsData.length > 0 && (
+        <div className="custom-character-details__favorites">
+          <div className="custom-character-details__favorites-label">
+            <StarIcon style={{ fontSize: 11, verticalAlign: 'middle', marginRight: 4 }} />
+            {t('character.favoriteWeapons')}
+          </div>
+          {favoriteWeaponsData.map(w => (
+            <button
+              key={`${w.fieldKey}.${w.rowId}`}
+              className="custom-character-details__favorite-item"
+              onClick={() => setRollModal({ weaponFieldKey: w.fieldKey, weaponRowId: w.rowId, label: w.label })}
+              disabled={!gameId || w.incomplete}
+              title={w.incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
+            >
+              <span className="custom-character-details__favorite-label">{w.label}</span>
+              <CasinoIcon style={{ fontSize: 14 }} />
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Modifier overlay */}
       {rollModal && (
         <div className="custom-roll-overlay">
@@ -216,7 +290,7 @@ function CustomCharacterDetails({
                 onChange={e => setModifier(Number(e.target.value))}
                 autoFocus
                 onKeyDown={e => {
-                  if (e.key === 'Enter') handleRoll(rollModal.skillKey, modifier);
+                  if (e.key === 'Enter') confirmRoll(modifier);
                   if (e.key === 'Escape') { setRollModal(null); setModifier(0); }
                 }}
               />
@@ -225,7 +299,7 @@ function CustomCharacterDetails({
               <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
                 {t('common.cancel')}
               </button>
-              <button className="custom-roll-overlay__btn--roll" onClick={() => handleRoll(rollModal.skillKey, modifier)}>
+              <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
                 <CasinoIcon style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }} />
                 {t('combat.roll')}
               </button>

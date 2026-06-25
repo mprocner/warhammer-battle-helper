@@ -201,7 +201,7 @@ function CustomCharacterSheet({
 
   const addWeaponRow = (fieldKey) => {
     const list = edited.weapons[fieldKey] || [];
-    const row = { id: genWeaponId(), cells: {}, damage: {}, favorite: false };
+    const row = { id: genWeaponId(), cells: {}, damage: {} };
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
@@ -215,7 +215,6 @@ function CustomCharacterSheet({
       id: genWeaponId(),
       cells: { ...(preset.cells || {}) },
       damage: { ...(preset.damage || {}) },
-      favorite: false,
     };
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
     setEdited(ne);
@@ -224,7 +223,9 @@ function CustomCharacterSheet({
 
   const removeWeaponRow = (fieldKey, rowId) => {
     const list = (edited.weapons[fieldKey] || []).filter(r => r.id !== rowId);
-    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
+    // Drop the removed row from favorites too, so CharacterDetails doesn't keep a dangling id.
+    const favoriteWeapons = (edited.favoriteWeapons || []).filter(id => id !== rowId);
+    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list }, favoriteWeapons };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
   };
@@ -242,15 +243,14 @@ function CustomCharacterSheet({
   const updateWeaponDamage = (fieldKey, rowId, blockId, value) =>
     mapWeaponRow(fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
 
-  const toggleWeaponFavorite = (fieldKey, rowId) =>
-    mapWeaponRow(fieldKey, rowId, r => ({ ...r, favorite: !r.favorite }));
-
-  // GM preset weapons live in the template, not in stats, so their "favorite" is a per-player
-  // list of preset ids rather than a flag on the row.
-  const toggleWeaponPresetFavorite = (presetId) => {
+  // Weapon favorites are tracked by weapon id in favoriteWeapons — for player rows and GM
+  // presets alike — so CharacterDetails can resolve and roll either kind the same way. (Preset
+  // weapons live in the template, not in stats, so a per-player id list is the only place to
+  // mark them; player rows reuse the same list for consistency.)
+  const toggleWeaponFavorite = (weaponId) => {
     setEdited(prev => {
       const favs = prev.favoriteWeapons || [];
-      const next = favs.includes(presetId) ? favs.filter(k => k !== presetId) : [...favs, presetId];
+      const next = favs.includes(weaponId) ? favs.filter(k => k !== weaponId) : [...favs, weaponId];
       const ne = { ...prev, favoriteWeapons: next };
       saveCharacter(ne, charNameRef.current);
       return ne;
@@ -321,8 +321,7 @@ function CustomCharacterSheet({
       weaponRemove:   (fieldKey, rowId)              => removeWeaponRow(fieldKey, rowId),
       weaponCell:     (fieldKey, rowId, colKey, val) => updateWeaponCell(fieldKey, rowId, colKey, val),
       weaponDamage:   (fieldKey, rowId, blockId, val) => updateWeaponDamage(fieldKey, rowId, blockId, val),
-      weaponFavorite: (fieldKey, rowId)              => toggleWeaponFavorite(fieldKey, rowId),
-      weaponPresetFavorite: (presetId)               => toggleWeaponPresetFavorite(presetId),
+      weaponFavorite: (weaponId)                     => toggleWeaponFavorite(weaponId),
     }}
     onRoll={setRollModal}
     favoriteWeapons={edited.favoriteWeapons}

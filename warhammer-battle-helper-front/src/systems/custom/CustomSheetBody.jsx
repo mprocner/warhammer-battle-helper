@@ -15,7 +15,7 @@ const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
 
 // weaponRowLabel picks a display name for a weapon row: the first text column's value,
 // then any non-empty cell, falling back to the field label.
-function weaponRowLabel(field, row, t) {
+export function weaponRowLabel(field, row, t) {
   const cells = row.cells || {};
   for (const c of (field.columns || [])) {
     if (c.type === 'text' && (cells[c.key] || '').trim()) return cells[c.key].trim();
@@ -72,7 +72,7 @@ export function isPlayerDie(b) {
 // (attr/skill) are always complete — a fully-fixed formula needs no input at all. Player dice
 // must be positive; a player flat number (const_input) may be any number, including 0 or
 // negative (a penalty), so we only require that it is filled.
-function weaponDamageIncomplete(blocks, row) {
+export function weaponDamageIncomplete(blocks, row) {
   const dmg = row.damage || {};
   for (const b of (blocks || [])) {
     if (b.type === 'const_input') {
@@ -725,7 +725,7 @@ function CustomSheetBody({
                     {onToggleFavorite && (
                       <button
                         className={`coc-star-btn${favoriteWeapons.includes(preset.id) ? ' coc-star-btn--active' : ''}`}
-                        onClick={() => onChange && onChange.weaponPresetFavorite(preset.id)}
+                        onClick={() => onChange && onChange.weaponFavorite(preset.id)}
                         disabled={readOnly}
                       >
                         <StarIcon style={{ fontSize: 12 }} />
@@ -762,8 +762,8 @@ function CustomSheetBody({
                 <div key={row.id} className="custom-sheet__weapon-row">
                   {onToggleFavorite && (
                     <button
-                      className={`coc-star-btn${row.favorite ? ' coc-star-btn--active' : ''}`}
-                      onClick={() => onChange && onChange.weaponFavorite(field.key, row.id)}
+                      className={`coc-star-btn${favoriteWeapons.includes(row.id) ? ' coc-star-btn--active' : ''}`}
+                      onClick={() => onChange && onChange.weaponFavorite(row.id)}
                       disabled={readOnly}
                     >
                       <StarIcon style={{ fontSize: 12 }} />
