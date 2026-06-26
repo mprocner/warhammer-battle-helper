@@ -118,7 +118,7 @@ func main() {
 	go hub.Run()
 
 	// Initialize services
-	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo)
+	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo, sessionRepo)
 
 	fogRepo := repository.NewFogRepository(db.GamesCollection)
 	fogService := service.NewFogService(fogRepo, hub)

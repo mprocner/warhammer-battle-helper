@@ -103,6 +103,38 @@ func (r *OnlineSessionRepository) CloseAll() error {
 	return err
 }
 
+// LatestStartedPerGame returns, for the given user, the most recent session
+// start time per game. One aggregation (group by gameId, max startedAt) instead
+// of a query per game — avoids the N+1 trap when sorting the lobby list.
+func (r *OnlineSessionRepository) LatestStartedPerGame(ctx context.Context, userID primitive.ObjectID) (map[primitive.ObjectID]time.Time, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"userId": userID}}},
+		{{Key: "$group", Value: bson.M{
+			"_id":         "$gameId",
+			"lastStarted": bson.M{"$max": "$startedAt"},
+		}}},
+	}
+
+	cur, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	result := make(map[primitive.ObjectID]time.Time)
+	for cur.Next(ctx) {
+		var row struct {
+			GameID      primitive.ObjectID `bson:"_id"`
+			LastStarted time.Time          `bson:"lastStarted"`
+		}
+		if err := cur.Decode(&row); err != nil {
+			return nil, err
+		}
+		result[row.GameID] = row.LastStarted
+	}
+	return result, cur.Err()
+}
+
 type OnlineStatsSummary struct {
 	TotalSeconds int64 `json:"totalSeconds"`
 	SessionCount int   `json:"sessionCount"`

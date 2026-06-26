@@ -7,21 +7,24 @@ import (
 	"battle-helper/internal/systems/custom"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math"
+	"sort"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type GameService struct {
-	gameRepo  *repository.GameRepository
-	userRepo  *repository.UserRepository
-	charRepo  *repository.CharactersRepository
-	hub       *websocket.Hub
-	statsRepo *repository.RollStatsRepository
+	gameRepo    *repository.GameRepository
+	userRepo    *repository.UserRepository
+	charRepo    *repository.CharactersRepository
+	hub         *websocket.Hub
+	statsRepo   *repository.RollStatsRepository
+	sessionRepo *repository.OnlineSessionRepository
 }
 
 func NewGameService(
@@ -30,13 +33,15 @@ func NewGameService(
 	charRepo *repository.CharactersRepository,
 	hub *websocket.Hub,
 	statsRepo *repository.RollStatsRepository,
+	sessionRepo *repository.OnlineSessionRepository,
 ) *GameService {
 	return &GameService{
-		gameRepo:  gameRepo,
-		userRepo:  userRepo,
-		charRepo:  charRepo,
-		hub:       hub,
-		statsRepo: statsRepo,
+		gameRepo:    gameRepo,
+		userRepo:    userRepo,
+		charRepo:    charRepo,
+		hub:         hub,
+		statsRepo:   statsRepo,
+		sessionRepo: sessionRepo,
 	}
 }
 
@@ -300,6 +305,28 @@ func (s *GameService) GetGamesForUser(userID primitive.ObjectID) ([]models.Game,
 			}
 		}
 	}
+
+	// Sort by "last opened by this user" (most recent first). The timestamp is
+	// per (user, game), so it lives in the sessions collection — not on the game.
+	// Games this user never opened fall back to CreatedAt, landing below the ones
+	// they actually visited.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	lastOpened, err := s.sessionRepo.LatestStartedPerGame(ctx, userID)
+	if err != nil {
+		// Sorting is best-effort: on failure return the unsorted list rather than erroring.
+		return games, nil
+	}
+
+	openedKey := func(g models.Game) time.Time {
+		if t, ok := lastOpened[g.ID]; ok {
+			return t
+		}
+		return g.CreatedAt
+	}
+	sort.SliceStable(games, func(i, j int) bool {
+		return openedKey(games[i]).After(openedKey(games[j]))
+	})
 
 	return games, nil
 }
