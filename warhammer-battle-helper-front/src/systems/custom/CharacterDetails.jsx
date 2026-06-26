@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
-import CustomCharacterSheet from './CharacterSheet';
 import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
 
 function CustomCharacterDetails({
@@ -15,13 +14,11 @@ function CustomCharacterDetails({
   gameId = null,
   token = null,
   isGM = false,
-  autoOpenSheet = false,
-  onSheetOpened = null,
+  onOpenCharacterSheet = null,
   rollVisibility = 'all',
   game = null,
 }) {
   const { t } = useTranslation();
-  const [showSheet,  setShowSheet]  = useState(false);
   const [rollModal,  setRollModal]  = useState(null); // { skillKey, label }
   const [modifier,   setModifier]   = useState(0);
 
@@ -29,13 +26,6 @@ function CustomCharacterDetails({
   const stats      = useMemo(() => character?.stats || {}, [character?.stats]);
   const attributes = stats.attributes || {};
   const progress   = stats.progress   || {};
-
-  useEffect(() => {
-    if (autoOpenSheet && character) {
-      setShowSheet(true);
-      onSheetOpened?.();
-    }
-  }, [autoOpenSheet, character, onSheetOpened]);
 
   const handleRoll = async (skillKey, mod = 0) => {
     if (!gameId || !character) return;
@@ -175,7 +165,7 @@ function CustomCharacterDetails({
         avatarSrc={character?.avatar}
         characterId={character?.id}
         name={character?.name}
-        onOpenSheet={() => setShowSheet(true)}
+        onOpenSheet={() => onOpenCharacterSheet?.(character.id)}
         t={t}
       />
 
@@ -308,20 +298,6 @@ function CustomCharacterDetails({
         </div>
       )}
 
-      {/* Full sheet popup */}
-      {showSheet && (
-        <CustomCharacterSheet
-          character={character}
-          onClose={() => setShowSheet(false)}
-          onCharacterUpdate={onCharacterUpdate}
-          addLogMessage={addLogMessage}
-          gameId={gameId}
-          token={token}
-          isGM={isGM}
-          rollVisibility={rollVisibility}
-          game={game}
-        />
-      )}
     </div>
   );
 }

@@ -688,6 +688,10 @@
   },
   "favoriteWeapons": "Ulubiona Bron",
   "favoriteSkills": "Umiejętności",
+  "windowBar": {
+    "close": "Zamknij",
+    "untitled": "Bez nazwy"
+  },
   "scenes": {
     "title": "Sceny",
     "createScene": "Nowa Scena",

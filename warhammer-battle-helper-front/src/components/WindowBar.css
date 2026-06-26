@@ -1,0 +1,126 @@
+/* Kontener górnych listew: okna nad scenami, wspólne zwijanie */
+.top-bars {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Górna listwa otwartych okien — pasek zadań sesji */
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #e8dcc4;
+  border-bottom: 2px solid #d4a574;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c9975b #e8dcc4;
+  flex-shrink: 0;
+  transition: height 0.3s ease, padding 0.3s ease, border-width 0.3s ease;
+}
+
+.window-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.window-bar::-webkit-scrollbar-thumb {
+  background: #c9975b;
+  border-radius: 2px;
+}
+
+.window-bar--collapsed {
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-width: 0;
+  overflow: hidden;
+}
+
+.window-bar__item {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  border: 1px solid #d4a574;
+  border-radius: 4px;
+  background: #f5e6d0;
+  overflow: hidden;
+  transition: all 0.15s;
+}
+
+.window-bar__item:hover {
+  background: #eedcc0;
+}
+
+.window-bar__item[draggable="true"] {
+  cursor: grab;
+}
+
+.window-bar__item--dragover {
+  box-shadow: inset 3px 0 0 0 #7a5c42;
+}
+
+.window-bar__item--active {
+  background: #c9975b;
+  border-color: #a67c52;
+}
+
+.window-bar__item--active .window-bar__open,
+.window-bar__item--active .window-bar__icon {
+  color: #fff;
+}
+
+.window-bar__item--hidden {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.window-bar__open {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px 4px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Cinzel', serif;
+  color: #7a5c42;
+  max-width: 180px;
+}
+
+.window-bar__icon {
+  display: flex;
+  align-items: center;
+  color: #c9975b;
+  flex-shrink: 0;
+}
+
+.window-bar__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-bar__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: none;
+  border-left: 1px solid #d4a574;
+  background: transparent;
+  cursor: pointer;
+  color: #7a5c42;
+  transition: background 0.15s, color 0.15s;
+}
+
+.window-bar__close:hover {
+  background: #b8503c;
+  color: #fff;
+}
+
+.window-bar__item--active .window-bar__close {
+  color: #fff;
+  border-left-color: #a67c52;
+}

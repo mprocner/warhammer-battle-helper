@@ -27,8 +27,15 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     const [hasChanges, setHasChanges] = useState(false);
     const saveTimeoutRef = useRef(null);
     const editedCharacterRef = useRef(editedCharacter);
+    const prevCharIdRef = useRef(character?.id);
 
+    // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
+    // postaci NIE nadpisujemy lokalnych edycji danymi z refetchu po evencie WS
+    // — inaczej rzut innego gracza kasowałby właśnie wpisywany tekst.
+    // (Stan początkowy ustawia już inicjalizator useState powyżej.)
     useEffect(() => {
+        if (character?.id === prevCharIdRef.current) return;
+        prevCharIdRef.current = character?.id;
         setEditedCharacter({
             ...character,
             basicSkills: character.basicSkills || {},

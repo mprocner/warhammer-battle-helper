@@ -42,8 +42,14 @@ function CustomCharacterSheet({
 
   const autoSaveTimer  = useRef(null);
   const charNameRef    = useRef(charName);
+  const prevCharIdRef  = useRef(character?.id);
 
+  // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
+  // postaci zachowujemy lokalne edycje — nie nadpisujemy ich danymi z refetchu
+  // po evencie WS (inaczej kasowałoby wpisywany właśnie tekst).
   useEffect(() => {
+    if (character?.id === prevCharIdRef.current) return;
+    prevCharIdRef.current = character?.id;
     const s = character?.stats || {};
     setEdited({
       attributes:       s.attributes        || {},
@@ -300,7 +306,7 @@ function CustomCharacterSheet({
   const headerButtons = useCharacterSheetHeaderButtons({
     isSaving, saveSuccess, isStandalone,
     onSave: () => saveCharacter(edited, charNameRef.current),
-    onPopOut: handlePopOut,
+    onPopOut: () => { handlePopOut(); onClose?.(); },
     t,
   });
 
@@ -339,6 +345,8 @@ function CustomCharacterSheet({
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={900}
+      windowId={`characterSheet:${character.id}`}
+      windowKind="characterSheet"
     >
       <div className="custom-sheet">
         {/* Roll modifier modal */}

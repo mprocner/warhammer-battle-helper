@@ -10,8 +10,7 @@ function CharacterDetailsPanel({
     token = null,
     isGM = false,
     gameSystem = 'warhammer4e',
-    autoOpenSheet = false,
-    onSheetOpened = null,
+    onOpenCharacterSheet = null,
     rollVisibility = 'all',
     game = null,
 }) {
@@ -38,8 +37,7 @@ function CharacterDetailsPanel({
                 token={token}
                 isGM={isGM}
                 gameSystem={gameSystem}
-                autoOpenSheet={autoOpenSheet}
-                onSheetOpened={onSheetOpened}
+                onOpenCharacterSheet={onOpenCharacterSheet}
                 rollVisibility={rollVisibility}
                 game={game}
             />

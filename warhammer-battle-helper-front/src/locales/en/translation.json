@@ -688,6 +688,10 @@
   },
   "favoriteWeapons": "Favorite Weapons",
   "favoriteSkills": "Skills",
+  "windowBar": {
+    "close": "Close",
+    "untitled": "Untitled"
+  },
   "scenes": {
     "title": "Scenes",
     "createScene": "New Scene",

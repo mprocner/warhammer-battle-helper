@@ -16,7 +16,9 @@ import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dn
 import ConfirmModal from './common/ConfirmModal';
 import ResizableSplitPane from './common/ResizableSplitPane';
 import CharacterSidebarList from './CharacterSidebarList';
+import CharacterSheetHost from './CharacterSheetHost';
 import { normalizeCharacter } from '../systems/registry';
+import { useWindowManager } from '../contexts/WindowManagerContext';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -70,8 +72,29 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Selected character for details panel
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
-  // Auto-open character sheet after creating new character
-  const [autoOpenCharacterSheet, setAutoOpenCharacterSheet] = useState(false);
+  // Otwarte karty postaci (multi-open) — lista id postaci
+  const [openCharacterIds, setOpenCharacterIds] = useState([]);
+  const { focusWindow } = useWindowManager();
+
+  const openCharacterSheet = useCallback((id) => {
+    if (!id) return;
+    setOpenCharacterIds(prev => (prev.includes(id) ? prev : [...prev, id]));
+    // Dedup: klik w już otwartą postać tylko podnosi okno na wierzch
+    focusWindow(`characterSheet:${id}`);
+  }, [focusWindow]);
+
+  const closeCharacterSheet = useCallback((id) => {
+    setOpenCharacterIds(prev => prev.filter(x => x !== id));
+  }, []);
+
+  // Żywa postać rozwiązana po id — z siatki, puli lub listy bazowej
+  const resolveCharacter = useCallback((id) => {
+    const fromZone = fightZones.find(z => z.character?.id === id)?.character;
+    if (fromZone) return fromZone;
+    const fromPool = characters.find(c => c.id === id);
+    if (fromPool) return fromPool;
+    return initialCharacters.find(c => c.id === id) || null;
+  }, [fightZones, characters, initialCharacters]);
 
   // Clone character popup
   const [cloneTarget, setCloneTarget] = useState(null);
@@ -341,12 +364,12 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       await fetchCharacters(true);
       setPcListCollapsed(false);
       setSelectedCharacter(createdCharacter);
-      setAutoOpenCharacterSheet(true);
+      openCharacterSheet(createdCharacter.id);
     } catch (err) {
       console.error('Failed to create character:', err);
       addLogMessage(t('character.createError'), 'error');
     }
-  }, [gameId, token, fetchCharacters, addLogMessage, t]);
+  }, [gameId, token, fetchCharacters, addLogMessage, t, openCharacterSheet]);
 
   const handleAddNPC = useCallback(async () => {
     try {
@@ -395,12 +418,12 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       await fetchCharacters(true);
       setNpcListCollapsed(false);
       setSelectedCharacter(createdCharacter);
-      setAutoOpenCharacterSheet(true);
+      openCharacterSheet(createdCharacter.id);
     } catch (err) {
       console.error('Failed to create NPC:', err);
       addLogMessage(t('character.createError'), 'error');
     }
-  }, [gameId, token, fetchCharacters, addLogMessage, t]);
+  }, [gameId, token, fetchCharacters, addLogMessage, t, openCharacterSheet]);
 
   const handleCloneCharacter = useCallback(async (count) => {
     if (!cloneTarget || !gameId) return;
@@ -836,8 +859,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                   token={token}
                   isGM={isGM}
                   gameSystem={gameSystem}
-                  autoOpenSheet={autoOpenCharacterSheet}
-                  onSheetOpened={() => setAutoOpenCharacterSheet(false)}
+                  onOpenCharacterSheet={openCharacterSheet}
                   rollVisibility={rollVisibility}
                   game={game}
                 />
@@ -959,6 +981,21 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           </div>
         )}
       </DragOverlay>
+
+      {/* Otwarte karty postaci (multi-open) */}
+      <CharacterSheetHost
+        openCharacterIds={openCharacterIds}
+        resolveCharacter={resolveCharacter}
+        onClose={closeCharacterSheet}
+        onCharacterUpdate={handleCharacterUpdate}
+        addLogMessage={addLogMessage}
+        gameId={gameId}
+        token={token}
+        isGM={isGM}
+        gameSystem={gameSystem}
+        rollVisibility={rollVisibility}
+        game={game}
+      />
 
       {/* Clone Character Modal */}
       {cloneTarget && (

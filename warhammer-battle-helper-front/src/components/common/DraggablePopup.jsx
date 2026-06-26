@@ -2,13 +2,30 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ModalHeader from './ModalHeader';
+import { useManagedWindow, useWindowManager } from '../../contexts/WindowManagerContext';
 
-function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400 }) {
+function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400, windowId = null, windowKind = 'characterSheet' }) {
     const { t } = useTranslation();
-    const [isMinimized, setIsMinimized] = useState(false);
+    const isManaged = !!windowId;
+
+    const { windows, toggleHidden } = useWindowManager();
+    const { hidden, zIndex, focus } = useManagedWindow({ id: windowId, kind: windowKind, title, onClose });
+
+    // Kaskadowy offset pozycji = liczba okien otwartych przed tym (zapamiętana raz)
+    const cascadeRef = useRef(null);
+    if (cascadeRef.current === null) cascadeRef.current = isManaged ? windows.length : 0;
+    const cascade = cascadeRef.current;
+
+    // Minimalizacja: okno zarządzane chowa się do listwy; pozostałe zwijają w miejscu
+    const [localMinimized, setLocalMinimized] = useState(false);
+    const isMinimized = isManaged ? false : localMinimized;
+    const handleToggleMinimize = isManaged
+        ? () => toggleHidden(windowId)
+        : () => setLocalMinimized(v => !v);
+
     const [position, setPosition] = useState(() => ({
-        x: Math.min(0, window.innerWidth - 600),
-        y: Math.min(0, window.innerHeight - 400)
+        x: Math.min(cascade * 30, window.innerWidth - 600),
+        y: Math.min(cascade * 30, window.innerHeight - 400)
     }));
     const [size, setSize] = useState(() => ({
         width: Math.min(initialWidth, window.innerWidth),
@@ -36,6 +53,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
     }, []);
 
     const handleMouseDown = (e) => {
+        if (isManaged) focus();
         if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
             setIsDragging(true);
             const rect = popupRef.current.getBoundingClientRect();
@@ -126,6 +144,8 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
         };
     }, [isDragging, isResizing, dragOffset, resizeDirection, resizeStart, clampPosition]);
 
+    if (isManaged && hidden) return null;
+
     const content = (
         <div
             ref={popupRef}
@@ -136,7 +156,8 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
                 width: isMinimized ? 'auto' : `${Math.min(size.width, window.innerWidth)}px`,
                 height: isMinimized ? 'auto' : `${Math.min(size.height, window.innerHeight)}px`,
                 maxWidth: '100vw',
-                maxHeight: '100vh'
+                maxHeight: '100vh',
+                ...(isManaged ? { zIndex } : {})
             }}
             onMouseDown={handleMouseDown}
         >
@@ -157,7 +178,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
                 title={title}
                 onClose={onClose}
                 isMinimized={isMinimized}
-                onToggleMinimize={() => setIsMinimized(v => !v)}
+                onToggleMinimize={handleToggleMinimize}
                 extraButtons={headerButtons}
                 isDragging={isDragging}
                 draggable

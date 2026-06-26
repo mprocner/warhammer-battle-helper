@@ -426,7 +426,7 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
   }, [gameId, token, character.id, rollVisibility]);
 
   const handlePopOut = usePopOut(character.id, gameId);
-  const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: handlePopOut, isStandalone, t });
+  const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
   const pb = edited.derived?.proficiencyBonus ?? 2;
   const passivePerc = edited.derived?.passivePerception ?? 10;
@@ -614,6 +614,8 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={1100}
+      windowId={`characterSheet:${character.id}`}
+      windowKind="characterSheet"
     >
       {sheetContent}
     </DraggablePopup>

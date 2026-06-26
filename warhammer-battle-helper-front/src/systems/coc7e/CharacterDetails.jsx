@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
@@ -6,7 +6,6 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import CharacterHeader from '../shared/CharacterHeader';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
-import CoCCharacterSheet from './CharacterSheet';
 import CoCDiceModOverlay from './CoCDiceModOverlay';
 import defaultSkillsData from './skills.json';
 import { getCharacterSaveUrl } from '../shared/characterApi';
@@ -29,14 +28,11 @@ function CoCCharacterDetails({
   gameId = null,
   token = null,
   isGM = false,
-  autoOpenSheet = false,
-  onSheetOpened = null,
+  onOpenCharacterSheet = null,
   rollVisibility = 'all',
   skills = defaultSkillsData,
-  weaponSkills = [],
 }) {
   const { t } = useTranslation();
-  const [showDetails, setShowDetails] = useState(false);
 
   const stats = character?.stats || {};
   const resources = stats.resources || {};
@@ -220,7 +216,7 @@ function CoCCharacterDetails({
         avatarSrc={character.avatar}
         characterId={character.id}
         name={character.name}
-        onOpenSheet={() => setShowDetails(true)}
+        onOpenSheet={() => onOpenCharacterSheet?.(character.id)}
         t={t}
       />
 
@@ -367,20 +363,6 @@ function CoCCharacterDetails({
         </div>
       )}
 
-      {showDetails && (
-        <CoCCharacterSheet
-          character={character}
-          onClose={() => setShowDetails(false)}
-          onCharacterUpdate={onCharacterUpdate}
-          addLogMessage={addLogMessage}
-          gameId={gameId}
-          token={token}
-          isGM={isGM}
-          rollVisibility={rollVisibility}
-          skills={skills}
-          weaponSkills={weaponSkills}
-        />
-      )}
     </div>
   );
 }

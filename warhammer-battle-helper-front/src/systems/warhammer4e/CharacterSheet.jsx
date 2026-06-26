@@ -115,7 +115,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
     }, [editedCharacter.characteristics]);
 
     const handlePopOut = usePopOut(character.id, gameId);
-    const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: handlePopOut, isStandalone, t });
+    const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
     const sharedSkillProps = {
         character: editedCharacter,
@@ -215,6 +215,8 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
                 title={editedCharacter.basicInfo?.name || t('characterSheet.title')}
                 onClose={onClose}
                 headerButtons={headerButtons}
+                windowId={`characterSheet:${character.id}`}
+                windowKind="characterSheet"
             >
                 {sheetContent}
             </DraggablePopup>

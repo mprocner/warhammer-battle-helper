@@ -23,15 +23,17 @@ import SortableNoteItem from './notes/SortableNoteItem';
 import NoteEditorModal from './notes/NoteEditorModal';
 import ConfirmModal from '../common/ConfirmModal';
 import { getNotes, createNote, updateNote, deleteNote, reorderNotes } from '../../api/notes';
+import { useWindowManager } from '../../contexts/WindowManagerContext';
 import './NotesTab.css';
 
 const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   const { t } = useTranslation();
   const [notes, setNotes] = useState([]);
   const [filterText, setFilterText] = useState('');
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState(null);
+  // Otwarte edytory (multi-open) — { key, noteId }. noteId=null = nowa notatka.
+  const [openEditors, setOpenEditors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { focusWindow } = useWindowManager();
   const [error, setError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -113,21 +115,18 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
     });
   }, [gameState?.notes, userId]);
 
-  // Auto-refresh editing note from WS updates
+  // Zamknij edytory notatek, które zniknęły (usunięte zdalnie). Edytory
+  // żywej notatki dostają aktualizacje przez prop `note` (resolveNote).
   useEffect(() => {
-    if (!editingNote || !gameState?.notes) return;
-
-    const updated = gameState.notes.find(n => n.id === editingNote.id);
-    if (updated) {
-      if (new Date(updated.updatedAt) > new Date(editingNote.updatedAt)) {
-        setEditingNote(updated);
-      }
-    } else if (confirmedNoteIdsRef.current.has(editingNote.id)) {
-      // Note was confirmed by server before — now it's gone, so it was deleted remotely
-      setIsEditorOpen(false);
-      setEditingNote(null);
-    }
-  }, [gameState?.notes, editingNote]);
+    setOpenEditors(prev => {
+      const filtered = prev.filter(e =>
+        !e.noteId
+        || notes.some(n => n.id === e.noteId)
+        || !confirmedNoteIdsRef.current.has(e.noteId)
+      );
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [notes]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -172,28 +171,34 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
 
   // CRUD handlers
   const handleCreate = useCallback(() => {
-    setEditingNote(null);
-    setIsEditorOpen(true);
+    setOpenEditors(prev => [...prev, { key: `new-${Date.now()}`, noteId: null }]);
   }, []);
 
   const handleEdit = useCallback((note) => {
-    setEditingNote(note);
-    setIsEditorOpen(true);
+    setOpenEditors(prev => {
+      const existing = prev.find(e => e.noteId === note.id);
+      if (existing) {
+        // Już otwarta — tylko podnieś okno na wierzch
+        focusWindow(`note:${existing.key}`);
+        return prev;
+      }
+      return [...prev, { key: `note-${note.id}`, noteId: note.id }];
+    });
+  }, [focusWindow]);
+
+  const handleEditorClose = useCallback((key) => {
+    setOpenEditors(prev => prev.filter(e => e.key !== key));
   }, []);
 
-  const handleEditorClose = useCallback(() => {
-    setIsEditorOpen(false);
-    setEditingNote(null);
-  }, []);
-
-  const handleSave = useCallback(async (data) => {
+  const handleSave = useCallback(async (editor, data) => {
     try {
-      if (editingNote) {
-        const updated = await updateNote(gameId, editingNote.id, data);
+      if (editor.noteId) {
+        const updated = await updateNote(gameId, editor.noteId, data);
         setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
       } else {
         const created = await createNote(gameId, data);
-        setEditingNote(created);
+        // Powiąż edytor z utworzoną notatką (kolejne zapisy = update)
+        setOpenEditors(prev => prev.map(e => e.key === editor.key ? { ...e, noteId: created.id } : e));
         // Prepend locally — consistent with backend AddNoteToOrder ($position: 0)
         setNotes(prev => [created, ...prev]);
       }
@@ -201,7 +206,7 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
       console.error('Failed to save note:', err);
       throw err;
     }
-  }, [gameId, editingNote]);
+  }, [gameId]);
 
   const handleDeleteClick = useCallback((note) => {
     setDeleteTarget(note);
@@ -214,17 +219,14 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
       await deleteNote(gameId, deleteTarget.id);
       deletedNoteIdsRef.current.add(deleteTarget.id);
       setNotes(prev => prev.filter(n => n.id !== deleteTarget.id));
-      if (editingNote?.id === deleteTarget.id) {
-        setIsEditorOpen(false);
-        setEditingNote(null);
-      }
+      setOpenEditors(prev => prev.filter(e => e.noteId !== deleteTarget.id));
     } catch (err) {
       console.error('Failed to delete note:', err);
     } finally {
       setIsDeleting(false);
       setDeleteTarget(null);
     }
-  }, [gameId, deleteTarget, editingNote]);
+  }, [gameId, deleteTarget]);
 
   if (isLoading) {
     return <div className="notes-tab notes-tab--loading">{t('common.loading')}</div>;
@@ -318,13 +320,18 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
         </DndContext>
       )}
 
-      {/* Editor Modal */}
-      <NoteEditorModal
-        isOpen={isEditorOpen}
-        note={editingNote}
-        onClose={handleEditorClose}
-        onSave={handleSave}
-      />
+      {/* Editor Modals — one per open note */}
+      {openEditors.map((editor, index) => (
+        <NoteEditorModal
+          key={editor.key}
+          windowKey={editor.key}
+          index={index}
+          isOpen={true}
+          note={editor.noteId ? (notes.find(n => n.id === editor.noteId) || null) : null}
+          onClose={() => handleEditorClose(editor.key)}
+          onSave={(data) => handleSave(editor, data)}
+        />
+      ))}
 
       {/* Delete Confirm */}
       <ConfirmModal

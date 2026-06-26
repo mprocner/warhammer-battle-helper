@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../../../api/axios';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import ModalHeader from '../../common/ModalHeader';
+import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
 import './HandoutViewerModal.css';
 
 /**
@@ -14,6 +15,9 @@ const MIN_HEIGHT = 200;
 
 const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
   const { t } = useTranslation();
+  const { toggleHidden } = useWindowManager();
+  const windowId = handout ? `handout:${handout.id}` : null;
+  const { hidden, zIndex, focus } = useManagedWindow({ id: windowId, kind: 'handout', title: handout?.title, onClose });
   const [textContent, setTextContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -92,7 +96,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     };
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [handout?.fileUrl, isMinimized]);
+  }, [handout?.fileUrl, isMinimized, hidden]);
 
   useEffect(() => { imageZoomRef.current = imageZoom; }, [imageZoom]);
 
@@ -134,6 +138,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
 
   // Modal drag handlers
   const handleMouseDown = (e) => {
+    focus();
     if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
@@ -234,7 +239,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     };
   }, [isDragging, dragOffset, isResizing, resizeDir, resizeStart, isImagePanning, clampPosition, clampImagePan]);
 
-  if (!isOpen || !handout) return null;
+  if (!isOpen || !handout || hidden) return null;
 
   const getFileUrl = () => {
     if (!handout.fileUrl) return '';
@@ -358,6 +363,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        zIndex,
         ...sizeStyle,
       }}
       onMouseDown={handleMouseDown}
@@ -366,7 +372,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
         title={handout.title}
         onClose={onClose}
         isMinimized={isMinimized}
-        onToggleMinimize={() => setIsMinimized(v => !v)}
+        onToggleMinimize={() => toggleHidden(windowId)}
         icon={<HandoutTypeIcon type={handout.type} className="handout-viewer__type-icon" />}
         isDragging={isDragging}
         draggable

@@ -6,7 +6,6 @@ import CharacterHeader from '../shared/CharacterHeader';
 import axios from 'axios';
 import axiosInstance, { getApiUrl, getApiHeaders } from '../../api/axios';
 import skillsData from '../../data/skills.json';
-import { getSystem } from '../../systems/registry';
 import { buildPayload } from './buildPayload';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 
@@ -17,28 +16,14 @@ function WarhammerCharacterDetails({
     gameId = null,
     token = null,
     isGM = false,
-    autoOpenSheet = false,
-    onSheetOpened = null,
+    onOpenCharacterSheet = null,
     rollVisibility = 'all',
-    gameSystem = 'warhammer4e',
 }) {
-    const system = getSystem(gameSystem);
     const { t } = useTranslation();
-    const [showDetails, setShowDetails] = useState(false);
     const [showModifierModal, setShowModifierModal] = useState(false);
     const [mousePosition, setMousePosition] = useState(null);
     const [pendingCharacteristic, setPendingCharacteristic] = useState(null);
     const woundsSaveTimerRef = useRef(null);
-
-    // Auto-open character sheet when requested (e.g., after creating new character)
-    useEffect(() => {
-        if (autoOpenSheet && character) {
-            setShowDetails(true);
-            if (onSheetOpened) {
-                onSheetOpened();
-            }
-        }
-    }, [autoOpenSheet, character, onSheetOpened]);
 
     // Initialize wounds.current to wounds.total if not set
     useEffect(() => {
@@ -438,7 +423,7 @@ function WarhammerCharacterDetails({
                 avatarSrc={character.avatar}
                 characterId={character.id}
                 name={character.basicInfo?.name}
-                onOpenSheet={() => setShowDetails(true)}
+                onOpenSheet={() => onOpenCharacterSheet?.(character.id)}
                 t={t}
             />
 
@@ -607,22 +592,6 @@ function WarhammerCharacterDetails({
                     </div>
                 </div>
             )}
-
-            {showDetails && (() => {
-                const CharacterSheet = system.CharacterSheet;
-                return (
-                    <CharacterSheet
-                        character={character}
-                        onClose={() => setShowDetails(false)}
-                        onCharacterUpdate={onCharacterUpdate}
-                        addLogMessage={addLogMessage}
-                        gameId={gameId}
-                        token={token}
-                        isGM={isGM}
-                        rollVisibility={rollVisibility}
-                    />
-                );
-            })()}
 
             {showModifierModal && (
                 <ModifierSelectionModal

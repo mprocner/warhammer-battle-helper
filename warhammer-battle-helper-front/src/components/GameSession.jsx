@@ -16,6 +16,8 @@ import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
 import { getMinigameState } from '../api/minigame';
 import SceneSelector from './scene/SceneSelector';
+import WindowBar from './WindowBar';
+import { WindowManagerProvider } from '../contexts/WindowManagerContext';
 import YahtzeeBoardModal from './minigame/YahtzeeBoardModal';
 import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
@@ -38,6 +40,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
   const [characterDataTrigger, setCharacterDataTrigger] = useState(0);
   const [leftPanelHidden, setLeftPanelHidden] = useState(false);
   const [rightPanelHidden, setRightPanelHidden] = useState(false);
+  // Wspólne zwijanie górnych listew (okna + sceny) jednym przyciskiem
+  const [topBarsCollapsed, setTopBarsCollapsed] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [pointerPings, setPointerPings] = useState([]);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
@@ -804,6 +808,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
   }
 
   return (
+    <WindowManagerProvider>
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {wsError && (
         <Alert severity="warning" sx={{ m: 2 }}>
@@ -831,17 +836,24 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
 
         <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
           <DragAndDropContext
-            sceneSelector={isGM ? (
-              <SceneSelector
-                scenes={gameState?.scenes || []}
-                activeSceneId={displayScene?.id}
-                onSceneChange={setGmViewingSceneId}
-                participants={gameState?.participants || []}
-                gameId={gameId}
-                onSceneCreated={setGmViewingSceneId}
-                onAssignAll={handleSceneAssignAll}
-              />
-            ) : null}
+            sceneSelector={(
+              <div className="top-bars">
+                <WindowBar collapsed={topBarsCollapsed} />
+                {isGM && (
+                  <SceneSelector
+                    scenes={gameState?.scenes || []}
+                    activeSceneId={displayScene?.id}
+                    onSceneChange={setGmViewingSceneId}
+                    participants={gameState?.participants || []}
+                    gameId={gameId}
+                    onSceneCreated={setGmViewingSceneId}
+                    onAssignAll={handleSceneAssignAll}
+                    collapsed={topBarsCollapsed}
+                    onToggleCollapse={() => setTopBarsCollapsed(v => !v)}
+                  />
+                )}
+              </div>
+            )}
             addLogMessage={addLogMessage}
             gameId={gameId}
             token={token}
@@ -951,6 +963,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         onCancel={() => setShowBackConfirm(false)}
       />
     </Box>
+    </WindowManagerProvider>
   );
 };
 

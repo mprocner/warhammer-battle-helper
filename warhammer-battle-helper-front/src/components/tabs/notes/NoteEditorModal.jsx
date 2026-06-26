@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ModalHeader from '../../common/ModalHeader';
+import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
@@ -15,7 +16,7 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 
 const AUTOSAVE_DELAY = 1500;
 
-const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
+const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }) => {
   const { t } = useTranslation();
   const popupRef = useRef(null);
 
@@ -41,6 +42,12 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
   useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
   useEffect(() => { titleRef.current = title; }, [title]);
   useEffect(() => { isPrivateRef.current = isPrivate; }, [isPrivate]);
+
+  const { toggleHidden } = useWindowManager();
+  // Stabilne id okna na cały czas życia edytora (nie zmienia się gdy nowa
+  // notatka dostaje realne id po pierwszym zapisie). Fallback dla zgodności.
+  const windowId = isOpen ? `note:${windowKey ?? (note ? note.id : 'new')}` : null;
+  const { hidden, zIndex, focus } = useManagedWindow({ id: windowId, kind: 'note', title: title || t('notes.newNote'), onClose });
 
   const editor = useEditor({
     extensions: [
@@ -112,7 +119,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       prevNoteIdRef.current = note.id;
 
       if (isNewNote) {
-        setPosition({ x: Math.max(50, window.innerWidth / 2 - 450), y: 50 });
+        setPosition({ x: Math.max(50, window.innerWidth / 2 - 450) + index * 30, y: 50 + index * 30 });
         setIsMinimized(false);
       }
 
@@ -134,12 +141,13 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       setEditorContent('');
       setSaveError('');
       setIsMinimized(false);
-      setPosition({ x: Math.max(50, window.innerWidth / 2 - 450), y: 50 });
+      setPosition({ x: Math.max(50, window.innerWidth / 2 - 450) + index * 30, y: 50 + index * 30 });
     }
-  }, [isOpen, note, editor, setEditorContent]);
+  }, [isOpen, note, editor, setEditorContent, index]);
 
   // Drag handlers
   const handleMouseDown = useCallback((e) => {
+    focus();
     if (e.target.closest('.modal-header') && !e.target.closest('.modal-header__buttons')) {
       setIsDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
@@ -148,7 +156,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
         y: e.clientY - rect.top
       });
     }
-  }, []);
+  }, [focus]);
 
   const handleResizeMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -205,7 +213,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
-  if (!isOpen) return null;
+  if (!isOpen || hidden) return null;
 
   const isEdit = !!note;
   const modalTitle = isEdit ? (note.title || t('notes.editNote')) : t('notes.newNote');
@@ -228,6 +236,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
       style={{
         left: position.x,
         top: position.y,
+        zIndex,
         ...(isMinimized ? {} : { width: size.width, height: size.height }),
       }}
       onMouseDown={handleMouseDown}
@@ -236,7 +245,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave }) => {
         title={modalTitle}
         onClose={onClose}
         isMinimized={isMinimized}
-        onToggleMinimize={() => setIsMinimized(v => !v)}
+        onToggleMinimize={() => toggleHidden(windowId)}
         isDragging={isDragging}
         draggable
         minimizeTitle={t('common.minimize')}

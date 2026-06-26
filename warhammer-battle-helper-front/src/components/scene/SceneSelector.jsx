@@ -16,12 +16,17 @@ const SceneSelector = ({
   gameId,
   onSceneCreated,
   onAssignAll,
+  collapsed: externalCollapsed,
+  onToggleCollapse,
 }) => {
   const { t } = useTranslation();
   const [openPopoverSceneId, setOpenPopoverSceneId] = useState(null);
   const [popoverAnchor, setPopoverAnchor] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  // Gdy rodzic steruje zwijaniem (wspólnie z listwą okien) — użyj jego stanu.
+  const collapsed = externalCollapsed ?? internalCollapsed;
+  const toggleCollapse = onToggleCollapse ?? (() => setInternalCollapsed(v => !v));
   const [tooltip, setTooltip] = useState(null);
   const tooltipTimeout = useRef(null);
   const popoverRef = useRef(null);
@@ -203,7 +208,7 @@ const SceneSelector = ({
     {/* Edge toggle — attached to bottom of bar, protrudes into viewport */}
     <button
       className="scene-selector__edge-toggle"
-      onClick={() => setCollapsed(v => !v)}
+      onClick={toggleCollapse}
       title={collapsed ? t('scenes.title') : t('scenes.collapseBar')}
     >
       {collapsed ? '▼' : '▲'}

@@ -13,10 +13,11 @@ import SkillsSection from './sections/SkillsSection';
 import WeaponsSection from './sections/WeaponsSection';
 import EquipmentSection from './sections/EquipmentSection';
 import BackgroundSection from './sections/BackgroundSection';
+import defaultSkillsData from './skills.json';
 
 const DEFAULT_UNARMED = { name: 'nieuzbrojony', damage: '1K3 + MO', range: '', attacks: 1, ammo: '', malfunction: '', skillKey: 'fighting_brawl' };
 
-function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all', skills = [], weaponSkills = [] }) {
+function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessage, gameId, token, isGM = false, isStandalone = false, rollVisibility = 'all', skills = defaultSkillsData, weaponSkills = [] }) {
   const { t } = useTranslation();
   const stats = character.stats || {};
 
@@ -46,8 +47,14 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Sync all fields when character prop changes (external update via WS or left panel)
+  const prevCharIdRef = useRef(character.id);
+
+  // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
+  // postaci zachowujemy lokalne edycje — nie nadpisujemy ich danymi z refetchu
+  // po evencie WS (inaczej kasowałoby wpisywany właśnie tekst).
   React.useEffect(() => {
+    if (character.id === prevCharIdRef.current) return;
+    prevCharIdRef.current = character.id;
     const s = character.stats || {};
     const weps = s.weapons || [];
     const first = weps[0] || {};
@@ -302,7 +309,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   }, [gameId, token, character.id, rollVisibility]);
 
   const handlePopOut = usePopOut(character.id, gameId);
-  const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: handlePopOut, isStandalone, t });
+  const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
   const sheetContent = (
     <div className="coc-sheet-layout">
@@ -388,6 +395,8 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={900}
+      windowId={`characterSheet:${character.id}`}
+      windowKind="characterSheet"
     >
       {sheetContent}
     </DraggablePopup>
