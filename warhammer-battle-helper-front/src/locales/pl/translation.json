@@ -835,7 +835,8 @@
     "visibility": {
       "all": "Wszyscy",
       "gmAndRoller": "MG + Gracz",
-      "gmOnly": "Tylko MG"
+      "gmOnly": "Tylko MG",
+      "playersGroup": "Gracze"
     }
   },
   "coc": {

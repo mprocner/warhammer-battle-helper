@@ -3,7 +3,8 @@ import {
     Info as InfoIcon,
     CheckCircle as SuccessIcon,
     Warning as WarningIcon,
-    Error as ErrorIcon
+    Error as ErrorIcon,
+    Lock as LockIcon
 } from '@mui/icons-material';
 import '../LogWindow.css';
 
@@ -31,9 +32,10 @@ const getMessageTypeClass = (type) => {
     }
 };
 
-const SimpleMessage = ({ text, type, timestamp, username, isMine = false, isNew = false }) => {
+const SimpleMessage = ({ text, type, timestamp, username, isMine = false, isNew = false, isHidden = false }) => {
     return (
-        <li className={`log-simple-message ${getMessageTypeClass(type)}${isMine ? ' log-simple-message--mine' : ''}${isNew ? ' log-simple-message--new' : ''}`}>
+        <li className={`log-simple-message ${getMessageTypeClass(type)}${isMine ? ' log-simple-message--mine' : ''}${isNew ? ' log-simple-message--new' : ''}${isHidden ? ' log-entry--hidden-roll' : ''}`}>
+            {isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}
             <div className="log-simple-message__content">
                 {getMessageIcon(type)}
                 <div>

@@ -52,6 +52,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
 
   const { toasts, pushToast, dismissToast, pauseAll, resumeAll } = useToastQueue();
   const isGMRef = useRef(false);
+  const userIdRef = useRef(null);
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -139,7 +140,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
               };
             case 'message':
               message = event.data.message || '';
-              return { createdAt, message, type: event.data.type || 'info', timestamp, data: { username: event.username, userId: event.createdBy } };
+              return { createdAt, message, type: event.data.type || 'info', timestamp, data: { username: event.username, userId: event.createdBy, visibility: event.data.visibility } };
             default:
               return null;
           }
@@ -168,7 +169,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
     // Push roll notifications — skip gm_only rolls for non-GM users
     if (TOAST_ROLL_EVENTS.has(message.type)) {
       const vis = message.payload?.visibility;
-      if (!vis || vis === 'all' || isGMRef.current) {
+      if (!vis || vis === 'all' || isGMRef.current || vis === userIdRef.current) {
         pushToast(message.payload);
       }
     }
@@ -287,7 +288,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         addLogMessage(
           message.payload.message,
           message.payload.type || 'info',
-          { username: message.payload.username, userId: message.payload.userId }
+          { username: message.payload.username, userId: message.payload.userId, visibility: message.payload.visibility }
         );
         break;
 
@@ -690,6 +691,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
 
   const isGM = gameState?.gameMasterId === userId;
   isGMRef.current = isGM;
+  userIdRef.current = userId;
 
   const displayScene = useMemo(() => {
     const scenes = gameState?.scenes || [];

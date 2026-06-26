@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
 import CloseIcon from '@mui/icons-material/Close';
+import { resolveDisplayName } from '../../utils/participants';
 import '../LogWindow.css';
 
 const DEFAULT_DICE = [4, 6, 8, 10, 12, 20, 100];
 const MAX_DICE_COUNT = 20;
 const MAX_DICE_SIDES = 10000;
 
-const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList }) => {
+const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList, participants = [], currentUserId = null }) => {
     const DICE = (Array.isArray(diceList) && diceList.length) ? diceList : DEFAULT_DICE;
+    const otherPlayers = participants.filter(p => p.userId && p.userId !== currentUserId);
     const { t } = useTranslation();
     const [chatMessage, setChatMessage] = useState('');
     const [isCustomPopupOpen, setIsCustomPopupOpen] = useState(false);
@@ -121,6 +123,15 @@ const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVis
                     <option value="all">{t('dice.visibility.all')}</option>
                     <option value="gm_and_roller">{t('dice.visibility.gmAndRoller')}</option>
                     <option value="gm_only">{t('dice.visibility.gmOnly')}</option>
+                    {otherPlayers.length > 0 && (
+                        <optgroup label={t('dice.visibility.playersGroup')}>
+                            {otherPlayers.map(p => (
+                                <option key={p.userId} value={p.userId}>
+                                    {resolveDisplayName(p) || p.username}
+                                </option>
+                            ))}
+                        </optgroup>
+                    )}
                 </select>
             </div>
             <div className="dice-controls__row">

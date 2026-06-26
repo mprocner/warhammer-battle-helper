@@ -631,21 +631,27 @@ func (s *GameService) RemoveCharacter(gameID string, characterID primitive.Objec
 }
 
 // AddLogMessage adds a message to the game log
-func (s *GameService) AddLogMessage(gameID string, message string, messageType string, userID primitive.ObjectID, username string) error {
+func (s *GameService) AddLogMessage(gameID string, message string, messageType string, userID primitive.ObjectID, username string, visibility string) error {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return fmt.Errorf("game not found: %w", err)
 	}
 
 	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	if visibility == "" {
+		visibility = "all"
+	}
 
 	event := models.GameEvent{
-		Type:      models.EventTypeMessage,
-		CreatedBy: userID,
-		Username:  displayName,
+		Type:         models.EventTypeMessage,
+		CreatedBy:    userID,
+		Username:     displayName,
+		Visibility:   visibility,
+		RollerUserID: userID,
 		Data: map[string]interface{}{
-			"message": message,
-			"type":    messageType,
+			"message":    message,
+			"type":       messageType,
+			"visibility": visibility,
 		},
 	}
 
@@ -653,13 +659,14 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 		return err
 	}
 
-	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, websocket.EventLogMessage, map[string]interface{}{
-		"message":  message,
-		"type":     messageType,
-		"username": displayName,
-		"userId":   userID.Hex(),
-	})
+	// Broadcast to the appropriate set of clients based on visibility (same routing as rolls)
+	s.broadcastRoll(gameID, websocket.EventLogMessage, map[string]interface{}{
+		"message":    message,
+		"type":       messageType,
+		"username":   displayName,
+		"userId":     userID.Hex(),
+		"visibility": visibility,
+	}, visibility, userID, game.GameMasterID)
 
 	return nil
 }
@@ -767,8 +774,14 @@ func (s *GameService) broadcastRoll(gameID, eventType string, payload map[string
 			targets = append(targets, rollerID.Hex())
 		}
 		s.hub.BroadcastToUsers(gameID, eventType, payload, targets)
-	default: // "all" or empty
+	case "all", "":
 		s.hub.BroadcastToGame(gameID, eventType, payload)
+	default: // targeted to a specific user id — only the roller and that user receive it (GM excluded)
+		targets := []string{rollerID.Hex()}
+		if visibility != rollerID.Hex() {
+			targets = append(targets, visibility)
+		}
+		s.hub.BroadcastToUsers(gameID, eventType, payload, targets)
 	}
 }
 

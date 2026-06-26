@@ -112,7 +112,8 @@ const LogWindow = ({
 
         // Fallback for simple text messages
         const username = msg.data && msg.data.username ? msg.data.username : null;
-        return <SimpleMessage key={key} text={msg.text} type={msg.type} timestamp={msg.timestamp} username={username} isMine={isMine} isNew={isNew} />;
+        const isHidden = Boolean(msg.data && msg.data.visibility && msg.data.visibility !== 'all');
+        return <SimpleMessage key={key} text={msg.text} type={msg.type} timestamp={msg.timestamp} username={username} isMine={isMine} isNew={isNew} isHidden={isHidden} />;
     };
 
     return (

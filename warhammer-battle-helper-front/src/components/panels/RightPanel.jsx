@@ -80,7 +80,7 @@ const RightPanel = ({
         const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
           method: 'POST',
           headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ message: text, visibility: rollVisibility })
         });
         if (!response.ok) throw new Error('Failed to send message');
       } else {
@@ -90,7 +90,7 @@ const RightPanel = ({
       console.error('Error sending message:', error);
       addLogMessage('Failed to send message', 'error');
     }
-  }, [gameId, token, addLogMessage]);
+  }, [gameId, token, addLogMessage, rollVisibility]);
 
   const rollDice = useCallback(async (sides, count = 1) => {
     try {
@@ -285,7 +285,7 @@ const RightPanel = ({
             )}
           </div>
 
-          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} />
+          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} participants={gameState?.participants || []} currentUserId={userId} />
         </div>
       </div>
     </aside>

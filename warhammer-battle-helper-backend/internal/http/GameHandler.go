@@ -187,8 +187,12 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 			if hasUser && (requestingUserID == game.GameMasterID || requestingUserID == e.RollerUserID) {
 				filteredEvents = append(filteredEvents, e)
 			}
-		default: // "all" or legacy events without visibility
+		case "all", "": // "all" or legacy events without visibility
 			filteredEvents = append(filteredEvents, e)
+		default: // targeted to a specific user id — only the roller and that user see it
+			if hasUser && (requestingUserID == e.RollerUserID || requestingUserID.Hex() == e.Visibility) {
+				filteredEvents = append(filteredEvents, e)
+			}
 		}
 	}
 	game.Events = filteredEvents
@@ -452,7 +456,8 @@ func (h *GameHandler) SendMessage(c *gin.Context) {
 	gameID := c.Param("id")
 
 	var req struct {
-		Message string `json:"message" binding:"required"`
+		Message    string `json:"message" binding:"required"`
+		Visibility string `json:"visibility"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -471,7 +476,7 @@ func (h *GameHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	err = h.GameService.AddLogMessage(gameID, req.Message, "info", userID, username)
+	err = h.GameService.AddLogMessage(gameID, req.Message, "info", userID, username, req.Visibility)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
