@@ -15,3 +15,4 @@
 - [Dice Poker Board Design](dice-poker-design.md) — Hidden dice mechanic, reveal phase animation, NPC name inputs, round tally layout (2026-04-25)
 - [Custom Dice Roll Design](custom-dice-roll-design.md) — XdY popup, drop-down vs flyout, multiplier badges, MultiDiceRoll log entry layout (2026-06-11)
 - [Custom Sheet Attribute Design](custom-sheet-attribute-design.md) — Capsule/joined-pill redesign of base/advances/total/roll field, narrow-column fallback (2026-06-15)
+- [Token Editing Design](token-editing-design.md) — Radial HUD (8-slot ring r=44, 45° each) + 3 approach mockups in docs/mockups/token-editing/ (2026-06-26)
