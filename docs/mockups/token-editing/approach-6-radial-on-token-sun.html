@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approach 6 — On-token sun + expanding ring | Token Editing Mockup</title>
+<!--
+  Variant of Approach 5 with one correction requested by the user:
+
+  - NON-SELECTED token: states AND numbers sit ON the token, arranged as a small "sun"
+    (compact radial layout at a small radius, overlapping the avatar surface) — at the
+    same angular slot positions they hold when selected. On selection the sun "fans out"
+    to the full ring around the token.
+
+  Progressive disclosure:
+    rest      → compact sun ON the token (active states + the 2 numbers, small)
+    selected  → full ring AROUND the token (all 8 slots, greyed inactive, editable numbers,
+                interactive HP row, stat chips)
+
+  Level handling (answer to "how do you remove 1 level of a state?"):
+    LEFT-click an active levelled state → +1 level (re-applying stacks it).
+    RIGHT-click (or long-press on touch) → −1 level; removes the state at level 0.
+    A small ▼ appears on hover over an active levelled slot when selected, as a discoverable
+    fallback for mouse users who don't know the right-click shortcut.
+
+  Data contract: same as Approach 5 (slots = conditions | numeric values).
+-->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: system-ui, -apple-system, sans-serif; background: #19120a; color: #3a2f1f; min-height: 100vh; padding-bottom: 40px; }
+
+/* ── HEADER ── */
+.page-header { background: linear-gradient(180deg, #0d0a05 0%, #1a1208 100%); border-bottom: 2px solid #7a5c42; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.page-header__title { font-family: Georgia, serif; font-size: 1.1rem; color: #c9975b; letter-spacing: 0.08em; }
+.page-header__badge { background: rgba(201,151,91,0.12); border: 1px solid #7a5c42; border-radius: 4px; padding: 3px 10px; font-size: 0.68rem; color: #c4a882; flex-shrink: 0; }
+
+/* ── DESC ── */
+.desc-box { max-width: 900px; margin: 18px auto 0; padding: 0 20px; }
+.desc-box__inner { background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%); border: 1.5px solid #c4a882; border-radius: 6px; padding: 12px 16px; font-size: 0.82rem; color: #3a2f1f; line-height: 1.55; }
+.desc-box__inner strong { color: #7a5c42; }
+.desc-box__inner em { color: #8a5a2a; font-style: normal; font-weight: 600; }
+
+/* ── CONTENT ── */
+.content { max-width: 900px; margin: 18px auto 0; padding: 0 20px; }
+.scene-label { font-family: Georgia, serif; font-size: 0.68rem; color: #c4a882; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #3a2a15; padding-bottom: 5px; }
+
+/* ── GRID ── */
+.grid-scene { position: relative; background-color: #dfc89a; background-image: linear-gradient(rgba(194,148,98,0.85) 1px, transparent 1px), linear-gradient(90deg, rgba(194,148,98,0.85) 1px, transparent 1px); background-size: 50px 50px; border: 2px solid #7a5c42; border-radius: 6px; overflow: visible; box-shadow: inset 0 0 40px rgba(100,70,30,0.15); }
+
+/* ── TOKEN ── */
+.tok-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.93); text-shadow: 0 1px 4px rgba(0,0,0,0.55); border: 2.5px solid #c9975b; box-shadow: 0 3px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(201,151,91,0.2); cursor: pointer; flex-shrink: 0; overflow: hidden; }
+.tok-circle--a { background: linear-gradient(135deg, #7a6a58, #5a4a3a); }
+.tok-circle--c { background: linear-gradient(135deg, #6a5a7a, #4a3a5a); }
+.tok-circle--selected { border-color: #f0c070; box-shadow: 0 0 0 2px rgba(201,151,91,0.65), 0 0 18px rgba(201,151,91,0.55), 0 3px 8px rgba(0,0,0,0.25); }
+
+/* ── HP BAR ── */
+.hp-bar-thin { position: absolute; width: 50px; height: 7px; background: rgba(0,0,0,0.45); border-radius: 4px; border: 1px solid rgba(0,0,0,0.25); overflow: hidden; }
+.hp-bar-thin__fill { height: 100%; border-radius: 3px; }
+.hp-bar-thin__fill--good { background: linear-gradient(90deg, #3a7a3a, #4eaa4e); }
+.hp-bar-thin__fill--warn { background: linear-gradient(90deg, #a86020, #d08030); }
+.hp-bar-thin__fill--danger { background: linear-gradient(90deg, #882020, #c83030); }
+.hp-bar-thin__text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5.5px; font-weight: 700; color: rgba(255,255,255,0.95); }
+
+/* ★ ON-TOKEN SUN (non-selected) — small icons overlapping the avatar */
+.sun-cond { position: absolute; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; background: rgba(14,9,3,0.86); border: 1px solid #c9975b; box-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+.sun-cond__lvl { position: absolute; bottom: -3px; right: -3px; min-width: 8px; height: 8px; padding: 0 1px; background: #c9975b; color: #2a1f12; border-radius: 4px; font-size: 5.5px; font-weight: 800; line-height: 8px; text-align: center; }
+.sun-num { position: absolute; width: 17px; height: 17px; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #efe3cd, #d8c8a8); border: 1px solid #7a5c42; box-shadow: 0 1px 3px rgba(0,0,0,0.6); font-family: Georgia, serif; font-size: 9px; font-weight: 800; color: #2a1f12; }
+
+/* ── EXPANDED RING (selected) ── */
+.hud-ring-guide { position: absolute; width: 138px; height: 138px; border-radius: 50%; border: 1.5px dashed rgba(201,151,91,0.28); pointer-events: none; }
+.hud-slot { position: absolute; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: all .12s; }
+.hud-slot--active { background: rgba(20,12,4,0.90); border: 1.5px solid #c9975b; box-shadow: 0 0 8px rgba(201,151,91,0.45), 0 1px 4px rgba(0,0,0,0.5); }
+.hud-slot--active:hover { box-shadow: 0 0 12px rgba(201,151,91,0.7), 0 1px 4px rgba(0,0,0,0.5); }
+.hud-slot--inactive { background: rgba(20,12,4,0.42); border: 1.5px solid rgba(201,151,91,0.30); filter: grayscale(1); opacity: 0.5; }
+.hud-slot--inactive:hover { filter: grayscale(0.2); opacity: 0.95; border-color: #c9975b; background: rgba(20,12,4,0.7); }
+.hud-slot__level { position: absolute; bottom: -3px; right: -3px; width: 10px; height: 10px; background: #c9975b; color: #3a2f1f; border-radius: 50%; font-size: 6px; font-weight: 800; display: flex; align-items: center; justify-content: center; line-height: 1; }
+/* discoverable level-down affordance, shown on hover/active levelled slot */
+.hud-slot__down { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 13px; height: 11px; background: rgba(255,249,240,0.96); border: 1px solid #c4a882; border-radius: 3px; font-size: 7px; line-height: 11px; text-align: center; color: #883030; font-weight: 800; }
+
+/* numeric slot (selected, editable) */
+.num-slot { position: absolute; width: 24px; height: 24px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #efe3cd, #dccbab); border: 1.5px solid #7a5c42; box-shadow: 0 1px 4px rgba(0,0,0,0.45); }
+.num-slot__val { font-size: 11px; font-weight: 800; color: #2a1f12; font-family: Georgia, serif; line-height: 1; }
+.num-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; line-height: 1; margin-top: 1px; }
+.num-slot--edit { border-color: #c9975b; box-shadow: 0 0 9px rgba(201,151,91,0.6); }
+.num-step { position: absolute; top: 0; width: 13px; height: 24px; display: flex; flex-direction: column; }
+.num-step--right { right: -15px; }
+.num-step--left { left: -15px; }
+.num-step__btn { flex: 1; width: 13px; display: flex; align-items: center; justify-content: center; background: rgba(255,249,240,0.96); border: 1px solid #c4a882; color: #3a2f1f; font-size: 8px; line-height: 1; cursor: pointer; user-select: none; }
+.num-step__btn:first-child { border-radius: 4px 4px 0 0; border-bottom: none; }
+.num-step__btn:last-child { border-radius: 0 0 4px 4px; }
+.num-step__btn:hover { background: #fff; border-color: #c9975b; }
+
+/* HP row + chips (selected) */
+.hud-hp-row { position: absolute; display: flex; align-items: center; gap: 4px; }
+.hud-hp-btn { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #c4a882; background: rgba(255,249,240,0.95); color: #3a2f1f; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; user-select: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.hud-hp-track { flex: 1; height: 14px; background: rgba(0,0,0,0.35); border-radius: 7px; overflow: hidden; border: 1px solid rgba(201,151,91,0.5); position: relative; }
+.hud-hp-fill { height: 100%; background: linear-gradient(90deg, #3a7a3a, #4eaa4e); border-radius: 6px; }
+.hud-hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 700; color: rgba(255,255,255,0.95); }
+.hud-chips { position: absolute; display: flex; gap: 4px; }
+.hud-chip { display: flex; flex-direction: column; align-items: center; background: rgba(244,232,216,0.92); border: 1px solid #c4a882; border-radius: 4px; padding: 2px 5px; min-width: 32px; backdrop-filter: blur(2px); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.hud-chip__label { font-size: 0.52rem; color: #7a5c42; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
+.hud-chip__val { font-size: 0.8rem; font-weight: 700; color: #3a2f1f; }
+
+/* ── ANNOTATIONS / LEGEND / FOOTER ── */
+.annotations { margin-top: 14px; background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%); border: 1.5px solid #c4a882; border-radius: 6px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+.ann { display: flex; gap: 8px; align-items: flex-start; font-size: 0.77rem; color: #3a2f1f; line-height: 1.45; }
+.ann__dot { width: 7px; height: 7px; border-radius: 50%; background: #c9975b; flex-shrink: 0; margin-top: 5px; }
+.ann__dot--blue { background: #5a6a78; }
+.ann__dot--red { background: #883030; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: 0.72rem; color: #c4a882; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 16px; height: 16px; border-radius: 50%; }
+.legend .sw--sq { border-radius: 5px; }
+.page-footer { max-width: 900px; margin: 18px auto 0; padding: 10px 20px 0; font-size: 0.68rem; color: #7a6a50; border-top: 1px solid #3a2a15; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1 class="page-header__title">Approach 6 — On-token sun + expanding ring</h1>
+  <span class="page-header__badge">Warhammer Battle Helper · Static HTML</span>
+</header>
+
+<div class="desc-box">
+  <div class="desc-box__inner">
+    <strong>What changed vs Approach 5:</strong> when a token is <em>not selected</em>, its active states <em>and</em> its numbers sit ON the token as a small sun (compact radial cluster overlapping the avatar) — at the same angular positions they'll hold when expanded. On selection the sun <em>fans out</em> into the full ring around the token (all 8 slots, greyed inactive conditions, editable numbers, interactive HP, stat chips).
+    <br><br>
+    <strong>Levels — how to subtract one:</strong> <em>left-click</em> an active levelled state = +1 level; <em>right-click</em> (or long-press on touch) = −1 level, removing it at 0. A small <span style="color:#883030;font-weight:700">▼</span> appears on hover over an active levelled slot as a discoverable fallback.
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="legend">
+    <span><span class="sw" style="background:rgba(20,12,4,0.9);border:1.5px solid #c9975b"></span> active condition</span>
+    <span><span class="sw" style="background:rgba(20,12,4,0.42);border:1.5px solid rgba(201,151,91,0.3);filter:grayscale(1);opacity:.6"></span> available (greyed → click to apply)</span>
+    <span><span class="sw sw--sq" style="background:linear-gradient(135deg,#efe3cd,#dccbab);border:1.5px solid #7a5c42"></span> numeric value (e.g. armour)</span>
+  </div>
+
+  <div style="display:flex;gap:18px;margin-top:14px;align-items:flex-start">
+
+    <!-- ══ LEFT: non-selected — sun ON the token ══ -->
+    <div style="flex:1">
+      <div class="scene-label">Non-selected · sun sits ON the token</div>
+      <div class="grid-scene" style="width:100%;height:260px;overflow:visible">
+
+        <!--
+          Two non-selected tokens placed near each other.
+          WILHELMINA: centre (115,130), TL (90,105). On-token sun radius r=17, icon 16/num 17.
+          Slot angles θ = -90° + n·45° → x = cx + r·sin, y = cy − r·cos.
+          n0 top (115,113) · n2 right (132,130) · n4 bottom (115,147) · n6 left (98,130).
+          Active: n0 poison lv1, n4 bleeding. Numbers: n2 AP=3, n6 WP=2.
+        -->
+        <div class="hp-bar-thin" style="left:90px;top:90px">
+          <div class="hp-bar-thin__fill hp-bar-thin__fill--good" style="width:71%"></div>
+          <div class="hp-bar-thin__text">20 / 28</div>
+        </div>
+        <div class="tok-circle tok-circle--c" style="position:absolute;left:90px;top:105px">W</div>
+        <!-- on-token sun -->
+        <div class="sun-cond" style="left:107px;top:105px" title="Poison lv1">🧪<div class="sun-cond__lvl">1</div></div>
+        <div class="sun-num"  style="left:124px;top:122px" title="Armour 3">3</div>
+        <div class="sun-cond" style="left:107px;top:139px" title="Bleeding">🩸</div>
+        <div class="sun-num"  style="left:90px;top:122px"  title="Ward 2">2</div>
+
+        <!--
+          GARRETT: centre (215,140), TL (190,115). Numbers only (no conditions) → AP=5, WP=1.
+          n2 right (232,140) · n6 left (198,140).
+        -->
+        <div class="hp-bar-thin" style="left:190px;top:100px">
+          <div class="hp-bar-thin__fill hp-bar-thin__fill--good" style="width:100%"></div>
+          <div class="hp-bar-thin__text">30 / 30</div>
+        </div>
+        <div class="tok-circle tok-circle--a" style="position:absolute;left:190px;top:115px">G</div>
+        <div class="sun-num" style="left:224px;top:132px" title="Armour 5">5</div>
+        <div class="sun-num" style="left:190px;top:132px" title="Ward 1">1</div>
+
+        <div style="position:absolute;left:90px;top:170px;font-size:0.6rem;color:#7a5c42;font-weight:600">Wilhelmina</div>
+        <div style="position:absolute;left:190px;top:180px;font-size:0.6rem;color:#7a5c42;font-weight:600">Garrett · armour visible</div>
+        <div style="position:absolute;right:8px;top:8px;font-size:0.6rem;color:rgba(122,92,66,0.75);letter-spacing:0.06em;text-transform:uppercase">No token selected</div>
+        <div style="position:absolute;left:8px;bottom:8px;font-size:0.6rem;color:rgba(122,92,66,0.7)">Icons stay inside the token footprint — packed tokens never blend</div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: selected — fanned-out ring ══ -->
+    <div style="flex:1">
+      <div class="scene-label">Selected · sun fans out into the full ring</div>
+      <div class="grid-scene" style="width:100%;height:260px;overflow:visible">
+
+        <!-- TOBIAS selected. centre (190,130), TL (165,105). Outer ring r=44. -->
+        <div class="hud-ring-guide" style="left:121px;top:61px"></div>
+        <div class="tok-circle tok-circle--a tok-circle--selected" style="position:absolute;left:165px;top:105px">T</div>
+
+        <div class="hud-hp-row" style="left:123px;top:42px;width:134px">
+          <div class="hud-hp-btn">−</div>
+          <div class="hud-hp-track" style="flex:1">
+            <div class="hud-hp-fill" style="width:80%"></div>
+            <div class="hud-hp-text">16 / 20</div>
+          </div>
+          <div class="hud-hp-btn">+</div>
+        </div>
+
+        <!-- 0 Poison ACTIVE lv2 — shows level badge + ▼ level-down affordance -->
+        <div class="hud-slot hud-slot--active" style="left:179px;top:75px" title="Poison lv2 — left-click +1, right-click −1">
+          🧪<div class="hud-slot__level">2</div><div class="hud-slot__down">▼</div>
+        </div>
+        <!-- 1 Stunned inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:210px;top:88px" title="Stunned — click to apply">💫</div>
+        <!-- 3 Slowed inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:210px;top:150px" title="Slowed — click to apply">🐌</div>
+        <!-- 4 Bleeding ACTIVE -->
+        <div class="hud-slot hud-slot--active" style="left:179px;top:163px" title="Bleeding — right-click to remove">🩸</div>
+        <!-- 5 Buffed inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:148px;top:150px" title="Buffed — click to apply">✨</div>
+        <!-- 7 Blinded inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:148px;top:88px" title="Blinded — click to apply">👁</div>
+
+        <!-- Numeric 2 — Armour (right, steppers out) -->
+        <div class="num-slot num-slot--edit" style="left:222px;top:118px" title="Armour — edit">
+          <span class="num-slot__val">3</span><span class="num-slot__cap">AP</span>
+          <div class="num-step num-step--right"><div class="num-step__btn">▲</div><div class="num-step__btn">▼</div></div>
+        </div>
+        <!-- Numeric 6 — Ward (left, steppers out) -->
+        <div class="num-slot num-slot--edit" style="left:134px;top:118px" title="Ward — edit">
+          <span class="num-slot__val">2</span><span class="num-slot__cap">WP</span>
+          <div class="num-step num-step--left"><div class="num-step__btn">▲</div><div class="num-step__btn">▼</div></div>
+        </div>
+
+        <div class="hud-chips" style="left:120px;top:197px">
+          <div class="hud-chip"><span class="hud-chip__label">ADV</span><span class="hud-chip__val">2</span></div>
+          <div class="hud-chip"><span class="hud-chip__label">Move</span><span class="hud-chip__val">4</span></div>
+          <div class="hud-chip"><span class="hud-chip__label">Init</span><span class="hud-chip__val">3</span></div>
+        </div>
+
+        <div style="position:absolute;left:8px;top:8px;font-size:0.6rem;color:#c9975b;opacity:0.85;letter-spacing:0.06em;text-transform:uppercase">Tobias — selected</div>
+        <div style="position:absolute;right:8px;bottom:8px;font-size:0.6rem;color:rgba(201,151,91,0.7)">L-click +level · R-click / ▼ −level · greyed = apply</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ANNOTATIONS ── -->
+  <div class="annotations" style="margin-top:16px">
+    <div class="ann"><div class="ann__dot"></div><div><strong>Rest = sun on token:</strong> active states and the two numbers cluster on the avatar at a small radius. Everything stays inside the 50px footprint, so tightly packed tokens never blend.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Select = fan out:</strong> the same icons animate outward to the full ring (r=44) at identical angles; greyed inactive conditions and editable number steppers appear. Deselect collapses back onto the token.</div></div>
+    <div class="ann"><div class="ann__dot ann__dot--red"></div><div><strong>Level up / down:</strong> left-click an active levelled state = +1; right-click / long-press = −1 (removes at 0). Hover reveals a small ▼ on the slot as a visible fallback.</div></div>
+    <div class="ann"><div class="ann__dot ann__dot--blue"></div><div><strong>Numbers always readable:</strong> armour / ward show on the token even at rest (see Garrett — armour 5, ward 1, no conditions). Steppers only appear on selection.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Shape = meaning:</strong> round = on/off (or levelled) condition, rounded-square = numeric value — distinct even at the tiny on-token size.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Readability trade-off:</strong> the sun overlaps the avatar art. Icons use a dark disc backing + thin gold ring so they stay legible over any uploaded image.</div></div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  <span>Warhammer Battle Helper · UX Mockup Series · Approach 6 (On-token sun + expanding ring)</span>
+  <span>Static HTML — no external dependencies · open directly in browser</span>
+</div>
+
+</body>
+</html>

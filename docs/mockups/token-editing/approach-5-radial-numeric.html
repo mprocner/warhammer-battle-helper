@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approach 5 — Radial HUD (numeric slots) | Token Editing Mockup</title>
+<!--
+  Variant of Approach 4 with two corrections requested by the user:
+
+  1. NON-SELECTED token: active states are shown radially (the "sun" ring) at the SAME
+     slot positions they occupy when the token is selected — NOT collapsed into an
+     on-token strip. Slot positions are stable, so a condition never jumps around.
+     (This reverts the on-token strip from Approach 4 back to a ring layout.)
+
+  2. TWO of the eight slots are NUMERIC value slots instead of on/off conditions.
+     They always display a number (e.g. Armour Points), visible even when the token is
+     not selected — handy for quick reference like checking someone's armour at a glance.
+     When the token is selected, the number becomes editable (▲ / ▼ steppers, or tap to type).
+
+  Data contract:
+  character = {
+    id, name,
+    hp: { current, total },
+    slots: Array<                                   // up to 8, fixed ring positions
+      | { kind: "condition", id, icon, label, active, level? }
+      | { kind: "value",     id, icon, label, value, min?, max? }
+    >,
+    stats: Array<{ label, value }>                  // extra stats, chips below when selected
+  }
+  Which slots are conditions vs numeric values is defined by the active game system.
+-->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #19120a; color: #3a2f1f; min-height: 100vh; padding-bottom: 40px;
+}
+
+/* ── HEADER ── */
+.page-header {
+  background: linear-gradient(180deg, #0d0a05 0%, #1a1208 100%);
+  border-bottom: 2px solid #7a5c42; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.page-header__title { font-family: Georgia, serif; font-size: 1.1rem; color: #c9975b; letter-spacing: 0.08em; }
+.page-header__badge { background: rgba(201,151,91,0.12); border: 1px solid #7a5c42; border-radius: 4px; padding: 3px 10px; font-size: 0.68rem; color: #c4a882; flex-shrink: 0; }
+
+/* ── DESC ── */
+.desc-box { max-width: 900px; margin: 18px auto 0; padding: 0 20px; }
+.desc-box__inner {
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #c4a882; border-radius: 6px; padding: 12px 16px;
+  font-size: 0.82rem; color: #3a2f1f; line-height: 1.55;
+}
+.desc-box__inner strong { color: #7a5c42; }
+.desc-box__inner em { color: #8a5a2a; font-style: normal; font-weight: 600; }
+
+/* ── CONTENT ── */
+.content { max-width: 900px; margin: 18px auto 0; padding: 0 20px; }
+.scene-label {
+  font-family: Georgia, serif; font-size: 0.68rem; color: #c4a882; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #3a2a15; padding-bottom: 5px;
+}
+
+/* ── GRID ── */
+.grid-scene {
+  position: relative; background-color: #dfc89a;
+  background-image:
+    linear-gradient(rgba(194,148,98,0.85) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(194,148,98,0.85) 1px, transparent 1px);
+  background-size: 50px 50px;
+  border: 2px solid #7a5c42; border-radius: 6px; overflow: visible;
+  box-shadow: inset 0 0 40px rgba(100,70,30,0.15);
+}
+
+/* ── TOKEN ── */
+.tok-circle {
+  width: 50px; height: 50px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Georgia, serif; font-size: 15px; font-weight: 700;
+  color: rgba(255,255,255,0.93); text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  border: 2.5px solid #c9975b;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(201,151,91,0.2);
+  cursor: pointer; flex-shrink: 0; overflow: hidden;
+}
+.tok-circle--a { background: linear-gradient(135deg, #7a6a58, #5a4a3a); }
+.tok-circle--c { background: linear-gradient(135deg, #6a5a7a, #4a3a5a); }
+.tok-circle--selected {
+  border-color: #f0c070;
+  box-shadow: 0 0 0 2px rgba(201,151,91,0.65), 0 0 18px rgba(201,151,91,0.55), 0 3px 8px rgba(0,0,0,0.25);
+}
+
+/* ── HP BAR ── */
+.hp-bar-thin {
+  position: absolute; width: 50px; height: 7px; background: rgba(0,0,0,0.45);
+  border-radius: 4px; border: 1px solid rgba(0,0,0,0.25); overflow: hidden;
+}
+.hp-bar-thin__fill { height: 100%; border-radius: 3px; }
+.hp-bar-thin__fill--good   { background: linear-gradient(90deg, #3a7a3a, #4eaa4e); }
+.hp-bar-thin__fill--warn   { background: linear-gradient(90deg, #a86020, #d08030); }
+.hp-bar-thin__fill--danger { background: linear-gradient(90deg, #882020, #c83030); }
+.hp-bar-thin__text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5.5px; font-weight: 700; color: rgba(255,255,255,0.95); }
+
+.hud-ring-guide { position: absolute; width: 138px; height: 138px; border-radius: 50%; border: 1.5px dashed rgba(201,151,91,0.28); pointer-events: none; }
+
+/* ── CONDITION SLOT (round) ── */
+.hud-slot {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 12px;
+  cursor: pointer; transition: all .12s;
+}
+.hud-slot--active { background: rgba(20,12,4,0.90); border: 1.5px solid #c9975b; box-shadow: 0 0 8px rgba(201,151,91,0.45), 0 1px 4px rgba(0,0,0,0.5); }
+.hud-slot--active:hover { box-shadow: 0 0 12px rgba(201,151,91,0.7), 0 1px 4px rgba(0,0,0,0.5); }
+.hud-slot--inactive { background: rgba(20,12,4,0.42); border: 1.5px solid rgba(201,151,91,0.30); filter: grayscale(1); opacity: 0.5; }
+.hud-slot--inactive:hover { filter: grayscale(0.2); opacity: 0.95; border-color: #c9975b; background: rgba(20,12,4,0.7); }
+.hud-slot__level { position: absolute; bottom: -3px; right: -3px; width: 10px; height: 10px; background: #c9975b; color: #3a2f1f; border-radius: 50%; font-size: 6px; font-weight: 800; display: flex; align-items: center; justify-content: center; line-height: 1; }
+
+/* ── NUMERIC SLOT (rounded square — distinct from round conditions) ── */
+.num-slot {
+  position: absolute; width: 24px; height: 24px; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #efe3cd, #dccbab);
+  border: 1.5px solid #7a5c42; box-shadow: 0 1px 4px rgba(0,0,0,0.45); cursor: default;
+}
+.num-slot__val { font-size: 11px; font-weight: 800; color: #2a1f12; font-family: Georgia, serif; line-height: 1; }
+.num-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1; margin-top: 1px; }
+/* editable look when token selected */
+.num-slot--edit { border-color: #c9975b; box-shadow: 0 0 9px rgba(201,151,91,0.6); cursor: text; }
+.num-step { position: absolute; top: 0; width: 13px; height: 24px; display: flex; flex-direction: column; }
+.num-step--right { right: -15px; }
+.num-step--left  { left: -15px; }
+.num-step__btn {
+  flex: 1; width: 13px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,249,240,0.96); border: 1px solid #c4a882; color: #3a2f1f;
+  font-size: 8px; line-height: 1; cursor: pointer; user-select: none;
+}
+.num-step__btn:first-child { border-radius: 4px 4px 0 0; border-bottom: none; }
+.num-step__btn:last-child  { border-radius: 0 0 4px 4px; }
+.num-step__btn:hover { background: #fff; border-color: #c9975b; }
+
+/* ── HP ROW + CHIPS (selected) ── */
+.hud-hp-row { position: absolute; display: flex; align-items: center; gap: 4px; }
+.hud-hp-btn { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #c4a882; background: rgba(255,249,240,0.95); color: #3a2f1f; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; user-select: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.hud-hp-track { flex: 1; height: 14px; background: rgba(0,0,0,0.35); border-radius: 7px; overflow: hidden; border: 1px solid rgba(201,151,91,0.5); position: relative; }
+.hud-hp-fill { height: 100%; background: linear-gradient(90deg, #3a7a3a, #4eaa4e); border-radius: 6px; }
+.hud-hp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 700; color: rgba(255,255,255,0.95); }
+
+.hud-chips { position: absolute; display: flex; gap: 4px; }
+.hud-chip { display: flex; flex-direction: column; align-items: center; background: rgba(244,232,216,0.92); border: 1px solid #c4a882; border-radius: 4px; padding: 2px 5px; min-width: 32px; backdrop-filter: blur(2px); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.hud-chip__label { font-size: 0.52rem; color: #7a5c42; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
+.hud-chip__val { font-size: 0.8rem; font-weight: 700; color: #3a2f1f; }
+
+/* ── ANNOTATIONS ── */
+.annotations { margin-top: 14px; background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%); border: 1.5px solid #c4a882; border-radius: 6px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+.ann { display: flex; gap: 8px; align-items: flex-start; font-size: 0.77rem; color: #3a2f1f; line-height: 1.45; }
+.ann__dot { width: 7px; height: 7px; border-radius: 50%; background: #c9975b; flex-shrink: 0; margin-top: 5px; }
+.ann__dot--blue { background: #5a6a78; }
+
+/* ── LEGEND ── */
+.legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: 0.72rem; color: #c4a882; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 16px; height: 16px; border-radius: 50%; }
+.legend .sw--sq { border-radius: 5px; }
+
+/* ── FOOTER ── */
+.page-footer { max-width: 900px; margin: 18px auto 0; padding: 10px 20px 0; font-size: 0.68rem; color: #7a6a50; border-top: 1px solid #3a2a15; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1 class="page-header__title">Approach 5 — Radial HUD · numeric slots</h1>
+  <span class="page-header__badge">Warhammer Battle Helper · Static HTML</span>
+</header>
+
+<div class="desc-box">
+  <div class="desc-box__inner">
+    <strong>What changed vs Approach 4:</strong>
+    <strong>(1)</strong> Active conditions on a <em>non-selected</em> token are shown as the radial "sun" ring — at the exact same fixed slot positions they hold when selected — instead of the inside-the-token strip.
+    <strong>(2)</strong> Two of the eight ring slots are <em>numeric value slots</em> (rounded squares) rather than on/off conditions. They always show a number (e.g. <em>Armour</em>) — visible even at rest for quick reference — and become editable (▲/▼ or tap-to-type) when the token is selected.
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="legend">
+    <span><span class="sw" style="background:rgba(20,12,4,0.9);border:1.5px solid #c9975b"></span> active condition</span>
+    <span><span class="sw" style="background:rgba(20,12,4,0.42);border:1.5px solid rgba(201,151,91,0.3);filter:grayscale(1);opacity:.6"></span> available (greyed, click to apply)</span>
+    <span><span class="sw sw--sq" style="background:linear-gradient(135deg,#efe3cd,#dccbab);border:1.5px solid #7a5c42"></span> numeric value (e.g. armour)</span>
+  </div>
+
+  <div style="display:flex;gap:18px;margin-top:14px;align-items:flex-start">
+
+    <!-- ══ LEFT: non-selected — radial ring, numbers always visible ══ -->
+    <div style="flex:1">
+      <div class="scene-label">Non-selected · radial ring · numbers always on</div>
+      <div class="grid-scene" style="width:100%;height:260px;overflow:visible">
+
+        <!--
+          WILHELMINA non-selected. Token centre (115,135), TL (90,110).
+          Slots r=44 (cond 22px half 11, num 24px half 12):
+          0 top    centre (115,91)  · 2 R centre (159,135) · 4 bottom (115,179) · 6 L (71,135)
+          Active conditions: slot0 poison(1), slot4 bleeding.
+          Numeric: slot2 AP=3, slot6 WP=2 (always shown).
+          Empty condition slots (1,3,5,7) are NOT rendered when not selected.
+        -->
+        <!-- HP bar above the ring -->
+        <div class="hp-bar-thin" style="left:90px;top:60px">
+          <div class="hp-bar-thin__fill hp-bar-thin__fill--good" style="width:71%"></div>
+          <div class="hp-bar-thin__text">20 / 28</div>
+        </div>
+
+        <div class="tok-circle tok-circle--c" style="position:absolute;left:90px;top:110px">W</div>
+
+        <!-- Slot 0 — Poison active lv1 (top) -->
+        <div class="hud-slot hud-slot--active" style="left:104px;top:80px" title="Poison lv1">🧪<div class="hud-slot__level">1</div></div>
+        <!-- Slot 4 — Bleeding active (bottom) -->
+        <div class="hud-slot hud-slot--active" style="left:104px;top:168px" title="Bleeding">🩸</div>
+
+        <!-- Slot 2 — numeric Armour = 3 (right) -->
+        <div class="num-slot" style="left:147px;top:123px" title="Armour Points">
+          <span class="num-slot__val">3</span><span class="num-slot__cap">AP</span>
+        </div>
+        <!-- Slot 6 — numeric Ward = 2 (left) -->
+        <div class="num-slot" style="left:59px;top:123px" title="Ward / Resolve">
+          <span class="num-slot__val">2</span><span class="num-slot__cap">WP</span>
+        </div>
+
+        <div style="position:absolute;left:90px;top:200px;font-size:0.6rem;color:#7a5c42;font-weight:600">Wilhelmina</div>
+        <div style="position:absolute;right:8px;top:8px;font-size:0.6rem;color:rgba(122,92,66,0.75);letter-spacing:0.06em;text-transform:uppercase">No token selected</div>
+        <div style="position:absolute;left:8px;bottom:8px;font-size:0.6rem;color:rgba(122,92,66,0.7)">Armour (3) &amp; Ward (2) readable at a glance — no need to open the token</div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: selected — full ring + editable numbers ══ -->
+    <div style="flex:1">
+      <div class="scene-label">Selected · full ring · numbers editable (▲▼)</div>
+      <div class="grid-scene" style="width:100%;height:260px;overflow:visible">
+
+        <!--
+          TOBIAS selected. Token centre (190,130), TL (165,105).
+          Slots r=44: 0 top (179,75) ·1 TR (210,88) ·2 R num (234,130 → TL 222,118)
+          ·3 BR (210,150) ·4 bottom (179,163) ·5 BL (148,150) ·6 L num (146,130 → TL 134,118) ·7 TL (148,88)
+          HP row 134 centred 190 → left 123 top 42. Ring guide → left 121 top 61. Chips → left 116 top 197.
+          Numeric steppers face outward (slot2 right → steppers right; slot6 left → steppers left).
+        -->
+        <div class="hud-ring-guide" style="left:121px;top:61px"></div>
+        <div class="tok-circle tok-circle--a tok-circle--selected" style="position:absolute;left:165px;top:105px">T</div>
+
+        <!-- Interactive HP row -->
+        <div class="hud-hp-row" style="left:123px;top:42px;width:134px">
+          <div class="hud-hp-btn">−</div>
+          <div class="hud-hp-track" style="flex:1">
+            <div class="hud-hp-fill" style="width:80%"></div>
+            <div class="hud-hp-text">16 / 20</div>
+          </div>
+          <div class="hud-hp-btn">+</div>
+        </div>
+
+        <!-- Conditions: slots 0,1,3,4,5,7 -->
+        <!-- 0 Poison active lv1 -->
+        <div class="hud-slot hud-slot--active" style="left:179px;top:75px" title="Poison lv1 — click to remove">🧪<div class="hud-slot__level">1</div></div>
+        <!-- 1 Stunned inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:210px;top:88px" title="Stunned — click to apply">💫</div>
+        <!-- 3 Slowed inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:210px;top:150px" title="Slowed — click to apply">🐌</div>
+        <!-- 4 Bleeding active -->
+        <div class="hud-slot hud-slot--active" style="left:179px;top:163px" title="Bleeding — click to remove">🩸</div>
+        <!-- 5 Buffed inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:148px;top:150px" title="Buffed — click to apply">✨</div>
+        <!-- 7 Blinded inactive -->
+        <div class="hud-slot hud-slot--inactive" style="left:148px;top:88px" title="Blinded — click to apply">👁</div>
+
+        <!-- Numeric slot 2 — Armour = 3 (editable, steppers right) -->
+        <div class="num-slot num-slot--edit" style="left:222px;top:118px" title="Armour Points — edit">
+          <span class="num-slot__val">3</span><span class="num-slot__cap">AP</span>
+          <div class="num-step num-step--right">
+            <div class="num-step__btn">▲</div>
+            <div class="num-step__btn">▼</div>
+          </div>
+        </div>
+        <!-- Numeric slot 6 — Ward = 2 (editable, steppers left) -->
+        <div class="num-slot num-slot--edit" style="left:134px;top:118px" title="Ward / Resolve — edit">
+          <span class="num-slot__val">2</span><span class="num-slot__cap">WP</span>
+          <div class="num-step num-step--left">
+            <div class="num-step__btn">▲</div>
+            <div class="num-step__btn">▼</div>
+          </div>
+        </div>
+
+        <!-- Extra stat chips (non-pinned stats) -->
+        <div class="hud-chips" style="left:120px;top:197px">
+          <div class="hud-chip"><span class="hud-chip__label">ADV</span><span class="hud-chip__val">2</span></div>
+          <div class="hud-chip"><span class="hud-chip__label">Move</span><span class="hud-chip__val">4</span></div>
+          <div class="hud-chip"><span class="hud-chip__label">Init</span><span class="hud-chip__val">3</span></div>
+        </div>
+
+        <div style="position:absolute;left:8px;top:8px;font-size:0.6rem;color:#c9975b;opacity:0.85;letter-spacing:0.06em;text-transform:uppercase">Tobias — selected</div>
+        <div style="position:absolute;right:8px;bottom:8px;font-size:0.6rem;color:rgba(201,151,91,0.7)">Tap ▲▼ to change armour/ward · greyed = apply · lit = remove</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ANNOTATIONS ── -->
+  <div class="annotations" style="margin-top:16px">
+    <div class="ann"><div class="ann__dot"></div><div><strong>Radial at rest:</strong> non-selected tokens show their active conditions on the ring at fixed 45° slots — identical positions to the selected state, so nothing shifts when you select.</div></div>
+    <div class="ann"><div class="ann__dot ann__dot--blue"></div><div><strong>Numeric slots (×2):</strong> rounded-square slots holding a value (e.g. Armour, Ward). Always visible — read someone's armour without opening their token.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Editing numbers:</strong> on selection the numeric slot gains ▲/▼ steppers (facing outward so they never overlap the token); tap the number itself to type a value directly.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Conditions still toggle:</strong> selected ring shows all condition slots — active glow, inactive greyed; click to apply/remove. Numeric slots are never "off", only their value changes.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Shape = meaning:</strong> round = condition (on/off), rounded-square = numeric value. The two are visually distinct at a glance, even shrunk to ring size.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Dense grids:</strong> selected token's group sits at a higher z-index and neighbouring rings dim to ~40% while a token is selected, so overlapping suns stay readable.</div></div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  <span>Warhammer Battle Helper · UX Mockup Series · Approach 5 (Radial HUD, numeric slots)</span>
+  <span>Static HTML — no external dependencies · open directly in browser</span>
+</div>
+
+</body>
+</html>

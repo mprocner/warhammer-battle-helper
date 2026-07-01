@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approach 2 — Modal | Token Editing Mockup</title>
+<!--
+  Data contract (same as Approach 1):
+  character = {
+    id: string,
+    name: string,
+    hp: { current: number, total: number },
+    states: Array<{ id: string, icon: string, label: string, level?: number }>,
+    stats: Array<{ label: string, value: number }>
+  }
+  State types come from the active game system registry — not hardcoded here.
+-->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #19120a;
+  color: #3a2f1f;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  background: linear-gradient(180deg, #0d0a05 0%, #1a1208 100%);
+  border-bottom: 2px solid #7a5c42;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-header__title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.1rem;
+  color: #c9975b;
+  letter-spacing: 0.08em;
+}
+.page-header__badge {
+  background: rgba(201,151,91,0.12);
+  border: 1px solid #7a5c42;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  color: #c4a882;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+/* ── DESCRIPTION BOX ── */
+.desc-box {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 0 20px;
+}
+.desc-box__inner {
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #c4a882;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  color: #3a2f1f;
+  line-height: 1.55;
+}
+.desc-box__inner strong { color: #7a5c42; }
+
+/* ── MAIN CONTENT ── */
+.content {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 0 20px;
+}
+
+/* ── SCENES STACKED VERTICALLY ── */
+.scene-label {
+  font-family: Georgia, serif;
+  font-size: 0.68rem;
+  color: #c4a882;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #3a2a15;
+  padding-bottom: 5px;
+}
+
+/* ── TACTICAL GRID ── */
+.grid-scene {
+  position: relative;
+  height: 250px;
+  background-color: #dfc89a;
+  background-image:
+    linear-gradient(rgba(194,148,98,0.85) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(194,148,98,0.85) 1px, transparent 1px);
+  background-size: 50px 50px;
+  border: 2px solid #7a5c42;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(100,70,30,0.15);
+}
+
+/* Overlay on dimmed grid scene */
+.grid-scene__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,6,2,0.55);
+  border-radius: 4px;
+  z-index: 50;
+}
+
+/* ── TOKEN ── */
+.tok {
+  position: absolute;
+}
+
+.tok__hp-bar {
+  width: 50px;
+  height: 7px;
+  background: rgba(0,0,0,0.45);
+  border-radius: 4px;
+  margin-bottom: 3px;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+.tok__hp-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.tok__hp-fill--good   { background: linear-gradient(90deg, #3a7a3a, #4eaa4e); }
+.tok__hp-fill--warn   { background: linear-gradient(90deg, #a86020, #d08030); }
+.tok__hp-fill--danger { background: linear-gradient(90deg, #882020, #c83030); }
+.tok__hp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  pointer-events: none;
+}
+
+.tok__circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.93);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  border: 2.5px solid #c9975b;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(201,151,91,0.2);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tok__circle--a { background: linear-gradient(135deg, #7a6a58, #5a4a3a); }
+.tok__circle--b { background: linear-gradient(135deg, #5a6a78, #3a4a58); }
+.tok__circle--c { background: linear-gradient(135deg, #6a5a7a, #4a3a5a); }
+
+.tok__circle--selected {
+  border-color: #f0c070;
+  box-shadow:
+    0 0 0 2px rgba(201,151,91,0.6),
+    0 0 16px rgba(201,151,91,0.55),
+    0 3px 8px rgba(0,0,0,0.25);
+}
+
+/* Edit icon — appears on selected token, triggers modal */
+.tok__edit-btn {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  background: #c9975b;
+  border: 1.5px solid #7a5c42;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  z-index: 60;
+  /* In React: onClick={() => openModal(characterId)} */
+}
+
+/* Active state badges (always visible, visible through overlay via z-index) */
+.tok__state {
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background: rgba(20,12,4,0.88);
+  border: 1.5px solid #c9975b;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  z-index: 60;
+}
+.tok__state-level {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  background: #c9975b;
+  color: #3a2f1f;
+  border-radius: 50%;
+  font-size: 6.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── MODAL ── */
+.modal-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+.modal {
+  width: 400px;
+  max-height: 90%;
+  background: linear-gradient(160deg, #f4e8d8 0%, #eddcca 50%, #e4d0b8 100%);
+  border: 2px solid #7a5c42;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.3);
+  overflow: hidden;
+  pointer-events: all;
+}
+
+/* Modal header */
+.modal-header {
+  background: linear-gradient(90deg, rgba(122,92,66,0.18) 0%, rgba(122,92,66,0.06) 100%);
+  border-bottom: 1.5px solid #c4a882;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.modal-header__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7a6a58, #5a4a3a);
+  border: 2px solid #c9975b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  flex-shrink: 0;
+}
+.modal-header__name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  color: #7a5c42;
+  font-weight: 700;
+  flex: 1;
+}
+.modal-header__close {
+  width: 26px;
+  height: 26px;
+  background: rgba(122,92,66,0.12);
+  border: 1px solid #c4a882;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #7a5c42;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Modal body */
+.modal-body { padding: 14px 16px 16px; }
+
+/* Divider */
+.modal-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c4a882, transparent);
+  margin: 12px 0;
+}
+
+/* Section label */
+.modal-label {
+  font-size: 0.62rem;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* HP section — larger controls for modal context */
+.modal-hp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.modal-hp-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #c4a882;
+  background: #fff9f0;
+  color: #3a2f1f;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+.modal-hp-input {
+  width: 44px;
+  height: 30px;
+  background: #fff9f0;
+  border: 1.5px solid #c4a882;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #3a2f1f;
+  flex-shrink: 0;
+}
+.modal-hp-sep {
+  color: #c4a882;
+  font-size: 1rem;
+  font-weight: 300;
+}
+.modal-hp-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #c4a882;
+  position: relative;
+}
+.modal-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3a7a3a, #4eaa4e);
+  border-radius: 5px;
+}
+
+/* Conditions grid — 5 columns, each has icon + name + level control */
+.modal-states-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.modal-state {
+  border-radius: 7px;
+  padding: 6px 4px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  position: relative;
+}
+.modal-state--active {
+  background: rgba(201,151,91,0.3);
+  border-color: #7a5c42;
+  box-shadow: 0 0 8px rgba(107,68,35,0.22);
+}
+.modal-state--inactive {
+  filter: grayscale(1);
+  opacity: 0.4;
+  background: rgba(0,0,0,0.05);
+  border-color: #d4c8b8;
+}
+.modal-state__icon { font-size: 18px; line-height: 1; }
+.modal-state__name {
+  font-size: 0.52rem;
+  color: #7a5c42;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.modal-state__level-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.modal-state__lvl-btn {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #c4a882;
+  background: #fff9f0;
+  color: #3a2f1f;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-state__lvl-val {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #c9975b;
+  min-width: 10px;
+  text-align: center;
+}
+
+/* Stats section */
+.modal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.modal-stat {
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 5px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-stat__label {
+  font-size: 0.6rem;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.modal-stat__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.modal-stat__btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid #c4a882;
+  background: rgba(201,151,91,0.15);
+  color: #7a5c42;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.modal-stat__val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3a2f1f;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ── ANNOTATIONS ── */
+.annotations {
+  margin-top: 14px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #c4a882;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+}
+.ann {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.77rem;
+  color: #3a2f1f;
+  line-height: 1.45;
+}
+.ann__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c9975b;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* ── FOOTER ── */
+.page-footer {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 10px 20px 0;
+  font-size: 0.68rem;
+  color: #7a6a50;
+  border-top: 1px solid #3a2a15;
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1 class="page-header__title">Approach 2 — Modal · Token Editing Mockup</h1>
+  <span class="page-header__badge">Warhammer Battle Helper · Static HTML</span>
+</header>
+
+<div class="desc-box">
+  <div class="desc-box__inner">
+    <strong>Concept:</strong> A small edit button (⚙) appears on the selected token. Clicking it opens a full centered modal over a dimmed backdrop. The modal contains complete HP management, a comprehensive 5×2 conditions grid with per-condition level controls, and a full stats editor. The grid is visible but dimmed behind the modal — active state badges and the HP bar remain readable at z-index above the overlay.
+    <br><br>
+    <strong>Trade-off:</strong> Maximum information density and edit clarity — ideal for deep character setup between encounters. Blocks the map view, breaks the "in-the-moment" combat feel. Requires a deliberate open/close cycle.
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ══ SCENE A: Normal gameplay ══ -->
+  <div style="margin-top:16px">
+    <div class="scene-label">Normal gameplay — HP bar &amp; active states always visible (no modal open)</div>
+    <div class="grid-scene">
+
+      <!-- Tobias — 16/20 HP — POISON(1) + STUNNED(2) -->
+      <div class="tok" style="left:50px;top:42px">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--good" style="width:80%"></div>
+          <div class="tok__hp-text">16 / 20</div>
+        </div>
+        <div class="tok__circle tok__circle--a">T</div>
+        <!-- MUI: Sick -->
+        <div class="tok__state" style="left:43px;top:-3px">🧪<div class="tok__state-level">1</div></div>
+        <!-- MUI: ElectricBolt -->
+        <div class="tok__state" style="left:55px;top:25px">💫<div class="tok__state-level">2</div></div>
+      </div>
+
+      <!-- Garrett — 8/30 HP (danger) — no states -->
+      <div class="tok" style="left:200px;top:42px">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--danger" style="width:27%"></div>
+          <div class="tok__hp-text">8 / 30</div>
+        </div>
+        <div class="tok__circle tok__circle--b">G</div>
+      </div>
+
+      <!-- Wilhelmina — 20/28 HP — BLEEDING(1) + SHIELDED + SLOWED -->
+      <div class="tok" style="left:150px;top:142px">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--good" style="width:71%"></div>
+          <div class="tok__hp-text">20 / 28</div>
+        </div>
+        <div class="tok__circle tok__circle--c">W</div>
+        <!-- MUI: Bloodtype -->
+        <div class="tok__state" style="left:15px;top:-15px">🩸<div class="tok__state-level">1</div></div>
+        <!-- MUI: Shield -->
+        <div class="tok__state" style="left:43px;top:53px">🛡</div>
+        <!-- MUI: SlowMotionVideo -->
+        <div class="tok__state" style="left:-13px;top:53px">🐌</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ SCENE B: Token selected → Edit icon → Modal open ══ -->
+  <div style="margin-top:16px">
+    <div class="scene-label">Tobias selected — ⚙ edit icon clicked — modal open over dimmed grid</div>
+    <div class="grid-scene">
+
+      <!-- Dark overlay -->
+      <div class="grid-scene__overlay"></div>
+
+      <!-- Tobias — SELECTED — visible through overlay (z-index above) -->
+      <div class="tok" style="left:50px;top:42px;z-index:60">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--good" style="width:80%"></div>
+          <div class="tok__hp-text">16 / 20</div>
+        </div>
+        <div class="tok__circle tok__circle--a tok__circle--selected">T
+          <!-- Edit / settings button — MUI: SettingsOutlined or EditOutlined -->
+          <div class="tok__edit-btn" title="Open full editor">⚙</div>
+        </div>
+        <div class="tok__state" style="left:43px;top:-3px">🧪<div class="tok__state-level">1</div></div>
+        <div class="tok__state" style="left:55px;top:25px">💫<div class="tok__state-level">2</div></div>
+      </div>
+
+      <!-- Garrett — dimmed, not selected -->
+      <div class="tok" style="left:200px;top:42px;z-index:55;opacity:0.4">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--danger" style="width:27%"></div>
+          <div class="tok__hp-text">8 / 30</div>
+        </div>
+        <div class="tok__circle tok__circle--b">G</div>
+      </div>
+
+      <!-- Wilhelmina — dimmed -->
+      <div class="tok" style="left:150px;top:142px;z-index:55;opacity:0.4">
+        <div class="tok__hp-bar">
+          <div class="tok__hp-fill tok__hp-fill--good" style="width:71%"></div>
+          <div class="tok__hp-text">20 / 28</div>
+        </div>
+        <div class="tok__circle tok__circle--c">W</div>
+        <div class="tok__state" style="left:15px;top:-15px">🩸<div class="tok__state-level">1</div></div>
+        <div class="tok__state" style="left:43px;top:53px">🛡</div>
+        <div class="tok__state" style="left:-13px;top:53px">🐌</div>
+      </div>
+
+      <!-- ════ MODAL ════ -->
+      <div class="modal-container">
+        <div class="modal">
+
+          <div class="modal-header">
+            <div class="modal-header__avatar">T</div>
+            <span class="modal-header__name">Tobias</span>
+            <div class="modal-header__close">✕</div>
+          </div>
+
+          <div class="modal-body">
+
+            <!-- HP Section -->
+            <div class="modal-label">Hit Points</div>
+            <div class="modal-hp-row">
+              <div class="modal-hp-btn">−</div>
+              <div class="modal-hp-track" style="flex:1">
+                <div class="modal-hp-fill" style="width:80%"></div>
+              </div>
+              <div class="modal-hp-btn">+</div>
+              <div class="modal-hp-input">16</div>
+              <span class="modal-hp-sep">/</span>
+              <div class="modal-hp-input">20</div>
+            </div>
+
+            <div class="modal-divider"></div>
+
+            <!-- Conditions Section -->
+            <div class="modal-label">Conditions
+              <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.6rem;color:#9a8060;margin-left:6px">· defined by active game system</span>
+            </div>
+            <div class="modal-states-grid">
+
+              <!-- POISON active, lv 1 — MUI: Sick -->
+              <div class="modal-state modal-state--active" title="Poison">
+                <div class="modal-state__icon">🧪</div>
+                <div class="modal-state__name">Poison</div>
+                <div class="modal-state__level-row">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">1</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- STUNNED active, lv 2 — MUI: ElectricBolt -->
+              <div class="modal-state modal-state--active" title="Stunned">
+                <div class="modal-state__icon">💫</div>
+                <div class="modal-state__name">Stunned</div>
+                <div class="modal-state__level-row">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">2</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- BLEEDING inactive — MUI: Bloodtype -->
+              <div class="modal-state modal-state--inactive" title="Bleeding">
+                <div class="modal-state__icon">🩸</div>
+                <div class="modal-state__name">Bleeding</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- SLOWED inactive — MUI: SlowMotionVideo -->
+              <div class="modal-state modal-state--inactive" title="Slowed">
+                <div class="modal-state__icon">🐌</div>
+                <div class="modal-state__name">Slowed</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- BLINDED inactive — MUI: VisibilityOff -->
+              <div class="modal-state modal-state--inactive" title="Blinded">
+                <div class="modal-state__icon">👁</div>
+                <div class="modal-state__name">Blinded</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- BUFFED inactive — MUI: AutoAwesome -->
+              <div class="modal-state modal-state--inactive" title="Buffed">
+                <div class="modal-state__icon">✨</div>
+                <div class="modal-state__name">Buffed</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- SLEEPING inactive — MUI: Bedtime -->
+              <div class="modal-state modal-state--inactive" title="Sleeping">
+                <div class="modal-state__icon">💤</div>
+                <div class="modal-state__name">Sleeping</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- SHIELDED inactive — MUI: Shield -->
+              <div class="modal-state modal-state--inactive" title="Shielded">
+                <div class="modal-state__icon">🛡</div>
+                <div class="modal-state__name">Shielded</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- BURNING inactive — MUI: LocalFireDepartment -->
+              <div class="modal-state modal-state--inactive" title="Burning">
+                <div class="modal-state__icon">🔥</div>
+                <div class="modal-state__name">Burning</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+              <!-- PARALYZED inactive — MUI: FlashOn -->
+              <div class="modal-state modal-state--inactive" title="Paralyzed">
+                <div class="modal-state__icon">⚡</div>
+                <div class="modal-state__name">Paralyzed</div>
+                <div class="modal-state__level-row" style="opacity:0">
+                  <div class="modal-state__lvl-btn">−</div>
+                  <div class="modal-state__lvl-val">-</div>
+                  <div class="modal-state__lvl-btn">+</div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="modal-divider"></div>
+
+            <!-- Stats Section -->
+            <div class="modal-label">Statistics</div>
+            <div class="modal-stats-grid">
+              <div class="modal-stat">
+                <span class="modal-stat__label">Advantage</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">2</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+              <div class="modal-stat">
+                <span class="modal-stat__label">Movement</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">4</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+              <div class="modal-stat">
+                <span class="modal-stat__label">Initiative</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">3</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+              <div class="modal-stat">
+                <span class="modal-stat__label">Armour</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">3</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+              <div class="modal-stat">
+                <span class="modal-stat__label">Fortune</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">1</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+              <div class="modal-stat">
+                <span class="modal-stat__label">Resolve</span>
+                <div class="modal-stat__controls">
+                  <div class="modal-stat__btn">−</div>
+                  <span class="modal-stat__val">2</span>
+                  <div class="modal-stat__btn">+</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <!-- end modal -->
+
+    </div>
+  </div>
+
+  <!-- ── ANNOTATIONS ── -->
+  <div class="annotations" style="margin-top:14px">
+    <div class="ann"><div class="ann__dot"></div><div><strong>Edit icon (⚙):</strong> Appears in the bottom-right corner of the selected token's circle. Clicking it opens the modal. Clicking anywhere on the backdrop (overlay) or pressing Escape closes the modal without saving, or auto-save on change.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Tokens visible behind overlay:</strong> The selected token's HP bar and active state badges stay at a higher z-index than the backdrop so the player can see what they're editing. Other tokens are dimmed at opacity 0.4.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Conditions grid — full control:</strong> Each condition card shows icon + name + level stepper (+/−). Inactive = greyscale. Active = golden glow. Clicking an inactive state activates it at level 1. Level can go to max (defined per state by game system).</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>HP controls:</strong> Dual-mode — large +/− buttons for quick combat adjustments, plus direct number inputs for setting exact values (e.g., after long rest). Bar animates fill on change.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Stats section:</strong> Full editable stats with +/− per field. In React: connected to the character's live state in GameSession; changes broadcast via WebSocket to all players.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Scalability:</strong> Modal can scroll vertically if the game system defines many conditions or stats. This makes Approach 2 the best fit for a "full editor" — accessible from the other two approaches via an expand/detail button.</div></div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  <span>Warhammer Battle Helper · UX Mockup Series · Approach 2 of 3 (Modal)</span>
+  <span>Static HTML — no external dependencies · open directly in browser</span>
+</div>
+
+</body>
+</html>

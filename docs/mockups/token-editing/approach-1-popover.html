@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approach 1 — Popover | Token Editing Mockup</title>
+<!--
+  Data contract assumed by this mockup:
+  character = {
+    id: string,
+    name: string,
+    avatarInitials: string,
+    hp: { current: number, total: number },
+    states: Array<{ id: string, icon: string, label: string, level?: number }>,  // max 8 active
+    stats: Array<{ label: string, value: number }>
+  }
+  Available state types come from the active game system (generic, not Warhammer-specific).
+-->
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #19120a;
+  color: #3a2f1f;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  background: linear-gradient(180deg, #0d0a05 0%, #1a1208 100%);
+  border-bottom: 2px solid #7a5c42;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-header__title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.1rem;
+  color: #c9975b;
+  letter-spacing: 0.08em;
+}
+.page-header__badge {
+  background: rgba(201,151,91,0.12);
+  border: 1px solid #7a5c42;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  color: #c4a882;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+/* ── DESCRIPTION BOX ── */
+.desc-box {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 0 20px;
+}
+.desc-box__inner {
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #c4a882;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  color: #3a2f1f;
+  line-height: 1.55;
+}
+.desc-box__inner strong { color: #7a5c42; }
+
+/* ── MAIN CONTENT ── */
+.content {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 0 20px;
+}
+
+/* ── SCENES ROW ── */
+.scenes-row {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.scene-panel { flex: 1; min-width: 0; }
+.scene-panel__label {
+  font-family: Georgia, serif;
+  font-size: 0.68rem;
+  color: #c4a882;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #3a2a15;
+  padding-bottom: 5px;
+}
+
+/* ── TACTICAL GRID ── */
+.grid-scene {
+  position: relative;
+  height: 250px;
+  background-color: #dfc89a;
+  background-image:
+    linear-gradient(rgba(194,148,98,0.85) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(194,148,98,0.85) 1px, transparent 1px);
+  background-size: 50px 50px;
+  border: 2px solid #7a5c42;
+  border-radius: 6px;
+  overflow: visible;
+  box-shadow: inset 0 0 40px rgba(100,70,30,0.15);
+}
+
+/* ── TOKEN ── */
+.tok {
+  position: absolute;
+  /* wrapper: top-left of cell, contains hp-bar + circle + state badges */
+}
+
+.tok__hp-bar {
+  width: 50px;
+  height: 7px;
+  background: rgba(0,0,0,0.45);
+  border-radius: 4px;
+  margin-bottom: 3px;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+.tok__hp-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.tok__hp-fill--good   { background: linear-gradient(90deg, #3a7a3a, #4eaa4e); }
+.tok__hp-fill--warn   { background: linear-gradient(90deg, #a86020, #d08030); }
+.tok__hp-fill--danger { background: linear-gradient(90deg, #882020, #c83030); }
+.tok__hp-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  pointer-events: none;
+  letter-spacing: 0.03em;
+}
+
+/* Avatar circle — system-agnostic, no ally/enemy coloring */
+.tok__circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.93);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  border: 2.5px solid #c9975b;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25), 0 0 0 1px rgba(201,151,91,0.2);
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+/* Each character gets a unique muted avatar gradient — represents user-uploaded photo placeholder */
+.tok__circle--a { background: linear-gradient(135deg, #7a6a58, #5a4a3a); }
+.tok__circle--b { background: linear-gradient(135deg, #5a6a78, #3a4a58); }
+.tok__circle--c { background: linear-gradient(135deg, #6a5a7a, #4a3a5a); }
+
+.tok__circle--selected {
+  border-color: #f0c070;
+  box-shadow:
+    0 0 0 2px rgba(201,151,91,0.6),
+    0 0 16px rgba(201,151,91,0.5),
+    0 3px 8px rgba(0,0,0,0.25);
+}
+
+/* ── ACTIVE STATE BADGES (always visible around token) ── */
+/* These are distributed radially for up to 8 active states. */
+/* Icon placeholders: emojis. Real impl uses @mui/icons-material icons. */
+.tok__state {
+  position: absolute;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background: rgba(20,12,4,0.88);
+  border: 1.5px solid #c9975b;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  z-index: 10;
+  /* positioned relative to .tok wrapper; token circle top = 10px (after hp bar+gap) */
+}
+.tok__state-level {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  background: #c9975b;
+  color: #3a2f1f;
+  border-radius: 50%;
+  font-size: 6.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Token center: (25, 10+25) = (25, 35) relative to .tok.
+   Ring r=40. icon 19px, half=9.5≈10.
+   Positions: left = 25 + cx - 10, top = 35 + cy - 10 */
+/* Slot 0 top:    cx=0,   cy=-40 → l=15, t=-15 */
+/* Slot 1 top-R:  cx=28,  cy=-28 → l=43, t=-3  */
+/* Slot 2 right:  cx=40,  cy=0   → l=55, t=25  */
+/* Slot 3 bot-R:  cx=28,  cy=28  → l=43, t=53  */
+/* Slot 4 bottom: cx=0,   cy=40  → l=15, t=65  */
+/* Slot 5 bot-L:  cx=-28, cy=28  → l=-13,t=53  */
+/* Slot 6 left:   cx=-40, cy=0   → l=-25,t=25  */
+/* Slot 7 top-L:  cx=-28, cy=-28 → l=-13,t=-3  */
+
+/* ── POPOVER ── */
+.tok__popover {
+  position: absolute;
+  left: calc(100% + 14px);
+  top: -8px;
+  width: 238px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #7a5c42;
+  border-radius: 8px;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 200;
+  overflow: hidden;
+}
+/* Arrow pointing left toward the token */
+.tok__popover::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 20px;
+  border: 8px solid transparent;
+  border-right-color: #7a5c42;
+}
+.tok__popover::after {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 21px;
+  border: 7px solid transparent;
+  border-right-color: #f4e8d8;
+}
+
+.pop-header {
+  background: rgba(122,92,66,0.1);
+  border-bottom: 1px solid #c4a882;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pop-header__name {
+  font-family: Georgia, serif;
+  font-size: 0.82rem;
+  color: #7a5c42;
+  font-weight: 700;
+}
+.pop-header__close {
+  width: 18px;
+  height: 18px;
+  background: rgba(122,92,66,0.12);
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #7a5c42;
+  cursor: pointer;
+}
+
+.pop-body { padding: 10px 12px 12px; }
+
+.pop-label {
+  font-size: 0.6rem;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+/* HP row */
+.pop-hp-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 11px;
+}
+.pop-hp-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #c4a882;
+  background: #fff9f0;
+  color: #3a2f1f;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+.pop-hp-track {
+  flex: 1;
+  height: 16px;
+  background: rgba(0,0,0,0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #c4a882;
+  position: relative;
+}
+.pop-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3a7a3a, #4eaa4e);
+  border-radius: 7px;
+}
+.pop-hp-track-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #3a2f1f;
+}
+
+/* State palette — all system-defined states, toggle on/off */
+.pop-state-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+.pop-state {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  border: 1.5px solid transparent;
+  transition: background 0.15s;
+}
+.pop-state--active {
+  background: rgba(201,151,91,0.35);
+  border-color: #7a5c42;
+  box-shadow: 0 0 6px rgba(107,68,35,0.25);
+}
+.pop-state--inactive {
+  filter: grayscale(1);
+  opacity: 0.42;
+  background: rgba(0,0,0,0.05);
+  border-color: #d4c8b8;
+}
+.pop-state__level {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 7px;
+  color: #c9975b;
+  font-weight: 800;
+  line-height: 1;
+}
+.pop-state-hint {
+  font-size: 0.58rem;
+  color: #9a8060;
+  margin-bottom: 10px;
+}
+
+/* Stats chips */
+.pop-stats-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pop-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 4px;
+  padding: 3px 7px;
+  min-width: 36px;
+}
+.pop-stat__label {
+  font-size: 0.57rem;
+  color: #7a5c42;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.pop-stat__val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #3a2f1f;
+}
+
+/* ── ANNOTATIONS ── */
+.annotations {
+  margin-top: 14px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 1.5px solid #c4a882;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+}
+.ann {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 0.77rem;
+  color: #3a2f1f;
+  line-height: 1.45;
+}
+.ann__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c9975b;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* ── FOOTER ── */
+.page-footer {
+  max-width: 860px;
+  margin: 18px auto 0;
+  padding: 10px 20px 0;
+  font-size: 0.68rem;
+  color: #7a6a50;
+  border-top: 1px solid #3a2a15;
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1 class="page-header__title">Approach 1 — Popover · Token Editing Mockup</h1>
+  <span class="page-header__badge">Warhammer Battle Helper · Static HTML</span>
+</header>
+
+<div class="desc-box">
+  <div class="desc-box__inner">
+    <strong>Concept:</strong> Clicking a token opens a contextual popover anchored to its right side with a left-pointing arrow. The popover contains: HP management (+/- bar), a full state palette (toggle on/off, level on active states), and compact stat chips. Active states are <em>always visible</em> as small radial badges around the token — even when unselected. The HP bar appears above any damaged token regardless of selection.
+    <br><br>
+    <strong>Trade-off:</strong> Doesn't block the map tile under the token. Limited space (≈240px width) — secondary stats may need a scrollable area. State palette inside the popover means all state management is in one place but the panel can feel dense.
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="scenes-row" style="margin-top:16px">
+
+    <!-- ══ SCENE A: Normal gameplay ══ -->
+    <div class="scene-panel">
+      <div class="scene-panel__label">Normal gameplay — HP bar &amp; active states always visible</div>
+      <div class="grid-scene" style="width:100%">
+
+        <!--
+          Character: Tobias — 16/20 HP — 2 active states: POISON(1) + STUNNED(2)
+          Cell (1,1): left=50, top=50. Wrapper top shifted by hp-bar (7px + 3px gap) = 10px.
+        -->
+        <div class="tok" style="left:50px;top:42px">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--good" style="width:80%"></div>
+            <div class="tok__hp-text">16 / 20</div>
+          </div>
+          <div class="tok__circle tok__circle--a">T</div>
+          <!-- POISON active, level 1 — MUI icon: Sick -->
+          <!-- Slot 1 (top-right): left=43, top=-3 -->
+          <div class="tok__state" style="left:43px;top:-3px">🧪<div class="tok__state-level">1</div></div>
+          <!-- STUNNED active, level 2 — MUI icon: ElectricBolt / Stars -->
+          <!-- Slot 2 (right): left=55, top=25 -->
+          <div class="tok__state" style="left:55px;top:25px">💫<div class="tok__state-level">2</div></div>
+        </div>
+
+        <!--
+          Character: Garrett — 8/30 HP (danger) — no active states
+          Cell (4,1): left=200, top=50
+        -->
+        <div class="tok" style="left:200px;top:42px">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--danger" style="width:27%"></div>
+            <div class="tok__hp-text">8 / 30</div>
+          </div>
+          <div class="tok__circle tok__circle--b">G</div>
+        </div>
+
+        <!--
+          Character: Wilhelmina — 20/28 HP — 3 active states: BLEEDING(1), SHIELDED(0), SLOWED(0)
+          Cell (3,3): left=150, top=150
+        -->
+        <div class="tok" style="left:150px;top:142px">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--good" style="width:71%"></div>
+            <div class="tok__hp-text">20 / 28</div>
+          </div>
+          <div class="tok__circle tok__circle--c">W</div>
+          <!-- BLEEDING active, level 1 — MUI icon: Bloodtype -->
+          <!-- Slot 0 (top): left=15, top=-15 -->
+          <div class="tok__state" style="left:15px;top:-15px">🩸<div class="tok__state-level">1</div></div>
+          <!-- SHIELDED active — MUI icon: Shield -->
+          <!-- Slot 3 (bottom-right): left=43, top=53 -->
+          <div class="tok__state" style="left:43px;top:53px">🛡</div>
+          <!-- SLOWED active — MUI icon: SlowMotionVideo -->
+          <!-- Slot 5 (bottom-left): left=-13, top=53 -->
+          <div class="tok__state" style="left:-13px;top:53px">🐌</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ SCENE B: Tobias selected → Popover ══ -->
+    <div class="scene-panel">
+      <div class="scene-panel__label">Token selected — popover anchored to the right</div>
+      <div class="grid-scene" style="width:100%;overflow:visible">
+
+        <!-- Tobias — SELECTED + POPOVER -->
+        <div class="tok" style="left:50px;top:42px;z-index:100">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--good" style="width:80%"></div>
+            <div class="tok__hp-text">16 / 20</div>
+          </div>
+          <div class="tok__circle tok__circle--a tok__circle--selected">T</div>
+          <!-- Active state badges still shown even when selected -->
+          <div class="tok__state" style="left:43px;top:-3px">🧪<div class="tok__state-level">1</div></div>
+          <div class="tok__state" style="left:55px;top:25px">💫<div class="tok__state-level">2</div></div>
+
+          <!-- ════ POPOVER ════ -->
+          <div class="tok__popover">
+            <div class="pop-header">
+              <span class="pop-header__name">Tobias</span>
+              <div class="pop-header__close">✕</div>
+            </div>
+
+            <div class="pop-body">
+
+              <!-- HP -->
+              <div class="pop-label">Hit Points</div>
+              <div class="pop-hp-row">
+                <div class="pop-hp-btn">−</div>
+                <div class="pop-hp-track">
+                  <div class="pop-hp-fill" style="width:80%"></div>
+                  <div class="pop-hp-track-text">16 / 20</div>
+                </div>
+                <div class="pop-hp-btn">+</div>
+              </div>
+
+              <!-- Conditions palette — all states from the game system -->
+              <div class="pop-label">Conditions</div>
+              <div class="pop-state-grid">
+                <!-- POISON active, lv 1 — MUI: Sick -->
+                <div class="pop-state pop-state--active" title="Poison lv 1">🧪<span class="pop-state__level">1</span></div>
+                <!-- STUNNED active, lv 2 — MUI: ElectricBolt -->
+                <div class="pop-state pop-state--active" title="Stunned lv 2">💫<span class="pop-state__level">2</span></div>
+                <!-- BLEEDING inactive — MUI: Bloodtype -->
+                <div class="pop-state pop-state--inactive" title="Bleeding">🩸</div>
+                <!-- SLOWED inactive — MUI: SlowMotionVideo -->
+                <div class="pop-state pop-state--inactive" title="Slowed">🐌</div>
+                <!-- BLINDED inactive — MUI: VisibilityOff -->
+                <div class="pop-state pop-state--inactive" title="Blinded">👁</div>
+                <!-- BUFFED inactive — MUI: AutoAwesome -->
+                <div class="pop-state pop-state--inactive" title="Buffed">✨</div>
+                <!-- SLEEPING inactive — MUI: Bedtime -->
+                <div class="pop-state pop-state--inactive" title="Sleeping">💤</div>
+                <!-- SHIELDED inactive — MUI: Shield -->
+                <div class="pop-state pop-state--inactive" title="Shielded">🛡</div>
+                <!-- BURNING inactive — MUI: LocalFireDepartment -->
+                <div class="pop-state pop-state--inactive" title="Burning">🔥</div>
+                <!-- PARALYZED inactive — MUI: FlashOn -->
+                <div class="pop-state pop-state--inactive" title="Paralyzed">⚡</div>
+              </div>
+              <div class="pop-state-hint">Click to toggle &nbsp;·&nbsp; right-click to adjust level</div>
+
+              <!-- Stats -->
+              <div class="pop-label">Statistics</div>
+              <div class="pop-stats-row">
+                <div class="pop-stat"><span class="pop-stat__label">ADV</span><span class="pop-stat__val">2</span></div>
+                <div class="pop-stat"><span class="pop-stat__label">Move</span><span class="pop-stat__val">4</span></div>
+                <div class="pop-stat"><span class="pop-stat__label">Init</span><span class="pop-stat__val">3</span></div>
+                <div class="pop-stat"><span class="pop-stat__label">AP</span><span class="pop-stat__val">3</span></div>
+                <div class="pop-stat"><span class="pop-stat__label">Fort</span><span class="pop-stat__val">1</span></div>
+              </div>
+
+            </div>
+          </div>
+          <!-- end popover -->
+        </div>
+
+        <!-- Garrett — unchanged -->
+        <div class="tok" style="left:200px;top:42px">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--danger" style="width:27%"></div>
+            <div class="tok__hp-text">8 / 30</div>
+          </div>
+          <div class="tok__circle tok__circle--b">G</div>
+        </div>
+
+        <!-- Wilhelmina — unchanged -->
+        <div class="tok" style="left:150px;top:142px">
+          <div class="tok__hp-bar">
+            <div class="tok__hp-fill tok__hp-fill--good" style="width:71%"></div>
+            <div class="tok__hp-text">20 / 28</div>
+          </div>
+          <div class="tok__circle tok__circle--c">W</div>
+          <div class="tok__state" style="left:15px;top:-15px">🩸<div class="tok__state-level">1</div></div>
+          <div class="tok__state" style="left:43px;top:53px">🛡</div>
+          <div class="tok__state" style="left:-13px;top:53px">🐌</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ANNOTATIONS ── -->
+  <div class="annotations">
+    <div class="ann"><div class="ann__dot"></div><div><strong>HP bar (always-on):</strong> Visible above any token with wounds or active conditions — not only selected tokens. Fill: green &gt;50%, orange 20–50%, red &lt;20% of max HP. Hides when HP is full and no conditions are active.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Active state badges (always-on):</strong> Only active states are rendered as radial badges; up to 8 can be distributed around the token ring. States without a level show no counter. Right-click badge to increment level; badge disappears when removed.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Popover arrow:</strong> Points left toward the token. Popover opens to the right so the grid tile under the token stays visible. If token is near the right viewport edge, popover flips left.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Condition palette in popover:</strong> Rows of all states from the active game system. Inactive = greyscale 42%. Active = golden glow. Click to toggle; right-click to increase level. Available states are system-defined, not hardcoded.</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Avatar tokens:</strong> Circular photo placeholder (shows initials when no image uploaded). Gold border — no ally/enemy color coding at token level. Teams/factions expressed differently (e.g., initiative order, sidebar grouping).</div></div>
+    <div class="ann"><div class="ann__dot"></div><div><strong>Icon note:</strong> All emojis are mockup placeholders. Real implementation uses <code>@mui/icons-material</code>: Sick, Bloodtype, VisibilityOff, Shield, SlowMotionVideo, AutoAwesome, Bedtime, LocalFireDepartment, ElectricBolt, etc.</div></div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  <span>Warhammer Battle Helper · UX Mockup Series · Approach 1 of 3 (Popover)</span>
+  <span>Static HTML — no external dependencies · open directly in browser</span>
+</div>
+
+</body>
+</html>
