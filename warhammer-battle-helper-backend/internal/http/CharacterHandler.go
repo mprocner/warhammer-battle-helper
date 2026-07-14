@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -276,6 +277,258 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updatedCharacter)
+}
+
+// PatchStatFieldRequest edits a single stats leaf (FEATURE-102 HP bar / field steppers).
+// Exactly one of Delta / Value is used: Delta for +/- steppers, Value for a typed input.
+// MaxPath (optional) clamps the result between Min (default 0) and stats[MaxPath].
+type PatchStatFieldRequest struct {
+	Path    string   `json:"path" binding:"required"`
+	Delta   *float64 `json:"delta"`
+	Value   *float64 `json:"value"`
+	MaxPath string   `json:"maxPath"`
+	Min     *float64 `json:"min"`
+}
+
+// PatchTokenOverlayRequest edits one manual ring-slot/square value (FEATURE-102).
+type PatchTokenOverlayRequest struct {
+	SlotID string   `json:"slotId" binding:"required"`
+	Number *float64 `json:"number"`
+	Select *string  `json:"select"`
+}
+
+// PatchKilledRequest toggles the dead-token strike-through.
+type PatchKilledRequest struct {
+	Killed bool `json:"killed"`
+}
+
+// PatchStateRequest bumps an icon-slot condition level up or down (FEATURE-102).
+// Delta is typically +1 (left-click) or -1 (right-click); the state is removed at level <= 0.
+type PatchStateRequest struct {
+	ConditionKey string `json:"conditionKey" binding:"required"`
+	Delta        int    `json:"delta"`
+}
+
+// authorizeCharacterEdit loads the game + character and enforces the same edit rule as
+// UpdateGameCharacter (GM, owner, or in VisibleTo). Returns the character on success.
+func (h *CharacterHandler) authorizeCharacterEdit(c *gin.Context) (*models.Character, bool) {
+	gameID := c.Param("id")
+	charID := c.Param("charId")
+	userObjID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return nil, false
+	}
+	game, err := h.GameRepo.GetByID(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return nil, false
+	}
+	ch, err := h.CharacterRepo.GetByID(charID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
+		return nil, false
+	}
+	if game.GameMasterID != userObjID {
+		canEdit := ch.CreatedBy == userObjID
+		for _, visID := range ch.VisibleTo {
+			if visID == userObjID {
+				canEdit = true
+				break
+			}
+		}
+		if !canEdit {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
+			return nil, false
+		}
+	}
+	return ch, true
+}
+
+// statNumberAtPath decodes a Character's Stats and reads a numeric leaf at a dot path.
+func statNumberAtPath(stats bson.Raw, path string) (float64, bool) {
+	var m bson.M
+	if err := bson.Unmarshal(stats, &m); err != nil {
+		return 0, false
+	}
+	parts := strings.Split(path, ".")
+	var cur interface{} = m
+	for _, p := range parts {
+		asMap, ok := cur.(bson.M)
+		if !ok {
+			return 0, false
+		}
+		cur, ok = asMap[p]
+		if !ok {
+			return 0, false
+		}
+	}
+	switch v := cur.(type) {
+	case float64:
+		return v, true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	default:
+		return 0, false
+	}
+}
+
+// broadcastCharacterUpdated re-reads the character and emits EventCharacterUpdated so
+// every client refetches (reuses the existing conditions-toggle sync path).
+func (h *CharacterHandler) broadcastCharacterUpdated(gameID, charID string) *models.Character {
+	updated, err := h.CharacterRepo.GetByID(charID)
+	if err != nil {
+		return nil
+	}
+	if h.Hub != nil {
+		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterUpdated, map[string]interface{}{
+			"character": updated,
+		})
+	}
+	return updated
+}
+
+// PatchStatField applies a targeted +/- or absolute edit to one stats leaf, clamping
+// against an optional max, then broadcasts (FEATURE-102). Skips ComputeDerived — the
+// edited leaf (e.g. wounds.current) is independent of derived stats.
+func (h *CharacterHandler) PatchStatField(c *gin.Context) {
+	ch, ok := h.authorizeCharacterEdit(c)
+	if !ok {
+		return
+	}
+	var req PatchStatFieldRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	charID := ch.ID.Hex()
+	if req.Value != nil {
+		if err := h.CharacterRepo.SetStatField(charID, req.Path, *req.Value); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	} else if req.Delta != nil {
+		if err := h.CharacterRepo.IncStatField(charID, req.Path, *req.Delta); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "delta or value is required"})
+		return
+	}
+
+	// Clamp: re-read and correct if out of [min, max]. Accepts a small race under
+	// concurrent edits — fine for a tabletop HP counter (self-corrects on next read).
+	fresh, err := h.CharacterRepo.GetByID(charID)
+	if err == nil {
+		if val, ok := statNumberAtPath(fresh.Stats, req.Path); ok {
+			min := 0.0
+			if req.Min != nil {
+				min = *req.Min
+			}
+			clamped := val
+			if clamped < min {
+				clamped = min
+			}
+			if req.MaxPath != "" {
+				if max, ok := statNumberAtPath(fresh.Stats, req.MaxPath); ok && clamped > max {
+					clamped = max
+				}
+			}
+			if clamped != val {
+				_ = h.CharacterRepo.SetStatField(charID, req.Path, clamped)
+			}
+		}
+	}
+
+	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
+	c.JSON(http.StatusOK, updated)
+}
+
+// PatchTokenOverlay writes one manual ring-slot/square value and broadcasts (FEATURE-102).
+func (h *CharacterHandler) PatchTokenOverlay(c *gin.Context) {
+	ch, ok := h.authorizeCharacterEdit(c)
+	if !ok {
+		return
+	}
+	var req PatchTokenOverlayRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	val := models.TokenOverlayValue{Number: req.Number}
+	if req.Select != nil {
+		val.Select = *req.Select
+	}
+	charID := ch.ID.Hex()
+	if err := h.CharacterRepo.SetTokenOverlay(charID, req.SlotID, val); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
+	c.JSON(http.StatusOK, updated)
+}
+
+// PatchState bumps an icon-slot condition's level and broadcasts (FEATURE-102).
+// Removes the state when the resulting level is <= 0.
+func (h *CharacterHandler) PatchState(c *gin.Context) {
+	ch, ok := h.authorizeCharacterEdit(c)
+	if !ok {
+		return
+	}
+	var req PatchStateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	states := make([]models.CharacterState, 0, len(ch.States))
+	found := false
+	for _, s := range ch.States {
+		if s.Name == req.ConditionKey {
+			found = true
+			newLevel := s.Level + req.Delta
+			if newLevel > 0 {
+				states = append(states, models.CharacterState{Name: s.Name, Level: newLevel})
+			}
+			// level <= 0 → drop it
+			continue
+		}
+		states = append(states, s)
+	}
+	if !found && req.Delta > 0 {
+		states = append(states, models.CharacterState{Name: req.ConditionKey, Level: req.Delta})
+	}
+	charID := ch.ID.Hex()
+	if err := h.CharacterRepo.SetStates(charID, states); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
+	c.JSON(http.StatusOK, updated)
+}
+
+// PatchKilled toggles the dead-token strike-through and broadcasts.
+func (h *CharacterHandler) PatchKilled(c *gin.Context) {
+	ch, ok := h.authorizeCharacterEdit(c)
+	if !ok {
+		return
+	}
+	var req PatchKilledRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	charID := ch.ID.Hex()
+	if err := h.CharacterRepo.SetKilled(charID, req.Killed); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
+	c.JSON(http.StatusOK, updated)
 }
 
 // DeleteGameCharacter deletes a character (owner or GM).

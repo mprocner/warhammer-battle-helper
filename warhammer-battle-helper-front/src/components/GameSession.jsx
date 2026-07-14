@@ -185,6 +185,12 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         onGoToGameList();
         break;
 
+      case WS_EVENTS.TOKEN_CONFIG_UPDATED:
+        // The GM's per-user token config changed; re-fetch so resolve-on-read supplies
+        // the fresh config to every connected client (players included).
+        fetchGameState();
+        break;
+
       case WS_EVENTS.PARTICIPANT_JOINED: {
         const newParticipant = message.payload.participant;
         addLogMessage(`${newParticipant.username} joined the game`, 'success');

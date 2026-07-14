@@ -161,7 +161,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
     // Always use the most up-to-date character data from initialCharacters
     const freshChar = initialCharacters.find(c => c.id === character.id) || character;
-    setSelectedCharacter(freshChar);
+    // Clicking the already-selected token toggles it off (same as clicking outside).
+    setSelectedCharacter(prev => (prev?.id === character.id ? null : freshChar));
   };
 
   // Multiplayer: Add character to grid (scene-aware)
@@ -603,12 +604,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [characterUpdateTrigger, fetchGameCharacters, gameId, token]);
 
-  // Character data changed (sheet edit, visibility) — silent refetch, no loading flash
+  // Character data changed (sheet edit, visibility, token state/HP/overlay) — silent
+  // refetch. fetchCharacters refreshes the available pool; fetchGameCharacters refreshes
+  // the tokens on the grid (fightZones) — the token overlay reads from there, so both
+  // must run or on-map state/HP edits look stale until the next placement change.
   useEffect(() => {
     if (gameId && token && characterDataTrigger > 0) {
       fetchCharacters(true);
+      fetchGameCharacters();
     }
-  }, [characterDataTrigger, fetchCharacters, gameId, token]);
+  }, [characterDataTrigger, fetchCharacters, fetchGameCharacters, gameId, token]);
 
   // Selected drawing path (for select/delete tool)
   const [selectedDrawingPathId, setSelectedDrawingPathId] = useState(null);
@@ -833,6 +838,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   if (isLoading) return <div>Ładowanie postaci...</div>;
   if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
 
+  // FEATURE-102: token-display layout comes from the game's embedded system template
+  // (set for custom games and for hardcoded games created from a named variant).
+  const tokenDisplay = game?.customSystemTemplate?.settings?.tokenDisplay || null;
 
   return (
     <DndContext
@@ -947,7 +955,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
           {/* Fight Grid with Scene Layers */}
           <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme}>
-            <div className="fight-grid">
+            <div
+              className="fight-grid"
+              onClick={() => { if (selectedCharacter) setSelectedCharacter(null); }}
+            >
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}
                 style={{ gridTemplateColumns: `repeat(${gridWidth}, ${CELL_SIZE}px)` }}
@@ -961,6 +972,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                       onSelectCharacter={handleSelectCharacter}
                       isOwnCharacter={zone.character ? (isGM || isOwnCharacter(zone.character.id)) : false}
                       isMultiplayer={!!(gameId && token)}
+                      tokenDisplay={tokenDisplay}
+                      selectedCharacterId={selectedCharacter?.id || null}
+                      gameId={gameId}
+                      token={token}
                   />
                 ))}
               </div>

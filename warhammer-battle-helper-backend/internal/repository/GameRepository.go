@@ -87,6 +87,37 @@ func (r *GameRepository) GetAll() ([]models.Game, error) {
 	return games, nil
 }
 
+// FindIDsByGameMasterAndSystem returns the IDs of the GM's non-deleted games for a
+// given hardcoded system — used to broadcast token-config changes to all of them so
+// the live singleton propagates to every affected game.
+func (r *GameRepository) FindIDsByGameMasterAndSystem(gmID primitive.ObjectID, system string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{
+		"gameMasterId": gmID,
+		"gameSystem":   system,
+		"deletedAt":    bson.M{"$exists": false},
+	}
+	cursor, err := r.Collection.Find(ctx, filter, options.Find().SetProjection(bson.M{"_id": 1}))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query games: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var rows []struct {
+		ID primitive.ObjectID `bson:"_id"`
+	}
+	if err := cursor.All(ctx, &rows); err != nil {
+		return nil, fmt.Errorf("failed to decode games: %w", err)
+	}
+	ids := make([]string, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID.Hex()
+	}
+	return ids, nil
+}
+
 // GetByUserID retrieves games where the user is GM or a participant
 func (r *GameRepository) GetByUserID(userID primitive.ObjectID) ([]models.Game, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -417,6 +417,25 @@ header nav a:hover::after {
   opacity: 1;
 }
 
+/* Level badge in the bottom-right corner — mirrors .token-slot__level on the map token. */
+.state-icon__level {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  background: #c9975b;
+  color: #2a1f12;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 14px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
 .state-tooltip {
   position: absolute;
   top: calc(100% + 8px);
@@ -1618,6 +1637,9 @@ align-items: center;
   left: 50%;
   transform: translateX(-50%);
   margin-left: 0;
+  /* On the base rule so it animates BOTH ways — the selected-state rules below only
+     change `bottom`; declaring transition there would skip the return (rest has none). */
+  transition: bottom .25s ease;
   white-space: nowrap;
   font-size: 10px;
   color: #3a2f1f;
@@ -10093,7 +10115,6 @@ align-items: center;
 .creator__settings-card {
     border: 1px solid #c4a882;
     border-radius: 8px;
-    overflow: hidden;
     background: rgba(255, 249, 240, 0.65);
 }
 
@@ -10387,3 +10408,176 @@ align-items: center;
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+/* ── FEATURE-102: Token display overlay (sun at rest, ring when selected) ── */
+.token-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+/* Interactive elements re-enable pointer events (only meaningful when selected). */
+.token-overlay--selected .token-slot,
+.token-overlay--selected .token-hp__btn,
+.token-overlay--selected .token-step button,
+.token-overlay--selected .token-square {
+  pointer-events: auto;
+}
+.character-wrapper:has(.token-overlay--selected) { z-index: 200; }
+/* When selected, the ring pushes slots to ±42px from centre — drop the name below the
+   bottom slot so they no longer collide (rest state keeps the tight -18px offset). */
+.character-wrapper:has(.token-overlay--selected) .character-entry.in-grid .character-name {
+  bottom: -54px;
+}
+/* Squares only render when selected — drop the name below them so it clears the row.
+   Same specificity as the rule above, so source order (this being later) wins. */
+.character-wrapper:has(.token-squares) .character-entry.in-grid .character-name {
+  bottom: -104px;
+}
+
+/* HP bar */
+.token-hp {
+  position: absolute;
+  left: 50%;
+  top: -11px;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 7px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  /* Matches the ring/name timing so everything expands and collapses together. */
+  transition: top .25s ease, width .25s ease, height .25s ease;
+}
+.token-hp--expanded {
+  /* Raised clear of the ring's top slots (their outer edge sits ~-53px from centre). */
+  top: -50px;
+  width: 88px;
+  height: 15px;
+}
+.token-hp__track {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(201,151,91,0.5);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.token-hp__fill { height: 100%; border-radius: 3px; }
+.token-hp__fill--good { background: linear-gradient(90deg, #3a7a3a, #4eaa4e); }
+.token-hp__fill--warn { background: linear-gradient(90deg, #a86020, #d08030); }
+.token-hp__fill--danger { background: linear-gradient(90deg, #882020, #c83030); }
+.token-hp__text {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 6px; font-weight: 700; color: rgba(255,255,255,0.95);
+}
+.token-hp--expanded .token-hp__text { font-size: 8px; }
+.token-hp__btn {
+  width: 15px; height: 15px; flex-shrink: 0; border-radius: 50%;
+  border: 1px solid #c4a882; background: rgba(255,249,240,0.95); color: #3a2f1f;
+  font-size: 12px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.token-hp__btn:hover { background: #fff; border-color: #c9975b; }
+
+/* Slots */
+.token-slot {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  /* Slightly slower spread of the "sun" into the ring; symmetric on the way back. */
+  transition: all .25s ease;
+}
+.token-slot--icon {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(14,9,3,0.86); border: 1px solid #c9975b; color: #f0d8b0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  /* Interactive even at rest so the label tooltip works on the unselected "sun". */
+  pointer-events: auto;
+}
+.token-overlay--selected .token-slot--icon { width: 22px; height: 22px; cursor: pointer; }
+.token-slot--icon.is-inactive { filter: grayscale(1); opacity: 0.5; background: rgba(20,12,4,0.42); }
+.token-slot--icon.is-inactive:hover { filter: grayscale(0.2); opacity: 0.95; }
+.token-slot__level {
+  position: absolute; bottom: -3px; right: -3px; min-width: 9px; height: 9px; padding: 0 1px;
+  background: #c9975b; color: #2a1f12; border-radius: 5px;
+  font-size: 6px; font-weight: 800; line-height: 9px; text-align: center;
+}
+.token-slot--num {
+  min-width: 17px; height: 17px; padding: 0 2px; border-radius: 4px; flex-direction: column;
+  background: linear-gradient(135deg, #efe3cd, #d8c8a8); border: 1px solid #7a5c42; color: #2a1f12;
+  font-family: Georgia, serif;
+}
+.token-overlay--selected .token-slot--num { min-width: 22px; height: 22px; }
+.token-slot__val { font-size: 9px; font-weight: 800; line-height: 1; }
+.token-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; line-height: 1; }
+.token-step {
+  position: absolute; right: -13px; top: 0; height: 100%; width: 12px;
+  display: flex; flex-direction: column;
+}
+.token-step button {
+  flex: 1; width: 12px; padding: 0; border: 1px solid #c4a882; background: rgba(255,249,240,0.96);
+  color: #3a2f1f; font-size: 7px; line-height: 1; cursor: pointer;
+}
+.token-step button:hover { background: #fff; border-color: #c9975b; }
+
+/* Squares row (selected only) */
+.token-squares {
+  position: absolute; left: 50%; bottom: -80px; transform: translateX(-50%);
+  display: flex; gap: 4px; max-width: 160px; overflow-x: auto;
+}
+.token-square {
+  position: relative; min-width: 30px; padding: 2px 4px; border-radius: 5px;
+  background: #fff9f0; border: 1px solid #c4a882; color: #3a2f1f;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column; align-items: center; cursor: pointer;
+  overflow: hidden; /* keep the docked stepper flush with the rounded corners */
+}
+/* Number squares dock a stepper column inside the right edge — reserve room for it. */
+.token-square:has(.token-step--sq) { min-width: 44px; padding-right: 16px; }
+.token-square__val { font-size: 10px; font-weight: 800; }
+.token-square__cap { font-size: 8px; color: #7a5c42; text-transform: uppercase; }
+/* Stepper docked inside the square's right edge: full height, split in half (▲ top, ▼ bottom). */
+.token-step--sq {
+  right: 0; top: 0; height: 100%; width: 14px;
+  border-left: 1px solid #c9975b;
+}
+.token-step--sq button {
+  width: 100%; border: none; border-bottom: 1px solid #c4a882;
+  display: flex; align-items: center; justify-content: center; font-size: 8px;
+}
+.token-step--sq button:last-child { border-bottom: none; }
+
+/* ── Kill marker (dead token) ─────────────────────────────────────────────── */
+/* Thick red X struck across the whole token footprint — always visible when killed. */
+.token-kill-strike {
+  position: absolute; left: 50%; top: 50%;
+  width: 50px; height: 50px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 8;
+}
+.token-kill-strike span {
+  position: absolute; left: 50%; top: 50%;
+  width: 100%; height: 6px;
+  background: #d21f1f; border-radius: 3px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.75);
+  transform-origin: center;
+}
+.token-kill-strike span:first-child { transform: translate(-50%, -50%) rotate(45deg); }
+.token-kill-strike span:last-child  { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* Toggle button on the right equator (3 o'clock), beyond the ring. Selected tokens only. */
+.token-kill-toggle {
+  position: absolute;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid #b03030; background: rgba(14, 9, 3, 0.86); color: #e59a9a;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  z-index: 9;
+}
+/* Greyed out when the kill isn't set, mirroring inactive icon slots; lights up on hover. */
+.token-kill-toggle:not(.is-killed) { filter: grayscale(0.6); opacity: 0.8; background: rgba(20, 12, 4, 0.7); }
+.token-kill-toggle:not(.is-killed):hover { filter: grayscale(0.2); opacity: 0.95; border-color: #e04040; color: #ffbcbc; }
+.token-kill-toggle.is-killed { background: #c0201f; border-color: #7a1010; color: #fff; }

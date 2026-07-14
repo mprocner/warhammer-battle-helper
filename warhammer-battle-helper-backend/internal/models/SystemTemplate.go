@@ -30,6 +30,69 @@ type TemplateSettings struct {
 	// DiceButtons is the ordered list of die face counts shown under the chat
 	// in the game session. Empty/nil means the client falls back to defaults.
 	DiceButtons []int `bson:"diceButtons,omitempty" json:"diceButtons,omitempty"`
+
+	// TokenDisplay configures what extra info renders around a character token on
+	// the map (FEATURE-102): 8 radial slots, an HP bar binding and optional squares.
+	TokenDisplay *TokenDisplayConfig `bson:"tokenDisplay,omitempty" json:"tokenDisplay,omitempty"`
+}
+
+// TokenDisplayConfig is the map-token overlay layout authored in the "Token Display"
+// card of the template creator's General tab. It stores only the *layout* (which
+// slots show what, HP-bar binding, squares) — the live per-token values live on the
+// Character (States for icon slots, TokenOverlay for number/select slots).
+type TokenDisplayConfig struct {
+	Enabled bool          `bson:"enabled" json:"enabled"`
+	Slots   [8]TokenSlot  `bson:"slots" json:"slots"` // index 0..7 = angle 0°,45°,...,315° (0 = top, clockwise)
+	HPBar   *FieldBinding `bson:"hpBar,omitempty" json:"hpBar,omitempty"`
+	Squares []TokenSquare `bson:"squares,omitempty" json:"squares,omitempty"`
+}
+
+// TokenSlot is one of the 8 fixed ring positions. ID is generated once when the
+// TokenDisplayConfig is initialized and never regenerated — it is the position's
+// permanent identity, independent of Type. ConditionKey follows the same opaque,
+// generated-once rule (see SkillOption.ID) so renaming an icon/label never orphans
+// the value stored under it in Character.States.
+type TokenSlot struct {
+	ID   string `bson:"id" json:"id"`
+	Type string `bson:"type" json:"type"` // "empty"|"icon"|"number"|"field"|"select"
+
+	// type == "icon": Icon is the MUI icon component name; ConditionKey is written
+	// into Character.States[].Name; ConditionLabel is the display label.
+	Icon           string `bson:"icon,omitempty" json:"icon,omitempty"`
+	ConditionKey   string `bson:"conditionKey,omitempty" json:"conditionKey,omitempty"`
+	ConditionLabel string `bson:"conditionLabel,omitempty" json:"conditionLabel,omitempty"`
+
+	// type == "number": manual counter, keyed into Character.TokenOverlay[slot.ID].
+	NumberLabel string `bson:"numberLabel,omitempty" json:"numberLabel,omitempty"`
+
+	// type == "field": read-only live binding to a character-sheet value.
+	Field *FieldBinding `bson:"field,omitempty" json:"field,omitempty"`
+
+	// type == "select": manual pick from a list, keyed into Character.TokenOverlay[slot.ID].
+	SelectOptions []string `bson:"selectOptions,omitempty" json:"selectOptions,omitempty"`
+}
+
+// TokenSquare is a dynamic entry in the row under the token. It carries its own ID
+// because squares can be added/removed/reordered (ring slots cannot), so position
+// is not a safe storage key.
+type TokenSquare struct {
+	ID            string        `bson:"id" json:"id"`
+	Type          string        `bson:"type" json:"type"` // "number"|"field"|"select"
+	Caption       string        `bson:"caption" json:"caption"`
+	NumberLabel   string        `bson:"numberLabel,omitempty" json:"numberLabel,omitempty"`
+	Field         *FieldBinding `bson:"field,omitempty" json:"field,omitempty"`
+	SelectOptions []string      `bson:"selectOptions,omitempty" json:"selectOptions,omitempty"`
+}
+
+// FieldBinding points at a live character-sheet value. Key is always expressed
+// relative to the Character's `stats` subdocument — the one canonical shape that
+// unifies hardcoded systems (whose TokenFields advertise JSON storage paths) and
+// custom systems (whose bindable fields come from the template Sections). MaxKey is
+// only set for progress bindings (the HP bar).
+type FieldBinding struct {
+	Key    string `bson:"key" json:"key"`
+	MaxKey string `bson:"maxKey,omitempty" json:"maxKey,omitempty"`
+	Label  string `bson:"label,omitempty" json:"label,omitempty"`
 }
 
 // DefaultDiceButtons is the dice set pre-populated on newly created templates,
@@ -50,8 +113,13 @@ type SystemTemplate struct {
 	IsPublic bool `bson:"isPublic" json:"isPublic"`
 	// OriginTemplateID points to the template this one was cloned from (zero/absent for originals).
 	OriginTemplateID primitive.ObjectID `bson:"originTemplateId,omitempty" json:"originTemplateId,omitempty"`
-	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
+	// BaseSystem is "" for a genuine custom template (sheet described by Sections/FieldDef),
+	// or a hardcoded system key ("warhammer4e"/"coc7e"/...) for a named token-display variant
+	// of that system. When set, Sections is unused — the character sheet comes from the Go plugin
+	// and the template exists purely to carry Settings.TokenDisplay.
+	BaseSystem string    `bson:"baseSystem,omitempty" json:"baseSystem,omitempty"`
+	CreatedAt  time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt  time.Time `bson:"updatedAt" json:"updatedAt"`
 
 	// IsOwner is computed per-request (not persisted): true when the requesting
 	// user owns this template. The client uses it to gate edit/delete actions.
@@ -169,6 +237,9 @@ type RollConfig struct {
 type CreateTemplateRequest struct {
 	Name     string       `json:"name" binding:"required"`
 	Sections []SectionDef `json:"sections"`
+	// BaseSystem is set only when creating a named token-display variant of a hardcoded
+	// system (e.g. "warhammer4e"); empty for genuine custom templates.
+	BaseSystem string `json:"baseSystem,omitempty"`
 }
 
 // UpdateTemplateRequest is the request body for PATCH /templates/:id.

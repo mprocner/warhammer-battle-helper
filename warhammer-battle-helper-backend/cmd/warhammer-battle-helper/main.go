@@ -165,6 +165,7 @@ func main() {
 	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
+	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
 	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// WebSocket (auth handled inside handler via token query param)
@@ -192,6 +193,11 @@ func main() {
 	auth.PATCH("/templates/:id", templateHandler.UpdateTemplate)
 	auth.POST("/templates/:id/clone", templateHandler.CloneTemplate)
 	auth.DELETE("/templates/:id", templateHandler.DeleteTemplate)
+
+	// Per-user token-display config for hardcoded systems (singleton per user+system).
+	// find-or-create, then publish broadcasts the change to all the GM's games.
+	auth.POST("/systems/:system/tokenConfig", gameHandler.EnsureTokenConfig)
+	auth.POST("/systems/:system/tokenConfig/publish", gameHandler.PublishTokenConfig)
 
 	// Games
 	auth.GET("/games", gameHandler.GetGames)
@@ -225,6 +231,10 @@ func main() {
 	game.GET("/characters", characterHandler.GetGameCharacters)
 	game.POST("/characters", characterHandler.CreateGameCharacter)
 	game.PUT("/characters/:charId", characterHandler.UpdateGameCharacter)
+	game.PATCH("/characters/:charId/statField", characterHandler.PatchStatField)
+	game.PATCH("/characters/:charId/tokenOverlay", characterHandler.PatchTokenOverlay)
+	game.PATCH("/characters/:charId/state", characterHandler.PatchState)
+	game.PATCH("/characters/:charId/killed", characterHandler.PatchKilled)
 	game.DELETE("/characters/:charId", characterHandler.DeleteGameCharacter)
 	game.POST("/characters/:charId/clone", characterHandler.CloneGameCharacter)
 	game.PUT("/characters/:charId/visibility", characterHandler.UpdateCharacterVisibility)

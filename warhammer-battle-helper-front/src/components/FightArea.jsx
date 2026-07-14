@@ -8,7 +8,11 @@ function FightArea({
     activeId,
     onSelectCharacter,
     isOwnCharacter = true,
-    isMultiplayer = false
+    isMultiplayer = false,
+    tokenDisplay = null,
+    selectedCharacterId = null,
+    gameId = null,
+    token = null
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: currentZone.id });
 
@@ -18,12 +22,14 @@ function FightArea({
         isActiveDrop && 'drag-target',
     ].filter(Boolean).join(' ');
 
-    const handleZoneClick = () => {
+    const handleZoneClick = (e) => {
         // In multiplayer mode, only allow selecting own characters
         if (currentZone.character && onSelectCharacter) {
             if (isMultiplayer && !isOwnCharacter) {
-                return; // Don't select other players' characters
+                return; // Don't select other players' characters (let it bubble → deselect)
             }
+            // Stop here so the grid-level deselect handler doesn't undo the selection.
+            e.stopPropagation();
             onSelectCharacter(currentZone.character);
         }
     };
@@ -38,6 +44,11 @@ function FightArea({
                         activeId={activeId}
                         isOwnCharacter={isOwnCharacter}
                         isMultiplayer={isMultiplayer}
+                        tokenDisplay={tokenDisplay}
+                        selected={selectedCharacterId === currentZone.character.id}
+                        canEditToken={isOwnCharacter}
+                        gameId={gameId}
+                        token={token}
                     />
                 </div>
             )}

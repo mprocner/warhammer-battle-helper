@@ -73,6 +73,9 @@ const coc7e = {
   getRollComponent,
   normalizeCharacter,
   buildPayload,
+  // FEATURE-102: normalizeCharacter keeps stats nested under `.stats`, so bound token
+  // fields (keys relative to `stats`) resolve against the `stats` subdocument.
+  statsRoot: (character) => character.stats || character,
 };
 
 export default coc7e;

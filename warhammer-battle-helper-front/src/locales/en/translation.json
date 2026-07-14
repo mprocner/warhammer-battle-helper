@@ -1,4 +1,7 @@
 {
+  "token": {
+    "killed": "Killed"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -432,7 +435,16 @@
     "prone": "Prone",
     "stunned": "Stunned",
     "surprised": "Surprised",
-    "unconscious": "Unconscious"
+    "unconscious": "Unconscious",
+    "charmed": "Charmed",
+    "frightened": "Frightened",
+    "grappled": "Grappled",
+    "incapacitated": "Incapacitated",
+    "invisible": "Invisible",
+    "paralyzed": "Paralyzed",
+    "petrified": "Petrified",
+    "restrained": "Restrained",
+    "exhaustion": "Exhaustion"
   },
   "attributes": {
     "hp": "Hit Points",
@@ -993,22 +1005,22 @@
     "assets": "Possessions"
   },
   "coc_da": {
-    "skill_animal_handling":     "Animal Handling",
-    "skill_art_craft":           "Art / Craft",
-    "skill_drive_horses_oxen":   "Drive (Horses/Oxen)",
-    "skill_fighting_custom":     "Fighting (custom)",
-    "skill_insight":             "Insight",
-    "skill_other_kingdoms":      "Other Kingdoms",
-    "skill_other_language":      "Other Language",
-    "skill_own_kingdom":         "Own Kingdom",
-    "skill_own_language":        "Own Language",
-    "skill_pilot_boat":          "Pilot Boat",
-    "skill_ranged_weapon":       "Ranged Weapon",
+    "skill_animal_handling": "Animal Handling",
+    "skill_art_craft": "Art / Craft",
+    "skill_drive_horses_oxen": "Drive (Horses/Oxen)",
+    "skill_fighting_custom": "Fighting (custom)",
+    "skill_insight": "Insight",
+    "skill_other_kingdoms": "Other Kingdoms",
+    "skill_other_language": "Other Language",
+    "skill_own_kingdom": "Own Kingdom",
+    "skill_own_language": "Own Language",
+    "skill_pilot_boat": "Pilot Boat",
+    "skill_ranged_weapon": "Ranged Weapon",
     "skill_read_write_language": "Read/Write Language",
-    "skill_religion":            "Religion",
-    "skill_repair_devise":       "Repair/Devise",
-    "skill_ride_horse":          "Ride Horse",
-    "skill_status":              "Status"
+    "skill_religion": "Religion",
+    "skill_repair_devise": "Repair/Devise",
+    "skill_ride_horse": "Ride Horse",
+    "skill_status": "Status"
   },
   "gameSystems": {
     "warhammer4e": "Warhammer Fantasy 4e",
@@ -1097,6 +1109,43 @@
       "makePublic": "Public template",
       "publicDesc": "Everyone can use this template to create a game (read-only for others).",
       "privateDesc": "Only you can see and use this template."
+    },
+    "tokenDisplay": {
+      "cardTitle": "Token Display",
+      "cardHint": "Configure what info shows around a character token on the map.",
+      "configureButton": "Configure token display",
+      "variantSuffix": "token config",
+      "intro": "Click a slot to show a condition, stat or value on this system's tokens.",
+      "hpBarTitle": "HP Bar",
+      "hpBindLabel": "Bound field",
+      "hpBindNone": "None",
+      "hpBindEmpty": "No progress-type field available for this system.",
+      "slotsTitle": "Slots",
+      "slot": {
+        "configTitle": "Configure slot · position {{position}}",
+        "typeLabel": "Slot type",
+        "type_empty": "Empty",
+        "type_icon": "Icon (condition)",
+        "type_number": "Number",
+        "type_field": "Character field",
+        "type_select": "Select",
+        "iconPresets": "Existing conditions",
+        "iconBrowseAll": "Browse all icons",
+        "iconLabel": "Label",
+        "numberLabel": "Label",
+        "fieldLabel": "Character field",
+        "fieldGroupAttributes": "Attributes",
+        "fieldGroupNumbers": "Numbers",
+        "selectOptionsLabel": "Options (comma-separated)",
+        "selectOptionsHint": "e.g. opt1,opt2,opt3"
+      },
+      "squares": {
+        "title": "Squares",
+        "hint": "Extra values shown below the token when selected, e.g. ammo or spell duration.",
+        "addButton": "Add square",
+        "configTitle": "Configure square",
+        "captionLabel": "Caption"
+      }
     },
     "addSection": "Add section",
     "addField": "Add field",

@@ -7,18 +7,53 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import TuneIcon from '@mui/icons-material/Tune';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
 import { resolveDisplayName } from '../../utils/participants';
+import { getApiUrl, getApiHeaders } from '../../api/axios';
 import RollStatsPanel from './RollStatsPanel';
+import TemplateBuilder from '../creator/TemplateBuilder';
 import './GeneralTab.css';
 
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token }) => {
+const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token, isGM = false }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [statsOpen, setStatsOpen] = useState(true);
+  const [tokenTemplate, setTokenTemplate] = useState(null); // token config being edited in-game
+
+  // Token display is a per-user singleton per hardcoded system (one "my Warhammer
+  // tokens"). Custom games carry their own full template, so they configure tokens in
+  // the creator instead. Only the GM configures it.
+  const canConfigureTokens = isGM && !!gameState?.gameSystem && gameState.gameSystem !== 'custom';
+
+  // Open (creating on first use) the user's single token config for this system. On
+  // close, publish broadcasts the change so every game of this system updates live.
+  const openTokenConfig = async () => {
+    if (!canConfigureTokens) return;
+    try {
+      const res = await fetch(`${getApiUrl()}/systems/${gameState.gameSystem}/tokenConfig`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+        body: '{}',
+      });
+      if (!res.ok) return;
+      setTokenTemplate(await res.json());
+    } catch { /* ignore */ }
+  };
+
+  const closeTokenConfig = async () => {
+    setTokenTemplate(null);
+    try {
+      await fetch(`${getApiUrl()}/systems/${gameState.gameSystem}/tokenConfig/publish`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+        body: '{}',
+      });
+    } catch { /* ignore */ }
+  };
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
@@ -58,6 +93,12 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
             <span className="general-tab__value">{gameState?.participants?.filter(p => p.role !== 'gm').length || 0}</span>
           </div>
         </div>
+        {canConfigureTokens && (
+          <button className="general-tab__action-btn general-tab__action-btn--back" onClick={openTokenConfig} style={{ marginTop: 8 }}>
+            <TuneIcon fontSize="small" />
+            {t('creator.tokenDisplay.configureButton')}
+          </button>
+        )}
       </section>
 
       {/* Music Volume Section */}
@@ -143,6 +184,15 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
       <div className="general-tab__logo">
         <img src="/img/logo.png" alt="Warhammer Battle Helper" className="general-tab__logo-img" />
       </div>
+
+      {tokenTemplate && (
+        <TemplateBuilder
+          template={tokenTemplate}
+          token={token}
+          onClose={closeTokenConfig}
+          onTemplateUpdated={(updated) => { if (updated?.id) setTokenTemplate(updated); }}
+        />
+      )}
     </div>
   );
 };

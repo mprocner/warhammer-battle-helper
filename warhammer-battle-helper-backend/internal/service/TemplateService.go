@@ -25,6 +25,10 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 		Name:     req.Name,
 		Sections: req.Sections,
 		Settings: models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
+		// BaseSystem marks this as a named token-display variant of a hardcoded system
+		// (FEATURE-102); "" keeps it a genuine custom template. Sections are ignored
+		// when BaseSystem is set — the sheet comes from the Go plugin.
+		BaseSystem: req.BaseSystem,
 	}
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
@@ -37,6 +41,47 @@ func (s *TemplateService) Get(id string) (*models.SystemTemplate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("template not found")
 	}
+	return t, nil
+}
+
+// FindTokenConfig returns the user's token-display config singleton for a hardcoded
+// system, or nil when not yet configured. Read-only (no creation) — used by the
+// resolve-on-read path when assembling game state.
+func (s *TemplateService) FindTokenConfig(ownerID primitive.ObjectID, baseSystem string) (*models.SystemTemplate, error) {
+	t, err := s.repo.FindByOwnerAndBaseSystem(ownerID, baseSystem)
+	if err != nil {
+		return nil, err
+	}
+	if t != nil {
+		t.IsOwner = t.OwnerID == ownerID
+	}
+	return t, nil
+}
+
+// GetOrCreateTokenConfig returns the user's single token-display config for a
+// hardcoded system, creating an empty one on first use. Enforces the singleton per
+// (owner, baseSystem): the sheet/rolls come from the Go plugin, so Sections stay
+// empty and only Settings (dice + token display) are meaningful.
+func (s *TemplateService) GetOrCreateTokenConfig(ownerID primitive.ObjectID, baseSystem string) (*models.SystemTemplate, error) {
+	existing, err := s.repo.FindByOwnerAndBaseSystem(ownerID, baseSystem)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		existing.IsOwner = true
+		return existing, nil
+	}
+	t := &models.SystemTemplate{
+		OwnerID:    ownerID,
+		Name:       baseSystem + " tokens",
+		Sections:   []models.SectionDef{},
+		Settings:   models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
+		BaseSystem: baseSystem,
+	}
+	if err := s.repo.Create(t); err != nil {
+		return nil, fmt.Errorf("failed to create token config: %w", err)
+	}
+	t.IsOwner = true
 	return t, nil
 }
 

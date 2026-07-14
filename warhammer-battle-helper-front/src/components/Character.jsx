@@ -1,6 +1,7 @@
 import React, {useRef} from 'react';
 import {useDraggable} from '@dnd-kit/core';
 import Avatar from './Avatar';
+import TokenOverlay from './token-display/TokenOverlay';
 
 function Character({
         currentZone,
@@ -8,9 +9,12 @@ function Character({
         activeId, isOverlay = false,
         isOwnCharacter = true,
         isMultiplayer = false,
+        tokenDisplay = null,
+        selected = false,
+        canEditToken = false,
+        gameId = null,
+        token = null,
     }) {
-
-    console.log('Rendering Character:', character?.basicInfo?.name, 'in zone:', currentZone);
 
     // Disable dragging for non-owned characters in multiplayer mode
     const canDrag = !isMultiplayer || isOwnCharacter;
@@ -52,6 +56,17 @@ function Character({
                 </div>
                 <span className="character-name">{displayName}</span>
             </div>
+            {tokenDisplay && currentZone?.id && !isOverlay && (
+                <TokenOverlay
+                    character={character}
+                    config={tokenDisplay}
+                    selected={selected}
+                    canEditToken={canEditToken}
+                    canEdit={canEditToken}
+                    gameId={gameId}
+                    token={token}
+                />
+            )}
         </div>
     );
 }

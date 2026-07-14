@@ -424,7 +424,10 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
             <>
               <FormControl fullWidth variant="outlined" sx={{ mt: 2 }} disabled={loading}>
                 <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}>{t('game.gameSystem')}</InputLabel>
-                <Select value={newGameSystem} onChange={(e) => setNewGameSystem(e.target.value)} label={t('game.gameSystem')}
+                <Select
+                  value={newGameSystem}
+                  onChange={(e) => setNewGameSystem(e.target.value)}
+                  label={t('game.gameSystem')}
                   sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem' }}>
                   {regularSystems
                     .filter(sys => !allowedSystems || allowedSystems.includes(sys.value))
@@ -434,8 +437,8 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
                 </Select>
               </FormControl>
 
-              {/* Creator CTA */}
-              <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              {/* Creator CTA — token display is configured later from inside the game. */}
+              <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
                 <Typography variant="body2" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', fontSize: '0.95rem' }}>
                   {t('creator.noSystemPrompt')}
                 </Typography>
@@ -593,7 +596,10 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
       <TemplateBuilder
         template={editingTemplate}
         token={token}
-        onClose={() => setEditingTemplate(null)}
+        onClose={() => {
+          setEditingTemplate(null);
+          fetchTemplates();
+        }}
         onTemplateUpdated={(updated) => {
           if (!updated?.id) return;
           setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));

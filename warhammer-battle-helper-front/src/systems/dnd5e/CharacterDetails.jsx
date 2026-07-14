@@ -6,6 +6,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import RemoveIcon from '@mui/icons-material/Remove';
 import AddIcon from '@mui/icons-material/Add';
 import CharacterHeader from '../shared/CharacterHeader';
+import CharacterStates from '../../components/CharacterStates';
 import axiosInstance from '../../api/axios';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
@@ -153,6 +154,12 @@ function DnD5eCharacterDetails({
         name={character.name}
         onOpenSheet={() => onOpenCharacterSheet?.(character.id)}
         t={t}
+      />
+
+      <CharacterStates
+        character={character}
+        onCharacterUpdate={onCharacterUpdate}
+        saveUrl={getCharacterSaveUrl(character.id, gameId)}
       />
 
       {/* Quick combat stats */}

@@ -47,6 +47,9 @@ const custom = {
   getRollComponent,
   normalizeCharacter,
   buildPayload,
+  // FEATURE-102: custom keeps stats nested in typed buckets, so bound token fields
+  // (keys relative to `stats`) resolve against char.stats, not the character itself.
+  statsRoot: (character) => character.stats || character,
 };
 
 export default custom;

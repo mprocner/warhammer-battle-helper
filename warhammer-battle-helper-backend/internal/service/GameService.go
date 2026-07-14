@@ -2048,9 +2048,9 @@ func (s *GameService) SyncTemplate(gameID string, gmID primitive.ObjectID, templ
 	if game.GameMasterID != gmID {
 		return nil, fmt.Errorf("not authorized")
 	}
-	if game.GameSystem != "custom" {
-		return nil, fmt.Errorf("game does not use a custom system")
-	}
+	// FEATURE-102: hardcoded-system games created from a named token-display variant
+	// also carry a TemplateSourceID and may re-sync. The only requirement is that a
+	// source template is actually linked — no custom-only restriction.
 	if game.TemplateSourceID.IsZero() {
 		return nil, fmt.Errorf("no source template linked to this game")
 	}
@@ -2062,6 +2062,21 @@ func (s *GameService) SyncTemplate(gameID string, gmID primitive.ObjectID, templ
 		return nil, err
 	}
 	return tmpl, nil
+}
+
+// BroadcastTokenConfig notifies all the GM's games of a hardcoded system that their
+// per-user token-display config changed. The payload is intentionally empty — clients
+// re-fetch game state, and the handler's resolve-on-read then supplies the fresh
+// config. This is what makes the singleton "live" across every game of that system.
+func (s *GameService) BroadcastTokenConfig(ownerID primitive.ObjectID, system string) error {
+	ids, err := s.gameRepo.FindIDsByGameMasterAndSystem(ownerID, system)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		s.hub.BroadcastToGame(id, websocket.EventTokenConfigUpdated, map[string]interface{}{})
+	}
+	return nil
 }
 
 // templateSourceID extracts the ObjectID from a SystemTemplate (nil-safe).

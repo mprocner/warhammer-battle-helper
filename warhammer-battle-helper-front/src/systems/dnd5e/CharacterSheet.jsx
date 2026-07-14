@@ -74,8 +74,14 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
     prevCharIdRef.current = character.id;
 
     if (!isNewCharacter) {
-      // Keep all local edits — only pull in server-computed derived values
-      if (st.derived) setEdited(prev => ({ ...prev, derived: st.derived }));
+      // Keep all local edits — only pull in values the server owns / that can change
+      // from outside the sheet: computed `derived`, and `resources` (HP edited from the
+      // token HP bar or by another player). Merge over prev so untouched leaves survive.
+      setEdited(prev => ({
+        ...prev,
+        ...(st.derived ? { derived: st.derived } : {}),
+        ...(st.resources ? { resources: { ...prev.resources, ...st.resources } } : {}),
+      }));
       return;
     }
 

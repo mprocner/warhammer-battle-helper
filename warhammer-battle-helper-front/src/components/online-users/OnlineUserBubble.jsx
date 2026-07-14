@@ -1,24 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
+import { usePortalTooltip } from '../common/PortalTooltip';
 
-
-function TooltipAbove({ top, left, center, text, alignLeft }) {
-    const modifierClass = alignLeft ? 'portal-tooltip--align-left' : 'portal-tooltip--above';
-    const arrowStyle = alignLeft ? { left: center - left - 6 } : undefined;
-    return (
-        <div
-            className={`portal-tooltip ${modifierClass}`}
-            style={{ top, left }}
-        >
-            {text}
-            <span className="portal-tooltip__arrow" style={arrowStyle} />
-        </div>
-    );
-}
 
 function getInitials(username) {
     if (!username) return '?';
@@ -29,26 +15,7 @@ function getInitials(username) {
 
 const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSignature = false, isCurrentUser = false, onOpenSettings }) => {
     const { t } = useTranslation();
-    const [tooltip, setTooltip] = useState(null);
-    const tooltipTimeoutRef = useRef(null);
-
-    const showTooltip = (text, element) => {
-        if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
-        const rect = element.getBoundingClientRect();
-        const center = rect.left + rect.width / 2;
-        const alignLeft = center < 125;
-        setTooltip({
-            top: rect.top,
-            left: alignLeft ? rect.left : center,
-            center,
-            text,
-            alignLeft,
-        });
-    };
-
-    const hideTooltip = () => {
-        tooltipTimeoutRef.current = setTimeout(() => setTooltip(null), 100);
-    };
+    const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
 
     const roleLabel = participant.isGM
         ? t('onlineUsers.role_gm')
@@ -86,10 +53,7 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
                     <span className="online-user-bubble__label">{displayName}</span>
                 )}
             </div>
-            {tooltip && createPortal(
-                <TooltipAbove top={tooltip.top} left={tooltip.left} center={tooltip.center} text={tooltip.text} alignLeft={tooltip.alignLeft} />,
-                document.body
-            )}
+            {tooltipNode}
         </>
     );
 };

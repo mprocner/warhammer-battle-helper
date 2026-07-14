@@ -72,6 +72,24 @@ func (r *TemplateRepository) ListVisibleToUser(ownerID primitive.ObjectID) ([]mo
 	return templates, nil
 }
 
+// FindByOwnerAndBaseSystem returns the caller's single token-config template for a
+// hardcoded system (BaseSystem set), or (nil, nil) when none exists yet. The
+// singleton per (ownerId, baseSystem) is enforced by GetOrCreateTokenConfig.
+func (r *TemplateRepository) FindByOwnerAndBaseSystem(ownerID primitive.ObjectID, baseSystem string) (*models.SystemTemplate, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var t models.SystemTemplate
+	err := r.collection.FindOne(ctx, bson.M{"ownerId": ownerID, "baseSystem": baseSystem}).Decode(&t)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
 func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings, isPublic *bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

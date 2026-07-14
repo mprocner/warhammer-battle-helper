@@ -53,9 +53,17 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   // postaci zachowujemy lokalne edycje — nie nadpisujemy ich danymi z refetchu
   // po evencie WS (inaczej kasowałoby wpisywany właśnie tekst).
   React.useEffect(() => {
-    if (character.id === prevCharIdRef.current) return;
-    prevCharIdRef.current = character.id;
     const s = character.stats || {};
+    if (character.id === prevCharIdRef.current) {
+      // Same character updated externally (HP changed from the token bar, another
+      // player, or server-computed maxes). Pull `resources` in without wiping local
+      // edits — merge over prev so untouched leaves survive.
+      if (s.resources) {
+        setEdited(prev => ({ ...prev, resources: { ...prev.resources, ...s.resources } }));
+      }
+      return;
+    }
+    prevCharIdRef.current = character.id;
     const weps = s.weapons || [];
     const first = weps[0] || {};
     if (autoSaveTimer.current) {

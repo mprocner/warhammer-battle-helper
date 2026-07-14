@@ -30,6 +30,19 @@ func Get(gameSystem string) (systems.GameSystem, error) {
 	return s, nil
 }
 
+// TokenFieldsBySystem returns the bindable token-field lists (FEATURE-102) for every
+// registered system, keyed by system id, in stable order. Systems with no bindable
+// fields (custom) are included with an empty list.
+func TokenFieldsBySystem() map[string][]systems.TokenFieldDef {
+	out := make(map[string][]systems.TokenFieldDef, len(systemOrder))
+	for _, k := range systemOrder {
+		if s, ok := registry[k]; ok {
+			out[k] = s.TokenFields()
+		}
+	}
+	return out
+}
+
 // ListSystems returns all registered system keys in a stable order.
 func ListSystems() []string {
 	out := make([]string, 0, len(systemOrder))

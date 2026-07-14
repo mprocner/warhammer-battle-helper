@@ -45,6 +45,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CustomSheetBody, { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
+import TokenDisplayBuilder from './TokenDisplayBuilder';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -1033,6 +1034,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab,   setActiveTab]   = useState('general');
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
+  // Named variants of hardcoded systems (baseSystem set) carry the sheet from the Go
+  // plugin, not GM-authored Sections — so only the General tab (token display / dice /
+  // visibility) is editable; hide the Fields and Preview tabs entirely.
+  const isVariant = !!template?.baseSystem;
   const saveTimer = useRef(null);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
@@ -1040,6 +1045,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   settingsRef.current = settings;
   const isPublicRef = useRef(isPublic);
   isPublicRef.current = isPublic;
+  const nameRef = useRef(name);
+  nameRef.current = name;
 
   useEffect(() => {
     setSections(template?.sections || []);
@@ -1075,6 +1082,16 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => saveTemplate(s, n), 1200);
   }, [saveTemplate]);
+
+  // Flush any pending debounced save BEFORE closing. The in-game close path
+  // (GeneralTab.closeTokenConfig) immediately re-syncs this template into the running
+  // game, so if the debounced PUT hasn't landed yet the game would embed a stale copy
+  // (e.g. a just-bound HP bar goes missing). Awaiting the save here fixes that race.
+  const handleClose = useCallback(async () => {
+    clearTimeout(saveTimer.current);
+    try { await saveTemplate(sectionsRef.current, nameRef.current); } catch { /* ignore */ }
+    onClose?.();
+  }, [saveTemplate, onClose]);
 
   // ── Section operations ─────────────────────────────────────────────────────
 
@@ -1329,7 +1346,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const totalFieldCount = sections.reduce((acc, s) => acc + s.fields.length, 0);
 
   return (
-    <Dialog open fullScreen onClose={onClose}
+    <Dialog open fullScreen onClose={handleClose}
       PaperProps={{ sx: { background: 'linear-gradient(160deg, #f4e8d8 0%, #ede0ce 100%)' } }}>
 
       {/* Top bar */}
@@ -1353,22 +1370,26 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               <span className="creator__tab-num">1</span>
               {t('creator.tabGeneral')}
             </button>
-            <span className="creator__tab-arrow">›</span>
-            <button
-              className={`creator__tab${activeTab === 'fields' ? ' creator__tab--active' : ''}`}
-              onClick={() => setActiveTab('fields')}
-            >
-              <span className="creator__tab-num">2</span>
-              {t('creator.tabFields')}
-            </button>
-            <span className="creator__tab-arrow">›</span>
-            <button
-              className={`creator__tab${activeTab === 'preview' ? ' creator__tab--active' : ''}`}
-              onClick={() => setActiveTab('preview')}
-            >
-              <span className="creator__tab-num">3</span>
-              {t('creator.tabPreview')}
-            </button>
+            {!isVariant && (
+              <>
+                <span className="creator__tab-arrow">›</span>
+                <button
+                  className={`creator__tab${activeTab === 'fields' ? ' creator__tab--active' : ''}`}
+                  onClick={() => setActiveTab('fields')}
+                >
+                  <span className="creator__tab-num">2</span>
+                  {t('creator.tabFields')}
+                </button>
+                <span className="creator__tab-arrow">›</span>
+                <button
+                  className={`creator__tab${activeTab === 'preview' ? ' creator__tab--active' : ''}`}
+                  onClick={() => setActiveTab('preview')}
+                >
+                  <span className="creator__tab-num">3</span>
+                  {t('creator.tabPreview')}
+                </button>
+              </>
+            )}
           </nav>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
@@ -1379,7 +1400,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               : saveSuccess
               ? <Chip icon={<CheckIcon />} label={t('common.saved')} size="small" color="success" variant="outlined" sx={{ fontFamily: 'Crimson Text, serif' }} />
               : null}
-            <IconButton onClick={onClose} size="small">
+            <IconButton onClick={handleClose} size="small">
               <CloseIcon />
             </IconButton>
           </Box>
@@ -1389,6 +1410,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       <DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
         {activeTab === 'general' ? (
           <div className="creator__general">
+            {/* Visibility (public/private) is meaningless for a hardcoded-system token
+                config: it is a private per-user singleton, never shared. Only custom
+                templates expose it. */}
+            {!isVariant && (
             <div className="creator__settings-card">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.visibilityTitle')}</span>
@@ -1413,6 +1438,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 </Typography>
               </div>
             </div>
+            )}
             <div className="creator__settings-card">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.diceTitle')}</span>
@@ -1422,6 +1448,21 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 <DiceConfigBuilder
                   dice={settings.diceButtons || []}
                   onChange={d => updateSettings({ diceButtons: d })}
+                />
+              </div>
+            </div>
+            <div className="creator__settings-card">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.tokenDisplay.cardTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.tokenDisplay.cardHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <TokenDisplayBuilder
+                  value={settings.tokenDisplay}
+                  onChange={cfg => updateSettings({ tokenDisplay: cfg })}
+                  baseSystem={template?.baseSystem}
+                  sections={sections}
+                  token={token}
                 />
               </div>
             </div>

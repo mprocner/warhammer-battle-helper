@@ -75,6 +75,9 @@ export const WS_EVENTS = {
   MUSIC_VOLUME: 'MUSIC_VOLUME',
   MUSIC_LOOP:   'MUSIC_LOOP',
 
+  // Token display config (per-user singleton, resolve-on-read)
+  TOKEN_CONFIG_UPDATED: 'TOKEN_CONFIG_UPDATED',
+
   // Pointer
   POINTER_PING: 'POINTER_PING',
 

@@ -290,6 +290,14 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	stats.Wounds.Hardy = hardyBonus
 	stats.Wounds.Total = stats.Wounds.SB + stats.Wounds.TB + stats.Wounds.WPB + stats.Wounds.Hardy
 
+	// Default current wounds to the full pool when unset, so a freshly created character
+	// starts at full HP everywhere (token HP bar, sheet) without waiting for the sheet to
+	// lazily initialize it. Only fills the gap — an existing current (incl. 0) is kept.
+	if stats.Wounds.Current == nil {
+		total := stats.Wounds.Total
+		stats.Wounds.Current = &total
+	}
+
 	if m, err := strconv.Atoi(stats.Movement.Movement); err == nil && m > 0 {
 		stats.Movement.Walk = strconv.Itoa(m * 2)
 		stats.Movement.Run = strconv.Itoa(m * 4)

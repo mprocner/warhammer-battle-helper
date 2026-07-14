@@ -77,6 +77,9 @@ const (
 	EventMusicVolume = "MUSIC_VOLUME"
 	EventMusicLoop   = "MUSIC_LOOP"
 
+	// Token display config (per-user singleton, resolve-on-read)
+	EventTokenConfigUpdated = "TOKEN_CONFIG_UPDATED"
+
 	// Minigames
 	EventMinigameStarted      = "MINIGAME_STARTED"
 	EventMinigameStateUpdated = "MINIGAME_STATE_UPDATED"

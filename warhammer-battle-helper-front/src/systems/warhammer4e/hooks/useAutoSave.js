@@ -67,9 +67,23 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
             const response = await axiosInstance.put(getCharacterSaveUrl(charToSave.id, gameId), buildPayload(charToSave));
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 2000);
+            const derived = normalizeCharacter(response.data);
             if (onCharacterUpdate) {
-                onCharacterUpdate(normalizeCharacter(response.data));
+                onCharacterUpdate(derived);
             }
+            // Reflect backend-derived fields locally so the wounds table / HP box fill in
+            // right after editing characteristics — no reload needed. Only computed fields
+            // (never hand-typed) are merged, so this can't clobber an in-progress edit.
+            // current is only filled when unset, preserving a locally edited HP value.
+            setEditedCharacter(prev => ({
+                ...prev,
+                wounds: {
+                    ...prev.wounds,
+                    ...derived.wounds,
+                    current: prev.wounds?.current ?? derived.wounds?.current,
+                },
+                movement: { ...prev.movement, ...derived.movement },
+            }));
             setHasChanges(false);
         } catch (error) {
             console.error('Error saving character:', error);

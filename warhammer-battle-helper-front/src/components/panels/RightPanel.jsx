@@ -219,6 +219,7 @@ const RightPanel = ({
             onControlSchemeChange={onControlSchemeChange}
             gameId={gameId}
             token={token}
+            isGM={isGM}
           />
         );
       default:

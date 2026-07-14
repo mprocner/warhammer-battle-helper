@@ -19,6 +19,10 @@ type Plugin struct {
 // New returns an initialised custom plugin.
 func New() *Plugin { return &Plugin{rng: gsys.DefaultRoller()} }
 
+// TokenFields returns nil for the custom system: bindable token fields (FEATURE-102)
+// come from the template's own Sections/FieldDef at request time, not the registry.
+func (p *Plugin) TokenFields() []gsys.TokenFieldDef { return nil }
+
 // DefaultStats returns an empty custom stats document.
 func (p *Plugin) DefaultStats() (bson.Raw, error) {
 	empty := Stats{

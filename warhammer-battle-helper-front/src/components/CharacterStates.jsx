@@ -2,43 +2,31 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 import { buildPayload } from '../utils/buildPayload';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import BloodtypeIcon from '@mui/icons-material/Bloodtype';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import HeartBrokenIcon from '@mui/icons-material/HeartBroken';
-import HearingDisabledIcon from '@mui/icons-material/HearingDisabled';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
-import BatteryAlertIcon from '@mui/icons-material/BatteryAlert';
-import SickIcon from '@mui/icons-material/Sick';
-import HotelIcon from '@mui/icons-material/Hotel';
-import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
-import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
-import BedtimeIcon from '@mui/icons-material/Bedtime';
-
-const STATES = [
-    { name: 'ABLAZE', icon: LocalFireDepartmentIcon, translationKey: 'ablaze' },
-    { name: 'BLEEDING', icon: BloodtypeIcon, translationKey: 'bleeding' },
-    { name: 'BLINDED', icon: VisibilityOffIcon, translationKey: 'blinded' },
-    { name: 'BROKEN', icon: HeartBrokenIcon, translationKey: 'broken' },
-    { name: 'DEAFENED', icon: HearingDisabledIcon, translationKey: 'deafened' },
-    { name: 'ENTANGLED', icon: LinkOffIcon, translationKey: 'entangled' },
-    { name: 'FATIGUED', icon: BatteryAlertIcon, translationKey: 'fatigued' },
-    { name: 'POISON', icon: SickIcon, translationKey: 'poison' },
-    { name: 'PRONE', icon: HotelIcon, translationKey: 'prone' },
-    { name: 'STUNNED', icon: ElectricBoltIcon, translationKey: 'stunned' },
-    { name: 'SURPRISED', icon: CrisisAlertIcon, translationKey: 'surprised' },
-    { name: 'UNCONSCIOUS', icon: BedtimeIcon, translationKey: 'unconscious' },
-];
+import { getSystem } from '../systems/registry';
+import { resolveIcon } from '../utils/tokenIcons';
 
 function CharacterStates({ character, onCharacterUpdate, saveUrl }) {
     const { t } = useTranslation();
+    // Conditions come from the character's game system (single source of truth); systems
+    // without a condition catalog (e.g. CoC) simply render no toggles.
+    const STATES = getSystem(character?.gameSystem).states || [];
 
-    const handleStateToggle = async (stateName) => {
+    // Left click bumps the level up, right click bumps it down — mirroring the token overlay
+    // (TokenOverlay.jsx bumpState). A level dropping to 0 removes the condition entirely.
+    const bumpStateLevel = async (stateName, delta) => {
         const currentStates = character.states || [];
-        const exists = currentStates.some(s => s.name === stateName);
-        const newStates = exists
-            ? currentStates.filter(s => s.name !== stateName)
-            : [...currentStates, { name: stateName, level: 1 }];
+        const existing = currentStates.find(s => s.name === stateName);
+
+        let newStates;
+        if (existing) {
+            const newLevel = existing.level + delta;
+            newStates = newLevel <= 0
+                ? currentStates.filter(s => s.name !== stateName)
+                : currentStates.map(s => s.name === stateName ? { ...s, level: newLevel } : s);
+        } else {
+            if (delta <= 0) return; // nothing to decrement on an inactive condition
+            newStates = [...currentStates, { name: stateName, level: 1 }];
+        }
 
         const updatedCharacter = { ...character, states: newStates };
         onCharacterUpdate(updatedCharacter);
@@ -55,19 +43,23 @@ function CharacterStates({ character, onCharacterUpdate, saveUrl }) {
             <div className="states-label">{t('conditions.label')}</div>
             <div className="states-grid">
                 {STATES.map((state) => {
-                    const isActive = (character.states || []).some(s => s.name === state.name);
-                    const IconComponent = state.icon;
+                    const active = (character.states || []).find(s => s.name === state.key);
+                    const IconComponent = resolveIcon(state.icon);
                     return (
                         <div
-                            key={state.name}
-                            className={`state-icon ${isActive ? 'active' : ''}`}
-                            data-state={state.name.toLowerCase()}
-                            onClick={() => handleStateToggle(state.name)}
+                            key={state.key}
+                            className={`state-icon ${active ? 'active' : ''}`}
+                            data-state={state.key.toLowerCase()}
+                            onClick={() => bumpStateLevel(state.key, +1)}
+                            onContextMenu={(e) => { e.preventDefault(); bumpStateLevel(state.key, -1); }}
                         >
-                            <IconComponent sx={{ fontSize: 18 }} />
+                            {IconComponent && <IconComponent sx={{ fontSize: 18 }} />}
+                            {active && active.level > 1 && (
+                                <span className="state-icon__level">{active.level}</span>
+                            )}
                             <span className="state-tooltip">
                                 <span className="state-tooltip-arrow" />
-                                {t(`conditions.${state.translationKey}`)}
+                                {t(state.labelKey)}
                             </span>
                         </div>
                     );

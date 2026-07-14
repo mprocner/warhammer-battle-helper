@@ -50,6 +50,16 @@ type RollResult struct {
 	PoolSuccessCondition string `json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
 }
 
+// TokenFieldDef describes one character-sheet value that a GM can bind to a map-token
+// slot, a square or the HP bar (FEATURE-102). Key is a path relative to the Character's
+// `stats` subdocument; ProgressMaxKey is only set for progress fields (HP-bar candidates).
+type TokenFieldDef struct {
+	Key            string `json:"key"`
+	Label          string `json:"label"`
+	Category       string `json:"category"` // "attribute" | "number" | "progress"
+	ProgressMaxKey string `json:"progressMaxKey,omitempty"`
+}
+
 // GameSystem is the interface every game-system plugin must implement.
 type GameSystem interface {
 	// RollSkill performs a skill/characteristic check.
@@ -74,4 +84,9 @@ type GameSystem interface {
 	// SetDisplayName writes name into the stats document and returns updated BSON.
 	// Systems that do not embed the name return stats unchanged and a nil error.
 	SetDisplayName(stats bson.Raw, name string) (bson.Raw, error)
+
+	// TokenFields lists the character-sheet values bindable to a map-token slot,
+	// square or HP bar (FEATURE-102). The custom system returns nil — its bindable
+	// fields come from the template's own Sections, not the registry.
+	TokenFields() []TokenFieldDef
 }

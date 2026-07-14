@@ -73,6 +73,24 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			return
 		}
 		template = t
+	} else if req.CustomTemplateID != "" {
+		// FEATURE-102: the GM picked a named token-display variant of this hardcoded
+		// system. Attach it so the game carries Settings.TokenDisplay; the character
+		// sheet still comes from the Go plugin (req.GameSystem).
+		t, err := h.TemplateService.Get(req.CustomTemplateID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "template not found"})
+			return
+		}
+		if t.BaseSystem != req.GameSystem {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "template does not match selected system"})
+			return
+		}
+		if !t.IsPublic && t.OwnerID != userID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
+			return
+		}
+		template = t
 	}
 
 	game, err := h.GameService.CreateGame(req.Name, req.GameSystem, userID, username, template)
@@ -174,6 +192,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+	h.attachTokenConfig(game)
 
 	// Filter events based on visibility and requesting user
 	filteredEvents := []models.GameEvent{}
@@ -580,6 +599,7 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	// Send initial game state only to the connecting client, with notes filtered for them
 	game, err := h.GameService.GetGame(gameID)
 	if err == nil {
+		h.attachTokenConfig(game)
 		service.FilterNotesForUser(game, userID)
 		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
 			"game": game,
@@ -616,4 +636,57 @@ func (h *GameHandler) GetFeatures(c *gin.Context) {
 	allowed := h.FeatureToggles.AllowedSystemsFor(allSystems, email)
 	fmt.Printf("[GetFeatures] allSystems=%v, allowed=%v\n", allSystems, allowed)
 	c.JSON(http.StatusOK, gin.H{"allowedSystems": allowed})
+}
+
+// GetTokenFields returns the bindable character-sheet fields per hardcoded system
+// (FEATURE-102), used by the Token Display config UI to populate field pickers.
+// Static metadata — no per-user scoping needed.
+func (h *GameHandler) GetTokenFields(c *gin.Context) {
+	c.JSON(http.StatusOK, registry.TokenFieldsBySystem())
+}
+
+// attachTokenConfig resolves the GM's per-user token-display config for a hardcoded
+// system and embeds it into the game payload (computed, never persisted). Custom
+// games carry their own full template and are left untouched. This is the read side
+// of the "live singleton" model — a game is a viewer of its GM's current config.
+func (h *GameHandler) attachTokenConfig(game *models.Game) {
+	if game == nil || game.GameSystem == "" || game.GameSystem == "custom" {
+		return
+	}
+	if tmpl, err := h.TemplateService.FindTokenConfig(game.GameMasterID, game.GameSystem); err == nil && tmpl != nil {
+		game.CustomSystemTemplate = tmpl
+	}
+}
+
+// EnsureTokenConfig returns the caller's token-display config for a hardcoded system,
+// creating an empty one on first use (singleton per user+system). The in-game
+// "Configure tokens" button calls this before opening the editor.
+func (h *GameHandler) EnsureTokenConfig(c *gin.Context) {
+	system := c.Param("system")
+	if _, err := registry.Get(system); err != nil || system == "custom" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported game system"})
+		return
+	}
+	tmpl, err := h.TemplateService.GetOrCreateTokenConfig(mustUserID(c), system)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tmpl)
+}
+
+// PublishTokenConfig broadcasts the caller's token-config change to all their games
+// of the given hardcoded system, so every connected client re-fetches and updates.
+// Called on close of the in-game token editor.
+func (h *GameHandler) PublishTokenConfig(c *gin.Context) {
+	system := c.Param("system")
+	if _, err := registry.Get(system); err != nil || system == "custom" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported game system"})
+		return
+	}
+	if err := h.GameService.BroadcastTokenConfig(mustUserID(c), system); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
