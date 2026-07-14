@@ -1,6 +1,6 @@
 {
   "token": {
-    "markKilled": "Zabity"
+    "killed": "Zabity"
   },
   "common": {
     "save": "Zapisz",
