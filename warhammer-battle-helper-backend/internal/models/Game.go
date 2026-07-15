@@ -58,6 +58,7 @@ type Game struct {
 	Music                MusicState         `bson:"music" json:"music"`
 	CustomSystemTemplate *SystemTemplate    `bson:"customSystemTemplate,omitempty" json:"customSystemTemplate,omitempty"`
 	TemplateSourceID     primitive.ObjectID `bson:"templateSourceId,omitempty" json:"templateSourceId,omitempty"`
+	ImageUrl             string             `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
 	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt"`
 	DeletedAt            *time.Time         `bson:"deletedAt,omitempty" json:"-"`

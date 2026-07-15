@@ -5,10 +5,13 @@ import (
 	"battle-helper/internal/features"
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
+	"battle-helper/internal/storage"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"fmt"
 	"net/http"
+	"path"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -21,6 +24,7 @@ type GameHandler struct {
 	TemplateService *service.TemplateService
 	Hub             *websocket.Hub
 	FeatureToggles  features.FeatureToggles
+	UserFiles       storage.Storage // stores game lobby images under /user-files
 }
 
 var upgrader = gorilla.Upgrader{
@@ -272,7 +276,8 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.DeleteGame(gameID, userID); err != nil {
+	imageUrl, err := h.GameService.DeleteGame(gameID, userID)
+	if err != nil {
 		switch err.Error() {
 		case "only the game master can delete the game":
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
@@ -281,6 +286,9 @@ func (h *GameHandler) DeleteGame(c *gin.Context) {
 		}
 		return
 	}
+
+	// Best-effort cleanup of the game's lobby image file
+	h.deleteImageFile(imageUrl)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Game deleted successfully"})
 }
@@ -622,6 +630,95 @@ func (h *GameHandler) SyncTemplate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, tmpl)
+}
+
+// deleteImageFile removes a lobby-image file from user-files storage (best effort).
+// imageUrl is the stored URL path, e.g. "/user-files/<name>.jpg".
+func (h *GameHandler) deleteImageFile(imageUrl string) {
+	if imageUrl == "" || h.UserFiles == nil {
+		return
+	}
+	if !strings.HasPrefix(imageUrl, "/user-files/") {
+		return // never touch files outside the user-files storage
+	}
+	_ = h.UserFiles.Delete(path.Base(imageUrl))
+}
+
+// UploadGameImage handles POST /games/:id/image — sets the game's lobby image (GM only).
+// Accepts multipart form field "image" (JPEG/PNG/GIF/WebP, max 5MB), stores the file
+// in user-files storage and saves its URL on the game document.
+func (h *GameHandler) UploadGameImage(c *gin.Context) {
+	gameID := c.Param("id")
+	userID := mustUserID(c)
+
+	if err := c.Request.ParseMultipartForm(storage.MaxFileSize); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No image file provided"})
+		return
+	}
+	defer file.Close()
+
+	ext, err := storage.ValidateFile(file, header)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	file.Seek(0, 0)
+
+	filename := storage.GenerateFilename(ext)
+	url, err := h.UserFiles.Upload(file, filename, header.Header.Get("Content-Type"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image: " + err.Error()})
+		return
+	}
+
+	oldUrl, err := h.GameService.SetGameImage(gameID, userID, url)
+	if err != nil {
+		// The game update failed — remove the freshly uploaded file so it doesn't leak.
+		h.deleteImageFile(url)
+		status := http.StatusInternalServerError
+		if err.Error() == "not authorized" {
+			status = http.StatusForbidden
+		} else if err.Error() == "game not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Replaced an existing image — clean up the previous file.
+	if oldUrl != url {
+		h.deleteImageFile(oldUrl)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"imageUrl": url})
+}
+
+// DeleteGameImage handles DELETE /games/:id/image — clears the game's lobby image (GM only).
+func (h *GameHandler) DeleteGameImage(c *gin.Context) {
+	gameID := c.Param("id")
+	userID := mustUserID(c)
+
+	oldUrl, err := h.GameService.SetGameImage(gameID, userID, "")
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "not authorized" {
+			status = http.StatusForbidden
+		} else if err.Error() == "game not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.deleteImageFile(oldUrl)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game image removed"})
 }
 
 func (h *GameHandler) GetFeatures(c *gin.Context) {

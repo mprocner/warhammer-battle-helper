@@ -1,15 +1,11 @@
 import React from "react";
 import MuiAvatar from "@mui/material/Avatar";
-import { getApiUrl } from "../api/axios";
+import { resolveFileUrl } from "../utils/fileUrl";
 
-// Helper to resolve avatar URL - prepends API base URL for backend-served avatars
+// Adapter over resolveFileUrl: null (not '') on empty input, so callers using
+// `if (url)` fall through to the MuiAvatar fallback below.
 export function getAvatarUrl(src) {
-  if (!src) return null;
-  // If the path starts with /avatars/, it's served by the backend
-  if (src.startsWith("/avatars/")) {
-    return getApiUrl() + src;
-  }
-  return src;
+  return resolveFileUrl(src) || null;
 }
 
 export default function Avatar({ src }) {

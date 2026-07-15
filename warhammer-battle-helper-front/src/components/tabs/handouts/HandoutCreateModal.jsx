@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { uploadHandoutFile } from '../../../api/handouts';
-import { getApiUrl } from '../../../api/axios';
+import { resolveFileUrl } from '../../../utils/fileUrl';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import ModalHeader from '../../common/ModalHeader';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -197,14 +197,6 @@ const HandoutCreateModal = ({
   // Filter out GM from participants for player selection
   const players = participants.filter(p => p.role !== 'gm');
 
-  // Get full URL for preview (handle relative paths)
-  const getPreviewUrl = () => {
-    if (!previewUrl) return '';
-    return previewUrl.startsWith('http')
-      ? previewUrl
-      : `${getApiUrl()}${previewUrl}`;
-  };
-
   // Detect file type from URL extension for preview
   const getUploadedFileType = (url) => {
     if (!url) return null;
@@ -340,7 +332,7 @@ const HandoutCreateModal = ({
               {previewUrl ? (
                 <div className="file-preview">
                   {getUploadedFileType(previewUrl) === 'image' ? (
-                    <img src={getPreviewUrl()} alt="Preview" className="file-preview__image" />
+                    <img src={resolveFileUrl(previewUrl)} alt="Preview" className="file-preview__image" />
                   ) : getUploadedFileType(previewUrl) === 'pdf' ? (
                     <div className="file-preview__pdf">
                       <HandoutTypeIcon type="document" />

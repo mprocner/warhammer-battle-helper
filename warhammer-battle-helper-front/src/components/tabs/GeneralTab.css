@@ -613,3 +613,102 @@
   font-weight: 700;
   color: #4a3728;
 }
+
+/* Game Image Section (lobby tile image, GM only) */
+.general-tab__game-image {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.general-tab__game-image-preview {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  object-fit: cover;
+  border: 2px solid #8b6b3d;
+  border-radius: 6px;
+  display: block;
+}
+
+.general-tab__game-image-placeholder {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed #c9a66b;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+  color: #c9a961;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+}
+
+.general-tab__game-image-hint {
+  margin: 0;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #8a7d6a;
+}
+
+/* Game image cropper overlay */
+.game-image-cropper__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 4, 0.6);
+}
+
+.game-image-cropper {
+  width: min(520px, calc(100vw - 32px));
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 3px solid #7a5c42;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-image-cropper__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin: 0;
+}
+
+.game-image-cropper__area {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #2a2218;
+  border: 2px solid #8b6b3d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.game-image-cropper__zoom {
+  display: flex;
+  align-items: center;
+}
+
+.game-image-cropper__zoom .general-tab__volume-slider {
+  width: 100%;
+}
+
+.game-image-cropper__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.game-image-cropper__actions .general-tab__action-btn {
+  justify-content: center;
+}

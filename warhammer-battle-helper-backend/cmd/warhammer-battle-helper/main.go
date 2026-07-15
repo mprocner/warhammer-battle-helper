@@ -162,7 +162,7 @@ func main() {
 	ft := features.Load("./feature-toggles.json")
 
 	// GET /games/:id is JWT-optional (event visibility filtering)
-	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft}
+	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft, UserFiles: userFilesStorage}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
@@ -223,6 +223,8 @@ func main() {
 	game.POST("/rollSkill", gameHandler.RollSkill)
 	game.POST("/rollWeapon", gameHandler.RollWeapon)
 	game.POST("/syncTemplate", gameHandler.SyncTemplate)
+	game.POST("/image", gameHandler.UploadGameImage)
+	game.DELETE("/image", gameHandler.DeleteGameImage)
 	game.GET("/roll-stats", statsHandler.GetGameStats)
 	game.GET("/online-stats", statsHandler.GetOnlineStats)
 	game.POST("/message", gameHandler.SendMessage)

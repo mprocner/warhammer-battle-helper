@@ -1,16 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { updateSceneImage, deleteSceneImage } from '../../api/scenes';
-import { getApiUrl } from '../../api/axios';
+import { resolveFileUrl } from '../../utils/fileUrl';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
-
-const getFileUrl = (fileUrl) => {
-  if (!fileUrl) return '';
-  return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
-};
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
@@ -338,7 +333,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
         onContextMenu={handleContextMenu}
       >
         <img
-          src={getFileUrl(image.fileUrl)}
+          src={resolveFileUrl(image.fileUrl)}
           alt={image.fileName}
           draggable={false}
           style={{

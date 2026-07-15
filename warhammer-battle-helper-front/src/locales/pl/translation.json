@@ -197,7 +197,9 @@
       "save": "Zapisz",
       "saving": "Zapisywanie...",
       "successMessage": "Ustawienia gracza zaktualizowane"
-    }
+    },
+    "paused": "Wstrzymana",
+    "completed": "Zakończona"
   },
   "character": {
     "name": "Imię",
@@ -523,7 +525,15 @@
     "controlSchemeModern": "Nowoczesne",
     "controlSchemeModernDesc": "Scroll → zoom · Przeciągnij → pan",
     "controlSchemeClassic": "Klasyczne",
-    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan"
+    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan",
+    "gameImage": "Obrazek gry",
+    "gameImageNone": "Brak obrazka",
+    "gameImageAdd": "Dodaj obrazek",
+    "gameImageChange": "Zmień obrazek",
+    "gameImageDelete": "Usuń obrazek",
+    "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy.",
+    "gameImageCropTitle": "Przytnij obrazek gry",
+    "gameImageZoom": "Powiększenie"
   },
   "handouts": {
     "title": "Handouty",
@@ -533,6 +543,7 @@
     "noHandouts": "Brak handoutów",
     "noHandoutsHint": "Kliknij przycisk powyżej, aby utworzyć pierwszy handout",
     "loadError": "Nie udało się załadować handoutów",
+    "unsupportedFile": "Tego pliku nie można wyświetlić.",
     "createError": "Nie udało się utworzyć handouta",
     "updateError": "Nie udało się zaktualizować handouta",
     "deleteError": "Nie udało się usunąć handouta",

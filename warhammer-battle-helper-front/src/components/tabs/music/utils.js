@@ -1,10 +1,3 @@
-import { getApiUrl } from '../../../api/axios';
-
-export const getFileUrl = (fileUrl) => {
-  if (!fileUrl) return '';
-  return fileUrl.startsWith('http') ? fileUrl : `${getApiUrl()}${fileUrl}`;
-};
-
 export const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00';
   const mins = Math.floor(seconds / 60);

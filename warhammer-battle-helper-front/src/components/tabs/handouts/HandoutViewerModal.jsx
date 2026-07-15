@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl } from '../../../api/axios';
+import { resolveFileUrl } from '../../../utils/fileUrl';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import ModalHeader from '../../common/ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
@@ -45,11 +46,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     setError('');
 
     try {
-      const url = handout.fileUrl.startsWith('http')
-        ? handout.fileUrl
-        : `${getApiUrl()}${handout.fileUrl}`;
-
-      const response = await fetch(url);
+      const response = await fetch(resolveFileUrl(handout.fileUrl));
       if (!response.ok) throw new Error('Failed to fetch text content');
 
       const text = await response.text();
@@ -241,12 +238,11 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
 
   if (!isOpen || !handout || hidden) return null;
 
-  const getFileUrl = () => {
-    if (!handout.fileUrl) return '';
-    return handout.fileUrl.startsWith('http')
-      ? handout.fileUrl
-      : `${getApiUrl()}${handout.fileUrl}`;
-  };
+  // Dedicated guard for the iframe sink — resolveFileUrl() resolves, it does not
+  // sanitize. handout.fileUrl is unvalidated by the backend and settable by any
+  // participant. The trailing slash matters: startsWith(getApiUrl()) alone would
+  // also accept http://localhost:8080.evil.com/x.pdf.
+  const isSafeIframeUrl = (url) => url.startsWith(`${getApiUrl()}/`);
 
   const getFileTypeFromUrl = (url) => {
     if (!url) return 'text';
@@ -257,7 +253,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
   };
 
   const renderContent = () => {
-    const fileUrl = getFileUrl();
+    const fileUrl = resolveFileUrl(handout.fileUrl);
     const fileType = getFileTypeFromUrl(handout.fileUrl);
 
     if (fileType === 'image') {
@@ -315,6 +311,9 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
     }
 
     if (fileType === 'pdf') {
+      if (!isSafeIframeUrl(fileUrl)) {
+        return <div className="handout-viewer__error">{t('handouts.unsupportedFile')}</div>;
+      }
       return (
         <div className="handout-viewer__pdf-container">
           <iframe

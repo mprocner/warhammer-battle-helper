@@ -16,7 +16,7 @@ import ConfirmModal from '../common/ConfirmModal';
 import DraggableFileItem from './files/DraggableFileItem';
 import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
-import { getFileUrl } from './files/getFileUrl';
+import { resolveFileUrl } from '../../utils/fileUrl';
 import './FilesTab.css';
 
 const getImageDimensions = (url) => new Promise((resolve) => {
@@ -76,7 +76,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
       const sceneEl = document.querySelector('.scene-viewport__content');
       const sceneW = sceneEl ? sceneEl.offsetWidth : 1000;
       const sceneH = sceneEl ? sceneEl.offsetHeight : 1000;
-      const { width: natW, height: natH } = await getImageDimensions(getFileUrl(addToSceneFile.fileUrl));
+      const { width: natW, height: natH } = await getImageDimensions(resolveFileUrl(addToSceneFile.fileUrl));
       const { width, height } = fitToScene(natW, natH, sceneW, sceneH);
 
       await addSceneImage(gameId, currentSceneId, {
@@ -200,7 +200,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
         if (dropX >= rect.left && dropX <= rect.right && dropY >= rect.top && dropY <= rect.bottom) {
           const zoom = rect.width / sceneEl.offsetWidth;
           try {
-            const { width: natW, height: natH } = await getImageDimensions(getFileUrl(file.fileUrl));
+            const { width: natW, height: natH } = await getImageDimensions(resolveFileUrl(file.fileUrl));
             const { width, height } = fitToScene(natW, natH, sceneEl.offsetWidth, sceneEl.offsetHeight);
             const x = Math.max(0, (dropX - rect.left) / zoom - width / 2);
             const y = Math.max(0, (dropY - rect.top) / zoom - height / 2);
@@ -621,7 +621,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
               <button className="files-tab__preview-close" onClick={() => setPreviewFile(null)}>
                 <CloseIcon fontSize="inherit" />
               </button>
-              <img src={getFileUrl(previewFile.fileUrl)} alt={previewFile.name} />
+              <img src={resolveFileUrl(previewFile.fileUrl)} alt={previewFile.name} />
               <div className="files-tab__preview-info">
                 <span className="files-tab__preview-name">{previewFile.name}</span>
                 <span className="files-tab__preview-size">
@@ -636,7 +636,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
         {hoveredFile && !draggingFile && (
           <div className="files-tab__hover-preview">
             <img
-              src={getFileUrl(hoveredFile.fileUrl)}
+              src={resolveFileUrl(hoveredFile.fileUrl)}
               alt={hoveredFile.name}
             />
             <span className="files-tab__hover-preview-name">{hoveredFile.name}</span>
@@ -695,7 +695,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
         {draggingFile && (
           <div className="files-tab__drag-overlay">
             <img
-              src={getFileUrl(draggingFile.fileUrl)}
+              src={resolveFileUrl(draggingFile.fileUrl)}
               alt={draggingFile.name}
               className="files-tab__drag-preview"
             />

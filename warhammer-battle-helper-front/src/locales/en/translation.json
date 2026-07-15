@@ -197,7 +197,9 @@
       "save": "Save",
       "saving": "Saving...",
       "successMessage": "Player settings updated"
-    }
+    },
+    "paused": "Paused",
+    "completed": "Completed"
   },
   "character": {
     "name": "Name",
@@ -523,7 +525,15 @@
     "controlSchemeModern": "Modern",
     "controlSchemeModernDesc": "Scroll → zoom · Drag → pan",
     "controlSchemeClassic": "Classic",
-    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan"
+    "controlSchemeClassicDesc": "Ctrl+Scroll → zoom · Scroll → pan",
+    "gameImage": "Game image",
+    "gameImageNone": "No image yet",
+    "gameImageAdd": "Add image",
+    "gameImageChange": "Change image",
+    "gameImageDelete": "Remove image",
+    "gameImageHint": "Shown on the game tile in the lobby. Visible to all players.",
+    "gameImageCropTitle": "Crop game image",
+    "gameImageZoom": "Zoom"
   },
   "handouts": {
     "title": "Handouts",
@@ -533,6 +543,7 @@
     "noHandouts": "No handouts yet",
     "noHandoutsHint": "Click the button above to create your first handout",
     "loadError": "Failed to load handouts",
+    "unsupportedFile": "This file cannot be previewed.",
     "createError": "Failed to create handout",
     "updateError": "Failed to update handout",
     "deleteError": "Failed to delete handout",

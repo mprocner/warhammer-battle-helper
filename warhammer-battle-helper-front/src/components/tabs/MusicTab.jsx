@@ -25,7 +25,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { getFileUrl, formatTime } from './music/utils';
+import { formatTime } from './music/utils';
+import { resolveFileUrl } from '../../utils/fileUrl';
 import DroppableMusicBackButton from './music/DroppableMusicBackButton';
 import DroppableMusicFolderItem from './music/DroppableMusicFolderItem';
 import DraggableMusicItem from './music/DraggableMusicItem';
@@ -346,7 +347,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(null);
     setActiveTrackIndex(-1);
     try {
-      await playTrack(gameId, getFileUrl(file.fileUrl), file.name, 0, '', 0, musicState.loop, file.id);
+      await playTrack(gameId, resolveFileUrl(file.fileUrl), file.name, 0, '', 0, musicState.loop, file.id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -406,7 +407,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(playlist);
     setActiveTrackIndex(0);
     try {
-      await playTrack(gameId, getFileUrl(tracks[0].fileUrl), tracks[0].name, 0, playlist.id, 0, musicState.loop, tracks[0].id);
+      await playTrack(gameId, resolveFileUrl(tracks[0].fileUrl), tracks[0].name, 0, playlist.id, 0, musicState.loop, tracks[0].id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -421,7 +422,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     setActivePlaylist(playlist);
     setActiveTrackIndex(trackIndex);
     try {
-      await playTrack(gameId, getFileUrl(tracks[trackIndex].fileUrl), tracks[trackIndex].name, 0, playlistId, trackIndex, musicState.loop, tracks[trackIndex].id);
+      await playTrack(gameId, resolveFileUrl(tracks[trackIndex].fileUrl), tracks[trackIndex].name, 0, playlistId, trackIndex, musicState.loop, tracks[trackIndex].id);
     } catch (err) {
       setError(t('music.playError'));
     }
@@ -434,18 +435,18 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const nextIndex = (activeTrackIndex + 1) % tracks.length;
       setActiveTrackIndex(nextIndex);
       try {
-        await playTrack(gameId, getFileUrl(tracks[nextIndex].fileUrl), tracks[nextIndex].name, 0, activePlaylist.id, nextIndex, musicState.loop, tracks[nextIndex].id);
+        await playTrack(gameId, resolveFileUrl(tracks[nextIndex].fileUrl), tracks[nextIndex].name, 0, activePlaylist.id, nextIndex, musicState.loop, tracks[nextIndex].id);
       } catch (err) {
         setError(t('music.playError'));
       }
     } else {
       const currentUrl = musicState.trackUrl || lastPlayedTrack?.trackUrl;
-      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === currentUrl);
+      const currentIndex = sortedMusicFiles.findIndex(f => resolveFileUrl(f.fileUrl) === currentUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const nextIndex = (currentIndex + 1) % sortedMusicFiles.length;
       const f = sortedMusicFiles[nextIndex];
       try {
-        await playTrack(gameId, getFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
+        await playTrack(gameId, resolveFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -459,18 +460,18 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
       const prevIndex = (activeTrackIndex - 1 + tracks.length) % tracks.length;
       setActiveTrackIndex(prevIndex);
       try {
-        await playTrack(gameId, getFileUrl(tracks[prevIndex].fileUrl), tracks[prevIndex].name, 0, activePlaylist.id, prevIndex, musicState.loop, tracks[prevIndex].id);
+        await playTrack(gameId, resolveFileUrl(tracks[prevIndex].fileUrl), tracks[prevIndex].name, 0, activePlaylist.id, prevIndex, musicState.loop, tracks[prevIndex].id);
       } catch (err) {
         setError(t('music.playError'));
       }
     } else {
       const currentUrl = musicState.trackUrl || lastPlayedTrack?.trackUrl;
-      const currentIndex = sortedMusicFiles.findIndex(f => getFileUrl(f.fileUrl) === currentUrl);
+      const currentIndex = sortedMusicFiles.findIndex(f => resolveFileUrl(f.fileUrl) === currentUrl);
       if (currentIndex === -1 || sortedMusicFiles.length === 0) return;
       const prevIndex = (currentIndex - 1 + sortedMusicFiles.length) % sortedMusicFiles.length;
       const f = sortedMusicFiles[prevIndex];
       try {
-        await playTrack(gameId, getFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
+        await playTrack(gameId, resolveFileUrl(f.fileUrl), f.name, 0, '', 0, musicState.loop, f.id);
       } catch (err) {
         setError(t('music.playError'));
       }
@@ -574,7 +575,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
   };
 
   const isTrackPlaying = (file) => {
-    return musicState.isPlaying && musicState.trackUrl === getFileUrl(file.fileUrl);
+    return musicState.isPlaying && musicState.trackUrl === resolveFileUrl(file.fileUrl);
   };
 
   if (loading) {

@@ -8,8 +8,6 @@ import {
   Box,
   Button,
   Card,
-  CardContent,
-  CardActions,
   Container,
   Typography,
   TextField,
@@ -17,7 +15,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   Chip,
   Divider,
   Alert,
@@ -32,8 +29,6 @@ import {
   ListItemSecondaryAction,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import PeopleIcon from '@mui/icons-material/People';
-import PersonIcon from '@mui/icons-material/Person';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -42,6 +37,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import SyncIcon from '@mui/icons-material/Sync';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ShieldIcon from '@mui/icons-material/Shield';
+import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
+import CheckIcon from '@mui/icons-material/Check';
+import { resolveAvatar, resolveDisplayName } from '../utils/participants';
+import { getAvatarUrl } from './Avatar';
 
 const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
   const { t } = useTranslation();
@@ -97,11 +97,11 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
     } catch { /* non-critical */ }
   }, [token]);
 
+  // The list changes rarely — a single fetch on mount is enough (F5 refreshes it),
+  // and every lobby action (create/delete/leave/sync) updates state itself.
   useEffect(() => {
     fetchGames();
     fetchTemplates();
-    const interval = setInterval(fetchGames, 5000);
-    return () => clearInterval(interval);
   }, [fetchGames, fetchTemplates]);
 
   const handleCreateGame = async () => {
@@ -281,6 +281,25 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
   // Systems shown in the regular dropdown — "custom" is handled via the creator CTA
   const regularSystems = listSystems().filter(s => s.value !== 'custom');
 
+  // Wax-seal look per game status (tarot-card tile). Icon + tooltip carry the meaning,
+  // color alone never does.
+  const statusSeal = (status) => ({
+    active:    { bg: 'radial-gradient(circle at 35% 30%, #7fa06a, #46603a 70%)', Icon: ShieldIcon,          label: t('game.active') },
+    paused:    { bg: 'radial-gradient(circle at 35% 30%, #e2b878, #a67c52 70%)', Icon: HourglassBottomIcon, label: t('game.paused') },
+    completed: { bg: 'radial-gradient(circle at 35% 30%, #a99f8c, #6f6656 70%)', Icon: CheckIcon,           label: t('game.completed') },
+  }[status] || { bg: 'radial-gradient(circle at 35% 30%, #a99f8c, #6f6656 70%)', Icon: CheckIcon, label: status });
+
+  const systemLabel = (game) => game.gameSystem === 'custom' && game.customSystemTemplate
+    ? game.customSystemTemplate.name
+    : (getSystem(game.gameSystem).label || game.gameSystem);
+
+  // Shared style of the small round player avatars in the tile party row
+  const avatarSx = {
+    width: 26, height: 26, borderRadius: '50%', ml: '-8px', flex: 'none',
+    border: '2px solid #f4e8d8', boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+    '&:first-of-type': { ml: 0 },
+  };
+
   return (
     <>
     <Container maxWidth="xl">
@@ -297,116 +316,174 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
 
       {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: 2.5, alignItems: 'stretch' }}>
         {games.length === 0 && (
-          <Grid item xs={12}>
-            <Card sx={{ textAlign: 'center', py: 6, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
-              <Typography variant="h5" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', fontStyle: 'italic' }}>
-                {t('game.noActiveGames')}
-              </Typography>
-            </Card>
-          </Grid>
+          <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 6, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
+            <Typography variant="h5" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', fontStyle: 'italic' }}>
+              {t('game.noActiveGames')}
+            </Typography>
+          </Card>
         )}
 
         {games.map((game) => {
           const isGM = game.gameMasterEmail === userEmail;
+          const seal = statusSeal(game.status);
+          const players = (game.participants || []).filter(p => p.role !== 'gm');
           return (
-            <Grid item xs={12} md={6} lg={4} key={game.id}>
-              <Card sx={{
-                height: '100%', display: 'flex', flexDirection: 'column',
-                background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
-                border: '3px solid', borderColor: 'primary.main',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 8px 20px rgba(0,0,0,0.25)' }
-              }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Typography variant="h5" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 600, color: 'primary.main', flexGrow: 1 }}>
-                      {game.name}
-                    </Typography>
-                    {isGM ? (
-                      <IconButton size="small" onClick={() => openConfirmDialog('delete', game.id, game.name)}
-                        onMouseEnter={e => showTooltip(t('game.deleteGame'), e.currentTarget)} onMouseLeave={hideTooltip}
-                        sx={{ color: 'error.main', ml: 1 }}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    ) : (
-                      <IconButton size="small" onClick={() => openConfirmDialog('leave', game.id, game.name)}
-                        onMouseEnter={e => showTooltip(t('game.leaveGame'), e.currentTarget)} onMouseLeave={hideTooltip}
-                        sx={{ color: 'text.secondary', ml: 1 }}>
-                        <ExitToAppIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </Box>
-                  <Divider sx={{ my: 1.5, borderColor: 'primary.light' }} />
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PersonIcon sx={{ mr: 1, color: 'secondary.main', fontSize: '1.2rem' }} />
-                    <Typography variant="body2" sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1rem' }}>
-                      <strong>{t('game.gameMaster')}:</strong> {game.gameMasterEmail || t('common.unknown')}
+            <Card key={game.id} sx={{
+              position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              background: 'linear-gradient(135deg, #f4e8d8 0%, #ede0ce 100%)',
+              border: '3px solid', borderColor: 'primary.main',
+              boxShadow: '0 4px 14px rgba(107,68,35,0.18)',
+              transition: 'transform 0.18s, box-shadow 0.18s',
+              '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 10px 24px rgba(107,68,35,0.3)' },
+              // double gold frame, rounded at the top like a tarot card
+              '&::before': {
+                content: '""', position: 'absolute', inset: '5px', zIndex: 3, pointerEvents: 'none',
+                border: '1.5px solid rgba(201,151,91,0.55)', borderRadius: '10px 10px 2px 2px',
+              },
+              ...(game.status === 'completed' && { opacity: 0.62, filter: 'saturate(0.7)' }),
+            }}>
+              {/* Image zone — game image or dark-leather fallback. Text never sits on the image. */}
+              <Box sx={{ position: 'relative', height: 190, flexShrink: 0, m: '8px 8px 0', borderRadius: '8px 8px 0 0', border: '1px solid rgba(107,68,35,0.5)', overflow: 'hidden' }}>
+                {game.imageUrl ? (
+                  <Box component="img" src={getAvatarUrl(game.imageUrl)} alt=""
+                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ) : (
+                  <Box sx={{
+                    width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 0.5,
+                    background: 'linear-gradient(135deg, #3a2920 0%, #2a2218 100%)', color: '#c9a961',
+                  }}>
+                    <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>✠</Typography>
+                    <Typography sx={{ fontFamily: 'Cinzel, serif', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.8, px: 1, textAlign: 'center' }}>
+                      {systemLabel(game)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <PeopleIcon sx={{ mr: 1, color: 'primary.main', fontSize: '1.2rem' }} />
-                    <Typography variant="body2" sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1rem' }}>
-                      <strong>{t('game.players')}:</strong> {game.participants?.filter(p => p.role !== 'gm').length || 0}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <Chip label={game.status === 'active' ? t('game.active') : game.status} color={game.status === 'active' ? 'success' : 'default'} size="small"
-                      sx={{ fontFamily: 'Crimson Text, serif', textTransform: 'uppercase', fontWeight: 600 }} />
-                    {game.gameSystem && (
-                      <Chip
-                        label={game.gameSystem === 'custom' && game.customSystemTemplate
-                          ? game.customSystemTemplate.name
-                          : (getSystem(game.gameSystem).label || game.gameSystem)}
-                        variant="outlined" size="small" sx={{ fontFamily: 'Crimson Text, serif' }} />
+                )}
+              </Box>
+
+              {/* Action pill on the image corner (icons only) */}
+              <Box sx={{ position: 'absolute', top: 14, right: 14, zIndex: 4, display: 'flex', gap: '2px', background: 'rgba(20,12,4,0.45)', borderRadius: 999, px: '4px', py: '2px' }}>
+                {isGM && game.gameSystem === 'custom' && (
+                  <IconButton size="small" onClick={() => handleSyncTemplate(game.id)} disabled={syncingGameId === game.id}
+                    onMouseEnter={e => showTooltip(t('creator.syncTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
+                    sx={{ color: '#f4e8d8', p: '3px' }}>
+                    <SyncIcon sx={{ fontSize: '1rem', animation: syncingGameId === game.id ? 'spin 1s linear infinite' : 'none' }} />
+                  </IconButton>
+                )}
+                {isGM ? (
+                  <IconButton size="small" onClick={() => openConfirmDialog('delete', game.id, game.name)}
+                    onMouseEnter={e => showTooltip(t('game.deleteGame'), e.currentTarget)} onMouseLeave={hideTooltip}
+                    sx={{ color: '#f4e8d8', p: '3px' }}>
+                    <DeleteIcon sx={{ fontSize: '1rem' }} />
+                  </IconButton>
+                ) : (
+                  <IconButton size="small" onClick={() => openConfirmDialog('leave', game.id, game.name)}
+                    onMouseEnter={e => showTooltip(t('game.leaveGame'), e.currentTarget)} onMouseLeave={hideTooltip}
+                    sx={{ color: '#f4e8d8', p: '3px' }}>
+                    <ExitToAppIcon sx={{ fontSize: '1rem' }} />
+                  </IconButton>
+                )}
+              </Box>
+
+              {/* Wax seal with the game status, hanging off the image edge */}
+              <Box role="img" aria-label={seal.label}
+                onMouseEnter={e => showTooltip(seal.label, e.currentTarget)} onMouseLeave={hideTooltip}
+                sx={{
+                  position: 'absolute', top: 180, right: 16, zIndex: 4,
+                  width: 36, height: 36, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                  color: 'rgba(255,255,255,0.92)', background: seal.bg,
+                  border: '1px solid rgba(0,0,0,0.2)',
+                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 5px rgba(0,0,0,0.35), 0 3px 6px rgba(0,0,0,0.35)',
+                }}>
+                <seal.Icon sx={{ fontSize: '1.05rem' }} />
+              </Box>
+
+              {/* Plaque */}
+              <Box sx={{ p: '14px 14px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, zIndex: 2 }}>
+                <Typography noWrap
+                  onMouseEnter={e => { if (e.currentTarget.scrollWidth > e.currentTarget.clientWidth) showTooltip(game.name, e.currentTarget); }}
+                  onMouseLeave={hideTooltip}
+                  sx={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '1.02rem', color: 'primary.dark' }}>
+                  {game.name}
+                </Typography>
+                <Typography sx={{ color: '#a67c52', fontSize: '0.8rem', letterSpacing: '0.4em', lineHeight: 1 }}>❦ ❦ ❦</Typography>
+                <Typography sx={{ fontFamily: 'Cinzel, serif', fontSize: '0.66rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#a67c52' }}>
+                  {systemLabel(game)}
+                </Typography>
+                <Typography noWrap sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.88rem', fontStyle: 'italic', color: 'text.secondary' }}>
+                  {t('game.gameMaster')}: {game.gameMasterEmail || t('common.unknown')}
+                </Typography>
+                {game.createdAt && (
+                  <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.8rem', color: '#8a7d6a' }}>
+                    {new Date(game.createdAt).toLocaleDateString()}
+                  </Typography>
+                )}
+
+                {/* Party row: avatar stack + player count */}
+                <Box sx={{ mt: 'auto', pt: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {players.slice(0, 3).map((p) => {
+                      const url = getAvatarUrl(resolveAvatar(p));
+                      const name = resolveDisplayName(p);
+                      return url ? (
+                        <Box key={p.userId} component="img" src={url} alt={name}
+                          onMouseEnter={e => showTooltip(name, e.currentTarget)} onMouseLeave={hideTooltip}
+                          sx={{ ...avatarSx, objectFit: 'cover' }} />
+                      ) : (
+                        <Box key={p.userId}
+                          onMouseEnter={e => showTooltip(name, e.currentTarget)} onMouseLeave={hideTooltip}
+                          sx={{ ...avatarSx, display: 'grid', placeItems: 'center', background: '#8b6a4d', color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '0.68rem', fontWeight: 700 }}>
+                          {(name || '?').charAt(0).toUpperCase()}
+                        </Box>
+                      );
+                    })}
+                    {players.length > 3 && (
+                      <Box sx={{ ...avatarSx, display: 'grid', placeItems: 'center', background: '#e8dcc4', color: 'text.secondary', border: '2px solid #8b6a4d', fontFamily: 'Cinzel, serif', fontSize: '0.62rem', fontWeight: 700 }}>
+                        +{players.length - 3}
+                      </Box>
                     )}
-                    {isGM && game.gameSystem === 'custom' && (
-                      <IconButton
-                        size="small"
-                        onClick={() => handleSyncTemplate(game.id)}
-                        disabled={syncingGameId === game.id}
-                        onMouseEnter={e => showTooltip(t('creator.syncTemplate'), e.currentTarget)}
-                        onMouseLeave={hideTooltip}
-                        sx={{ color: 'primary.light', ml: 'auto' }}
-                      >
-                        <SyncIcon fontSize="small" sx={{ animation: syncingGameId === game.id ? 'spin 1s linear infinite' : 'none' }} />
-                      </IconButton>
-                    )}
                   </Box>
-                </CardContent>
-                <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button fullWidth variant="contained" onClick={() => handleJoinGame(game.id)} disabled={loading}
-                    sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontWeight: 600, py: 1 }}>
-                    {t('game.enterGame')}
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
+                  <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary' }}>
+                    {t('game.players')}: {players.length}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Enter bar flush with the bottom edge */}
+              <Button fullWidth onClick={() => handleJoinGame(game.id)} disabled={loading} disableElevation
+                sx={{
+                  mt: 'auto', borderRadius: 0, border: 0, borderTop: '2px solid #6b4423',
+                  background: 'linear-gradient(180deg, #8b6a4d 0%, #7a5c42 100%)', color: '#f4e8d8',
+                  fontFamily: 'Cinzel, serif', fontWeight: 700, letterSpacing: '0.07em', py: 1,
+                  '&:hover': { border: 0, borderTop: '2px solid #6b4423', background: 'linear-gradient(180deg, #96755a 0%, #85654a 100%)' },
+                }}>
+                {t('game.enterGame')} →
+              </Button>
+            </Card>
           );
         })}
 
         {/* Creator tile — always last */}
-        <Grid item xs={12} md={6} lg={4}>
-          <Card onClick={() => { fetchTemplates(); setOpenCreatorDialog(true); }}
-            sx={{
-              height: '100%', minHeight: 180, display: 'flex', flexDirection: 'column',
-              justifyContent: 'center', alignItems: 'center',
-              background: 'rgba(244, 232, 216, 0.3)',
-              border: '2px dashed', borderColor: 'primary.light',
-              boxShadow: 'none', cursor: 'pointer', transition: 'all 0.2s',
-              '&:hover': { borderColor: 'primary.main', background: 'rgba(244, 232, 216, 0.6)', transform: 'translateY(-2px)' }
-            }}>
-            <TuneIcon sx={{ fontSize: 40, color: 'primary.light', mb: 1 }} />
-            <Typography variant="h6" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 600, color: 'primary.main', textAlign: 'center' }}>
-              {t('creator.tileTitle')}
-            </Typography>
-            <Typography variant="body2" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', mt: 0.5, textAlign: 'center', px: 2 }}>
-              {t('creator.tileDesc')}
-            </Typography>
-          </Card>
-        </Grid>
-      </Grid>
+        <Card onClick={() => { fetchTemplates(); setOpenCreatorDialog(true); }}
+          sx={{
+            minHeight: 220, display: 'flex', flexDirection: 'column',
+            justifyContent: 'center', alignItems: 'center',
+            background: 'rgba(244, 232, 216, 0.3)',
+            border: '2px dashed', borderColor: 'primary.light',
+            boxShadow: 'none', cursor: 'pointer', transition: 'all 0.2s',
+            '&:hover': { borderColor: 'primary.main', background: 'rgba(244, 232, 216, 0.6)', transform: 'translateY(-2px)' }
+          }}>
+          <TuneIcon sx={{ fontSize: 40, color: 'primary.light', mb: 1 }} />
+          <Typography variant="h6" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 600, color: 'primary.main', textAlign: 'center' }}>
+            {t('creator.tileTitle')}
+          </Typography>
+          <Typography variant="body2" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', mt: 0.5, textAlign: 'center', px: 2 }}>
+            {t('creator.tileDesc')}
+          </Typography>
+        </Card>
+      </Box>
 
       {/* Create Game Dialog */}
       <Dialog open={openCreateDialog} onClose={() => !loading && setOpenCreateDialog(false)} maxWidth="sm" fullWidth

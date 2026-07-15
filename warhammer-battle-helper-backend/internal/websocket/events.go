@@ -2,8 +2,9 @@ package websocket
 
 const (
 	// Game state
-	EventGameState   = "GAME_STATE"
-	EventGameDeleted = "GAME_DELETED"
+	EventGameState        = "GAME_STATE"
+	EventGameDeleted      = "GAME_DELETED"
+	EventGameImageUpdated = "GAME_IMAGE_UPDATED"
 
 	// Participants
 	EventParticipantJoined  = "PARTICIPANT_JOINED"

@@ -304,6 +304,9 @@ func (s *GameService) GetGamesForUser(userID primitive.ObjectID) ([]models.Game,
 				games[i].GameMasterEmail = gmUser.Email
 			}
 		}
+		// Lobby tiles show participant avatars; account/character avatar URLs are
+		// computed fields, so the list needs the same enrichment as GetGame.
+		s.enrichParticipants(&games[i])
 	}
 
 	// Sort by "last opened by this user" (most recent first). The timestamp is
@@ -438,26 +441,49 @@ func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, usernam
 	return s.gameRepo.GetByID(gameID)
 }
 
-// DeleteGame deletes a game entirely (GM only)
-func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) error {
+// DeleteGame deletes a game entirely (GM only). Returns the game's lobby image URL
+// (if any) so the handler can remove the file from storage.
+func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) (string, error) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can delete the game")
+		return "", fmt.Errorf("only the game master can delete the game")
 	}
 
 	if err := s.gameRepo.Delete(gameID); err != nil {
-		return err
+		return "", err
 	}
 
 	s.hub.BroadcastToGame(gameID, websocket.EventGameDeleted, map[string]interface{}{
 		"gameId": gameID,
 	})
 
-	return nil
+	return game.ImageUrl, nil
+}
+
+// SetGameImage sets (or clears, when imageUrl is empty) the lobby image of a game.
+// GM only. Returns the previous image URL so the handler can delete the old file
+// from storage. Broadcasts the change so connected clients re-fetch game state.
+func (s *GameService) SetGameImage(gameID string, gmID primitive.ObjectID, imageUrl string) (string, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return "", fmt.Errorf("game not found")
+	}
+	if game.GameMasterID != gmID {
+		return "", fmt.Errorf("not authorized")
+	}
+	if err := s.gameRepo.SetImageUrl(gameID, imageUrl); err != nil {
+		return "", err
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventGameImageUpdated, map[string]interface{}{
+		"imageUrl": imageUrl,
+	})
+
+	return game.ImageUrl, nil
 }
 
 // LeaveGame removes a user from a game

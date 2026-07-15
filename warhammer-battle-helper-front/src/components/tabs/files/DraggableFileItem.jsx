@@ -5,7 +5,7 @@ import MapIcon from '@mui/icons-material/Map';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
-import { getFileUrl } from './getFileUrl';
+import { resolveFileUrl } from '../../../utils/fileUrl';
 
 const DraggableFileItem = ({
   file,
@@ -56,7 +56,7 @@ const DraggableFileItem = ({
       {...attributes}
     >
       <img
-        src={getFileUrl(file.fileUrl)}
+        src={resolveFileUrl(file.fileUrl)}
         alt={file.name}
         className="files-tab__item-thumbnail"
         draggable={false}

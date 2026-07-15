@@ -191,6 +191,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         fetchGameState();
         break;
 
+      case WS_EVENTS.GAME_IMAGE_UPDATED:
+        setGameState(prev => prev ? { ...prev, imageUrl: message.payload.imageUrl || '' } : prev);
+        break;
+
       case WS_EVENTS.PARTICIPANT_JOINED: {
         const newParticipant = message.payload.participant;
         addLogMessage(`${newParticipant.username} joined the game`, 'success');

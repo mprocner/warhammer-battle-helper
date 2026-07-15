@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getApiUrl } from '../api/axios';
 import { getMusic, playTrack, nextTrack } from '../api/music';
+import { resolveFileUrl } from '../utils/fileUrl';
 
 import { WS_EVENTS } from '../websocket/events';
-
-const resolveUrl = (url) => (url && !url.startsWith('http') ? `${getApiUrl()}${url}` : url);
 
 /**
  * Manages all music state: audio playback, GM volume, player volume,
@@ -86,7 +84,7 @@ export function useGameMusic(gameId) {
     });
 
     if (gameMusicState.isPlaying && gameMusicState.trackUrl) {
-      const url = resolveUrl(gameMusicState.trackUrl);
+      const url = resolveFileUrl(gameMusicState.trackUrl);
       if (audio.src !== url) {
         audio.src = url;
         audio.currentTime = gameMusicState.position || 0;
@@ -106,7 +104,6 @@ export function useGameMusic(gameId) {
     if (!scene.sceneMusicId) return;
     try {
       const musicData = await getMusic();
-      const resolveUrl = (url) => url?.startsWith('http') ? url : `${getApiUrl()}${url}`;
       if (scene.sceneMusicType === 'playlist') {
         const playlist = (musicData.playlists || []).find(p => p.id === scene.sceneMusicId);
         if (!playlist) return;
@@ -114,11 +111,11 @@ export function useGameMusic(gameId) {
           .map(id => (musicData.music || []).find(f => f.id === id))
           .filter(Boolean);
         if (tracks.length === 0) return;
-        await playTrack(gameId, resolveUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0, scene.sceneMusicLoop !== false, tracks[0].id);
+        await playTrack(gameId, resolveFileUrl(tracks[0].fileUrl), tracks[0].name, 0, scene.sceneMusicId, 0, scene.sceneMusicLoop !== false, tracks[0].id);
       } else {
         const file = (musicData.music || []).find(f => f.id === scene.sceneMusicId);
         if (!file) return;
-        await playTrack(gameId, resolveUrl(file.fileUrl), file.name, 0, '', 0, scene.sceneMusicLoop !== false, file.id);
+        await playTrack(gameId, resolveFileUrl(file.fileUrl), file.name, 0, '', 0, scene.sceneMusicLoop !== false, file.id);
       }
     } catch (err) {
       console.error('[music] Failed to play scene music:', err);
@@ -131,7 +128,9 @@ export function useGameMusic(gameId) {
     switch (message.type) {
       case WS_EVENTS.MUSIC_PLAY: {
         const { trackUrl: rawTrackUrl, trackName, position, playlistId, trackIndex, loop, version } = message.payload;
-        const trackUrl = resolveUrl(rawTrackUrl);
+        // trackUrl from WS may already be absolute (MusicTab resolves before POSTing) —
+        // resolveFileUrl is idempotent for that case.
+        const trackUrl = resolveFileUrl(rawTrackUrl);
         if (audio.src !== trackUrl) {
           audio.src = trackUrl;
         }
