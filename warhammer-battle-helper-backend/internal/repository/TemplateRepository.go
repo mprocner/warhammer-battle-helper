@@ -50,15 +50,21 @@ func (r *TemplateRepository) GetByID(id string) (*models.SystemTemplate, error) 
 }
 
 // ListVisibleToUser returns templates the user may use when creating a game:
-// their own templates plus every public template, newest first.
+// their own templates plus every public template, newest first. Token-config
+// templates (BaseSystem set) are excluded — they carry no Sections and describe
+// only the map-token overlay of a hardcoded system, so they are not selectable
+// as a game system.
 func (r *TemplateRepository) ListVisibleToUser(ownerID primitive.ObjectID) ([]models.SystemTemplate, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.M{"$or": bson.A{
-		bson.M{"ownerId": ownerID},
-		bson.M{"isPublic": true},
-	}}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"ownerId": ownerID},
+			bson.M{"isPublic": true},
+		},
+		"baseSystem": bson.M{"$in": bson.A{"", nil}},
+	}
 	cursor, err := r.collection.Find(ctx, filter, options.Find().SetSort(bson.M{"createdAt": -1}))
 	if err != nil {
 		return nil, err

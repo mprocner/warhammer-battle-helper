@@ -10229,6 +10229,19 @@ align-items: center;
     border-radius: 5px;
     background: rgba(201, 151, 91, 0.14);
     border: 1px solid rgba(201, 151, 91, 0.4);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.dcb__chip:hover {
+    border-color: rgba(201, 151, 91, 0.75);
+    background: rgba(201, 151, 91, 0.22);
+}
+
+.dcb__chip--dragging {
+    cursor: grabbing;
+    box-shadow: 0 2px 8px rgba(61, 43, 26, 0.25);
 }
 
 .dcb__chip-label {
@@ -10241,28 +10254,14 @@ align-items: center;
     text-align: center;
 }
 
-.dcb__chip-move {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    cursor: pointer;
+.dcb__chip-grip {
     color: #7a5c42;
-    opacity: 0.55;
-    padding: 2px;
-    border-radius: 3px;
-    transition: opacity 0.12s, background 0.12s;
+    opacity: 0.4;
+    transition: opacity 0.12s;
 }
 
-.dcb__chip-move:hover:not(:disabled) {
-    opacity: 1;
-    background: rgba(122, 92, 66, 0.12);
-}
-
-.dcb__chip-move:disabled {
-    opacity: 0.18;
-    cursor: default;
+.dcb__chip:hover .dcb__chip-grip {
+    opacity: 0.85;
 }
 
 .dcb__chip-remove {

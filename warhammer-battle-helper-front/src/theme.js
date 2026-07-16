@@ -125,6 +125,18 @@ const theme = createTheme({
                     '&:hover': {
                         background: 'linear-gradient(180deg, #9a7a5d 0%, #8b6a4d 100%)',
                     },
+                    // Disabled contained CTAs must stay legible on parchment. Without this,
+                    // MUI falls back to a washed-out grey fill + grey text that vanishes
+                    // against the dialog background. Keep the button's mass, just dim it:
+                    // a flat tan fill with dark-leather text (~4.2:1 contrast, AA for the
+                    // bold uppercase label), so activation reads as a colour shift.
+                    '&.Mui-disabled': {
+                        background: 'linear-gradient(180deg, #d3c3a7 0%, #c6b492 100%)',
+                        color: '#6b4423',
+                        borderColor: '#a98c6a',
+                        boxShadow: 'none',
+                        opacity: 1,
+                    },
                 },
                 containedSecondary: {
                     background: 'linear-gradient(180deg, #a64545 0%, #8b2f2f 100%)',
