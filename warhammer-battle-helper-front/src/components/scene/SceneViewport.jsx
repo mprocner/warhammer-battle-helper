@@ -21,7 +21,7 @@ const SceneViewport = ({
   brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
-  controlScheme = 'modern',
+  controlScheme = 'modern', onBackgroundClick,
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
@@ -284,8 +284,11 @@ const SceneViewport = ({
   const PING_MOVE_THRESHOLD = 5;
   const pingTimerRef = useRef(null);
   const pingOriginRef = useRef(null);
+  // Mousedown position, used to tell a plain click (clears the active token) from a pan-drag.
+  const clickDownPosRef = useRef(null);
 
   const handleContentMouseDown = useCallback((e) => {
+    clickDownPosRef.current = { x: e.clientX, y: e.clientY };
     if (e.button !== 0 || !sendMessage || !displayedScene) return;
     const contentEl = e.currentTarget;
     const rect = contentEl.getBoundingClientRect();
@@ -316,6 +319,20 @@ const SceneViewport = ({
   }, [clearPingTimer]);
 
   useEffect(() => clearPingTimer, [clearPingTimer]);
+
+  // Click on the map background (image, empty grid) outside any token → clear the active token.
+  // A token's own click stops propagation in FightArea, so it never reaches here. Skip drags
+  // (pan) by comparing against the mousedown position, same threshold as the pointer ping.
+  const handleBackgroundClick = useCallback((e) => {
+    if (!onBackgroundClick) return;
+    const down = clickDownPosRef.current;
+    if (down) {
+      const dx = e.clientX - down.x;
+      const dy = e.clientY - down.y;
+      if (Math.sqrt(dx * dx + dy * dy) > PING_MOVE_THRESHOLD) return;
+    }
+    onBackgroundClick(e);
+  }, [onBackgroundClick]);
 
   const isDrawingMode = editingLayer === 'drawing';
 
@@ -433,6 +450,7 @@ const SceneViewport = ({
                 onMouseMove={handleContentMouseMove}
                 onMouseUp={clearPingTimer}
                 onMouseLeave={clearPingTimer}
+                onClick={handleBackgroundClick}
               >
                 <SceneLayer
                   images={backgroundImages}

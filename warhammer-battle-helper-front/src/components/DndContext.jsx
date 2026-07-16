@@ -72,6 +72,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Selected character for details panel
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
+  // Active token on the grid (sun/ring expansion) — independent of the card. Id only,
+  // because FightArea resolves the live character from fightZones (like resolveCharacter).
+  const [activeTokenId, setActiveTokenId] = useState(null);
+
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
   const { focusWindow } = useWindowManager();
@@ -127,6 +131,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     fightZonesRef.current = fightZones;
   }, [fightZones]);
 
+  // Clear the active token when its character leaves the grid for any reason
+  // (grid-toggle off, drag back to the pool, delete, scene switch, WS refetch).
+  // Mirrors the selectedDrawingPathId cleanup pattern below.
+  useEffect(() => {
+    if (!activeTokenId) return;
+    if (!fightZones.some(z => z.character?.id === activeTokenId)) setActiveTokenId(null);
+  }, [fightZones, activeTokenId]);
+
   // Regenerate zones when scene changes (dimensions or scene id)
   const prevSceneRef = useRef(null);
   useEffect(() => {
@@ -164,6 +176,22 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     // Clicking the already-selected token toggles it off (same as clicking outside).
     setSelectedCharacter(prev => (prev?.id === character.id ? null : freshChar));
   };
+
+  // Select/toggle the active token on the grid (sun/ring). Independent of the card selection.
+  const handleSelectToken = (character) => {
+    // Same ownership guard as handleSelectCharacter — FightArea already screens this, but keep
+    // it here too (defense in depth, matches the existing double-guard pattern).
+    if (gameId && token && !isGM && !isOwnCharacter(character.id)) {
+      return;
+    }
+    // Clicking the already-active token toggles it off (same UX as the card toggle).
+    setActiveTokenId(prev => (prev === character.id ? null : character.id));
+  };
+
+  // Clear the active token — fired when clicking anywhere on the map outside a token
+  // (background image, empty grid). Own-token clicks stopPropagation in FightArea, so
+  // activating a token doesn't immediately clear it.
+  const clearActiveToken = useCallback(() => setActiveTokenId(null), []);
 
   // Multiplayer: Add character to grid (scene-aware)
   const handleAddCharacterToGrid = async (characterId, positionX, positionY, isEnemy) => {
@@ -954,11 +982,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme}>
-            <div
-              className="fight-grid"
-              onClick={() => { if (selectedCharacter) setSelectedCharacter(null); }}
-            >
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken}>
+            <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}
                 style={{ gridTemplateColumns: `repeat(${gridWidth}, ${CELL_SIZE}px)` }}
@@ -969,11 +994,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                       currentZone={zone}
                       isActiveDrop={overId === zone.id}
                       activeId={activeId}
-                      onSelectCharacter={handleSelectCharacter}
+                      onSelectToken={handleSelectToken}
                       isOwnCharacter={zone.character ? (isGM || isOwnCharacter(zone.character.id)) : false}
                       isMultiplayer={!!(gameId && token)}
                       tokenDisplay={tokenDisplay}
-                      selectedCharacterId={selectedCharacter?.id || null}
+                      activeTokenId={activeTokenId}
                       gameId={gameId}
                       token={token}
                   />
