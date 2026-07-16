@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import CloseIcon from '@mui/icons-material/Close';
+import { SkullIcon } from '../icons';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { resolveField } from '../../utils/tokenFieldResolver';
@@ -133,7 +133,7 @@ export default function TokenOverlay({ character, config, selected, canEdit, gam
           onClick={(e) => { e.stopPropagation(); toggleKilled(); }}
           onMouseEnter={(e) => showTooltip(t('token.killed'), e.currentTarget)}
           onMouseLeave={hideTooltip}>
-          <CloseIcon sx={{ fontSize: 16 }} />
+          <SkullIcon size={16} />
         </button>
       )}
 
