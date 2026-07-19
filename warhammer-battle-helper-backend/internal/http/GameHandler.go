@@ -234,6 +234,11 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 		game.Notes = publicNotes
 	}
 
+	// Mask hidden HP bars on image-tokens for anyone who is not the GM (a missing user is never
+	// the GM). requestingUserID is the zero ObjectID when hasUser is false, which never equals a
+	// real GameMasterID, so this correctly masks for anonymous viewers too.
+	service.FilterSceneImageTokensForUser(game, requestingUserID)
+
 	c.JSON(http.StatusOK, game)
 }
 
@@ -609,6 +614,7 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	if err == nil {
 		h.attachTokenConfig(game)
 		service.FilterNotesForUser(game, userID)
+		service.FilterSceneImageTokensForUser(game, userID)
 		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
 			"game": game,
 		}, []string{userID.Hex()})

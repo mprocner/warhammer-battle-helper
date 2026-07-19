@@ -1575,6 +1575,112 @@ func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID,
 	return createdImage, nil
 }
 
+// cloneImageTokenOverlay deep-copies an overlay so a duplicated image is fully independent.
+func cloneImageTokenOverlay(o *models.ImageTokenOverlay) *models.ImageTokenOverlay {
+	if o == nil {
+		return nil
+	}
+	c := *o
+	if len(o.HPBars) > 0 {
+		c.HPBars = append([]models.ImageTokenHPBar(nil), o.HPBars...)
+	}
+	if len(o.Slots) > 0 {
+		c.Slots = append([]models.ImageTokenSlot(nil), o.Slots...)
+	}
+	return &c
+}
+
+// DuplicateSceneImage creates Count copies of a scene image (GM only), cascaded next to the
+// original. Every copy keeps the source's appearance and — importantly — its token overlay config
+// (deep-copied); it starts unlocked and alive so the GM can position it. Players receive each new
+// image with hidden HP bars/slots masked.
+func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userID primitive.ObjectID, count int) error {
+	if count < 1 {
+		count = 1
+	}
+	if count > 20 {
+		count = 20 // sanity cap
+	}
+
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can duplicate scene images")
+	}
+
+	var scene *models.Scene
+	for i := range game.Scenes {
+		if game.Scenes[i].ID == sceneID {
+			scene = &game.Scenes[i]
+			break
+		}
+	}
+	if scene == nil {
+		return fmt.Errorf("scene not found")
+	}
+	var src *models.SceneImage
+	for i := range scene.Images {
+		if scene.Images[i].ID == imageID {
+			src = &scene.Images[i]
+			break
+		}
+	}
+	if src == nil {
+		return fmt.Errorf("image not found")
+	}
+
+	// Grid canvas is GridWidth*cell px (cell matches the frontend CELL_SIZE). Clamp copies inside it.
+	const cell = 50.0
+	maxX := float64(scene.GridWidth)*cell - src.Width
+	maxY := float64(scene.GridHeight)*cell - src.Height
+	if maxX < 0 {
+		maxX = 0
+	}
+	if maxY < 0 {
+		maxY = 0
+	}
+	clamp := func(v, hi float64) float64 {
+		if v < 0 {
+			return 0
+		}
+		if v > hi {
+			return hi
+		}
+		return v
+	}
+
+	for k := 1; k <= count; k++ {
+		dup := *src
+		dup.ID = primitive.NilObjectID // AddSceneImage assigns a fresh id + timestamps
+		dup.X = clamp(src.X+30*float64(k), maxX)
+		dup.Y = clamp(src.Y+30*float64(k), maxY)
+		dup.Locked = false
+		dup.Killed = false
+		dup.TokenOverlay = cloneImageTokenOverlay(src.TokenOverlay)
+
+		created, err := s.gameRepo.AddSceneImage(gameID, sceneID, dup)
+		if err != nil {
+			return err
+		}
+
+		gmID := game.GameMasterID.Hex()
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+			"sceneId": sceneID.Hex(),
+			"image":   created,
+		}, []string{gmID})
+		maskedImg := *created
+		maskedImg.TokenOverlay = MaskImageTokenForPlayer(created.TokenOverlay)
+		s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+			"sceneId": sceneID.Hex(),
+			"image":   maskedImg,
+		}, gmID)
+	}
+
+	return nil
+}
+
 // UpdateSceneImage updates an image within a scene (GM only)
 func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneImageRequest) error {
 	game, err := s.gameRepo.GetByID(gameID)
@@ -1603,6 +1709,27 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 
 	if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, imageID, req); err != nil {
 		return err
+	}
+
+	// A tokenOverlay in the request carries HP-bar values that may be flagged Hidden. Broadcasting
+	// the raw request to everyone would leak them, so when the overlay is present we split: full to
+	// the GM, masked to every other player. Plain position/appearance updates keep the simple
+	// broadcast.
+	if req.TokenOverlay != nil {
+		playerReq := req
+		playerReq.TokenOverlay = MaskImageTokenForPlayer(req.TokenOverlay)
+		gmID := game.GameMasterID.Hex()
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(),
+			"imageId": imageID.Hex(),
+			"update":  req,
+		}, []string{gmID})
+		s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(),
+			"imageId": imageID.Hex(),
+			"update":  playerReq,
+		}, gmID)
+		return nil
 	}
 
 	s.hub.BroadcastToGame(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
@@ -1635,6 +1762,248 @@ func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID
 	})
 
 	return nil
+}
+
+// PatchSceneImageTokenHP steps or sets one HP bar on an image-token (GM only). After the atomic
+// write it re-reads the overlay, clamps the bar into [0, max], and broadcasts the fresh value —
+// full to the GM, masked to players (hidden bars keep their Hidden flag but lose their numbers).
+func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, userID primitive.ObjectID, req models.PatchImageTokenHPRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can edit image tokens")
+	}
+
+	if req.Value != nil {
+		if err := s.gameRepo.SetSceneImageHPBar(gameID, sceneID, imageID, req.BarID, *req.Value); err != nil {
+			return err
+		}
+	} else if req.Delta != nil {
+		if err := s.gameRepo.IncSceneImageHPBar(gameID, sceneID, imageID, req.BarID, *req.Delta); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("either delta or value is required")
+	}
+
+	// Re-read, clamp the bar into [0, max].
+	img, err := s.gameRepo.GetSceneImage(gameID, sceneID, imageID)
+	if err != nil {
+		return err
+	}
+	if img.TokenOverlay != nil {
+		for _, bar := range img.TokenOverlay.HPBars {
+			if bar.ID != req.BarID {
+				continue
+			}
+			clamped := bar.Current
+			if clamped < 0 {
+				clamped = 0
+			}
+			if bar.Max > 0 && clamped > bar.Max {
+				clamped = bar.Max
+			}
+			if clamped != bar.Current {
+				if err := s.gameRepo.SetSceneImageHPBar(gameID, sceneID, imageID, req.BarID, clamped); err != nil {
+					return err
+				}
+				img, err = s.gameRepo.GetSceneImage(gameID, sceneID, imageID)
+				if err != nil {
+					return err
+				}
+			}
+			break
+		}
+	}
+
+	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID)
+	return nil
+}
+
+// PatchSceneImageTokenSlot bumps an icon slot's level or sets a number slot's value (GM only).
+func (s *GameService) PatchSceneImageTokenSlot(gameID string, sceneID, imageID, userID primitive.ObjectID, req models.PatchImageTokenSlotRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can edit image tokens")
+	}
+
+	if req.Number != nil {
+		if err := s.gameRepo.SetSceneImageSlotNumber(gameID, sceneID, imageID, req.SlotID, *req.Number); err != nil {
+			return err
+		}
+	} else if req.Delta != nil {
+		if err := s.gameRepo.IncSceneImageSlot(gameID, sceneID, imageID, req.SlotID, *req.Delta); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("either delta or number is required")
+	}
+
+	img, err := s.gameRepo.GetSceneImage(gameID, sceneID, imageID)
+	if err != nil {
+		return err
+	}
+	// Clamp icon level to >= 0.
+	if req.Delta != nil && img.TokenOverlay != nil {
+		for _, slot := range img.TokenOverlay.Slots {
+			if slot.ID == req.SlotID && slot.Type == "icon" && slot.Level < 0 {
+				if err := s.gameRepo.SetSceneImageSlotLevel(gameID, sceneID, imageID, req.SlotID, 0); err != nil {
+					return err
+				}
+				img, err = s.gameRepo.GetSceneImage(gameID, sceneID, imageID)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+
+	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID)
+	return nil
+}
+
+// ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in the
+// scene (GM only). Locked=true copies req.Slot's config onto that position on all such images —
+// keeping each image's own slot id, resetting the live Level/Number, and marking it Locked.
+// Locked=false just clears the Locked flag at that position (config and values are left intact).
+func (s *GameService) ApplyImageTokenSlot(gameID string, sceneID, userID primitive.ObjectID, req models.ApplyImageTokenSlotRequest) error {
+	if req.Position < 0 || req.Position >= 8 {
+		return fmt.Errorf("invalid slot position")
+	}
+	if req.Locked && req.Slot == nil {
+		return fmt.Errorf("slot config is required when locking")
+	}
+
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can share token slots")
+	}
+
+	var scene *models.Scene
+	for i := range game.Scenes {
+		if game.Scenes[i].ID == sceneID {
+			scene = &game.Scenes[i]
+			break
+		}
+	}
+	if scene == nil {
+		return fmt.Errorf("scene not found")
+	}
+
+	for i := range scene.Images {
+		img := &scene.Images[i]
+		if img.Layer != "tokens" {
+			continue
+		}
+		overlay := img.TokenOverlay
+		if overlay == nil {
+			if !req.Locked {
+				continue // nothing to unlock on a token with no overlay
+			}
+			overlay = &models.ImageTokenOverlay{Enabled: true}
+		}
+		// Ensure 8 fixed ring positions so the index is always valid.
+		for len(overlay.Slots) < 8 {
+			overlay.Slots = append(overlay.Slots, models.ImageTokenSlot{ID: primitive.NewObjectID().Hex(), Type: "empty"})
+		}
+		cur := overlay.Slots[req.Position]
+		if req.Locked {
+			id := cur.ID
+			if id == "" {
+				id = primitive.NewObjectID().Hex()
+			}
+			ns := *req.Slot // config from the initiating token
+			ns.ID = id      // keep this token's own slot id (value patches key on it)
+			ns.Level = 0    // config is shared; the live value resets and stays per-token
+			ns.Number = 0
+			ns.Locked = true
+			overlay.Slots[req.Position] = ns
+		} else {
+			overlay.Slots[req.Position].Locked = false
+		}
+
+		if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, img.ID, models.UpdateSceneImageRequest{TokenOverlay: overlay}); err != nil {
+			return err
+		}
+		s.broadcastImageTokenUpdated(gameID, sceneID, img.ID, overlay, game.GameMasterID)
+	}
+
+	return nil
+}
+
+// broadcastImageTokenUpdated sends the fresh overlay to the GM in full and to every other player
+// masked (hidden HP bars keep their Hidden flag but lose their numbers).
+func (s *GameService) broadcastImageTokenUpdated(gameID string, sceneID, imageID primitive.ObjectID, overlay *models.ImageTokenOverlay, gmID primitive.ObjectID) {
+	s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageTokenUpdated, map[string]interface{}{
+		"sceneId":      sceneID.Hex(),
+		"imageId":      imageID.Hex(),
+		"tokenOverlay": overlay,
+	}, []string{gmID.Hex()})
+
+	s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageTokenUpdated, map[string]interface{}{
+		"sceneId":      sceneID.Hex(),
+		"imageId":      imageID.Hex(),
+		"tokenOverlay": MaskImageTokenForPlayer(overlay),
+	}, gmID.Hex())
+}
+
+// MaskImageTokenForPlayer returns a copy of the overlay safe to send to a non-GM. A Hidden HP bar
+// has its Current/Max zeroed (the client filters it out, so it becomes invisible without leaking
+// the value). A Hidden ring slot is blanked to an empty slot — keeping its index (ring position)
+// stable while making it invisible. Returns nil unchanged.
+func MaskImageTokenForPlayer(overlay *models.ImageTokenOverlay) *models.ImageTokenOverlay {
+	if overlay == nil {
+		return nil
+	}
+	masked := *overlay
+	if len(overlay.HPBars) > 0 {
+		bars := make([]models.ImageTokenHPBar, len(overlay.HPBars))
+		copy(bars, overlay.HPBars)
+		for i := range bars {
+			if bars[i].Hidden {
+				bars[i].Current = 0
+				bars[i].Max = 0
+			}
+		}
+		masked.HPBars = bars
+	}
+	if len(overlay.Slots) > 0 {
+		slots := make([]models.ImageTokenSlot, len(overlay.Slots))
+		copy(slots, overlay.Slots)
+		for i := range slots {
+			if slots[i].Hidden {
+				// Blank it but keep the id + position so remaining slots don't shift angles.
+				slots[i] = models.ImageTokenSlot{ID: slots[i].ID, Type: "empty"}
+			}
+		}
+		masked.Slots = slots
+	}
+	return &masked
+}
+
+// FilterSceneImageTokensForUser masks hidden HP bars on every tokens-layer image for a non-GM
+// viewer, in place on the game payload. The GM sees the real numbers untouched. Mirrors
+// FilterNotesForUser — called wherever the full game state is serialized to a specific viewer.
+func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID) {
+	if game.GameMasterID == userID {
+		return
+	}
+	for si := range game.Scenes {
+		for ii := range game.Scenes[si].Images {
+			if game.Scenes[si].Images[ii].TokenOverlay != nil {
+				game.Scenes[si].Images[ii].TokenOverlay = MaskImageTokenForPlayer(game.Scenes[si].Images[ii].TokenOverlay)
+			}
+		}
+	}
 }
 
 // PlayTrackPersistRequest holds the data for starting playback.

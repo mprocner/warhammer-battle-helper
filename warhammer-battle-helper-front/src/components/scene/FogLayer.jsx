@@ -226,6 +226,7 @@ const FogLayer = ({
   // Mouse event handlers — only active when GM is editing fog layer
   const handleMouseDown = useCallback((e) => {
     if (!isEditingFog) return;
+    if (e.button !== 0) return; // right button → pan (handled by the viewport), never edit fog
     e.preventDefault();
     e.stopPropagation();
 

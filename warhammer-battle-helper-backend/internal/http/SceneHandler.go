@@ -345,3 +345,131 @@ func (h *SceneHandler) DeleteSceneImage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Image deleted"})
 }
+
+// sceneImageIDs parses the :sceneId/:imageId params, writing a 400 and returning ok=false on error.
+func sceneImageIDs(c *gin.Context) (sceneID, imageID primitive.ObjectID, ok bool) {
+	var err error
+	if sceneID, err = primitive.ObjectIDFromHex(c.Param("sceneId")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+	if imageID, err = primitive.ObjectIDFromHex(c.Param("imageId")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid image ID"})
+		return
+	}
+	return sceneID, imageID, true
+}
+
+// PatchSceneImageTokenHP steps or sets one HP bar on an image-token (GM only).
+func (h *SceneHandler) PatchSceneImageTokenHP(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, imageID, ok := sceneImageIDs(c)
+	if !ok {
+		return
+	}
+
+	var req models.PatchImageTokenHPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.PatchSceneImageTokenHP(gameID, sceneID, imageID, userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Token HP updated"})
+}
+
+// PatchSceneImageTokenSlot bumps an icon slot's level or sets a number slot's value (GM only).
+func (h *SceneHandler) PatchSceneImageTokenSlot(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, imageID, ok := sceneImageIDs(c)
+	if !ok {
+		return
+	}
+
+	var req models.PatchImageTokenSlotRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.PatchSceneImageTokenSlot(gameID, sceneID, imageID, userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Token slot updated"})
+}
+
+// DuplicateSceneImage creates N copies of a scene image next to the original (GM only).
+func (h *SceneHandler) DuplicateSceneImage(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, imageID, ok := sceneImageIDs(c)
+	if !ok {
+		return
+	}
+
+	var req models.DuplicateSceneImageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.DuplicateSceneImage(gameID, sceneID, imageID, userID, req.Count); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Image duplicated"})
+}
+
+// ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in the
+// scene (GM only).
+func (h *SceneHandler) ApplyImageTokenSlot(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, err := primitive.ObjectIDFromHex(c.Param("sceneId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+
+	var req models.ApplyImageTokenSlotRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.ApplyImageTokenSlot(gameID, sceneID, userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Token slot shared"})
+}

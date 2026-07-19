@@ -8,7 +8,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  /* Above MUI dialogs (default 1300) so a confirmation shown from within one stays on top. */
+  z-index: 1400;
 }
 
 .confirm-modal {

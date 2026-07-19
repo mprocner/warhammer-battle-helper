@@ -307,6 +307,7 @@ const DrawingLayer = ({
 
   const handleMouseDown = useCallback((e) => {
     if (!isDrawingMode) return;
+    if (e.button !== 0) return; // right button → pan (handled by the viewport), never draw
     e.preventDefault();
     e.stopPropagation();
 

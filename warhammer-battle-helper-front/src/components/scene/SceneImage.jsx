@@ -1,15 +1,16 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateSceneImage, deleteSceneImage } from '../../api/scenes';
+import { updateSceneImage, deleteSceneImage, duplicateSceneImage } from '../../api/scenes';
 import { resolveFileUrl } from '../../utils/fileUrl';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
+import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, selected = false, onSelectImageToken }) => {
   const { t } = useTranslation();
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
@@ -252,6 +253,19 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, [isGM]);
 
+  const isToken = image.layer === 'tokens';
+
+  // --- Click-to-select (tokens layer, GM only) ---
+  // Selecting expands the ring — a GM editing affordance. Players can't select: their visible
+  // slots/HP stay in the rest ("sun") position on the token. A real drag ends with a native click
+  // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
+  const handleClick = useCallback((e) => {
+    if (!isToken || !isGM || !onSelectImageToken) return;
+    if (justFinishedDraggingRef.current || isDragging) return;
+    e.stopPropagation();
+    onSelectImageToken(image.id);
+  }, [isToken, isGM, onSelectImageToken, isDragging, image.id]);
+
   const handleZIndexChange = async (newZIndex) => {
     try {
       await updateSceneImage(gameId, sceneId, image.id, { zIndex: newZIndex });
@@ -275,6 +289,15 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
       await deleteSceneImage(gameId, sceneId, image.id);
     } catch (err) {
       console.error('Failed to delete scene image:', err);
+    }
+    setContextMenu(null);
+  };
+
+  const handleDuplicate = async (count) => {
+    try {
+      await duplicateSceneImage(gameId, sceneId, image.id, count);
+    } catch (err) {
+      console.error('Failed to duplicate scene image:', err);
     }
     setContextMenu(null);
   };
@@ -317,7 +340,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
     <>
       <div
         ref={containerRef}
-        className={`scene-image ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${image.locked ? 'scene-image--locked' : ''}`}
+        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''}`}
         style={{
           position: 'absolute',
           left: pos.x,
@@ -326,10 +349,11 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM && !image.locked && editingLayer === 'grid' ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          cursor: isGM && !image.locked && editingLayer === 'grid' ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
           transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}
+        onClick={handleClick}
         onContextMenu={handleContextMenu}
       >
         <img
@@ -348,6 +372,18 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
         {/* GM layer badge */}
         {image.layer === 'gm' && (
           <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
+        )}
+
+        {/* States/HP ring for tokens-layer images */}
+        {isToken && (
+          <ImageTokenOverlay
+            image={image}
+            gameId={gameId}
+            sceneId={sceneId}
+            selected={selected}
+            canEdit={isGM}
+            gameSystem={gameSystem}
+          />
         )}
 
         {/* Lock badge (GM only) */}
@@ -389,6 +425,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer }) => {
           onResizeToGrid={handleResizeToGrid}
           onResetRotation={handleResetRotation}
           onLockToggle={handleLockToggle}
+          onDuplicate={handleDuplicate}
           onClose={() => setContextMenu(null)}
         />
       )}

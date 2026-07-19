@@ -58,6 +58,31 @@ export const deleteSceneImage = async (gameId, sceneId, imageId) => {
   return response.data;
 };
 
+// Creates `count` copies of an image next to the original (GM only). Copies keep the token overlay config.
+export const duplicateSceneImage = async (gameId, sceneId, imageId, count) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/images/${imageId}/duplicate`, { count });
+  return response.data;
+};
+
+// Steps or sets one HP bar on an image-token (GM only). data = { barId, delta } or { barId, value }.
+export const patchSceneImageTokenHP = async (gameId, sceneId, imageId, data) => {
+  const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/images/${imageId}/tokenOverlay/hp`, data);
+  return response.data;
+};
+
+// Bumps an icon slot level or sets a number slot value (GM only). data = { slotId, delta } or { slotId, number }.
+export const patchSceneImageTokenSlot = async (gameId, sceneId, imageId, data) => {
+  const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/images/${imageId}/tokenOverlay/slot`, data);
+  return response.data;
+};
+
+// Shares/unshares one ring position across all tokens-layer images in the scene (GM only).
+// data = { position, locked, slot? }. slot required only when locked=true.
+export const applyImageTokenSlot = async (gameId, sceneId, data) => {
+  const response = await axiosInstance.put(`/games/${gameId}/scenes/${sceneId}/tokenSlotConfig`, data);
+  return response.data;
+};
+
 export const toggleFog = async (gameId, sceneId, data) => {
   const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/fog`, data);
   return response.data;

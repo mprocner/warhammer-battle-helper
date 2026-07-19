@@ -10509,6 +10509,17 @@ align-items: center;
 }
 .token-overlay--selected .token-slot--num { min-width: 22px; height: 22px; }
 .token-slot__val { font-size: 9px; font-weight: 800; line-height: 1; }
+/* Editable value (selected + can-edit): looks like .token-slot__val, no chrome, native spinners
+   hidden (we keep the custom ▲/▼). Pointer-events on so it can be focused despite the slot's
+   pointer-events rules. */
+.token-slot__input {
+  width: 22px; border: none; background: transparent; text-align: center;
+  font: 800 9px/1 Georgia, serif; color: #2a1f12; padding: 0; margin: 0;
+  pointer-events: auto; -moz-appearance: textfield;
+}
+.token-slot__input:focus { outline: none; }
+.token-slot__input::-webkit-outer-spin-button,
+.token-slot__input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .token-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; line-height: 1; }
 .token-step {
   position: absolute; right: -13px; top: 0; height: 100%; width: 12px;
@@ -10580,3 +10591,72 @@ align-items: center;
 .token-kill-toggle:not(.is-killed) { filter: grayscale(0.6); opacity: 0.8; background: rgba(20, 12, 4, 0.7); }
 .token-kill-toggle:not(.is-killed):hover { filter: grayscale(0.2); opacity: 0.95; border-color: #e04040; color: #ffbcbc; }
 .token-kill-toggle.is-killed { background: #c0201f; border-color: #7a1010; color: #fff; }
+
+/* ── Image-token overlay (states/HP ring on a tokens-layer scene image) ──
+   Reuses the character token overlay classes (token-overlay, token-hp, token-slot, token-step)
+   for identical visuals; only the multi-bar stacking, per-bar label, gear and kill are unique. */
+
+/* HP bars — stacked above the token centre, growing upward. Each bar's track/fill/text reuse the
+   character .token-hp__* classes; this owns only layout (the character overlay has a single bar). */
+.img-token-hp-stack {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, calc(-50% - 46px));
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  width: 60px;
+  transition: transform .25s ease, width .25s ease;
+}
+.img-token-hp-stack--expanded {
+  transform: translate(-50%, calc(-50% - 58px));
+  width: 96px;
+}
+.img-token-hp {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 7px;
+}
+.img-token-hp-stack--expanded .img-token-hp { height: 15px; }
+/* .token-hp__text is 6px by default (its expanded rule is scoped to .token-hp--expanded, which we
+   don't use); bump it here when the stack is expanded to match the character bar. */
+.img-token-hp-stack--expanded .token-hp__text { font-size: 8px; }
+
+/* Config gear (GM, left equator). Root is pointer-events:none, so opt back in. */
+.img-token-gear {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer;
+  pointer-events: auto;
+  background: rgba(20,12,4,0.75); border: 1px solid #c9975b; color: #f0d8b0;
+}
+.img-token-gear:hover { background: #7a5c42; color: #fff; }
+
+/* Kill marker — red X across the image, scales with it (unlike the fixed 50px character one). */
+.img-token-kill-strike {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden; z-index: 8;
+}
+.img-token-kill-strike span {
+  position: absolute; left: 50%; top: 50%;
+  width: 130%; height: 6px;
+  background: #d21f1f; border-radius: 3px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.75);
+  transform-origin: center;
+}
+.img-token-kill-strike span:first-child { transform: translate(-50%, -50%) rotate(45deg); }
+.img-token-kill-strike span:last-child  { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* Kill toggle (GM, left equator). */
+.img-token-kill-toggle {
+  position: absolute;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid #b03030; background: rgba(14,9,3,0.86); color: #e59a9a;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7); z-index: 9;
+}
+.img-token-kill-toggle:not(.is-killed) { filter: grayscale(0.6); opacity: 0.8; background: rgba(20,12,4,0.7); }
+.img-token-kill-toggle:not(.is-killed):hover { filter: grayscale(0.2); opacity: 0.95; border-color: #e04040; color: #ffbcbc; }
+.img-token-kill-toggle.is-killed { background: #c0201f; border-color: #7a1010; color: #fff; }

@@ -551,6 +551,26 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         });
         break;
 
+      case WS_EVENTS.SCENE_IMAGE_TOKEN_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId: sitSceneId, imageId: sitImageId, tokenOverlay } = message.payload;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === sitSceneId
+                ? {
+                    ...s,
+                    images: (s.images || []).map(img =>
+                      img.id === sitImageId ? { ...img, tokenOverlay } : img
+                    ),
+                  }
+                : s
+            ),
+          };
+        });
+        break;
+
       case WS_EVENTS.FOG_TOGGLED:
         setGameState(prev => {
           if (!prev) return prev;

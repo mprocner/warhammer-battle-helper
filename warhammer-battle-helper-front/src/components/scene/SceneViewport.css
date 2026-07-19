@@ -273,7 +273,9 @@
   transition: border-color 0.15s;
 }
 
-.scene-image:hover {
+/* Hover frame only for the GM — players can't move/edit images, so the frame (which suggests
+   they can) must not appear for them. */
+.scene-image--editable:hover {
   border-color: rgba(201, 151, 91, 0.6);
 }
 
@@ -304,6 +306,12 @@
   pointer-events: none;
   user-select: none;
   line-height: 1.4;
+}
+
+/* Selected token image gets a subtle ring so it reads as "active" while its overlay is expanded. */
+.scene-image--token.scene-image--selected {
+  outline: 2px solid rgba(201, 151, 91, 0.9);
+  outline-offset: 1px;
 }
 
 .scene-image__lock-badge {
@@ -423,6 +431,35 @@
 
 .scene-context-menu__item:hover {
   background: #e8d4b8;
+}
+
+.scene-context-menu__label {
+  padding: 4px 12px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7a5c42;
+}
+
+.scene-context-menu__item--active {
+  font-weight: 700;
+  color: #7a5c42;
+}
+
+.scene-context-menu__item--duplicate {
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.scene-context-menu__dup-input {
+  width: 44px;
+  padding: 2px 4px;
+  border: 1px solid #d4a574;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  text-align: center;
 }
 
 .scene-context-menu__item--danger {

@@ -23,7 +23,8 @@
     "expand": "Expand",
     "minimize": "Minimize",
     "retry": "Retry",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "add": "Add"
   },
   "navigation": {
     "title": "RollHammer",
@@ -804,7 +805,13 @@
     "musicLinked": "Music linked",
     "musicSearch": "Search tracks and playlists...",
     "musicLoadError": "Failed to load music library",
-    "musicLoop": "Loop"
+    "musicLoop": "Loop",
+    "tokenBadge": "TOKEN",
+    "layerBackground": "Background",
+    "layerTokens": "Tokens",
+    "layerGm": "GM Layer",
+    "duplicate": "Duplicate",
+    "times": "times"
   },
   "files": {
     "title": "Files",
@@ -1514,5 +1521,25 @@
       },
       "holdHint": "Click dice to hold, then re-roll or confirm"
     }
+  },
+  "imageToken": {
+    "configure": "Configure token",
+    "configTitle": "Token configuration",
+    "hpBars": "Bars",
+    "noBars": "No HP bars yet.",
+    "barLabel": "Label",
+    "barCurrent": "Current",
+    "barMax": "Max",
+    "barColor": "Bar color",
+    "hiddenFromPlayers": "Hidden from players",
+    "visibleToPlayers": "Visible to players",
+    "statesNumbers": "States & numbers",
+    "noSlots": "No states or numbers yet.",
+    "number": "Number",
+    "sunHint": "Click a ring position to add a state or number counter.",
+    "shareAll": "Set for all tokens on the scene",
+    "unshareAll": "Unlock for all tokens on the scene",
+    "shareAllConfirm": "Set this slot for all tokens on the scene? Their live values reset; editing this slot will then change every token.",
+    "unshareAllConfirm": "Unlock this slot for all tokens on the scene? Edits will affect only this token again."
   }
 }

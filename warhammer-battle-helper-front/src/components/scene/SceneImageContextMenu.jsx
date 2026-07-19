@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
-const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onResetRotation, onLockToggle, onDelete, onClose }) => {
+const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onResetRotation, onLockToggle, onDuplicate, onDelete, onClose }) => {
   const { t } = useTranslation();
   const [zIndex, setZIndex] = useState(image.zIndex || 0);
+  const [dupCount, setDupCount] = useState(1);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -13,11 +14,22 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
         onClose();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // Capture phase: fires on document before any element's onMouseDown, so it works even over
+    // images / drawing / fog layers whose handlers call stopPropagation (which would otherwise
+    // keep a bubble-phase listener from ever seeing the click). Also catch right-clicks/pans.
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('contextmenu', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('contextmenu', handleClickOutside, true);
+    };
   }, [onClose]);
 
-  const targetLayer = image.layer === 'background' ? 'gm' : 'background';
+  const layers = [
+    { key: 'background', label: t('scenes.layerBackground') },
+    { key: 'tokens', label: t('scenes.layerTokens') },
+    { key: 'gm', label: t('scenes.layerGm') },
+  ];
 
   return createPortal(
     <div
@@ -51,16 +63,37 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
 
       <div className="scene-context-menu__divider" />
 
-      {/* Layer toggle */}
-      <button
-        className="scene-context-menu__item"
-        onClick={() => onLayerChange(targetLayer)}
+      {/* Layer selection */}
+      <div className="scene-context-menu__label">{t('scenes.layer')}</div>
+      {layers.map(l => (
+        <button
+          key={l.key}
+          className={`scene-context-menu__item${image.layer === l.key ? ' scene-context-menu__item--active' : ''}`}
+          onClick={() => onLayerChange(l.key)}
+        >
+          {image.layer === l.key ? '✓ ' : '   '}{l.label}
+        </button>
+      ))}
+
+      <div className="scene-context-menu__divider" />
+
+      {/* Duplicate N× — the whole row triggers it except the number input. */}
+      <div
+        className="scene-context-menu__item scene-context-menu__item--duplicate"
+        onClick={() => onDuplicate(Math.max(1, parseInt(dupCount, 10) || 1))}
       >
-        {image.layer === 'background'
-          ? t('scenes.moveToGmLayer')
-          : t('scenes.moveToBackground')
-        }
-      </button>
+        <span>{t('scenes.duplicate')}</span>
+        <input
+          type="number"
+          min="1"
+          value={dupCount}
+          onChange={(e) => setDupCount(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="scene-context-menu__dup-input"
+        />
+        <span>{t('scenes.times')}</span>
+      </div>
 
       <div className="scene-context-menu__divider" />
 

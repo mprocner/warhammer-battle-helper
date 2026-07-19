@@ -5,6 +5,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { resolveField } from '../../utils/tokenFieldResolver';
 import { usePortalTooltip } from '../common/PortalTooltip';
+import NumberSlotInput from './NumberSlotInput';
 
 // The kill toggle sits on the token's right equator (3 o'clock), beyond the ring. A selected
 // slot reaches r≈53px (RING_RADIUS 42 + ~11px half-slot), and a *number* slot there also docks
@@ -110,6 +111,10 @@ export default function TokenOverlay({ character, config, selected, canEdit, gam
     const cur = character.tokenOverlay?.[slot.id]?.number ?? 0;
     patch('tokenOverlay', { slotId: slot.id, number: cur + delta });
   };
+  const setNumber = (slot, value) => {
+    if (!canEdit) return;
+    patch('tokenOverlay', { slotId: slot.id, number: value });
+  };
   const cycleSelect = (slot) => {
     if (!canEdit || !(slot.selectOptions || []).length) return;
     const cur = character.tokenOverlay?.[slot.id]?.select;
@@ -188,16 +193,18 @@ export default function TokenOverlay({ character, config, selected, canEdit, gam
         const display = val?.value;
         const cap = slot.type === 'number' ? slot.numberLabel
           : slot.type === 'field' ? slot.field?.label : '';
-        const showSteppers = selected && canEdit && slot.type === 'number';
+        const editableNumber = selected && canEdit && slot.type === 'number';
         return (
           <div key={slot.id}
             className="token-slot token-slot--num"
             style={posStyle}
             title={cap || ''}
             onClick={(e) => { if (selected && slot.type === 'select') { e.stopPropagation(); cycleSelect(slot); } }}>
-            <span className="token-slot__val">{display ?? '–'}</span>
+            {editableNumber
+              ? <NumberSlotInput value={character.tokenOverlay?.[slot.id]?.number ?? 0} onCommit={(n) => setNumber(slot, n)} />
+              : <span className="token-slot__val">{display ?? '–'}</span>}
             {cap && <span className="token-slot__cap">{cap}</span>}
-            {showSteppers && (
+            {editableNumber && (
               <div className="token-step">
                 <button onClick={(e) => { e.stopPropagation(); stepNumber(slot, +1); }}>▲</button>
                 <button onClick={(e) => { e.stopPropagation(); stepNumber(slot, -1); }}>▼</button>

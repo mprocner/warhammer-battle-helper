@@ -75,6 +75,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Active token on the grid (sun/ring expansion) — independent of the card. Id only,
   // because FightArea resolves the live character from fightZones (like resolveCharacter).
   const [activeTokenId, setActiveTokenId] = useState(null);
+  // Selected image-token (tokens-layer scene image with an expanded ring). Mutually exclusive
+  // with activeTokenId — only one ring is open at a time, character or image.
+  const [selectedImageTokenId, setSelectedImageTokenId] = useState(null);
 
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
@@ -186,12 +189,23 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
     // Clicking the already-active token toggles it off (same UX as the card toggle).
     setActiveTokenId(prev => (prev === character.id ? null : character.id));
+    setSelectedImageTokenId(null); // one ring open at a time
   };
 
-  // Clear the active token — fired when clicking anywhere on the map outside a token
+  // Select an image-token (tokens-layer scene image). Toggles off when re-clicked, and clears any
+  // active character token so only one ring is open at once.
+  const handleSelectImageToken = useCallback((imageId) => {
+    setSelectedImageTokenId(prev => (prev === imageId ? null : imageId));
+    setActiveTokenId(null);
+  }, []);
+
+  // Clear any expanded ring — fired when clicking anywhere on the map outside a token
   // (background image, empty grid). Own-token clicks stopPropagation in FightArea, so
   // activating a token doesn't immediately clear it.
-  const clearActiveToken = useCallback(() => setActiveTokenId(null), []);
+  const clearActiveToken = useCallback(() => {
+    setActiveTokenId(null);
+    setSelectedImageTokenId(null);
+  }, []);
 
   // Multiplayer: Add character to grid (scene-aware)
   const handleAddCharacterToGrid = async (characterId, positionX, positionY, isEnemy) => {
@@ -982,7 +996,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken}>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem}>
             <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}

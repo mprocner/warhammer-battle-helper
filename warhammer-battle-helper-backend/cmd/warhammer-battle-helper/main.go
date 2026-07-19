@@ -253,6 +253,10 @@ func main() {
 	game.POST("/scenes/:sceneId/images", sceneHandler.AddSceneImage)
 	game.PUT("/scenes/:sceneId/images/:imageId", sceneHandler.UpdateSceneImage)
 	game.DELETE("/scenes/:sceneId/images/:imageId", sceneHandler.DeleteSceneImage)
+	game.POST("/scenes/:sceneId/images/:imageId/duplicate", sceneHandler.DuplicateSceneImage)
+	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/hp", sceneHandler.PatchSceneImageTokenHP)
+	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/slot", sceneHandler.PatchSceneImageTokenSlot)
+	game.PUT("/scenes/:sceneId/tokenSlotConfig", sceneHandler.ApplyImageTokenSlot)
 
 	// Fog of war
 	game.PATCH("/scenes/:sceneId/fog", fogHandler.ToggleFog)

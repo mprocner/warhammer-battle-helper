@@ -13,6 +13,7 @@ const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 const PING_HOLD_MS = 500;
+const RIGHT_PAN_THRESHOLD = 5; // px of movement before a right-drag counts as a pan (not a menu-click)
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
@@ -22,6 +23,7 @@ const SceneViewport = ({
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
+  selectedImageTokenId = null, onSelectImageToken, gameSystem = 'warhammer4e',
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
@@ -39,6 +41,16 @@ const SceneViewport = ({
   const [isCovering, setIsCovering] = useState(false);
 
   const panStartRef = useRef(null);
+  // Right-button pan works on ANY layer (grid/fog/drawing) and in both schemes.
+  // rightPanStartRef holds the drag origin; didRightPanRef marks that a real drag happened.
+  // rightActiveRef is true for the whole press→release: while set, every *native* (trusted)
+  // contextmenu is suppressed. We can't decide click-vs-drag when the menu fires (Chrome/macOS
+  // fires it on mousedown, before any movement), so we suppress unconditionally and, on mouseup,
+  // *replay* a synthetic contextmenu only if it turned out to be a click. This is ordering-proof:
+  // works whether the browser fires contextmenu on mousedown (macOS) or after mouseup (Windows).
+  const rightPanStartRef = useRef(null);
+  const didRightPanRef = useRef(false);
+  const rightActiveRef = useRef(false);
   const [textInputPos, setTextInputPos] = useState(null);
   const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
@@ -245,6 +257,9 @@ const SceneViewport = ({
   }, [controlScheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleViewportMouseDown = useCallback((e) => {
+    // Left button — modern-scheme pan on the grid layer only (existing behaviour).
+    // Right-button pan is handled via Pointer Events (handleViewportPointerDown) because
+    // Chrome on macOS never fires `mouseup` for the secondary button.
     if (schemeRef.current !== 'modern') return;
     if (e.button !== 0 || editingLayerRef.current !== null) return;
     if (e.target.closest('.character-wrapper')) return;
@@ -256,6 +271,18 @@ const SceneViewport = ({
       startY: panOffsetRef.current.y,
     };
     setIsPanning(true);
+  }, []);
+
+  // Suppress every native contextmenu during a right-button interaction. Capture phase runs
+  // before the per-image onContextMenu, so stopPropagation keeps that menu from opening. The
+  // menu for a genuine click is re-created by replaying a synthetic event on pointerup (below),
+  // and that replay is trusted-false, so we let it through here.
+  const handleViewportContextMenu = useCallback((e) => {
+    if (!e.isTrusted) return; // our own replayed event → allow it to open the image menu
+    if (rightActiveRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }, []);
 
   useEffect(() => {
@@ -277,6 +304,70 @@ const SceneViewport = ({
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
+    };
+  }, []);
+
+  // Right-button pan — Pointer Events (not mouse events) because Chrome/macOS never fires
+  // `mouseup` for the secondary button, only `pointerup`. Works on any layer and both schemes.
+  const handleViewportPointerDown = useCallback((e) => {
+    if (e.button !== 2) return;
+    rightPanStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      startX: panOffsetRef.current.x,
+      startY: panOffsetRef.current.y,
+      scrollLeft: viewportRef.current?.scrollLeft || 0,
+      scrollTop: viewportRef.current?.scrollTop || 0,
+    };
+    didRightPanRef.current = false;
+    rightActiveRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    const handlePointerMove = (e) => {
+      const r = rightPanStartRef.current;
+      if (!r) return;
+      const dx = e.clientX - r.mouseX;
+      const dy = e.clientY - r.mouseY;
+      if (!didRightPanRef.current && Math.hypot(dx, dy) > RIGHT_PAN_THRESHOLD) {
+        didRightPanRef.current = true;
+        setIsPanning(true);
+      }
+      if (!didRightPanRef.current) return;
+      if (schemeRef.current === 'classic') {
+        const el = viewportRef.current;
+        if (el) {
+          el.scrollLeft = r.scrollLeft - dx;
+          el.scrollTop = r.scrollTop - dy;
+        }
+      } else {
+        const newOffset = { x: r.startX + dx, y: r.startY + dy };
+        setPanOffset(newOffset);
+        panOffsetRef.current = newOffset;
+      }
+    };
+    const handlePointerUp = (e) => {
+      if (!rightPanStartRef.current) return;
+      const wasDrag = didRightPanRef.current;
+      rightPanStartRef.current = null;
+      setIsPanning(false);
+      if (!wasDrag) {
+        // Plain right-click → replay a contextmenu on the element under the cursor so the image
+        // menu opens (the trusted one was suppressed on press to keep drags menu-free).
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        el?.dispatchEvent(new MouseEvent('contextmenu', {
+          bubbles: true, cancelable: true, view: window, clientX: e.clientX, clientY: e.clientY,
+        }));
+      }
+      didRightPanRef.current = false;
+      // Clear on the next tick so a trailing (Windows-order) trusted contextmenu is still suppressed.
+      setTimeout(() => { rightActiveRef.current = false; }, 0);
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, []);
 
@@ -367,6 +458,7 @@ const SceneViewport = ({
 
   const backgroundImages = (displayedScene?.images || []).filter(img => img.layer === 'background');
   const gmImages = (displayedScene?.images || []).filter(img => img.layer === 'gm');
+  const tokenImages = (displayedScene?.images || []).filter(img => img.layer === 'tokens');
   const dGridWidth = displayedScene?.gridWidth ?? gridWidth;
   const dGridHeight = displayedScene?.gridHeight ?? gridHeight;
 
@@ -424,6 +516,8 @@ const SceneViewport = ({
         <div
           ref={viewportRef}
           onMouseDownCapture={handleViewportMouseDown}
+          onPointerDownCapture={handleViewportPointerDown}
+          onContextMenuCapture={handleViewportContextMenu}
           className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : (controlScheme === 'modern' && editingLayer === null) ? ' scene-viewport--grab' : ''}`}
         >
           <div
@@ -467,6 +561,20 @@ const SceneViewport = ({
                 >
                   {children}
                 </div>
+
+                {/* Tokens layer — visible to ALL users (unlike gm). Images here carry a
+                    states/HP ring; clicking one expands it. */}
+                <SceneLayer
+                  images={tokenImages}
+                  layerName="tokens"
+                  isGM={isGM}
+                  gameId={gameId}
+                  sceneId={displayedScene?.id}
+                  editingLayer={editingLayer}
+                  gameSystem={gameSystem}
+                  selectedImageTokenId={selectedImageTokenId}
+                  onSelectImageToken={onSelectImageToken}
+                />
 
                 {isGM && (
                   <SceneLayer

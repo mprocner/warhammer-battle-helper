@@ -23,7 +23,8 @@
     "expand": "Rozwiń",
     "minimize": "Minimalizuj",
     "retry": "Ponów",
-    "saving": "Zapisywanie..."
+    "saving": "Zapisywanie...",
+    "add": "Dodaj"
   },
   "navigation": {
     "title": "RollHammer",
@@ -804,7 +805,13 @@
     "musicLinked": "Muzyka przypisana",
     "musicSearch": "Szukaj tracków i playlist...",
     "musicLoadError": "Nie udało się załadować biblioteki muzycznej",
-    "musicLoop": "Zapętlenie"
+    "musicLoop": "Zapętlenie",
+    "tokenBadge": "TOKEN",
+    "layerBackground": "Tło",
+    "layerTokens": "Tokeny",
+    "layerGm": "Warstwa MG",
+    "duplicate": "Duplikuj",
+    "times": "razy"
   },
   "files": {
     "title": "Pliki",
@@ -1514,5 +1521,25 @@
       },
       "holdHint": "Kliknij kości, które chcesz zachować, a następnie przerzuć lub potwierdź rękę"
     }
+  },
+  "imageToken": {
+    "configure": "Konfiguruj token",
+    "configTitle": "Konfiguracja tokena",
+    "hpBars": "Paski",
+    "noBars": "Brak pasków HP.",
+    "barLabel": "Etykieta",
+    "barCurrent": "Obecne",
+    "barMax": "Maks.",
+    "barColor": "Kolor paska",
+    "hiddenFromPlayers": "Ukryte przed graczami",
+    "visibleToPlayers": "Widoczne dla graczy",
+    "statesNumbers": "Stany i liczby",
+    "noSlots": "Brak stanów ani liczb.",
+    "number": "Liczba",
+    "sunHint": "Kliknij pozycję w pierścieniu, aby dodać stan lub licznik.",
+    "shareAll": "Ustaw dla wszystkich tokenów na scenie",
+    "unshareAll": "Odblokuj dla wszystkich tokenów na scenie",
+    "shareAllConfirm": "Ustawić ten slot dla wszystkich tokenów na scenie? Wartości zostaną zresetowane, a edycja tego slotu będzie zmieniać wszystkie tokeny.",
+    "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów na scenie? Zmiany będą znów dotyczyć tylko tego tokena."
   }
 }

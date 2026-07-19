@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  TextField, MenuItem, Box, Typography, IconButton,
+  TextField, MenuItem, Box, Typography, IconButton, Switch, FormControlLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
 import { TOKEN_ICONS, resolveIcon } from '../../utils/tokenIcons';
@@ -18,9 +18,13 @@ function makeConditionKey() {
 // allow number/field/select and always show a caption input.
 export default function TokenSlotConfigModal({
   open, slot, allowedTypes, isSquare, fields, presetConditions = [], positionLabel, onSave, onCancel,
+  allowHidden = false,
 }) {
   const { t } = useTranslation();
   const [type, setType] = useState(slot?.type || allowedTypes[0]);
+  // Per-slot player visibility (image tokens only). Defaults to hidden for a fresh slot; an
+  // existing slot keeps whatever was saved.
+  const [hidden, setHidden] = useState(slot?.hidden ?? true);
   const [icon, setIcon] = useState(slot?.icon || '');
   const [conditionKey, setConditionKey] = useState(slot?.conditionKey || '');
   const [conditionLabel, setConditionLabel] = useState(slot?.conditionLabel || '');
@@ -70,6 +74,7 @@ export default function TokenSlotConfigModal({
     } else if (type === 'select') {
       base.selectOptions = parsedOptions;
     }
+    if (allowHidden) base.hidden = hidden;
     onSave(base);
   };
 
@@ -216,6 +221,14 @@ export default function TokenSlotConfigModal({
               </Box>
             )}
           </Box>
+        )}
+
+        {allowHidden && type !== 'empty' && (
+          <FormControlLabel
+            sx={{ mt: 2, color: '#3a2f1f' }}
+            control={<Switch checked={!hidden} onChange={e => setHidden(!e.target.checked)} />}
+            label={t('imageToken.visibleToPlayers')}
+          />
         )}
       </DialogContent>
       <DialogActions>

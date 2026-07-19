@@ -159,7 +159,7 @@ type SceneImage struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	FileURL   string             `bson:"fileUrl" json:"fileUrl"`
 	FileName  string             `bson:"fileName" json:"fileName"`
-	Layer     string             `bson:"layer" json:"layer"` // "background" or "gm"
+	Layer     string             `bson:"layer" json:"layer"` // "background" | "gm" | "tokens"
 	X         float64            `bson:"x" json:"x"`
 	Y         float64            `bson:"y" json:"y"`
 	Width     float64            `bson:"width" json:"width"`
@@ -169,6 +169,59 @@ type SceneImage struct {
 	Rotation  float64            `bson:"rotation" json:"rotation"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+
+	// Killed marks a tokens-layer image as dead (red strike-through), like Character.Killed.
+	// Independent of TokenOverlay — a token can be killed with no ring configured.
+	Killed bool `bson:"killed,omitempty" json:"killed,omitempty"`
+
+	// TokenOverlay is the self-contained states/HP ring for an image on the "tokens" layer.
+	// Unlike the character overlay (TokenDisplayConfig layout kept separate from Character.States/
+	// TokenOverlay live values), config and live values are NOT split here: an image-token's
+	// overlay is never shared across documents, so there is nothing to decouple. nil/absent = the
+	// image carries no overlay (the default for background/gm images and for a tokens-layer image
+	// the GM has not configured yet).
+	TokenOverlay *ImageTokenOverlay `bson:"tokenOverlay,omitempty" json:"tokenOverlay,omitempty"`
+}
+
+// ImageTokenOverlay is the states/HP ring attached directly to one SceneImage. Every field here
+// is both "layout" and "live value" at once (see SceneImage.TokenOverlay).
+type ImageTokenOverlay struct {
+	Enabled bool              `bson:"enabled" json:"enabled"`
+	HPBars  []ImageTokenHPBar `bson:"hpBars,omitempty" json:"hpBars,omitempty"`
+	Slots   []ImageTokenSlot  `bson:"slots,omitempty" json:"slots,omitempty"` // ring, ordered; angle = index (-90 + i*45)
+}
+
+// ImageTokenHPBar is one HP/resource bar on the token (the "multiple HP bars" requirement).
+// Current/Max are stored as plain values — there is no stats document to bind to, unlike the
+// character overlay's FieldBinding HP bar. Hidden masks the values from players (see
+// service.MaskImageTokenForPlayer); Color is an accent on the label chip so stacked bars stay
+// distinguishable.
+type ImageTokenHPBar struct {
+	ID      string  `bson:"id" json:"id"`
+	Label   string  `bson:"label" json:"label"`
+	Current float64 `bson:"current" json:"current"`
+	Max     float64 `bson:"max" json:"max"`
+	Color   string  `bson:"color,omitempty" json:"color,omitempty"`
+	Hidden  bool    `bson:"hidden,omitempty" json:"hidden,omitempty"`
+}
+
+// ImageTokenSlot is one ring position: a condition icon (with a live level) or a manual number
+// chip (with a live value). No "field"/"select" types — images have no stats to bind to.
+// ConditionKey follows the same generated-once, rename-safe rule as TokenSlot.ConditionKey.
+type ImageTokenSlot struct {
+	ID             string  `bson:"id" json:"id"`
+	Type           string  `bson:"type" json:"type"` // "icon" | "number"
+	Icon           string  `bson:"icon,omitempty" json:"icon,omitempty"`
+	ConditionKey   string  `bson:"conditionKey,omitempty" json:"conditionKey,omitempty"`
+	ConditionLabel string  `bson:"conditionLabel,omitempty" json:"conditionLabel,omitempty"`
+	Level          int     `bson:"level,omitempty" json:"level,omitempty"` // 0 = inactive
+	NumberLabel    string  `bson:"numberLabel,omitempty" json:"numberLabel,omitempty"`
+	Number         float64 `bson:"number,omitempty" json:"number,omitempty"`
+	Hidden         bool    `bson:"hidden,omitempty" json:"hidden,omitempty"` // hidden from players (masked to empty)
+	// Locked = this ring position is shared across every tokens-layer image in the scene: its
+	// config is identical everywhere and editing it propagates to all. The live value
+	// (Level/Number) stays per-token. All tokens at this position carry the same Locked value.
+	Locked bool `bson:"locked,omitempty" json:"locked,omitempty"`
 }
 
 // FogPath represents a single brush stroke or shape that reveals or covers area in fog of war
@@ -385,4 +438,41 @@ type UpdateSceneImageRequest struct {
 	Layer    *string  `json:"layer,omitempty"`
 	Locked   *bool    `json:"locked,omitempty"`
 	Rotation *float64 `json:"rotation,omitempty"`
+	Killed   *bool    `json:"killed,omitempty"`
+	// TokenOverlay replaces the whole overlay layout+values in one shot. Used by the GM's config
+	// panel (add/remove/rename slots and HP bars); frequent per-play value bumps go through the
+	// atomic PATCH .../tokenOverlay/hp|slot endpoints instead.
+	TokenOverlay *ImageTokenOverlay `json:"tokenOverlay,omitempty"`
+}
+
+// PatchImageTokenHPRequest steps or sets one HP bar's current value. Exactly one of Delta/Value
+// is expected (delta = relative +/-, value = absolute); mirrors PatchStatFieldRequest.
+type PatchImageTokenHPRequest struct {
+	BarID string   `json:"barId" binding:"required"`
+	Delta *float64 `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+}
+
+// PatchImageTokenSlotRequest bumps an icon slot's level (Delta) or sets a number slot's value
+// (Number). Exactly one is expected, matching the slot's type.
+type PatchImageTokenSlotRequest struct {
+	SlotID string   `json:"slotId" binding:"required"`
+	Delta  *int     `json:"delta,omitempty"`
+	Number *float64 `json:"number,omitempty"`
+}
+
+// DuplicateSceneImageRequest asks for Count copies of a scene image, placed next to the original.
+type DuplicateSceneImageRequest struct {
+	Count int `json:"count"`
+}
+
+// ApplyImageTokenSlotRequest shares (or unshares) one ring position across every tokens-layer
+// image in the scene. Locked=true applies Slot's config to that position on all tokens (keeping
+// each token's own slot id, resetting the live Level/Number) and marks it locked. Locked=false
+// just clears the locked flag at that position on all tokens (config/values kept). Slot is
+// required only when Locked is true.
+type ApplyImageTokenSlotRequest struct {
+	Position int             `json:"position"`
+	Locked   bool            `json:"locked"`
+	Slot     *ImageTokenSlot `json:"slot,omitempty"`
 }

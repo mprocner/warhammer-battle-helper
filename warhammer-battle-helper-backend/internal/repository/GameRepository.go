@@ -1195,6 +1195,12 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	if req.Rotation != nil {
 		setFields["scenes.$[scene].images.$[img].rotation"] = *req.Rotation
 	}
+	if req.Killed != nil {
+		setFields["scenes.$[scene].images.$[img].killed"] = *req.Killed
+	}
+	if req.TokenOverlay != nil {
+		setFields["scenes.$[scene].images.$[img].tokenOverlay"] = *req.TokenOverlay
+	}
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{"$set": setFields}
@@ -1215,6 +1221,100 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	}
 
 	return nil
+}
+
+// GetSceneImage re-reads a single embedded scene image (used after an atomic overlay write to
+// broadcast the fresh value).
+func (r *GameRepository) GetSceneImage(gameID string, sceneID, imageID primitive.ObjectID) (*models.SceneImage, error) {
+	scene, err := r.GetScene(gameID, sceneID)
+	if err != nil {
+		return nil, err
+	}
+	for _, img := range scene.Images {
+		if img.ID == imageID {
+			return &img, nil
+		}
+	}
+	return nil, fmt.Errorf("image not found")
+}
+
+// tokenOverlayUpdate runs a three-level arrayFilters update reaching into one image's overlay
+// (scene → image → hp-bar or slot). The extra filter identifier (by string id) is supplied by the
+// caller. Shared by the atomic hp/slot mutators below.
+func (r *GameRepository) tokenOverlayUpdate(gameID string, sceneID, imageID primitive.ObjectID, thirdFilter bson.M, update bson.M) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{
+			bson.M{"scene._id": sceneID},
+			bson.M{"img._id": imageID},
+			thirdFilter,
+		},
+	})
+
+	result, err := r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to update image token overlay: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
+// IncSceneImageHPBar atomically adds delta to one HP bar's current value.
+func (r *GameRepository) IncSceneImageHPBar(gameID string, sceneID, imageID primitive.ObjectID, barID string, delta float64) error {
+	return r.tokenOverlayUpdate(gameID, sceneID, imageID, bson.M{"bar.id": barID}, bson.M{
+		"$inc": bson.M{"scenes.$[scene].images.$[img].tokenOverlay.hpBars.$[bar].current": delta},
+		"$set": bson.M{"scenes.$[scene].images.$[img].updatedAt": time.Now(), "updatedAt": time.Now()},
+	})
+}
+
+// SetSceneImageHPBar sets one HP bar's current value (used to clamp back into [0, max]).
+func (r *GameRepository) SetSceneImageHPBar(gameID string, sceneID, imageID primitive.ObjectID, barID string, value float64) error {
+	return r.tokenOverlayUpdate(gameID, sceneID, imageID, bson.M{"bar.id": barID}, bson.M{
+		"$set": bson.M{
+			"scenes.$[scene].images.$[img].tokenOverlay.hpBars.$[bar].current": value,
+			"scenes.$[scene].images.$[img].updatedAt":                          time.Now(),
+			"updatedAt": time.Now(),
+		},
+	})
+}
+
+// IncSceneImageSlot atomically bumps an icon slot's level.
+func (r *GameRepository) IncSceneImageSlot(gameID string, sceneID, imageID primitive.ObjectID, slotID string, deltaLevel int) error {
+	return r.tokenOverlayUpdate(gameID, sceneID, imageID, bson.M{"slot.id": slotID}, bson.M{
+		"$inc": bson.M{"scenes.$[scene].images.$[img].tokenOverlay.slots.$[slot].level": deltaLevel},
+		"$set": bson.M{"scenes.$[scene].images.$[img].updatedAt": time.Now(), "updatedAt": time.Now()},
+	})
+}
+
+// SetSceneImageSlotLevel sets an icon slot's level (used to clamp to >= 0).
+func (r *GameRepository) SetSceneImageSlotLevel(gameID string, sceneID, imageID primitive.ObjectID, slotID string, level int) error {
+	return r.tokenOverlayUpdate(gameID, sceneID, imageID, bson.M{"slot.id": slotID}, bson.M{
+		"$set": bson.M{
+			"scenes.$[scene].images.$[img].tokenOverlay.slots.$[slot].level": level,
+			"scenes.$[scene].images.$[img].updatedAt":                        time.Now(),
+			"updatedAt": time.Now(),
+		},
+	})
+}
+
+// SetSceneImageSlotNumber sets a number slot's value.
+func (r *GameRepository) SetSceneImageSlotNumber(gameID string, sceneID, imageID primitive.ObjectID, slotID string, number float64) error {
+	return r.tokenOverlayUpdate(gameID, sceneID, imageID, bson.M{"slot.id": slotID}, bson.M{
+		"$set": bson.M{
+			"scenes.$[scene].images.$[img].tokenOverlay.slots.$[slot].number": number,
+			"scenes.$[scene].images.$[img].updatedAt":                         time.Now(),
+			"updatedAt": time.Now(),
+		},
+	})
 }
 
 // DeleteSceneImage removes an image from a scene
