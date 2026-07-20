@@ -37,8 +37,7 @@ const RightPanel = ({
   isConnected,
   currentSceneId,
   onSceneChange,
-  editingLayer,
-  onEditingLayerChange,
+  imageEditLayer = 'background',
   musicState,
   audioRef,
   playerVolume,
@@ -164,8 +163,6 @@ const RightPanel = ({
             isConnected={isConnected}
             currentSceneId={currentSceneId}
             onSceneChange={onSceneChange}
-            editingLayer={editingLayer}
-            onEditingLayerChange={onEditingLayerChange}
           />
         );
       case 'handouts':
@@ -180,6 +177,7 @@ const RightPanel = ({
             token={token}
             gameId={gameId}
             currentSceneId={currentSceneId}
+            imageEditLayer={imageEditLayer}
           />
         );
       case 'music':

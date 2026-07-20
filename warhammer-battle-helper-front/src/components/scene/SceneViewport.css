@@ -284,6 +284,13 @@
   border-color: #c9975b;
 }
 
+/* Images on a layer other than the one currently armed for editing (Images mode):
+   dimmed and non-interactive so only the armed layer responds. */
+.scene-image--inert {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 .scene-image--gm {
   opacity: 0.5;
   outline: 1px dashed rgba(255, 255, 255, 0.5);

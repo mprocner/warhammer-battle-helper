@@ -58,7 +58,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
   const { audioRef, musicState, playerVolume, onPlayerVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
   const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools();
-  const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode } = useFogTools();
+  const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode, imageEditLayer, setImageEditLayer } = useFogTools();
 
   // Block browser back button and tab close while in game
   useEffect(() => {
@@ -900,6 +900,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
             participants={gameState?.participants || []}
             editingLayer={editingLayer}
             onEditingLayerChange={setEditingLayer}
+            imageEditLayer={imageEditLayer}
+            onImageEditLayerChange={setImageEditLayer}
             fogCoverMode={fogCoverMode}
             onFogCoverModeChange={setFogCoverMode}
             sendMessage={sendMessage}
@@ -937,8 +939,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
           isConnected={isConnected}
           currentSceneId={displayScene?.id}
           onSceneChange={setGmViewingSceneId}
-          editingLayer={editingLayer}
-          onEditingLayerChange={setEditingLayer}
+          imageEditLayer={imageEditLayer}
           musicState={musicState}
           audioRef={audioRef}
           playerVolume={playerVolume}

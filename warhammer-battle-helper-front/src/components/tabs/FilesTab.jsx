@@ -35,7 +35,7 @@ const fitToScene = (imgW, imgH, sceneW, sceneH) => {
 /**
  * Files tab - manages user's image files repository (GM only)
  */
-const FilesTab = ({ token, gameId, currentSceneId }) => {
+const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background' }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
 
@@ -207,7 +207,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
             await addSceneImage(gameId, currentSceneId, {
               fileUrl: file.fileUrl,
               fileName: file.name,
-              layer: 'background',
+              layer: imageEditLayer,
               x, y, width, height,
             });
           } catch (err) {
@@ -568,7 +568,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
               onPreview={setPreviewFile}
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
-              onAddToScene={gameId && currentSceneId ? setAddToSceneFile : null}
+              onAddToScene={gameId && currentSceneId ? (file) => { setAddToSceneFile(file); setAddToSceneLayer(imageEditLayer); } : null}
               onRename={startRenameFile}
               renamingFile={renamingFile}
               renameFileValue={renameFileValue}
@@ -664,6 +664,7 @@ const FilesTab = ({ token, gameId, currentSceneId }) => {
                   }}
                 >
                   <option value="background">{t('scenes.backgroundLayer')}</option>
+                  <option value="tokens">{t('scenes.tokensLayer')}</option>
                   <option value="gm">{t('scenes.gmLayer')}</option>
                 </select>
               </div>

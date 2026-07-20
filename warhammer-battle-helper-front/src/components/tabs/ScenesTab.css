@@ -451,45 +451,6 @@
   color: #3a2f1f;
 }
 
-/* Layer toggle */
-.scenes-tab__layer-toggle {
-  display: flex;
-  gap: 0;
-  border: 1px solid #d4a574;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.scenes-tab__layer-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-family: 'Cinzel', serif;
-  background: #faf3e8;
-  border: none;
-  border-right: 1px solid #d4a574;
-  color: #7a5c42;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.scenes-tab__layer-btn:last-child {
-  border-right: none;
-}
-
-.scenes-tab__layer-btn:hover {
-  background: #eedcc0;
-}
-
-.scenes-tab__layer-btn--active {
-  background: #c9975b;
-  color: #fff;
-}
-
 /* Fog of War section */
 .scenes-tab__fog-section {
   display: flex;

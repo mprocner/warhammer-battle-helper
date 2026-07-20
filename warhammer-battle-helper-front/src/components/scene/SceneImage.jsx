@@ -10,8 +10,12 @@ import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, selected = false, onSelectImageToken }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken }) => {
   const { t } = useTranslation();
+  // In Images ('grid') mode only the armed layer is manipulable; images on other layers
+  // are dimmed + inert. Outside grid mode nothing here is armed.
+  const isLayerArmed = editingLayer === 'grid' && image.layer === imageEditLayer;
+  const isLayerInert = editingLayer === 'grid' && image.layer !== imageEditLayer;
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -65,7 +69,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
 
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
-    if (!isGM || editingLayer !== 'grid' || e.button !== 0 || image.locked) return;
+    if (!isGM || !isLayerArmed || e.button !== 0 || image.locked) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -78,7 +82,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
       maxX: Math.max(0, gridWidth * CELL_SIZE - size.width),
       maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
-  }, [isGM, editingLayer, pos, zoom, image.locked, size, gridWidth, gridHeight]);
+  }, [isGM, isLayerArmed, pos, zoom, image.locked, size, gridWidth, gridHeight]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -340,7 +344,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
     <>
       <div
         ref={containerRef}
-        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''}`}
+        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''}`}
         style={{
           position: 'absolute',
           left: pos.x,
@@ -349,7 +353,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM && !image.locked && editingLayer === 'grid' ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
+          cursor: isGM && !image.locked && isLayerArmed ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
           transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}
@@ -391,8 +395,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
           <span className="scene-image__lock-badge">🔒</span>
         )}
 
-        {/* Resize handles (GM only, only when unlocked, only in grid/image layer) */}
-        {isGM && !image.locked && editingLayer === 'grid' && RESIZE_HANDLES.map(handle => (
+        {/* Resize handles (GM only, only when unlocked, only on the armed image layer) */}
+        {isGM && !image.locked && isLayerArmed && RESIZE_HANDLES.map(handle => (
           <div
             key={handle}
             className={`scene-image__handle scene-image__handle--${handle}`}
@@ -401,8 +405,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, gameSystem, se
           />
         ))}
 
-        {/* Rotate handle (GM only, only when unlocked, only in grid/image layer) */}
-        {isGM && !image.locked && editingLayer === 'grid' && (
+        {/* Rotate handle (GM only, only when unlocked, only on the armed image layer) */}
+        {isGM && !image.locked && isLayerArmed && (
           <div
             className="scene-image__rotate-handle"
             onMouseDown={handleRotateStart}

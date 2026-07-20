@@ -3,16 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
 import { getMusic } from '../../api/music';
 import { resolveDisplayName } from '../../utils/participants';
-import OpenWithIcon from '@mui/icons-material/OpenWith';
-import CloudIcon from '@mui/icons-material/Cloud';
-import EditIcon from '@mui/icons-material/Edit';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import ModalHeader from '../common/ModalHeader';
 import CloseIcon from '@mui/icons-material/Close';
 import './ScenesTab.css';
 
-const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, editingLayer, onEditingLayerChange }) => {
+const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange }) => {
   const { t } = useTranslation();
   const [scenes, setScenes] = useState([]);
   const selectedSceneId = currentSceneId || null;
@@ -348,28 +345,6 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
         {selectedScene && (
         <div className="scenes-tab__settings">
           <h4 className="scenes-tab__settings-title">{t('scenes.sceneSettings')}</h4>
-
-          {/* Editing layer toggle */}
-          <div className="scenes-tab__field">
-            <label>{t('scenes.editingLayer')}</label>
-            <div className="scenes-tab__layer-toggle">
-              {[
-                { value: 'grid',    label: t('scenes.sceneLayer'),   Icon: OpenWithIcon },
-                { value: 'fog',     label: t('scenes.fogLayer'),     Icon: CloudIcon },
-                { value: 'drawing', label: t('scenes.drawingLayer'), Icon: EditIcon },
-              ].map(({ value, label, Icon }) => (
-                <button
-                  key={value}
-                  className={`scenes-tab__layer-btn ${editingLayer === value ? 'scenes-tab__layer-btn--active' : ''}`}
-                  onClick={() => onEditingLayerChange(value)}
-                  title={label}
-                >
-                  <Icon style={{ fontSize: 16 }} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Name */}
           <div className="scenes-tab__field">

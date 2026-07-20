@@ -17,7 +17,7 @@ const RIGHT_PAN_THRESHOLD = 5; // px of movement before a right-drag counts as a
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
-  scene, isGM, gameId, editingLayer, gridWidth, gridHeight, children,
+  scene, isGM, gameId, editingLayer, imageEditLayer = 'background', gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing,
   brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
@@ -553,6 +553,7 @@ const SceneViewport = ({
                   gameId={gameId}
                   sceneId={displayedScene?.id}
                   editingLayer={editingLayer}
+                  imageEditLayer={imageEditLayer}
                 />
 
                 <div
@@ -571,6 +572,7 @@ const SceneViewport = ({
                   gameId={gameId}
                   sceneId={displayedScene?.id}
                   editingLayer={editingLayer}
+                  imageEditLayer={imageEditLayer}
                   gameSystem={gameSystem}
                   selectedImageTokenId={selectedImageTokenId}
                   onSelectImageToken={onSelectImageToken}
@@ -584,6 +586,7 @@ const SceneViewport = ({
                     gameId={gameId}
                     sceneId={displayedScene?.id}
                     editingLayer={editingLayer}
+                    imageEditLayer={imageEditLayer}
                   />
                 )}
 
