@@ -5,8 +5,18 @@ import FogLayer from './FogLayer';
 import DrawingLayer from './DrawingLayer';
 import ZoomContext from './ZoomContext';
 import PointerPing from './PointerPing';
-import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING } from '../../constants/scene';
+import MapRulerOverlay from './MapRulerOverlay';
+import useMapRuler from '../../hooks/useMapRuler';
+import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE } from '../../constants/scene';
+import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween } from '../../utils/tokenGeometry';
 import './SceneViewport.css';
+
+// Deterministic colour per measuring player, so remote rulers are distinguishable.
+const rulerColorFor = (id) => {
+  let hash = 0;
+  for (let i = 0; i < String(id).length; i++) hash = (hash * 31 + String(id).charCodeAt(i)) | 0;
+  return `hsl(${Math.abs(hash) % 360}, 70%, 60%)`;
+};
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 
@@ -24,6 +34,10 @@ const SceneViewport = ({
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
   selectedImageTokenId = null, onSelectImageToken, gameSystem = 'warhammer4e',
+  tokenPlacementMode = 'snap',
+  userId = null, userName = '', measurementMetric = 'euclidean', mapRulers = [],
+  dragRuler = null, onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
+  aoeEnabled = true,
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
@@ -263,6 +277,8 @@ const SceneViewport = ({
     if (schemeRef.current !== 'modern') return;
     if (e.button !== 0 || editingLayerRef.current !== null) return;
     if (e.target.closest('.character-wrapper')) return;
+    // A token-layer image is draggable in Pan mode too — pressing one moves the token, not the map.
+    if (e.target.closest('.scene-image--token')) return;
     if (!e.target.closest('.scene-viewport__sizer')) return;
     panStartRef.current = {
       mouseX: e.clientX,
@@ -378,8 +394,63 @@ const SceneViewport = ({
   // Mousedown position, used to tell a plain click (clears the active token) from a pan-drag.
   const clickDownPosRef = useRef(null);
 
+  // --- Distance ruler (measure mode) ----------------------------------------------------
+  const contentRef = useRef(null);
+  const [isMeasuring, setIsMeasuring] = useState(false);
+
+  // Token centers the ruler magnetizes to (characters + token-layer images), so large
+  // tokens are measured center-to-center.
+  const rulerSnapTargets = useMemo(() => {
+    const targets = [];
+    (displayedScene?.characters || []).forEach(gc => {
+      const tk = characterToMapToken(gc);
+      const c = centerOf(tk);
+      targets.push({ col: c.col, row: c.row, radius: Math.max(tk.w, tk.h) / 2 });
+    });
+    (displayedScene?.images || []).filter(img => img.layer === 'tokens').forEach(img => {
+      const tk = imageToMapToken(img);
+      const c = centerOf(tk);
+      targets.push({ col: c.col, row: c.row, radius: Math.max(tk.w, tk.h) / 2 });
+    });
+    return targets;
+  }, [displayedScene?.characters, displayedScene?.images]);
+
+  const snapPoint = useCallback((p) => snapPointToTokens(p, rulerSnapTargets), [rulerSnapTargets]);
+
+  const ruler = useMapRuler({
+    metric: measurementMetric, sendMessage, sceneId: displayedScene?.id,
+    userId, userName, snapPoint, aoeEnabled,
+  });
+  const { start: rulerStart, move: rulerMove, end: rulerEnd } = ruler;
+
+  const clientToCell = useCallback((clientX, clientY) => {
+    const rect = contentRef.current?.getBoundingClientRect();
+    if (!rect) return { col: 0, row: 0 };
+    return { col: (clientX - rect.left) / zoom / CELL_SIZE, row: (clientY - rect.top) / zoom / CELL_SIZE };
+  }, [zoom]);
+
+  useEffect(() => {
+    if (!isMeasuring) return;
+    const onMove = (e) => rulerMove(clientToCell(e.clientX, e.clientY));
+    const onUp = () => { rulerEnd(); setIsMeasuring(false); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [isMeasuring, rulerMove, rulerEnd, clientToCell]);
+
   const handleContentMouseDown = useCallback((e) => {
     clickDownPosRef.current = { x: e.clientX, y: e.clientY };
+    // Measure mode: left-drag lays out a ruler instead of pinging/panning.
+    if (editingLayer === 'measure') {
+      if (e.button === 0) {
+        rulerStart(clientToCell(e.clientX, e.clientY));
+        setIsMeasuring(true);
+      }
+      return;
+    }
     if (e.button !== 0 || !sendMessage || !displayedScene) return;
     const contentEl = e.currentTarget;
     const rect = contentEl.getBoundingClientRect();
@@ -390,7 +461,7 @@ const SceneViewport = ({
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, displayedScene, zoom]);
+  }, [sendMessage, displayedScene, zoom, editingLayer, rulerStart, clientToCell]);
 
   const clearPingTimer = useCallback(() => {
     if (pingTimerRef.current) {
@@ -462,6 +533,37 @@ const SceneViewport = ({
   const dGridWidth = displayedScene?.gridWidth ?? gridWidth;
   const dGridHeight = displayedScene?.gridHeight ?? gridHeight;
 
+  // Own live ruler + every other player's (relayed over WS), rendered read-only.
+  const displayRulers = [];
+  if (ruler.ruler) {
+    // Manual ruler tool → AoE circle when the toggle is on.
+    displayRulers.push({ key: 'self', from: ruler.ruler.from, to: ruler.ruler.to, distance: ruler.distance, name: null, color: '#ffe08a', aoe: aoeEnabled });
+  }
+  // Live readout while dragging a token (local to the dragger) — no AoE circle.
+  if (dragRuler) {
+    displayRulers.push({
+      key: 'drag',
+      from: dragRuler.from,
+      to: dragRuler.to,
+      distance: distanceBetween({ col: dragRuler.from.col, row: dragRuler.from.row, w: 0, h: 0 }, { col: dragRuler.to.col, row: dragRuler.to.row, w: 0, h: 0 }, measurementMetric),
+      name: null,
+      color: '#ffe08a',
+      aoe: false,
+    });
+  }
+  mapRulers.forEach(r => {
+    if (r.userId === userId) return; // own echo — already shown locally
+    displayRulers.push({
+      key: r.userId,
+      from: r.from,
+      to: r.to,
+      distance: distanceBetween({ col: r.from.col, row: r.from.row, w: 0, h: 0 }, { col: r.to.col, row: r.to.row, w: 0, h: 0 }, measurementMetric),
+      name: r.name,
+      color: rulerColorFor(r.userId),
+      aoe: !!r.aoe, // remote ruler carries its own AoE flag (measurer's toggle)
+    });
+  });
+
   return (
     <ZoomContext.Provider value={{ zoom, gridWidth: dGridWidth, gridHeight: dGridHeight }}>
       <div className="scene-viewport-wrapper">
@@ -532,6 +634,7 @@ const SceneViewport = ({
               style={{ transform: `scale(${zoom})`, transformOrigin: '0 0' }}
             >
               <div
+                ref={contentRef}
                 className="scene-viewport__content"
                 style={{
                   position: 'absolute',
@@ -576,6 +679,10 @@ const SceneViewport = ({
                   gameSystem={gameSystem}
                   selectedImageTokenId={selectedImageTokenId}
                   onSelectImageToken={onSelectImageToken}
+                  tokenPlacementMode={tokenPlacementMode}
+                  onTokenDragMeasureStart={onTokenDragMeasureStart}
+                  onTokenDragMeasureMove={onTokenDragMeasureMove}
+                  onTokenDragMeasureEnd={onTokenDragMeasureEnd}
                 />
 
                 {isGM && (
@@ -630,6 +737,13 @@ const SceneViewport = ({
                     canvasHeight={canvasSize.height}
                   />
                 )}
+
+                <MapRulerOverlay
+                  rulers={displayRulers}
+                  metric={measurementMetric}
+                  canvasWidth={canvasSize.width}
+                  canvasHeight={canvasSize.height}
+                />
 
                 {textInputPos && (
                   <input

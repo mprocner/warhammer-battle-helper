@@ -44,6 +44,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
   const [topBarsCollapsed, setTopBarsCollapsed] = useState(false);
   const [gmViewingSceneId, setGmViewingSceneId] = useState(null);
   const [pointerPings, setPointerPings] = useState([]);
+  // Ephemeral distance rulers from other players, keyed by userId (one live ruler per player).
+  const [mapRulers, setMapRulers] = useState({});
+  const rulerTimersRef = useRef({});
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
@@ -193,6 +196,12 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
 
       case WS_EVENTS.GAME_IMAGE_UPDATED:
         setGameState(prev => prev ? { ...prev, imageUrl: message.payload.imageUrl || '' } : prev);
+        break;
+
+      case WS_EVENTS.GAME_MAP_SETTINGS_UPDATED:
+        // GM changed snap/free placement or the distance metric — refetch so every client
+        // applies the same shared rule.
+        fetchGameState();
         break;
 
       case WS_EVENTS.PARTICIPANT_JOINED: {
@@ -690,6 +699,26 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         break;
       }
 
+      case WS_EVENTS.MAP_RULER: {
+        // A player's live measuring ruler (ephemeral, never persisted). One ruler per player;
+        // active:false clears it. A safety timeout drops it if the sender disconnects mid-drag.
+        const { userId: ruId, name, from, to, active, sceneId, aoe } = message.payload;
+        if (ruId === userId) break; // our own echo — shown locally already
+        clearTimeout(rulerTimersRef.current[ruId]);
+        setMapRulers(prev => {
+          const next = { ...prev };
+          if (active) next[ruId] = { userId: ruId, name, from, to, sceneId, aoe };
+          else delete next[ruId];
+          return next;
+        });
+        if (active) {
+          rulerTimersRef.current[ruId] = setTimeout(() => {
+            setMapRulers(prev => { const n = { ...prev }; delete n[ruId]; return n; });
+          }, 3000);
+        }
+        break;
+      }
+
       case WS_EVENTS.USERS_ONLINE:
         handleOnlineUsersMessage(message);
         break;
@@ -907,6 +936,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
             sendMessage={sendMessage}
             pointerPings={pointerPings}
             onRemovePing={removePing}
+            mapRulers={mapRulers}
             onFogPathComplete={handleFogPathComplete}
             activeTool={activeTool}
             onActiveToolChange={setActiveTool}

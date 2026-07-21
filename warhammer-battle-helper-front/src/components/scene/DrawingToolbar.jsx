@@ -14,6 +14,8 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PolylineIcon from '@mui/icons-material/Polyline';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import NearMeIcon from '@mui/icons-material/NearMe';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import BlurCircularIcon from '@mui/icons-material/BlurCircular';
 import UndoIcon from '@mui/icons-material/Undo';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -55,6 +57,8 @@ const DrawingToolbar = ({
   onImageEditLayerChange,
   fogCoverMode = false,
   onFogCoverModeChange,
+  aoeEnabled = true,
+  onAoeToggle,
   activeTool,
   onActiveToolChange,
   brushSize,
@@ -125,15 +129,31 @@ const DrawingToolbar = ({
             <EditIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
           </button>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
+          >
+            <StraightenIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
+          </button>
         </div>
       ) : (
-        <button
-          className={`drawing-toolbar__toggle ${isActive ? 'drawing-toolbar__toggle--on' : ''}`}
-          onClick={handleToggle}
-        >
-          <EditIcon style={{ fontSize: 24 }} />
-          <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
-        </button>
+        <div className="drawing-toolbar__tabs">
+          <button
+            className={`drawing-toolbar__toggle ${isActive ? 'drawing-toolbar__toggle--on' : ''}`}
+            onClick={handleToggle}
+          >
+            <EditIcon style={{ fontSize: 24 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
+          </button>
+          <button
+            className={`drawing-toolbar__toggle ${editingLayer === 'measure' ? 'drawing-toolbar__toggle--on' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
+          >
+            <StraightenIcon style={{ fontSize: 24 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
+          </button>
+        </div>
       )}
 
       {/* Image-layer picker — only in Images ('grid') mode. Arms one of the three
@@ -178,6 +198,21 @@ const DrawingToolbar = ({
               </ToggleButton>
             ))}
           </ToggleButtonGroup>
+        </div>
+      )}
+
+      {/* Measure-tool options — AoE circle toggle (shown like the image-layer picker). */}
+      {editingLayer === 'measure' && (
+        <div className="drawing-toolbar__controls">
+          <button
+            className={`drawing-toolbar__aoe-toggle ${aoeEnabled ? 'drawing-toolbar__aoe-toggle--on' : ''}`}
+            onClick={onAoeToggle}
+            role="switch"
+            aria-checked={aoeEnabled}
+          >
+            <BlurCircularIcon style={{ fontSize: 18 }} />
+            <span>{t('scenes.measureAoe')}</span>
+          </button>
         </div>
       )}
 

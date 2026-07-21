@@ -1052,8 +1052,8 @@ func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.Obje
 	return nil
 }
 
-// UpdateSceneCharacterPosition updates a character's position within a scene
-func (r *GameRepository) UpdateSceneCharacterPosition(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, x, y int) error {
+// UpdateSceneCharacterGeometry applies a partial position/size update to a scene token.
+func (r *GameRepository) UpdateSceneCharacterGeometry(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, req models.UpdateSceneCharacterRequest) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -1062,15 +1062,28 @@ func (r *GameRepository) UpdateSceneCharacterPosition(gameID string, sceneID pri
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
-	filter := bson.M{"_id": objectID}
-	update := bson.M{
-		"$set": bson.M{
-			"scenes.$[scene].characters.$[char].positionX": x,
-			"scenes.$[scene].characters.$[char].positionY": y,
-			"scenes.$[scene].characters.$[char].updatedAt": time.Now(),
-			"updatedAt": time.Now(),
-		},
+	setFields := bson.M{
+		"scenes.$[scene].characters.$[char].updatedAt": time.Now(),
+		"updatedAt": time.Now(),
 	}
+	if req.PositionX != nil {
+		setFields["scenes.$[scene].characters.$[char].positionX"] = *req.PositionX
+	}
+	if req.PositionY != nil {
+		setFields["scenes.$[scene].characters.$[char].positionY"] = *req.PositionY
+	}
+	if req.W != nil {
+		setFields["scenes.$[scene].characters.$[char].w"] = *req.W
+	}
+	if req.H != nil {
+		setFields["scenes.$[scene].characters.$[char].h"] = *req.H
+	}
+	if req.ZIndex != nil {
+		setFields["scenes.$[scene].characters.$[char].zIndex"] = *req.ZIndex
+	}
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{"$set": setFields}
 	opts := options.Update().SetArrayFilters(options.ArrayFilters{
 		Filters: []interface{}{
 			bson.M{"scene._id": sceneID},
@@ -1080,7 +1093,7 @@ func (r *GameRepository) UpdateSceneCharacterPosition(gameID string, sceneID pri
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return fmt.Errorf("failed to update scene character position: %w", err)
+		return fmt.Errorf("failed to update scene character geometry: %w", err)
 	}
 
 	if result.MatchedCount == 0 {
@@ -1528,6 +1541,28 @@ func (r *GameRepository) SetImageUrl(gameID string, imageUrl string) error {
 	}
 
 	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	return err
+}
+
+// UpdateMapSettings applies a partial update to a game's mapSettings (only provided fields).
+func (r *GameRepository) UpdateMapSettings(gameID string, req models.UpdateMapSettingsRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	setFields := bson.M{"updatedAt": time.Now()}
+	if req.TokenPlacementMode != nil {
+		setFields["mapSettings.tokenPlacementMode"] = *req.TokenPlacementMode
+	}
+	if req.MeasurementMetric != nil {
+		setFields["mapSettings.measurementMetric"] = *req.MeasurementMetric
+	}
+
+	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{"$set": setFields})
 	return err
 }
 

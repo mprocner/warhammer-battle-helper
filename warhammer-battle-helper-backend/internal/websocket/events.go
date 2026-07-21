@@ -6,6 +6,9 @@ const (
 	EventGameDeleted      = "GAME_DELETED"
 	EventGameImageUpdated = "GAME_IMAGE_UPDATED"
 
+	// Map settings (per-game: snap/free placement + distance metric)
+	EventGameMapSettingsUpdated = "GAME_MAP_SETTINGS_UPDATED"
+
 	// Participants
 	EventParticipantJoined  = "PARTICIPANT_JOINED"
 	EventParticipantLeft    = "PARTICIPANT_LEFT"

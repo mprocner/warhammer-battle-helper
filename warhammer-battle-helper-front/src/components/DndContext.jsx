@@ -18,6 +18,7 @@ import ResizableSplitPane from './common/ResizableSplitPane';
 import CharacterSidebarList from './CharacterSidebarList';
 import CharacterSheetHost from './CharacterSheetHost';
 import { normalizeCharacter } from '../systems/registry';
+import { resolveDisplayName } from '../utils/participants';
 import { useWindowManager } from '../contexts/WindowManagerContext';
 
 const DEFAULT_GRID_WIDTH = 20;
@@ -48,7 +49,7 @@ const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => 
   return transform;
 };
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
   const { t } = useTranslation();
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -66,6 +67,65 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const [error, setError] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [overId, setOverId] = useState(null);
+  // Per-game map rules + own display name (name is stamped on broadcast drag rulers).
+  const tokenPlacementMode = game?.mapSettings?.tokenPlacementMode || 'snap';
+  const measurementMetric = game?.mapSettings?.measurementMetric || 'euclidean';
+  const userName = resolveDisplayName(participants.find(p => p.userId === userId)) || '';
+
+  // Live measuring ruler while dragging a token (grab point → current position). Shown locally
+  // AND broadcast to other players over the same MAP_RULER channel as the manual ruler tool.
+  const [imageDragRuler, setImageDragRuler] = useState(null);
+  const [aoeMeasure, setAoeMeasure] = useState(true); // AoE circle toggle for the manual ruler tool
+  const dragRulerFromRef = useRef(null);
+  const lastDragRulerSendRef = useRef(0);
+  const sendDragRuler = useCallback((from, to, active) => {
+    if (!sendMessage) return;
+    if (active) {
+      const now = Date.now();
+      if (now - lastDragRulerSendRef.current < 50) return; // throttle live updates
+      lastDragRulerSendRef.current = now;
+    }
+    sendMessage('MAP_RULER', { sceneId: currentSceneId, userId, name: userName, from, to, active, aoe: false });
+  }, [sendMessage, currentSceneId, userId, userName]);
+
+  // Image-token drags feed the ruler via callbacks; character drags derive it from activeId/overId.
+  const handleTokenDragMeasureStart = useCallback((center) => {
+    dragRulerFromRef.current = center;
+    setImageDragRuler({ from: center, to: center });
+    sendDragRuler(center, center, true);
+  }, [sendDragRuler]);
+  const handleTokenDragMeasureMove = useCallback((center) => {
+    const from = dragRulerFromRef.current;
+    setImageDragRuler(from ? { from, to: center } : null);
+    if (from) sendDragRuler(from, center, true);
+  }, [sendDragRuler]);
+  const handleTokenDragMeasureEnd = useCallback(() => {
+    const from = dragRulerFromRef.current;
+    dragRulerFromRef.current = null;
+    setImageDragRuler(null);
+    sendDragRuler(from, from, false);
+  }, [sendDragRuler]);
+
+  // Home-cell center of a dragged character (1×1 pre-unification), for the character drag ruler.
+  const characterHomeCenter = useCallback((id) => {
+    const z = fightZonesRef.current.find(zn => zn.character?.id === id);
+    return z ? { col: z.col + 0.5, row: z.row + 0.5 } : null;
+  }, []);
+
+  // Character drags (dnd-kit) → ruler from the token's home cell to the hovered cell. Auto-clears
+  // locally when the drag ends because activeId/overId reset.
+  const characterDragRuler = useMemo(() => {
+    if (!activeId) return null;
+    const startZone = fightZonesRef.current.find(z => z.character?.id === activeId);
+    if (!startZone) return null;
+    const from = { col: startZone.col + 0.5, row: startZone.row + 0.5 };
+    let to = from;
+    if (overId && overId.startsWith('zone-')) {
+      const parts = overId.split('-'); // "zone-<row>-<col>"
+      to = { col: Number(parts[2]) + 0.5, row: Number(parts[1]) + 0.5 };
+    }
+    return { from, to };
+  }, [activeId, overId]);
   const [viewportZoom, setViewportZoom] = useState(1);
   const hasInitializedRef = useRef(false);
 
@@ -248,9 +308,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     if (!gameId || !token) return;
 
     const sid = sceneIdRef.current;
+    // Scene tokens use the unified geometry endpoint (charId in path, partial body); the legacy
+    // top-level grid still posts to /characters/move with the id in the body.
     const url = sid
-      ? `${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/move`
+      ? `${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`
       : `${getApiUrl()}/games/${gameId}/characters/move`;
+    const body = sid
+      ? { positionX, positionY }
+      : { characterId, positionX, positionY };
 
     try {
       const response = await fetch(url, {
@@ -259,11 +324,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }),
-        body: JSON.stringify({
-          characterId,
-          positionX,
-          positionY
-        })
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
@@ -734,10 +795,22 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [gameId, currentSceneId, selectedDrawingPathId]);
 
-  const handleDragStart = e => setActiveId(e.active.id);
-  const handleDragOver = e => setOverId(e.over ? e.over.id : null);
-  
+  const handleDragStart = e => {
+    setActiveId(e.active.id);
+    const from = characterHomeCenter(e.active.id);
+    if (from) sendDragRuler(from, from, true);
+  };
+  const handleDragOver = e => {
+    setOverId(e.over ? e.over.id : null);
+    const from = characterHomeCenter(e.active.id);
+    if (from && e.over && String(e.over.id).startsWith('zone-')) {
+      const p = String(e.over.id).split('-'); // "zone-<row>-<col>"
+      sendDragRuler(from, { col: Number(p[2]) + 0.5, row: Number(p[1]) + 0.5 }, true);
+    }
+  };
+
   const handleDragEnd = (event) => {
+    sendDragRuler(null, null, false); // clear the broadcast ruler for other players
     const { active, over } = event;
     if (!over) { setActiveId(null); setOverId(null); return; }
 
@@ -884,6 +957,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // (set for custom games and for hardcoded games created from a named variant).
   const tokenDisplay = game?.customSystemTemplate?.settings?.tokenDisplay || null;
 
+  // Other players' rulers on this scene (manual tool + broadcast drag rulers).
+  const sceneRulers = Object.values(mapRulers).filter(r => r.sceneId === currentSceneId);
+  const dragRuler = imageDragRuler || characterDragRuler;
+
   return (
     <DndContext
       sensors={sensors}
@@ -976,6 +1053,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
               onImageEditLayerChange={onImageEditLayerChange}
               fogCoverMode={fogCoverMode}
               onFogCoverModeChange={onFogCoverModeChange}
+              aoeEnabled={aoeMeasure}
+              onAoeToggle={() => setAoeMeasure(v => !v)}
               activeTool={activeTool}
               onActiveToolChange={onActiveToolChange}
               brushSize={brushSize}
@@ -998,7 +1077,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem}>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure}>
             <div className="fight-grid">
               <div
                 className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}

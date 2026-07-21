@@ -486,6 +486,27 @@ func (s *GameService) SetGameImage(gameID string, gmID primitive.ObjectID, image
 	return game.ImageUrl, nil
 }
 
+// UpdateMapSettings changes a game's per-game map rules (snap/free, distance metric). GM-only.
+// Broadcasts so every client refetches and applies the same shared rule.
+func (s *GameService) UpdateMapSettings(gameID string, gmID primitive.ObjectID, req models.UpdateMapSettingsRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return fmt.Errorf("game not found")
+	}
+	if game.GameMasterID != gmID {
+		return fmt.Errorf("not authorized")
+	}
+	if err := s.gameRepo.UpdateMapSettings(gameID, req); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventGameMapSettingsUpdated, map[string]interface{}{
+		"gameId": gameID,
+	})
+
+	return nil
+}
+
 // LeaveGame removes a user from a game
 func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, username string) error {
 	game, err := s.gameRepo.GetByID(gameID)
@@ -568,8 +589,10 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 		CharacterID: charObjectID,
 		Name:        character.Name,
 		Avatar:      character.Avatar,
-		PositionX:   x,
-		PositionY:   y,
+		PositionX:   float64(x),
+		PositionY:   float64(y),
+		W:           1,
+		H:           1,
 		IsEnemy:     isEnemy,
 		PlacedBy:    placedBy,
 	}
@@ -1492,8 +1515,10 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 		CharacterID: charObjectID,
 		Name:        character.Name,
 		Avatar:      character.Avatar,
-		PositionX:   x,
-		PositionY:   y,
+		PositionX:   float64(x),
+		PositionY:   float64(y),
+		W:           1,
+		H:           1,
 		IsEnemy:     isEnemy,
 		PlacedBy:    placedBy,
 	}
@@ -1510,18 +1535,23 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 	return nil
 }
 
-// MoveCharacterInScene updates a character's position within a scene
-func (s *GameService) MoveCharacterInScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, x, y int) error {
-	if err := s.gameRepo.UpdateSceneCharacterPosition(gameID, sceneID, characterID, x, y); err != nil {
+// UpdateSceneCharacterGeometry updates a scene token's position and/or size (partial).
+func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, req models.UpdateSceneCharacterRequest) error {
+	if err := s.gameRepo.UpdateSceneCharacterGeometry(gameID, sceneID, characterID, req); err != nil {
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterMoved, map[string]interface{}{
+	payload := map[string]interface{}{
 		"sceneId":     sceneID.Hex(),
 		"characterId": characterID.Hex(),
-		"x":           x,
-		"y":           y,
-	})
+	}
+	if req.PositionX != nil {
+		payload["x"] = *req.PositionX
+	}
+	if req.PositionY != nil {
+		payload["y"] = *req.PositionY
+	}
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterMoved, payload)
 
 	return nil
 }

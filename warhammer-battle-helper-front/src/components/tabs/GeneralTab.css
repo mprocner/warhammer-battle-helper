@@ -712,3 +712,42 @@
 .game-image-cropper__actions .general-tab__action-btn {
   justify-content: center;
 }
+
+/* Map settings — segmented control (snap/free placement, distance metric).
+   Segmented over <select> on purpose: the active choice is visible at a glance
+   during a live session. */
+.map-settings-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(184, 134, 58, 0.12);
+  border: 1px solid #c9a66b;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.map-settings-toggle__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7a5c42;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.map-settings-toggle__option:hover {
+  background: rgba(184, 134, 58, 0.2);
+}
+
+.map-settings-toggle__option--active {
+  background: #c9975b;
+  color: #f5ebe0;
+}

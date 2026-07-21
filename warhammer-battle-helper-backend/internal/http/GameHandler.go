@@ -727,6 +727,31 @@ func (h *GameHandler) DeleteGameImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Game image removed"})
 }
 
+// UpdateMapSettings sets the per-game map rules (snap/free placement, distance metric). GM-only.
+func (h *GameHandler) UpdateMapSettings(c *gin.Context) {
+	gameID := c.Param("id")
+	userID := mustUserID(c)
+
+	var req models.UpdateMapSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.GameService.UpdateMapSettings(gameID, userID, req); err != nil {
+		status := http.StatusInternalServerError
+		if err.Error() == "not authorized" {
+			status = http.StatusForbidden
+		} else if err.Error() == "game not found" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Map settings updated"})
+}
+
 func (h *GameHandler) GetFeatures(c *gin.Context) {
 	email := ""
 	if token, exists := c.Get("jwt"); exists {

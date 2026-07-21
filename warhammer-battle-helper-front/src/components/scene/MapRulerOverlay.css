@@ -1,0 +1,19 @@
+/* Live-updating distance readout following a measuring ruler. Not a tooltip — an ephemeral
+   overlay label, so it does not reuse .portal-tooltip. */
+.map-ruler-badge {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  padding: 2px 8px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-ruler-badge__name {
+  font-weight: 400;
+  opacity: 0.85;
+}

@@ -349,3 +349,36 @@
   color: #fff;
   box-shadow: 0 3px 8px rgba(201, 68, 68, 0.35);
 }
+
+/* AoE circle toggle — shown when the measure tool is active. */
+.drawing-toolbar__aoe-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #d4a574;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drawing-toolbar__aoe-toggle:hover:not(.drawing-toolbar__aoe-toggle--on) {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+}
+
+.drawing-toolbar__aoe-toggle--on {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #7a5c42;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.3);
+}
+
+.drawing-toolbar__aoe-toggle--on:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
+}

@@ -638,6 +638,17 @@
     "kickConfirm": "Usunąć {{name}} z gry?",
     "noPlayers": "Brak graczy"
   },
+  "map": {
+    "tokenPositioning": "Pozycjonowanie tokenów",
+    "snapToGrid": "Przyciągaj do siatki",
+    "freeform": "Swobodnie",
+    "distanceMeasurement": "Pomiar odległości",
+    "metric": {
+      "euclidean": "Euklidesowa",
+      "chebyshev": "Chebyshev",
+      "alternating": "5-10-5"
+    }
+  },
   "music": {
     "title": "Biblioteka Muzyki",
     "uploadMusic": "Wgraj Muzykę",
@@ -782,6 +793,8 @@
     "fogRevealAll": "Odkryj wszystko",
     "fogCoverAll": "Zakryj wszystko",
     "drawingLayer": "Rysowanie",
+    "measureLayer": "Pomiar odległości",
+    "measureAoe": "Koło AoE",
     "drawingSection": "Warstwa rysowania",
     "drawingTool": "Narzędzie",
     "drawingTool_freehand": "Odręczny",

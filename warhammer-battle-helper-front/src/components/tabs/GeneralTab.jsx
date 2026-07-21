@@ -9,6 +9,8 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TuneIcon from '@mui/icons-material/Tune';
+import GridOnIcon from '@mui/icons-material/GridOn';
+import GridOffIcon from '@mui/icons-material/GridOff';
 import ImageIcon from '@mui/icons-material/Image';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
@@ -137,6 +139,21 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
     }
   };
 
+  // Per-game map rules (snap/free placement + distance metric). GM-only. The PATCH broadcasts
+  // GAME_MAP_SETTINGS_UPDATED, so every client refetches — no optimistic local state needed.
+  const placementMode = gameState?.mapSettings?.tokenPlacementMode || 'snap';
+  const measurementMetric = gameState?.mapSettings?.measurementMetric || 'euclidean';
+
+  const updateMapSettings = async (patch) => {
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/mapSettings`, {
+        method: 'PATCH',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+        body: JSON.stringify(patch),
+      });
+    } catch { /* ignore — WS broadcast refreshes state */ }
+  };
+
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
     i18n.changeLanguage(newLang);
@@ -182,6 +199,51 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
           </button>
         )}
       </section>
+
+      {/* Map Settings — GM only. Shared session rules for the scene map. */}
+      {isGM && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('map.tokenPositioning')}</h4>
+          <div className="map-settings-toggle" role="radiogroup" aria-label={t('map.tokenPositioning')}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={placementMode === 'snap'}
+              className={`map-settings-toggle__option${placementMode === 'snap' ? ' map-settings-toggle__option--active' : ''}`}
+              onClick={() => updateMapSettings({ tokenPlacementMode: 'snap' })}
+            >
+              <GridOnIcon fontSize="small" />
+              {t('map.snapToGrid')}
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={placementMode === 'free'}
+              className={`map-settings-toggle__option${placementMode === 'free' ? ' map-settings-toggle__option--active' : ''}`}
+              onClick={() => updateMapSettings({ tokenPlacementMode: 'free' })}
+            >
+              <GridOffIcon fontSize="small" />
+              {t('map.freeform')}
+            </button>
+          </div>
+
+          <h4 className="general-tab__section-title" style={{ marginTop: 16 }}>{t('map.distanceMeasurement')}</h4>
+          <div className="map-settings-toggle" role="radiogroup" aria-label={t('map.distanceMeasurement')}>
+            {['euclidean', 'chebyshev', 'alternating'].map(metric => (
+              <button
+                key={metric}
+                type="button"
+                role="radio"
+                aria-checked={measurementMetric === metric}
+                className={`map-settings-toggle__option${measurementMetric === metric ? ' map-settings-toggle__option--active' : ''}`}
+                onClick={() => updateMapSettings({ measurementMetric: metric })}
+              >
+                {t(`map.metric.${metric}`)}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Game Image Section — GM only, shown on the lobby tile */}
       {isGM && (

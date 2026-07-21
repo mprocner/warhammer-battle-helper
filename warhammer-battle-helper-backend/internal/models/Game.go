@@ -59,9 +59,25 @@ type Game struct {
 	CustomSystemTemplate *SystemTemplate    `bson:"customSystemTemplate,omitempty" json:"customSystemTemplate,omitempty"`
 	TemplateSourceID     primitive.ObjectID `bson:"templateSourceId,omitempty" json:"templateSourceId,omitempty"`
 	ImageUrl             string             `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
+	MapSettings          MapSettings        `bson:"mapSettings" json:"mapSettings"`               // per-game map rules (snap/free, distance metric)
 	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt"`
 	DeletedAt            *time.Time         `bson:"deletedAt,omitempty" json:"-"`
+}
+
+// MapSettings holds per-game rules for the scene map, configured by the GM in GeneralTab.
+// These are a shared session truth (unlike per-user controlScheme): if the GM sets "free"
+// placement, every player must see the same token positions and the same "5 cells" reading.
+// Zero-value ("") means the default — the frontend reads "" as "snap" / "euclidean".
+type MapSettings struct {
+	TokenPlacementMode string `bson:"tokenPlacementMode" json:"tokenPlacementMode"` // "snap" | "free"
+	MeasurementMetric  string `bson:"measurementMetric" json:"measurementMetric"`   // "euclidean" | "chebyshev" | "alternating"
+}
+
+// UpdateMapSettingsRequest is a partial update — only provided fields are changed.
+type UpdateMapSettingsRequest struct {
+	TokenPlacementMode *string `json:"tokenPlacementMode,omitempty"`
+	MeasurementMetric  *string `json:"measurementMetric,omitempty"`
 }
 
 // GameParticipant represents a user participating in a game
@@ -94,8 +110,11 @@ type GameCharacter struct {
 	CharacterID primitive.ObjectID `bson:"characterId" json:"characterId"`
 	Name        string             `bson:"name" json:"name"`
 	Avatar      string             `bson:"avatar" json:"avatar"`
-	PositionX   int                `bson:"positionX" json:"positionX"`
-	PositionY   int                `bson:"positionY" json:"positionY"`
+	PositionX   float64            `bson:"positionX" json:"positionX"` // col in cells; float so "free" mode can be fractional
+	PositionY   float64            `bson:"positionY" json:"positionY"` // row in cells
+	W           float64            `bson:"w" json:"w"`                 // width in cells (default 1; adapter falls back for old docs)
+	H           float64            `bson:"h" json:"h"`                 // height in cells (default 1)
+	ZIndex      int                `bson:"zIndex" json:"zIndex"`       // shared stacking with scene images
 	IsEnemy     bool               `bson:"isEnemy" json:"isEnemy"`
 	PlacedBy    primitive.ObjectID `bson:"placedBy" json:"placedBy"`
 	PlacedAt    time.Time          `bson:"placedAt" json:"placedAt"`
@@ -139,11 +158,21 @@ type JoinGameRequest struct {
 	GameID string `json:"gameId" binding:"required"`
 }
 
-// MoveCharacterRequest is the request body for moving a character
+// MoveCharacterRequest is the request body for moving a character (legacy top-level grid).
 type MoveCharacterRequest struct {
 	CharacterID string `json:"characterId" binding:"required"`
 	PositionX   int    `json:"positionX"`
 	PositionY   int    `json:"positionY"`
+}
+
+// UpdateSceneCharacterRequest is a partial geometry update for a scene token (position and/or
+// size). Mirrors UpdateSceneImageRequest — only provided fields are changed.
+type UpdateSceneCharacterRequest struct {
+	PositionX *float64 `json:"positionX,omitempty"`
+	PositionY *float64 `json:"positionY,omitempty"`
+	W         *float64 `json:"w,omitempty"`
+	H         *float64 `json:"h,omitempty"`
+	ZIndex    *int     `json:"zIndex,omitempty"`
 }
 
 // AddCharacterRequest is the request body for adding a character to the grid

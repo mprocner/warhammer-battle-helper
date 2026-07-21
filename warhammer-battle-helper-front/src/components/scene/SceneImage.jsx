@@ -10,12 +10,17 @@ import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd }) => {
   const { t } = useTranslation();
   // In Images ('grid') mode only the armed layer is manipulable; images on other layers
   // are dimmed + inert. Outside grid mode nothing here is armed.
   const isLayerArmed = editingLayer === 'grid' && image.layer === imageEditLayer;
   const isLayerInert = editingLayer === 'grid' && image.layer !== imageEditLayer;
+  // A token-layer image can be dragged both when its layer is armed (Images mode) AND in Pan
+  // mode (editingLayer null) — like a character token, tokens are the interactive pieces you
+  // move around the map. Resize/rotate stay gated to Images mode to avoid clutter; background
+  // and GM images are only editable when their layer is armed.
+  const canDragImage = isGM && !image.locked && (isLayerArmed || (image.layer === 'tokens' && editingLayer === null));
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -67,9 +72,16 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     }
   }, [gameId, sceneId, image.id]);
 
+  // In snap mode, token-layer images quantize to whole cells on commit (drag/resize end).
+  // Free mode and non-token layers stay pixel-precise. Snap belongs to the shared geometry,
+  // so it works in the same cell units the future unified renderer will use.
+  const snapEnabled = image.layer === 'tokens' && tokenPlacementMode === 'snap';
+  const snapCoord = useCallback((v) => (snapEnabled ? Math.round(v / CELL_SIZE) * CELL_SIZE : v), [snapEnabled]);
+  const snapDim = useCallback((v) => (snapEnabled ? Math.max(CELL_SIZE, Math.round(v / CELL_SIZE) * CELL_SIZE) : v), [snapEnabled]);
+
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
-    if (!isGM || !isLayerArmed || e.button !== 0 || image.locked) return;
+    if (!canDragImage || e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
@@ -82,26 +94,29 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       maxX: Math.max(0, gridWidth * CELL_SIZE - size.width),
       maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
-  }, [isGM, isLayerArmed, pos, zoom, image.locked, size, gridWidth, gridHeight]);
+    // Live distance readout from the grab point (token center) to the current position.
+    onTokenDragMeasureStart?.({ col: (pos.x + size.width / 2) / CELL_SIZE, row: (pos.y + size.height / 2) / CELL_SIZE });
+  }, [canDragImage, pos, zoom, size, gridWidth, gridHeight, onTokenDragMeasureStart]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e) => {
       const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
-      setPos({
-        x: Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX)),
-        y: Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY)),
-      });
+      const x = Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX));
+      const y = Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY));
+      setPos({ x, y });
+      onTokenDragMeasureMove?.({ col: (x + size.width / 2) / CELL_SIZE, row: (y + size.height / 2) / CELL_SIZE });
     };
 
     const handleMouseUpFinal = (e) => {
       const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
-      const finalX = Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX));
-      const finalY = Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY));
+      const finalX = snapCoord(Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX)));
+      const finalY = snapCoord(Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY)));
       setPos({ x: finalX, y: finalY });
       justFinishedDraggingRef.current = true;
       setIsDragging(false);
+      onTokenDragMeasureEnd?.();
       savePosition(finalX, finalY, undefined, undefined);
     };
 
@@ -111,7 +126,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUpFinal);
     };
-  }, [isDragging, savePosition]);
+  }, [isDragging, savePosition, snapCoord, size, onTokenDragMeasureMove, onTokenDragMeasureEnd]);
 
   // --- Resize ---
   const handleResizeStart = useCallback((e, handle) => {
@@ -184,7 +199,11 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     };
 
     const handleMouseUp = (e) => {
-      const { newX, newY, newW, newH } = computeResize(e);
+      const raw = computeResize(e);
+      const newW = snapDim(raw.newW);
+      const newH = snapDim(raw.newH);
+      const newX = snapCoord(raw.newX);
+      const newY = snapCoord(raw.newY);
 
       setPos({ x: newX, y: newY });
       setSize({ width: newW, height: newH });
@@ -199,7 +218,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing, savePosition]);
+  }, [isResizing, savePosition, snapCoord, snapDim]);
 
   // --- Rotate ---
   const saveRotation = useCallback(async (newRotation) => {
@@ -353,7 +372,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: isGM && !image.locked && isLayerArmed ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
+          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
           transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}

@@ -638,6 +638,17 @@
     "kickConfirm": "Remove {{name}} from the game?",
     "noPlayers": "No players yet"
   },
+  "map": {
+    "tokenPositioning": "Token positioning",
+    "snapToGrid": "Snap to grid",
+    "freeform": "Freeform",
+    "distanceMeasurement": "Distance measurement",
+    "metric": {
+      "euclidean": "Euclidean",
+      "chebyshev": "Chebyshev",
+      "alternating": "5-10-5"
+    }
+  },
   "music": {
     "title": "Music Library",
     "uploadMusic": "Upload Music",
@@ -782,6 +793,8 @@
     "fogRevealAll": "Reveal all",
     "fogCoverAll": "Cover all",
     "drawingLayer": "Drawing",
+    "measureLayer": "Measure distance",
+    "measureAoe": "AoE circle",
     "drawingSection": "Drawing Layer",
     "drawingTool": "Tool",
     "drawingTool_freehand": "Freehand",

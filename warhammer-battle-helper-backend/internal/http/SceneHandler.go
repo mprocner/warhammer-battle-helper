@@ -187,10 +187,11 @@ func (h *SceneHandler) AddSceneCharacter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Character added to scene"})
 }
 
-// MoveSceneCharacter moves a character within a scene
-func (h *SceneHandler) MoveSceneCharacter(c *gin.Context) {
+// UpdateSceneCharacter updates a scene token's geometry (position and/or size).
+func (h *SceneHandler) UpdateSceneCharacter(c *gin.Context) {
 	gameID := c.Param("id")
 	sceneIDStr := c.Param("sceneId")
+	charIDStr := c.Param("charId")
 
 	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
 	if err != nil {
@@ -198,24 +199,24 @@ func (h *SceneHandler) MoveSceneCharacter(c *gin.Context) {
 		return
 	}
 
-	var req models.MoveCharacterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	characterID, err := primitive.ObjectIDFromHex(req.CharacterID)
+	characterID, err := primitive.ObjectIDFromHex(charIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid character ID"})
 		return
 	}
 
-	if err := h.GameService.MoveCharacterInScene(gameID, sceneID, characterID, req.PositionX, req.PositionY); err != nil {
+	var req models.UpdateSceneCharacterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Character moved"})
+	if err := h.GameService.UpdateSceneCharacterGeometry(gameID, sceneID, characterID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Character updated"})
 }
 
 // RemoveSceneCharacter removes a character from a scene

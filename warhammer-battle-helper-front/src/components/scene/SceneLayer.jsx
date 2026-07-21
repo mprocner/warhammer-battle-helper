@@ -1,7 +1,7 @@
 import React from 'react';
 import SceneImage from './SceneImage';
 
-const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selectedImageTokenId, onSelectImageToken }) => {
+const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selectedImageTokenId, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd }) => {
   const sortedImages = [...images].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
   // background sits under the grid, tokens just above it, gm on top.
@@ -29,6 +29,10 @@ const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer, im
           gameSystem={gameSystem}
           selected={selectedImageTokenId === image.id}
           onSelectImageToken={onSelectImageToken}
+          tokenPlacementMode={tokenPlacementMode}
+          onTokenDragMeasureStart={onTokenDragMeasureStart}
+          onTokenDragMeasureMove={onTokenDragMeasureMove}
+          onTokenDragMeasureEnd={onTokenDragMeasureEnd}
         />
       ))}
     </div>
