@@ -645,9 +645,13 @@
     "distanceMeasurement": "Pomiar odległości",
     "metric": {
       "euclidean": "Euklidesowa",
-      "chebyshev": "Chebyshev",
+      "chebyshev": "Szachownica",
       "alternating": "5-10-5"
-    }
+    },
+    "cellSize": "Rozmiar komórki",
+    "oneCellEquals": "1 komórka =",
+    "unitCustom": "Własna",
+    "customUnitPlaceholder": "Własna jednostka (np. kroki)"
   },
   "music": {
     "title": "Biblioteka Muzyki",
@@ -797,6 +801,7 @@
     "measureAoe": "Koło AoE",
     "drawingSection": "Warstwa rysowania",
     "drawingTool": "Narzędzie",
+    "drawingTool_pan": "Przesuń i ruszaj tokeny",
     "drawingTool_freehand": "Odręczny",
     "drawingTool_line": "Linia",
     "drawingTool_rect": "Prostokąt",

@@ -105,14 +105,17 @@ describe('distanceBetween', () => {
 });
 
 describe('formatDistance', () => {
-  it('euclidean reads as inches with one decimal', () => {
-    expect(formatDistance(7.34, 'euclidean')).toBe('7.3"');
-    expect(formatDistance(5, 'euclidean')).toBe('5"');
+  it('scales the cell count by the cell size and appends the unit', () => {
+    expect(formatDistance(3, 5, 'ft')).toBe('15 ft');
+    expect(formatDistance(2, 1.5, 'm')).toBe('3 m');
   });
 
-  it('grid metrics read as a plain number', () => {
-    expect(formatDistance(4, 'chebyshev')).toBe('4');
-    expect(formatDistance(3.5, 'alternating')).toBe('3.5');
+  it('rounds to one decimal', () => {
+    expect(formatDistance(7.34, 1, 'in')).toBe('7.3 in');
+  });
+
+  it('omits the unit when none is given', () => {
+    expect(formatDistance(4, 1)).toBe('4');
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
@@ -11,6 +11,9 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TuneIcon from '@mui/icons-material/Tune';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import GridOffIcon from '@mui/icons-material/GridOff';
+import StraightenIcon from '@mui/icons-material/Straighten';
+import Grid3x3Icon from '@mui/icons-material/Grid3x3';
+import AltRouteIcon from '@mui/icons-material/AltRoute';
 import ImageIcon from '@mui/icons-material/Image';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
@@ -23,6 +26,12 @@ import './GeneralTab.css';
 
 // Aspect ratio of the lobby tile image zone (tarot card layout in GameLobby)
 export const GAME_IMAGE_ASPECT = 5 / 4;
+
+// Icon per distance metric (Grid3x3 for chebyshev, not GridOn — that one marks snap placement).
+const METRIC_ICONS = { euclidean: StraightenIcon, chebyshev: Grid3x3Icon, alternating: AltRouteIcon };
+
+// Distance units for the cell-size config (same set as Roll20). 'custom' → free-text label.
+const DISTANCE_UNITS = ['ft', 'm', 'km', 'mi', 'in', 'cm', 'un', 'hex', 'sq', 'custom'];
 
 // Crops the source image (data URL) to the given pixel area and returns a JPEG blob.
 // Output is downscaled to at most 800px wide — plenty for a lobby tile.
@@ -143,6 +152,9 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
   // GAME_MAP_SETTINGS_UPDATED, so every client refetches — no optimistic local state needed.
   const placementMode = gameState?.mapSettings?.tokenPlacementMode || 'snap';
   const measurementMetric = gameState?.mapSettings?.measurementMetric || 'euclidean';
+  const cellDistance = gameState?.mapSettings?.cellDistance || 5;
+  const distanceUnit = gameState?.mapSettings?.distanceUnit || 'ft';
+  const customUnit = gameState?.mapSettings?.customUnit || '';
 
   const updateMapSettings = async (patch) => {
     try {
@@ -153,6 +165,19 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
       });
     } catch { /* ignore — WS broadcast refreshes state */ }
   };
+
+  // Text/number inputs commit on blur (not per keystroke) — draft state synced from server value.
+  const [cellDraft, setCellDraft] = useState(String(cellDistance));
+  useEffect(() => { setCellDraft(String(cellDistance)); }, [cellDistance]);
+  const [customDraft, setCustomDraft] = useState(customUnit);
+  useEffect(() => { setCustomDraft(customUnit); }, [customUnit]);
+
+  const commitCellDistance = () => {
+    const v = parseFloat(cellDraft);
+    if (!Number.isNaN(v) && v > 0) updateMapSettings({ cellDistance: v });
+    else setCellDraft(String(cellDistance)); // revert invalid input
+  };
+  const commitCustomUnit = () => updateMapSettings({ customUnit: customDraft.trim() });
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'pl' : 'en';
@@ -228,20 +253,59 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
           </div>
 
           <h4 className="general-tab__section-title" style={{ marginTop: 16 }}>{t('map.distanceMeasurement')}</h4>
-          <div className="map-settings-toggle" role="radiogroup" aria-label={t('map.distanceMeasurement')}>
-            {['euclidean', 'chebyshev', 'alternating'].map(metric => (
-              <button
-                key={metric}
-                type="button"
-                role="radio"
-                aria-checked={measurementMetric === metric}
-                className={`map-settings-toggle__option${measurementMetric === metric ? ' map-settings-toggle__option--active' : ''}`}
-                onClick={() => updateMapSettings({ measurementMetric: metric })}
-              >
-                {t(`map.metric.${metric}`)}
-              </button>
-            ))}
+          <div className="map-settings-toggle map-settings-toggle--vertical" role="radiogroup" aria-label={t('map.distanceMeasurement')}>
+            {['euclidean', 'chebyshev', 'alternating'].map(metric => {
+              const Icon = METRIC_ICONS[metric];
+              return (
+                <button
+                  key={metric}
+                  type="button"
+                  role="radio"
+                  aria-checked={measurementMetric === metric}
+                  className={`map-settings-toggle__option${measurementMetric === metric ? ' map-settings-toggle__option--active' : ''}`}
+                  onClick={() => updateMapSettings({ measurementMetric: metric })}
+                >
+                  <Icon fontSize="small" />
+                  {t(`map.metric.${metric}`)}
+                </button>
+              );
+            })}
           </div>
+
+          <h4 className="general-tab__section-title" style={{ marginTop: 16 }}>{t('map.cellSize')}</h4>
+          <div className="map-cell-size">
+            <span className="map-cell-size__prefix">{t('map.oneCellEquals')}</span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              className="map-cell-size__value"
+              value={cellDraft}
+              onChange={(e) => setCellDraft(e.target.value)}
+              onBlur={commitCellDistance}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+            />
+            <select
+              className="map-cell-size__unit"
+              value={distanceUnit}
+              onChange={(e) => updateMapSettings({ distanceUnit: e.target.value })}
+            >
+              {DISTANCE_UNITS.map(u => (
+                <option key={u} value={u}>{u === 'custom' ? t('map.unitCustom') : u}</option>
+              ))}
+            </select>
+          </div>
+          {distanceUnit === 'custom' && (
+            <input
+              type="text"
+              className="map-cell-size__custom"
+              placeholder={t('map.customUnitPlaceholder')}
+              value={customDraft}
+              onChange={(e) => setCustomDraft(e.target.value)}
+              onBlur={commitCustomUnit}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+            />
+          )}
         </section>
       )}
 

@@ -717,7 +717,9 @@
    Segmented over <select> on purpose: the active choice is visible at a glance
    during a live session. */
 .map-settings-toggle {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr; /* equal-width columns regardless of label length or button count */
   gap: 4px;
   background: rgba(184, 134, 58, 0.12);
   border: 1px solid #c9a66b;
@@ -725,8 +727,51 @@
   padding: 4px;
 }
 
+/* Cell-size config: "1 cell = [number] [unit select]" + optional custom-unit text field. */
+.map-cell-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.map-cell-size__prefix {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b4423;
+  white-space: nowrap;
+}
+.map-cell-size__value,
+.map-cell-size__unit,
+.map-cell-size__custom {
+  padding: 6px 8px;
+  border: 1px solid #c9a66b;
+  border-radius: 4px;
+  background: #fff9f0;
+  color: #3a2f1f;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+}
+.map-cell-size__value { width: 64px; }
+.map-cell-size__unit { flex: 1; min-width: 0; cursor: pointer; }
+.map-cell-size__custom { margin-top: 8px; width: 100%; box-sizing: border-box; }
+.map-cell-size__value:focus,
+.map-cell-size__unit:focus,
+.map-cell-size__custom:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+/* Distance-metric selector: stacked rows (long labels don't fit 3-across in the narrow panel). */
+.map-settings-toggle--vertical {
+  grid-auto-flow: row;
+  grid-auto-columns: unset;
+}
+.map-settings-toggle--vertical .map-settings-toggle__option {
+  justify-content: flex-start;
+}
+
 .map-settings-toggle__option {
-  flex: 1;
+  min-width: 0; /* let long labels wrap within the equal column instead of stretching it */
   display: flex;
   align-items: center;
   justify-content: center;

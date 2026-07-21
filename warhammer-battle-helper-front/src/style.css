@@ -10561,9 +10561,8 @@ align-items: center;
 /* ── Kill marker (dead token) ─────────────────────────────────────────────── */
 /* Thick red X struck across the whole token footprint — always visible when killed. */
 .token-kill-strike {
-  position: absolute; left: 50%; top: 50%;
-  width: 50px; height: 50px;
-  transform: translate(-50%, -50%);
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 100%;
   pointer-events: none;
   z-index: 8;
 }
@@ -10660,3 +10659,80 @@ align-items: center;
 .img-token-kill-toggle:not(.is-killed) { filter: grayscale(0.6); opacity: 0.8; background: rgba(20,12,4,0.7); }
 .img-token-kill-toggle:not(.is-killed):hover { filter: grayscale(0.2); opacity: 0.95; border-color: #e04040; color: #ffbcbc; }
 .img-token-kill-toggle.is-killed { background: #c0201f; border-color: #7a1010; color: #fff; }
+
+/* ============================================================
+   Unified tokens layer — character tokens (MapCharacterToken)
+   ============================================================ */
+.map-char-token {
+  box-sizing: border-box;
+  user-select: none;
+  touch-action: none;
+}
+/* Snap landing preview — the cell(s) a token will drop into while dragging (snap mode). Shared by
+   character tokens and token-layer images; positioned via inline left/top/width/height. */
+.token-snap-preview {
+  position: absolute;
+  z-index: 0;
+  border-radius: 4px;
+  background: rgba(201, 151, 91, 0.18);
+  box-shadow: inset 0 0 0 2px #d4a574;
+  pointer-events: none;
+}
+.map-char-token__avatar {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #c9975b;
+  background: #2a2119;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.map-char-token__avatar .avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.map-char-token--enemy .map-char-token__avatar {
+  border-color: #c0201f;
+}
+.map-char-token--selected .map-char-token__avatar {
+  box-shadow: 0 0 0 2px #c9975b, 0 0 12px rgba(201, 151, 91, 0.7);
+}
+.map-char-token--dragging {
+  opacity: 0.9;
+  z-index: 999;
+}
+.map-char-token__name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 2px;
+  max-width: 160%;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f4e8d8;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000;
+  pointer-events: none;
+}
+/* Shared token resize handles (character + image). z-index above the states/HP overlay. */
+.token-resize-handle {
+  position: absolute;
+  background: rgba(201, 151, 91, 0.8);
+  border: 1px solid #7a5c42;
+  border-radius: 2px;
+  z-index: 30;
+  pointer-events: auto;
+}
+.token-resize-handle--n { top: -4px; left: 50%; transform: translateX(-50%); width: 12px; height: 8px; cursor: ns-resize; }
+.token-resize-handle--s { bottom: -4px; left: 50%; transform: translateX(-50%); width: 12px; height: 8px; cursor: ns-resize; }
+.token-resize-handle--e { right: -4px; top: 50%; transform: translateY(-50%); width: 8px; height: 12px; cursor: ew-resize; }
+.token-resize-handle--w { left: -4px; top: 50%; transform: translateY(-50%); width: 8px; height: 12px; cursor: ew-resize; }
+.token-resize-handle--ne { top: -4px; right: -4px; width: 8px; height: 8px; cursor: nesw-resize; }
+.token-resize-handle--nw { top: -4px; left: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
+.token-resize-handle--se { bottom: -4px; right: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
+.token-resize-handle--sw { bottom: -4px; left: -4px; width: 8px; height: 8px; cursor: nesw-resize; }

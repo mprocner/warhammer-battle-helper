@@ -645,9 +645,13 @@
     "distanceMeasurement": "Distance measurement",
     "metric": {
       "euclidean": "Euclidean",
-      "chebyshev": "Chebyshev",
+      "chebyshev": "Chessboard",
       "alternating": "5-10-5"
-    }
+    },
+    "cellSize": "Cell size",
+    "oneCellEquals": "1 cell =",
+    "unitCustom": "Custom",
+    "customUnitPlaceholder": "Custom unit (e.g. paces)"
   },
   "music": {
     "title": "Music Library",
@@ -797,6 +801,7 @@
     "measureAoe": "AoE circle",
     "drawingSection": "Drawing Layer",
     "drawingTool": "Tool",
+    "drawingTool_pan": "Pan & move tokens",
     "drawingTool_freehand": "Freehand",
     "drawingTool_line": "Line",
     "drawingTool_rect": "Rectangle",

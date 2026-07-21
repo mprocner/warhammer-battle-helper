@@ -40,7 +40,10 @@ const FogLayer = ({
 
   const fogEnabled = scene?.fogEnabled || false;
   const fogOpacity = scene?.fogOpacity || 0.85;
-  const isEditingFog = isGM && editingLayer === 'fog';
+  // In fog mode the GM always SEES the fog; the pan tool only suspends painting/interaction so
+  // tokens can be moved underneath while the fog stays visible.
+  const inFogMode = isGM && editingLayer === 'fog';
+  const isEditingFog = inFogMode && fogTool !== 'pan';
 
   // Render the full fog canvas (saved paths + optional in-progress path)
   const render = useCallback((extraPath = null) => {
@@ -341,13 +344,12 @@ const FogLayer = ({
     }
   }, [handleMouseUp, render]);
 
-  // GM: only when actively editing the fog layer
-  // Players: only when fog is enabled by GM
-  if (isGM && !isEditingFog) return null;
+  // GM: whenever in fog mode (incl. pan). Players: only when fog is enabled by GM.
+  if (isGM && !inFogMode) return null;
   if (!isGM && !fogEnabled) return null;
 
-  // CSS opacity: players see full fog; GM sees 50% in edit mode, fogOpacity otherwise
-  const cssOpacity = !isGM ? 1.0 : isEditingFog ? 0.5 : fogOpacity;
+  // CSS opacity: players see full fog; GM sees a see-through 50% while in fog mode (edit or pan).
+  const cssOpacity = !isGM ? 1.0 : inFogMode ? 0.5 : fogOpacity;
 
   return (
     <canvas

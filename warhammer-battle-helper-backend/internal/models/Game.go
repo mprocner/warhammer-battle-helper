@@ -70,14 +70,20 @@ type Game struct {
 // placement, every player must see the same token positions and the same "5 cells" reading.
 // Zero-value ("") means the default — the frontend reads "" as "snap" / "euclidean".
 type MapSettings struct {
-	TokenPlacementMode string `bson:"tokenPlacementMode" json:"tokenPlacementMode"` // "snap" | "free"
-	MeasurementMetric  string `bson:"measurementMetric" json:"measurementMetric"`   // "euclidean" | "chebyshev" | "alternating"
+	TokenPlacementMode string  `bson:"tokenPlacementMode" json:"tokenPlacementMode"`     // "snap" | "free"
+	MeasurementMetric  string  `bson:"measurementMetric" json:"measurementMetric"`       // "euclidean" | "chebyshev" | "alternating"
+	CellDistance       float64 `bson:"cellDistance" json:"cellDistance"`                 // real-world size of one cell (front defaults 5 when 0)
+	DistanceUnit       string  `bson:"distanceUnit" json:"distanceUnit"`                 // "ft" | "m" | "km" | "mi" | "in" | "cm" | "un" | "hex" | "sq" | "custom"
+	CustomUnit         string  `bson:"customUnit,omitempty" json:"customUnit,omitempty"` // free-text label when distanceUnit == "custom"
 }
 
 // UpdateMapSettingsRequest is a partial update — only provided fields are changed.
 type UpdateMapSettingsRequest struct {
-	TokenPlacementMode *string `json:"tokenPlacementMode,omitempty"`
-	MeasurementMetric  *string `json:"measurementMetric,omitempty"`
+	TokenPlacementMode *string  `json:"tokenPlacementMode,omitempty"`
+	MeasurementMetric  *string  `json:"measurementMetric,omitempty"`
+	CellDistance       *float64 `json:"cellDistance,omitempty"`
+	DistanceUnit       *string  `json:"distanceUnit,omitempty"`
+	CustomUnit         *string  `json:"customUnit,omitempty"`
 }
 
 // GameParticipant represents a user participating in a game

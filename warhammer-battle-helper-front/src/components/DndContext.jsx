@@ -1,18 +1,14 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
-import FightArea from './FightArea';
 import CharacterDetailsPanel from './CharacterDetailsPanel';
-import Character from './Character';
 import CloneCharacterModal from './CloneCharacterModal';
 import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
-import { CELL_SIZE } from '../constants/scene';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
-import {DndContext, DragOverlay, useSensor, useSensors, PointerSensor} from '@dnd-kit/core';
 import ConfirmModal from './common/ConfirmModal';
 import ResizableSplitPane from './common/ResizableSplitPane';
 import CharacterSidebarList from './CharacterSidebarList';
@@ -36,18 +32,6 @@ const generateFightZones = (width, height) => {
   return zones;
 };
 
-const snapCenterToCursor = ({ activatorEvent, draggingNodeRect, transform }) => {
-  if (draggingNodeRect && activatorEvent) {
-    const offsetX = activatorEvent.clientX - draggingNodeRect.left;
-    const offsetY = activatorEvent.clientY - draggingNodeRect.top;
-    return {
-      ...transform,
-      x: transform.x + offsetX - draggingNodeRect.width / 2,
-      y: transform.y + offsetY - draggingNodeRect.height / 2,
-    };
-  }
-  return transform;
-};
 
 function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
   const { t } = useTranslation();
@@ -55,7 +39,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const [initialCharacters, setInitialCharacters] = useState([]);
   const gridWidth = currentScene?.gridWidth || DEFAULT_GRID_WIDTH;
   const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
-  const gridVisible = currentScene?.gridVisible !== false;
   const sceneId = currentScene?.id || null;
   const sceneIdRef = useRef(sceneId);
   useEffect(() => { sceneIdRef.current = sceneId; }, [sceneId]);
@@ -65,11 +48,18 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const [characters, setCharacters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeId, setActiveId] = useState(null);
-  const [overId, setOverId] = useState(null);
+  // Optimistic character size override (characterId -> {w,h}). The scene's embedded w/h isn't
+  // refreshed after a resize (no full gameState refetch), so without this a reconciliation remount
+  // would reset the token to its stale placement size. Cleared on scene change.
+  const [charGeomOverride, setCharGeomOverride] = useState({});
+  useEffect(() => { setCharGeomOverride({}); }, [currentSceneId]);
   // Per-game map rules + own display name (name is stamped on broadcast drag rulers).
   const tokenPlacementMode = game?.mapSettings?.tokenPlacementMode || 'snap';
   const measurementMetric = game?.mapSettings?.measurementMetric || 'euclidean';
+  // Ruler scale: one cell = cellDistance × unit (custom → free-text label). Defaults 5 ft.
+  const cellDistance = game?.mapSettings?.cellDistance || 5;
+  const rawUnit = game?.mapSettings?.distanceUnit || 'ft';
+  const distanceUnit = rawUnit === 'custom' ? (game?.mapSettings?.customUnit || '') : rawUnit;
   const userName = resolveDisplayName(participants.find(p => p.userId === userId)) || '';
 
   // Live measuring ruler while dragging a token (grab point → current position). Shown locally
@@ -106,27 +96,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     sendDragRuler(from, from, false);
   }, [sendDragRuler]);
 
-  // Home-cell center of a dragged character (1×1 pre-unification), for the character drag ruler.
-  const characterHomeCenter = useCallback((id) => {
-    const z = fightZonesRef.current.find(zn => zn.character?.id === id);
-    return z ? { col: z.col + 0.5, row: z.row + 0.5 } : null;
-  }, []);
-
-  // Character drags (dnd-kit) → ruler from the token's home cell to the hovered cell. Auto-clears
-  // locally when the drag ends because activeId/overId reset.
-  const characterDragRuler = useMemo(() => {
-    if (!activeId) return null;
-    const startZone = fightZonesRef.current.find(z => z.character?.id === activeId);
-    if (!startZone) return null;
-    const from = { col: startZone.col + 0.5, row: startZone.row + 0.5 };
-    let to = from;
-    if (overId && overId.startsWith('zone-')) {
-      const parts = overId.split('-'); // "zone-<row>-<col>"
-      to = { col: Number(parts[2]) + 0.5, row: Number(parts[1]) + 0.5 };
-    }
-    return { from, to };
-  }, [activeId, overId]);
-  const [viewportZoom, setViewportZoom] = useState(1);
+  const [, setViewportZoom] = useState(1);
   const hasInitializedRef = useRef(false);
 
   // Selected character for details panel
@@ -336,6 +306,45 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     } catch (error) {
       console.error('Error moving character:', error);
       addLogMessage('Failed to move character', 'error');
+    }
+  };
+
+  // Commit a character move from the unified tokens layer (MapCharacterToken drag). Mirrors the
+  // old dnd-kit drop: optimistic fightZones update + REST. Snap mode keeps one token per cell.
+  const handleCommitCharacterMove = (characterId, col, row) => {
+    const zones = fightZonesRef.current;
+    const zoneId = `zone-${row}-${col}`;
+    const targetIdx = zones.findIndex(z => z.id === zoneId);
+    const currentIdx = zones.findIndex(z => z.character?.id === characterId);
+    if (targetIdx === -1 || currentIdx === targetIdx) return;
+    const targetChar = zones[targetIdx].character;
+    if (targetChar && targetChar.id !== characterId) {
+      addLogMessage('Cell already occupied', 'warning');
+      return; // token snaps back on next prop sync
+    }
+    const draggedChar = currentIdx !== -1 ? zones[currentIdx].character : resolveCharacter(characterId);
+    setFightZones(prev => prev.map((zone, idx) => {
+      if (idx === currentIdx) return { ...zone, character: null };
+      if (idx === targetIdx) return { ...zone, character: draggedChar };
+      return zone;
+    }));
+    handleMoveCharacter(characterId, col, row);
+  };
+
+  // Commit a character resize (and any position shift from N/W handles) to the geometry endpoint.
+  const handleResizeCharacter = async (characterId, w, h, col, row) => {
+    if (!gameId || !token) return;
+    const sid = sceneIdRef.current;
+    if (!sid) return;
+    setCharGeomOverride(prev => ({ ...prev, [characterId]: { w, h } })); // optimistic; survives remount
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`, {
+        method: 'PUT',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ positionX: col, positionY: row, w, h }),
+      });
+    } catch (error) {
+      console.error('Error resizing character:', error);
     }
   };
 
@@ -795,134 +804,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [gameId, currentSceneId, selectedDrawingPathId]);
 
-  const handleDragStart = e => {
-    setActiveId(e.active.id);
-    const from = characterHomeCenter(e.active.id);
-    if (from) sendDragRuler(from, from, true);
-  };
-  const handleDragOver = e => {
-    setOverId(e.over ? e.over.id : null);
-    const from = characterHomeCenter(e.active.id);
-    if (from && e.over && String(e.over.id).startsWith('zone-')) {
-      const p = String(e.over.id).split('-'); // "zone-<row>-<col>"
-      sendDragRuler(from, { col: Number(p[2]) + 0.5, row: Number(p[1]) + 0.5 }, true);
-    }
-  };
-
-  const handleDragEnd = (event) => {
-    sendDragRuler(null, null, false); // clear the broadcast ruler for other players
-    const { active, over } = event;
-    if (!over) { setActiveId(null); setOverId(null); return; }
-
-    const draggedId = active.id;
-    const overZoneId = over.id;
-
-    // Znajdź przeciąganą postać
-    let draggedChar = null;
-    if (characters && Array.isArray(characters)) {
-      draggedChar = characters.find(c => c.id === draggedId);
-    }
-    if (!draggedChar && fightZones) {
-      draggedChar = fightZones.find(z => z.character?.id === draggedId)?.character;
-    }
-
-    if (!draggedChar) { setActiveId(null); setOverId(null); return; }
-
-    // In multiplayer mode, only allow moving own characters (GM can move any)
-    if (gameId && token && !isGM && !isOwnCharacter(draggedChar.id)) {
-      setActiveId(null); setOverId(null); return;
-    }
-
-    // Znajdź obecną strefę postaci
-    const currentZoneIndex = fightZones.findIndex(z => z.character?.id === draggedId);
-    
-    // Jeśli upuszczamy w tej samej strefie - nic nie rób
-    if (currentZoneIndex !== -1 && fightZones[currentZoneIndex].id === overZoneId) {
-      setActiveId(null); setOverId(null); return;
-    }
-
-    const targetZoneIndex = fightZones.findIndex(z => z.id === overZoneId);
-    
-    if (targetZoneIndex !== -1) {
-      // Upuszczamy w strefie
-      const targetZone = fightZones[targetZoneIndex];
-
-      // Sprawdź czy strefa jest pusta
-      if (targetZone.character) {
-        addLogMessage(`Strefa ${overZoneId} jest już zajęta przez ${targetZone.character.basicInfo?.name}`, 'warning');
-        setActiveId(null); setOverId(null); return;
-      }
-
-      // If in multiplayer mode, sync with backend
-      if (gameId && token) {
-        if (currentZoneIndex === -1) {
-          // Adding character to grid (from available pool)
-          // col is X, row is Y
-          handleAddCharacterToGrid(draggedChar.id, targetZone.col, targetZone.row, false);
-        } else {
-          // Moving character on grid
-          // col is X, row is Y
-          handleMoveCharacter(draggedChar.id, targetZone.col, targetZone.row);
-        }
-      }
-
-      setFightZones(prev =>
-        prev.map((zone, idx) => {
-          if (idx === currentZoneIndex) {
-            // Usuń z obecnej strefy
-            return { ...zone, character: null };
-          }
-          if (idx === targetZoneIndex) {
-            // Dodaj do docelowej strefy
-            return { ...zone, character: draggedChar };
-          }
-          return zone;
-        })
-      );
-
-      // Usuń z listy dostępnych
-      setCharacters(prev => {
-        if (!prev || !Array.isArray(prev)) return [];
-        return prev.filter(c => c.id !== draggedId);
-      });
-      
-    } else if (overZoneId === 'available-pool') {
-      // Wracamy do listy dostępnych
-      if (currentZoneIndex !== -1) {
-        setFightZones(prev =>
-          prev.map((zone, idx) =>
-            idx === currentZoneIndex
-              ? { ...zone, character: null }
-              : zone
-          )
-        );
-      }
-      setCharacters(prev => {
-        if (!prev || !Array.isArray(prev)) return [];
-        return prev.some(c => c.id === draggedId) ? prev : [...prev, draggedChar];
-      });
-    }
-
-    setActiveId(null);
-    setOverId(null);
-  };
-
-
-  const activeCharacter = useMemo(() => {
-    if (!activeId) return null;
-    if (!characters || !fightZones) return null;
-    return characters.find(c => c.id === activeId) ||
-           fightZones.find(z => z.character?.id === activeId)?.character || null;
-  }, [activeId, characters, fightZones]);
-
-  // Configure drag sensors with distance threshold to allow clicks
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Require 8px movement before drag starts
-      },
-    })
-  );
 
 
   // Toggle character on/off grid from the sidebar list
@@ -959,15 +840,30 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
   // Other players' rulers on this scene (manual tool + broadcast drag rulers).
   const sceneRulers = Object.values(mapRulers).filter(r => r.sceneId === currentSceneId);
-  const dragRuler = imageDragRuler || characterDragRuler;
+  const dragRuler = imageDragRuler;
+
+  // Placed character tokens for the unified layer: cell from fightZones, size/z-index from the
+  // scene character (defaults 1×1 for pre-w/h data), drag gated by ownership.
+  const isMultiplayer = !!(gameId && token);
+  const sceneChars = currentScene?.characters || [];
+  const placedCharacters = fightZones
+    .filter(z => z.character)
+    .map(z => {
+      const sc = sceneChars.find(c => c.characterId === z.character.id);
+      const ov = charGeomOverride[z.character.id];
+      return {
+        character: z.character,
+        col: z.col,
+        row: z.row,
+        w: ov?.w ?? ((sc && sc.w) || 1),
+        h: ov?.h ?? ((sc && sc.h) || 1),
+        zIndex: (sc && sc.zIndex) || 0,
+        canDrag: !isMultiplayer || isGM || isOwnCharacter(z.character.id),
+      };
+    });
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
+    <>
       <div className="dnd-context">
         {/* Left Sidebar with Toggle */}
         <div className="left-sidebar-wrapper">
@@ -1077,45 +973,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure}>
-            <div className="fight-grid">
-              <div
-                className={`fight-grid-inner ${!gridVisible ? 'grid-hidden' : ''}`}
-                style={{ gridTemplateColumns: `repeat(${gridWidth}, ${CELL_SIZE}px)` }}
-              >
-                {fightZones.map(zone => (
-                  <FightArea
-                      key={zone.id}
-                      currentZone={zone}
-                      isActiveDrop={overId === zone.id}
-                      activeId={activeId}
-                      onSelectToken={handleSelectToken}
-                      isOwnCharacter={zone.character ? (isGM || isOwnCharacter(zone.character.id)) : false}
-                      isMultiplayer={!!(gameId && token)}
-                      tokenDisplay={tokenDisplay}
-                      activeTokenId={activeTokenId}
-                      gameId={gameId}
-                      token={token}
-                  />
-                ))}
-              </div>
-            </div>
-          </SceneViewport>
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} />
         </div>
       </div>
-
-      <DragOverlay modifiers={[snapCenterToCursor]}>
-        {activeCharacter && (
-          <div className="drag-overlay-wrapper" style={{ transform: `scale(${viewportZoom})` }}>
-            <Character
-              character={activeCharacter}
-              currentZone={null}
-              activeId={activeId}
-              isOverlay
-            />
-          </div>
-        )}
-      </DragOverlay>
 
       {/* Otwarte karty postaci (multi-open) */}
       <CharacterSheetHost
@@ -1161,7 +1021,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         isLoading={isDeleting}
       />
 
-    </DndContext>
+    </>
   );
 }
 

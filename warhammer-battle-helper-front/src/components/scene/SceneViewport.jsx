@@ -6,6 +6,7 @@ import DrawingLayer from './DrawingLayer';
 import ZoomContext from './ZoomContext';
 import PointerPing from './PointerPing';
 import MapRulerOverlay from './MapRulerOverlay';
+import MapTokensLayer from './MapTokensLayer';
 import useMapRuler from '../../hooks/useMapRuler';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE } from '../../constants/scene';
 import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween } from '../../utils/tokenGeometry';
@@ -36,8 +37,11 @@ const SceneViewport = ({
   selectedImageTokenId = null, onSelectImageToken, gameSystem = 'warhammer4e',
   tokenPlacementMode = 'snap',
   userId = null, userName = '', measurementMetric = 'euclidean', mapRulers = [],
+  cellDistance = 1, distanceUnit = '',
   dragRuler = null, onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   aoeEnabled = true,
+  placedCharacters = [], isMultiplayer = false, tokenDisplay = null, token = null,
+  activeTokenId = null, onSelectCharacter, onCommitMove, onCommitResize,
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
@@ -263,6 +267,8 @@ const SceneViewport = ({
   // Pan on drag
   const editingLayerRef = useRef(editingLayer);
   useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
+  const activeToolRef = useRef(activeTool);
+  useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
 
   const schemeRef = useRef(controlScheme);
   useEffect(() => {
@@ -275,10 +281,12 @@ const SceneViewport = ({
     // Right-button pan is handled via Pointer Events (handleViewportPointerDown) because
     // Chrome on macOS never fires `mouseup` for the secondary button.
     if (schemeRef.current !== 'modern') return;
-    if (e.button !== 0 || editingLayerRef.current !== null) return;
+    // Pan when in the default layer, or when the pan tool is active inside fog/drawing mode.
+    if (e.button !== 0 || (editingLayerRef.current !== null && activeToolRef.current !== 'pan')) return;
     if (e.target.closest('.character-wrapper')) return;
-    // A token-layer image is draggable in Pan mode too — pressing one moves the token, not the map.
+    // Pressing a token (character or token-layer image) drags it, never the map.
     if (e.target.closest('.scene-image--token')) return;
+    if (e.target.closest('.map-char-token')) return;
     if (!e.target.closest('.scene-viewport__sizer')) return;
     panStartRef.current = {
       mouseX: e.clientX,
@@ -443,15 +451,19 @@ const SceneViewport = ({
 
   const handleContentMouseDown = useCallback((e) => {
     clickDownPosRef.current = { x: e.clientX, y: e.clientY };
-    // Measure mode: left-drag lays out a ruler instead of pinging/panning.
+    // Measure mode: left-drag on empty map lays out a ruler. Pressing a token instead drags it
+    // (the token shows its own drag ruler) — don't also start a measure-tool ruler.
     if (editingLayer === 'measure') {
-      if (e.button === 0) {
+      const onToken = e.target.closest('.map-char-token') || e.target.closest('.scene-image--token');
+      if (e.button === 0 && !onToken) {
         rulerStart(clientToCell(e.clientX, e.clientY));
         setIsMeasuring(true);
       }
       return;
     }
     if (e.button !== 0 || !sendMessage || !displayedScene) return;
+    // Pressing a token starts a token drag, not a pointer ping.
+    if (e.target.closest('.map-char-token') || e.target.closest('.scene-image--token')) return;
     const contentEl = e.currentTarget;
     const rect = contentEl.getBoundingClientRect();
     const canvasX = (e.clientX - rect.left) / zoom;
@@ -659,30 +671,43 @@ const SceneViewport = ({
                   imageEditLayer={imageEditLayer}
                 />
 
+                {/* Visible grid as a CSS background (decoupled from drop-target cells). */}
                 <div
-                  className={`scene-viewport__grid-layer${isDrawingMode ? ' scene-viewport__grid-layer--drawing' : ''}`}
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {children}
-                </div>
+                  className="map-grid-background"
+                  style={{
+                    position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                    backgroundImage: (displayedScene?.gridVisible !== false)
+                      ? `linear-gradient(to right, #d4a574 1px, transparent 1px), linear-gradient(to bottom, #d4a574 1px, transparent 1px)`
+                      : 'none',
+                    backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+                    opacity: 0.4,
+                  }}
+                />
 
-                {/* Tokens layer — visible to ALL users (unlike gm). Images here carry a
-                    states/HP ring; clicking one expands it. */}
-                <SceneLayer
+                {/* Unified tokens layer — character tokens + token-layer images, one z-order. */}
+                <MapTokensLayer
+                  characters={placedCharacters}
                   images={tokenImages}
-                  layerName="tokens"
                   isGM={isGM}
                   gameId={gameId}
                   sceneId={displayedScene?.id}
+                  gameSystem={gameSystem}
                   editingLayer={editingLayer}
                   imageEditLayer={imageEditLayer}
-                  gameSystem={gameSystem}
+                  activeTool={activeTool}
+                  tokenPlacementMode={tokenPlacementMode}
                   selectedImageTokenId={selectedImageTokenId}
                   onSelectImageToken={onSelectImageToken}
-                  tokenPlacementMode={tokenPlacementMode}
                   onTokenDragMeasureStart={onTokenDragMeasureStart}
                   onTokenDragMeasureMove={onTokenDragMeasureMove}
                   onTokenDragMeasureEnd={onTokenDragMeasureEnd}
+                  isMultiplayer={isMultiplayer}
+                  tokenDisplay={tokenDisplay}
+                  token={token}
+                  activeTokenId={activeTokenId}
+                  onSelectCharacter={onSelectCharacter}
+                  onCommitMove={onCommitMove}
+                  onCommitResize={onCommitResize}
                 />
 
                 {isGM && (
@@ -740,7 +765,8 @@ const SceneViewport = ({
 
                 <MapRulerOverlay
                   rulers={displayRulers}
-                  metric={measurementMetric}
+                  cellDistance={cellDistance}
+                  unit={distanceUnit}
                   canvasWidth={canvasSize.width}
                   canvasHeight={canvasSize.height}
                 />

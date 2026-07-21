@@ -40,6 +40,9 @@ const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#
 // fogCompat: true → narzędzie widoczne w trybie mgły; false → ukryte w fog mode
 // fogOnly: true → narzędzie widoczne TYLKO w trybie mgły (ukryte w trybie rysowania)
 const TOOLS = [
+  // Pan/move: the fog & drawing layers become click-through, so tokens can be moved (and the map
+  // panned) without leaving fog/drawing mode. Handy for revealing a dungeon while moving NPCs.
+  { value: 'pan',      Icon: PanToolIcon,             labelKey: 'scenes.drawingTool_pan',      fogCompat: true  },
   { value: 'freehand', Icon: BrushIcon,               labelKey: 'scenes.drawingTool_freehand', fogCompat: true  },
   { value: 'line',     Icon: HorizontalRuleIcon,       labelKey: 'scenes.drawingTool_line',     fogCompat: true  },
   { value: 'rect',     Icon: CropSquareIcon,           labelKey: 'scenes.drawingTool_rect',     fogCompat: true  },

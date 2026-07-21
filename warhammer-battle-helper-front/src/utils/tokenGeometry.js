@@ -67,12 +67,13 @@ export function distanceBetween(a, b, metric = 'euclidean') {
   }
 }
 
-// Human-readable distance for the ruler badge. Euclidean reads as inches (e.g. 7.3"),
-// grid metrics read as a plain cell count.
-export function formatDistance(distance, metric = 'euclidean') {
-  const rounded = Math.round(distance * 10) / 10;
+// Human-readable distance for the ruler badge: the measured cell count scaled by the per-game
+// cell size and labelled with the configured unit (e.g. 3 cells × 5 → "15 ft").
+export function formatDistance(distance, cellDistance = 1, unit = '') {
+  const v = distance * cellDistance;
+  const rounded = Math.round(v * 10) / 10;
   const num = Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-  return metric === 'euclidean' ? `${num}"` : num;
+  return unit ? `${num} ${unit}` : num;
 }
 
 // Snaps a cell point to the nearest token center within that token's radius, so the ruler

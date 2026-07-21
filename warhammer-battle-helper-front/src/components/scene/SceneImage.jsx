@@ -7,10 +7,11 @@ import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
+import TokenResizeHandles from './TokenResizeHandles';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null }) => {
   const { t } = useTranslation();
   // In Images ('grid') mode only the armed layer is manipulable; images on other layers
   // are dimmed + inert. Outside grid mode nothing here is armed.
@@ -20,7 +21,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   // mode (editingLayer null) — like a character token, tokens are the interactive pieces you
   // move around the map. Resize/rotate stay gated to Images mode to avoid clutter; background
   // and GM images are only editable when their layer is armed.
-  const canDragImage = isGM && !image.locked && (isLayerArmed || (image.layer === 'tokens' && editingLayer === null));
+  const canDragImage = isGM && !image.locked && (isLayerArmed || (image.layer === 'tokens' && (editingLayer === null || activeTool === 'pan')));
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -33,6 +34,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
   const rotateStartRef = useRef(null);
+  const movedRef = useRef(false); // true once a drag actually moved — suppresses the post-drag select
   const justFinishedDraggingRef = useRef(false);
   const justFinishedResizingRef = useRef(false);
   const justFinishedRotatingRef = useRef(false);
@@ -84,6 +86,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     if (!canDragImage || e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
+    movedRef.current = false;
     setIsDragging(true);
     dragStartRef.current = {
       mouseX: e.clientX,
@@ -95,18 +98,20 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
     // Live distance readout from the grab point (token center) to the current position.
-    onTokenDragMeasureStart?.({ col: (pos.x + size.width / 2) / CELL_SIZE, row: (pos.y + size.height / 2) / CELL_SIZE });
-  }, [canDragImage, pos, zoom, size, gridWidth, gridHeight, onTokenDragMeasureStart]);
+    // snapCoord quantizes to the cell in snap mode (identity otherwise) → ruler steps cell-to-cell.
+    onTokenDragMeasureStart?.({ col: (snapCoord(pos.x) + size.width / 2) / CELL_SIZE, row: (snapCoord(pos.y) + size.height / 2) / CELL_SIZE });
+  }, [canDragImage, pos, zoom, size, gridWidth, gridHeight, snapCoord, onTokenDragMeasureStart]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e) => {
       const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
+      if (Math.abs(e.clientX - mouseX) + Math.abs(e.clientY - mouseY) > 3) movedRef.current = true;
       const x = Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX));
       const y = Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY));
       setPos({ x, y });
-      onTokenDragMeasureMove?.({ col: (x + size.width / 2) / CELL_SIZE, row: (y + size.height / 2) / CELL_SIZE });
+      onTokenDragMeasureMove?.({ col: (snapCoord(x) + size.width / 2) / CELL_SIZE, row: (snapCoord(y) + size.height / 2) / CELL_SIZE });
     };
 
     const handleMouseUpFinal = (e) => {
@@ -284,7 +289,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
   const handleClick = useCallback((e) => {
     if (!isToken || !isGM || !onSelectImageToken) return;
-    if (justFinishedDraggingRef.current || isDragging) return;
+    // A real drag (moved past threshold) must not select/expand the token afterwards.
+    if (movedRef.current || isDragging) return;
     e.stopPropagation();
     onSelectImageToken(image.id);
   }, [isToken, isGM, onSelectImageToken, isDragging, image.id]);
@@ -379,6 +385,16 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
         onClick={handleClick}
         onContextMenu={handleContextMenu}
       >
+        {/* Snap preview — the grid cell the token image will land in (snap mode only). */}
+        {isDragging && snapEnabled && (
+          <div className="token-snap-preview" style={{
+            left: Math.round(pos.x / CELL_SIZE) * CELL_SIZE - pos.x,
+            top: Math.round(pos.y / CELL_SIZE) * CELL_SIZE - pos.y,
+            width: size.width,
+            height: size.height,
+          }} />
+        )}
+
         <img
           src={resolveFileUrl(image.fileUrl)}
           alt={image.fileName}
@@ -414,8 +430,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           <span className="scene-image__lock-badge">🔒</span>
         )}
 
-        {/* Resize handles (GM only, only when unlocked, only on the armed image layer) */}
-        {isGM && !image.locked && isLayerArmed && RESIZE_HANDLES.map(handle => (
+        {/* Background/GM images: full editor (8 handles + rotate) on the armed image layer. */}
+        {!isToken && isGM && !image.locked && isLayerArmed && RESIZE_HANDLES.map(handle => (
           <div
             key={handle}
             className={`scene-image__handle scene-image__handle--${handle}`}
@@ -423,9 +439,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
             onMouseDown={(e) => handleResizeStart(e, handle)}
           />
         ))}
-
-        {/* Rotate handle (GM only, only when unlocked, only on the armed image layer) */}
-        {isGM && !image.locked && isLayerArmed && (
+        {!isToken && isGM && !image.locked && isLayerArmed && (
           <div
             className="scene-image__rotate-handle"
             onMouseDown={handleRotateStart}
@@ -433,6 +447,12 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           >
             <RotateRightIcon style={{ fontSize: 14 }} />
           </div>
+        )}
+
+        {/* Token images: the SAME shared resize handles as character tokens (selected, in the
+            token-manipulation context — default or pan tool). No rotate, matching characters. */}
+        {isToken && selected && isGM && !image.locked && (editingLayer === null || activeTool === 'pan') && (
+          <TokenResizeHandles onResizeStart={handleResizeStart} />
         )}
       </div>
 

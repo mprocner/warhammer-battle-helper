@@ -391,7 +391,7 @@ const DrawingLayer = ({
     }
   }, [handleMouseUp]);
 
-  const isInteractive = isDrawingMode;
+  const isInteractive = isDrawingMode && activeTool !== 'pan';
   const cursor = !isInteractive
     ? 'default'
     : activeTool === 'text'

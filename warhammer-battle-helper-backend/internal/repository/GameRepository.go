@@ -1561,6 +1561,15 @@ func (r *GameRepository) UpdateMapSettings(gameID string, req models.UpdateMapSe
 	if req.MeasurementMetric != nil {
 		setFields["mapSettings.measurementMetric"] = *req.MeasurementMetric
 	}
+	if req.CellDistance != nil {
+		setFields["mapSettings.cellDistance"] = *req.CellDistance
+	}
+	if req.DistanceUnit != nil {
+		setFields["mapSettings.distanceUnit"] = *req.DistanceUnit
+	}
+	if req.CustomUnit != nil {
+		setFields["mapSettings.customUnit"] = *req.CustomUnit
+	}
 
 	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{"$set": setFields})
 	return err

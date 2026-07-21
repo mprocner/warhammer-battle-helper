@@ -6,7 +6,7 @@ import './MapRulerOverlay.css';
 // Presentational overlay for measuring rulers — the local one plus every other player's,
 // all ephemeral. Coordinates are in canvas pixels (col/row * CELL_SIZE); the parent already
 // lives in scene space (zoom is applied by an ancestor transform).
-export default function MapRulerOverlay({ rulers, metric = 'euclidean', canvasWidth, canvasHeight }) {
+export default function MapRulerOverlay({ rulers, cellDistance = 1, unit = '', canvasWidth, canvasHeight }) {
   if (!rulers.length) return null;
   return (
     <div
@@ -49,7 +49,7 @@ export default function MapRulerOverlay({ rulers, metric = 'euclidean', canvasWi
         const my = ((r.from.row + r.to.row) / 2) * CELL_SIZE;
         return (
           <div key={r.key} className="map-ruler-badge" style={{ left: mx, top: my }}>
-            {formatDistance(r.distance, metric)}
+            {formatDistance(r.distance, cellDistance, unit)}
             {r.name ? <span className="map-ruler-badge__name"> · {r.name}</span> : null}
           </div>
         );
