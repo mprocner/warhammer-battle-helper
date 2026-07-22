@@ -24,7 +24,6 @@ const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
 const PING_HOLD_MS = 500;
-const RIGHT_PAN_THRESHOLD = 5; // px of movement before a right-drag counts as a pan (not a menu-click)
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
@@ -59,16 +58,6 @@ const SceneViewport = ({
   const [isCovering, setIsCovering] = useState(false);
 
   const panStartRef = useRef(null);
-  // Right-button pan works on ANY layer (grid/fog/drawing) and in both schemes.
-  // rightPanStartRef holds the drag origin; didRightPanRef marks that a real drag happened.
-  // rightActiveRef is true for the whole press→release: while set, every *native* (trusted)
-  // contextmenu is suppressed. We can't decide click-vs-drag when the menu fires (Chrome/macOS
-  // fires it on mousedown, before any movement), so we suppress unconditionally and, on mouseup,
-  // *replay* a synthetic contextmenu only if it turned out to be a click. This is ordering-proof:
-  // works whether the browser fires contextmenu on mousedown (macOS) or after mouseup (Windows).
-  const rightPanStartRef = useRef(null);
-  const didRightPanRef = useRef(false);
-  const rightActiveRef = useRef(false);
   const [textInputPos, setTextInputPos] = useState(null);
   const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
@@ -278,8 +267,7 @@ const SceneViewport = ({
 
   const handleViewportMouseDown = useCallback((e) => {
     // Left button — modern-scheme pan on the grid layer only (existing behaviour).
-    // Right-button pan is handled via Pointer Events (handleViewportPointerDown) because
-    // Chrome on macOS never fires `mouseup` for the secondary button.
+    // Right button no longer pans; it opens the native context menu on scene images.
     if (schemeRef.current !== 'modern') return;
     // Pan when in the default layer, or when the pan tool is active inside fog/drawing mode.
     if (e.button !== 0 || (editingLayerRef.current !== null && activeToolRef.current !== 'pan')) return;
@@ -295,18 +283,6 @@ const SceneViewport = ({
       startY: panOffsetRef.current.y,
     };
     setIsPanning(true);
-  }, []);
-
-  // Suppress every native contextmenu during a right-button interaction. Capture phase runs
-  // before the per-image onContextMenu, so stopPropagation keeps that menu from opening. The
-  // menu for a genuine click is re-created by replaying a synthetic event on pointerup (below),
-  // and that replay is trusted-false, so we let it through here.
-  const handleViewportContextMenu = useCallback((e) => {
-    if (!e.isTrusted) return; // our own replayed event → allow it to open the image menu
-    if (rightActiveRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
   }, []);
 
   useEffect(() => {
@@ -328,60 +304,6 @@ const SceneViewport = ({
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
-    };
-  }, []);
-
-  // Right-button pan — Pointer Events (not mouse events) because Chrome/macOS never fires
-  // `mouseup` for the secondary button, only `pointerup`. Works on any layer and both schemes.
-  const handleViewportPointerDown = useCallback((e) => {
-    if (e.button !== 2) return;
-    rightPanStartRef.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      startX: panOffsetRef.current.x,
-      startY: panOffsetRef.current.y,
-      scrollLeft: viewportRef.current?.scrollLeft || 0,
-      scrollTop: viewportRef.current?.scrollTop || 0,
-    };
-    didRightPanRef.current = false;
-    rightActiveRef.current = true;
-  }, []);
-
-  useEffect(() => {
-    const handlePointerMove = (e) => {
-      const r = rightPanStartRef.current;
-      if (!r) return;
-      const dx = e.clientX - r.mouseX;
-      const dy = e.clientY - r.mouseY;
-      // Right-button pan is disabled by request. We still flag a real drag (past threshold) so that
-      // a right-DRAG doesn't replay a context menu on release — only a plain right-click does. The
-      // map itself no longer scrolls with the right button.
-      if (!didRightPanRef.current && Math.hypot(dx, dy) > RIGHT_PAN_THRESHOLD) {
-        didRightPanRef.current = true;
-      }
-    };
-    const handlePointerUp = (e) => {
-      if (!rightPanStartRef.current) return;
-      const wasDrag = didRightPanRef.current;
-      rightPanStartRef.current = null;
-      setIsPanning(false);
-      if (!wasDrag) {
-        // Plain right-click → replay a contextmenu on the element under the cursor so the image
-        // menu opens (the trusted one was suppressed on press to keep drags menu-free).
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        el?.dispatchEvent(new MouseEvent('contextmenu', {
-          bubbles: true, cancelable: true, view: window, clientX: e.clientX, clientY: e.clientY,
-        }));
-      }
-      didRightPanRef.current = false;
-      // Clear on the next tick so a trailing (Windows-order) trusted contextmenu is still suppressed.
-      setTimeout(() => { rightActiveRef.current = false; }, 0);
-    };
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, []);
 
@@ -413,7 +335,15 @@ const SceneViewport = ({
     return targets;
   }, [displayedScene?.characters, displayedScene?.images]);
 
-  const snapPoint = useCallback((p) => snapPointToTokens(p, rulerSnapTargets), [rulerSnapTargets]);
+  // Ruler endpoint snapping: a token center wins when close (measure large tokens center-to-center);
+  // otherwise, in snap mode, quantize to the cell center so distances are measured grid-cell to
+  // grid-cell (matching how tokens are placed). Free mode keeps the continuous cursor point.
+  const snapPoint = useCallback((p) => {
+    const magnetized = snapPointToTokens(p, rulerSnapTargets);
+    if (magnetized !== p) return magnetized; // snapPointToTokens returns p unchanged when no token is near
+    if (tokenPlacementMode === 'snap') return { col: Math.floor(p.col) + 0.5, row: Math.floor(p.row) + 0.5 };
+    return p;
+  }, [rulerSnapTargets, tokenPlacementMode]);
 
   const ruler = useMapRuler({
     metric: measurementMetric, sendMessage, sceneId: displayedScene?.id,
@@ -441,11 +371,11 @@ const SceneViewport = ({
 
   const handleContentMouseDown = useCallback((e) => {
     clickDownPosRef.current = { x: e.clientX, y: e.clientY };
-    // Measure mode: left-drag on empty map lays out a ruler. Pressing a token instead drags it
-    // (the token shows its own drag ruler) — don't also start a measure-tool ruler.
+    // Measure mode: left-drag lays out a ruler. Pressing a token is fine — snapPoint magnetizes
+    // the origin to its center, so you measure FROM a token without moving it (tokens ignore the
+    // press while measuring; see MapCharacterToken).
     if (editingLayer === 'measure') {
-      const onToken = e.target.closest('.map-char-token') || e.target.closest('.scene-image--token');
-      if (e.button === 0 && !onToken) {
+      if (e.button === 0) {
         rulerStart(clientToCell(e.clientX, e.clientY));
         setIsMeasuring(true);
       }
@@ -620,8 +550,6 @@ const SceneViewport = ({
         <div
           ref={viewportRef}
           onMouseDownCapture={handleViewportMouseDown}
-          onPointerDownCapture={handleViewportPointerDown}
-          onContextMenuCapture={handleViewportContextMenu}
           className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : (controlScheme === 'modern' && editingLayer === null) ? ' scene-viewport--grab' : ''}`}
         >
           <div
