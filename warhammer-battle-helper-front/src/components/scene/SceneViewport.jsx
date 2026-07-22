@@ -353,21 +353,11 @@ const SceneViewport = ({
       if (!r) return;
       const dx = e.clientX - r.mouseX;
       const dy = e.clientY - r.mouseY;
+      // Right-button pan is disabled by request. We still flag a real drag (past threshold) so that
+      // a right-DRAG doesn't replay a context menu on release — only a plain right-click does. The
+      // map itself no longer scrolls with the right button.
       if (!didRightPanRef.current && Math.hypot(dx, dy) > RIGHT_PAN_THRESHOLD) {
         didRightPanRef.current = true;
-        setIsPanning(true);
-      }
-      if (!didRightPanRef.current) return;
-      if (schemeRef.current === 'classic') {
-        const el = viewportRef.current;
-        if (el) {
-          el.scrollLeft = r.scrollLeft - dx;
-          el.scrollTop = r.scrollTop - dy;
-        }
-      } else {
-        const newOffset = { x: r.startX + dx, y: r.startY + dy };
-        setPanOffset(newOffset);
-        panOffsetRef.current = newOffset;
       }
     };
     const handlePointerUp = (e) => {
