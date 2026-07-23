@@ -9,7 +9,7 @@ const MapTokensLayer = ({
   characters = [], images = [],
   isGM, gameId, sceneId, gameSystem, editingLayer, imageEditLayer, activeTool,
   tokenPlacementMode = 'snap',
-  selectedImageTokenId, onSelectImageToken,
+  selectedImageId, onSelectImage,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   // character-specific
   isMultiplayer = false, tokenDisplay, token,
@@ -32,8 +32,8 @@ const MapTokensLayer = ({
           editingLayer={editingLayer}
           imageEditLayer={imageEditLayer}
           gameSystem={gameSystem}
-          selected={selectedImageTokenId === item.data.id}
-          onSelectImageToken={onSelectImageToken}
+          selected={selectedImageId === item.data.id}
+          onSelectImage={onSelectImage}
           tokenPlacementMode={tokenPlacementMode}
           activeTool={activeTool}
           onTokenDragMeasureStart={onTokenDragMeasureStart}

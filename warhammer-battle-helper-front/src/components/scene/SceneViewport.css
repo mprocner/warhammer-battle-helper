@@ -315,8 +315,8 @@
   line-height: 1.4;
 }
 
-/* Selected token image gets a subtle ring so it reads as "active" while its overlay is expanded. */
-.scene-image--token.scene-image--selected {
+/* Selected image (any layer) gets a subtle gold ring so it reads as "active". */
+.scene-image--selected {
   outline: 2px solid rgba(201, 151, 91, 0.9);
   outline-offset: 1px;
 }

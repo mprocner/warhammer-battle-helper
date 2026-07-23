@@ -33,7 +33,7 @@ const SceneViewport = ({
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
-  selectedImageTokenId = null, onSelectImageToken, gameSystem = 'warhammer4e',
+  selectedImageId = null, onSelectImage, gameSystem = 'warhammer4e',
   tokenPlacementMode = 'snap',
   userId = null, userName = '', measurementMetric = 'euclidean', mapRulers = [],
   cellDistance = 1, distanceUnit = '',
@@ -587,6 +587,8 @@ const SceneViewport = ({
                   sceneId={displayedScene?.id}
                   editingLayer={editingLayer}
                   imageEditLayer={imageEditLayer}
+                  selectedImageId={selectedImageId}
+                  onSelectImage={onSelectImage}
                 />
 
                 {/* Visible grid as a CSS background (decoupled from drop-target cells). */}
@@ -614,8 +616,8 @@ const SceneViewport = ({
                   imageEditLayer={imageEditLayer}
                   activeTool={activeTool}
                   tokenPlacementMode={tokenPlacementMode}
-                  selectedImageTokenId={selectedImageTokenId}
-                  onSelectImageToken={onSelectImageToken}
+                  selectedImageId={selectedImageId}
+                  onSelectImage={onSelectImage}
                   onTokenDragMeasureStart={onTokenDragMeasureStart}
                   onTokenDragMeasureMove={onTokenDragMeasureMove}
                   onTokenDragMeasureEnd={onTokenDragMeasureEnd}
@@ -637,6 +639,8 @@ const SceneViewport = ({
                     sceneId={displayedScene?.id}
                     editingLayer={editingLayer}
                     imageEditLayer={imageEditLayer}
+                    selectedImageId={selectedImageId}
+                    onSelectImage={onSelectImage}
                   />
                 )}
 

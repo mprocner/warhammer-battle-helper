@@ -11,7 +11,7 @@ import TokenResizeHandles from './TokenResizeHandles';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImage, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null }) => {
   const { t } = useTranslation();
   // In Images ('grid') mode only the armed layer is manipulable; images on other layers
   // are dimmed + inert. Outside grid mode nothing here is armed.
@@ -283,17 +283,20 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
 
   const isToken = image.layer === 'tokens';
 
-  // --- Click-to-select (tokens layer, GM only) ---
-  // Selecting expands the ring — a GM editing affordance. Players can't select: their visible
-  // slots/HP stay in the rest ("sun") position on the token. A real drag ends with a native click
-  // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
+  // --- Click-to-select (GM only) ---
+  // GM click selects any image so it can be deleted via keyboard. For a tokens-layer image
+  // selecting also expands its ring (a GM editing affordance); players can't select, so their
+  // visible slots/HP stay in the rest ("sun") position on the token.
+  // Gated to non-drawing context (default or pan) — same condition as token drag/ring — so tool
+  // clicks aren't hijacked. A real drag ends with a native click too, so ignore the click right
+  // after a drag (movedRef / isDragging).
   const handleClick = useCallback((e) => {
-    if (!isToken || !isGM || !onSelectImageToken) return;
-    // A real drag (moved past threshold) must not select/expand the token afterwards.
+    if (!isGM || !onSelectImage) return;
+    if (!(editingLayer === null || activeTool === 'pan')) return;
     if (movedRef.current || isDragging) return;
     e.stopPropagation();
-    onSelectImageToken(image.id);
-  }, [isToken, isGM, onSelectImageToken, isDragging, image.id]);
+    onSelectImage(image.id);
+  }, [isGM, onSelectImage, editingLayer, activeTool, isDragging, image.id]);
 
   const handleZIndexChange = async (newZIndex) => {
     try {
@@ -378,7 +381,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
+          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isGM && (editingLayer === null || activeTool === 'pan') ? 'pointer' : 'default'),
           transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}
