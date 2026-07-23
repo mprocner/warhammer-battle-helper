@@ -8,7 +8,7 @@ import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
-import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath } from '../api/scenes';
+import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath, deleteSceneImage } from '../api/scenes';
 import ConfirmModal from './common/ConfirmModal';
 import ResizableSplitPane from './common/ResizableSplitPane';
 import CharacterSidebarList from './CharacterSidebarList';
@@ -108,6 +108,34 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Selected image-token (tokens-layer scene image with an expanded ring). Mutually exclusive
   // with activeTokenId — only one ring is open at a time, character or image.
   const [selectedImageId, setSelectedImageId] = useState(null);
+
+  // Clear selection when the selected image is removed by any user (WS delete).
+  // Mirrors the drawing-path cleanup below.
+  useEffect(() => {
+    if (!selectedImageId) return;
+    const images = currentScene?.images || [];
+    if (!images.find(i => i.id === selectedImageId)) {
+      setSelectedImageId(null);
+    }
+  }, [currentScene?.images, selectedImageId]);
+
+  // Delete / Backspace removes the selected image (GM). Locked images are skipped.
+  // Ignored while typing in a field. Mirrors DrawingLayer's keyboard delete.
+  useEffect(() => {
+    if (!selectedImageId) return;
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const el = e.target;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      const img = (currentScene?.images || []).find(i => i.id === selectedImageId);
+      if (!img || img.locked) return;
+      deleteSceneImage(gameId, currentSceneId, selectedImageId)
+        .then(() => setSelectedImageId(null))
+        .catch(err => console.error('Failed to delete scene image:', err));
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageId, currentScene?.images, gameId, currentSceneId]);
 
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
