@@ -114,7 +114,7 @@ export default function CharacterTokenGearPanel({
   const barMx = (bar) => bar.field ? (resolveField(character, bar.field).max ?? 0) : (draft.barValues[bar.id]?.max ?? 0);
 
   const saveSlotStructure = (base) => {
-    const posId = (blueprintSlots[editingSlot] || {}).id;
+    const posId = blueprintSlots[editingSlot]?.id ?? `p${editingSlot}`; // consistent with effectiveSlotAt's fallback key
     patchSlotOverride(posId, { slot: { ...base, id: posId } });
     setEditingSlot(null);
   };
@@ -248,7 +248,7 @@ export default function CharacterTokenGearPanel({
                 const { slot, isOverride, hidden } = effectiveSlotAt(i, blueprintSlots, draft);
                 const configured = slot.type && slot.type !== 'empty';
                 const Ico = slot.type === 'icon' ? resolveIcon(slot.icon) : null;
-                const posId = (blueprintSlots[i] || {}).id;
+                const posId = blueprintSlots[i]?.id ?? `p${i}`; // consistent with effectiveSlotAt's fallback key
                 return (
                   <Box key={i} onClick={() => setEditingSlot(i)}
                     sx={{
