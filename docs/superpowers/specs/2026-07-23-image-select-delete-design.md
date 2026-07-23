@@ -35,7 +35,7 @@ Generalize the existing `selectedImageTokenId` into a single `selectedImageId` c
 ### `SceneImage.jsx`
 - Widen `handleClick`: currently early-returns unless `isToken`. Change so a GM click selects **any** image.
   - Keep the drag guard (`movedRef.current || isDragging` → skip).
-  - Skip selection when a drawing/fog tool is active (`activeTool` is a draw/fog mode) so tool clicks aren't hijacked. Selection allowed in the default/non-drawing state.
+  - Skip selection when GM is in draw/fog mode, using the **existing** gate convention (`SceneImage.jsx:24` / `:454`): allow selection only when `editingLayer === null || activeTool === 'pan'`. No new list of tool names — reuse the same condition the ring/drag already use.
   - Token images: selecting still expands the ring (unchanged behavior — ring keys off `selected && isToken`).
 - Visual for non-token selected image: add a `scene-image--selected` class (or equivalent) when `selected && !isToken`.
 
