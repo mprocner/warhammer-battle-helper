@@ -26,12 +26,10 @@ type Character struct {
 	// Killed marks the character as dead — the token is struck through with a red X on the
 	// map. Independent of the token overlay config; toggled via PATCH .../killed.
 	Killed bool `bson:"killed,omitempty" json:"killed,omitempty"`
-	// TokenOverlay holds live per-token values for manual (non-field-bound) ring slots
-	// and squares (FEATURE-102), keyed by the slot's/square's stable opaque ID. Icon-slot
-	// conditions use States instead; field-bound slots read straight from Stats.
-	TokenOverlay map[string]TokenOverlayValue `bson:"tokenOverlay,omitempty" json:"tokenOverlay,omitempty"`
-	CreatedAt    time.Time                    `bson:"createdAt" json:"createdAt"`
-	UpdatedAt    time.Time                    `bson:"updatedAt" json:"updatedAt"`
+	// Manual per-token ring-slot/square values used to live here (TokenOverlay); they moved to the
+	// placement (GameCharacter.TokenGear) so multiple placements of one card don't share values.
+	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // MarshalJSON overrides default serialisation so that Stats (bson.Raw) is
@@ -51,35 +49,33 @@ func (ch Character) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(struct {
-		ID           primitive.ObjectID           `json:"id"`
-		GameID       primitive.ObjectID           `json:"gameId"`
-		GameSystem   string                       `json:"gameSystem"`
-		CreatedBy    primitive.ObjectID           `json:"createdBy"`
-		VisibleTo    []primitive.ObjectID         `json:"visibleTo"`
-		IsNPC        bool                         `json:"isNPC,omitempty"`
-		Name         string                       `json:"name"`
-		Avatar       string                       `json:"avatar"`
-		Stats        json.RawMessage              `json:"stats"`
-		States       []CharacterState             `json:"states,omitempty"`
-		Killed       bool                         `json:"killed,omitempty"`
-		TokenOverlay map[string]TokenOverlayValue `json:"tokenOverlay,omitempty"`
-		CreatedAt    time.Time                    `json:"createdAt"`
-		UpdatedAt    time.Time                    `json:"updatedAt"`
+		ID         primitive.ObjectID   `json:"id"`
+		GameID     primitive.ObjectID   `json:"gameId"`
+		GameSystem string               `json:"gameSystem"`
+		CreatedBy  primitive.ObjectID   `json:"createdBy"`
+		VisibleTo  []primitive.ObjectID `json:"visibleTo"`
+		IsNPC      bool                 `json:"isNPC,omitempty"`
+		Name       string               `json:"name"`
+		Avatar     string               `json:"avatar"`
+		Stats      json.RawMessage      `json:"stats"`
+		States     []CharacterState     `json:"states,omitempty"`
+		Killed     bool                 `json:"killed,omitempty"`
+		CreatedAt  time.Time            `json:"createdAt"`
+		UpdatedAt  time.Time            `json:"updatedAt"`
 	}{
-		ID:           ch.ID,
-		GameID:       ch.GameID,
-		GameSystem:   ch.GameSystem,
-		CreatedBy:    ch.CreatedBy,
-		VisibleTo:    ch.VisibleTo,
-		IsNPC:        ch.IsNPC,
-		Name:         ch.Name,
-		Avatar:       ch.Avatar,
-		Stats:        statsJSON,
-		States:       ch.States,
-		Killed:       ch.Killed,
-		TokenOverlay: ch.TokenOverlay,
-		CreatedAt:    ch.CreatedAt,
-		UpdatedAt:    ch.UpdatedAt,
+		ID:         ch.ID,
+		GameID:     ch.GameID,
+		GameSystem: ch.GameSystem,
+		CreatedBy:  ch.CreatedBy,
+		VisibleTo:  ch.VisibleTo,
+		IsNPC:      ch.IsNPC,
+		Name:       ch.Name,
+		Avatar:     ch.Avatar,
+		Stats:      statsJSON,
+		States:     ch.States,
+		Killed:     ch.Killed,
+		CreatedAt:  ch.CreatedAt,
+		UpdatedAt:  ch.UpdatedAt,
 	})
 }
 

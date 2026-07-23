@@ -238,6 +238,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	// the GM). requestingUserID is the zero ObjectID when hasUser is false, which never equals a
 	// real GameMasterID, so this correctly masks for anonymous viewers too.
 	service.FilterSceneImageTokensForUser(game, requestingUserID)
+	h.GameService.FilterSceneCharacterTokensForUser(game, requestingUserID)
 
 	c.JSON(http.StatusOK, game)
 }
@@ -615,6 +616,7 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 		h.attachTokenConfig(game)
 		service.FilterNotesForUser(game, userID)
 		service.FilterSceneImageTokensForUser(game, userID)
+		h.GameService.FilterSceneCharacterTokensForUser(game, userID)
 		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
 			"game": game,
 		}, []string{userID.Hex()})

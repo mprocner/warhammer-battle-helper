@@ -1,3 +1,4 @@
 - [Custom system data model conventions](custom-system-data-model.md) — Stats uses per-type maps (Attributes/Skills/Numbers/...); AttrValue {base,advances,current} is the reusable pattern for any "advances" feature
 - [Skill table advances design (2026-06-15)](skill-table-advances-design.md) — compact grid layout for skill_table rows with base/advances/total columns
 - [Map settings toggle vertical (2026-07-21)](map-settings-toggle-vertical.md) — 3+ long-label toggles in narrow settings tab: go vertical segmented, don't shorten labels or hide meaning in tooltip-only
+- [Character token gear — Model A (2026-07-22)](character-token-gear-model-a.md) — Blueprint (per-system) vs Gear (per-token) split; reuse ImageToken's lock icon for "synced to blueprint" vs override

@@ -1081,6 +1081,9 @@ func (r *GameRepository) UpdateSceneCharacterGeometry(gameID string, sceneID pri
 	if req.ZIndex != nil {
 		setFields["scenes.$[scene].characters.$[char].zIndex"] = *req.ZIndex
 	}
+	if req.Hidden != nil {
+		setFields["scenes.$[scene].characters.$[char].hidden"] = *req.Hidden
+	}
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{"$set": setFields}
@@ -1211,6 +1214,9 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	if req.Killed != nil {
 		setFields["scenes.$[scene].images.$[img].killed"] = *req.Killed
 	}
+	if req.Hidden != nil {
+		setFields["scenes.$[scene].images.$[img].hidden"] = *req.Hidden
+	}
 	if req.TokenOverlay != nil {
 		setFields["scenes.$[scene].images.$[img].tokenOverlay"] = *req.TokenOverlay
 	}
@@ -1327,6 +1333,117 @@ func (r *GameRepository) SetSceneImageSlotNumber(gameID string, sceneID, imageID
 			"scenes.$[scene].images.$[img].updatedAt":                         time.Now(),
 			"updatedAt": time.Now(),
 		},
+	})
+}
+
+// --- Character token gear (per-placement, keyed by GameCharacter._id) -----------------------
+// charGearPrefix is the array-path prefix into one scene placement's embedded tokenGear.
+const charGearPrefix = "scenes.$[scene].characters.$[char]."
+
+// charGearUpdate runs an arrayFilters update (scene._id, char._id, plus any extra) into one
+// placement. `update` is the full mongo update doc (paths built by the caller). Absent tokenGear is
+// created on first write (Mongo auto-creates missing nested paths).
+func (r *GameRepository) charGearUpdate(gameID string, sceneID, placementID primitive.ObjectID, extra []interface{}, update bson.M) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+	filters := append([]interface{}{
+		bson.M{"scene._id": sceneID},
+		bson.M{"char._id": placementID},
+	}, extra...)
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{Filters: filters})
+	result, err := r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, update, opts)
+	if err != nil {
+		return fmt.Errorf("failed to update character token gear: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
+// gearSet wraps leaf $set fields with the placement + game updatedAt bumps.
+func gearSet(fields bson.M) bson.M {
+	fields[charGearPrefix+"updatedAt"] = time.Now()
+	fields["updatedAt"] = time.Now()
+	return bson.M{"$set": fields}
+}
+
+// SetCharGear replaces the whole per-token gear in one write (used by the config panel's Save).
+func (r *GameRepository) SetCharGear(gameID string, sceneID, placementID primitive.ObjectID, gear *models.CharacterTokenGear) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{
+		charGearPrefix + "tokenGear": gear,
+	}))
+}
+
+func (r *GameRepository) SetCharSlotValue(gameID string, sceneID, placementID primitive.ObjectID, slotID string, val models.TokenOverlayValue) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{
+		charGearPrefix + "tokenGear.slotOverrides." + slotID + ".value": val,
+	}))
+}
+
+func (r *GameRepository) SetCharSlotHidden(gameID string, sceneID, placementID primitive.ObjectID, slotID string, hidden bool) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{
+		charGearPrefix + "tokenGear.slotOverrides." + slotID + ".hidden": hidden,
+	}))
+}
+
+// SetCharSlotStructure sets (or, with slot==nil, clears) only the .slot leaf of a position override.
+func (r *GameRepository) SetCharSlotStructure(gameID string, sceneID, placementID primitive.ObjectID, slotID string, slot *models.TokenSlot) error {
+	path := charGearPrefix + "tokenGear.slotOverrides." + slotID + ".slot"
+	if slot == nil {
+		return r.charGearUpdate(gameID, sceneID, placementID, nil, bson.M{
+			"$unset": bson.M{path: ""},
+			"$set":   bson.M{charGearPrefix + "updatedAt": time.Now(), "updatedAt": time.Now()},
+		})
+	}
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{path: slot}))
+}
+
+// ClearCharSlotOverride removes the whole override entry for a position (full reset to blueprint).
+func (r *GameRepository) ClearCharSlotOverride(gameID string, sceneID, placementID primitive.ObjectID, slotID string) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, bson.M{
+		"$unset": bson.M{charGearPrefix + "tokenGear.slotOverrides." + slotID: ""},
+		"$set":   bson.M{charGearPrefix + "updatedAt": time.Now(), "updatedAt": time.Now()},
+	})
+}
+
+func (r *GameRepository) SetCharBarHidden(gameID string, sceneID, placementID primitive.ObjectID, barID string, hidden bool) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{
+		charGearPrefix + "tokenGear.barOverrides." + barID: hidden,
+	}))
+}
+
+func (r *GameRepository) SetCharBarValue(gameID string, sceneID, placementID primitive.ObjectID, barID string, val models.HPBarValue) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, gearSet(bson.M{
+		charGearPrefix + "tokenGear.barValues." + barID: val,
+	}))
+}
+
+func (r *GameRepository) PushCharAddedBar(gameID string, sceneID, placementID primitive.ObjectID, bar models.TokenHPBar) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, bson.M{
+		"$push": bson.M{charGearPrefix + "tokenGear.addedBars": bar},
+		"$set":  bson.M{charGearPrefix + "updatedAt": time.Now(), "updatedAt": time.Now()},
+	})
+}
+
+func (r *GameRepository) EditCharAddedBar(gameID string, sceneID, placementID primitive.ObjectID, bar models.TokenHPBar) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, []interface{}{bson.M{"el.id": bar.ID}}, gearSet(bson.M{
+		charGearPrefix + "tokenGear.addedBars.$[el]": bar,
+	}))
+}
+
+func (r *GameRepository) RemoveCharAddedBar(gameID string, sceneID, placementID primitive.ObjectID, barID string) error {
+	return r.charGearUpdate(gameID, sceneID, placementID, nil, bson.M{
+		"$pull": bson.M{charGearPrefix + "tokenGear.addedBars": bson.M{"id": barID}},
+		"$unset": bson.M{
+			charGearPrefix + "tokenGear.barValues." + barID:    "",
+			charGearPrefix + "tokenGear.barOverrides." + barID: "",
+		},
+		"$set": bson.M{charGearPrefix + "updatedAt": time.Now(), "updatedAt": time.Now()},
 	})
 }
 

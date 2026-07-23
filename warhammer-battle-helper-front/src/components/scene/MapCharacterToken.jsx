@@ -12,7 +12,8 @@ function MapCharacterToken({
   character, col, row, w, h,
   isGM = false, isMultiplayer = false, canDrag = true, selected = false,
   tokenPlacementMode = 'snap', tokenDisplay = null, gameId = null, token = null,
-  editingLayer = null, activeTool = null,
+  sceneId = null, hidden = false, placementId = null, tokenGear = null, tokenView = null,
+  gameSystem = null, editingLayer = null, activeTool = null,
   onSelect, onCommitMove, onCommitResize,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
 }) {
@@ -48,6 +49,9 @@ function MapCharacterToken({
     if (e.button !== 0) return;
     // Presses on a resize handle or on the states/HP overlay must not start a drag.
     if (e.target.closest('.map-char-token__handle') || e.target.closest('.token-overlay')) return;
+    // Measure mode: the ruler owns the press (it magnetizes to this token's center in the
+    // viewport's capture handler). The token must stay put — never drag/select while measuring.
+    if (editingLayer === 'measure') return;
     // Selection is allowed for everyone able to select; dragging is ownership-gated.
     e.stopPropagation();
     if (!canDrag) return;
@@ -64,7 +68,7 @@ function MapCharacterToken({
     onTokenDragMeasureStart?.(snap
       ? { col: Math.round(pos.col) + size.w / 2, row: Math.round(pos.row) + size.h / 2 }
       : { col: pos.col + size.w / 2, row: pos.row + size.h / 2 });
-  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, onTokenDragMeasureStart]);
+  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, onTokenDragMeasureStart]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -151,6 +155,7 @@ function MapCharacterToken({
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click
+    if (editingLayer === 'measure') return; // measuring — a press must not open the character
     e.stopPropagation();
     onSelect?.(character);
   };
@@ -160,9 +165,13 @@ function MapCharacterToken({
   const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo);
   const px = { left: pos.col * CELL_SIZE, top: pos.row * CELL_SIZE, width: size.w * CELL_SIZE, height: size.h * CELL_SIZE };
 
+  // GM-only dim: this token's placement is hidden from players (players without the card don't
+  // receive it at all). An explicit GM action, so dimming it is always the right signal.
+  const hiddenFromPlayers = isGM && hidden;
+
   return (
     <div
-      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}`}
+      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}`}
       style={{ position: 'absolute', ...px, cursor: canDrag ? (isDragging ? 'grabbing' : 'grab') : 'pointer', pointerEvents: 'auto' }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
@@ -183,15 +192,21 @@ function MapCharacterToken({
       </div>
       <span className="map-char-token__name">{displayName}</span>
 
-      {tokenDisplay && (
+      {(tokenDisplay || tokenView) && (
         <TokenOverlay
           character={character}
           config={tokenDisplay}
+          tokenGear={tokenGear}
+          tokenView={tokenView}
           selected={selected}
-          canEditToken={canDrag}
           canEdit={canDrag}
+          isGM={isGM}
+          sceneId={sceneId}
+          placementId={placementId}
+          hidden={hidden}
           gameId={gameId}
           token={token}
+          gameSystem={gameSystem}
           width={size.w * CELL_SIZE}
           height={size.h * CELL_SIZE}
         />

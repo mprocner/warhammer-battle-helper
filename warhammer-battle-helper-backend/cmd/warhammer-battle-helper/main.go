@@ -235,7 +235,6 @@ func main() {
 	game.POST("/characters", characterHandler.CreateGameCharacter)
 	game.PUT("/characters/:charId", characterHandler.UpdateGameCharacter)
 	game.PATCH("/characters/:charId/statField", characterHandler.PatchStatField)
-	game.PATCH("/characters/:charId/tokenOverlay", characterHandler.PatchTokenOverlay)
 	game.PATCH("/characters/:charId/state", characterHandler.PatchState)
 	game.PATCH("/characters/:charId/killed", characterHandler.PatchKilled)
 	game.DELETE("/characters/:charId", characterHandler.DeleteGameCharacter)
@@ -258,6 +257,19 @@ func main() {
 	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/hp", sceneHandler.PatchSceneImageTokenHP)
 	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/slot", sceneHandler.PatchSceneImageTokenSlot)
 	game.PUT("/scenes/:sceneId/tokenSlotConfig", sceneHandler.ApplyImageTokenSlot)
+
+	// Per-token character token gear (GM-only, keyed by placement _id). Slots = per-position overlay
+	// (value/visibility/structure/reset); bars = append list (visibility/value/add/edit/remove).
+	game.PUT("/scenes/:sceneId/tokens/:placementId/tokenGear", sceneHandler.SetCharGear)
+	game.PATCH("/scenes/:sceneId/tokens/:placementId/tokenGear/slots/:slotId/value", sceneHandler.SetCharSlotValue)
+	game.PATCH("/scenes/:sceneId/tokens/:placementId/tokenGear/slots/:slotId/visibility", sceneHandler.SetCharSlotVisibility)
+	game.PUT("/scenes/:sceneId/tokens/:placementId/tokenGear/slots/:slotId/structure", sceneHandler.SetCharSlotStructure)
+	game.DELETE("/scenes/:sceneId/tokens/:placementId/tokenGear/slots/:slotId", sceneHandler.ClearCharSlotOverride)
+	game.PATCH("/scenes/:sceneId/tokens/:placementId/tokenGear/bars/:barId/visibility", sceneHandler.SetCharBarVisibility)
+	game.PATCH("/scenes/:sceneId/tokens/:placementId/tokenGear/bars/:barId/value", sceneHandler.SetCharBarValue)
+	game.POST("/scenes/:sceneId/tokens/:placementId/tokenGear/bars", sceneHandler.AddCharBar)
+	game.PATCH("/scenes/:sceneId/tokens/:placementId/tokenGear/bars/:barId/structure", sceneHandler.EditCharBar)
+	game.DELETE("/scenes/:sceneId/tokens/:placementId/tokenGear/bars/:barId", sceneHandler.RemoveCharBar)
 
 	// Fog of war
 	game.PATCH("/scenes/:sceneId/fog", fogHandler.ToggleFog)

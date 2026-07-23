@@ -1,0 +1,1 @@
+- [Token gear redesign plan](token-gear-redesign-plan.md) — Model A plan (2026-07-22, NOT yet implemented): per-token GameCharacter.TokenGear, multi HP bars, masking moves to scene payload not GetGameCharacters

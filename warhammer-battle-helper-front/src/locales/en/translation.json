@@ -1,6 +1,24 @@
 {
   "token": {
-    "killed": "Killed"
+    "killed": "Killed",
+    "hideFromPlayers": "Hide from players",
+    "showToPlayers": "Show to players",
+    "gear": {
+      "title": "Configure Token — {{name}}",
+      "tooltip": "Configure this token",
+      "blueprintStrip": "Creator: {{system}}",
+      "editBlueprint": "Edit in creator",
+      "editBlueprintHint": "Changes apply to every token of this system",
+      "hiddenTokenWarning": "This token is currently hidden from players — visibility settings below have no effect until you reveal it.",
+      "fromBlueprintSection": "From creator",
+      "addedHereSection": "Added on this token",
+      "inheritedTooltip": "Defined in the creator — change structure there",
+      "overrideTooltip": "Overridden on this token",
+      "restoreFromBlueprint": "Restore from creator",
+      "addBar": "Add bar",
+      "slotHint": "Click a position to override its slot for this token.",
+      "squaresBlueprintOnlyHint": "Squares are defined in the creator; here you only toggle their visibility."
+    }
   },
   "common": {
     "save": "Save",
@@ -1154,10 +1172,15 @@
     "tokenDisplay": {
       "cardTitle": "Token Display",
       "cardHint": "Configure what info shows around a character token on the map.",
-      "configureButton": "Configure token display",
+      "configureButton": "Configure system",
       "variantSuffix": "token config",
       "intro": "Click a slot to show a condition, stat or value on this system's tokens.",
       "hpBarTitle": "HP Bar",
+      "hpBarsTitle": "HP Bars",
+      "hpBarsEmpty": "No HP bars yet. Add one bound to a card field or a manual one.",
+      "fromCard": "From card",
+      "visibleByDefault": "Visible to players by default",
+      "hiddenByDefault": "Hidden from players by default",
       "hpBindLabel": "Bound field",
       "hpBindNone": "None",
       "hpBindEmpty": "No progress-type field available for this system.",

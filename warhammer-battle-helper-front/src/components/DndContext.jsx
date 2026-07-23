@@ -670,7 +670,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
             // Use full character data if accessible; otherwise fall back to scene token data
             const charData = fullChar
               ? normalizeCharacter(fullChar)
-              : { id: gameChar.characterId, name: gameChar.name, avatar: gameChar.avatar, isEnemy: gameChar.isEnemy, stats: {}, gridOnly: true };
+              : { id: gameChar.characterId, name: gameChar.name, avatar: gameChar.avatar, isEnemy: gameChar.isEnemy, killed: gameChar.killed, stats: {}, gridOnly: true };
             clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: charData };
             characterIdsOnGrid.add(gameChar.characterId);
           }
@@ -858,6 +858,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         w: ov?.w ?? ((sc && sc.w) || 1),
         h: ov?.h ?? ((sc && sc.h) || 1),
         zIndex: (sc && sc.zIndex) || 0,
+        hidden: !!(sc && sc.hidden),
+        placementId: sc && sc.id,
+        tokenGear: sc && sc.tokenGear,   // raw per-token gear (GM/card-holder)
+        tokenView: sc && sc.tokenView,   // masked projection (card-less viewer)
         canDrag: !isMultiplayer || isGM || isOwnCharacter(z.character.id),
       };
     });

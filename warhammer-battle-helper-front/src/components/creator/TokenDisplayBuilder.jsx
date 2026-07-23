@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, TextField, MenuItem, IconButton } from '@mui/material';
+import { Box, Typography, TextField, MenuItem, IconButton, Button, Checkbox, FormControlLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/CloseOutlined';
+import DeleteIcon from '@mui/icons-material/DeleteOutline';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { getSystem } from '../../systems/registry';
@@ -10,25 +13,29 @@ import TokenSlotConfigModal from './TokenSlotConfigModal';
 
 const SLOT_COUNT = 8;
 const genId = () => Math.random().toString(36).slice(2, 10);
+const BAR_COLORS = ['#e03131', '#2f9e44', '#1971c2', '#f2cc0c'];
 
-// A fresh, empty layout: 8 fixed ring positions (stable ids), no HP binding, no squares.
+// A fresh, empty layout: 8 fixed ring positions (stable ids), no HP bars, no squares.
 function makeDefaultConfig() {
   return {
     enabled: true,
     slots: Array.from({ length: SLOT_COUNT }, () => ({ id: genId(), type: 'empty' })),
-    hpBar: null,
+    hpBars: [],
     squares: [],
   };
 }
 
-// Ensure a config always has exactly 8 slots with ids (defensive against older/partial data).
+// Ensure a config always has exactly 8 slots with ids, and an hpBars list (folding a legacy single
+// hpBar into a one-element list if an un-migrated config reaches the editor).
 function normalizeConfig(cfg) {
   if (!cfg) return makeDefaultConfig();
   const slots = Array.from({ length: SLOT_COUNT }, (_, i) => {
     const s = cfg.slots?.[i];
     return s && s.id ? s : { id: genId(), type: 'empty' };
   });
-  return { enabled: cfg.enabled !== false, slots, hpBar: cfg.hpBar || null, squares: cfg.squares || [] };
+  let hpBars = cfg.hpBars;
+  if (!hpBars) hpBars = cfg.hpBar ? [{ id: genId(), label: cfg.hpBar.label || '', field: cfg.hpBar }] : [];
+  return { enabled: cfg.enabled !== false, slots, hpBars, squares: cfg.squares || [] };
 }
 
 // Position (percent) of ring slot i around the sample token, starting at top, clockwise.
@@ -115,10 +122,23 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
 
   const removeSquare = (i) => commit({ ...config, squares: config.squares.filter((_, idx) => idx !== i) });
 
-  const bindHP = (key) => {
-    if (!key) return commit({ ...config, hpBar: null });
+  // Blueprint default player-visibility toggles (seed the per-token gear). Slots/squares carry
+  // defaultHidden inline; the gear can override per token.
+  const toggleSlotHidden = (i) => commit({ ...config, slots: config.slots.map((s, idx) => idx === i ? { ...s, defaultHidden: !s.defaultHidden } : s) });
+
+  // ── HP bars (list) ──────────────────────────────────────────────────────
+  const addBar = () => commit({ ...config, hpBars: [...config.hpBars, { id: genId(), label: '', color: BAR_COLORS[1], field: null, defaultHidden: false }] });
+  const updateBar = (id, patch) => commit({ ...config, hpBars: config.hpBars.map(b => b.id === id ? { ...b, ...patch } : b) });
+  const removeBar = (id) => commit({ ...config, hpBars: config.hpBars.filter(b => b.id !== id) });
+  // "From card" toggle: bind to a progress field, or clear to make the bar manual (per-token values).
+  const setBarFromCard = (id, on) => {
+    if (!on) return updateBar(id, { field: null });
+    const f = progressFields[0];
+    updateBar(id, { field: f ? { key: f.key, maxKey: f.progressMaxKey, label: f.label } : null });
+  };
+  const setBarField = (id, key) => {
     const f = progressFields.find(pf => pf.key === key);
-    commit({ ...config, hpBar: { key: f.key, maxKey: f.progressMaxKey, label: f.label } });
+    updateBar(id, { field: f ? { key: f.key, maxKey: f.progressMaxKey, label: f.label } : null });
   };
 
   return (
@@ -127,10 +147,53 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
         {t('creator.tokenDisplay.intro')}
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-        {/* Radial editor */}
-        <Box sx={{ position: 'relative', width: 260, height: 260, flexShrink: 0 }}>
-          {/* Sample token */}
+      {/* ── HP BARS (top, full width, ImageToken-style rows) ── */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42' }}>{t('creator.tokenDisplay.hpBarsTitle')}</Typography>
+        <Button size="small" startIcon={<AddIcon />} onClick={addBar} sx={{ color: '#7a5c42' }}>{t('common.add')}</Button>
+      </Box>
+      <Box sx={{ mb: 2 }}>
+        {config.hpBars.length === 0 && (
+          <Typography sx={{ fontSize: '0.78rem', color: '#a89272', mb: 1 }}>{t('creator.tokenDisplay.hpBarsEmpty')}</Typography>
+        )}
+        {config.hpBars.map(bar => (
+          <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+            <TextField size="small" variant="outlined" label={t('imageToken.barLabel')} value={bar.label}
+              onChange={e => updateBar(bar.id, { label: e.target.value })} sx={{ flex: 1, minWidth: 100 }} />
+            <FormControlLabel
+              sx={{ m: 0, '& .MuiFormControlLabel-label': { fontSize: '0.72rem', color: '#7a5c42' } }}
+              control={<Checkbox size="small" checked={!!bar.field} onChange={e => setBarFromCard(bar.id, e.target.checked)} />}
+              label={t('creator.tokenDisplay.fromCard')}
+            />
+            {bar.field && (
+              <TextField select size="small" variant="outlined" label={t('creator.tokenDisplay.hpBindLabel')} value={bar.field.key || ''} onChange={e => setBarField(bar.id, e.target.value)}
+                sx={{ minWidth: 130 }} helperText={progressFields.length === 0 ? t('creator.tokenDisplay.hpBindEmpty') : undefined}>
+                {progressFields.map(f => <MenuItem key={f.key} value={f.key}>{f.label}</MenuItem>)}
+              </TextField>
+            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+              {BAR_COLORS.map(c => (
+                <Box key={c} onClick={() => updateBar(bar.id, { color: c })} title={t('imageToken.barColor')}
+                  sx={{ width: 16, height: 16, borderRadius: '50%', background: c, cursor: 'pointer', border: bar.color === c ? '2px solid #3a2f1f' : '1px solid rgba(0,0,0,0.25)' }} />
+              ))}
+              <input type="color" value={bar.color || '#c9975b'} onChange={e => updateBar(bar.id, { color: e.target.value })}
+                title={t('imageToken.barColor')} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
+            </Box>
+            <IconButton size="small" title={bar.defaultHidden ? t('creator.tokenDisplay.hiddenByDefault') : t('creator.tokenDisplay.visibleByDefault')}
+              onClick={() => updateBar(bar.id, { defaultHidden: !bar.defaultHidden })} sx={{ color: bar.defaultHidden ? '#b5482f' : '#5a7a42' }}>
+              {bar.defaultHidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+            </IconButton>
+            <IconButton size="small" onClick={() => removeBar(bar.id)} sx={{ color: '#b5482f' }}><DeleteIcon fontSize="small" /></IconButton>
+          </Box>
+        ))}
+      </Box>
+
+      <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
+
+      {/* ── RING SLOTS (middle, radial sun like the gear popup) ── */}
+      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>{t('creator.tokenDisplay.slotsTitle')}</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+        <Box sx={{ position: 'relative', width: 240, height: 240, flexShrink: 0 }}>
           <Box sx={{
             position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
             width: 54, height: 54, borderRadius: '50%', border: '2.5px solid #c9975b',
@@ -144,11 +207,10 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
             const configured = slot.type && slot.type !== 'empty';
             const Ico = slot.type === 'icon' ? resolveIcon(slot.icon) : null;
             return (
-              <Box key={slot.id} onClick={() => setEditing({ kind: 'slot', index: i })}
-                title={slotSummary(slot, t)}
+              <Box key={slot.id} onClick={() => setEditing({ kind: 'slot', index: i })} title={slotSummary(slot, t)}
                 sx={{
                   position: 'absolute', left: pos.left, top: pos.top, transform: 'translate(-50%, -50%)',
-                  width: 30, height: 30, borderRadius: slot.type === 'number' || slot.type === 'field' ? '6px' : '50%',
+                  width: 32, height: 32, borderRadius: slot.type === 'number' || slot.type === 'field' ? '6px' : '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                   border: configured ? '1.5px solid #c9975b' : '1.5px dashed #c4a882',
                   background: configured ? 'rgba(20,12,4,0.85)' : 'rgba(255,249,240,0.6)',
@@ -159,74 +221,44 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
                   : slot.type === 'field' ? (slot.field?.label || '').slice(0, 3)
                   : slot.type === 'number' ? (slot.numberLabel || '').slice(0, 3)
                   : (slot.selectOptions?.[0] || '').slice(0, 3)}
-                <Box sx={{ position: 'absolute', top: -6, right: -6, width: 13, height: 13, borderRadius: '50%', background: '#7a5c42', color: '#fff', fontSize: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i}</Box>
+                {/* defaultHidden eye per configured slot (top-right). */}
+                {configured && (
+                  <Box onClick={(e) => { e.stopPropagation(); toggleSlotHidden(i); }}
+                    title={slot.defaultHidden ? t('creator.tokenDisplay.hiddenByDefault') : t('creator.tokenDisplay.visibleByDefault')}
+                    sx={{ position: 'absolute', top: -9, right: -9, width: 18, height: 18, borderRadius: '50%',
+                      background: '#fff9f0', border: '1px solid #c4a882', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', color: slot.defaultHidden ? '#b5482f' : '#5a7a42' }}>
+                    {slot.defaultHidden ? <VisibilityOffIcon sx={{ fontSize: 12 }} /> : <VisibilityIcon sx={{ fontSize: 12 }} />}
+                  </Box>
+                )}
               </Box>
             );
           })}
         </Box>
+      </Box>
 
-        {/* Bindings panel */}
-        <Box sx={{ flex: 1, minWidth: 240 }}>
-          {/* HP bar */}
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>
-            {t('creator.tokenDisplay.hpBarTitle')}
-          </Typography>
-          <TextField
-            select fullWidth size="small" variant="outlined"
-            label={t('creator.tokenDisplay.hpBindLabel')}
-            value={config.hpBar?.key || ''}
-            onChange={e => bindHP(e.target.value)}
-            sx={{ mb: 2 }}
-            helperText={progressFields.length === 0 ? t('creator.tokenDisplay.hpBindEmpty') : undefined}
-          >
-            <MenuItem value=""><em>{t('creator.tokenDisplay.hpBindNone')}</em></MenuItem>
-            {progressFields.map(f => <MenuItem key={f.key} value={f.key}>{f.label}</MenuItem>)}
-          </TextField>
+      <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
 
-          {/* Slot list */}
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>
-            {t('creator.tokenDisplay.slotsTitle')}
-          </Typography>
-          <Box sx={{ mb: 2 }}>
-            {config.slots.map((slot, i) => (
-              <Box key={slot.id} onClick={() => setEditing({ kind: 'slot', index: i })}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.25, cursor: 'pointer', fontSize: '0.82rem', color: '#3a2f1f' }}>
-                <Box sx={{ width: 18, textAlign: 'center', color: '#7a5c42', fontWeight: 700 }}>{i}</Box>
-                <Box sx={{ flex: 1 }}>{slot.type === 'empty' ? <em style={{ color: '#a89272' }}>{t('creator.tokenDisplay.slot.type_empty')}</em> : slotSummary(slot, t)}</Box>
-                <Box sx={{ fontSize: '0.7rem', color: '#a89272' }}>{slot.type !== 'empty' ? t(`creator.tokenDisplay.slot.type_${slot.type}`) : ''}</Box>
-              </Box>
-            ))}
-          </Box>
-
-          {/* Squares */}
-          <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>
-            {t('creator.tokenDisplay.squares.title')}
-          </Typography>
-          <Typography sx={{ fontSize: '0.75rem', color: '#a89272', mb: 1 }}>
-            {t('creator.tokenDisplay.squares.hint')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {config.squares.map((sq, i) => (
-              <Box key={sq.id} sx={{ position: 'relative' }}>
-                <Box onClick={() => setEditing({ kind: 'square', index: i })}
-                  title={sq.caption}
-                  sx={{ width: 48, minHeight: 44, border: '1.5px solid #c9975b', borderRadius: '6px', background: 'rgba(20,12,4,0.85)', color: '#f0d8b0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', p: 0.5 }}>
-                  <Box sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{sq.field?.label || sq.numberLabel || (sq.selectOptions?.[0] || '').slice(0, 3) || '—'}</Box>
-                  <Box sx={{ fontSize: '0.55rem', color: '#c4a882', textAlign: 'center' }}>{sq.caption}</Box>
-                </Box>
-                <IconButton size="small" onClick={() => removeSquare(i)}
-                  sx={{ position: 'absolute', top: -10, right: -10, width: 18, height: 18, background: '#fff9f0', border: '1px solid #c4a882' }}>
-                  <CloseIcon sx={{ fontSize: 12, color: '#883030' }} />
-                </IconButton>
-              </Box>
-            ))}
-            {/* Add-square button, itself square-shaped */}
-            <Box onClick={() => setEditing({ kind: 'square', index: -1 })}
-              title={t('creator.tokenDisplay.squares.addButton')}
-              sx={{ width: 48, minHeight: 44, border: '1.5px dashed #c4a882', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#c4a882' }}>
-              <AddIcon sx={{ fontSize: 20 }} />
+      {/* ── SQUARES (bottom, full width) ── */}
+      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>{t('creator.tokenDisplay.squares.title')}</Typography>
+      <Typography sx={{ fontSize: '0.75rem', color: '#a89272', mb: 1 }}>{t('creator.tokenDisplay.squares.hint')}</Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        {config.squares.map((sq, i) => (
+          <Box key={sq.id} sx={{ position: 'relative' }}>
+            <Box onClick={() => setEditing({ kind: 'square', index: i })} title={sq.caption}
+              sx={{ width: 48, minHeight: 44, border: '1.5px solid #c9975b', borderRadius: '6px', background: 'rgba(20,12,4,0.85)', color: '#f0d8b0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', p: 0.5 }}>
+              <Box sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{sq.field?.label || sq.numberLabel || (sq.selectOptions?.[0] || '').slice(0, 3) || '—'}</Box>
+              <Box sx={{ fontSize: '0.55rem', color: '#c4a882', textAlign: 'center' }}>{sq.caption}</Box>
             </Box>
+            <IconButton size="small" onClick={() => removeSquare(i)}
+              sx={{ position: 'absolute', top: -10, right: -10, width: 18, height: 18, background: '#fff9f0', border: '1px solid #c4a882' }}>
+              <CloseIcon sx={{ fontSize: 12, color: '#883030' }} />
+            </IconButton>
           </Box>
+        ))}
+        <Box onClick={() => setEditing({ kind: 'square', index: -1 })} title={t('creator.tokenDisplay.squares.addButton')}
+          sx={{ width: 48, minHeight: 44, border: '1.5px dashed #c4a882', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#c4a882' }}>
+          <AddIcon sx={{ fontSize: 20 }} />
         </Box>
       </Box>
 

@@ -48,9 +48,11 @@ const (
 	EventPlayerSceneChanged = "PLAYER_SCENE_CHANGED"
 
 	// Scene characters
-	EventSceneCharacterAdded   = "SCENE_CHARACTER_ADDED"
-	EventSceneCharacterMoved   = "SCENE_CHARACTER_MOVED"
-	EventSceneCharacterRemoved = "SCENE_CHARACTER_REMOVED"
+	EventSceneCharacterAdded        = "SCENE_CHARACTER_ADDED"
+	EventSceneCharacterMoved        = "SCENE_CHARACTER_MOVED"
+	EventSceneCharacterUpdated      = "SCENE_CHARACTER_UPDATED"
+	EventSceneCharacterTokenUpdated = "SCENE_CHARACTER_TOKEN_UPDATED"
+	EventSceneCharacterRemoved      = "SCENE_CHARACTER_REMOVED"
 
 	// Scene images
 	EventSceneImageAdded        = "SCENE_IMAGE_ADDED"

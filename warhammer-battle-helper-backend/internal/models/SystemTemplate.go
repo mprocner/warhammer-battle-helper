@@ -42,9 +42,23 @@ type TemplateSettings struct {
 // Character (States for icon slots, TokenOverlay for number/select slots).
 type TokenDisplayConfig struct {
 	Enabled bool          `bson:"enabled" json:"enabled"`
-	Slots   [8]TokenSlot  `bson:"slots" json:"slots"` // index 0..7 = angle 0°,45°,...,315° (0 = top, clockwise)
-	HPBar   *FieldBinding `bson:"hpBar,omitempty" json:"hpBar,omitempty"`
+	Slots   [8]TokenSlot  `bson:"slots" json:"slots"`                       // index 0..7 = angle 0°,45°,...,315° (0 = top, clockwise)
+	HPBars  []TokenHPBar  `bson:"hpBars,omitempty" json:"hpBars,omitempty"` // replaces the old single *FieldBinding HPBar
 	Squares []TokenSquare `bson:"squares,omitempty" json:"squares,omitempty"`
+}
+
+// TokenHPBar is one HP/resource bar on the token. Either field-bound (Field != nil → reads a
+// Character.Stats value, shared across every placement of that character) or manual (Field == nil →
+// current/max live per-token in GameCharacter.TokenGear.BarValues). DefaultHidden is the blueprint's
+// default player-visibility, overridable per-token via CharacterTokenGear.BarOverrides. This same
+// struct is reused for GameCharacter.TokenGear.AddedBars (per-token-only bars) — there DefaultHidden
+// is the literal (only) hidden flag, no override layer above it.
+type TokenHPBar struct {
+	ID            string        `bson:"id" json:"id"`
+	Label         string        `bson:"label" json:"label"`
+	Color         string        `bson:"color,omitempty" json:"color,omitempty"`
+	Field         *FieldBinding `bson:"field,omitempty" json:"field,omitempty"`
+	DefaultHidden bool          `bson:"defaultHidden,omitempty" json:"defaultHidden,omitempty"`
 }
 
 // TokenSlot is one of the 8 fixed ring positions. ID is generated once when the
@@ -70,6 +84,10 @@ type TokenSlot struct {
 
 	// type == "select": manual pick from a list, keyed into Character.TokenOverlay[slot.ID].
 	SelectOptions []string `bson:"selectOptions,omitempty" json:"selectOptions,omitempty"`
+
+	// DefaultHidden is the blueprint's default player-visibility for this ring position, before any
+	// per-token override (CharacterTokenGear.SlotOverrides[id].Hidden).
+	DefaultHidden bool `bson:"defaultHidden,omitempty" json:"defaultHidden,omitempty"`
 }
 
 // TokenSquare is a dynamic entry in the row under the token. It carries its own ID
@@ -82,6 +100,11 @@ type TokenSquare struct {
 	NumberLabel   string        `bson:"numberLabel,omitempty" json:"numberLabel,omitempty"`
 	Field         *FieldBinding `bson:"field,omitempty" json:"field,omitempty"`
 	SelectOptions []string      `bson:"selectOptions,omitempty" json:"selectOptions,omitempty"`
+
+	// DefaultHidden is the blueprint's default player-visibility for this square, before any
+	// per-token override (CharacterTokenGear.SlotOverrides — squares reuse the slot override map keyed
+	// by square id for visibility only; squares have no structural per-token override).
+	DefaultHidden bool `bson:"defaultHidden,omitempty" json:"defaultHidden,omitempty"`
 }
 
 // FieldBinding points at a live character-sheet value. Key is always expressed

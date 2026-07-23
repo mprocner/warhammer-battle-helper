@@ -474,3 +474,220 @@ func (h *SceneHandler) ApplyImageTokenSlot(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Token slot shared"})
 }
+
+// --- Character token gear (per-placement, GM-only) ------------------------------------------
+
+// gearParams pulls the common {gameID, sceneID, placementID, userID} out of the request, writing a
+// 400 and returning ok=false on any parse failure.
+func gearParams(c *gin.Context) (gameID string, sceneID, placementID, userID primitive.ObjectID, ok bool) {
+	gameID = c.Param("id")
+	var err error
+	if sceneID, err = primitive.ObjectIDFromHex(c.Param("sceneId")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+	if placementID, err = primitive.ObjectIDFromHex(c.Param("placementId")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid placement ID"})
+		return
+	}
+	if userID, err = getUserIDFromContext(c); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	ok = true
+	return
+}
+
+// gearError maps a service error to 403 (GM-only), 404 (not found), or 400.
+func gearError(c *gin.Context, err error) {
+	msg := err.Error()
+	switch {
+	case msg == "only the game master can edit token gear":
+		c.JSON(http.StatusForbidden, gin.H{"error": msg})
+	case msg == "game not found":
+		c.JSON(http.StatusNotFound, gin.H{"error": msg})
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+	}
+}
+
+// SetCharGear replaces the whole per-token gear (config panel Save).
+func (h *SceneHandler) SetCharGear(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var gear models.CharacterTokenGear
+	if err := c.ShouldBindJSON(&gear); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.GameService.SetCharGear(gameID, sceneID, placementID, userID, &gear); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) SetCharSlotValue(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Number *float64 `json:"number"`
+		Select *string  `json:"select"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	val := models.TokenOverlayValue{Number: req.Number}
+	if req.Select != nil {
+		val.Select = *req.Select
+	}
+	if err := h.GameService.SetCharSlotValue(gameID, sceneID, placementID, userID, c.Param("slotId"), val); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) SetCharSlotVisibility(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Hidden bool `json:"hidden"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.GameService.SetCharSlotVisibility(gameID, sceneID, placementID, userID, c.Param("slotId"), req.Hidden); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) SetCharSlotStructure(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	// Body is a TokenSlot, or literal null to clear the structural override.
+	var slot *models.TokenSlot
+	if err := c.ShouldBindJSON(&slot); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.GameService.SetCharSlotStructure(gameID, sceneID, placementID, userID, c.Param("slotId"), slot); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) ClearCharSlotOverride(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	if err := h.GameService.ClearCharSlotOverride(gameID, sceneID, placementID, userID, c.Param("slotId")); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) SetCharBarVisibility(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Hidden bool `json:"hidden"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.GameService.SetCharBarVisibility(gameID, sceneID, placementID, userID, c.Param("barId"), req.Hidden); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) SetCharBarValue(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Delta *float64 `json:"delta"`
+		Value *float64 `json:"value"`
+		Max   *float64 `json:"max"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// The gear stores absolute current/max; a delta is applied against the existing value in the
+	// service. Here we forward all; service resolves (mirrors statField delta-vs-value).
+	if err := h.GameService.SetCharBarValuePatch(gameID, sceneID, placementID, userID, c.Param("barId"), req.Delta, req.Value, req.Max); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) AddCharBar(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var bar models.TokenHPBar
+	if err := c.ShouldBindJSON(&bar); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	created, err := h.GameService.AddCharBar(gameID, sceneID, placementID, userID, bar)
+	if err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, created)
+}
+
+func (h *SceneHandler) EditCharBar(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	var bar models.TokenHPBar
+	if err := c.ShouldBindJSON(&bar); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	bar.ID = c.Param("barId")
+	if err := h.GameService.EditCharBar(gameID, sceneID, placementID, userID, bar); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}
+
+func (h *SceneHandler) RemoveCharBar(c *gin.Context) {
+	gameID, sceneID, placementID, userID, ok := gearParams(c)
+	if !ok {
+		return
+	}
+	if err := h.GameService.RemoveCharBar(gameID, sceneID, placementID, userID, c.Param("barId")); err != nil {
+		gearError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ok"})
+}

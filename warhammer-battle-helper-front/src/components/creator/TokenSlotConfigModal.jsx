@@ -100,7 +100,8 @@ export default function TokenSlotConfigModal({
 
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' } }}>
+      PaperProps={{ sx: { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' } }}
+      onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#3a2f1f', fontFamily: 'Cinzel, serif' }}>
         {titleLabel}
         <IconButton onClick={onCancel} size="small"><CloseIcon /></IconButton>

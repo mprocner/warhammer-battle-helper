@@ -473,7 +473,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         break;
 
       case WS_EVENTS.SCENE_CHARACTER_MOVED: {
-        const { sceneId: scId, characterId: scCharId, x: scX, y: scY } = message.payload;
+        const { sceneId: scId, characterId: scCharId, x: scX, y: scY, w: scW, h: scH, zIndex: scZ } = message.payload;
         setGameState(prev => {
           if (!prev) return prev;
           return {
@@ -482,10 +482,72 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
               s.id === scId
                 ? {
                     ...s,
+                    // Move sends x/y; resize sends w/h; apply whichever the payload carries so a
+                    // resize propagates to every client (not just position changes).
                     characters: (s.characters || []).map(c =>
-                      c.id === scCharId ? { ...c, x: scX, y: scY } : c
+                      c.characterId === scCharId || c.id === scCharId
+                        ? {
+                            ...c,
+                            ...(scX !== undefined ? { positionX: scX } : {}),
+                            ...(scY !== undefined ? { positionY: scY } : {}),
+                            ...(scW !== undefined ? { w: scW } : {}),
+                            ...(scH !== undefined ? { h: scH } : {}),
+                            ...(scZ !== undefined ? { zIndex: scZ } : {}),
+                          }
+                        : c
                     ),
                   }
+                : s
+            ),
+          };
+        });
+        setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+      }
+
+      case WS_EVENTS.SCENE_CHARACTER_UPDATED: {
+        // Token visibility toggled. Update the placement's hidden flag locally (drives the GM's
+        // dimmed styling + eye state) and refetch scene characters — the server filter then drops
+        // the token for players without the card.
+        const { sceneId: scuSceneId, characterId: scuCharId, hidden: scuHidden } = message.payload;
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === scuSceneId
+                ? {
+                    ...s,
+                    characters: (s.characters || []).map(c =>
+                      c.characterId === scuCharId ? { ...c, hidden: scuHidden } : c
+                    ),
+                  }
+                : s
+            ),
+          };
+        });
+        setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+      }
+
+      case WS_EVENTS.SCENE_CHARACTER_TOKEN_UPDATED: {
+        // Two shapes:
+        //  - live value bump (granular endpoint): payload carries fresh raw gear (GM/card-holders
+        //    only) → optimistic local update, keeps play-time +/- snappy.
+        //  - config-panel Save (whole-gear PUT): payload has NO gear → refetch the whole game so
+        //    EVERY viewer (including card-less players) re-masks with the new visibility.
+        const { sceneId: sctSceneId, placementId: sctPlacementId, tokenGear: sctGear } = message.payload;
+        if (sctGear === undefined) {
+          fetchGameState();
+          break;
+        }
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === sctSceneId
+                ? { ...s, characters: (s.characters || []).map(c => c.id === sctPlacementId ? { ...c, tokenGear: sctGear } : c) }
                 : s
             ),
           };

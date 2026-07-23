@@ -10448,6 +10448,35 @@ align-items: center;
   /* Matches the ring/name timing so everything expands and collapses together. */
   transition: top .25s ease, width .25s ease, height .25s ease;
 }
+
+/* Multiple HP bars stacked above a character token (blueprint bars + per-token added bars). The
+   stack owns the absolute positioning; inner .token-hp become plain flex rows. Mirrors
+   .img-token-hp-stack for image tokens. */
+.token-hp-stack {
+  position: absolute;
+  left: 50%;
+  top: -11px;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  width: 46px;
+  transition: top .25s ease, width .25s ease;
+}
+.token-hp-stack--expanded {
+  top: -44px;
+  width: 88px;
+}
+.token-hp-stack .token-hp {
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
+  width: 100%;
+  height: 7px;
+}
+.token-hp-stack--expanded .token-hp { height: 15px; }
+.token-hp-stack--expanded .token-hp__text { font-size: 8px; }
 .token-hp--expanded {
   /* Raised clear of the ring's top slots (their outer edge sits ~-53px from centre). */
   top: -50px;
@@ -10590,6 +10619,44 @@ align-items: center;
 .token-kill-toggle:not(.is-killed) { filter: grayscale(0.6); opacity: 0.8; background: rgba(20, 12, 4, 0.7); }
 .token-kill-toggle:not(.is-killed):hover { filter: grayscale(0.2); opacity: 0.95; border-color: #e04040; color: #ffbcbc; }
 .token-kill-toggle.is-killed { background: #c0201f; border-color: #7a1010; color: #fff; }
+
+/* Per-token gear config button — GM only, left equator (9 o'clock), opposite the kill toggle. */
+.token-gear {
+  position: absolute;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid #c9975b; background: rgba(20, 12, 4, 0.75); color: #f0d8b0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  z-index: 9;
+}
+.token-gear:hover { background: #7a5c42; color: #fff; }
+
+/* Player-visibility (eye) toggle — stacked under the kill toggle. Gold when visible, dimmed
+   when hidden from players; mirrors the kill toggle's sizing/placement conventions. */
+.token-visibility-toggle,
+.img-token-visibility-toggle {
+  position: absolute;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid #c9975b; background: rgba(14, 9, 3, 0.86); color: #f0d8b0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  z-index: 9;
+}
+.token-visibility-toggle:hover,
+.img-token-visibility-toggle:hover { background: #7a5c42; color: #fff; }
+/* Hidden from players → greyed, matching the "inactive" look of the kill toggle at rest. */
+.token-visibility-toggle.is-hidden,
+.img-token-visibility-toggle.is-hidden {
+  filter: grayscale(0.5); opacity: 0.85;
+  background: rgba(20, 12, 4, 0.7); border-color: #7a5c42; color: #b89b78;
+}
+
+/* GM-only dim for a token hidden from players (players never receive it at all). */
+.map-char-token--hidden { opacity: 0.55; }
+.map-char-token--hidden .map-char-token__avatar { filter: grayscale(0.4); }
+.scene-image--hidden { opacity: 0.5; }
 
 /* ── Image-token overlay (states/HP ring on a tokens-layer scene image) ──
    Reuses the character token overlay classes (token-overlay, token-hp, token-slot, token-step)

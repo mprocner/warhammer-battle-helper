@@ -36,6 +36,10 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
   const setSlotNumber = (slotId, number) => { if (canEdit) patchSceneImageTokenSlot(gameId, sceneId, image.id, { slotId, number }).catch(() => {}); };
 
   const killed = !!image?.killed;
+  const hiddenFromPlayers = !!image?.hidden;
+  const toggleVisibility = () => {
+    if (canEdit) updateSceneImage(gameId, sceneId, image.id, { hidden: !hiddenFromPlayers }).catch(() => {});
+  };
 
   // Nothing to draw and not selected: a bare, unconfigured tokens-layer image. Still render when
   // killed, when selected+GM (gear/skull reachable), or while the config popup is open.
@@ -71,6 +75,8 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
       radius={radius} equatorX={equatorX}
       killStrikeClassName="img-token-kill-strike" killToggleClassName="img-token-kill-toggle"
       onToggleKilled={() => { if (canEdit) updateSceneImage(gameId, sceneId, image.id, { killed: !killed }).catch(() => {}); }}
+      canManageVisibility={canEdit} hiddenFromPlayers={hiddenFromPlayers}
+      onToggleVisibility={toggleVisibility} visibilityToggleClassName="img-token-visibility-toggle"
       slots={slots}
       renderHp={() => bars.length > 0 ? (
         <div className={`img-token-hp-stack ${selected ? 'img-token-hp-stack--expanded' : ''}`} style={{ transform: hpTransform }}>

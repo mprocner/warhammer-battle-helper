@@ -1,6 +1,24 @@
 {
   "token": {
-    "killed": "Zabity"
+    "killed": "Zabity",
+    "hideFromPlayers": "Ukryj przed graczami",
+    "showToPlayers": "Pokaż graczom",
+    "gear": {
+      "title": "Konfiguracja tokenu — {{name}}",
+      "tooltip": "Konfiguruj ten token",
+      "blueprintStrip": "Kreator: {{system}}",
+      "editBlueprint": "Edytuj w kreatorze",
+      "editBlueprintHint": "Zmiany dotyczą wszystkich tokenów tego systemu",
+      "hiddenTokenWarning": "Ten token jest teraz ukryty przed graczami — ustawienia widoczności poniżej nie działają, dopóki go nie odsłonisz.",
+      "fromBlueprintSection": "Z kreatora",
+      "addedHereSection": "Dodane na tym tokenie",
+      "inheritedTooltip": "Zdefiniowane w kreatorze — zmień strukturę tam",
+      "overrideTooltip": "Nadpisane na tym tokenie",
+      "restoreFromBlueprint": "Przywróć z kreatora",
+      "addBar": "Dodaj pasek",
+      "slotHint": "Kliknij pozycję, aby nadpisać jej slot dla tego tokenu.",
+      "squaresBlueprintOnlyHint": "Kwadraty definiuje kreator; tutaj przełączasz tylko ich widoczność."
+    }
   },
   "common": {
     "save": "Zapisz",
@@ -1154,10 +1172,15 @@
     "tokenDisplay": {
       "cardTitle": "Wyświetlanie tokenów",
       "cardHint": "Skonfiguruj, jakie informacje pokazują się przy tokenie postaci na mapie.",
-      "configureButton": "Konfiguruj wyświetlanie tokenów",
+      "configureButton": "Konfiguruj system",
       "variantSuffix": "konfiguracja tokenów",
       "intro": "Kliknij slot, aby pokazać stan, cechę lub wartość przy tokenach tego systemu.",
       "hpBarTitle": "Pasek HP",
+      "hpBarsTitle": "Paski HP",
+      "hpBarsEmpty": "Brak pasków HP. Dodaj pasek z pola karty lub manualny.",
+      "fromCard": "Z karty",
+      "visibleByDefault": "Domyślnie widoczny dla graczy",
+      "hiddenByDefault": "Domyślnie ukryty przed graczami",
       "hpBindLabel": "Powiązane pole",
       "hpBindNone": "Brak",
       "hpBindEmpty": "Brak pola typu progress w tym systemie.",

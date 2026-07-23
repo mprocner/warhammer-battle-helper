@@ -53,6 +53,12 @@ const MapTokensLayer = ({
           canDrag={item.data.canDrag}
           selected={activeTokenId === item.data.character.id}
           tokenPlacementMode={tokenPlacementMode}
+          sceneId={sceneId}
+          hidden={item.data.hidden}
+          placementId={item.data.placementId}
+          tokenGear={item.data.tokenGear}
+          tokenView={item.data.tokenView}
+          gameSystem={gameSystem}
           editingLayer={editingLayer}
           activeTool={activeTool}
           tokenDisplay={tokenDisplay}

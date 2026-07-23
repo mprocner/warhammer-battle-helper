@@ -90,6 +90,13 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
           onChange={(e) => setDupCount(e.target.value)}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.stopPropagation();
+              onDuplicate(Math.max(1, parseInt(dupCount, 10) || 1));
+            }
+          }}
           className="scene-context-menu__dup-input"
         />
         <span>{t('scenes.times')}</span>

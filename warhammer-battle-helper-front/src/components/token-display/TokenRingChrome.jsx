@@ -1,5 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { SkullIcon } from '../icons';
 import { usePortalTooltip } from '../common/PortalTooltip';
 import NumberSlotInput from './NumberSlotInput';
@@ -74,6 +77,10 @@ export default function TokenRingChrome({
   extraClassName = '', selected, canEdit, killed,
   radius, equatorX,
   killStrikeClassName, killToggleClassName, onToggleKilled,
+  // Player-visibility toggle (GM-only). Rendered as an eye stacked under the kill toggle.
+  canManageVisibility = false, hiddenFromPlayers = false, onToggleVisibility, visibilityToggleClassName,
+  // Per-token gear config (GM-only). Rendered as a gear on the left equator (9 o'clock).
+  canConfigureGear = false, onConfigureGear, gearToggleClassName,
   slots = [],
   renderHp, renderExtras,
   stopContainerEvents = false,
@@ -102,6 +109,30 @@ export default function TokenRingChrome({
           onMouseEnter={(e) => showTooltip(t('token.killed'), e.currentTarget)}
           onMouseLeave={hideTooltip}>
           <SkullIcon size={16} />
+        </button>
+      )}
+
+      {/* Player-visibility toggle — GM only, stacked just under the kill toggle (right equator). */}
+      {selected && canManageVisibility && (
+        <button type="button"
+          className={`${visibilityToggleClassName} ${hiddenFromPlayers ? 'is-hidden' : ''}`}
+          style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${equatorX}px), calc(-50% + 26px))` }}
+          onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
+          onMouseEnter={(e) => showTooltip(t(hiddenFromPlayers ? 'token.showToPlayers' : 'token.hideFromPlayers'), e.currentTarget)}
+          onMouseLeave={hideTooltip}>
+          {hiddenFromPlayers ? <VisibilityOffIcon sx={{ fontSize: 15 }} /> : <VisibilityIcon sx={{ fontSize: 15 }} />}
+        </button>
+      )}
+
+      {/* Gear config toggle — GM only, left equator (9 o'clock), opposite the kill toggle. */}
+      {selected && canConfigureGear && (
+        <button type="button"
+          className={gearToggleClassName}
+          style={{ left: '50%', top: '50%', transform: `translate(calc(-50% - ${equatorX}px), -50%)` }}
+          onClick={(e) => { e.stopPropagation(); onConfigureGear(); }}
+          onMouseEnter={(e) => showTooltip(t('token.gear.tooltip'), e.currentTarget)}
+          onMouseLeave={hideTooltip}>
+          <SettingsIcon sx={{ fontSize: 15 }} />
         </button>
       )}
 

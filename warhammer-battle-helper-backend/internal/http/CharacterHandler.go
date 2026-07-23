@@ -290,13 +290,6 @@ type PatchStatFieldRequest struct {
 	Min     *float64 `json:"min"`
 }
 
-// PatchTokenOverlayRequest edits one manual ring-slot/square value (FEATURE-102).
-type PatchTokenOverlayRequest struct {
-	SlotID string   `json:"slotId" binding:"required"`
-	Number *float64 `json:"number"`
-	Select *string  `json:"select"`
-}
-
 // PatchKilledRequest toggles the dead-token strike-through.
 type PatchKilledRequest struct {
 	Killed bool `json:"killed"`
@@ -445,30 +438,6 @@ func (h *CharacterHandler) PatchStatField(c *gin.Context) {
 		}
 	}
 
-	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
-	c.JSON(http.StatusOK, updated)
-}
-
-// PatchTokenOverlay writes one manual ring-slot/square value and broadcasts (FEATURE-102).
-func (h *CharacterHandler) PatchTokenOverlay(c *gin.Context) {
-	ch, ok := h.authorizeCharacterEdit(c)
-	if !ok {
-		return
-	}
-	var req PatchTokenOverlayRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	val := models.TokenOverlayValue{Number: req.Number}
-	if req.Select != nil {
-		val.Select = *req.Select
-	}
-	charID := ch.ID.Hex()
-	if err := h.CharacterRepo.SetTokenOverlay(charID, req.SlotID, val); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 	updated := h.broadcastCharacterUpdated(c.Param("id"), charID)
 	c.JSON(http.StatusOK, updated)
 }

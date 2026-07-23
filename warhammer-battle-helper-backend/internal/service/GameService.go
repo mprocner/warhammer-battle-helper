@@ -15,6 +15,7 @@ import (
 	"sort"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -158,6 +159,18 @@ func (s *GameService) enrichSceneCharacters(game *models.Game) {
 			if ch, ok := charMap[gc.CharacterID]; ok {
 				gc.Name = ch.Name
 				gc.Avatar = ch.Avatar
+				gc.Killed = ch.Killed // computed-only; lets a card-less token show the dead strike
+				// Fallback: some systems (e.g. warhammer4e) keep the avatar in stats.basicInfo.avatar
+				// rather than the top-level field. A card-less player only ever sees this placement
+				// avatar (no full character), so resolve it here or their token shows a placeholder.
+				if gc.Avatar == "" && len(ch.Stats) > 0 {
+					var statsDoc bson.M
+					if bson.Unmarshal(ch.Stats, &statsDoc) == nil {
+						if a, ok := statByPath(statsDoc, "basicInfo.avatar").(string); ok {
+							gc.Avatar = a
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1541,6 +1554,18 @@ func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primit
 		return err
 	}
 
+	// Visibility toggle → tell every client to refetch scene characters. The refetch re-applies the
+	// server filter (FilterSceneCharacterTokensForUser), which drops the token for players without
+	// the card and keeps it for the GM (dimmed) and card-holders — no per-user targeting needed here.
+	if req.Hidden != nil {
+		s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterUpdated, map[string]interface{}{
+			"sceneId":     sceneID.Hex(),
+			"characterId": characterID.Hex(),
+			"hidden":      *req.Hidden,
+		})
+		return nil
+	}
+
 	payload := map[string]interface{}{
 		"sceneId":     sceneID.Hex(),
 		"characterId": characterID.Hex(),
@@ -1551,8 +1576,225 @@ func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primit
 	if req.PositionY != nil {
 		payload["y"] = *req.PositionY
 	}
+	// Include size/z so a GM resize propagates to every client, not just the mover (a resize sends
+	// w/h with no x/y — previously those were dropped and players never saw the new size).
+	if req.W != nil {
+		payload["w"] = *req.W
+	}
+	if req.H != nil {
+		payload["h"] = *req.H
+	}
+	if req.ZIndex != nil {
+		payload["zIndex"] = *req.ZIndex
+	}
 	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterMoved, payload)
 
+	return nil
+}
+
+// --- Character token gear (per-placement, GM-only) ------------------------------------------
+
+// requireGM loads the game and returns it only if userID is the GM (else an error).
+func (s *GameService) requireGM(gameID string, userID primitive.ObjectID) (*models.Game, error) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+	if game.GameMasterID != userID {
+		return nil, fmt.Errorf("only the game master can edit token gear")
+	}
+	return game, nil
+}
+
+// broadcastCharTokenGear re-reads the fresh placement gear and sends it to the GM + card-holders
+// (character's VisibleTo) only — raw gear may carry hidden values, so card-less players are NOT sent
+// it here; they pick up the masked state on the next full game fetch. (A targeted masked live
+// broadcast to card-less players is a Phase-3 refinement, once the masking engine exists.)
+func (s *GameService) broadcastCharTokenGear(gameID string, sceneID, placementID primitive.ObjectID) {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return
+	}
+	var gear *models.CharacterTokenGear
+	var charID primitive.ObjectID
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		for _, gc := range game.Scenes[si].Characters {
+			if gc.ID == placementID {
+				gear = gc.TokenGear
+				charID = gc.CharacterID
+			}
+		}
+	}
+	recipients := []string{game.GameMasterID.Hex()}
+	if chars, err := s.charRepo.GetByGameID(gameID); err == nil {
+		for _, ch := range chars {
+			if ch.ID == charID {
+				for _, v := range ch.VisibleTo {
+					recipients = append(recipients, v.Hex())
+				}
+			}
+		}
+	}
+	s.hub.BroadcastToUsers(gameID, websocket.EventSceneCharacterTokenUpdated, map[string]interface{}{
+		"sceneId":     sceneID.Hex(),
+		"placementId": placementID.Hex(),
+		"tokenGear":   gear,
+	}, recipients)
+}
+
+// SetCharGear replaces the whole per-token gear (config panel Save). Unlike the granular live-bump
+// endpoints, this broadcasts a gear-less SCENE_CHARACTER_TOKEN_UPDATED to the WHOLE game so every
+// client (GM, card-holder, AND card-less player) refetches and re-masks — visibility changes must
+// reach players who don't hold the card. Save is infrequent, so a full refetch is fine here.
+func (s *GameService) SetCharGear(gameID string, sceneID, placementID, userID primitive.ObjectID, gear *models.CharacterTokenGear) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.SetCharGear(gameID, sceneID, placementID, gear); err != nil {
+		return err
+	}
+	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterTokenUpdated, map[string]interface{}{
+		"sceneId":     sceneID.Hex(),
+		"placementId": placementID.Hex(),
+	})
+	return nil
+}
+
+func (s *GameService) SetCharSlotValue(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, val models.TokenOverlayValue) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.SetCharSlotValue(gameID, sceneID, placementID, slotID, val); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+func (s *GameService) SetCharSlotVisibility(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, hidden bool) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.SetCharSlotHidden(gameID, sceneID, placementID, slotID, hidden); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+func (s *GameService) SetCharSlotStructure(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, slot *models.TokenSlot) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if slot != nil {
+		slot.ID = slotID // position identity is the map key, never a second source of truth
+	}
+	if err := s.gameRepo.SetCharSlotStructure(gameID, sceneID, placementID, slotID, slot); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+func (s *GameService) ClearCharSlotOverride(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.ClearCharSlotOverride(gameID, sceneID, placementID, slotID); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+func (s *GameService) SetCharBarVisibility(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string, hidden bool) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.SetCharBarHidden(gameID, sceneID, placementID, barID, hidden); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+// SetCharBarValuePatch sets a manual bar's current (delta XOR value) and/or its max, keeping the
+// other. Mirrors statField's delta-vs-value semantics. Current clamps to >= 0.
+func (s *GameService) SetCharBarValuePatch(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string, delta, value, max *float64) error {
+	game, err := s.requireGM(gameID, userID)
+	if err != nil {
+		return err
+	}
+	// Read the existing stored value (for the untouched field, and for the delta base).
+	var cur models.HPBarValue
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		for _, gc := range game.Scenes[si].Characters {
+			if gc.ID == placementID && gc.TokenGear != nil {
+				if v, ok := gc.TokenGear.BarValues[barID]; ok {
+					cur = v
+				}
+			}
+		}
+	}
+	if value != nil {
+		cur.Current = *value
+	} else if delta != nil {
+		cur.Current += *delta
+	}
+	if max != nil {
+		cur.Max = *max
+	}
+	if cur.Current < 0 {
+		cur.Current = 0
+	}
+	if err := s.gameRepo.SetCharBarValue(gameID, sceneID, placementID, barID, cur); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+// AddCharBar mints an id and appends a per-token bar. Loose cap of 4 added bars for now; the exact
+// blueprint+added <= 4 check lands with blueprint wiring in Phase 3.
+func (s *GameService) AddCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, bar models.TokenHPBar) (models.TokenHPBar, error) {
+	game, err := s.requireGM(gameID, userID)
+	if err != nil {
+		return bar, err
+	}
+	_ = game // no bar-count limit (removed by request)
+	bar.ID = primitive.NewObjectID().Hex()
+	if err := s.gameRepo.PushCharAddedBar(gameID, sceneID, placementID, bar); err != nil {
+		return bar, err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return bar, nil
+}
+
+func (s *GameService) EditCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, bar models.TokenHPBar) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.EditCharAddedBar(gameID, sceneID, placementID, bar); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
+	return nil
+}
+
+func (s *GameService) RemoveCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string) error {
+	if _, err := s.requireGM(gameID, userID); err != nil {
+		return err
+	}
+	if err := s.gameRepo.RemoveCharAddedBar(gameID, sceneID, placementID, barID); err != nil {
+		return err
+	}
+	s.broadcastCharTokenGear(gameID, sceneID, placementID)
 	return nil
 }
 
@@ -1741,6 +1983,53 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 		return err
 	}
 
+	gmID := game.GameMasterID.Hex()
+
+	// Locate the pre-update image so we can tell whether it's hidden and, on unhide, re-send its
+	// full data to players (a player may have joined while it was hidden and never received it).
+	var current *models.SceneImage
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		for ii := range game.Scenes[si].Images {
+			if game.Scenes[si].Images[ii].ID == imageID {
+				current = &game.Scenes[si].Images[ii]
+			}
+		}
+	}
+
+	// Visibility toggle: a hidden token must never reach a player, so we don't broadcast the raw
+	// update to them. Hiding → players drop the token (DELETE); unhiding → players receive the full
+	// masked token (ADD). The GM always gets the plain update to flip its own dimmed styling.
+	if req.Hidden != nil {
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
+		}, []string{gmID})
+		if *req.Hidden {
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageDeleted, map[string]interface{}{
+				"sceneId": sceneID.Hex(), "imageId": imageID.Hex(),
+			}, gmID)
+		} else if current != nil {
+			shown := *current
+			shown.Hidden = false
+			shown.TokenOverlay = MaskImageTokenForPlayer(current.TokenOverlay)
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+				"sceneId": sceneID.Hex(), "image": shown,
+			}, gmID)
+		}
+		return nil
+	}
+
+	// Any other update on an already-hidden token stays GM-only — players don't have it and must
+	// not start receiving its position/appearance.
+	if current != nil && current.Hidden {
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
+		}, []string{gmID})
+		return nil
+	}
+
 	// A tokenOverlay in the request carries HP-bar values that may be flagged Hidden. Broadcasting
 	// the raw request to everyone would leak them, so when the overlay is present we split: full to
 	// the GM, masked to every other player. Plain position/appearance updates keep the simple
@@ -1748,7 +2037,6 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 	if req.TokenOverlay != nil {
 		playerReq := req
 		playerReq.TokenOverlay = MaskImageTokenForPlayer(req.TokenOverlay)
-		gmID := game.GameMasterID.Hex()
 		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
 			"sceneId": sceneID.Hex(),
 			"imageId": imageID.Hex(),
@@ -1818,7 +2106,8 @@ func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, us
 		return fmt.Errorf("either delta or value is required")
 	}
 
-	// Re-read, clamp the bar into [0, max].
+	// Re-read, clamp the bar's lower bound only. Current MAY exceed max on purpose (temporary buffs
+	// that raise the effective maximum for the duration of an effect), so no upper clamp.
 	img, err := s.gameRepo.GetSceneImage(gameID, sceneID, imageID)
 	if err != nil {
 		return err
@@ -1831,9 +2120,6 @@ func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, us
 			clamped := bar.Current
 			if clamped < 0 {
 				clamped = 0
-			}
-			if bar.Max > 0 && clamped > bar.Max {
-				clamped = bar.Max
 			}
 			if clamped != bar.Current {
 				if err := s.gameRepo.SetSceneImageHPBar(gameID, sceneID, imageID, req.BarID, clamped); err != nil {
@@ -2028,11 +2314,75 @@ func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID)
 		return
 	}
 	for si := range game.Scenes {
-		for ii := range game.Scenes[si].Images {
-			if game.Scenes[si].Images[ii].TokenOverlay != nil {
-				game.Scenes[si].Images[ii].TokenOverlay = MaskImageTokenForPlayer(game.Scenes[si].Images[ii].TokenOverlay)
+		kept := make([]models.SceneImage, 0, len(game.Scenes[si].Images))
+		for _, img := range game.Scenes[si].Images {
+			// A hidden image is dropped entirely for players — never sent, so it can't be read from
+			// the payload (mirrors how a character absent from VisibleTo never reaches the player).
+			if img.Hidden {
+				continue
+			}
+			if img.TokenOverlay != nil {
+				img.TokenOverlay = MaskImageTokenForPlayer(img.TokenOverlay)
+			}
+			kept = append(kept, img)
+		}
+		game.Scenes[si].Images = kept
+	}
+}
+
+// FilterSceneCharacterTokensForUser drops hidden character-token placements from every scene for a
+// non-GM viewer, in place on the game payload. A placement flagged Hidden is removed UNLESS the
+// viewer holds the character card (is in the character's VisibleTo) — token visibility is separate
+// from card visibility, and a card-holder must always see the token. The GM sees everything.
+func (s *GameService) FilterSceneCharacterTokensForUser(game *models.Game, userID primitive.ObjectID) {
+	if game.GameMasterID == userID {
+		return
+	}
+	// Load every character once: used both for hasCard (VisibleTo) and, for card-less viewers, for the
+	// masked token projection (Stats/States).
+	charByID := map[primitive.ObjectID]*models.Character{}
+	hasCard := map[primitive.ObjectID]bool{}
+	if chars, err := s.charRepo.GetByGameID(game.ID.Hex()); err == nil {
+		for i := range chars {
+			ch := &chars[i]
+			charByID[ch.ID] = ch
+			for _, vid := range ch.VisibleTo {
+				if vid == userID {
+					hasCard[ch.ID] = true
+					break
+				}
 			}
 		}
+	}
+
+	// Blueprint (already attached to game.CustomSystemTemplate for both hardcoded and custom systems
+	// by attachTokenConfig, which runs before this filter). nil → tokens render bare (avatar+name).
+	var blueprint *models.TokenDisplayConfig
+	if game.CustomSystemTemplate != nil {
+		blueprint = game.CustomSystemTemplate.Settings.TokenDisplay
+	}
+
+	for si := range game.Scenes {
+		kept := make([]models.GameCharacter, 0, len(game.Scenes[si].Characters))
+		for _, gc := range game.Scenes[si].Characters {
+			if gc.Hidden && !hasCard[gc.CharacterID] {
+				continue // hidden placement: dropped entirely for a viewer without the card
+			}
+			if !hasCard[gc.CharacterID] {
+				// Card-less viewer: replace raw gear (may carry hidden values/definitions) with a
+				// fully-resolved masked projection. GM/card-holders keep gc.TokenGear untouched.
+				ch := charByID[gc.CharacterID]
+				var stats bson.Raw
+				var states []models.CharacterState
+				if ch != nil {
+					stats, states = ch.Stats, ch.States
+				}
+				gc.TokenView = buildMaskedTokenView(blueprint, gc.TokenGear, stats, states)
+				gc.TokenGear = nil
+			}
+			kept = append(kept, gc)
+		}
+		game.Scenes[si].Characters = kept
 	}
 }
 

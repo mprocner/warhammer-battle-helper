@@ -122,9 +122,99 @@ type GameCharacter struct {
 	H           float64            `bson:"h" json:"h"`                 // height in cells (default 1)
 	ZIndex      int                `bson:"zIndex" json:"zIndex"`       // shared stacking with scene images
 	IsEnemy     bool               `bson:"isEnemy" json:"isEnemy"`
-	PlacedBy    primitive.ObjectID `bson:"placedBy" json:"placedBy"`
-	PlacedAt    time.Time          `bson:"placedAt" json:"placedAt"`
-	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`
+	// Hidden hides this token placement from players who don't hold the character card (VisibleTo).
+	// Token visibility is deliberately separate from card visibility: a card-holder always sees the
+	// token; for everyone else this flag decides. Enforced server-side (FilterSceneCharacterTokensForUser).
+	Hidden bool `bson:"hidden,omitempty" json:"hidden,omitempty"`
+	// Killed is computed-only (bson:"-"): enriched from Character.Killed so the token can render the
+	// dead strike-through even for a card-less player, who never receives the Character document.
+	Killed    bool               `bson:"-" json:"killed,omitempty"`
+	PlacedBy  primitive.ObjectID `bson:"placedBy" json:"placedBy"`
+	PlacedAt  time.Time          `bson:"placedAt" json:"placedAt"`
+	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
+
+	// TokenGear is this placement's per-token customization of the blueprint (GM-only). Absent/nil =
+	// the token follows the blueprint everywhere. Lives on the placement, NOT the Character, because
+	// one card can have several placements that must not share gear.
+	TokenGear *CharacterTokenGear `bson:"tokenGear,omitempty" json:"tokenGear,omitempty"`
+	// TokenView is computed-only (never persisted): the masked projection sent to a viewer without the
+	// card. Populated by FilterSceneCharacterTokensForUser; nil for GM/card-holders (they get the full
+	// Character + raw TokenGear).
+	TokenView *CharacterTokenView `bson:"-" json:"tokenView,omitempty"`
+}
+
+// CharacterTokenGear is the per-token (per-placement) gear. Two shapes for the two structures it
+// customizes: slots use a per-ring-POSITION overlay (the ring is a fixed 8 positions, so a per-token
+// customization can only REPLACE one, never add a 9th), bars use an append model (a bar list has no
+// fixed capacity). This asymmetry is intentional. GM-only to edit; purely additive.
+type CharacterTokenGear struct {
+	// SlotOverrides: per-ring-position overlay, keyed by the BLUEPRINT slot's stable id at that
+	// position (TokenSlot.ID is the position's permanent identity). Also keyed by square id for
+	// square visibility overrides. Presence = this token customizes something at that position; the
+	// three axes inside are independently optional.
+	SlotOverrides map[string]SlotOverride `bson:"slotOverrides,omitempty" json:"slotOverrides,omitempty"`
+
+	// BarOverrides: per-token visibility override for a blueprint bar (keyed by bar id). BarValues:
+	// manual current/max for a bar (blueprint manual bar or an AddedBar), keyed by bar id (shared
+	// id-space). AddedBars: full bar definitions existing ONLY on this token.
+	BarOverrides map[string]bool       `bson:"barOverrides,omitempty" json:"barOverrides,omitempty"`
+	BarValues    map[string]HPBarValue `bson:"barValues,omitempty" json:"barValues,omitempty"`
+	AddedBars    []TokenHPBar          `bson:"addedBars,omitempty" json:"addedBars,omitempty"`
+}
+
+// SlotOverride is everything a token can customize at one ring position, each axis independently
+// optional: Slot (nil = keep blueprint's slot; non-nil = per-token replacement), Hidden (nil =
+// inherit effective slot's DefaultHidden; non-nil = forced), Value (manual number/select value).
+type SlotOverride struct {
+	Slot   *TokenSlot         `bson:"slot,omitempty" json:"slot,omitempty"`
+	Hidden *bool              `bson:"hidden,omitempty" json:"hidden,omitempty"`
+	Value  *TokenOverlayValue `bson:"value,omitempty" json:"value,omitempty"`
+}
+
+// HPBarValue is a manual bar's per-token current/max.
+type HPBarValue struct {
+	Current float64 `bson:"current" json:"current"`
+	Max     float64 `bson:"max" json:"max"`
+}
+
+// CharacterTokenView is the FULLY-RESOLVED masked projection of a character's token sent to a viewer
+// without the card, scoped to ONE placement. Never persisted (json-only DTO). Deliberately baked
+// server-side (values already resolved, not raw stats + client-side field resolution) so a card-less
+// viewer only ever receives the exact visible display values — never a raw stats subtree, and never
+// the definition/value of a hidden element. The client renders it verbatim: no blueprint lookup, no
+// visibility recomputation, zero client/server masking drift.
+type CharacterTokenView struct {
+	// Slots: exactly 8 entries (ring positions). A nil entry = nothing renders at that position
+	// (hidden or empty on this token). A non-nil entry carries the effective slot definition + its
+	// resolved display value (nil Value for icon slots — those read level from States).
+	Slots   []*TokenViewSlot `json:"slots,omitempty"`
+	Squares []TokenViewCell  `json:"squares,omitempty"` // visible squares, resolved
+	Bars    []TokenViewBar   `json:"bars,omitempty"`    // visible HP bars, resolved (current/max baked)
+	States  []CharacterState `json:"states,omitempty"`  // filtered to visible icon-slot conditions only
+}
+
+// TokenViewSlot is one visible ring position for a card-less viewer: the effective slot definition
+// plus its already-resolved display value (icon slots leave Value nil and use States for level).
+type TokenViewSlot struct {
+	Slot  *TokenSlot  `json:"slot"`
+	Value interface{} `json:"value,omitempty"`
+}
+
+// TokenViewCell is one visible square, resolved.
+type TokenViewCell struct {
+	ID      string      `json:"id"`
+	Caption string      `json:"caption,omitempty"`
+	Value   interface{} `json:"value,omitempty"`
+}
+
+// TokenViewBar is one visible HP bar, fully resolved (current/max are the final numbers, whether the
+// bar was field-bound or manual — the card-less client never sees which, nor the underlying stat).
+type TokenViewBar struct {
+	ID      string  `json:"id"`
+	Label   string  `json:"label,omitempty"`
+	Color   string  `json:"color,omitempty"`
+	Current float64 `json:"current"`
+	Max     float64 `json:"max"`
 }
 
 // EventType represents different types of game events
@@ -179,6 +269,7 @@ type UpdateSceneCharacterRequest struct {
 	W         *float64 `json:"w,omitempty"`
 	H         *float64 `json:"h,omitempty"`
 	ZIndex    *int     `json:"zIndex,omitempty"`
+	Hidden    *bool    `json:"hidden,omitempty"`
 }
 
 // AddCharacterRequest is the request body for adding a character to the grid
@@ -208,6 +299,11 @@ type SceneImage struct {
 	// Killed marks a tokens-layer image as dead (red strike-through), like Character.Killed.
 	// Independent of TokenOverlay — a token can be killed with no ring configured.
 	Killed bool `bson:"killed,omitempty" json:"killed,omitempty"`
+
+	// Hidden hides a tokens-layer image from players (GM-only visibility). The server never sends
+	// a hidden token to a non-GM (see FilterSceneImageTokensForUser); the GM sees it dimmed. This
+	// is the image-token analogue of Character.VisibleTo (characters use a per-player allow-list).
+	Hidden bool `bson:"hidden,omitempty" json:"hidden,omitempty"`
 
 	// TokenOverlay is the self-contained states/HP ring for an image on the "tokens" layer.
 	// Unlike the character overlay (TokenDisplayConfig layout kept separate from Character.States/
@@ -474,6 +570,7 @@ type UpdateSceneImageRequest struct {
 	Locked   *bool    `json:"locked,omitempty"`
 	Rotation *float64 `json:"rotation,omitempty"`
 	Killed   *bool    `json:"killed,omitempty"`
+	Hidden   *bool    `json:"hidden,omitempty"`
 	// TokenOverlay replaces the whole overlay layout+values in one shot. Used by the GM's config
 	// panel (add/remove/rename slots and HP bars); frequent per-play value bumps go through the
 	// atomic PATCH .../tokenOverlay/hp|slot endpoints instead.

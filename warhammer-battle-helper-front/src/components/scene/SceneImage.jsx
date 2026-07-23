@@ -369,7 +369,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     <>
       <div
         ref={containerRef}
-        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''}`}
+        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''}`}
         style={{
           position: 'absolute',
           left: pos.x,

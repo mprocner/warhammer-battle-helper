@@ -127,21 +127,6 @@ func (r *CharactersRepository) SetStatField(id, statPath string, value float64) 
 	return err
 }
 
-// SetTokenOverlay atomically writes one manual ring-slot/square value keyed by its
-// stable slot ID (FEATURE-102) → $set {"tokenOverlay.<slotID>": val}.
-func (r *CharactersRepository) SetTokenOverlay(id, slotID string, val models.TokenOverlayValue) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-	_, err = r.Collection.UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{
-		"$set": bson.M{"tokenOverlay." + slotID: val, "updatedAt": time.Now()},
-	})
-	return err
-}
-
 // SetKilled atomically flips the killed flag (dead-token strike-through), without
 // touching Stats or the overlay values.
 func (r *CharactersRepository) SetKilled(id string, killed bool) error {
