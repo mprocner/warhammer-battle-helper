@@ -119,6 +119,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [currentScene?.images, selectedImageId]);
 
+  // Drop the selection when leaving the context where images are selectable (same gate as
+  // SceneImage.handleClick: default or pan). Without this a stale selection stays deletable from
+  // Fog/Measure/Images/Drawing modes. Mirrors the selectedDrawingPathId clear on tool change.
+  useEffect(() => {
+    if (!(editingLayer === null || activeTool === 'pan')) setSelectedImageId(null);
+  }, [editingLayer, activeTool]);
+
   // Delete / Backspace removes the selected image (GM). Locked images are skipped.
   // Ignored while typing in a field. Mirrors DrawingLayer's keyboard delete.
   useEffect(() => {
