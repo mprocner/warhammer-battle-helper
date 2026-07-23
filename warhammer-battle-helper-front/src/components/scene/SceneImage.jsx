@@ -287,13 +287,16 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   // Selecting expands the ring — a GM editing affordance. Players can't select: their visible
   // slots/HP stay in the rest ("sun") position on the token. A real drag ends with a native click
   // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
+  // GM click selects any image (not just tokens) so it can be deleted via keyboard.
+  // Gated to non-drawing context (default or pan) — same condition as token drag/ring —
+  // so tool clicks aren't hijacked. A real drag must not select afterwards.
   const handleClick = useCallback((e) => {
-    if (!isToken || !isGM || !onSelectImage) return;
-    // A real drag (moved past threshold) must not select/expand the token afterwards.
+    if (!isGM || !onSelectImage) return;
+    if (!(editingLayer === null || activeTool === 'pan')) return;
     if (movedRef.current || isDragging) return;
     e.stopPropagation();
     onSelectImage(image.id);
-  }, [isToken, isGM, onSelectImage, isDragging, image.id]);
+  }, [isGM, onSelectImage, editingLayer, activeTool, isDragging, image.id]);
 
   const handleZIndexChange = async (newZIndex) => {
     try {
@@ -378,7 +381,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           height: size.height,
           zIndex: image.zIndex || 0,
           pointerEvents: 'auto',
-          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isToken && isGM ? 'pointer' : 'default'),
+          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isGM && (editingLayer === null || activeTool === 'pan') ? 'pointer' : 'default'),
           transform: `rotate(${rotation}deg)`,
         }}
         onMouseDown={handleMouseDown}

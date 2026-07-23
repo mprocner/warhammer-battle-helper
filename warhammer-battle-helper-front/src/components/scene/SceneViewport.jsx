@@ -587,6 +587,8 @@ const SceneViewport = ({
                   sceneId={displayedScene?.id}
                   editingLayer={editingLayer}
                   imageEditLayer={imageEditLayer}
+                  selectedImageId={selectedImageId}
+                  onSelectImage={onSelectImage}
                 />
 
                 {/* Visible grid as a CSS background (decoupled from drop-target cells). */}
@@ -637,6 +639,8 @@ const SceneViewport = ({
                     sceneId={displayedScene?.id}
                     editingLayer={editingLayer}
                     imageEditLayer={imageEditLayer}
+                    selectedImageId={selectedImageId}
+                    onSelectImage={onSelectImage}
                   />
                 )}
 
