@@ -283,13 +283,13 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
 
   const isToken = image.layer === 'tokens';
 
-  // --- Click-to-select (tokens layer, GM only) ---
-  // Selecting expands the ring — a GM editing affordance. Players can't select: their visible
-  // slots/HP stay in the rest ("sun") position on the token. A real drag ends with a native click
-  // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
-  // GM click selects any image (not just tokens) so it can be deleted via keyboard.
-  // Gated to non-drawing context (default or pan) — same condition as token drag/ring —
-  // so tool clicks aren't hijacked. A real drag must not select afterwards.
+  // --- Click-to-select (GM only) ---
+  // GM click selects any image so it can be deleted via keyboard. For a tokens-layer image
+  // selecting also expands its ring (a GM editing affordance); players can't select, so their
+  // visible slots/HP stay in the rest ("sun") position on the token.
+  // Gated to non-drawing context (default or pan) — same condition as token drag/ring — so tool
+  // clicks aren't hijacked. A real drag ends with a native click too, so ignore the click right
+  // after a drag (movedRef / isDragging).
   const handleClick = useCallback((e) => {
     if (!isGM || !onSelectImage) return;
     if (!(editingLayer === null || activeTool === 'pan')) return;
