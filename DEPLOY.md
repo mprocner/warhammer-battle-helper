@@ -151,28 +151,42 @@ Or set `PROJECT_DIR` if running from elsewhere:
 PROJECT_DIR=/opt/warhammer-battle-helper bash scripts/deploy.sh
 ```
 
-### autopull (auto-deploy on push)
+### GitHub Actions (auto-deploy on push)
 
-`scripts/autopull.sh` polls git every 5 minutes. If new commits are detected on `main`, it runs `deploy.sh` automatically.
+Deployment is triggered automatically on every push to `main` by the workflow
+`.github/workflows/deploy.yml`:
 
-Set up as a systemd service:
+1. **`test` job** — runs `go test ./...` on the backend (same gate as the `.githooks/pre-push` hook).
+2. **`deploy` job** — only runs if tests pass. It connects to the VPS over SSH
+   (`appleboy/ssh-action`) and runs `scripts/deploy.sh`, which pulls the latest code
+   (`git reset --hard origin/main`), backs up the DB and volumes, rebuilds and restarts containers.
+
+You can also trigger a manual redeploy without pushing: **Actions → Deploy → Run workflow**
+(`workflow_dispatch`).
+
+#### Required repository secrets
+
+Set these in **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `DEPLOY_HOST` | VPS IP / domain |
+| `DEPLOY_USER` | SSH user (e.g. `ubuntu`) |
+| `DEPLOY_SSH_KEY` | **private** SSH key (full contents, including headers) |
+| `DEPLOY_PORT` | SSH port (only if not `22`; can be omitted) |
+| `DEPLOY_PROJECT_DIR` | project path on the server (e.g. `/opt/warhammer-battle-helper`) |
+
+Generate a dedicated key pair for CI and authorize it on the server:
 
 ```bash
-# Edit the path inside the file if project is not at /root/warhammer-battle-helper
-sudo cp scripts/autopull.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable autopull
-sudo systemctl start autopull
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key
+# append deploy_key.pub to ~/.ssh/authorized_keys of DEPLOY_USER on the VPS
+# paste the contents of deploy_key (private) into the DEPLOY_SSH_KEY secret
 ```
 
-Manage the service:
-
-```bash
-sudo systemctl status autopull
-sudo journalctl -u autopull -f     # live logs
-sudo systemctl restart autopull
-sudo systemctl stop autopull
-```
+> **Passwordless sudo required.** `deploy.sh` uses `sudo rsync` / `sudo rm` for volume backups.
+> Over a non-interactive SSH session, a sudo password prompt would abort the script (`set -e`),
+> so `DEPLOY_USER` must have `NOPASSWD` sudo for those commands (or deploy as `root`).
 
 ---
 
