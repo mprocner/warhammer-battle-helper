@@ -107,7 +107,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const [activeTokenId, setActiveTokenId] = useState(null);
   // Selected image-token (tokens-layer scene image with an expanded ring). Mutually exclusive
   // with activeTokenId — only one ring is open at a time, character or image.
-  const [selectedImageTokenId, setSelectedImageTokenId] = useState(null);
+  const [selectedImageId, setSelectedImageId] = useState(null);
 
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
@@ -219,13 +219,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
     // Clicking the already-active token toggles it off (same UX as the card toggle).
     setActiveTokenId(prev => (prev === character.id ? null : character.id));
-    setSelectedImageTokenId(null); // one ring open at a time
+    setSelectedImageId(null); // one ring open at a time
   };
 
   // Select an image-token (tokens-layer scene image). Toggles off when re-clicked, and clears any
   // active character token so only one ring is open at once.
-  const handleSelectImageToken = useCallback((imageId) => {
-    setSelectedImageTokenId(prev => (prev === imageId ? null : imageId));
+  const handleSelectImage = useCallback((imageId) => {
+    setSelectedImageId(prev => (prev === imageId ? null : imageId));
     setActiveTokenId(null);
   }, []);
 
@@ -234,7 +234,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // activating a token doesn't immediately clear it.
   const clearActiveToken = useCallback(() => {
     setActiveTokenId(null);
-    setSelectedImageTokenId(null);
+    setSelectedImageId(null);
   }, []);
 
   // Multiplayer: Add character to grid (scene-aware)
@@ -977,7 +977,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageTokenId={selectedImageTokenId} onSelectImageToken={handleSelectImageToken} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} />
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageId={selectedImageId} onSelectImage={handleSelectImage} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} />
         </div>
       </div>
 

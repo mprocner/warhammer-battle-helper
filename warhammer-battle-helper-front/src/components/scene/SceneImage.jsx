@@ -11,7 +11,7 @@ import TokenResizeHandles from './TokenResizeHandles';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImageToken, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImage, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null }) => {
   const { t } = useTranslation();
   // In Images ('grid') mode only the armed layer is manipulable; images on other layers
   // are dimmed + inert. Outside grid mode nothing here is armed.
@@ -288,12 +288,12 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   // slots/HP stay in the rest ("sun") position on the token. A real drag ends with a native click
   // too, so ignore the click right after a drag (justFinishedDraggingRef, cleared one tick later).
   const handleClick = useCallback((e) => {
-    if (!isToken || !isGM || !onSelectImageToken) return;
+    if (!isToken || !isGM || !onSelectImage) return;
     // A real drag (moved past threshold) must not select/expand the token afterwards.
     if (movedRef.current || isDragging) return;
     e.stopPropagation();
-    onSelectImageToken(image.id);
-  }, [isToken, isGM, onSelectImageToken, isDragging, image.id]);
+    onSelectImage(image.id);
+  }, [isToken, isGM, onSelectImage, isDragging, image.id]);
 
   const handleZIndexChange = async (newZIndex) => {
     try {
