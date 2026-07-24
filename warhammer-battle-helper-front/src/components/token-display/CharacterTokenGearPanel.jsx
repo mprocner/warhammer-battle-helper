@@ -131,7 +131,8 @@ export default function CharacterTokenGearPanel({
 
   const paperSx = { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' };
   const headSx = { fontSize: '0.8rem', color: '#7a5c42', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 };
-  const sub = (txt) => <Typography sx={{ fontSize: '0.72rem', color: '#a89272', fontWeight: 700, textTransform: 'uppercase', mt: 1, mb: 0.5 }}>{txt}</Typography>;
+  const hintSx = { fontSize: '0.875rem', color: '#7a5c42', mb: 1 };
+  const sub = (txt) => <Typography sx={{ fontSize: '0.72rem', color: '#7a5c42', fontWeight: 700, textTransform: 'uppercase', mt: 1, mb: 0.5 }}>{txt}</Typography>;
 
   return (
     <>
@@ -176,7 +177,7 @@ export default function CharacterTokenGearPanel({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography sx={{ fontSize: '0.82rem', color: '#3a2f1f' }}>{bar.label || t('imageToken.barLabel')}</Typography>
                   {/* #4: show which character field this bar is bound to. */}
-                  {bar.field && <Typography sx={{ fontSize: '0.68rem', color: '#a89272' }}>↳ {bar.field.label || bar.field.key}</Typography>}
+                  {bar.field && <Typography sx={{ fontSize: '0.68rem', color: '#7a5c42' }}>↳ {bar.field.label || bar.field.key}</Typography>}
                 </Box>
                 {manual ? (
                   <>
@@ -233,7 +234,7 @@ export default function CharacterTokenGearPanel({
 
           {/* RING SLOTS — single sun, per-position overlay */}
           <Typography sx={{ ...headSx, mb: 0.5 }}>{t('imageToken.statesNumbers')}</Typography>
-          <Typography sx={{ fontSize: '0.75rem', color: '#a89272', mb: 1 }}>{t('token.gear.slotHint')}</Typography>
+          <Typography sx={hintSx}>{t('token.gear.slotHint')}</Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
             <Box sx={{ position: 'relative', width: 240, height: 240, flexShrink: 0 }}>
               <Box sx={{
