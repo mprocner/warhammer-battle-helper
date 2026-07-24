@@ -106,39 +106,6 @@
   gap: 6px;
 }
 
-/* Wrapper for the Images tab: circular button with a layer stamp centered over it. */
-.drawing-toolbar__tab-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Stamp/seal showing the currently armed image layer, centered on the icon center
-   (deliberately overlapping the lower part of the icon). */
-.drawing-toolbar__layer-caption {
-  position: absolute;
-  left: 50%;
-  bottom: 3px;
-  transform: translateX(-50%) rotate(-4deg);
-  z-index: 3;
-  padding: 1px 5px;
-  font-size: 9px;
-  line-height: 1.25;
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  color: #6b4423;
-  text-align: center;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
-  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
-  border: 1.5px solid #a67c52;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(107, 68, 35, 0.35), inset 0 0 0 1px rgba(201, 151, 91, 0.35);
-  user-select: none;
-  pointer-events: none;
-}
-
 .drawing-toolbar__tab {
   width: 52px;
   height: 52px;
