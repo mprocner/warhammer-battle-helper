@@ -94,6 +94,20 @@ const DrawingToolbar = ({
             <span className="drawing-toolbar__tooltip">{t('scenes.panLayer')}</span>
           </button>
           <button
+            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
+          >
+            <HighlightAltIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
+          </button>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
+          >
+            <StraightenIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
+          </button>
+          <button
             className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
             onClick={() => onEditingLayerChange(editingLayer === 'fog' ? null : 'fog')}
           >
@@ -106,20 +120,6 @@ const DrawingToolbar = ({
           >
             <EditIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
-          >
-            <StraightenIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
-          >
-            <HighlightAltIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
           </button>
         </div>
       ) : (
