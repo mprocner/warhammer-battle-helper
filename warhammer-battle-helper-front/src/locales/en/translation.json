@@ -793,7 +793,6 @@
     "gridLayer": "Grid",
     "panLayer": "Pan",
     "sceneLayer": "Images",
-    "imageLayers": "Image layers",
     "fogLayer": "Fog of War",
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",

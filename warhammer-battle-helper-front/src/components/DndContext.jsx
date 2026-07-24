@@ -6,6 +6,7 @@ import CloneCharacterModal from './CloneCharacterModal';
 import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
+import LayerSelector from './scene/LayerSelector';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath, deleteSceneImage, updateSceneImage, batchMoveTokens } from '../api/scenes';
@@ -33,7 +34,7 @@ const generateFightZones = (width, height) => {
 };
 
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'grid', onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = null, onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
   const { t } = useTranslation();
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -1099,36 +1100,41 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
             participants={participants}
             onParticipantUpdated={onParticipantUpdated}
           />
-          {/* Drawing toolbar — floats over the scene, visible to all */}
+          {/* Scene tools — armed-layer picker (GM) stacked above the tool bar, bottom-right */}
           {currentScene && (
-            <DrawingToolbar
-              editingLayer={editingLayer}
-              onEditingLayerChange={onEditingLayerChange}
-              imageEditLayer={imageEditLayer}
-              onImageEditLayerChange={onImageEditLayerChange}
-              fogCoverMode={fogCoverMode}
-              onFogCoverModeChange={onFogCoverModeChange}
-              aoeEnabled={aoeMeasure}
-              onAoeToggle={() => setAoeMeasure(v => !v)}
-              activeTool={activeTool}
-              onActiveToolChange={onActiveToolChange}
-              brushSize={brushSize}
-              onBrushSizeChange={onBrushSizeChange}
-              drawingColor={drawingColor}
-              onDrawingColorChange={onDrawingColorChange}
-              drawingFontSize={drawingFontSize}
-              onDrawingFontSizeChange={onDrawingFontSizeChange}
-              onUndoDrawing={handleUndoDrawing}
-              onClearDrawing={handleClearDrawing}
-              onUndoFog={handleUndoFog}
-              onClearFog={handleClearFog}
-              onRevealAllFog={handleRevealAllFog}
-              selectedPathId={selectedDrawingPathId}
-              onDeleteSelected={handleDeleteSelectedDrawing}
-              isGM={isGM}
-              canUndo={(currentScene?.drawingPaths || []).length > 0}
-              canUndoFog={(currentScene?.revealPaths || []).length > 0}
-            />
+            <div className="scene-tools">
+              <LayerSelector
+                imageEditLayer={imageEditLayer}
+                onImageEditLayerChange={onImageEditLayerChange}
+                isGM={isGM}
+              />
+              <DrawingToolbar
+                editingLayer={editingLayer}
+                onEditingLayerChange={onEditingLayerChange}
+                fogCoverMode={fogCoverMode}
+                onFogCoverModeChange={onFogCoverModeChange}
+                aoeEnabled={aoeMeasure}
+                onAoeToggle={() => setAoeMeasure(v => !v)}
+                activeTool={activeTool}
+                onActiveToolChange={onActiveToolChange}
+                brushSize={brushSize}
+                onBrushSizeChange={onBrushSizeChange}
+                drawingColor={drawingColor}
+                onDrawingColorChange={onDrawingColorChange}
+                drawingFontSize={drawingFontSize}
+                onDrawingFontSizeChange={onDrawingFontSizeChange}
+                onUndoDrawing={handleUndoDrawing}
+                onClearDrawing={handleClearDrawing}
+                onUndoFog={handleUndoFog}
+                onClearFog={handleClearFog}
+                onRevealAllFog={handleRevealAllFog}
+                selectedPathId={selectedDrawingPathId}
+                onDeleteSelected={handleDeleteSelectedDrawing}
+                isGM={isGM}
+                canUndo={(currentScene?.drawingPaths || []).length > 0}
+                canUndoFog={(currentScene?.revealPaths || []).length > 0}
+              />
+            </div>
           )}
 
           {/* Fight Grid with Scene Layers */}
