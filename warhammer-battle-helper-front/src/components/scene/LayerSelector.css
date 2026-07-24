@@ -1,0 +1,70 @@
+/* =====================================================
+   LayerSelector — pionowy pasek warstw obrazu (GM)
+   Spójny z pergaminowym motywem DrawingToolbar.
+   ===================================================== */
+
+.layer-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.layer-selector__btn {
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #d4a574;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  color: #6b4423;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+
+.layer-selector__btn:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
+}
+
+.layer-selector__btn--active {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  color: #fff;
+  border-color: #7a5c42;
+}
+
+.layer-selector__label {
+  white-space: nowrap;
+}
+
+/* Tooltip — ten sam wzorzec co DrawingToolbar (CSS span, po lewej przycisku). */
+.layer-selector__tooltip {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  color: #3a2f1f;
+  padding: 5px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid #c9975b;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
+  z-index: 200;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
+}
+
+.layer-selector__btn:hover .layer-selector__tooltip {
+  visibility: visible;
+  opacity: 1;
+}

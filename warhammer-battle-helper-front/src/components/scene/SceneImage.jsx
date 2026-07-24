@@ -13,18 +13,13 @@ const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
 const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImage, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart }) => {
   const { t } = useTranslation();
-  // In Images ('grid') mode only the armed layer is manipulable; images on other layers
-  // are dimmed + inert. Outside grid mode nothing here is armed.
-  const isLayerArmed = editingLayer === 'grid' && image.layer === imageEditLayer;
-  const isLayerInert = editingLayer === 'grid' && image.layer !== imageEditLayer;
-  // A token-layer image can be dragged both when its layer is armed (Images mode) AND in Pan
-  // mode (editingLayer null) — like a character token, tokens are the interactive pieces you
-  // move around the map. Resize/rotate stay gated to Images mode to avoid clutter; background
-  // and GM images are only editable when their layer is armed.
-  // In Select mode the armed layer's images are draggable too (single move, like Pan/Images mode),
-  // so you can reposition one without leaving Select. Marquee starts only on empty/locked/non-armed.
-  const isSelectArmed = editingLayer === 'select' && image.layer === imageEditLayer;
-  const canDragImage = isGM && !image.locked && (isLayerArmed || isSelectArmed || (image.layer === 'tokens' && (editingLayer === null || activeTool === 'pan')));
+  // Select/Move mode: only the armed image layer is manipulable — its images drag, resize and
+  // rotate (bg/GM show handles); images on other layers are dimmed + inert and act as a marquee
+  // backdrop. Token-layer images are also draggable in Pan mode (editingLayer null / pan tool),
+  // like character tokens — the interactive pieces you move around the map.
+  const isLayerArmed = editingLayer === 'select' && image.layer === imageEditLayer;
+  const isLayerInert = editingLayer === 'select' && image.layer !== imageEditLayer;
+  const canDragImage = isGM && !image.locked && (isLayerArmed || (image.layer === 'tokens' && (editingLayer === null || activeTool === 'pan')));
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -102,7 +97,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
         return;
       }
       // Otherwise an armed-layer image: fall through to the normal single-image drag below
-      // (canDragImage now includes Select mode via isSelectArmed).
+      // (canDragImage covers the armed layer via isLayerArmed).
     }
     if (!canDragImage || e.button !== 0) return;
     e.preventDefault();

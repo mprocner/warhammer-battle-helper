@@ -4,7 +4,6 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import EditIcon from '@mui/icons-material/Edit';
 import CloudIcon from '@mui/icons-material/Cloud';
-import ImageIcon from '@mui/icons-material/Image';
 import PanToolIcon from '@mui/icons-material/PanTool';
 import BrushIcon from '@mui/icons-material/Brush';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
@@ -23,18 +22,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import FoggyIcon from '@mui/icons-material/Foggy';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import WallpaperIcon from '@mui/icons-material/Wallpaper';
-import GroupsIcon from '@mui/icons-material/Groups';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import './DrawingToolbar.css';
-
-// Image sub-layers armed for editing while in 'grid' (Images) mode.
-const IMAGE_LAYERS = [
-  { value: 'background', Icon: WallpaperIcon,           labelKey: 'scenes.layerBackground', captionKey: 'scenes.layerBackground' },
-  { value: 'tokens',     Icon: GroupsIcon,              labelKey: 'scenes.layerTokens',     captionKey: 'scenes.layerTokens' },
-  { value: 'gm',         Icon: AdminPanelSettingsIcon,  labelKey: 'scenes.layerGm',         captionKey: 'scenes.layerGmShort' },
-];
 
 const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
 
@@ -57,8 +46,6 @@ const TOOLS = [
 const DrawingToolbar = ({
   editingLayer,
   onEditingLayerChange,
-  imageEditLayer = 'background',
-  onImageEditLayerChange,
   fogCoverMode = false,
   onFogCoverModeChange,
   aoeEnabled = true,
@@ -106,19 +93,20 @@ const DrawingToolbar = ({
             <PanToolIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.panLayer')}</span>
           </button>
-          <div className="drawing-toolbar__tab-wrap">
-            <button
-              className={`drawing-toolbar__tab ${editingLayer === 'grid' ? 'drawing-toolbar__tab--active' : ''}`}
-              onClick={() => onEditingLayerChange(editingLayer === 'grid' ? null : 'grid')}
-            >
-              <ImageIcon style={{ fontSize: 22 }} />
-              <span className="drawing-toolbar__tooltip">{t('scenes.imageLayers')}</span>
-            </button>
-            {/* Stamp caption: which image layer is currently armed (glanceable in any mode) */}
-            <span className="drawing-toolbar__layer-caption">
-              {t(IMAGE_LAYERS.find(l => l.value === imageEditLayer)?.captionKey || 'scenes.layerBackground')}
-            </span>
-          </div>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
+          >
+            <HighlightAltIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
+          </button>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
+          >
+            <StraightenIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
+          </button>
           <button
             className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
             onClick={() => onEditingLayerChange(editingLayer === 'fog' ? null : 'fog')}
@@ -132,20 +120,6 @@ const DrawingToolbar = ({
           >
             <EditIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
-          >
-            <StraightenIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
-          >
-            <HighlightAltIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
           </button>
         </div>
       ) : (
@@ -167,52 +141,7 @@ const DrawingToolbar = ({
         </div>
       )}
 
-      {/* Image-layer picker — shown in Images ('grid') and Select modes. Arms one of the three
-          image layers (background/tokens/gm); in Select mode it also scopes what the marquee grabs. */}
-      {(editingLayer === 'grid' || editingLayer === 'select') && (
-        <div className="drawing-toolbar__controls">
-          <ToggleButtonGroup
-            value={imageEditLayer}
-            exclusive
-            onChange={(_, val) => val && onImageEditLayerChange(val)}
-            size="small"
-            fullWidth
-            sx={{
-              '& .MuiToggleButton-root': {
-                flex: 1,
-                border: '1px solid #d4a574',
-                color: '#6b4423',
-                fontFamily: 'Cinzel, serif',
-                fontSize: '11px',
-                padding: '4px 6px',
-                gap: '4px',
-                background: 'linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%)',
-                textTransform: 'none',
-                '&.Mui-selected': {
-                  background: 'linear-gradient(135deg, #c9975b 0%, #a67c52 100%)',
-                  color: '#fff',
-                  borderColor: '#7a5c42',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #d4a574 0%, #c9975b 100%)',
-                  },
-                },
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #ffffff 0%, #fff9f0 100%)',
-                },
-              },
-            }}
-          >
-            {IMAGE_LAYERS.map(({ value, Icon, labelKey }) => (
-              <ToggleButton key={value} value={value} title={t(labelKey)}>
-                <Icon style={{ fontSize: 15 }} />
-                {t(labelKey)}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-        </div>
-      )}
-
-      {/* Measure-tool options — AoE circle toggle (shown like the image-layer picker). */}
+      {/* Measure-tool options — AoE circle toggle. */}
       {editingLayer === 'measure' && (
         <div className="drawing-toolbar__controls">
           <button
