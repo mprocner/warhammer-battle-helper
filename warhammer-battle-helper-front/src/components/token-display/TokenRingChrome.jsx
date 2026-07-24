@@ -14,17 +14,32 @@ import { slotOffset } from '../../utils/tokenRingGeometry';
 // the single-vs-many HP model, character squares vs image gear) stay in the thin wrappers, which
 // pass a normalized `slots` array plus `renderHp` / `renderExtras`.
 
-// Inner HP bar visual (track + fill + text + optional ± buttons). Shared by both HP models.
-export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep }) {
+// Inner HP bar visual (track + fill + value + optional ± buttons). Shared by both HP models.
+// When selected AND a label is present, the track shows the label on the left and the value on
+// the right (labeled row); otherwise the value stays centered as before. Hovering a labelled bar
+// shows the full label via the caller-supplied portal tooltip (survives ellipsis truncation).
+export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, label, selected, showTooltip, hideTooltip }) {
+  const hasLabel = !!label;
+  const showLabel = selected && hasLabel;
+  const valueText = `${current}${max ? ` / ${max}` : ''}`;
   return (
     <>
       {canEdit && (
         <button className="token-hp__btn" onClick={(e) => { e.stopPropagation(); onStep(-1); }}>−</button>
       )}
-      <div className="token-hp__track">
+      <div className="token-hp__track"
+        onMouseEnter={hasLabel && showTooltip ? (e) => showTooltip(label, e.currentTarget) : undefined}
+        onMouseLeave={hasLabel && hideTooltip ? hideTooltip : undefined}>
         <div className={`token-hp__fill token-hp__fill--${tone}`}
           style={{ width: `${pct}%`, ...(color ? { background: color } : {}) }} />
-        <span className="token-hp__text">{current}{max ? ` / ${max}` : ''}</span>
+        {showLabel ? (
+          <div className="token-hp__row">
+            <span className="token-hp__label">{label}</span>
+            <span className="token-hp__text">{valueText}</span>
+          </div>
+        ) : (
+          <span className="token-hp__text">{valueText}</span>
+        )}
       </div>
       {canEdit && (
         <button className="token-hp__btn" onClick={(e) => { e.stopPropagation(); onStep(1); }}>+</button>
@@ -136,7 +151,7 @@ export default function TokenRingChrome({
         </button>
       )}
 
-      {renderHp && renderHp()}
+      {renderHp && renderHp({ showTooltip, hideTooltip })}
 
       {slots.map((slot, i) => slot == null ? null : (
         <TokenSlot key={slot.id} slot={slot} index={i} radius={radius}

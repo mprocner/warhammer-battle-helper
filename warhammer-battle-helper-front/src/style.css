@@ -10501,6 +10501,18 @@ align-items: center;
   font-size: 6px; font-weight: 700; color: rgba(255,255,255,0.95);
 }
 .token-hp--expanded .token-hp__text { font-size: 8px; }
+/* Labeled bar (selected + label): label left, value right, over the fill.
+   Value has priority (never truncates); label ellipsises. Shared by both token stacks. */
+.token-hp__row {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: space-between; gap: 4px; padding: 0 4px;
+}
+.token-hp__row .token-hp__text { position: static; inset: auto; flex: 0 0 auto; }
+.token-hp__label {
+  flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.95);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+}
 .token-hp__btn {
   width: 15px; height: 15px; flex-shrink: 0; border-radius: 50%;
   border: 1px solid #c4a882; background: rgba(255,249,240,0.95); color: #3a2f1f;
