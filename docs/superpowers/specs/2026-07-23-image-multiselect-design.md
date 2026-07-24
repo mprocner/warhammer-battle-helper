@@ -25,8 +25,12 @@ postaci** (character tokens). Rozszerzenie istniejącego single-select
 - Różnica px vs cells siedzi **tylko w schemacie zapisu**:
   - obraz = `scene.images`, `x/y/width/height` px (`SceneImage`, PUT `images/:id`)
   - postać = placement, `positionX/positionY` cells (`Game.go:119`,
-    `handleMoveCharacter` → move endpoint). Delete postaci = **zdejmij z siatki**,
-    nie usuń encji.
+    `handleMoveCharacter` → `PUT /scenes/:sid/characters/:charId`). Delete
+    placementu = **zdejmij z siatki**, nie usuń encji.
+  - Prereq zrobiony: martwe legacy no-scene ścieżki (`!sid`: `/characters/move`
+    404, `POST /characters` tworzył encję, `DELETE /characters/:id` kasował
+    encję) usunięte — persist postaci jest teraz czysto scene-scoped
+    (identyfikacja: `charId` + `sceneId`, nigdy `placementId`).
 - Każdy `SceneImage` / `MapCharacterToken` prowadzi własny drag (lokalne
   listenery), zapisuje per-żeton.
 - Tryby (`editingLayer`): `null` (pan), `grid` (Images), `fog`, `drawing`,

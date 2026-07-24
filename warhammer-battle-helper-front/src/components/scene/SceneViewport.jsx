@@ -7,9 +7,12 @@ import ZoomContext from './ZoomContext';
 import PointerPing from './PointerPing';
 import MapRulerOverlay from './MapRulerOverlay';
 import MapTokensLayer from './MapTokensLayer';
+import MarqueeOverlay from './MarqueeOverlay';
+import SceneTokenMultiContextMenu from './SceneTokenMultiContextMenu';
 import useMapRuler from '../../hooks/useMapRuler';
+import useGroupDrag from '../../hooks/useGroupDrag';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE } from '../../constants/scene';
-import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween } from '../../utils/tokenGeometry';
+import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween, selectTokensInRect } from '../../utils/tokenGeometry';
 import './SceneViewport.css';
 
 // Deterministic colour per measuring player, so remote rulers are distinguishable.
@@ -41,9 +44,13 @@ const SceneViewport = ({
   aoeEnabled = true,
   placedCharacters = [], isMultiplayer = false, tokenDisplay = null, token = null,
   activeTokenId = null, onSelectCharacter, onCommitMove, onCommitResize,
+  selectedTokens = [], onMarqueeSelect, onCommitGroupMove, isTokenSelected, onToggleTokenSelected,
+  onGroupDelete, onGroupSetLock, onGroupSetLayer, onGroupResetRotation,
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
+  // Group context menu (Select mode, right-click on the multi-selection). GM-only, gated below.
+  const [multiMenu, setMultiMenu] = useState(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [zoomDropdownOpen, setZoomDropdownOpen] = useState(false);
@@ -369,8 +376,60 @@ const SceneViewport = ({
     };
   }, [isMeasuring, rulerMove, rulerEnd, clientToCell]);
 
+  // Marquee candidates: tokens on the armed image layer. On the 'tokens' layer, character
+  // placements join the token-layer images. Locked images are never selectable.
+  // Characters are read from displayedScene.characters (SceneCharacter placements) — the same
+  // characterToMapToken(gc) call convention rulerSnapTargets uses above — NOT placedCharacters,
+  // whose items carry col/row from fightZones rather than positionX/positionY and would give
+  // characterToMapToken the wrong shape (all candidates collapsing to col:0,row:0).
+  const marqueeCandidates = useMemo(() => {
+    if (editingLayer !== 'select') return [];
+    const imgs = (displayedScene?.images || []).filter(i => i.layer === imageEditLayer && !i.locked);
+    const out = imgs.map(i => ({ kind: 'image', id: i.id, rect: imageToMapToken(i) }));
+    if (imageEditLayer === 'tokens') {
+      (displayedScene?.characters || []).forEach(sc => {
+        out.push({ kind: 'char', id: sc.characterId, rect: characterToMapToken(sc) });
+      });
+    }
+    return out;
+  }, [editingLayer, imageEditLayer, displayedScene?.images, displayedScene?.characters]);
+
+  // Marquee drag state: { x,y,width,height } in content px for rendering, plus col/row/w/h in
+  // cells (added once the drag has moved) for the intersection test on mouseup.
+  const [marquee, setMarquee] = useState(null);
+  const marqueeStartRef = useRef(null);
+  // Latest marquee rect in cells, kept in a ref so mouseup can read it and fire selection from the
+  // EVENT handler — never from inside a setState updater (that runs during render and would setState
+  // on the parent DndContext mid-render). null until the drag has actually moved.
+  const marqueeRectRef = useRef(null);
+
   const handleContentMouseDown = useCallback((e) => {
     clickDownPosRef.current = { x: e.clientX, y: e.clientY };
+    // Select mode: left-drag on empty content draws a marquee. Pressing a token instead starts
+    // its own select/drag-move path (MapCharacterToken / SceneImage), so skip those targets.
+    if (editingLayer === 'select') {
+      if (e.button !== 0) return;
+      // A press on an armed-layer, UNLOCKED token is a drag (single or group) — that token's own
+      // handler owns it, so don't start a marquee there. Everything else starts a marquee: empty
+      // grid, a LOCKED image (can't be dragged), or a non-armed backdrop (e.g. the background map
+      // while editing the tokens layer). Lock a full-scene map to marquee tokens over it.
+      const imgEl = e.target.closest('.scene-image');
+      const charEl = e.target.closest('.map-char-token');
+      // A press on a draggable token — an armed unlocked image, or a character (chars live on the
+      // tokens layer) — is owned by that token's own single/group drag, so don't marquee there.
+      // Marquee starts on empty grid, a LOCKED image, or a non-armed backdrop (e.g. the background
+      // map while editing tokens; lock a full-scene map to marquee tokens over it).
+      const onArmedDraggableImg = imgEl && imgEl.dataset.sceneLayer === imageEditLayer && !imgEl.classList.contains('scene-image--locked');
+      const onChar = charEl && imageEditLayer === 'tokens';
+      if (onArmedDraggableImg || onChar) return;
+      const rect = contentRef.current.getBoundingClientRect();
+      const col = (e.clientX - rect.left) / zoom / CELL_SIZE;
+      const row = (e.clientY - rect.top) / zoom / CELL_SIZE;
+      marqueeStartRef.current = { col, row, additive: e.shiftKey };
+      marqueeRectRef.current = null; // set only once the drag moves, so a no-move click reads null
+      setMarquee({ x: col * CELL_SIZE, y: row * CELL_SIZE, width: 0, height: 0 });
+      return;
+    }
     // Measure mode: left-drag lays out a ruler. Pressing a token is fine — snapPoint magnetizes
     // the origin to its center, so you measure FROM a token without moving it (tokens ignore the
     // press while measuring; see MapCharacterToken).
@@ -393,7 +452,41 @@ const SceneViewport = ({
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, displayedScene, zoom, editingLayer, rulerStart, clientToCell]);
+  }, [sendMessage, displayedScene, zoom, editingLayer, imageEditLayer, rulerStart, clientToCell]);
+
+  // Tracks the marquee drag: updates the rect on mousemove, computes the intersection on mouseup.
+  useEffect(() => {
+    if (!marquee) return;
+    const onMove = (e) => {
+      const s = marqueeStartRef.current;
+      const rect = contentRef.current.getBoundingClientRect();
+      const col = (e.clientX - rect.left) / zoom / CELL_SIZE;
+      const row = (e.clientY - rect.top) / zoom / CELL_SIZE;
+      const c0 = Math.min(s.col, col), r0 = Math.min(s.row, row);
+      const w = Math.abs(col - s.col), h = Math.abs(row - s.row);
+      marqueeRectRef.current = { col: c0, row: r0, w, h };
+      setMarquee({ x: c0 * CELL_SIZE, y: r0 * CELL_SIZE, width: w * CELL_SIZE, height: h * CELL_SIZE });
+    };
+    const onUp = () => {
+      const cur = marqueeRectRef.current;
+      // Only a real drag (moved past the start point) changes the selection. A no-movement press —
+      // including the click/ctrl-click/tap that opens the context menu — must NOT clear it; use
+      // Escape or a fresh marquee to deselect. Clearing here wiped the selection out from under the
+      // group menu (the press that opened it counted as an empty click).
+      if (cur) {
+        onMarqueeSelect?.(selectTokensInRect(cur, marqueeCandidates), marqueeStartRef.current?.additive);
+      }
+      marqueeRectRef.current = null;
+      marqueeStartRef.current = null;
+      setMarquee(null);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [marquee, zoom, marqueeCandidates, onMarqueeSelect]);
 
   const clearPingTimer = useCallback(() => {
     if (pingTimerRef.current) {
@@ -454,6 +547,24 @@ const SceneViewport = ({
     () => pointerPings.filter(p => p.sceneId === displayedScene?.id),
     [pointerPings, displayedScene?.id]
   );
+
+  // Group-drag controller: one delta (in cells) for the whole multi-selection. Characters are
+  // sourced from displayedScene.characters (SceneCharacter: characterId/positionX/positionY) — the
+  // same shape marqueeCandidates/rulerSnapTargets use above — NOT placedCharacters, whose fightZones
+  // shape ({character,col,row,w,h}) doesn't match what characterToMapToken reads.
+  const groupDrag = useGroupDrag({
+    selectedTokens,
+    images: (displayedScene?.images || []),
+    characters: (displayedScene?.characters || []),
+    gridWidth: displayedScene?.gridWidth ?? gridWidth,
+    gridHeight: displayedScene?.gridHeight ?? gridHeight,
+    snap: tokenPlacementMode === 'snap',
+    zoom,
+    onCommit: onCommitGroupMove,
+    onMeasureStart: onTokenDragMeasureStart,
+    onMeasureMove: onTokenDragMeasureMove,
+    onMeasureEnd: onTokenDragMeasureEnd,
+  });
 
   if (!scene) {
     return <div className="scene-viewport">{children}</div>;
@@ -578,6 +689,14 @@ const SceneViewport = ({
                 onMouseUp={clearPingTimer}
                 onMouseLeave={clearPingTimer}
                 onClick={handleBackgroundClick}
+                onContextMenu={(e) => {
+                  // Only a real multi-selection (2+) opens the group menu; a lone token's right-click
+                  // falls through to its own single-image menu (SceneImage.handleContextMenu).
+                  if (editingLayer === 'select' && selectedTokens.length > 1) {
+                    e.preventDefault();
+                    setMultiMenu({ x: e.clientX, y: e.clientY });
+                  }
+                }}
               >
                 <SceneLayer
                   images={backgroundImages}
@@ -589,6 +708,11 @@ const SceneViewport = ({
                   imageEditLayer={imageEditLayer}
                   selectedImageId={selectedImageId}
                   onSelectImage={onSelectImage}
+                  isTokenSelected={isTokenSelected}
+                  onToggleTokenSelected={onToggleTokenSelected}
+                  multiSelectActive={selectedTokens.length > 1}
+                  groupDragDelta={groupDrag.delta}
+                  onGroupDragStart={groupDrag.begin}
                 />
 
                 {/* Visible grid as a CSS background (decoupled from drop-target cells). */}
@@ -628,6 +752,11 @@ const SceneViewport = ({
                   onSelectCharacter={onSelectCharacter}
                   onCommitMove={onCommitMove}
                   onCommitResize={onCommitResize}
+                  isTokenSelected={isTokenSelected}
+                  onToggleTokenSelected={onToggleTokenSelected}
+                  multiSelectActive={selectedTokens.length > 1}
+                  groupDragDelta={groupDrag.delta}
+                  onGroupDragStart={groupDrag.begin}
                 />
 
                 {isGM && (
@@ -641,6 +770,11 @@ const SceneViewport = ({
                     imageEditLayer={imageEditLayer}
                     selectedImageId={selectedImageId}
                     onSelectImage={onSelectImage}
+                    isTokenSelected={isTokenSelected}
+                    onToggleTokenSelected={onToggleTokenSelected}
+                    multiSelectActive={selectedTokens.length > 1}
+                    groupDragDelta={groupDrag.delta}
+                    onGroupDragStart={groupDrag.begin}
                   />
                 )}
 
@@ -692,6 +826,17 @@ const SceneViewport = ({
                   canvasWidth={canvasSize.width}
                   canvasHeight={canvasSize.height}
                 />
+
+                <MarqueeOverlay rect={marquee} />
+
+                {multiMenu && (
+                  <SceneTokenMultiContextMenu
+                    x={multiMenu.x} y={multiMenu.y} selection={selectedTokens}
+                    onDelete={onGroupDelete} onSetLock={onGroupSetLock}
+                    onSetLayer={onGroupSetLayer} onResetRotation={onGroupResetRotation}
+                    onClose={() => setMultiMenu(null)}
+                  />
+                )}
 
                 {textInputPos && (
                   <input

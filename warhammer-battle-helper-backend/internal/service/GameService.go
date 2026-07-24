@@ -2059,6 +2059,60 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 	return nil
 }
 
+// BatchMoveSceneTokens persists a group drag (GM only) and broadcasts once. Hidden images must not
+// leak their new position to players, so we split: GM gets the full set, players get every character
+// (character moves are already whole-game, unknown ids no-op client-side) plus only NON-hidden images.
+func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.BatchMoveTokensRequest) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+	if game.GameMasterID != userID {
+		return fmt.Errorf("only the game master can move scene tokens")
+	}
+
+	if err := s.gameRepo.BatchMoveSceneTokens(gameID, sceneID, req); err != nil {
+		return err
+	}
+
+	// Hidden-image id set (from pre-move game) — used to withhold their positions from players.
+	hidden := map[string]bool{}
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		for _, img := range game.Scenes[si].Images {
+			if img.Hidden {
+				hidden[img.ID.Hex()] = true
+			}
+		}
+	}
+
+	gmID := game.GameMasterID.Hex()
+
+	// GM: everything.
+	s.hub.BroadcastToUsers(gameID, websocket.EventSceneTokensMoved, map[string]interface{}{
+		"sceneId":    sceneID.Hex(),
+		"images":     req.Images,
+		"characters": req.Characters,
+	}, []string{gmID})
+
+	// Players: non-hidden images only + all characters.
+	visibleImages := make([]models.BatchImagePos, 0, len(req.Images))
+	for _, img := range req.Images {
+		if !hidden[img.ID] {
+			visibleImages = append(visibleImages, img)
+		}
+	}
+	s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneTokensMoved, map[string]interface{}{
+		"sceneId":    sceneID.Hex(),
+		"images":     visibleImages,
+		"characters": req.Characters,
+	}, gmID)
+
+	return nil
+}
+
 // DeleteSceneImage deletes an image from a scene (GM only)
 func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID) error {
 	game, err := s.gameRepo.GetByID(gameID)

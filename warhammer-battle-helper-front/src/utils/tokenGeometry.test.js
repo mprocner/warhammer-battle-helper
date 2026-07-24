@@ -9,6 +9,10 @@ import {
   snapPointToTokens,
   characterToMapToken,
   imageToMapToken,
+  rectsIntersect,
+  unionRect,
+  selectTokensInRect,
+  clampGroupDelta,
 } from './tokenGeometry';
 
 // CELL_SIZE is 50 (constants/scene.js).
@@ -182,5 +186,65 @@ describe('imageToMapToken', () => {
       zIndex: 3,
       locked: true,
     });
+  });
+});
+
+describe('rectsIntersect', () => {
+  const a = { col: 0, row: 0, w: 2, h: 2 };
+  it('true for partial overlap', () => {
+    expect(rectsIntersect(a, { col: 1, row: 1, w: 2, h: 2 })).toBe(true);
+  });
+  it('false when fully apart', () => {
+    expect(rectsIntersect(a, { col: 5, row: 5, w: 1, h: 1 })).toBe(false);
+  });
+  it('false on edge touch only', () => {
+    expect(rectsIntersect(a, { col: 2, row: 0, w: 1, h: 1 })).toBe(false);
+  });
+  it('true when one contains the other', () => {
+    expect(rectsIntersect(a, { col: 0.5, row: 0.5, w: 0.5, h: 0.5 })).toBe(true);
+  });
+});
+
+describe('unionRect', () => {
+  it('returns null for empty', () => {
+    expect(unionRect([])).toBeNull();
+  });
+  it('wraps two rects', () => {
+    expect(unionRect([
+      { col: 1, row: 1, w: 1, h: 1 },
+      { col: 3, row: 2, w: 2, h: 2 },
+    ])).toEqual({ col: 1, row: 1, w: 4, h: 3 });
+  });
+});
+
+describe('selectTokensInRect', () => {
+  const candidates = [
+    { kind: 'image', id: 'a', rect: { col: 0, row: 0, w: 1, h: 1 } },
+    { kind: 'char', id: 'b', rect: { col: 5, row: 5, w: 1, h: 1 } },
+    { kind: 'image', id: 'c', rect: { col: 0.5, row: 0.5, w: 2, h: 2 } },
+  ];
+  it('returns only intersecting tokens', () => {
+    expect(selectTokensInRect({ col: 0, row: 0, w: 1, h: 1 }, candidates)).toEqual([
+      { kind: 'image', id: 'a' },
+      { kind: 'image', id: 'c' },
+    ]);
+  });
+  it('empty when nothing intersects', () => {
+    expect(selectTokensInRect({ col: 20, row: 20, w: 1, h: 1 }, candidates)).toEqual([]);
+  });
+});
+
+describe('clampGroupDelta', () => {
+  it('passes through when in bounds', () => {
+    expect(clampGroupDelta({ dCol: 1, dRow: 1 }, { col: 2, row: 2, w: 1, h: 1 }, 10, 10))
+      .toEqual({ dCol: 1, dRow: 1 });
+  });
+  it('clamps against left/top edge', () => {
+    expect(clampGroupDelta({ dCol: -5, dRow: -5 }, { col: 2, row: 3, w: 1, h: 1 }, 10, 10))
+      .toEqual({ dCol: -2, dRow: -3 });
+  });
+  it('clamps against right/bottom edge', () => {
+    expect(clampGroupDelta({ dCol: 5, dRow: 5 }, { col: 8, row: 8, w: 2, h: 2 }, 10, 10))
+      .toEqual({ dCol: 0, dRow: 0 });
   });
 });

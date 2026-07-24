@@ -129,3 +129,46 @@ export function imageToMapToken(img) {
     raw: img,
   };
 }
+
+// AABB overlap in cell units. Edge-touch (shared boundary, zero area) counts as NO overlap,
+// so a marquee that merely grazes a token's edge doesn't grab it.
+export function rectsIntersect(a, b) {
+  return (
+    a.col < b.col + b.w &&
+    a.col + a.w > b.col &&
+    a.row < b.row + b.h &&
+    a.row + a.h > b.row
+  );
+}
+
+// Bounding box (CellRect) wrapping every rect. null for an empty list.
+export function unionRect(rects) {
+  if (!rects.length) return null;
+  let minC = Infinity, minR = Infinity, maxC = -Infinity, maxR = -Infinity;
+  for (const r of rects) {
+    minC = Math.min(minC, r.col);
+    minR = Math.min(minR, r.row);
+    maxC = Math.max(maxC, r.col + r.w);
+    maxR = Math.max(maxR, r.row + r.h);
+  }
+  return { col: minC, row: minR, w: maxC - minC, h: maxR - minR };
+}
+
+// candidates: [{ kind, id, rect }]. Returns [{ kind, id }] whose rect intersects the marquee.
+export function selectTokensInRect(rect, candidates) {
+  return candidates
+    .filter(c => rectsIntersect(rect, c.rect))
+    .map(({ kind, id }) => ({ kind, id }));
+}
+
+// Clamp a cell-space drag delta so the group's bounding box stays fully inside the grid.
+// Clamping the WHOLE group's bbox (not per-token) preserves the tokens' relative layout.
+export function clampGroupDelta(delta, bbox, gridWidth, gridHeight) {
+  let dCol = delta.dCol;
+  let dRow = delta.dRow;
+  dCol = Math.max(dCol, -bbox.col);
+  dCol = Math.min(dCol, gridWidth - (bbox.col + bbox.w));
+  dRow = Math.max(dRow, -bbox.row);
+  dRow = Math.min(dRow, gridHeight - (bbox.row + bbox.h));
+  return { dCol, dRow };
+}

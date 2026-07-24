@@ -1242,6 +1242,78 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	return nil
 }
 
+// BatchMoveSceneTokens moves many images (px) and character placements (cells) in one BulkWrite —
+// a single round-trip so a group drag lands atomically. Each element is its own UpdateOne with
+// arrayFilters (arrayFilters can't set different values across matched elements in one update).
+func (r *GameRepository) BatchMoveSceneTokens(gameID string, sceneID primitive.ObjectID, req models.BatchMoveTokensRequest) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	models_ := make([]mongo.WriteModel, 0, len(req.Images)+len(req.Characters))
+	now := time.Now()
+
+	for _, img := range req.Images {
+		imgID, err := primitive.ObjectIDFromHex(img.ID)
+		if err != nil {
+			continue
+		}
+		m := mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": objectID}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"scenes.$[scene].images.$[img].x":         img.X,
+				"scenes.$[scene].images.$[img].y":         img.Y,
+				"scenes.$[scene].images.$[img].updatedAt": now,
+				"updatedAt": now,
+			}}).
+			SetArrayFilters(options.ArrayFilters{Filters: []interface{}{
+				bson.M{"scene._id": sceneID},
+				bson.M{"img._id": imgID},
+			}})
+		models_ = append(models_, m)
+	}
+
+	for _, ch := range req.Characters {
+		charID, err := primitive.ObjectIDFromHex(ch.ID)
+		if err != nil {
+			continue
+		}
+		m := mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": objectID}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"scenes.$[scene].characters.$[char].positionX": ch.PositionX,
+				"scenes.$[scene].characters.$[char].positionY": ch.PositionY,
+				"scenes.$[scene].characters.$[char].updatedAt": now,
+				"updatedAt": now,
+			}}).
+			SetArrayFilters(options.ArrayFilters{Filters: []interface{}{
+				bson.M{"scene._id": sceneID},
+				bson.M{"char.characterId": charID},
+			}})
+		models_ = append(models_, m)
+	}
+
+	if len(models_) == 0 {
+		return nil
+	}
+
+	result, err := r.Collection.BulkWrite(ctx, models_, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		return fmt.Errorf("failed to batch move scene tokens: %w", err)
+	}
+	// Every op filters on the game _id; a zero match means the game itself is gone (mirrors
+	// UpdateSceneImage). A stale token id still matches the game doc but no array element, which
+	// this can't detect — acceptable, the client self-heals on the next refetch.
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
+	}
+	return nil
+}
+
 // GetSceneImage re-reads a single embedded scene image (used after an atomic overlay write to
 // broadcast the fresh value).
 func (r *GameRepository) GetSceneImage(gameID string, sceneID, imageID primitive.ObjectID) (*models.SceneImage, error) {

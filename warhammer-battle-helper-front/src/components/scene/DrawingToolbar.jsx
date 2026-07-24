@@ -26,6 +26,7 @@ import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import GroupsIcon from '@mui/icons-material/Groups';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import './DrawingToolbar.css';
 
 // Image sub-layers armed for editing while in 'grid' (Images) mode.
@@ -139,6 +140,13 @@ const DrawingToolbar = ({
             <StraightenIcon style={{ fontSize: 22 }} />
             <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
           </button>
+          <button
+            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
+          >
+            <HighlightAltIcon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
+          </button>
         </div>
       ) : (
         <div className="drawing-toolbar__tabs">
@@ -159,9 +167,9 @@ const DrawingToolbar = ({
         </div>
       )}
 
-      {/* Image-layer picker — only in Images ('grid') mode. Arms one of the three
-          image layers (background/tokens/gm) for editing; others go inert. */}
-      {editingLayer === 'grid' && (
+      {/* Image-layer picker — shown in Images ('grid') and Select modes. Arms one of the three
+          image layers (background/tokens/gm); in Select mode it also scopes what the marquee grabs. */}
+      {(editingLayer === 'grid' || editingLayer === 'select') && (
         <div className="drawing-toolbar__controls">
           <ToggleButtonGroup
             value={imageEditLayer}

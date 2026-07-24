@@ -816,6 +816,7 @@
     "fogCoverAll": "Zakryj wszystko",
     "drawingLayer": "Rysowanie",
     "measureLayer": "Pomiar odległości",
+    "selectLayer": "Zaznacz żetony",
     "measureAoe": "Koło AoE",
     "drawingSection": "Warstwa rysowania",
     "drawingTool": "Narzędzie",
@@ -849,7 +850,13 @@
     "layerGm": "Warstwa MG",
     "layerGmShort": "MG",
     "duplicate": "Duplikuj",
-    "times": "razy"
+    "times": "razy",
+    "lockAll": "Zablokuj wszystkie",
+    "unlockAll": "Odblokuj wszystkie",
+    "moveToLayer": "Przenieś na warstwę",
+    "resetRotationAll": "Resetuj obrót (wszystkie)",
+    "deleteAll": "Usuń wszystkie",
+    "removeFromScene": "Zdejmij zaznaczone ze sceny"
   },
   "files": {
     "title": "Pliki",

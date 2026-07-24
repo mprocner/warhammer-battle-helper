@@ -816,6 +816,7 @@
     "fogCoverAll": "Cover all",
     "drawingLayer": "Drawing",
     "measureLayer": "Measure distance",
+    "selectLayer": "Select tokens",
     "measureAoe": "AoE circle",
     "drawingSection": "Drawing Layer",
     "drawingTool": "Tool",
@@ -849,7 +850,13 @@
     "layerGm": "GM Layer",
     "layerGmShort": "GM",
     "duplicate": "Duplicate",
-    "times": "times"
+    "times": "times",
+    "lockAll": "Lock all",
+    "unlockAll": "Unlock all",
+    "moveToLayer": "Move to layer",
+    "resetRotationAll": "Reset rotation (all)",
+    "deleteAll": "Delete all",
+    "removeFromScene": "Remove selected from scene"
   },
   "files": {
     "title": "Files",

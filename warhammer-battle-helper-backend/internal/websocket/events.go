@@ -59,6 +59,7 @@ const (
 	EventSceneImageUpdated      = "SCENE_IMAGE_UPDATED"
 	EventSceneImageDeleted      = "SCENE_IMAGE_DELETED"
 	EventSceneImageTokenUpdated = "SCENE_IMAGE_TOKEN_UPDATED"
+	EventSceneTokensMoved       = "SCENE_TOKENS_MOVED"
 
 	// Fog of war
 	EventFogToggled     = "FOG_TOGGLED"

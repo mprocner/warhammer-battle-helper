@@ -315,6 +315,35 @@ func (h *SceneHandler) UpdateSceneImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Image updated"})
 }
 
+// BatchMoveSceneTokens moves multiple images + character placements at once (group drag, GM only).
+func (h *SceneHandler) BatchMoveSceneTokens(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, err := primitive.ObjectIDFromHex(c.Param("sceneId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+
+	var req models.BatchMoveTokensRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.BatchMoveSceneTokens(gameID, sceneID, userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tokens moved"})
+}
+
 // DeleteSceneImage deletes an image from a scene
 func (h *SceneHandler) DeleteSceneImage(c *gin.Context) {
 	gameID := c.Param("id")

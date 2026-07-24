@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import Avatar from '../Avatar';
 import TokenOverlay from '../token-display/TokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
@@ -13,9 +13,10 @@ function MapCharacterToken({
   isGM = false, isMultiplayer = false, canDrag = true, selected = false,
   tokenPlacementMode = 'snap', tokenDisplay = null, gameId = null, token = null,
   sceneId = null, hidden = false, placementId = null, tokenGear = null, tokenView = null,
-  gameSystem = null, editingLayer = null, activeTool = null,
+  gameSystem = null, editingLayer = null, imageEditLayer = 'background', activeTool = null,
   onSelect, onCommitMove, onCommitResize,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
+  multiSelected = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ col, row });
@@ -26,6 +27,7 @@ function MapCharacterToken({
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
   const movedRef = useRef(false);
+  const groupPressRef = useRef(null); // select-mode press point — distinguishes a group drag from a click
   const justMovedRef = useRef(false);
   const justResizedRef = useRef(false);
 
@@ -52,6 +54,24 @@ function MapCharacterToken({
     // Measure mode: the ruler owns the press (it magnetizes to this token's center in the
     // viewport's capture handler). The token must stay put — never drag/select while measuring.
     if (editingLayer === 'measure') return;
+    if (editingLayer === 'select') {
+      // Record the press point so the native click that follows can tell a drag (single OR group)
+      // from a real click — a drag must not toggle this selection.
+      groupPressRef.current = { x: e.clientX, y: e.clientY };
+      if (e.button !== 0) return; // right/middle → context menu, never a drag
+      // Characters are draggable only when the tokens layer is armed (their own layer). On another
+      // armed layer they're backdrop, so the press falls through to the viewport marquee.
+      if (imageEditLayer !== 'tokens') return;
+      // Part of the multi-selection → group drag (moves the whole selection together).
+      if (multiSelected && onGroupDragStart) {
+        e.preventDefault();
+        e.stopPropagation();
+        onGroupDragStart(e);
+        return;
+      }
+      // Otherwise fall through to the normal single-character drag below (like an armed image), so
+      // a lone token can be repositioned without leaving Select mode.
+    }
     // Selection is allowed for everyone able to select; dragging is ownership-gated.
     e.stopPropagation();
     if (!canDrag) return;
@@ -68,7 +88,7 @@ function MapCharacterToken({
     onTokenDragMeasureStart?.(snap
       ? { col: Math.round(pos.col) + size.w / 2, row: Math.round(pos.row) + size.h / 2 }
       : { col: pos.col + size.w / 2, row: pos.row + size.h / 2 });
-  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, onTokenDragMeasureStart]);
+  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, imageEditLayer, onTokenDragMeasureStart, multiSelected, onGroupDragStart]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -155,6 +175,20 @@ function MapCharacterToken({
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click
+    if (editingLayer === 'select') {
+      if (!isGM || !onToggleSelect) return;
+      // Characters are only selectable when the tokens layer is armed (matching the marquee scope);
+      // otherwise they're backdrop and the press falls through to the marquee.
+      if (imageEditLayer !== 'tokens') return;
+      e.stopPropagation();
+      // A group drag ends with a native click too; if the pointer moved, this was a drag — skip the
+      // toggle (else a multi-token drag would collapse the selection down to just this token).
+      const press = groupPressRef.current;
+      groupPressRef.current = null;
+      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 3) return;
+      onToggleSelect('char', character.id, e.shiftKey);
+      return;
+    }
     if (editingLayer === 'measure') return; // measuring — a press must not open the character
     e.stopPropagation();
     onSelect?.(character);
@@ -163,7 +197,29 @@ function MapCharacterToken({
   const displayName = character.basicInfo?.name || character.name;
   const displayAvatar = character.avatar || character.basicInfo?.avatar;
   const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo);
-  const px = { left: pos.col * CELL_SIZE, top: pos.row * CELL_SIZE, width: size.w * CELL_SIZE, height: size.h * CELL_SIZE };
+  // Group drag: while this token is part of an in-progress group drag, offset its render by the
+  // controller's single shared delta (in cells) — pos.col/row stay untouched, the controller
+  // commits the real move on mouseup (see useGroupDrag).
+  // Grab cursor only when the token is actually draggable in the current context: never while
+  // measuring, and in Select mode only when its own (tokens) layer is armed — on another layer a
+  // character is backdrop for the marquee, so a move cursor would be misleading.
+  const dragEnabledNow = canDrag && editingLayer !== 'measure' && (editingLayer !== 'select' || imageEditLayer === 'tokens');
+  const groupDCol = (multiSelected && groupDragDelta) ? groupDragDelta.dCol : 0;
+  const groupDRow = (multiSelected && groupDragDelta) ? groupDragDelta.dRow : 0;
+  const px = { left: (pos.col + groupDCol) * CELL_SIZE, top: (pos.row + groupDRow) * CELL_SIZE, width: size.w * CELL_SIZE, height: size.h * CELL_SIZE };
+
+  // When a group drag ends, bake the last delta into local pos and skip one prop-sync so the token
+  // holds its dropped cell until the batch move round-trips (mirrors justMovedRef on single drag).
+  // useLayoutEffect: run before paint so the token never paints a frame at its stale position.
+  const prevGroupDeltaRef = useRef(null);
+  useLayoutEffect(() => {
+    const prev = prevGroupDeltaRef.current;
+    prevGroupDeltaRef.current = groupDragDelta;
+    if (multiSelected && prev && !groupDragDelta && (prev.dCol !== 0 || prev.dRow !== 0)) {
+      justMovedRef.current = true;
+      setPos(p => ({ col: p.col + prev.dCol, row: p.row + prev.dRow }));
+    }
+  }, [groupDragDelta, multiSelected]);
 
   // GM-only dim: this token's placement is hidden from players (players without the card don't
   // receive it at all). An explicit GM action, so dimming it is always the right signal.
@@ -171,8 +227,8 @@ function MapCharacterToken({
 
   return (
     <div
-      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}`}
-      style={{ position: 'absolute', ...px, cursor: canDrag ? (isDragging ? 'grabbing' : 'grab') : 'pointer', pointerEvents: 'auto' }}
+      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}${multiSelected ? ' map-char-token--multi-selected' : ''}`}
+      style={{ position: 'absolute', ...px, cursor: dragEnabledNow ? (isDragging ? 'grabbing' : 'grab') : 'default', pointerEvents: 'auto' }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >

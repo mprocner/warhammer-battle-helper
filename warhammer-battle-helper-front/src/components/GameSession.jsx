@@ -564,7 +564,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
             ...prev,
             scenes: (prev.scenes || []).map(s =>
               s.id === scRId
-                ? { ...s, characters: (s.characters || []).filter(c => c.id !== scRCharId) }
+                // Match by characterId (the payload's id) OR placement id — mirrors SCENE_CHARACTER_MOVED.
+                // Matching only c.id (the placement id) never hit, so removal fell back to a refetch;
+                // two concurrent group removals then raced their refetches and dropped only one token.
+                ? { ...s, characters: (s.characters || []).filter(c => c.characterId !== scRCharId && c.id !== scRCharId) }
                 : s
             ),
           };
@@ -641,6 +644,35 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
           };
         });
         break;
+
+      case WS_EVENTS.SCENE_TOKENS_MOVED: {
+        const { sceneId: stmSceneId, images: stmImages = [], characters: stmChars = [] } = message.payload;
+        const imgMap = new Map(stmImages.map(i => [i.id, i]));
+        const charMap = new Map(stmChars.map(c => [c.id, c]));
+        setGameState(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            scenes: (prev.scenes || []).map(s =>
+              s.id === stmSceneId
+                ? {
+                    ...s,
+                    images: (s.images || []).map(img =>
+                      imgMap.has(img.id) ? { ...img, x: imgMap.get(img.id).x, y: imgMap.get(img.id).y } : img
+                    ),
+                    characters: (s.characters || []).map(c =>
+                      charMap.has(c.characterId)
+                        ? { ...c, positionX: charMap.get(c.characterId).positionX, positionY: charMap.get(c.characterId).positionY }
+                        : c
+                    ),
+                  }
+                : s
+            ),
+          };
+        });
+        setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+      }
 
       case WS_EVENTS.FOG_TOGGLED:
         setGameState(prev => {

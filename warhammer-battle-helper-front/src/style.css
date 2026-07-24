@@ -10803,3 +10803,16 @@ align-items: center;
 .token-resize-handle--nw { top: -4px; left: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
 .token-resize-handle--se { bottom: -4px; right: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
 .token-resize-handle--sw { bottom: -4px; left: -4px; width: 8px; height: 8px; cursor: nesw-resize; }
+
+/* Select mode: marquee rectangle dragged over the map to bulk-select tokens. */
+.marquee-overlay {
+  border: 1px dashed #c9975b;
+  background: rgba(201, 151, 91, 0.15);
+}
+
+/* Select mode: gold outline on tokens/images picked up by the marquee or click/shift-click. */
+.scene-image--multi-selected,
+.map-char-token--multi-selected {
+  outline: 2px solid #c9975b;
+  outline-offset: 2px;
+}

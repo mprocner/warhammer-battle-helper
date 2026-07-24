@@ -14,6 +14,8 @@ const MapTokensLayer = ({
   // character-specific
   isMultiplayer = false, tokenDisplay, token,
   activeTokenId, onSelectCharacter, onCommitMove, onCommitResize,
+  isTokenSelected, onToggleTokenSelected, multiSelectActive,
+  groupDragDelta, onGroupDragStart,
 }) => {
   const items = [
     ...characters.map(c => ({ kind: 'character', zIndex: c.zIndex || 0, key: `c:${c.character.id}`, data: c })),
@@ -39,6 +41,11 @@ const MapTokensLayer = ({
           onTokenDragMeasureStart={onTokenDragMeasureStart}
           onTokenDragMeasureMove={onTokenDragMeasureMove}
           onTokenDragMeasureEnd={onTokenDragMeasureEnd}
+          multiSelected={isTokenSelected?.('image', item.data.id)}
+          multiSelectActive={multiSelectActive}
+          onToggleSelect={onToggleTokenSelected}
+          groupDragDelta={groupDragDelta}
+          onGroupDragStart={onGroupDragStart}
         />
       ) : (
         <MapCharacterToken
@@ -60,6 +67,7 @@ const MapTokensLayer = ({
           tokenView={item.data.tokenView}
           gameSystem={gameSystem}
           editingLayer={editingLayer}
+          imageEditLayer={imageEditLayer}
           activeTool={activeTool}
           tokenDisplay={tokenDisplay}
           gameId={gameId}
@@ -70,6 +78,10 @@ const MapTokensLayer = ({
           onTokenDragMeasureStart={onTokenDragMeasureStart}
           onTokenDragMeasureMove={onTokenDragMeasureMove}
           onTokenDragMeasureEnd={onTokenDragMeasureEnd}
+          multiSelected={isTokenSelected?.('char', item.data.character.id)}
+          onToggleSelect={onToggleTokenSelected}
+          groupDragDelta={groupDragDelta}
+          onGroupDragStart={onGroupDragStart}
         />
       ))}
     </div>

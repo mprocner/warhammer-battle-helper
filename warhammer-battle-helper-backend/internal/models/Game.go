@@ -577,6 +577,24 @@ type UpdateSceneImageRequest struct {
 	TokenOverlay *ImageTokenOverlay `json:"tokenOverlay,omitempty"`
 }
 
+// Batch token move (multi-select group drag). Images carry pixel coords; characters cell coords.
+type BatchImagePos struct {
+	ID string  `json:"id" binding:"required"`
+	X  float64 `json:"x"`
+	Y  float64 `json:"y"`
+}
+
+type BatchCharPos struct {
+	ID        string  `json:"id" binding:"required"`
+	PositionX float64 `json:"positionX"`
+	PositionY float64 `json:"positionY"`
+}
+
+type BatchMoveTokensRequest struct {
+	Images     []BatchImagePos `json:"images"`
+	Characters []BatchCharPos  `json:"characters"`
+}
+
 // PatchImageTokenHPRequest steps or sets one HP bar's current value. Exactly one of Delta/Value
 // is expected (delta = relative +/-, value = absolute); mirrors PatchStatFieldRequest.
 type PatchImageTokenHPRequest struct {
