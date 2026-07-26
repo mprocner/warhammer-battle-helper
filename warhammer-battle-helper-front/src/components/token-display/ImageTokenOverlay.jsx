@@ -78,14 +78,15 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
       canManageVisibility={canEdit} hiddenFromPlayers={hiddenFromPlayers}
       onToggleVisibility={toggleVisibility} visibilityToggleClassName="img-token-visibility-toggle"
       slots={slots}
-      renderHp={() => bars.length > 0 ? (
+      renderHp={({ showTooltip, hideTooltip }) => bars.length > 0 ? (
         <div className={`img-token-hp-stack ${selected ? 'img-token-hp-stack--expanded' : ''}`} style={{ transform: hpTransform }}>
           {bars.map(bar => {
             const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
             return (
               <div key={bar.id} className="img-token-hp">
                 <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpTone(pct)} color={bar.color}
-                  canEdit={selected && canEdit} onStep={(d) => stepHP(bar.id, d)} />
+                  canEdit={selected && canEdit} onStep={(d) => stepHP(bar.id, d)}
+                  label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
               </div>
             );
           })}

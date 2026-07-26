@@ -103,13 +103,14 @@ export default function TokenOverlay({
         radius={radius} equatorX={equatorX}
         killStrikeClassName="token-kill-strike" killToggleClassName="token-kill-toggle"
         slots={slots}
-        renderHp={() => (tokenView.bars || []).length > 0 ? (
+        renderHp={({ showTooltip, hideTooltip }) => (tokenView.bars || []).length > 0 ? (
           <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''}`}>
             {tokenView.bars.map(bar => {
               const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
               return (
                 <div key={bar.id} className="token-hp">
-                  <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color} canEdit={false} onStep={() => {}} />
+                  <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color} canEdit={false} onStep={() => {}}
+                    label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
                 </div>
               );
             })}
@@ -201,14 +202,15 @@ export default function TokenOverlay({
       canConfigureGear={isGM && !!placementId && overlayEnabled} onConfigureGear={() => setGearOpen(true)}
       gearToggleClassName="token-gear"
       slots={slots}
-      renderHp={() => (overlayEnabled && composedBars.length > 0) ? (
+      renderHp={({ showTooltip, hideTooltip }) => (overlayEnabled && composedBars.length > 0) ? (
         <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''}`}>
           {composedBars.map(bar => {
             const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
             return (
               <div key={bar.id} className="token-hp">
                 <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color}
-                  canEdit={selected && canEdit && bar.manual} onStep={(d) => stepBar(bar.id, d)} />
+                  canEdit={selected && canEdit && bar.manual} onStep={(d) => stepBar(bar.id, d)}
+                  label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
               </div>
             );
           })}
