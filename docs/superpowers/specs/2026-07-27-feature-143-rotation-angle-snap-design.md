@@ -34,18 +34,24 @@ typu 42° — wpadnie w 45. Akceptowalne dla mapy bitewnej.
 
 ## Implementacja
 
-Plik: `warhammer-battle-helper-front/src/components/scene/SceneImage.jsx`
+Helper w osobnym module (modularność + testowalność):
 
-Helper (poziom modułu, nad komponentem):
+Nowy plik: `warhammer-battle-helper-front/src/utils/angleSnap.js`
 
 ```js
-const SNAP_STEP = 45;
-const SNAP_THRESHOLD = 10;
+export const SNAP_STEP = 45;
+export const SNAP_THRESHOLD = 10;
 
-function snapAngle(angle) {
-  const nearest = Math.round(angle / SNAP_STEP) * SNAP_STEP;
-  return Math.abs(angle - nearest) <= SNAP_THRESHOLD ? nearest : angle;
+export function snapAngle(angle, step = SNAP_STEP, threshold = SNAP_THRESHOLD) {
+  const nearest = Math.round(angle / step) * step;
+  return Math.abs(angle - nearest) <= threshold ? nearest : angle;
 }
+```
+
+Import w `warhammer-battle-helper-front/src/components/scene/SceneImage.jsx`:
+
+```js
+import { snapAngle } from '../../utils/angleSnap';
 ```
 
 Wpięcie w istniejący `useEffect` obsługujący rotację (`onMove` + `onUp`):
@@ -66,7 +72,8 @@ saveRotation(finalRotation);
 
 ## Testy
 
-Jednostkowe dla `snapAngle` (jeśli helper wyeksportowany):
+Jednostkowe dla `snapAngle` — nowy plik `utils/angleSnap.test.js`
+(wzorzec jak istniejące `utils/tokenGeometry.test.js`):
 - `snapAngle(43)` → `45`
 - `snapAngle(30)` → `30` (|30-45|=15 > 10, |30-0|=30 > 10)
 - `snapAngle(2)` → `0`
