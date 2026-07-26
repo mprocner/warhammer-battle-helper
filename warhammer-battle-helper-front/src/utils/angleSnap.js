@@ -2,9 +2,9 @@ export const SNAP_STEP = 45;
 export const SNAP_THRESHOLD = 10;
 
 /**
- * Magnetyczny snap kąta obrotu.
- * Jeśli `angle` jest w granicach `threshold` od najbliższej wielokrotności
- * `step`, zwraca tę wielokrotność; w przeciwnym razie zwraca `angle` bez zmian.
+ * Magnetic rotation-angle snap.
+ * If `angle` is within `threshold` of the nearest multiple of `step`,
+ * returns that multiple; otherwise returns `angle` unchanged.
  */
 export function snapAngle(angle, step = SNAP_STEP, threshold = SNAP_THRESHOLD) {
   const nearest = Math.round(angle / step) * step;
