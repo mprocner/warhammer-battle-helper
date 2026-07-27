@@ -75,4 +75,15 @@ describe('useTokenRotate', () => {
     fireEvent.mouseUp(document, { clientX: 200, clientY: 155 });
     expect(onCommit).toHaveBeenCalledWith(90);
   });
+
+  it('a click with no movement commits nothing and leaves the angle unchanged', () => {
+    const onCommit = jest.fn();
+    render(<Harness onCommit={onCommit} initial={37} />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseUp(document, { clientX: 150, clientY: 100 });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByTestId('angle')).toHaveTextContent('37');
+    expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
 });
