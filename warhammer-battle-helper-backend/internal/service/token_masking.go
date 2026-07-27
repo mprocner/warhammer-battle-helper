@@ -52,6 +52,22 @@ func toFloat(v interface{}) float64 {
 	return 0
 }
 
+// barPct is the clamped 0–100 fill fraction baked into a numbers-hidden bar so the client draws the
+// fill without ever receiving the raw current/max.
+func barPct(cur, max float64) float64 {
+	if max <= 0 {
+		return 0
+	}
+	p := cur / max * 100
+	if p < 0 {
+		return 0
+	}
+	if p > 100 {
+		return 100
+	}
+	return p
+}
+
 // effectiveSlotAt resolves ring position i for masking: the effective slot (blueprint or per-token
 // structural override) and whether it's hidden on this token.
 func effectiveSlotAt(i int, blueprint *models.TokenDisplayConfig, gear *models.CharacterTokenGear) (slot models.TokenSlot, hidden bool, value *models.TokenOverlayValue) {
@@ -117,7 +133,7 @@ func buildMaskedTokenView(blueprint *models.TokenDisplayConfig, gear *models.Cha
 	// with no per-player visibility (by request). Only GM/card-holders (full character) render them.
 
 	// --- HP bars: blueprint bars (visibility override via BarOverrides) + per-token AddedBars ---
-	addBar := func(bar models.TokenHPBar, hidden bool) {
+	addBar := func(bar models.TokenHPBar, hidden, hideValues bool) {
 		if hidden {
 			return
 		}
@@ -132,20 +148,28 @@ func buildMaskedTokenView(blueprint *models.TokenDisplayConfig, gear *models.Cha
 				out.Current, out.Max = v.Current, v.Max
 			}
 		}
+		if hideValues {
+			out.Pct = barPct(out.Current, out.Max)
+			out.Current, out.Max, out.HideValues = 0, 0, true
+		}
 		view.Bars = append(view.Bars, out)
 	}
 	for _, bar := range blueprint.HPBars {
 		hidden := bar.DefaultHidden
+		hideValues := bar.DefaultHideValues
 		if gear != nil {
 			if v, ok := gear.BarOverrides[bar.ID]; ok {
 				hidden = v
 			}
+			if v, ok := gear.BarHideValues[bar.ID]; ok {
+				hideValues = v
+			}
 		}
-		addBar(bar, hidden)
+		addBar(bar, hidden, hideValues)
 	}
 	if gear != nil {
 		for _, bar := range gear.AddedBars {
-			addBar(bar, bar.DefaultHidden) // added bars have no override layer
+			addBar(bar, bar.DefaultHidden, bar.DefaultHideValues) // added bars have no override layer
 		}
 	}
 

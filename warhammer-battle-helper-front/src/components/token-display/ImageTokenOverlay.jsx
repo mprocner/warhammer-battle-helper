@@ -24,8 +24,9 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
 
   const overlay = image?.tokenOverlay;
   const enabled = !!overlay && overlay.enabled !== false;
-  // A bar hidden from players is masked server-side to max 0, so this filter also hides it for them.
-  const bars = enabled ? (overlay.hpBars || []).filter(b => Number(b.max) > 0) : [];
+  // A whole-bar-hidden bar is masked to max 0 (filtered out); a numbers-hidden bar also arrives with
+  // max 0 but must still render (its fill comes from the baked pct), so keep it via hideValues.
+  const bars = enabled ? (overlay.hpBars || []).filter(b => Number(b.max) > 0 || b.hideValues) : [];
   const rawSlots = enabled ? (overlay.slots || []).slice(0, MAX_SLOTS) : [];
 
   const { radius, equatorX } = tokenRingGeometry(image?.width, image?.height, selected);
@@ -81,12 +82,15 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
       renderHp={({ showTooltip, hideTooltip }) => bars.length > 0 ? (
         <div className={`img-token-hp-stack ${selected ? 'img-token-hp-stack--expanded' : ''}`} style={{ transform: hpTransform }}>
           {bars.map(bar => {
-            const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
+            // GM (canEdit) always sees the real numbers even when hideValues is set on the config;
+            // only the masked player payload carries the zeroed current/max + baked pct.
+            const valuesHidden = !!bar.hideValues && !canEdit;
+            const pct = bar.hideValues && !canEdit ? (bar.pct || 0) : (bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0);
             return (
               <div key={bar.id} className="img-token-hp">
                 <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpTone(pct)} color={bar.color}
                   canEdit={selected && canEdit} onStep={(d) => stepHP(bar.id, d)}
-                  label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+                  label={bar.label} selected={selected} valuesHidden={valuesHidden} showTooltip={showTooltip} hideTooltip={hideTooltip} />
               </div>
             );
           })}
