@@ -18,13 +18,15 @@ import { slotOffset } from '../../utils/tokenRingGeometry';
 // When selected AND a label is present, the track shows the label on the left and the value on
 // the right (labeled row); otherwise the value stays centered as before. Hovering a labelled bar
 // shows the full label via the caller-supplied portal tooltip (survives ellipsis truncation).
-export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, label, selected, showTooltip, hideTooltip }) {
+export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, label, selected, showTooltip, hideTooltip, valuesHidden = false }) {
   const hasLabel = !!label;
   const showLabel = selected && hasLabel;
+  const showValue = !valuesHidden;
+  const showSteps = canEdit && !valuesHidden;
   const valueText = `${current}${max ? ` / ${max}` : ''}`;
   return (
     <>
-      {canEdit && (
+      {showSteps && (
         <button className="token-hp__btn" onClick={(e) => { e.stopPropagation(); onStep(-1); }}>−</button>
       )}
       <div className="token-hp__track"
@@ -35,13 +37,13 @@ export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, la
         {showLabel ? (
           <div className="token-hp__row">
             <span className="token-hp__label">{label}</span>
-            <span className="token-hp__text">{valueText}</span>
+            {showValue && <span className="token-hp__text">{valueText}</span>}
           </div>
         ) : (
-          <span className="token-hp__text">{valueText}</span>
+          showValue && <span className="token-hp__text">{valueText}</span>
         )}
       </div>
-      {canEdit && (
+      {showSteps && (
         <button className="token-hp__btn" onClick={(e) => { e.stopPropagation(); onStep(1); }}>+</button>
       )}
     </>
