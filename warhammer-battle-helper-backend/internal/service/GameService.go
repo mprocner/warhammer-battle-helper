@@ -2342,6 +2342,7 @@ func MaskImageTokenForPlayer(overlay *models.ImageTokenOverlay) *models.ImageTok
 			if bars[i].Hidden {
 				bars[i].Current = 0
 				bars[i].Max = 0
+				bars[i].HideValues = false
 			} else if bars[i].HideValues {
 				bars[i].Pct = barPct(bars[i].Current, bars[i].Max)
 				bars[i].Current = 0

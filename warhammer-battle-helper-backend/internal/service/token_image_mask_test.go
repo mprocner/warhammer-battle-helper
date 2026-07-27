@@ -15,6 +15,7 @@ func TestMaskImageToken_HideValues(t *testing.T) {
 			{ID: "hp", Label: "HP", Current: 6, Max: 10},                          // normal
 			{ID: "shield", Label: "Shield", Current: 4, Max: 8, HideValues: true}, // numbers hidden
 			{ID: "secret", Label: "Secret", Current: 2, Max: 5, Hidden: true},     // whole bar hidden
+			{ID: "both", Label: "Both", Current: 3, Max: 6, Hidden: true, HideValues: true}, // hidden + numbers hidden
 		},
 	}
 
@@ -32,5 +33,8 @@ func TestMaskImageToken_HideValues(t *testing.T) {
 	}
 	if b := byID["secret"]; b.Current != 0 || b.Max != 0 {
 		t.Fatalf("hidden bar must be zeroed, got %+v", b)
+	}
+	if b := byID["both"]; b.Current != 0 || b.Max != 0 || b.HideValues {
+		t.Fatalf("hidden+hideValues bar must be zeroed with hideValues cleared (so client filter drops it), got %+v", b)
 	}
 }
