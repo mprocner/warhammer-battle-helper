@@ -339,6 +339,10 @@ type ImageTokenHPBar struct {
 	Max     float64 `bson:"max" json:"max"`
 	Color   string  `bson:"color,omitempty" json:"color,omitempty"`
 	Hidden  bool    `bson:"hidden,omitempty" json:"hidden,omitempty"`
+	// HideValues: keep the bar visible to players but strip its numeric text. Masked server-side
+	// (see MaskImageTokenForPlayer): current/max are zeroed and Pct carries the fill fraction.
+	HideValues bool    `bson:"hideValues,omitempty" json:"hideValues,omitempty"`
+	Pct        float64 `bson:"pct,omitempty" json:"pct,omitempty"`
 }
 
 // ImageTokenSlot is one ring position: a condition icon (with a live level) or a manual number
