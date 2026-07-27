@@ -2,6 +2,9 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import Avatar from '../Avatar';
 import TokenOverlay from '../token-display/TokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
+import TokenRotateHandle from './TokenRotateHandle';
+import { useTokenRotate } from './useTokenRotate';
+import { canManipulateToken } from '../../utils/tokenManipulation';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 
@@ -9,20 +12,23 @@ import { CELL_SIZE } from '../../constants/scene';
 // (the same zoom-aware math as SceneImage). Movement stays snapped to whole cells in snap mode,
 // matching the existing grid data flow; resize grows in whole cells.
 function MapCharacterToken({
-  character, col, row, w, h,
+  character, col, row, w, h, rotation = 0,
   isGM = false, isMultiplayer = false, canDrag = true, selected = false,
   tokenPlacementMode = 'snap', tokenDisplay = null, gameId = null, token = null,
   sceneId = null, hidden = false, placementId = null, tokenGear = null, tokenView = null,
   gameSystem = null, editingLayer = null, imageEditLayer = 'background', activeTool = null,
-  onSelect, onCommitMove, onCommitResize,
+  onSelect, onCommitMove, onCommitResize, onCommitRotate,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
-  multiSelected = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
+  multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ col, row });
   const [size, setSize] = useState({ w, h });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [angle, setAngle] = useState(rotation);
+  const containerRef = useRef(null);
+  const justRotatedRef = useRef(false);
 
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
@@ -43,6 +49,10 @@ function MapCharacterToken({
     if (justResizedRef.current) { justResizedRef.current = false; return; }
     setSize({ w, h });
   }, [w, h, isResizing]);
+  useEffect(() => {
+    if (justRotatedRef.current) { justRotatedRef.current = false; return; }
+    setAngle(rotation);
+  }, [rotation]);
 
   const snap = tokenPlacementMode === 'snap';
 
@@ -51,6 +61,7 @@ function MapCharacterToken({
     if (e.button !== 0) return;
     // Presses on a resize handle or on the states/HP overlay must not start a drag.
     if (e.target.closest('.map-char-token__handle') || e.target.closest('.token-overlay')) return;
+    if (e.target.closest('.token-rotate-handle') || e.target.closest('.token-resize-handle')) return;
     // Measure mode: the ruler owns the press (it magnetizes to this token's center in the
     // viewport's capture handler). The token must stay put — never drag/select while measuring.
     if (editingLayer === 'measure') return;
@@ -126,7 +137,18 @@ function MapCharacterToken({
   // --- Resize (GM/owner only) ---
   // Handles only in the token-manipulation context (default/pan), matching how SceneImage shows
   // handles only when its layer is armed — so they don't clutter fog/drawing/measure modes.
-  const canResize = (isGM || canDrag) && (!editingLayer || activeTool === 'pan');
+  // One shared predicate decides both handle kinds, so the pan and select tools can never drift
+  // apart again (see utils/tokenManipulation.js).
+  const showHandles = canManipulateToken({
+    allowed: isGM || canDrag,
+    locked: false, // character placements have no lock concept
+    editingLayer,
+    activeTool,
+    imageEditLayer,
+    activeSelected: selected,
+    groupSelected: multiSelected,
+    multiSelectActive,
+  });
   const handleResizeStart = useCallback((e, handle) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -172,6 +194,23 @@ function MapCharacterToken({
       document.removeEventListener('mouseup', onUp);
     };
   }, [isResizing, snap, character.id, onCommitResize]);
+
+  // --- Rotate ---
+  // Only the avatar badge turns; the name and the states/HP overlay stay upright so their text
+  // never ends up sideways. Rotation is purely visual — the token's grid footprint (w/h) is
+  // unchanged, matching how scene images behave.
+  const commitRotation = useCallback((finalAngle) => {
+    justRotatedRef.current = true;
+    onCommitRotate?.(character.id, finalAngle);
+  }, [character.id, onCommitRotate]);
+
+  const { handleRotateStart } = useTokenRotate({
+    containerRef,
+    rotation: angle,
+    setRotation: setAngle,
+    enabled: isGM || canDrag,
+    onCommit: commitRotation,
+  });
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click
@@ -227,6 +266,7 @@ function MapCharacterToken({
 
   return (
     <div
+      ref={containerRef}
       className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}${multiSelected ? ' map-char-token--multi-selected' : ''}`}
       style={{ position: 'absolute', ...px, cursor: dragEnabledNow ? (isDragging ? 'grabbing' : 'grab') : 'default', pointerEvents: 'auto' }}
       onMouseDown={handleMouseDown}
@@ -243,7 +283,7 @@ function MapCharacterToken({
         }} />
       )}
 
-      <div className="map-char-token__avatar">
+      <div className="map-char-token__avatar" style={{ transform: `rotate(${angle}deg)` }}>
         <Avatar key={displayAvatar || 'default'} src={displayAvatar} />
       </div>
       <span className="map-char-token__name">{displayName}</span>
@@ -268,7 +308,12 @@ function MapCharacterToken({
         />
       )}
 
-      {canResize && selected && <TokenResizeHandles onResizeStart={handleResizeStart} />}
+      {showHandles && (
+        <>
+          <TokenResizeHandles onResizeStart={handleResizeStart} />
+          <TokenRotateHandle onRotateStart={handleRotateStart} />
+        </>
+      )}
     </div>
   );
 }

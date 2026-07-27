@@ -13,7 +13,7 @@ const MapTokensLayer = ({
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   // character-specific
   isMultiplayer = false, tokenDisplay, token,
-  activeTokenId, onSelectCharacter, onCommitMove, onCommitResize,
+  activeTokenId, onSelectCharacter, onCommitMove, onCommitResize, onCommitRotate,
   isTokenSelected, onToggleTokenSelected, multiSelectActive,
   groupDragDelta, onGroupDragStart,
 }) => {
@@ -75,10 +75,13 @@ const MapTokensLayer = ({
           onSelect={onSelectCharacter}
           onCommitMove={onCommitMove}
           onCommitResize={onCommitResize}
+          rotation={item.data.rotation}
+          onCommitRotate={onCommitRotate}
           onTokenDragMeasureStart={onTokenDragMeasureStart}
           onTokenDragMeasureMove={onTokenDragMeasureMove}
           onTokenDragMeasureEnd={onTokenDragMeasureEnd}
           multiSelected={isTokenSelected?.('char', item.data.character.id)}
+          multiSelectActive={multiSelectActive}
           onToggleSelect={onToggleTokenSelected}
           groupDragDelta={groupDragDelta}
           onGroupDragStart={onGroupDragStart}
