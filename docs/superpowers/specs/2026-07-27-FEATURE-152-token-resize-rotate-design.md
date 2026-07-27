@@ -49,7 +49,8 @@ Nowy czysty moduł `warhammer-battle-helper-front/src/utils/tokenManipulation.js
 
 ```js
 export function canManipulateToken({
-  allowed, locked, editingLayer, activeTool, imageEditLayer, selected, multiSelectActive,
+  allowed, locked, editingLayer, activeTool, imageEditLayer,
+  activeSelected, groupSelected, multiSelectActive,
 }) { ... }
 ```
 
@@ -57,9 +58,19 @@ Zwraca prawdę gdy `allowed && !locked` oraz spełniony jeden z warunków kontek
 
 | Kontekst | Warunek |
 |---|---|
-| Pan (domyślny) | `editingLayer === null` |
-| Narzędzie pan w innym trybie | `activeTool === 'pan'` |
-| Select, dokładnie jeden token | `editingLayer === 'select' && imageEditLayer === 'tokens' && selected && !multiSelectActive` |
+| Pan (domyślny) lub narzędzie pan | `(editingLayer === null \|\| activeTool === 'pan') && activeSelected` |
+| Select, dokładnie jeden token | `editingLayer === 'select' && imageEditLayer === 'tokens' && groupSelected && !multiSelectActive` |
+
+**Dwa różne pojęcia zaznaczenia — nie wolno ich mylić.** Aplikacja ma dwa niezależne stany
+zaznaczenia i uchwyty zależą w każdym trybie od innego:
+
+| Argument | Znaczenie | Źródło |
+|---|---|---|
+| `activeSelected` | token kliknięty/aktywny (jeden w całej scenie) | `activeTokenId === character.id` / `selectedImageId === image.id` — prop `selected` |
+| `groupSelected` | token należy do zaznaczenia z marquee | `isTokenSelected(kind, id)` — prop `multiSelected` |
+
+W Pan uchwyty pokazują się dla tokena aktywnego (dzisiejsze zachowanie). W Select dla tokena
+z zaznaczenia grupowego, i tylko gdy jest ono jednoelementowe.
 
 Predykat zastępuje `canResize` w `MapCharacterToken.jsx:129` i warunek w `SceneImage.jsx:516`, i
 rządzi **obydwoma** uchwytami (skalowanie + obrót) w **obu** hostach.
@@ -107,10 +118,20 @@ co `TokenResizeHandles`: uchwyt jest wspólny, math zostaje u hosta.
 
 ### Renderowanie obrotu
 
-| Rodzaj | Węzeł obracany | Węzły pozostające pionowo |
+| Rodzaj | Węzeł obracany | Sposób utrzymania overlaya pionowo |
 |---|---|---|
-| Obraz-token | kontener `.scene-image` (już to robi, `SceneImage.jsx:444`) | overlay HP/statusów — przenieść poza obracany węzeł |
-| Token postaci | `.map-char-token__avatar` (koło z obwódką) | kontener, `.map-char-token__name`, `<TokenOverlay>` |
+| Obraz-token | kontener `.scene-image` (już to robi, `SceneImage.jsx:444`) | opakowanie `<ImageTokenOverlay>` w `.scene-image__upright` z `rotate(-θ)` |
+| Token postaci | `.map-char-token__avatar` (koło z obwódką) | nic — kontener się nie obraca, więc `.map-char-token__name` i `<TokenOverlay>` stoją same |
+
+*Dlaczego obraz-token dostaje kontrobrót zamiast przeniesienia overlaya poza obracany węzeł:*
+przeniesienie wymagałoby zdjęcia `transform` z kontenera, a wtedy uchwyty skalowania i obrotu
+przestałyby się obracać razem z obrazem — dla obrazów tła to regresja, bo uchwyty mają trzymać się
+narożników obróconego kształtu. Kontrobrót jest przy tym **dokładny**, nie przybliżony: root
+overlaya to `.token-overlay` z `position: absolute; inset: 0` (`style.css:10412-10417`,
+`TokenRingChrome.jsx:112`), więc jego `transform-origin` pokrywa się ze środkiem kontenera, a
+złożenie `rotate(θ)` z `rotate(-θ)` wokół tego samego punktu daje identyczność. Opakowanie żyje w
+`SceneImage`, więc `TokenRingChrome` i `TokenOverlay` — dzielone przez oba rodzaje tokenów —
+zostają nietknięte.
 
 Overlay nigdy się nie obraca: to UI odczytu (liczby HP, sloty stanów), które przy 90° byłoby
 nieczytelne, a przy 180° do góry nogami. Tak samo rozwiązują to Roll20 i Foundry VTT.
@@ -156,7 +177,14 @@ Obrót nie jest informacją poufną.
 `/games/:id/scenes/:sid/characters/:charId` z `{ rotation }`. Serwer rozgłasza po WebSocketcie,
 klienci robią `fetchGameState()` — istniejąca ścieżka, bez nowego kanału.
 
-Obraz-token korzysta z istniejącego `updateSceneImage(gameId, sceneId, imageId, { rotation })`.
+Obraz-token korzysta z istniejącego `updateSceneImage(gameId, sceneId, imageId, { rotation })`
+(`src/api/scenes.js:36`).
+
+Adapter `characterToMapToken` (`utils/tokenGeometry.js:102-115`) twardo wpisuje `rotation: 0` z
+komentarzem *„characters don't rotate (unreadable avatar + no facing in the rules)"* — po tej
+zmianie nieprawdziwym. Musi czytać `gc.rotation || 0`. Dziś żaden konsument `MapToken` nie używa
+pola `rotation` (linijka, marquee i przeciąganie grupowe czytają tylko `col`/`row`/`w`/`h`), więc
+zmiana jest spójnościowa, nie funkcjonalna — ale zostawienie zera zakłamałoby model.
 
 ### Reset obrotu
 
@@ -173,8 +201,14 @@ Dla pojedynczej postaci reset odbywa się przez przeciągnięcie uchwytu do zera
 - `src/utils/tokenManipulation.test.js` — tablica prawdy predykatu: Pan; `activeTool === 'pan'`;
   Select z jednym tokenem; Select z dwoma (fałsz); Select na nieuzbrojonej warstwie (fałsz);
   token zablokowany (fałsz); brak uprawnień (fałsz).
-- Smoke test renderu uchwytów wzorem `LayerSelector.smoke.test.jsx`: uchwyty skalowania i obrotu
-  pojawiają się dla pojedynczego zaznaczenia w Select, znikają przy zaznaczeniu wielokrotnym.
+- `src/components/scene/useTokenRotate.test.jsx` — hook na atrapie kontenera z podmienionym
+  `getBoundingClientRect` (jsdom nie liczy layoutu): wejście w stan obracania, blokada przy
+  `enabled: false`, ćwierć obrotu za wskaźnikiem, jednokrotny commit na `mouseup`, magnetyczne
+  przyciągnięcie do 45°.
+- **Bez testu komponentowego uchwytów.** Reguła widoczności jest w całości w predykacie i to on ma
+  tablicę prawdy; wyrenderowanie `MapCharacterToken` wymagałoby atrapy `ZoomContext`, i18n i
+  kilkunastu propsów, żeby sprawdzić to samo rozgałęzienie drugi raz. Sam render uchwytów
+  weryfikowany ręcznie w aplikacji (kroki w planie).
 - `snapAngle` ma już testy (`utils/angleSnap.test.js`) — bez zmian.
 - Backend: nowy test nie powstaje. Warstwa repozytorium gry nie ma dziś zaplecza testowego
   (jedyny test repozytorium to `UserRepository_test.go`); dołożenie go byłoby osobną pracą.
