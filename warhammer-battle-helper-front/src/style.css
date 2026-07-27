@@ -10839,6 +10839,15 @@ align-items: center;
 }
 .token-rotate-handle:active { cursor: grabbing; }
 
+/* Counter-rotation wrapper: cancels the token container's rotation for overlay chrome that must
+   stay upright (HP numbers, state slots). Pointer-events pass through — the overlay's own
+   controls opt back in. */
+.scene-image__upright {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 /* Select mode: marquee rectangle dragged over the map to bulk-select tokens. */
 .marquee-overlay {
   border: 1px dashed #c9975b;

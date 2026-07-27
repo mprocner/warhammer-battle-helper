@@ -2,13 +2,15 @@ import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from
 import { useTranslation } from 'react-i18next';
 import { updateSceneImage, deleteSceneImage, duplicateSceneImage } from '../../api/scenes';
 import { resolveFileUrl } from '../../utils/fileUrl';
-import { snapAngle } from '../../utils/angleSnap';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
+import TokenRotateHandle from './TokenRotateHandle';
+import { useTokenRotate } from './useTokenRotate';
+import { canManipulateToken } from '../../utils/tokenManipulation';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
@@ -26,19 +28,41 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   const [size, setSize] = useState({ width: image.width, height: image.height });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [isRotating, setIsRotating] = useState(false);
   const [rotation, setRotation] = useState(image.rotation || 0);
   const [contextMenu, setContextMenu] = useState(null);
 
   const dragStartRef = useRef(null);
   const resizeStartRef = useRef(null);
-  const rotateStartRef = useRef(null);
   const movedRef = useRef(false); // true once a drag actually moved — suppresses the post-drag select
   const groupPressRef = useRef(null); // select-mode press point — distinguishes a group drag from a click
   const justFinishedDraggingRef = useRef(false);
   const justFinishedResizingRef = useRef(false);
   const justFinishedRotatingRef = useRef(false);
   const containerRef = useRef(null);
+
+  // --- Rotate ---
+  // Declared here (ahead of the prop-sync effect below, which reads isRotating) rather than next to
+  // Drag/Resize — the hook must be called before anything references the isRotating it returns.
+  const saveRotation = useCallback(async (newRotation) => {
+    try {
+      await updateSceneImage(gameId, sceneId, image.id, { rotation: newRotation });
+    } catch (err) {
+      console.error('Failed to update scene image rotation:', err);
+    }
+  }, [gameId, sceneId, image.id]);
+
+  const commitRotation = useCallback((finalRotation) => {
+    justFinishedRotatingRef.current = true;
+    saveRotation(finalRotation);
+  }, [saveRotation]);
+
+  const { isRotating, handleRotateStart } = useTokenRotate({
+    containerRef,
+    rotation,
+    setRotation,
+    enabled: isGM && !image.locked,
+    onCommit: commitRotation,
+  });
 
   // Sync with props when image updates from server
   useEffect(() => {
@@ -242,55 +266,6 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     };
   }, [isResizing, savePosition, snapCoord, snapDim]);
 
-  // --- Rotate ---
-  const saveRotation = useCallback(async (newRotation) => {
-    try {
-      await updateSceneImage(gameId, sceneId, image.id, { rotation: newRotation });
-    } catch (err) {
-      console.error('Failed to update scene image rotation:', err);
-    }
-  }, [gameId, sceneId, image.id]);
-
-  const handleRotateStart = useCallback((e) => {
-    if (!isGM || image.locked) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
-    rotateStartRef.current = { centerX, centerY, startAngle, startRotation: rotation };
-    setIsRotating(true);
-  }, [isGM, image.locked, rotation]);
-
-  useEffect(() => {
-    if (!isRotating) return;
-
-    const onMove = (e) => {
-      const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
-      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
-      const raw = startRotation + (currentAngle - startAngle);
-      setRotation(snapAngle(raw));
-    };
-
-    const onUp = (e) => {
-      const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
-      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
-      const finalRotation = snapAngle(startRotation + (currentAngle - startAngle));
-      setRotation(finalRotation);
-      justFinishedRotatingRef.current = true;
-      setIsRotating(false);
-      saveRotation(finalRotation);
-    };
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    return () => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-  }, [isRotating, saveRotation]);
-
   // --- Context menu ---
   const handleContextMenu = useCallback((e) => {
     if (!isGM) return;
@@ -475,16 +450,23 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
         )}
 
-        {/* States/HP ring for tokens-layer images */}
+        {/* States/HP ring for tokens-layer images. Counter-rotated so HP numbers stay readable
+            while the artwork turns: .token-overlay is inset:0, so its origin is the container
+            centre and rotate(-r) exactly undoes the container's rotate(r). */}
         {isToken && (
-          <ImageTokenOverlay
-            image={image}
-            gameId={gameId}
-            sceneId={sceneId}
-            selected={selected}
-            canEdit={isGM}
-            gameSystem={gameSystem}
-          />
+          <div
+            className="scene-image__upright"
+            style={{ transform: `rotate(${-rotation}deg)` }}
+          >
+            <ImageTokenOverlay
+              image={image}
+              gameId={gameId}
+              sceneId={sceneId}
+              selected={selected}
+              canEdit={isGM}
+              gameSystem={gameSystem}
+            />
+          </div>
         )}
 
         {/* Lock badge (GM only) */}
@@ -511,10 +493,22 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           </div>
         )}
 
-        {/* Token images: the SAME shared resize handles as character tokens (selected, in the
-            token-manipulation context — default or pan tool). No rotate, matching characters. */}
-        {isToken && selected && isGM && !image.locked && (editingLayer === null || activeTool === 'pan') && (
-          <TokenResizeHandles onResizeStart={handleResizeStart} />
+        {/* Token images: the SAME shared chrome as character tokens — resize handles plus a rotate
+            handle, shown for a lone token under either the pan or the select tool. */}
+        {isToken && canManipulateToken({
+          allowed: isGM,
+          locked: image.locked,
+          editingLayer,
+          activeTool,
+          imageEditLayer,
+          activeSelected: selected,
+          groupSelected: multiSelected,
+          multiSelectActive,
+        }) && (
+          <>
+            <TokenResizeHandles onResizeStart={handleResizeStart} />
+            <TokenRotateHandle onRotateStart={handleRotateStart} />
+          </>
         )}
       </div>
 
