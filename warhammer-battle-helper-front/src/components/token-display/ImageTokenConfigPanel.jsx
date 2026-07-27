@@ -11,6 +11,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import PinOutlinedIcon from '@mui/icons-material/PinOutlined';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { getSystem } from '../../systems/registry';
 import { updateSceneImage, applyImageTokenSlot } from '../../api/scenes';
@@ -29,9 +30,9 @@ const PRESET_COLORS = ['#e03131', '#2f9e44', '#1971c2', '#f2cc0c'];
 // GM only has to fill in the numbers. Left blank they simply won't render over the token. They
 // default to hidden from players (only the GM sees them until the eye toggle reveals one).
 const defaultBars = () => [
-  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#2f9e44', hidden: true },
-  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#1971c2', hidden: true },
-  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#e03131', hidden: true },
+  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#2f9e44', hidden: true, hideValues: false },
+  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#1971c2', hidden: true, hideValues: false },
+  { id: `bar_${genId()}`, label: '', current: '', max: '', color: '#e03131', hidden: true, hideValues: false },
 ];
 
 // Position (percent) of ring slot i around the sample token — top, clockwise. Mirrors
@@ -76,7 +77,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
   // ── HP bars ──────────────────────────────────────────────────────────────
   const addBar = () => {
     if (draft.hpBars.length >= MAX_BARS) return;
-    setDraft(d => ({ ...d, hpBars: [...d.hpBars, { id: `bar_${genId()}`, label: '', current: 10, max: 10, color: '#c9975b', hidden: true }] }));
+    setDraft(d => ({ ...d, hpBars: [...d.hpBars, { id: `bar_${genId()}`, label: '', current: 10, max: 10, color: '#c9975b', hidden: true, hideValues: false }] }));
   };
   const updateBar = (id, patch) => setDraft(d => ({ ...d, hpBars: d.hpBars.map(b => b.id === id ? { ...b, ...patch } : b) }));
   const removeBar = (id) => setDraft(d => ({ ...d, hpBars: d.hpBars.filter(b => b.id !== id) }));
@@ -183,6 +184,12 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
                 <input type="color" value={bar.color || '#c9975b'} onChange={e => updateBar(bar.id, { color: e.target.value })}
                   title={t('imageToken.barColor')} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
               </Box>
+              <IconButton size="small" disabled={bar.hidden}
+                title={bar.hideValues ? t('imageToken.showValues') : t('imageToken.hideValues')}
+                onClick={() => updateBar(bar.id, { hideValues: !bar.hideValues })}
+                sx={{ color: bar.hidden ? '#bbb' : (bar.hideValues ? '#b5482f' : '#5a7a42') }}>
+                <PinOutlinedIcon fontSize="small" />
+              </IconButton>
               <IconButton size="small" title={bar.hidden ? t('imageToken.hiddenFromPlayers') : t('imageToken.visibleToPlayers')}
                 onClick={() => updateBar(bar.id, { hidden: !bar.hidden })} sx={{ color: bar.hidden ? '#b5482f' : '#5a7a42' }}>
                 {bar.hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}

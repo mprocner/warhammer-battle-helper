@@ -1582,6 +1582,8 @@
     "barColor": "Bar color",
     "hiddenFromPlayers": "Hidden from players",
     "visibleToPlayers": "Visible to players",
+    "hideValues": "Hide numbers",
+    "showValues": "Show numbers",
     "statesNumbers": "States & numbers",
     "noSlots": "No states or numbers yet.",
     "number": "Number",

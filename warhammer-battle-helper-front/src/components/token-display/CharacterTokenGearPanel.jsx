@@ -13,6 +13,7 @@ import DesignServicesIcon from '@mui/icons-material/DesignServicesOutlined';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PinOutlinedIcon from '@mui/icons-material/PinOutlined';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { resolveField } from '../../utils/tokenFieldResolver';
 import { getSystem } from '../../systems/registry';
@@ -36,6 +37,7 @@ function draftFrom(gear) {
   return {
     slotOverrides: JSON.parse(JSON.stringify(g.slotOverrides || {})),
     barOverrides: { ...(g.barOverrides || {}) },
+    barHideValues: { ...(g.barHideValues || {}) },
     barValues: JSON.parse(JSON.stringify(g.barValues || {})),
     addedBars: JSON.parse(JSON.stringify(g.addedBars || [])),
   };
@@ -90,6 +92,7 @@ export default function CharacterTokenGearPanel({
     return { ...d, slotOverrides: next };
   });
   const setBarOverride = (id, hidden) => setDraft(d => ({ ...d, barOverrides: { ...d.barOverrides, [id]: hidden } }));
+  const setBarHideValues = (id, hv) => setDraft(d => ({ ...d, barHideValues: { ...d.barHideValues, [id]: hv } }));
   const setBarValue = (id, patch) => setDraft(d => {
     // No upper clamp: current may exceed max on purpose (temporary buffs that raise the effective
     // maximum for the duration of an effect). Only guard against negatives.
@@ -102,13 +105,18 @@ export default function CharacterTokenGearPanel({
     const bv = { ...d.barValues }; delete bv[id];
     return { ...d, addedBars: d.addedBars.filter(b => b.id !== id), barValues: bv };
   });
-  const addBar = () => setDraft(d => ({ ...d, addedBars: [...d.addedBars, { id: genId(), label: '', color: BAR_COLORS[0], defaultHidden: false }] }));
+  const addBar = () => setDraft(d => ({ ...d, addedBars: [...d.addedBars, { id: genId(), label: '', color: BAR_COLORS[0], defaultHidden: false, defaultHideValues: false }] }));
 
   // ── Value helpers ──────────────────────────────────────────────────────────
   const barHidden = (bar, isAdded) => {
     if (isAdded) return !!bar.defaultHidden;
     const ov = draft.barOverrides[bar.id];
     return ov != null ? ov : !!bar.defaultHidden;
+  };
+  const barValuesHidden = (bar, isAdded) => {
+    if (isAdded) return !!bar.defaultHideValues;
+    const ov = draft.barHideValues[bar.id];
+    return ov != null ? ov : !!bar.defaultHideValues;
   };
   const barCur = (bar) => bar.field ? (resolveField(character, bar.field).value ?? 0) : (draft.barValues[bar.id]?.current ?? 0);
   const barMx = (bar) => bar.field ? (resolveField(character, bar.field).max ?? 0) : (draft.barValues[bar.id]?.max ?? 0);
@@ -169,6 +177,7 @@ export default function CharacterTokenGearPanel({
           {blueprintBars.length > 0 && sub(t('token.gear.fromBlueprintSection'))}
           {blueprintBars.map(bar => {
             const hidden = barHidden(bar, false);
+            const valuesHidden = barValuesHidden(bar, false);
             const manual = !bar.field;
             return (
               <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75, pl: 0.5 }}>
@@ -190,6 +199,12 @@ export default function CharacterTokenGearPanel({
                   <Typography sx={{ fontSize: '0.8rem', color: '#7a5c42' }}>{barCur(bar)} / {barMx(bar)}</Typography>
                 )}
                 <Box sx={{ width: 14, height: 14, borderRadius: '50%', background: bar.color || '#c9975b', border: '1px solid rgba(0,0,0,0.25)' }} />
+                <IconButton size="small" disabled={hidden}
+                  title={valuesHidden ? t('imageToken.showValues') : t('imageToken.hideValues')}
+                  onClick={() => setBarHideValues(bar.id, !valuesHidden)}
+                  sx={{ color: hidden ? '#bbb' : (valuesHidden ? '#b5482f' : '#5a7a42') }}>
+                  <PinOutlinedIcon fontSize="small" />
+                </IconButton>
                 <IconButton size="small" onClick={() => setBarOverride(bar.id, !hidden)} sx={{ color: hidden ? '#b5482f' : '#5a7a42' }}>
                   {hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                 </IconButton>
@@ -221,6 +236,12 @@ export default function CharacterTokenGearPanel({
                   <input type="color" value={bar.color || '#c9975b'} onChange={e => updateAddedBar(bar.id, { color: e.target.value })}
                     title={t('imageToken.barColor')} style={{ width: 24, height: 24, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
                 </Box>
+                <IconButton size="small" disabled={hidden}
+                  title={bar.defaultHideValues ? t('imageToken.showValues') : t('imageToken.hideValues')}
+                  onClick={() => updateAddedBar(bar.id, { defaultHideValues: !bar.defaultHideValues })}
+                  sx={{ color: hidden ? '#bbb' : (bar.defaultHideValues ? '#b5482f' : '#5a7a42') }}>
+                  <PinOutlinedIcon fontSize="small" />
+                </IconButton>
                 <IconButton size="small" title={hidden ? t('imageToken.hiddenFromPlayers') : t('imageToken.visibleToPlayers')}
                   onClick={() => updateAddedBar(bar.id, { defaultHidden: !hidden })} sx={{ color: hidden ? '#b5482f' : '#5a7a42' }}>
                   {hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}

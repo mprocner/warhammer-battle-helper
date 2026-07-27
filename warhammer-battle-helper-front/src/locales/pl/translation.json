@@ -1582,6 +1582,8 @@
     "barColor": "Kolor paska",
     "hiddenFromPlayers": "Ukryte przed graczami",
     "visibleToPlayers": "Widoczne dla graczy",
+    "hideValues": "Ukryj liczby",
+    "showValues": "Pokaż liczby",
     "statesNumbers": "Stany i liczby",
     "noSlots": "Brak stanów ani liczb.",
     "number": "Liczba",
