@@ -49,10 +49,30 @@ function MapCharacterToken({
     if (justResizedRef.current) { justResizedRef.current = false; return; }
     setSize({ w, h });
   }, [w, h, isResizing]);
+  // --- Rotate ---
+  // Only the avatar badge turns; the name and the states/HP overlay stay upright so their text
+  // never ends up sideways. Rotation is purely visual — the token's grid footprint (w/h) is
+  // unchanged, matching how scene images behave.
+  // Declared here (ahead of the prop-sync effect below, which reads isRotating) rather than next to
+  // Drag/Resize — the hook must be called before anything references the isRotating it returns.
+  const commitRotation = useCallback((finalAngle) => {
+    justRotatedRef.current = true;
+    onCommitRotate?.(character.id, finalAngle);
+  }, [character.id, onCommitRotate]);
+
+  const { isRotating, handleRotateStart } = useTokenRotate({
+    containerRef,
+    rotation: angle,
+    setRotation: setAngle,
+    enabled: isGM || canDrag,
+    onCommit: commitRotation,
+  });
+
   useEffect(() => {
+    if (isRotating) return;
     if (justRotatedRef.current) { justRotatedRef.current = false; return; }
     setAngle(rotation);
-  }, [rotation]);
+  }, [rotation, isRotating]);
 
   const snap = tokenPlacementMode === 'snap';
 
@@ -194,23 +214,6 @@ function MapCharacterToken({
       document.removeEventListener('mouseup', onUp);
     };
   }, [isResizing, snap, character.id, onCommitResize]);
-
-  // --- Rotate ---
-  // Only the avatar badge turns; the name and the states/HP overlay stay upright so their text
-  // never ends up sideways. Rotation is purely visual — the token's grid footprint (w/h) is
-  // unchanged, matching how scene images behave.
-  const commitRotation = useCallback((finalAngle) => {
-    justRotatedRef.current = true;
-    onCommitRotate?.(character.id, finalAngle);
-  }, [character.id, onCommitRotate]);
-
-  const { handleRotateStart } = useTokenRotate({
-    containerRef,
-    rotation: angle,
-    setRotation: setAngle,
-    enabled: isGM || canDrag,
-    onCommit: commitRotation,
-  });
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click

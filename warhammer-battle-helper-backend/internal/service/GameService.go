@@ -1587,6 +1587,9 @@ func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primit
 	if req.ZIndex != nil {
 		payload["zIndex"] = *req.ZIndex
 	}
+	if req.Rotation != nil {
+		payload["rotation"] = *req.Rotation
+	}
 	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterMoved, payload)
 
 	return nil

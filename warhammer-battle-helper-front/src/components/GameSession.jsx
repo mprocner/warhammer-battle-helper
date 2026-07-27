@@ -473,7 +473,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         break;
 
       case WS_EVENTS.SCENE_CHARACTER_MOVED: {
-        const { sceneId: scId, characterId: scCharId, x: scX, y: scY, w: scW, h: scH, zIndex: scZ } = message.payload;
+        const { sceneId: scId, characterId: scCharId, x: scX, y: scY, w: scW, h: scH, zIndex: scZ, rotation: scRot } = message.payload;
         setGameState(prev => {
           if (!prev) return prev;
           return {
@@ -493,6 +493,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
                             ...(scW !== undefined ? { w: scW } : {}),
                             ...(scH !== undefined ? { h: scH } : {}),
                             ...(scZ !== undefined ? { zIndex: scZ } : {}),
+                            ...(scRot !== undefined ? { rotation: scRot } : {}),
                           }
                         : c
                     ),
