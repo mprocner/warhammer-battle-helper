@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from
 import { useTranslation } from 'react-i18next';
 import { updateSceneImage, deleteSceneImage, duplicateSceneImage } from '../../api/scenes';
 import { resolveFileUrl } from '../../utils/fileUrl';
+import { snapAngle } from '../../utils/angleSnap';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
@@ -268,13 +269,14 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     const onMove = (e) => {
       const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
       const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
-      setRotation(startRotation + (currentAngle - startAngle));
+      const raw = startRotation + (currentAngle - startAngle);
+      setRotation(snapAngle(raw));
     };
 
     const onUp = (e) => {
       const { centerX, centerY, startAngle, startRotation } = rotateStartRef.current;
       const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
-      const finalRotation = startRotation + (currentAngle - startAngle);
+      const finalRotation = snapAngle(startRotation + (currentAngle - startAngle));
       setRotation(finalRotation);
       justFinishedRotatingRef.current = true;
       setIsRotating(false);
