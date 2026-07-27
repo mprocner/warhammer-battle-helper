@@ -106,11 +106,11 @@ export default function TokenOverlay({
         renderHp={({ showTooltip, hideTooltip }) => (tokenView.bars || []).length > 0 ? (
           <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''}`}>
             {tokenView.bars.map(bar => {
-              const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
+              const pct = bar.hideValues ? (bar.pct || 0) : (bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0);
               return (
                 <div key={bar.id} className="token-hp">
                   <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color} canEdit={false} onStep={() => {}}
-                    label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+                    label={bar.label} selected={selected} valuesHidden={!!bar.hideValues} showTooltip={showTooltip} hideTooltip={hideTooltip} />
                 </div>
               );
             })}
