@@ -10817,6 +10817,28 @@ align-items: center;
 .token-resize-handle--se { bottom: -4px; right: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
 .token-resize-handle--sw { bottom: -4px; left: -4px; width: 8px; height: 8px; cursor: nesw-resize; }
 
+/* Rotate chrome — sits above the token's north edge, clear of the 8 resize handles. Shared by
+   character tokens and token-layer images, matching .token-resize-handle's look. */
+.token-rotate-handle {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  background: rgba(201, 151, 91, 0.8);
+  border: 1px solid #7a5c42;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: grab;
+  z-index: 30;
+  pointer-events: auto;
+}
+.token-rotate-handle:active { cursor: grabbing; }
+
 /* Select mode: marquee rectangle dragged over the map to bulk-select tokens. */
 .marquee-overlay {
   border: 1px dashed #c9975b;

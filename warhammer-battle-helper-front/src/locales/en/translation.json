@@ -800,6 +800,7 @@
     "zoomLevel": "Zoom Level",
     "gmBadge": "GM",
     "rotateImage": "Rotate image",
+    "rotateToken": "Rotate token",
     "resetRotation": "Reset rotation",
     "fogEnabled": "Enable Fog of War",
     "fogTool": "Tool",
