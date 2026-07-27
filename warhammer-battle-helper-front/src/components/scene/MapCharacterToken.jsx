@@ -60,7 +60,7 @@ function MapCharacterToken({
     onCommitRotate?.(character.id, finalAngle);
   }, [character.id, onCommitRotate]);
 
-  const { isRotating, handleRotateStart } = useTokenRotate({
+  const { isRotating, handleRotateStart, consumeJustFinished } = useTokenRotate({
     containerRef,
     rotation: angle,
     setRotation: setAngle,
@@ -217,6 +217,10 @@ function MapCharacterToken({
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click
+    // The rotate handle stops propagation on mousedown, so neither branch below ever set up its own
+    // "this was a drag" state — the native click that follows a rotation must not fall through to
+    // select/deselect logic.
+    if (consumeJustFinished()) return;
     if (editingLayer === 'select') {
       if (!isGM || !onToggleSelect) return;
       // Characters are only selectable when the tokens layer is armed (matching the marquee scope);

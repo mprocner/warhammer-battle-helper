@@ -56,7 +56,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     saveRotation(finalRotation);
   }, [saveRotation]);
 
-  const { isRotating, handleRotateStart } = useTokenRotate({
+  const { isRotating, handleRotateStart, consumeJustFinished } = useTokenRotate({
     containerRef,
     rotation,
     setRotation,
@@ -289,6 +289,10 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   // clicks aren't hijacked. A real drag ends with a native click too, so ignore the click right
   // after a drag (movedRef / isDragging).
   const handleClick = useCallback((e) => {
+    // The rotate handle stops propagation on mousedown, so neither branch below ever set up its own
+    // "this was a drag" state (movedRef/groupPressRef) — the native click that follows a rotation
+    // must not fall through to select/deselect logic.
+    if (consumeJustFinished()) return;
     if (editingLayer === 'select') {
       if (!isGM || !onToggleSelect || image.locked) return;
       // Only the armed layer is selectable — a backdrop image on another layer (e.g. the background
@@ -308,7 +312,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     if (movedRef.current || isDragging) return;
     e.stopPropagation();
     onSelectImage(image.id);
-  }, [isGM, onSelectImage, editingLayer, activeTool, isDragging, image.id, onToggleSelect, image.locked, image.layer, imageEditLayer]);
+  }, [isGM, onSelectImage, editingLayer, activeTool, isDragging, image.id, onToggleSelect, image.locked, image.layer, imageEditLayer, consumeJustFinished]);
 
   const handleZIndexChange = async (newZIndex) => {
     try {

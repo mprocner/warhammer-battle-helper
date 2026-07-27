@@ -16,6 +16,18 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
   // magnetism can jump an untouched angle to the nearest 45° on a plain click (0 == 0 delta still
   // gets fed through snapAngle).
   const movedRef = useRef(false);
+  // Consume-once "a rotation just finished" signal. handleRotateStart calls e.stopPropagation() on
+  // mousedown, so neither host's own handleMouseDown runs and neither movedRef nor groupPressRef
+  // gets set there — the browser then dispatches a native click on mouseup believing no drag
+  // happened, and the host's handleClick would toggle selection right after the rotate. Both hosts
+  // must consume this once per finished rotation to swallow exactly that click.
+  const justFinishedRef = useRef(false);
+
+  const consumeJustFinished = useCallback(() => {
+    if (!justFinishedRef.current) return false;
+    justFinishedRef.current = false;
+    return true;
+  }, []);
 
   const angleFrom = (centerX, centerY, e) =>
     Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
@@ -61,6 +73,7 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
         const final = compute(e);
         setRotation(final);
         onCommit?.(final);
+        justFinishedRef.current = true;
       }
       setIsRotating(false);
       startRef.current = null;
@@ -74,5 +87,5 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
     };
   }, [isRotating, setRotation, onCommit]);
 
-  return { isRotating, handleRotateStart };
+  return { isRotating, handleRotateStart, consumeJustFinished };
 }

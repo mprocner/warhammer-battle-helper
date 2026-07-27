@@ -6,14 +6,17 @@ import { useTokenRotate } from './useTokenRotate';
 function Harness({ enabled = true, onCommit = () => {}, initial = 0 }) {
   const containerRef = useRef(null);
   const [rotation, setRotation] = useState(initial);
-  const { isRotating, handleRotateStart } = useTokenRotate({
+  const [lastConsumed, setLastConsumed] = useState(null);
+  const { isRotating, handleRotateStart, consumeJustFinished } = useTokenRotate({
     containerRef, rotation, setRotation, enabled, onCommit,
   });
   return (
     <div ref={containerRef} data-testid="box">
       <span data-testid="angle">{rotation}</span>
       <span data-testid="state">{isRotating ? 'rotating' : 'idle'}</span>
+      <span data-testid="consumed">{lastConsumed === null ? '' : String(lastConsumed)}</span>
       <button data-testid="handle" onMouseDown={handleRotateStart}>rotate</button>
+      <button data-testid="consume" onClick={() => setLastConsumed(consumeJustFinished())}>consume</button>
     </div>
   );
 }
@@ -85,5 +88,27 @@ describe('useTokenRotate', () => {
     expect(onCommit).not.toHaveBeenCalled();
     expect(screen.getByTestId('angle')).toHaveTextContent('37');
     expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
+
+  it('sets the just-finished signal after a completed rotation drag, and clears it once consumed', () => {
+    render(<Harness />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+    fireEvent.mouseUp(document, { clientX: 200, clientY: 150 });
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('true');
+    // Consume-once: a second read clears back to false.
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('false');
+  });
+
+  it('does not set the just-finished signal for a click with no movement', () => {
+    render(<Harness />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseUp(document, { clientX: 150, clientY: 100 });
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('false');
   });
 });
