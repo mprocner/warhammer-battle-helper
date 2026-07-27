@@ -492,7 +492,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     if (!gameId || !token) return;
     const sid = sceneIdRef.current;
     if (!sid) return;
-    setCharGeomOverride(prev => ({ ...prev, [characterId]: { w, h } })); // optimistic; survives remount
+    setCharGeomOverride(prev => ({ ...prev, [characterId]: { ...prev[characterId], w, h } })); // optimistic; survives remount
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`, {
         method: 'PUT',
