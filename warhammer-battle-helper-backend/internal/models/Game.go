@@ -128,11 +128,11 @@ type GameCharacter struct {
 	Hidden bool `bson:"hidden,omitempty" json:"hidden,omitempty"`
 	// Killed is computed-only (bson:"-"): enriched from Character.Killed so the token can render the
 	// dead strike-through even for a card-less player, who never receives the Character document.
-	Killed    bool               `bson:"-" json:"killed,omitempty"`
+	Killed bool `bson:"-" json:"killed,omitempty"`
 	// Rotation is the token's facing in degrees (0 = unrotated). Purely visual: the token's grid
 	// footprint (W/H) is unaffected, matching how scene images treat rotation. Plain placement
 	// data, not gear, so it survives token masking and every viewer sees the same angle.
-	Rotation  float64            `bson:"rotation,omitempty" json:"rotation,omitempty"`
+	Rotation  float64            `bson:"rotation" json:"rotation"`
 	PlacedBy  primitive.ObjectID `bson:"placedBy" json:"placedBy"`
 	PlacedAt  time.Time          `bson:"placedAt" json:"placedAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"updatedAt"`
