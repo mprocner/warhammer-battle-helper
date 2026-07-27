@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 // Group context menu. Action set = intersection valid for the whole selection:
-//  images-only → full; chars-only → remove; mixed → remove only.
+//  images-only → full set (lock/unlock, move-to-layer, reset rotation, remove); any selection with
+//  characters (chars-only or mixed) → reset rotation + remove only. Lock/unlock and move-to-layer
+//  stay image-only concepts; reset rotation applies to both token kinds since FEATURE-152.
 const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSetLayer, onResetRotation, onClose }) => {
   const { t } = useTranslation();
   const ref = useRef(null);
@@ -45,10 +47,10 @@ const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSe
             <button key={l.key} className="scene-context-menu__item" onMouseDown={act(() => onSetLayer(l.key))}>{l.label}</button>
           ))}
           <div className="scene-context-menu__divider" />
-          <button className="scene-context-menu__item" onMouseDown={act(() => onResetRotation())}>{t('scenes.resetRotationAll')}</button>
-          <div className="scene-context-menu__divider" />
         </>
       )}
+      <button className="scene-context-menu__item" onMouseDown={act(() => onResetRotation())}>{t('scenes.resetRotationAll')}</button>
+      <div className="scene-context-menu__divider" />
       <button className="scene-context-menu__item scene-context-menu__item--danger" onMouseDown={act(() => onDelete())}>
         {imagesOnly ? t('scenes.deleteAll') : t('scenes.removeFromScene')}
       </button>
