@@ -18,14 +18,16 @@ export function canManipulateToken({
 } = {}) {
   if (!allowed || locked) return false;
 
-  // Pan tab, or the pan tool borrowed inside fog/drawing.
-  if (editingLayer === null || activeTool === 'pan') return activeSelected;
-
-  // Select tab: only on the armed tokens layer, and only for a lone selection — rotating a group
-  // would move each token's centre, which is a different operation (see the spec).
+  // Select tab takes precedence: an explicit tool tab outranks a stale activeTool value from a
+  // previous tab. Only on the armed tokens layer, and only for a lone selection — rotating a
+  // group would move each token's centre, which is a different operation (see the spec).
   if (editingLayer === 'select') {
     return imageEditLayer === 'tokens' && groupSelected && !multiSelectActive;
   }
+
+  // Pan tab, or the pan tool borrowed inside fog/drawing. Two independent selection states:
+  // activeSelected (clicked/active token) vs groupSelected (marquee selection).
+  if (editingLayer === null || activeTool === 'pan') return activeSelected;
 
   // measure / fog / drawing own the pointer.
   return false;

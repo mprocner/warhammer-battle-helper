@@ -67,6 +67,17 @@ describe('canManipulateToken', () => {
     it('ignores the active token in select context', () => {
       expect(canManipulateToken({ ...select, activeSelected: true })).toBe(false);
     });
+
+    it('stays select-governed when a stale pan tool is still active', () => {
+      // activeTool survives a tab switch (useDrawingTools owns it independently), so the Select
+      // tab must win over a leftover 'pan' from drawing mode.
+      expect(canManipulateToken({
+        ...select, activeTool: 'pan', groupSelected: true,
+      })).toBe(true);
+      expect(canManipulateToken({
+        ...select, activeTool: 'pan', activeSelected: true,
+      })).toBe(false);
+    });
   });
 
   describe('gates that override every context', () => {
