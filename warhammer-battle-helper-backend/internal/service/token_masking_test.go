@@ -163,6 +163,46 @@ func TestMask_AddedBars(t *testing.T) {
 	}
 }
 
+// A numbers-hidden bar stays visible but ships NO raw numbers: current/max are zeroed and a baked
+// pct carries the fill. Covers both the per-token override (blueprint bar) and an added bar's flag.
+func TestMask_HideValuesBar(t *testing.T) {
+	blueprint := sampleBlueprint() // bpWounds bar = field wounds.current / wounds.max, visible
+	stats := statsRaw(t, bson.M{"wounds": bson.M{"current": 6, "max": 10}, "corruption": 1})
+	gear := &models.CharacterTokenGear{
+		BarHideValues: map[string]bool{"bpWounds": true},
+		AddedBars: []models.TokenHPBar{
+			{ID: "rage", Label: "Rage", DefaultHideValues: true},
+		},
+		BarValues: map[string]models.HPBarValue{"rage": {Current: 3, Max: 4}},
+	}
+
+	view := buildMaskedTokenView(blueprint, gear, stats, nil)
+
+	byID := map[string]models.TokenViewBar{}
+	for _, b := range view.Bars {
+		byID[b.ID] = b
+	}
+
+	wounds, ok := byID["bpWounds"]
+	if !ok {
+		t.Fatal("wounds bar must still be present (visible, numbers hidden)")
+	}
+	if !wounds.HideValues || wounds.Current != 0 || wounds.Max != 0 {
+		t.Fatalf("wounds numbers must be stripped, got %+v", wounds)
+	}
+	if wounds.Pct != 60 {
+		t.Fatalf("wounds pct should be 60 (6/10), got %v", wounds.Pct)
+	}
+
+	rage, ok := byID["rage"]
+	if !ok {
+		t.Fatal("added rage bar must be present")
+	}
+	if !rage.HideValues || rage.Current != 0 || rage.Max != 0 || rage.Pct != 75 {
+		t.Fatalf("rage bar wrong: %+v", rage)
+	}
+}
+
 // A per-token manual value on a number slot is baked; disabled/absent blueprint → nil view.
 func TestMask_ManualValueAndDisabledBlueprint(t *testing.T) {
 	if buildMaskedTokenView(nil, nil, nil, nil) != nil {

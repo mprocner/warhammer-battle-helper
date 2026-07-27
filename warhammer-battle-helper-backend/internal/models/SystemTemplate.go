@@ -59,6 +59,10 @@ type TokenHPBar struct {
 	Color         string        `bson:"color,omitempty" json:"color,omitempty"`
 	Field         *FieldBinding `bson:"field,omitempty" json:"field,omitempty"`
 	DefaultHidden bool          `bson:"defaultHidden,omitempty" json:"defaultHidden,omitempty"`
+	// DefaultHideValues: hide the numeric current/max text while keeping the bar's fill visible.
+	// For added bars this is the literal (only) flag; blueprint bars override it per-token via
+	// CharacterTokenGear.BarHideValues.
+	DefaultHideValues bool `bson:"defaultHideValues,omitempty" json:"defaultHideValues,omitempty"`
 }
 
 // TokenSlot is one of the 8 fixed ring positions. ID is generated once when the

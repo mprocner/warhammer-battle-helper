@@ -157,9 +157,10 @@ type CharacterTokenGear struct {
 	// BarOverrides: per-token visibility override for a blueprint bar (keyed by bar id). BarValues:
 	// manual current/max for a bar (blueprint manual bar or an AddedBar), keyed by bar id (shared
 	// id-space). AddedBars: full bar definitions existing ONLY on this token.
-	BarOverrides map[string]bool       `bson:"barOverrides,omitempty" json:"barOverrides,omitempty"`
-	BarValues    map[string]HPBarValue `bson:"barValues,omitempty" json:"barValues,omitempty"`
-	AddedBars    []TokenHPBar          `bson:"addedBars,omitempty" json:"addedBars,omitempty"`
+	BarOverrides  map[string]bool       `bson:"barOverrides,omitempty" json:"barOverrides,omitempty"`
+	BarHideValues map[string]bool       `bson:"barHideValues,omitempty" json:"barHideValues,omitempty"`
+	BarValues     map[string]HPBarValue `bson:"barValues,omitempty" json:"barValues,omitempty"`
+	AddedBars     []TokenHPBar          `bson:"addedBars,omitempty" json:"addedBars,omitempty"`
 }
 
 // SlotOverride is everything a token can customize at one ring position, each axis independently
@@ -215,6 +216,10 @@ type TokenViewBar struct {
 	Color   string  `json:"color,omitempty"`
 	Current float64 `json:"current"`
 	Max     float64 `json:"max"`
+	// HideValues: the bar's numbers are intentionally stripped for this viewer; Pct carries the
+	// fill fraction (0–100) so the client can still draw the bar without the raw numbers leaking.
+	HideValues bool    `json:"hideValues,omitempty"`
+	Pct        float64 `json:"pct,omitempty"`
 }
 
 // EventType represents different types of game events
