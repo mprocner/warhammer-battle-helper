@@ -107,7 +107,7 @@ export function characterToMapToken(gc) {
     row: gc.positionY || 0,
     w: gc.w || 1, // defensive fallback for pre-w/h documents (zero value)
     h: gc.h || 1,
-    rotation: 0, // characters don't rotate (unreadable avatar + no facing in the rules)
+    rotation: gc.rotation || 0, // visual facing only — never changes the token's w/h footprint
     zIndex: gc.zIndex || 0,
     locked: false, // characters have no "locked" concept
     raw: gc,

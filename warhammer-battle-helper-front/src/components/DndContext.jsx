@@ -233,10 +233,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     setSelectedTokens([]);
   }, [groupImages, gameId]);
 
+  // Resets both token kinds — characters gained rotation in FEATURE-152, and leaving them out
+  // would make the "reset all" menu entry lie about what it touched.
   const handleGroupResetRotation = useCallback(() => {
     const sid = sceneIdRef.current;
     groupImages().forEach(img => updateSceneImage(gameId, sid, img.id, { rotation: 0 }).catch(e => console.error(e)));
-  }, [groupImages, gameId]);
+    selectedTokens
+      .filter(t => t.kind === 'char')
+      .forEach(t => handleRotateCharacter(t.id, 0));
+  }, [groupImages, gameId, selectedTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
