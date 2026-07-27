@@ -79,9 +79,9 @@ function MapCharacterToken({
   // --- Drag ---
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
-    // Presses on a resize handle or on the states/HP overlay must not start a drag.
-    if (e.target.closest('.map-char-token__handle') || e.target.closest('.token-overlay')) return;
-    if (e.target.closest('.token-rotate-handle') || e.target.closest('.token-resize-handle')) return;
+    // Presses on the states/HP overlay must not start a drag. (Resize/rotate handles already stop
+    // propagation on their own mousedown, so a press on them never reaches here.)
+    if (e.target.closest('.token-overlay')) return;
     // Measure mode: the ruler owns the press (it magnetizes to this token's center in the
     // viewport's capture handler). The token must stay put — never drag/select while measuring.
     if (editingLayer === 'measure') return;
