@@ -10529,13 +10529,13 @@ align-items: center;
   /* Slightly slower spread of the "sun" into the ring; symmetric on the way back. */
   transition: all .25s ease;
 }
-/* Hover target for a chip slot. It never moves — only the chip inside it does — so a chip that
-   slides outward cannot escape the pointer and start a leave/enter loop. At rest it is barely
-   larger than the chip; while active it grows to cover the pushed-out position too. */
+/* Hover target for a chip slot. It carries the pointer handlers instead of the chip, and its
+   resting box stays inside its active box on both axes — so the chip sliding outward can never
+   leave the box under the pointer and start a leave/enter loop. Growing ACTIVE_PUSH without
+   growing the active size below would break that containment and bring the flicker back. */
 .token-slot-zone {
   position: absolute;
   width: 30px; height: 26px;
-  display: flex; align-items: center; justify-content: center;
   pointer-events: none;
 }
 .token-overlay--selected .token-slot-zone.is-interactive { pointer-events: auto; }
