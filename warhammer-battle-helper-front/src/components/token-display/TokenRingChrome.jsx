@@ -59,11 +59,13 @@ export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, la
 // ACTIVE_PUSH outward along its ring angle to make space. Two consequences shape the markup:
 //   - the handlers live on `.token-slot-zone`, a wrapper that DOES move — it is centred halfway
 //     along the push (ACTIVE_PUSH/2), so it covers both the resting and pushed-out chip positions
-//     — but the resting zone box stays fully contained inside the active zone box on both axes,
-//     because ACTIVE_PUSH/2 plus the active box's half-extent exceeds the resting box's
-//     half-extent. That containment, not immobility, is what stops the chip sliding out from
-//     under the pointer and triggering a mouseleave → mouseenter flicker loop; raising
-//     ACTIVE_PUSH without also growing the active zone to match would reintroduce it.
+//     — but the resting zone box stays fully contained inside the active zone box on both axes.
+//     The binding constraint is the INWARD edge: activeHalfExtent − ACTIVE_PUSH/2 ≥
+//     restingHalfExtent. With today's sizes that is 23 − 8 = 15 ≥ 15 on the x axis for the 3
+//     o'clock and 9 o'clock slots — exactly tight, zero slack. That containment, not immobility,
+//     is what stops the chip sliding out from under the pointer and triggering a mouseleave →
+//     mouseenter flicker loop; raising ACTIVE_PUSH, widening the resting `.token-slot-zone`, or
+//     shrinking `.token-slot-zone.is-active` would each eat into that slack and reintroduce it.
 // Icon slots deliberately skip all of this: they are single-click toggles with no stepper to fit.
 function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onFocusChange, showTooltip, hideTooltip }) {
   if (!selected && !slot.showAtRest) return null;
@@ -105,7 +107,7 @@ function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onF
         title={slot.cap || ''}
         onClick={(e) => { if (selected && slot.onClick) { e.stopPropagation(); slot.onClick(); } }}>
         {slot.editable
-          ? <NumberSlotInput value={slot.numberValue} onCommit={slot.onSetNumber} onFocusChange={onFocusChange} />
+          ? <NumberSlotInput value={slot.numberValue} onCommit={slot.onSetNumber} onFocusChange={canStep ? onFocusChange : undefined} />
           : <span className="token-slot__val">{slot.value ?? '–'}</span>}
         {slot.cap && <span className="token-slot__cap">{slot.cap}</span>}
         {active && (

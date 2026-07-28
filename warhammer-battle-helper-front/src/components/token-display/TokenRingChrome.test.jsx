@@ -31,6 +31,7 @@ test('an editable chip shows no stepper until it becomes active', () => {
 test('hovering the hit-zone reveals the stepper and releasing hides it again', () => {
   const { container } = renderRing([editableSlot()]);
   const zone = container.querySelector('.token-slot-zone');
+  expect(zone.className).toContain('is-interactive');
 
   fireEvent.mouseEnter(zone);
   expect(container.querySelectorAll('.token-step--sq button')).toHaveLength(2);
@@ -57,7 +58,21 @@ test('hovering a second slot transfers active state away from the first', () => 
   expect(second.className).toContain('is-active');
 });
 
-test('the active push splits between the zone and the chip, summing to ACTIVE_PUSH', () => {
+test('at rest, before any hover, neither the zone nor the chip carries a push offset', () => {
+  const { container } = renderRing([editableSlot()]);
+  const zone = container.querySelector('.token-slot-zone');
+  const chip = container.querySelector('.token-slot--num');
+
+  const off = slotOffset(0, RADIUS);
+  const dir = slotOffset(0, 1);
+  const [, zoneY] = readTranslate(zone);
+  const [, chipY] = readTranslate(chip);
+
+  expect((zoneY - off.y) * dir.y).toBeCloseTo(0);
+  expect(chipY * dir.y).toBeCloseTo(0);
+});
+
+test('the active push splits evenly between the zone and the chip, ACTIVE_PUSH/2 each', () => {
   // Slot index 0 is the top slot: its ring-angle direction is (0, -1), so only the y offset
   // moves and the assertion does not need to combine x/y into a magnitude.
   const { container } = renderRing([editableSlot()]);
@@ -77,8 +92,11 @@ test('the active push splits between the zone and the chip, summing to ACTIVE_PU
   const zonePush = (zoneY - off.y) * dir.y;
   const chipPush = chipY * dir.y;
 
-  // Fails if the chip offset were doubled (double-counting the push) or zeroed out.
-  expect(zonePush + chipPush).toBeCloseTo(ACTIVE_PUSH);
+  // Pinning each half separately (not just their sum) catches the variant where the whole
+  // 16px push lands on one element and the other contributes 0 — which would undermine the
+  // containment argument that the resting zone box stays inside the active zone box.
+  expect(zonePush).toBeCloseTo(ACTIVE_PUSH / 2);
+  expect(chipPush).toBeCloseTo(ACTIVE_PUSH / 2);
 });
 
 test('a select-type chip (no editable, but with slot.onClick) still cycles when clicked', () => {
@@ -108,7 +126,7 @@ test('deselecting the token clears the active slot', () => {
   fireEvent.mouseEnter(container.querySelector('.token-slot-zone'));
 
   rerender(
-    <TokenRingChrome selected={false} canEdit radius={42} equatorX={94} slots={[editableSlot()]}
+    <TokenRingChrome selected={false} canEdit radius={RADIUS} equatorX={94} slots={[editableSlot()]}
       killStrikeClassName="token-kill-strike" killToggleClassName="token-kill-toggle"
       onToggleKilled={() => {}} />
   );
@@ -118,6 +136,8 @@ test('deselecting the token clears the active slot', () => {
 
 test('a read-only chip gets no hit-zone handlers and never opens a stepper', () => {
   const { container } = renderRing([{ id: 'ro', variant: 'chip', value: 3, cap: 'WS', showAtRest: true }]);
-  fireEvent.mouseEnter(container.querySelector('.token-slot-zone'));
+  const zone = container.querySelector('.token-slot-zone');
+  expect(zone.className).not.toContain('is-interactive');
+  fireEvent.mouseEnter(zone);
   expect(container.querySelector('.token-step')).toBeNull();
 });
