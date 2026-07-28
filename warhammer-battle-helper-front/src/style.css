@@ -10464,8 +10464,11 @@ align-items: center;
   transition: top .25s ease, width .25s ease;
 }
 .token-hp-stack--expanded {
-  /* -50 not -44: an ACTIVE top slot reaches RING_MARGIN + ACTIVE_PUSH + 14 = 47px above the
-     token's top edge. halfLong cancels out of that sum, so one value holds for every token size. */
+  /* -50 not -44: an ACTIVE top slot reaches RING_MARGIN + ACTIVE_PUSH + ACTIVE_HALF_HEIGHT = 47px
+     above the token's top edge. halfLong cancels out of that sum, so one value holds for every
+     token size. Those three constants live in utils/tokenRingGeometry.js and cannot be read from
+     here — keep this literal in sync with them (and with HP_CLEAR, the image overlay's equivalent).
+     Scoped to --expanded on purpose: a slot can only push out while the token is selected. */
   top: -50px;
   width: 88px;
 }
@@ -10556,7 +10559,11 @@ align-items: center;
   background: linear-gradient(135deg, #efe3cd, #d8c8a8); border: 1px solid #7a5c42; color: #2a1f12;
   font-family: Georgia, serif;
 }
-.token-overlay--selected .token-slot--num { min-width: 14px; height: 22px; }
+.token-overlay--selected .token-slot--num { min-width: 22px; height: 22px; }
+/* Only a chip holding the adaptive input may shrink below 22px — NumberSlotInput sizes itself to
+   the value's length, and a 22px floor would pin every chip to its widest form. Read-only field /
+   select chips (and every chip on the card-less player view) keep the 22px width. */
+.token-overlay--selected .token-slot--num:has(.token-slot__input) { min-width: 14px; }
 .token-overlay--selected .token-slot--num.is-clickable { cursor: pointer; }
 /* Active chip: 28px tall. With box-sizing: border-box the 1px border leaves a 26px padding box,
    so each docked stepper button (.token-step--sq splits it top/bottom) is ~13x13, not the 14x14
@@ -10568,7 +10575,6 @@ align-items: center;
 .token-slot--num.is-active {
   height: 28px; padding-right: 14px;
   overflow: hidden;
-  z-index: 1;
 }
 .token-slot__val { font-size: 9px; font-weight: 800; line-height: 1; }
 /* Editable value (selected + can-edit): looks like .token-slot__val, no chrome, native spinners
@@ -10702,12 +10708,13 @@ align-items: center;
    for identical visuals; only the multi-bar stacking, per-bar label, gear and kill are unique. */
 
 /* HP bars — stacked above the token centre, growing upward. Each bar's track/fill/text reuse the
-   character .token-hp__* classes; this owns only layout (the character overlay has a single bar). */
+   character .token-hp__* classes; this owns only layout (the character overlay has a single bar).
+   The vertical offset itself is an inline transform from ImageTokenOverlay (it depends on the
+   token's pixel size), so only the transition for it lives here. */
 .img-token-hp-stack {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, calc(-50% - 46px));
   display: flex;
   flex-direction: column-reverse;
   gap: 3px;
@@ -10715,7 +10722,6 @@ align-items: center;
   transition: transform .25s ease, width .25s ease;
 }
 .img-token-hp-stack--expanded {
-  transform: translate(-50%, calc(-50% - 58px));
   width: 96px;
 }
 .img-token-hp {

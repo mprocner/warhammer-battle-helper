@@ -4,13 +4,14 @@ import React, { useEffect, useRef, useState } from 'react';
 // land on 22px, which is exactly the width this field used to be fixed at — so the widest chip is
 // no wider than before and the resting ring keeps its clearance. Shorter values simply take less.
 const CHAR_WIDTH = 4.5;
-const PADDING = 4;
+// Not CSS padding (the input's own padding is 0) — slack so the caret has somewhere to sit.
+const CARET_ALLOWANCE = 4;
 const MIN_CHARS = 1;
 const MAX_CHARS = 4;
 
 function widthFor(text) {
   const chars = Math.min(MAX_CHARS, Math.max(MIN_CHARS, String(text).length));
-  return `${PADDING + Math.round(chars * CHAR_WIDTH)}px`;
+  return `${CARET_ALLOWANCE + Math.round(chars * CHAR_WIDTH)}px`;
 }
 
 // Editable value for a number ring slot: shown when the token is selected and the viewer can edit.

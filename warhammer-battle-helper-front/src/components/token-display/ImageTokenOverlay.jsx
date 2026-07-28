@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { patchSceneImageTokenHP, patchSceneImageTokenSlot, updateSceneImage } from '../../api/scenes';
-import { tokenRingGeometry, HP_CLEAR } from '../../utils/tokenRingGeometry';
+import { tokenRingGeometry, HP_CLEAR, REST_HP_CLEAR } from '../../utils/tokenRingGeometry';
 import ImageTokenConfigPanel from './ImageTokenConfigPanel';
 import TokenRingChrome, { TokenHpBar } from './TokenRingChrome';
 
@@ -29,7 +29,10 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
   const rawSlots = enabled ? (overlay.slots || []).slice(0, MAX_SLOTS) : [];
 
   const { radius, equatorX } = tokenRingGeometry(image?.width, image?.height, selected);
-  const hpTransform = `translate(-50%, calc(-100% - ${radius + HP_CLEAR}px))`;
+  // A slot can only become active (pushed out, 28px tall) while the token is selected, so only the
+  // selected state needs the larger clearance. Mirrors how the character overlay scopes the same
+  // fix to .token-hp-stack--expanded.
+  const hpTransform = `translate(-50%, calc(-100% - ${radius + (selected ? HP_CLEAR : REST_HP_CLEAR)}px))`;
 
   const stepHP = (barId, delta) => { if (canEdit) patchSceneImageTokenHP(gameId, sceneId, image.id, { barId, delta }).catch(() => {}); };
   const bumpSlot = (slotId, delta) => { if (canEdit) patchSceneImageTokenSlot(gameId, sceneId, image.id, { slotId, delta }).catch(() => {}); };
