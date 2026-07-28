@@ -4,7 +4,20 @@
 
 export const RING_MARGIN = 17; // slots sit ~17px beyond the token edge (25 + 17 = 42 at 50px)
 export const REST_FACTOR = 0.68; // sun-at-rest radius as a fraction of half the long side
-export const EQUATOR_GAP = 38; // gear/kill toggle sit this far beyond the ring (42 + 38 = 80)
+// Equator toggles (kill / eye / gear) sit this far beyond the ring. 52 rather than a tighter
+// value because an ACTIVE equator slot pushes ACTIVE_PUSH outward and is ACTIVE_HALF_WIDTH wide,
+// so its outer edge reaches ringRadius + 37 — the toggles must start beyond that.
+export const EQUATOR_GAP = 52;
+
+// An active (hovered / tapped / focused) number slot grows to fit a docked stepper and pushes
+// outward along its own ring angle. Pushing raises the vertical distance to the 45-degree
+// neighbour above the summed half-heights, which makes the chip's width irrelevant — boxes
+// collide only when they overlap on both axes.
+export const ACTIVE_PUSH = 16;        // radial offset of the active chip
+export const ACTIVE_HALF_HEIGHT = 14; // half of the 28px active chip
+export const ACTIVE_HALF_WIDTH = 21;  // half of the widest active chip (22 input + 6 chrome + 14 stepper)
+// HP stacks sit this far beyond the ring, i.e. clear of an active top slot with 4px to spare.
+export const HP_CLEAR = ACTIVE_PUSH + ACTIVE_HALF_HEIGHT + 4;
 
 // Slot position at angle -90° + i·45° (0 = top, clockwise).
 export function slotOffset(i, radius) {

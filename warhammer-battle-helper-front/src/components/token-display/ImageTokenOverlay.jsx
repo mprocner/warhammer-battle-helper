@@ -3,12 +3,11 @@ import { useTranslation } from 'react-i18next';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { patchSceneImageTokenHP, patchSceneImageTokenSlot, updateSceneImage } from '../../api/scenes';
-import { tokenRingGeometry } from '../../utils/tokenRingGeometry';
+import { tokenRingGeometry, HP_CLEAR } from '../../utils/tokenRingGeometry';
 import ImageTokenConfigPanel from './ImageTokenConfigPanel';
 import TokenRingChrome, { TokenHpBar } from './TokenRingChrome';
 
 const MAX_SLOTS = 8; // ring positions
-const HP_CLEAR = 16; // HP stack's bottom edge sits this far beyond the top ring slot
 
 function hpTone(pct) {
   return pct > 50 ? 'good' : pct > 25 ? 'warn' : 'danger';
