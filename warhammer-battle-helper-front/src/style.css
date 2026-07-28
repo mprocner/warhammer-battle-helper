@@ -10529,6 +10529,17 @@ align-items: center;
   /* Slightly slower spread of the "sun" into the ring; symmetric on the way back. */
   transition: all .25s ease;
 }
+/* Hover target for a chip slot. It never moves — only the chip inside it does — so a chip that
+   slides outward cannot escape the pointer and start a leave/enter loop. At rest it is barely
+   larger than the chip; while active it grows to cover the pushed-out position too. */
+.token-slot-zone {
+  position: absolute;
+  width: 30px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.token-overlay--selected .token-slot-zone { pointer-events: auto; }
+.token-slot-zone.is-active { width: 46px; height: 46px; z-index: 12; }
 .token-slot--icon {
   width: 16px; height: 16px; border-radius: 50%;
   background: rgba(14,9,3,0.86); border: 1px solid #c9975b; color: #f0d8b0;
@@ -10549,7 +10560,15 @@ align-items: center;
   background: linear-gradient(135deg, #efe3cd, #d8c8a8); border: 1px solid #7a5c42; color: #2a1f12;
   font-family: Georgia, serif;
 }
-.token-overlay--selected .token-slot--num { min-width: 22px; height: 22px; }
+.token-overlay--selected .token-slot--num { min-width: 14px; height: 22px; }
+/* Active chip: 28px tall so each docked stepper button is 14x14, matching .token-hp__btn's
+   established 15px affordance; padding-right reserves the stepper column. */
+.token-slot--num.is-active {
+  height: 28px; padding-right: 14px;
+  transition: transform .12s ease-out, height .12s ease-out;
+  z-index: 1;
+}
+.token-slot--num:not(.is-active) { transition: transform .15s ease-in, height .15s ease-in; }
 .token-slot__val { font-size: 9px; font-weight: 800; line-height: 1; }
 /* Editable value (selected + can-edit): looks like .token-slot__val, no chrome, native spinners
    hidden (we keep the custom ▲/▼). Pointer-events on so it can be focused despite the slot's
