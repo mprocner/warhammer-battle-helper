@@ -10464,7 +10464,9 @@ align-items: center;
   transition: top .25s ease, width .25s ease;
 }
 .token-hp-stack--expanded {
-  top: -44px;
+  /* -50 not -44: an ACTIVE top slot reaches RING_MARGIN + ACTIVE_PUSH + 14 = 47px above the
+     token's top edge. halfLong cancels out of that sum, so one value holds for every token size. */
+  top: -50px;
   width: 88px;
 }
 .token-hp-stack .token-hp {
@@ -10477,12 +10479,6 @@ align-items: center;
 }
 .token-hp-stack--expanded .token-hp { height: 15px; }
 .token-hp-stack--expanded .token-hp__text { font-size: 8px; }
-.token-hp--expanded {
-  /* Raised clear of the ring's top slots (their outer edge sits ~-53px from centre). */
-  top: -50px;
-  width: 88px;
-  height: 15px;
-}
 .token-hp__track {
   position: relative;
   flex: 1;
@@ -10501,7 +10497,6 @@ align-items: center;
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-size: 6px; font-weight: 700; color: rgba(255,255,255,0.95);
 }
-.token-hp--expanded .token-hp__text { font-size: 8px; }
 /* Labeled bar (selected + label): label left, value right, over the fill.
    Value has priority (never truncates); label ellipsises. Shared by both token stacks. */
 .token-hp__row {
@@ -10562,6 +10557,7 @@ align-items: center;
   font-family: Georgia, serif;
 }
 .token-overlay--selected .token-slot--num { min-width: 14px; height: 22px; }
+.token-overlay--selected .token-slot--num.is-clickable { cursor: pointer; }
 /* Active chip: 28px tall. With box-sizing: border-box the 1px border leaves a 26px padding box,
    so each docked stepper button (.token-step--sq splits it top/bottom) is ~13x13, not the 14x14
    this comment used to claim; padding-right reserves the stepper column. overflow: hidden keeps
@@ -10582,18 +10578,24 @@ align-items: center;
   width: 22px; border: none; background: transparent; text-align: center;
   font: 800 9px/1 Georgia, serif; color: #2a1f12; padding: 0; margin: 0;
   pointer-events: auto; -moz-appearance: textfield;
+  /* Pointer while idle, matching every other interactive part of the ring; a caret once the field
+     is genuinely in edit mode, because there a click places an insertion point rather than firing
+     an action. The inline style from NumberSlotInput overrides the width above. */
+  cursor: pointer;
 }
-.token-slot__input:focus { outline: none; }
+.token-slot__input:focus { outline: none; cursor: text; }
 .token-slot__input::-webkit-outer-spin-button,
 .token-slot__input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .token-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; line-height: 1; }
+/* Stepper column. Both users (ring chips and squares) dock it inside the host's right edge via
+   .token-step--sq; the base only owns the layout. */
 .token-step {
-  position: absolute; right: -13px; top: 0; height: 100%; width: 12px;
+  position: absolute;
   display: flex; flex-direction: column;
 }
 .token-step button {
-  flex: 1; width: 12px; padding: 0; border: 1px solid #c4a882; background: rgba(255,249,240,0.96);
-  color: #3a2f1f; font-size: 7px; line-height: 1; cursor: pointer;
+  flex: 1; padding: 0; background: rgba(255,249,240,0.96);
+  color: #3a2f1f; line-height: 1; cursor: pointer;
 }
 .token-step button:hover { background: #fff; border-color: #c9975b; }
 
@@ -10723,8 +10725,8 @@ align-items: center;
   height: 7px;
 }
 .img-token-hp-stack--expanded .img-token-hp { height: 15px; }
-/* .token-hp__text is 6px by default (its expanded rule is scoped to .token-hp--expanded, which we
-   don't use); bump it here when the stack is expanded to match the character bar. */
+/* .token-hp__text is 6px by default; bump it here when the stack is expanded to match the
+   character bar. */
 .img-token-hp-stack--expanded .token-hp__text { font-size: 8px; }
 
 /* Config gear (GM, left equator). Root is pointer-events:none, so opt back in. */
