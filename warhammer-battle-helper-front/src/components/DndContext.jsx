@@ -16,6 +16,7 @@ import CharacterSidebarList from './CharacterSidebarList';
 import CharacterSheetHost from './CharacterSheetHost';
 import { normalizeCharacter } from '../systems/registry';
 import { resolveDisplayName } from '../utils/participants';
+import { buildPlacedCharacters } from '../utils/placedCharacters';
 import { useWindowManager } from '../contexts/WindowManagerContext';
 
 const DEFAULT_GRID_WIDTH = 20;
@@ -298,13 +299,17 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     fightZonesRef.current = fightZones;
   }, [fightZones]);
 
-  // Clear the active token when its character leaves the grid for any reason
+  // Clear the active token when its character leaves the scene for any reason
   // (grid-toggle off, drag back to the pool, delete, scene switch, WS refetch).
   // Mirrors the selectedDrawingPathId cleanup pattern below.
+  // Asks the scene's placements, not fightZones: the token layer renders from the placements now,
+  // and a token missing from the whole-cell grid (two free-mode tokens rounding into one cell)
+  // would otherwise be deselected the instant it was selected.
   useEffect(() => {
-    if (!activeTokenId) return;
-    if (!fightZones.some(z => z.character?.id === activeTokenId)) setActiveTokenId(null);
-  }, [fightZones, activeTokenId]);
+    if (!activeTokenId || !currentScene) return;
+    const onScene = (currentScene.characters || []).some(c => c.characterId === activeTokenId);
+    if (!onScene) setActiveTokenId(null);
+  }, [currentScene, activeTokenId]);
 
   // Regenerate zones when scene changes (dimensions or scene id)
   const prevSceneRef = useRef(null);
@@ -459,24 +464,29 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   };
 
   // Commit a character move from the unified tokens layer (MapCharacterToken drag). Mirrors the
-  // old dnd-kit drop: optimistic fightZones update + REST. Snap mode keeps one token per cell.
+  // Commit a character token move. Snap mode enforces one token per cell and mirrors the move into
+  // fightZones (which the sidebar and the occupancy rule still read). Free mode has no cell to
+  // occupy — positions are fractional — so it persists straight away. Gating the whole function on
+  // a `zone-${row}-${col}` lookup meant a fractional position matched no zone and the move was
+  // silently dropped before it ever reached the server.
   const handleCommitCharacterMove = (characterId, col, row) => {
-    const zones = fightZonesRef.current;
-    const zoneId = `zone-${row}-${col}`;
-    const targetIdx = zones.findIndex(z => z.id === zoneId);
-    const currentIdx = zones.findIndex(z => z.character?.id === characterId);
-    if (targetIdx === -1 || currentIdx === targetIdx) return;
-    const targetChar = zones[targetIdx].character;
-    if (targetChar && targetChar.id !== characterId) {
-      addLogMessage('Cell already occupied', 'warning');
-      return; // token snaps back on next prop sync
+    if (tokenPlacementMode === 'snap') {
+      const zones = fightZonesRef.current;
+      const targetIdx = zones.findIndex(z => z.id === `zone-${row}-${col}`);
+      const currentIdx = zones.findIndex(z => z.character?.id === characterId);
+      if (targetIdx === -1 || currentIdx === targetIdx) return;
+      const targetChar = zones[targetIdx].character;
+      if (targetChar && targetChar.id !== characterId) {
+        addLogMessage('Cell already occupied', 'warning');
+        return; // token snaps back on next prop sync
+      }
+      const draggedChar = currentIdx !== -1 ? zones[currentIdx].character : resolveCharacter(characterId);
+      setFightZones(prev => prev.map((zone, idx) => {
+        if (idx === currentIdx) return { ...zone, character: null };
+        if (idx === targetIdx) return { ...zone, character: draggedChar };
+        return zone;
+      }));
     }
-    const draggedChar = currentIdx !== -1 ? zones[currentIdx].character : resolveCharacter(characterId);
-    setFightZones(prev => prev.map((zone, idx) => {
-      if (idx === currentIdx) return { ...zone, character: null };
-      if (idx === targetIdx) return { ...zone, character: draggedChar };
-      return zone;
-    }));
     handleMoveCharacter(characterId, col, row);
   };
 
@@ -838,9 +848,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         const characterIdsOnGrid = new Set();
 
         sceneCharacters.forEach(gameChar => {
-          // positionX is col, positionY is row. Round to the nearest cell: fightZones are whole
-          // cells, so a fractional position (a free-mode drag / group move) would match no zone and
-          // the token would silently vanish. Characters always render on a zone anyway.
+          // A placement is on the scene whether or not a whole cell is free for it — the token layer
+          // renders from the placements, so this set must not be gated on the zone lookup below or a
+          // token would show on the map and stay listed as available in the sidebar at the same time.
+          characterIdsOnGrid.add(gameChar.characterId);
+          // fightZones is a whole-cell grid holding at most one character per cell; it still backs
+          // the sidebar and the snap-mode occupancy rule, so mirror the placement into the nearest
+          // cell when one is free. In free mode two tokens can round into the same cell — the loser
+          // simply has no zone, which no longer costs it anything.
           const zoneIndex = clearedZones.findIndex(
             z => z.col === Math.round(gameChar.positionX) && z.row === Math.round(gameChar.positionY)
           );
@@ -851,7 +866,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
               ? normalizeCharacter(fullChar)
               : { id: gameChar.characterId, name: gameChar.name, avatar: gameChar.avatar, isEnemy: gameChar.isEnemy, killed: gameChar.killed, stats: {}, gridOnly: true };
             clearedZones[zoneIndex] = { ...clearedZones[zoneIndex], character: charData };
-            characterIdsOnGrid.add(gameChar.characterId);
           }
         });
 
@@ -1021,30 +1035,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const sceneRulers = Object.values(mapRulers).filter(r => r.sceneId === currentSceneId);
   const dragRuler = imageDragRuler;
 
-  // Placed character tokens for the unified layer: cell from fightZones, size/z-index from the
-  // scene character (defaults 1×1 for pre-w/h data), drag gated by ownership.
+  // Placed character tokens for the unified layer, built from the scene's server placements — see
+  // utils/placedCharacters.js for why the position no longer comes from the fightZones grid.
   const isMultiplayer = !!(gameId && token);
   const sceneChars = currentScene?.characters || [];
-  const placedCharacters = fightZones
-    .filter(z => z.character)
-    .map(z => {
-      const sc = sceneChars.find(c => c.characterId === z.character.id);
-      const ov = charGeomOverride[z.character.id];
-      return {
-        character: z.character,
-        col: z.col,
-        row: z.row,
-        w: ov?.w ?? ((sc && sc.w) || 1),
-        h: ov?.h ?? ((sc && sc.h) || 1),
-        rotation: ov?.rotation ?? ((sc && sc.rotation) || 0),
-        zIndex: (sc && sc.zIndex) || 0,
-        hidden: !!(sc && sc.hidden),
-        placementId: sc && sc.id,
-        tokenGear: sc && sc.tokenGear,   // raw per-token gear (GM/card-holder)
-        tokenView: sc && sc.tokenView,   // masked projection (card-less viewer)
-        canDrag: !isMultiplayer || isGM || isOwnCharacter(z.character.id),
-      };
-    });
+  const placedCharacters = buildPlacedCharacters(sceneChars, {
+    resolveCharacter,
+    overrides: charGeomOverride,
+    canDrag: (id) => !isMultiplayer || isGM || isOwnCharacter(id),
+  });
 
   return (
     <>
