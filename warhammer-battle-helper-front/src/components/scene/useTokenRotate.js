@@ -16,12 +16,27 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
   // magnetism can jump an untouched angle to the nearest 45° on a plain click (0 == 0 delta still
   // gets fed through snapAngle).
   const movedRef = useRef(false);
-  // Consume-once "a rotation just finished" signal. handleRotateStart calls e.stopPropagation() on
-  // mousedown, so neither host's own handleMouseDown runs and neither movedRef nor groupPressRef
+  // Consume-once "a handle press just finished" signal. handleRotateStart calls e.stopPropagation()
+  // on mousedown, so neither host's own handleMouseDown runs and neither movedRef nor groupPressRef
   // gets set there — the browser then dispatches a native click on mouseup believing no drag
   // happened, and the host's handleClick would toggle selection right after the rotate. Both hosts
-  // must consume this once per finished rotation to swallow exactly that click.
+  // consume this once to swallow exactly that click.
   const justFinishedRef = useRef(false);
+  const clearTimerRef = useRef(null);
+
+  // The native click lands on the nearest common ancestor of the mousedown and mouseup targets. A
+  // rotation sweeps an arc, so the pointer usually leaves the token before release — the click then
+  // fires on an ancestor, the host's handleClick never runs, and an armed flag would sit there and
+  // eat the user's NEXT genuine click on the token. Clearing on the following macrotask bounds the
+  // signal's life to the click it was meant for: click dispatch is synchronous after mouseup, so a
+  // click that does reach the host still sees the flag.
+  const armJustFinished = useCallback(() => {
+    justFinishedRef.current = true;
+    clearTimeout(clearTimerRef.current);
+    clearTimerRef.current = setTimeout(() => { justFinishedRef.current = false; }, 0);
+  }, []);
+
+  useEffect(() => () => clearTimeout(clearTimerRef.current), []);
 
   const consumeJustFinished = useCallback(() => {
     if (!justFinishedRef.current) return false;
@@ -73,8 +88,10 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
         const final = compute(e);
         setRotation(final);
         onCommit?.(final);
-        justFinishedRef.current = true;
       }
+      // Armed whether or not the pointer moved: a press that started on the rotate handle is never
+      // a click on the token, so it must not reach select/deselect logic either way.
+      armJustFinished();
       setIsRotating(false);
       startRef.current = null;
     };
@@ -85,7 +102,7 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-  }, [isRotating, setRotation, onCommit]);
+  }, [isRotating, setRotation, onCommit, armJustFinished]);
 
   return { isRotating, handleRotateStart, consumeJustFinished };
 }

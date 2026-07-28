@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useTokenRotate } from './useTokenRotate';
 
 // Harness: a 100x100 box whose centre sits at (150, 150) in screen coordinates.
@@ -103,12 +103,33 @@ describe('useTokenRotate', () => {
     expect(screen.getByTestId('consumed')).toHaveTextContent('false');
   });
 
-  it('does not set the just-finished signal for a click with no movement', () => {
+  it('sets the just-finished signal even when the press never moved', () => {
+    // A press that started on the rotate handle is never a click on the token, so it must be
+    // swallowed whether or not it turned into a rotation.
     render(<Harness />);
     stubBox();
     fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
     fireEvent.mouseUp(document, { clientX: 150, clientY: 100 });
     fireEvent.click(screen.getByTestId('consume'));
-    expect(screen.getByTestId('consumed')).toHaveTextContent('false');
+    expect(screen.getByTestId('consumed')).toHaveTextContent('true');
+  });
+
+  it('drops the just-finished signal if no click follows, so a later click is not eaten', () => {
+    // A rotation sweeps an arc, so the pointer usually leaves the token before release and the
+    // native click lands on an ancestor instead of the host. An armed flag left behind would
+    // swallow the user's next real click on that token.
+    jest.useFakeTimers();
+    try {
+      render(<Harness />);
+      stubBox();
+      fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+      fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+      fireEvent.mouseUp(document, { clientX: 200, clientY: 150 });
+      act(() => { jest.runAllTimers(); });
+      fireEvent.click(screen.getByTestId('consume'));
+      expect(screen.getByTestId('consumed')).toHaveTextContent('false');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
