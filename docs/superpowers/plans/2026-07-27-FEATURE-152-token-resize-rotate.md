@@ -186,14 +186,16 @@ export function canManipulateToken({
 } = {}) {
   if (!allowed || locked) return false;
 
-  // Pan tab, or the pan tool borrowed inside fog/drawing.
-  if (editingLayer === null || activeTool === 'pan') return activeSelected;
-
-  // Select tab: only on the armed tokens layer, and only for a lone selection — rotating a group
-  // would move each token's centre, which is a different operation (see the spec).
+  // Select tab first: activeTool lives in useDrawingTools and survives a tab switch, so a 'pan'
+  // left over from drawing mode must NOT hijack the Select rule below. An explicit tab outranks
+  // a stale tool. Only on the armed tokens layer, and only for a lone selection — rotating a
+  // group would move each token's centre, which is a different operation (see the spec).
   if (editingLayer === 'select') {
     return imageEditLayer === 'tokens' && groupSelected && !multiSelectActive;
   }
+
+  // Pan tab, or the pan tool borrowed inside fog/drawing.
+  if (editingLayer === null || activeTool === 'pan') return activeSelected;
 
   // measure / fog / drawing own the pointer.
   return false;
@@ -513,8 +515,12 @@ In `warhammer-battle-helper-backend/internal/models/Game.go`, inside `GameCharac
 	// Rotation is the token's facing in degrees (0 = unrotated). Purely visual: the token's grid
 	// footprint (W/H) is unaffected, matching how scene images treat rotation. Plain placement
 	// data, not gear, so it survives token masking and every viewer sees the same angle.
-	Rotation  float64            `bson:"rotation,omitempty" json:"rotation,omitempty"`
+	Rotation  float64            `bson:"rotation" json:"rotation"`
 ```
+
+Tags without `omitempty`, matching `SceneImage.Rotation` exactly: both token kinds must describe
+rotation identically, because the frontend unifies them behind one adapter. With `omitempty` an
+unrotated character token would drop the key while an unrotated image still sent `"rotation": 0`.
 
 - [ ] **Step 2: Add the field to the update request**
 
@@ -575,7 +581,11 @@ The container already carries `transform: rotate(...)` (line 444) and the handle
 
 - [ ] **Step 1: Replace the hand-rolled rotation with the hook**
 
-Delete lines 245–292 of `warhammer-battle-helper-front/src/components/scene/SceneImage.jsx` — the whole block from the `// --- Rotate ---` comment through the closing of the `useEffect` that listens for `mousemove`/`mouseup` — and put this in its place:
+Delete lines 245–292 of `warhammer-battle-helper-front/src/components/scene/SceneImage.jsx` — the whole block from the `// --- Rotate ---` comment through the closing of the `useEffect` that listens for `mousemove`/`mouseup`.
+
+**Placement matters.** Put the replacement block high in the component, right after the `containerRef` declaration — *not* where the deleted code was. The prop-sync `useEffect` near the top lists `isRotating` in its dependency array, and dependency arrays are evaluated during render: a `const` destructured from the hook further down would still be in its temporal dead zone, so every render would throw `ReferenceError`. The original code was safe only because `const [isRotating] = useState(false)` sat above that effect; removing it moves the constraint onto the hook call.
+
+The replacement block:
 
 ```jsx
   // --- Rotate ---

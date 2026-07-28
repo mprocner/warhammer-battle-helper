@@ -248,3 +248,15 @@ describe('clampGroupDelta', () => {
       .toEqual({ dCol: 0, dRow: 0 });
   });
 });
+
+describe('characterToMapToken rotation', () => {
+  it('carries the placement rotation through', () => {
+    const tk = characterToMapToken({ characterId: 'c1', positionX: 1, positionY: 2, w: 1, h: 1, rotation: 45 });
+    expect(tk.rotation).toBe(45);
+  });
+
+  it('defaults to 0 for a placement saved before rotation existed', () => {
+    const tk = characterToMapToken({ characterId: 'c1', positionX: 1, positionY: 2, w: 1, h: 1 });
+    expect(tk.rotation).toBe(0);
+  });
+});

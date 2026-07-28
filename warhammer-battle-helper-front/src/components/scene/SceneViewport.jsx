@@ -43,7 +43,7 @@ const SceneViewport = ({
   dragRuler = null, onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   aoeEnabled = true,
   placedCharacters = [], isMultiplayer = false, tokenDisplay = null, token = null,
-  activeTokenId = null, onSelectCharacter, onCommitMove, onCommitResize,
+  activeTokenId = null, onSelectCharacter, onCommitMove, onCommitResize, onCommitRotate,
   selectedTokens = [], onMarqueeSelect, onCommitGroupMove, isTokenSelected, onToggleTokenSelected,
   onGroupDelete, onGroupSetLock, onGroupSetLayer, onGroupResetRotation,
 }) => {
@@ -752,6 +752,7 @@ const SceneViewport = ({
                   onSelectCharacter={onSelectCharacter}
                   onCommitMove={onCommitMove}
                   onCommitResize={onCommitResize}
+                  onCommitRotate={onCommitRotate}
                   isTokenSelected={isTokenSelected}
                   onToggleTokenSelected={onToggleTokenSelected}
                   multiSelectActive={selectedTokens.length > 1}

@@ -233,10 +233,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     setSelectedTokens([]);
   }, [groupImages, gameId]);
 
+  // Resets both token kinds — characters gained rotation in FEATURE-152, and leaving them out
+  // would make the "reset all" menu entry lie about what it touched.
   const handleGroupResetRotation = useCallback(() => {
     const sid = sceneIdRef.current;
     groupImages().forEach(img => updateSceneImage(gameId, sid, img.id, { rotation: 0 }).catch(e => console.error(e)));
-  }, [groupImages, gameId]);
+    selectedTokens
+      .filter(t => t.kind === 'char')
+      .forEach(t => handleRotateCharacter(t.id, 0));
+  }, [groupImages, gameId, selectedTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Otwarte karty postaci (multi-open) — lista id postaci
   const [openCharacterIds, setOpenCharacterIds] = useState([]);
@@ -492,7 +497,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     if (!gameId || !token) return;
     const sid = sceneIdRef.current;
     if (!sid) return;
-    setCharGeomOverride(prev => ({ ...prev, [characterId]: { w, h } })); // optimistic; survives remount
+    setCharGeomOverride(prev => ({ ...prev, [characterId]: { ...prev[characterId], w, h } })); // optimistic; survives remount
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`, {
         method: 'PUT',
@@ -501,6 +506,24 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       });
     } catch (error) {
       console.error('Error resizing character:', error);
+    }
+  };
+
+  // Commit a character token's rotation. Same optimistic-override + PUT pattern as the resize
+  // above; the server broadcasts over WS and every client refetches.
+  const handleRotateCharacter = async (characterId, rotation) => {
+    if (!gameId || !token) return;
+    const sid = sceneIdRef.current;
+    if (!sid) return;
+    setCharGeomOverride(prev => ({ ...prev, [characterId]: { ...prev[characterId], rotation } }));
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/scenes/${sid}/characters/${characterId}`, {
+        method: 'PUT',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ rotation }),
+      });
+    } catch (error) {
+      console.error('Error rotating character:', error);
     }
   };
 
@@ -1013,6 +1036,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
         row: z.row,
         w: ov?.w ?? ((sc && sc.w) || 1),
         h: ov?.h ?? ((sc && sc.h) || 1),
+        rotation: ov?.rotation ?? ((sc && sc.rotation) || 0),
         zIndex: (sc && sc.zIndex) || 0,
         hidden: !!(sc && sc.hidden),
         placementId: sc && sc.id,
@@ -1138,7 +1162,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageId={selectedImageId} onSelectImage={handleSelectImage} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageId={selectedImageId} onSelectImage={handleSelectImage} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} onCommitRotate={handleRotateCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
         </div>
       </div>
 

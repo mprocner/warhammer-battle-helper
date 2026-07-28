@@ -1,0 +1,135 @@
+import React, { useRef, useState } from 'react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { useTokenRotate } from './useTokenRotate';
+
+// Harness: a 100x100 box whose centre sits at (150, 150) in screen coordinates.
+function Harness({ enabled = true, onCommit = () => {}, initial = 0 }) {
+  const containerRef = useRef(null);
+  const [rotation, setRotation] = useState(initial);
+  const [lastConsumed, setLastConsumed] = useState(null);
+  const { isRotating, handleRotateStart, consumeJustFinished } = useTokenRotate({
+    containerRef, rotation, setRotation, enabled, onCommit,
+  });
+  return (
+    <div ref={containerRef} data-testid="box">
+      <span data-testid="angle">{rotation}</span>
+      <span data-testid="state">{isRotating ? 'rotating' : 'idle'}</span>
+      <span data-testid="consumed">{lastConsumed === null ? '' : String(lastConsumed)}</span>
+      <button data-testid="handle" onMouseDown={handleRotateStart}>rotate</button>
+      <button data-testid="consume" onClick={() => setLastConsumed(consumeJustFinished())}>consume</button>
+    </div>
+  );
+}
+
+// jsdom has no layout, so getBoundingClientRect always returns zeros — stub it.
+function stubBox() {
+  screen.getByTestId('box').getBoundingClientRect = () => ({
+    left: 100, top: 100, width: 100, height: 100, right: 200, bottom: 200, x: 100, y: 100,
+  });
+}
+
+describe('useTokenRotate', () => {
+  it('starts idle', () => {
+    render(<Harness />);
+    expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
+
+  it('enters the rotating state on mousedown', () => {
+    render(<Harness />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    expect(screen.getByTestId('state')).toHaveTextContent('rotating');
+  });
+
+  it('does nothing when disabled', () => {
+    render(<Harness enabled={false} />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
+
+  it('follows the pointer around the centre', () => {
+    render(<Harness />);
+    stubBox();
+    // Grab at 12 o'clock (dx 0, dy -50), drag to 3 o'clock (dx +50, dy 0): a quarter turn.
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+    expect(screen.getByTestId('angle')).toHaveTextContent('90');
+  });
+
+  it('commits the final angle once on mouseup', () => {
+    const onCommit = jest.fn();
+    render(<Harness onCommit={onCommit} />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+    fireEvent.mouseUp(document, { clientX: 200, clientY: 150 });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith(90);
+    expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
+
+  it('magnetically snaps a near-45 drag', () => {
+    const onCommit = jest.fn();
+    render(<Harness onCommit={onCommit} />);
+    stubBox();
+    // Grab at 12 o'clock, release just past 3 o'clock — within snapAngle's 10 deg threshold of 90.
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseUp(document, { clientX: 200, clientY: 155 });
+    expect(onCommit).toHaveBeenCalledWith(90);
+  });
+
+  it('a click with no movement commits nothing and leaves the angle unchanged', () => {
+    const onCommit = jest.fn();
+    render(<Harness onCommit={onCommit} initial={37} />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseUp(document, { clientX: 150, clientY: 100 });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByTestId('angle')).toHaveTextContent('37');
+    expect(screen.getByTestId('state')).toHaveTextContent('idle');
+  });
+
+  it('sets the just-finished signal after a completed rotation drag, and clears it once consumed', () => {
+    render(<Harness />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+    fireEvent.mouseUp(document, { clientX: 200, clientY: 150 });
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('true');
+    // Consume-once: a second read clears back to false.
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('false');
+  });
+
+  it('sets the just-finished signal even when the press never moved', () => {
+    // A press that started on the rotate handle is never a click on the token, so it must be
+    // swallowed whether or not it turned into a rotation.
+    render(<Harness />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseUp(document, { clientX: 150, clientY: 100 });
+    fireEvent.click(screen.getByTestId('consume'));
+    expect(screen.getByTestId('consumed')).toHaveTextContent('true');
+  });
+
+  it('drops the just-finished signal if no click follows, so a later click is not eaten', () => {
+    // A rotation sweeps an arc, so the pointer usually leaves the token before release and the
+    // native click lands on an ancestor instead of the host. An armed flag left behind would
+    // swallow the user's next real click on that token.
+    jest.useFakeTimers();
+    try {
+      render(<Harness />);
+      stubBox();
+      fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+      fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+      fireEvent.mouseUp(document, { clientX: 200, clientY: 150 });
+      act(() => { jest.runAllTimers(); });
+      fireEvent.click(screen.getByTestId('consume'));
+      expect(screen.getByTestId('consumed')).toHaveTextContent('false');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});

@@ -56,10 +56,17 @@ export function canManipulateToken({
 
 Zwraca prawdę gdy `allowed && !locked` oraz spełniony jeden z warunków kontekstu:
 
-| Kontekst | Warunek |
-|---|---|
-| Pan (domyślny) lub narzędzie pan | `(editingLayer === null \|\| activeTool === 'pan') && activeSelected` |
-| Select, dokładnie jeden token | `editingLayer === 'select' && imageEditLayer === 'tokens' && groupSelected && !multiSelectActive` |
+| Kolejność | Kontekst | Warunek |
+|---|---|---|
+| 1 | Select, dokładnie jeden token | `editingLayer === 'select' && imageEditLayer === 'tokens' && groupSelected && !multiSelectActive` |
+| 2 | Pan (domyślny) lub narzędzie pan | `(editingLayer === null \|\| activeTool === 'pan') && activeSelected` |
+
+**Kolejność jest istotna, nie kosmetyczna.** `activeTool` mieszka w `useDrawingTools`
+(`src/hooks/useDrawingTools.js:7`), a `editingLayer` w `useFogTools` — przełączenie zakładki nie
+resetuje narzędzia. Użytkownik, który w trybie rysowania wybrał narzędzie Pan i przeszedł na
+zakładkę Select, ma `editingLayer === 'select'` przy `activeTool === 'pan'`. Gdyby gałąź Pan była
+sprawdzana pierwsza, przechwyciłaby ten stan i gałąź Select nigdy by się nie wykonała — czyli
+feature nie działałby dokładnie tam, gdzie miał. Jawna zakładka wygrywa z zaległym narzędziem.
 
 **Dwa różne pojęcia zaznaczenia — nie wolno ich mylić.** Aplikacja ma dwa niezależne stany
 zaznaczenia i uchwyty zależą w każdym trybie od innego:
@@ -156,7 +163,7 @@ Obraz sceny ma już `Rotation` (`models/Game.go:300`). `GameCharacter` nie ma.
 
 | Plik | Zmiana |
 |---|---|
-| `internal/models/Game.go` (`GameCharacter`, ~`:131`) | `Rotation float64 \`bson:"rotation,omitempty" json:"rotation,omitempty"\`` |
+| `internal/models/Game.go` (`GameCharacter`, ~`:131`) | `Rotation float64 \`bson:"rotation" json:"rotation"\`` — tagi identyczne jak `SceneImage.Rotation`, bez `omitempty`: oba rodzaje tokenów muszą opisywać obrót tak samo, bo front ujednolica je jednym adapterem |
 | `internal/models/Game.go:271` (`UpdateSceneCharacterRequest`) | `Rotation *float64 \`json:"rotation,omitempty"\`` |
 | `internal/repository/GameRepository.go` (po `:1086`) | kolejny blok `if req.Rotation != nil { setFields["scenes.$[scene].characters.$[char].rotation"] = *req.Rotation }` |
 

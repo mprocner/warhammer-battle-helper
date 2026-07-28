@@ -1078,6 +1078,9 @@ func (r *GameRepository) UpdateSceneCharacterGeometry(gameID string, sceneID pri
 	if req.H != nil {
 		setFields["scenes.$[scene].characters.$[char].h"] = *req.H
 	}
+	if req.Rotation != nil {
+		setFields["scenes.$[scene].characters.$[char].rotation"] = *req.Rotation
+	}
 	if req.ZIndex != nil {
 		setFields["scenes.$[scene].characters.$[char].zIndex"] = *req.ZIndex
 	}
