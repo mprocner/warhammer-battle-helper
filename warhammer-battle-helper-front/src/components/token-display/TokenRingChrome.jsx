@@ -57,9 +57,13 @@ export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, la
 // A chip that can step (an editable number) needs room for a stepper, which does not fit between
 // two neighbouring slots — so it only appears while the slot is active, and the chip pushes
 // ACTIVE_PUSH outward along its ring angle to make space. Two consequences shape the markup:
-//   - the handlers live on `.token-slot-zone`, a wrapper that does NOT move, so the chip sliding
-//     out from under the pointer cannot trigger a mouseleave → mouseenter flicker loop;
-//   - the zone is centred halfway along the push, so it covers both chip positions.
+//   - the handlers live on `.token-slot-zone`, a wrapper that DOES move — it is centred halfway
+//     along the push (ACTIVE_PUSH/2), so it covers both the resting and pushed-out chip positions
+//     — but the resting zone box stays fully contained inside the active zone box on both axes,
+//     because ACTIVE_PUSH/2 plus the active box's half-extent exceeds the resting box's
+//     half-extent. That containment, not immobility, is what stops the chip sliding out from
+//     under the pointer and triggering a mouseleave → mouseenter flicker loop; raising
+//     ACTIVE_PUSH without also growing the active zone to match would reintroduce it.
 // Icon slots deliberately skip all of this: they are single-click toggles with no stepper to fit.
 function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onFocusChange, showTooltip, hideTooltip }) {
   if (!selected && !slot.showAtRest) return null;
@@ -82,7 +86,8 @@ function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onF
   }
 
   const canStep = !!slot.editable && !!slot.onStep;
-  const push = isActive && canStep ? ACTIVE_PUSH : 0;
+  const active = isActive && canStep;
+  const push = active ? ACTIVE_PUSH : 0;
   const dir = slotOffset(index, 1); // unit vector along this slot's ring angle
   const zone = { x: off.x + (dir.x * push) / 2, y: off.y + (dir.y * push) / 2 };
   const chipDx = (dir.x * push) / 2; // chip sits at the far end of the zone while active
@@ -90,12 +95,12 @@ function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onF
   const clickable = selected && (canStep || !!slot.onClick);
 
   return (
-    <div className={`token-slot-zone ${isActive ? 'is-active' : ''}`}
+    <div className={`token-slot-zone ${active ? 'is-active' : ''} ${canStep ? 'is-interactive' : ''}`}
       style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${zone.x}px), calc(-50% + ${zone.y}px))` }}
       onMouseEnter={canStep ? () => onHoverChange(true) : undefined}
       onMouseLeave={canStep ? () => onHoverChange(false) : undefined}
       onClick={canStep ? () => onHoverChange(true) : undefined}>
-      <div className={`token-slot token-slot--num ${isActive ? 'is-active' : ''} ${clickable ? 'is-clickable' : ''}`}
+      <div className={`token-slot token-slot--num ${active ? 'is-active' : ''} ${clickable ? 'is-clickable' : ''}`}
         style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${chipDx}px), calc(-50% + ${chipDy}px))` }}
         title={slot.cap || ''}
         onClick={(e) => { if (selected && slot.onClick) { e.stopPropagation(); slot.onClick(); } }}>
@@ -103,7 +108,7 @@ function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onF
           ? <NumberSlotInput value={slot.numberValue} onCommit={slot.onSetNumber} onFocusChange={onFocusChange} />
           : <span className="token-slot__val">{slot.value ?? '–'}</span>}
         {slot.cap && <span className="token-slot__cap">{slot.cap}</span>}
-        {isActive && canStep && (
+        {active && (
           <div className="token-step token-step--sq">
             <button onClick={(e) => { e.stopPropagation(); slot.onStep(+1); }}>▲</button>
             <button onClick={(e) => { e.stopPropagation(); slot.onStep(-1); }}>▼</button>
@@ -134,7 +139,9 @@ export default function TokenRingChrome({
   // the field while still hovering leaves it open. Touch sets the hover id via the zone's onClick.
   const [hoverSlotId, setHoverSlotId] = useState(null);
   const [focusSlotId, setFocusSlotId] = useState(null);
-  const activeSlotId = focusSlotId ?? hoverSlotId;
+  // Guarded by `selected`: useEffect below only clears the ids after paint, so on the render
+  // where `selected` flips to false a stale id would otherwise flash the chip active once more.
+  const activeSlotId = selected ? (focusSlotId ?? hoverSlotId) : null;
 
   // Deselecting must clear both, or a stale id makes the slot reappear already pushed out.
   useEffect(() => {

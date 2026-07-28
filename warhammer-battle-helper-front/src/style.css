@@ -10538,7 +10538,7 @@ align-items: center;
   display: flex; align-items: center; justify-content: center;
   pointer-events: none;
 }
-.token-overlay--selected .token-slot-zone { pointer-events: auto; }
+.token-overlay--selected .token-slot-zone.is-interactive { pointer-events: auto; }
 .token-slot-zone.is-active { width: 46px; height: 46px; z-index: 12; }
 .token-slot--icon {
   width: 16px; height: 16px; border-radius: 50%;
@@ -10561,14 +10561,17 @@ align-items: center;
   font-family: Georgia, serif;
 }
 .token-overlay--selected .token-slot--num { min-width: 14px; height: 22px; }
-/* Active chip: 28px tall so each docked stepper button is 14x14, matching .token-hp__btn's
-   established 15px affordance; padding-right reserves the stepper column. */
+/* Active chip: 28px tall. With box-sizing: border-box the 1px border leaves a 26px padding box,
+   so each docked stepper button (.token-step--sq splits it top/bottom) is ~13x13, not the 14x14
+   this comment used to claim; padding-right reserves the stepper column. overflow: hidden keeps
+   the stepper's square corners flush with the chip's rounded corners, same as .token-square (see
+   its own overflow: hidden comment). Transition is inherited from the base .token-slot rule so the
+   whole ring expands/collapses as one motion. */
 .token-slot--num.is-active {
   height: 28px; padding-right: 14px;
-  transition: transform .12s ease-out, height .12s ease-out;
+  overflow: hidden;
   z-index: 1;
 }
-.token-slot--num:not(.is-active) { transition: transform .15s ease-in, height .15s ease-in; }
 .token-slot__val { font-size: 9px; font-weight: 800; line-height: 1; }
 /* Editable value (selected + can-edit): looks like .token-slot__val, no chrome, native spinners
    hidden (we keep the custom ▲/▼). Pointer-events on so it can be focused despite the slot's

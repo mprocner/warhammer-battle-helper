@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import TokenRingChrome from './TokenRingChrome';
+import { ACTIVE_PUSH, slotOffset } from '../../utils/tokenRingGeometry';
 
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k) => k }) }));
 
@@ -9,11 +10,18 @@ const editableSlot = (over = {}) => ({
   editable: true, numberValue: 5, onSetNumber: () => {}, onStep: () => {}, ...over,
 });
 
-const renderRing = (slots, props = {}) => render(
-  <TokenRingChrome selected canEdit radius={42} equatorX={94} slots={slots}
+const RADIUS = 42;
+
+const renderRing = (slots) => render(
+  <TokenRingChrome selected canEdit radius={RADIUS} equatorX={94} slots={slots}
     killStrikeClassName="token-kill-strike" killToggleClassName="token-kill-toggle"
-    onToggleKilled={() => {}} {...props} />
+    onToggleKilled={() => {}} />
 );
+
+// Reads the `Npx` literal out of a `translate(calc(-50% + Npx), calc(-50% + Npx))` inline
+// transform, in order: [x, y].
+const readTranslate = (el) => [...el.style.transform.matchAll(/calc\(-50% \+ (-?[\d.eE+-]+)px\)/g)]
+  .map((m) => parseFloat(m[1]));
 
 test('an editable chip shows no stepper until it becomes active', () => {
   const { container } = renderRing([editableSlot()]);
@@ -31,7 +39,13 @@ test('hovering the hit-zone reveals the stepper and releasing hides it again', (
   expect(container.querySelector('.token-step')).toBeNull();
 });
 
-test('only one slot is active at a time', () => {
+test('hovering a second slot transfers active state away from the first', () => {
+  // NOTE: reduced from the original "only one slot is active at a time" test. That test fired
+  // mouseLeave(first) then mouseEnter(second) as two independent events (not how a browser
+  // interleaves a pointer move between siblings) and asserted `toHaveLength(1)`, which is
+  // trivially true given hoverSlotId is a single scalar — it can never hold two ids at once by
+  // construction. What's actually worth asserting is that the two concrete elements end up in
+  // the right states after the transition.
   const { container } = renderRing([editableSlot(), editableSlot({ id: 'slot-2' })]);
   const [first, second] = container.querySelectorAll('.token-slot-zone');
 
@@ -39,8 +53,43 @@ test('only one slot is active at a time', () => {
   fireEvent.mouseLeave(first);
   fireEvent.mouseEnter(second);
 
-  expect(container.querySelectorAll('.token-slot-zone.is-active')).toHaveLength(1);
+  expect(first.className).not.toContain('is-active');
   expect(second.className).toContain('is-active');
+});
+
+test('the active push splits between the zone and the chip, summing to ACTIVE_PUSH', () => {
+  // Slot index 0 is the top slot: its ring-angle direction is (0, -1), so only the y offset
+  // moves and the assertion does not need to combine x/y into a magnitude.
+  const { container } = renderRing([editableSlot()]);
+  const zone = container.querySelector('.token-slot-zone');
+
+  fireEvent.mouseEnter(zone);
+  const chip = container.querySelector('.token-slot--num');
+
+  const off = slotOffset(0, RADIUS);
+  const dir = slotOffset(0, 1);
+  const [, zoneY] = readTranslate(zone);
+  const [, chipY] = readTranslate(chip);
+
+  // Zone's own push contribution is its offset minus the slot's resting position; the chip's
+  // transform carries only its push contribution (the zone already absorbed the resting offset).
+  // Multiplying by dir.y (-1) turns "outward" into a positive magnitude along the ring angle.
+  const zonePush = (zoneY - off.y) * dir.y;
+  const chipPush = chipY * dir.y;
+
+  // Fails if the chip offset were doubled (double-counting the push) or zeroed out.
+  expect(zonePush + chipPush).toBeCloseTo(ACTIVE_PUSH);
+});
+
+test('a select-type chip (no editable, but with slot.onClick) still cycles when clicked', () => {
+  const onClick = jest.fn();
+  const { container } = renderRing([
+    { id: 'stance', variant: 'chip', value: 'Full', cap: 'STANCE', showAtRest: true, onClick },
+  ]);
+
+  fireEvent.click(container.querySelector('.token-slot--num'));
+
+  expect(onClick).toHaveBeenCalledTimes(1);
 });
 
 test('a focused field keeps the slot open after the pointer leaves', () => {
