@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -6,7 +6,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { SkullIcon } from '../icons';
 import { usePortalTooltip } from '../common/PortalTooltip';
 import NumberSlotInput from './NumberSlotInput';
-import { slotOffset } from '../../utils/tokenRingGeometry';
+import { slotOffset, ACTIVE_PUSH } from '../../utils/tokenRingGeometry';
 
 // Shared, purely-presentational chrome for BOTH token overlays (character + image). It renders the
 // identical visual parts — container, kill strike/toggle, ring slots, HP bar visuals — from already
@@ -53,12 +53,26 @@ export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, la
 // One ring slot. `slot` is normalized: { variant:'icon'|'chip', showAtRest, ... }. `index` is the
 // slot's position in the original config array (drives the ring angle), so callers must keep empty
 // slots as null placeholders rather than filtering them out.
-function TokenSlot({ slot, index, radius, selected, showTooltip, hideTooltip }) {
+//
+// A chip that can step (an editable number) needs room for a stepper, which does not fit between
+// two neighbouring slots — so it only appears while the slot is active, and the chip pushes
+// ACTIVE_PUSH outward along its ring angle to make space. Two consequences shape the markup:
+//   - the handlers live on `.token-slot-zone`, a wrapper that DOES move — it is centred halfway
+//     along the push (ACTIVE_PUSH/2), so it covers both the resting and pushed-out chip positions
+//     — but the resting zone box stays fully contained inside the active zone box on both axes.
+//     The binding constraint is the INWARD edge: activeHalfExtent − ACTIVE_PUSH/2 ≥
+//     restingHalfExtent. With today's sizes that is 23 − 8 = 15 ≥ 15 on the x axis for the 3
+//     o'clock and 9 o'clock slots — exactly tight, zero slack. That containment, not immobility,
+//     is what stops the chip sliding out from under the pointer and triggering a mouseleave →
+//     mouseenter flicker loop; raising ACTIVE_PUSH, widening the resting `.token-slot-zone`, or
+//     shrinking `.token-slot-zone.is-active` would each eat into that slack and reintroduce it.
+// Icon slots deliberately skip all of this: they are single-click toggles with no stepper to fit.
+function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onFocusChange, showTooltip, hideTooltip }) {
   if (!selected && !slot.showAtRest) return null;
   const off = slotOffset(index, radius);
-  const posStyle = { left: '50%', top: '50%', transform: `translate(calc(-50% + ${off.x}px), calc(-50% + ${off.y}px))` };
 
   if (slot.variant === 'icon') {
+    const posStyle = { left: '50%', top: '50%', transform: `translate(calc(-50% + ${off.x}px), calc(-50% + ${off.y}px))` };
     const Ico = slot.Icon;
     return (
       <div className={`token-slot token-slot--icon ${slot.active ? 'is-active' : 'is-inactive'}`}
@@ -73,19 +87,36 @@ function TokenSlot({ slot, index, radius, selected, showTooltip, hideTooltip }) 
     );
   }
 
+  const canStep = !!slot.editable && !!slot.onStep;
+  const active = isActive && canStep;
+  const push = active ? ACTIVE_PUSH : 0;
+  const dir = slotOffset(index, 1); // unit vector along this slot's ring angle
+  const zone = { x: off.x + (dir.x * push) / 2, y: off.y + (dir.y * push) / 2 };
+  const chipDx = (dir.x * push) / 2; // chip sits at the far end of the zone while active
+  const chipDy = (dir.y * push) / 2;
+  const clickable = selected && (canStep || !!slot.onClick);
+
   return (
-    <div className="token-slot token-slot--num" style={posStyle} title={slot.cap || ''}
-      onClick={(e) => { if (selected && slot.onClick) { e.stopPropagation(); slot.onClick(); } }}>
-      {slot.editable
-        ? <NumberSlotInput value={slot.numberValue} onCommit={slot.onSetNumber} />
-        : <span className="token-slot__val">{slot.value ?? '–'}</span>}
-      {slot.cap && <span className="token-slot__cap">{slot.cap}</span>}
-      {slot.editable && (
-        <div className="token-step">
-          <button onClick={(e) => { e.stopPropagation(); slot.onStep(+1); }}>▲</button>
-          <button onClick={(e) => { e.stopPropagation(); slot.onStep(-1); }}>▼</button>
-        </div>
-      )}
+    <div className={`token-slot-zone ${active ? 'is-active' : ''} ${canStep ? 'is-interactive' : ''}`}
+      style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${zone.x}px), calc(-50% + ${zone.y}px))` }}
+      onMouseEnter={canStep ? () => onHoverChange(true) : undefined}
+      onMouseLeave={canStep ? () => onHoverChange(false) : undefined}
+      onClick={canStep ? () => onHoverChange(true) : undefined}>
+      <div className={`token-slot token-slot--num ${active ? 'is-active' : ''} ${clickable ? 'is-clickable' : ''}`}
+        style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${chipDx}px), calc(-50% + ${chipDy}px))` }}
+        title={slot.cap || ''}
+        onClick={(e) => { if (selected && slot.onClick) { e.stopPropagation(); slot.onClick(); } }}>
+        {slot.editable
+          ? <NumberSlotInput value={slot.numberValue} onCommit={slot.onSetNumber} onFocusChange={canStep ? onFocusChange : undefined} />
+          : <span className="token-slot__val">{slot.value ?? '–'}</span>}
+        {slot.cap && <span className="token-slot__cap">{slot.cap}</span>}
+        {active && (
+          <div className="token-step token-step--sq">
+            <button onClick={(e) => { e.stopPropagation(); slot.onStep(+1); }}>▲</button>
+            <button onClick={(e) => { e.stopPropagation(); slot.onStep(-1); }}>▼</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -104,6 +135,20 @@ export default function TokenRingChrome({
 }) {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
+
+  // Which slot shows its stepper. Hover and focus are tracked separately so that typing a value
+  // and then moving the pointer away does not collapse the chip mid-edit, and so that blurring
+  // the field while still hovering leaves it open. Touch sets the hover id via the zone's onClick.
+  const [hoverSlotId, setHoverSlotId] = useState(null);
+  const [focusSlotId, setFocusSlotId] = useState(null);
+  // Guarded by `selected`: useEffect below only clears the ids after paint, so on the render
+  // where `selected` flips to false a stale id would otherwise flash the chip active once more.
+  const activeSlotId = selected ? (focusSlotId ?? hoverSlotId) : null;
+
+  // Deselecting must clear both, or a stale id makes the slot reappear already pushed out.
+  useEffect(() => {
+    if (!selected) { setHoverSlotId(null); setFocusSlotId(null); }
+  }, [selected]);
 
   return (
     // Root is pointer-events:none (CSS); only the controls opt back in. Image tokens additionally
@@ -157,7 +202,10 @@ export default function TokenRingChrome({
 
       {slots.map((slot, i) => slot == null ? null : (
         <TokenSlot key={slot.id} slot={slot} index={i} radius={radius}
-          selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+          selected={selected} isActive={activeSlotId === slot.id}
+          onHoverChange={(on) => setHoverSlotId(on ? slot.id : null)}
+          onFocusChange={(on) => setFocusSlotId(on ? slot.id : null)}
+          showTooltip={showTooltip} hideTooltip={hideTooltip} />
       ))}
 
       {renderExtras && renderExtras({ showTooltip, hideTooltip })}

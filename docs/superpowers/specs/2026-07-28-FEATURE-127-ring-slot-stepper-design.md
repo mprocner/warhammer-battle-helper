@@ -59,21 +59,25 @@ unnecessary once steppers are hidden at rest); a symmetric `◄ 999 ►` pill (5
 | Property | Rest / selected-inactive | Active |
 |---|---|---|
 | Chip height | 22px | 28px |
-| Chip width | adaptive, 10–28px | adaptive + 14px stepper, max 42px |
+| Chip width | adaptive, 15–28px | adaptive + 14px stepper, max 40px |
 | Radial offset | `R` | `R + 16` |
 | Stepper | not rendered | docked inside the right edge, 14px wide |
-| Stepper button | — | 14×14px |
+| Stepper button | — | ~13×13px |
 
 The push is 16px, not 14px: at 14px the clearance against a resting neighbour is 1.3px, which is
 noise rather than a margin. At 16px it is 3.3px.
 
-Active chip height is 28px so each stepper button is 14×14px, matching `.token-hp__btn` (15×15px).
-This ring already trades ideal touch sizing for density everywhere (22px equator toggles, 15px HP
-buttons); matching that established scale beats introducing a larger tap-target tier for one
-control.
+Active chip height is 28px so each stepper button lands at ~13×13px — `box-sizing: border-box`
+leaves a 26px padding box inside the 28px chip, and `.token-step--sq` splits that in half. Close
+enough to `.token-hp__btn` (15×15px) to read as the same affordance. This ring already trades ideal
+touch sizing for density everywhere (22px equator toggles, 15px HP buttons); matching that
+established scale beats introducing a larger tap-target tier for one control.
 
 Only slots that actually render a stepper (editable `number` slots) grow and push. `field`,
-`select` and read-only `number` chips keep their resting geometry.
+`select` and read-only `number` chips keep their resting geometry — including their 22px minimum
+width, so the adaptive floor must be scoped with `:has(.token-slot__input)` rather than applied to
+every selected chip. Getting that scope wrong shrinks the whole ring on the card-less player view,
+where nothing is editable.
 
 ### Clearances after the change
 
@@ -88,6 +92,11 @@ All values are measured from the token's centre unless stated otherwise, on a 50
 | Active top slot vs image HP stack | −(R+30) vs −(R+16) (**overlap**) | −(R+30) vs −(R+34) | 4px |
 | Active bottom slot vs `.token-squares` | 72px vs 105px | unchanged | 33px |
 | Active bottom slot vs character name | 72px vs 79px | unchanged | 7px |
+
+The active hit-zone is larger than the chip it contains (46×46 vs ~40×28), so it clears less: 10px
+to the equator toggles and only 2px to the character HP stack. The zone is transparent, so this
+matters for hit-testing rather than looks — it carries `z-index: 12`, above everything else in the
+overlay, so any overlap with the HP bar's ± buttons would steal their clicks.
 
 Two of these are new collisions introduced *by* the push and must be fixed in the same change:
 
@@ -104,27 +113,42 @@ Two of these are new collisions introduced *by* the push and must be fixed in th
   slot's outer edge is at `-(RING_MARGIN + 11) = -28px` and an active one at
   `-(RING_MARGIN + 16 + 14) = -47px`. Both are independent of token size, because `halfLong`
   cancels — so a single value works for every token. Fix: `-44px → -50px`. The image stack is
-  computed in JS (`HP_CLEAR = 16` in `ImageTokenOverlay.jsx:33`); fix: `16 → 34`.
+  computed in JS (`HP_CLEAR = 16` in `ImageTokenOverlay.jsx`); fix: `16 → 34`.
 
-  Cost: at rest the bars sit ~6px (characters) / ~18px (images) further from the token than today.
-  Accepted, because the alternative — sliding the stack while a slot is active — couples two
+  Both fixes must apply **only while the token is selected**, because a slot can only become active
+  when it is. The character side gets this for free — `-50px` lives on
+  `.token-hp-stack--expanded`, a selected-only modifier. The image side does not: its offset is one
+  JS expression covering both states, so it needs an explicit `selected ? HP_CLEAR : REST_HP_CLEAR`.
+  Applying the active clearance at rest strands the bars ~18px from a small image with nothing in
+  between.
+
+  Cost: while selected, the bars sit ~6px (characters) / ~18px (images) further from the token than
+  today. Accepted, because the alternative — sliding the stack when a slot activates — couples two
   animations and reads as jumpy.
 
 ## Interaction
 
-**State.** One `activeSlotId` lives in `TokenRingChrome`, not per-slot. Only one slot can be
-active, so slot-to-slot movement can't race two independent booleans.
+**State.** `TokenRingChrome` holds two ids, `hoverSlotId` and `focusSlotId`, and derives
+`activeSlotId = selected ? (focusSlotId ?? hoverSlotId) : null`. Two ids rather than one boolean per
+slot, so only one slot can be active and slot-to-slot movement can't race; two ids rather than one,
+because focus and hover must be able to disagree (see below). Deriving from `selected` rather than
+only clearing it in an effect matters: an effect runs after paint, so the chip would flash once in
+its pushed-out state on the frame where the token is deselected.
 
 **Set active by:** `mouseenter` on the slot's hit-zone, tap / click on the hit-zone, or the input
 receiving keyboard focus. All three feed the same state, so mouse and touch share one code path —
 no `@media (hover: hover)` split is needed. Touch devices fire a synthetic `mouseenter` after a
-tap, which lands on the same state the tap already set; the usual "sticky hover" problem is
-neutralised by clearing explicitly on outside tap and on deselection rather than relying on
-`mouseleave` alone.
+tap, which lands on the same state the tap already set.
 
-**Clears on:** `mouseleave` of the hit-zone, tap or click outside the ring, and token deselection.
-Deselection must clear via a `useEffect` keyed on `selected`; otherwise a stale `activeSlotId`
-survives and the slot reappears already pushed out on the next selection.
+**Clears on:** `mouseleave` of the hit-zone, blur of the field, and token deselection — the last via
+both the derivation above and a `useEffect` keyed on `selected`, since a zone that loses
+`pointer-events` on deselect will not reliably fire `mouseleave` and would leave a stale
+`hoverSlotId` behind.
+
+There is deliberately **no** document-level outside-click handler. On touch this leaves one narrow
+gap: tapping a slot open and then tapping another control on the same token (its HP bar, the kill
+toggle) leaves the chip pushed out, because nothing fires `mouseleave` and the token stays selected.
+Deselecting clears it. Accepted over adding a document listener for a purely cosmetic case.
 
 **Focus wins over mouse-leave.** `NumberSlotInput` already tracks `focusedRef` internally to avoid
 clobbering a mid-typed draft on WebSocket updates. Lift that signal out as an `onFocusChange`
@@ -133,14 +157,27 @@ value and then moves the mouse away has the chip collapse mid-edit.
 
 **Hover flicker.** Moving a target under the cursor is a real hazard: chip moves away →
 `mouseleave` → chip returns → `mouseenter` → loop. The fix is to decouple the hit-test from the
-visual. Each slot renders a **static hit-zone** div at the slot's resting offset, sized to cover
-the union of the resting box, the pushed-out box and the docked stepper (~44×52px). The hit-zone
-carries all the pointer handlers and never moves; only the inner `.token-slot--num` translates.
-The cursor therefore never leaves the hit-zone's bounding box during the transition, and the path
-from chip centre to arrow is continuous — no dead gap to cross.
+visual. Each slot renders a hit-zone div (`.token-slot-zone`) that carries all the pointer
+handlers; only the inner `.token-slot--num` shows the chip.
 
-Transition: `transform .12s ease-out` on the way out, `.15s ease-in` on the way back. The existing
-`.token-slot { transition: all .25s ease }` continues to own the rest/selected spread.
+The zone is **not** static — it takes half the push (`ACTIVE_PUSH/2`), the chip takes the other
+half, and the zone grows from 30×26 at rest to 46×46 while active. What prevents the flicker is
+not immobility but **containment**: the resting zone box stays wholly inside the active zone box,
+so the pointer that triggered the activation is still inside the element carrying the handlers
+after the zone has moved and grown. The binding inequality is on the inward edge:
+
+```
+activeHalfExtent − ACTIVE_PUSH/2 ≥ restingHalfExtent
+```
+
+which on the x axis for the 3 and 9 o'clock slots is `23 − 8 = 15 ≥ 15` — **exactly tight, zero
+slack**. Three separate edits break it silently: raising `ACTIVE_PUSH`, widening the resting zone,
+or shrinking the active zone. Any of the three must be paired with a re-derivation.
+
+Transition: `transform .25s ease`, on both the zone and the chip, matching the ring's existing
+`.token-slot { transition: all .25s ease }` so the whole ring moves as one. Both halves of the
+split push must be eased — a zone with no transition would snap 8px in one frame while the chip
+eased the other 8px.
 
 **Cursor.** `cursor: pointer` on `.token-slot__input` when it is not focused, `cursor: text` on
 `:focus`. Pointer advertises "this is interactive" consistently with the rest of the ring, but once
@@ -152,16 +189,21 @@ typing is the fast path for large jumps. Arrows keep `cursor: pointer` unconditi
 ## Component changes
 
 **`utils/tokenRingGeometry.js`**
-- `EQUATOR_GAP: 38 → 52`.
-- New exported `ACTIVE_PUSH = 16` and `ACTIVE_HALF_HEIGHT = 14`, so the HP clearance in
-  `ImageTokenOverlay` is derived (`ACTIVE_PUSH + ACTIVE_HALF_HEIGHT + 4`) rather than a second
-  magic number that can drift.
+- New exported `ACTIVE_PUSH = 16`, `ACTIVE_HALF_HEIGHT = 14` and `ACTIVE_HALF_WIDTH = 21`.
+- `EQUATOR_GAP: 38 → 52`, expressed as `ACTIVE_PUSH + ACTIVE_HALF_WIDTH + 11 + 4` (half a 22px
+  toggle, plus margin) rather than a literal, so raising the push moves the toggles with it.
+- New exported `HP_CLEAR` (`ACTIVE_PUSH + ACTIVE_HALF_HEIGHT + 4`) and `REST_HP_CLEAR = 16`, so the
+  image overlay's two clearances are derived rather than magic numbers that can drift apart.
 - `slotOffset` is unchanged — the active slot simply calls it with `radius + ACTIVE_PUSH`.
 
 **`components/token-display/TokenRingChrome.jsx`**
-- `useState` for `activeSlotId`; `useEffect` clearing it when `selected` goes false.
-- `TokenSlot` gains `isActive` plus the static hit-zone wrapper for chip slots that can step.
-- Steppers render only when `isActive`.
+- `useState` for `hoverSlotId` and `focusSlotId`; `useEffect` clearing both when `selected` goes
+  false, with the active id derived defensively from `selected` as well.
+- `TokenSlot` gains `isActive` plus the hit-zone wrapper for chip slots that can step. Both the
+  push and the active styling are gated on `isActive && canStep`, never on `isActive` alone — a chip
+  that grew without pushing would sit 28px tall at the resting radius, which is exactly the overlap
+  this feature removes.
+- Steppers render only on the active slot.
 - One-line comment recording that icon slots deliberately do *not* get the active tier — they are
   single-click toggles with no stepper to keep clear of a neighbour.
 
