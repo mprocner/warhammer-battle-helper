@@ -41,7 +41,10 @@ function CustomRoll({ data, timestamp }) {
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
     : '';
 
-  const hasFormula = Boolean(data.formulaBreakdown) || poolFormulaText !== '';
+  // Single source of truth for "a formula is shown": pool formula wins when present,
+  // otherwise fall back to the traditional-mode breakdown string.
+  const formulaText = poolFormulaText || data.formulaBreakdown;
+  const hasFormula = Boolean(formulaText);
 
   return (
     <>
@@ -70,33 +73,29 @@ function CustomRoll({ data, timestamp }) {
           {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
           {!hasFormula && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
-        {poolDice.length > 0 ? (
-          <>
-            <div className="custom-pool-dice">
-              {poolDice.map(({ value, sides }, i) => {
-                const dieSucceeded = data.poolSuccessCondition === 'eq'
-                  ? value === data.target
-                  : value >= data.target;
-                return (
-                  <span
-                    key={i}
-                    className={`custom-pool-die${dieSucceeded ? ' custom-pool-die--success' : ''}`}
-                    onMouseEnter={e => showTooltip(t('dice.label', { sides }), e.currentTarget)}
-                    onMouseLeave={hideTooltip}
-                  >
-                    {value}
-                  </span>
-                );
-              })}
-              <span className="custom-pool-success-count">
-                {t('customRoll.poolSuccesses', { count: data.poolSuccesses })}
-              </span>
-            </div>
-            <div className="log-formula-breakdown">{poolFormulaText}</div>
-          </>
-        ) : data.formulaBreakdown ? (
-          <div className="log-formula-breakdown">{data.formulaBreakdown}</div>
-        ) : null}
+        {poolDice.length > 0 && (
+          <div className="custom-pool-dice">
+            {poolDice.map(({ value, sides }, i) => {
+              const dieSucceeded = data.poolSuccessCondition === 'eq'
+                ? value === data.target
+                : value >= data.target;
+              return (
+                <span
+                  key={i}
+                  className={`custom-pool-die${dieSucceeded ? ' custom-pool-die--success' : ''}`}
+                  onMouseEnter={e => showTooltip(t('dice.label', { sides }), e.currentTarget)}
+                  onMouseLeave={hideTooltip}
+                >
+                  {value}
+                </span>
+              );
+            })}
+            <span className="custom-pool-success-count">
+              {t('customRoll.poolSuccesses', { count: data.poolSuccesses })}
+            </span>
+          </div>
+        )}
+        {formulaText ? <div className="log-formula-breakdown">{formulaText}</div> : null}
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {outcomeLabel}

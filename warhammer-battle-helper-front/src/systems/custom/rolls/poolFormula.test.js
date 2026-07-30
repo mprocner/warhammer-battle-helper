@@ -65,4 +65,14 @@ describe('formatPoolFormula', () => {
   test('returns an empty string for a missing formula', () => {
     expect(formatPoolFormula(undefined, t)).toBe('');
   });
+
+  test('shows a non-numeric count label when an attribute is the die count', () => {
+    const formula = [{ kind: 'dice', sides: 6, countLabel: 'STR', rolls: [4, 6, 2] }];
+    expect(formatPoolFormula(formula, t)).toBe('STRK6');
+  });
+
+  test('combines a count label and a sides label on the same die', () => {
+    const formula = [{ kind: 'dice', sides: 8, countLabel: '3', sidesLabel: 'STR', rolls: [4, 6, 2] }];
+    expect(formatPoolFormula(formula, t)).toBe('3K(STR)');
+  });
 });
