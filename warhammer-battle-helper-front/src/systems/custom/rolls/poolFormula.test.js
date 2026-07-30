@@ -1,7 +1,10 @@
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
 
-// Stand-in for i18next's t, using the Polish notation (K).
-const t = (key, opts) => (key === 'dice.dieNotation' ? 'K' : `K${opts.sides}`);
+// Stand-in for i18next's t, parameterized by the die letter so tests can
+// prove the rendered formula tracks the locale rather than a hardcoded letter.
+const makeT = (letter) => (key, opts) => (key === 'dice.dieNotation' ? letter : `${letter}${opts.sides}`);
+const t = makeT('K'); // Polish notation
+const tEn = makeT('D'); // English notation
 
 describe('flattenPoolDice', () => {
   test('returns one entry per die, carrying that die\'s face count', () => {
@@ -41,6 +44,7 @@ describe('formatPoolFormula', () => {
       { kind: 'dice', sides: 10, rolls: [2] },
     ];
     expect(formatPoolFormula(formula, t)).toBe('K6+K10+K10');
+    expect(formatPoolFormula(formula, tEn)).toBe('D6+D10+D10');
   });
 
   test('keeps the multiplier in front of the die', () => {
@@ -55,6 +59,7 @@ describe('formatPoolFormula', () => {
       { kind: 'text', text: '2' },
     ];
     expect(formatPoolFormula(formula, t)).toBe('K(STR)+2');
+    expect(formatPoolFormula(formula, tEn)).toBe('D(STR)+2');
   });
 
   test('returns an empty string for a missing formula', () => {
