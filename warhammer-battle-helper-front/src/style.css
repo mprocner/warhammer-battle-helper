@@ -10546,9 +10546,12 @@ align-items: center;
   /* Interactive even at rest so the label tooltip works on the unselected "sun". */
   pointer-events: auto;
 }
-.token-overlay--selected .token-slot--icon { width: 22px; height: 22px; cursor: pointer; }
+.token-overlay--selected .token-slot--icon { width: 22px; height: 22px; }
+/* Pointer + hover highlight only when the click actually bumps the condition (see the `canBump`
+   comment in TokenRingChrome) — a read-only viewer's icons stay inert-looking. */
+.token-overlay--selected .token-slot--icon.is-clickable { cursor: pointer; }
 .token-slot--icon.is-inactive { filter: grayscale(1); opacity: 0.5; background: rgba(20,12,4,0.42); }
-.token-slot--icon.is-inactive:hover { filter: grayscale(0.2); opacity: 0.95; }
+.token-slot--icon.is-inactive.is-clickable:hover { filter: grayscale(0.2); opacity: 0.95; }
 .token-slot__level {
   position: absolute; bottom: -3px; right: -3px; min-width: 9px; height: 9px; padding: 0 1px;
   background: #c9975b; color: #2a1f12; border-radius: 5px;
@@ -10584,12 +10587,12 @@ align-items: center;
   width: 22px; border: none; background: transparent; text-align: center;
   font: 800 9px/1 Georgia, serif; color: #2a1f12; padding: 0; margin: 0;
   pointer-events: auto; -moz-appearance: textfield;
-  /* Pointer while idle, matching every other interactive part of the ring; a caret once the field
-     is genuinely in edit mode, because there a click places an insertion point rather than firing
-     an action. The inline style from NumberSlotInput overrides the width above. */
-  cursor: pointer;
+  /* Caret, not pointer: the rest of the ring is buttons (pointer), but this is the one spot where
+     the value can be typed, and the I-beam is what advertises that. The inline style from
+     NumberSlotInput overrides the width above. */
+  cursor: text;
 }
-.token-slot__input:focus { outline: none; cursor: text; }
+.token-slot__input:focus { outline: none; }
 .token-slot__input::-webkit-outer-spin-button,
 .token-slot__input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .token-slot__cap { font-size: 5px; font-weight: 800; color: #7a5c42; text-transform: uppercase; line-height: 1; }

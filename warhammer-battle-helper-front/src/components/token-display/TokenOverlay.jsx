@@ -90,7 +90,7 @@ export default function TokenOverlay({
         return {
           id: s.id, variant: 'icon', active: !!st, level: st?.level || 0,
           Icon: resolveIcon(s.icon), label: s.conditionLabel || s.conditionKey,
-          onBump: () => {}, showAtRest: !!st,
+          showAtRest: !!st, // no onBump: this viewer cannot edit, so the icon must not look clickable
         };
       }
       const cap = s.type === 'number' ? s.numberLabel : s.type === 'field' ? s.field?.label : '';
@@ -155,7 +155,7 @@ export default function TokenOverlay({
       return {
         id: slot.id, variant: 'icon', active: !!st, level: st?.level || 0,
         Icon: resolveIcon(slot.icon), label: slot.conditionLabel || slot.conditionKey,
-        onBump: (d) => bumpState(slot, d), showAtRest: !!st,
+        onBump: canEdit ? (d) => bumpState(slot, d) : undefined, showAtRest: !!st,
       };
     }
     let v = null;
@@ -169,7 +169,8 @@ export default function TokenOverlay({
       numberValue: value?.number ?? 0,
       onSetNumber: (n) => setNumber(slot.id, n),
       onStep: (d) => stepNumber(slot.id, value?.number, d),
-      onClick: slot.type === 'select' ? () => cycleSelect(slot.id, slot.selectOptions, value?.select) : undefined,
+      // Gated on canEdit as well as the type: `onClick` is what makes the chip look clickable.
+      onClick: canEdit && slot.type === 'select' ? () => cycleSelect(slot.id, slot.selectOptions, value?.select) : undefined,
     };
   });
 
