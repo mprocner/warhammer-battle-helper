@@ -45,6 +45,15 @@ func sampleStats() *Stats {
 	}
 }
 
+// poolRolls flattens a pool formula back to the individual dice results, in roll order.
+func poolRolls(parts []gsys.PoolFormulaPart) []int {
+	var out []int
+	for _, p := range parts {
+		out = append(out, p.Rolls...)
+	}
+	return out
+}
+
 // ---------------------------------------------------------------------------
 // Pure helpers
 // ---------------------------------------------------------------------------
@@ -376,8 +385,8 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 		if res.PoolSuccesses != 2 || res.Roll != 2 {
 			t.Errorf("got successes=%d roll=%d, want 2/2", res.PoolSuccesses, res.Roll)
 		}
-		if !reflect.DeepEqual(res.PoolRolls, []int{4, 6, 2}) {
-			t.Errorf("PoolRolls = %v, want [4 6 2]", res.PoolRolls)
+		if got := poolRolls(res.PoolFormula); !reflect.DeepEqual(got, []int{4, 6, 2}) {
+			t.Errorf("pool rolls = %v, want [4 6 2]", got)
 		}
 		if res.Outcome != "regular_success" {
 			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
@@ -404,6 +413,36 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 			t.Errorf("got successes=%d outcome=%q, want 0/failure", res.PoolSuccesses, res.Outcome)
 		}
 	})
+}
+
+func TestRollFromFormula_DicePoolFormulaParts(t *testing.T) {
+	stats := sampleStats()
+	cfg := &models.RollConfig{
+		RollMode: "dice_pool",
+		Formula: []models.FormulaBlock{
+			diceBlock("d6"), opBlock("+"), diceBlock("d10"), opBlock("+"), diceBlock("d10"),
+		},
+		PoolSuccessThreshold: 5,
+	}
+	// d6 -> 4, d10 -> 7, d10 -> 2
+	p := newTestPlugin(3, 6, 1)
+	res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+	if err != nil {
+		t.Fatalf("rollFromFormula() error: %v", err)
+	}
+	want := []gsys.PoolFormulaPart{
+		{Kind: "dice", Sides: 6, Rolls: []int{4}},
+		{Kind: "text", Text: "+"},
+		{Kind: "dice", Sides: 10, Rolls: []int{7}},
+		{Kind: "text", Text: "+"},
+		{Kind: "dice", Sides: 10, Rolls: []int{2}},
+	}
+	if !reflect.DeepEqual(res.PoolFormula, want) {
+		t.Errorf("PoolFormula = %+v, want %+v", res.PoolFormula, want)
+	}
+	if res.FormulaBreakdown != "" {
+		t.Errorf("FormulaBreakdown = %q, want empty (pool mode uses PoolFormula)", res.FormulaBreakdown)
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -636,30 +675,30 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 
 	t.Run("single dice_attr collects one roll", func(t *testing.T) {
 		p := newTestPlugin(3) // d8 -> 4
-		rolls, diceType, _, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "")
+		parts, diceType, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "")
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
-		if !reflect.DeepEqual(rolls, []int{4}) || diceType != 8 {
-			t.Errorf("got rolls=%v dice=%d, want [4]/8", rolls, diceType)
+		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{4}) || diceType != 8 {
+			t.Errorf("got rolls=%v dice=%d, want [4]/8", got, diceType)
 		}
 	})
 
 	t.Run("dice_attr pool collects all rolls", func(t *testing.T) {
 		p := newTestPlugin(3, 5) // 4, 6
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_attr", Key: "str"}}
-		rolls, _, _, _ := p.evalFormulaDicePool(blocks, stats, "", "")
-		if !reflect.DeepEqual(rolls, []int{4, 6}) {
-			t.Errorf("rolls = %v, want [4 6]", rolls)
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "", "")
+		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{4, 6}) {
+			t.Errorf("rolls = %v, want [4 6]", got)
 		}
 	})
 
 	t.Run("dice_skill_attr pool", func(t *testing.T) {
 		p := newTestPlugin(7, 9) // sides 18 -> 8, 10
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_skill_attr"}}
-		rolls, _, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str")
-		if !reflect.DeepEqual(rolls, []int{8, 10}) {
-			t.Errorf("rolls = %v, want [8 10]", rolls)
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str")
+		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{8, 10}) {
+			t.Errorf("rolls = %v, want [8 10]", got)
 		}
 	})
 
@@ -673,19 +712,62 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 			{Type: "attr_linked"},
 			numBlock(2),
 		}
-		rolls, _, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex")
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex")
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
-		if len(rolls) != 0 {
-			t.Errorf("rolls = %v, want empty (no dice blocks)", rolls)
+		if got := poolRolls(parts); len(got) != 0 {
+			t.Errorf("rolls = %v, want empty (no dice blocks)", got)
 		}
 	})
 
 	t.Run("empty formula errors", func(t *testing.T) {
 		p := newTestPlugin()
-		if _, _, _, err := p.evalFormulaDicePool(nil, stats, "", ""); err == nil {
+		if _, _, err := p.evalFormulaDicePool(nil, stats, "", ""); err == nil {
 			t.Error("expected error for empty pool formula, got nil")
+		}
+	})
+
+	t.Run("count form keeps one term with every roll", func(t *testing.T) {
+		p := newTestPlugin(3, 5, 1) // 4, 6, 2
+		blocks := []models.FormulaBlock{numBlock(3), opBlock("d"), diceBlock("d6")}
+		parts, diceType, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		want := []gsys.PoolFormulaPart{{Kind: "dice", Sides: 6, CountLabel: "3", Rolls: []int{4, 6, 2}}}
+		if !reflect.DeepEqual(parts, want) || diceType != 6 {
+			t.Errorf("got parts=%+v dice=%d, want %+v/6", parts, diceType, want)
+		}
+	})
+
+	t.Run("computed faces keep their source label", func(t *testing.T) {
+		p := newTestPlugin(3) // d8 -> 4
+		blocks := []models.FormulaBlock{{Type: "dice_attr", Key: "str", Label: "STR"}}
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		want := []gsys.PoolFormulaPart{{Kind: "dice", Sides: 8, SidesLabel: "STR", Rolls: []int{4}}}
+		if !reflect.DeepEqual(parts, want) {
+			t.Errorf("parts = %+v, want %+v", parts, want)
+		}
+	})
+
+	t.Run("die used as the count stays in the formula", func(t *testing.T) {
+		// d6 -> 2 decides the count, then two d10 -> 7, 3.
+		p := newTestPlugin(1, 6, 2)
+		blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("d"), diceBlock("d10")}
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		want := []gsys.PoolFormulaPart{
+			{Kind: "dice", Sides: 6, Rolls: []int{2}},
+			{Kind: "dice", Sides: 10, Rolls: []int{7, 3}},
+		}
+		if !reflect.DeepEqual(parts, want) {
+			t.Errorf("parts = %+v, want %+v", parts, want)
 		}
 	})
 }

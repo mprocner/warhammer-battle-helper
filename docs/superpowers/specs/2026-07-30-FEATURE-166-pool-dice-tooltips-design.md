@@ -20,10 +20,11 @@ Dotyczy wyłącznie `CustomRoll` (rzuty na umiejętności i atrybuty).
 
 ## Poza zakresem
 
-- **Rzut bronią w trybie puli.** `RollWeaponWithTemplate` (`weapon.go:40`) woła
-  `rollFromFormula`, więc broń może wpaść w tryb puli, ale `CustomWeaponRoll.jsx`
-  w ogóle nie renderuje żetonów puli. To istniejąca luka w widoku, nie problem
-  tooltipów — osobne zadanie.
+- **Żetony puli w rzucie bronią.** `RollWeaponWithTemplate` (`weapon.go:40`) woła
+  `rollFromFormula`, więc broń może wpaść w tryb puli. `CustomWeaponRoll.jsx`
+  renderuje linię wzoru (`formatPoolFormula(data.poolFormula, t)`), tak samo jak
+  `CustomRoll`, ale nadal **nie renderuje żetonów puli ani tooltipów** — to
+  istniejąca luka w widoku, nie problem tooltipów — osobne zadanie.
 - **Lokalizacja notacji w trybie tradycyjnym.** `formulaBreakdown` nadal pokaże
   `d6` zamiast `K6`, a backend nadal wstawia zaszyte polskie `umiej.`
   (`roller.go`, `case "skill"`). Wyrównanie tego to osobny feature.
@@ -57,9 +58,10 @@ oraz osobne `PoolDice` + `PoolFormula` (`sides` w dwóch miejscach).
 
 ### Wzór pod rzędem żetonów
 
-Kolejność w logu: opis → żetony + licznik sukcesów → wzór → werdykt. Tryb
-tradycyjny zachowuje wzór nad wynikiem, więc gałęzie renderu pozostają
-rozdzielone.
+Kolejność w logu: opis → żetony + licznik sukcesów → wzór → werdykt. To ten sam
+element `<div className="log-formula-breakdown">` w obu trybach, w tym samym
+miejscu drzewa — tryb tradycyjny po prostu nie ma rzędu żetonów nad nim, więc
+wzór wygląda, jakby siedział bezpośrednio pod opisem.
 
 ## Kontrakt backendu
 
@@ -85,7 +87,7 @@ Zmiany w `RollResult`:
 | `PoolRolls []int` | usunięte, zastąpione przez `PoolFormula []PoolFormulaPart` |
 | `PoolSuccesses`, `PoolSuccessCondition` | bez zmian |
 | `FormulaBreakdown` | w trybie puli przestaje być ustawiany |
-| `DiceType` | zostaje — konsumuje go `ToastStack.jsx:37` |
+| `DiceType` | zostaje — konsumuje go `GameService.go:806` (`DieType: r.DiceType` w rekordzie statystyk rzutów) |
 
 `SidesLabel` jest rozdzielone od `Sides`, bo oba są potrzebne naraz: tooltip
 używa `Sides` (`K8`), linia wzoru `SidesLabel` (`K(SIŁA)`). Puste `SidesLabel`
@@ -152,11 +154,13 @@ Reguła renderu członu w `formatPoolFormula`:
   + `onMouseLeave={hideTooltip}`, z `usePortalTooltip()` w domyślnym trybie
   `placement: 'above'` — żetony leżą w poziomym rzędzie, tooltip po lewej
   zasłaniałby sąsiedni żeton
-- pod rzędem żetonów `<div className="log-formula-breakdown">{formatPoolFormula(...)}</div>`
-- warunek ukrywania `diceLabel` i `modifierText` w linii opisu (dziś
-  `!data.formulaBreakdown`) musi objąć też pulę, która `formulaBreakdown` już
-  nie dostaje — jedna zmienna `hasFormula` użyta w obu miejscach
-- gałąź `else if (data.formulaBreakdown)` dla trybu tradycyjnego bez zmian
+- jedna zmienna `formulaText = poolFormulaText || data.formulaBreakdown` zasila
+  oba miejsca: pulę wygrywa `formatPoolFormula(...)`, gdy go brak — string
+  trybu tradycyjnego. Pod rzędem żetonów renderuje się ten sam element w obu
+  trybach: `{formulaText ? <div className="log-formula-breakdown">{formulaText}</div> : null}`
+- warunek ukrywania `diceLabel` i `modifierText` w linii opisu to
+  `hasFormula = Boolean(formulaText)` — ta sama zmienna, która steruje
+  renderem linii wzoru, więc oba miejsca fizycznie nie mogą się rozjechać
 
 ### i18n
 
@@ -183,5 +187,8 @@ wystarczają.
 `sides`; wzór mieszany → różne `sides`) i format (kość literalna, kość z
 `countLabel`, kość z `sidesLabel`, człony tekstowe) z atrapą `t`.
 
-Testu renderu `CustomRoll` nie dokładamy — cała logika siedzi w module czystym,
-a komponent po zmianie to samo mapowanie propsów na JSX.
+**Frontend, `CustomRoll.smoke.test.jsx`** (dodane w przeglądzie po scaleniu):
+gałąź renderu — "dice.length > 0" vs. formuła — to logika, która nie siedzi w
+module czystym, więc wymaga osobnego testu. Pokrywa: rzut puli z kośćmi
+(żetony + linia wzoru pod nimi) oraz rzut puli, którego `poolFormula` ma same
+człony tekstowe (linia wzoru mimo braku żetonów).

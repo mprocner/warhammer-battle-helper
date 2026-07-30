@@ -45,9 +45,23 @@ type RollResult struct {
 	FormulaBreakdown string `json:"formulaBreakdown,omitempty"`
 
 	// Dice-pool mode results (only present when rolled in dice_pool mode).
-	PoolRolls            []int  `json:"poolRolls,omitempty"`
-	PoolSuccesses        int    `json:"poolSuccesses,omitempty"`
-	PoolSuccessCondition string `json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
+	PoolFormula          []PoolFormulaPart `json:"poolFormula,omitempty"`
+	PoolSuccesses        int               `json:"poolSuccesses,omitempty"`
+	PoolSuccessCondition string            `json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
+}
+
+// PoolFormulaPart is one term of a dice-pool formula: either a text fragment
+// (operator, attribute label, constant) or a die term carrying the results it
+// produced. Keeping the rolls inside the term is what lets the client label every
+// result with the die that produced it — a flat roll list cannot say whether a 4
+// came off a d6 or a d10.
+type PoolFormulaPart struct {
+	Kind       string `json:"kind"`                 // "text" | "dice"
+	Text       string `json:"text,omitempty"`       // kind=text: "+", "STR", "3"
+	Sides      int    `json:"sides,omitempty"`      // kind=dice: resolved face count
+	CountLabel string `json:"countLabel,omitempty"` // kind=dice: multiplier shown before the die, e.g. "3"
+	SidesLabel string `json:"sidesLabel,omitempty"` // kind=dice: source expression when faces are computed, e.g. "STR"
+	Rolls      []int  `json:"rolls,omitempty"`      // kind=dice: one entry per die rolled
 }
 
 // TokenFieldDef describes one character-sheet value that a GM can bind to a map-token

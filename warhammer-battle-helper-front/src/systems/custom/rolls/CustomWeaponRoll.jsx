@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
+import { formatPoolFormula } from './poolFormula';
 import '../../../components/LogWindow.css';
 
 const OUTCOME_MAP = {
@@ -33,6 +34,10 @@ function CustomWeaponRoll({ data, timestamp }) {
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
     : '';
 
+  // Dice-pool weapon attacks carry their formula as poolFormula (formulaBreakdown
+  // is left empty by the backend in pool mode); traditional rolls keep formulaBreakdown.
+  const formulaText = formatPoolFormula(data.poolFormula, t) || data.formulaBreakdown;
+
   return (
     <>
       <WaxSealToken
@@ -53,10 +58,10 @@ function CustomWeaponRoll({ data, timestamp }) {
           <strong className="log-list-item__character-name">⚔ {weaponLabel}</strong>{' '}
           <strong className="log-roll-value" style={{ color: resultColor }}>{data.roll}</strong>
           {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
-          {!data.formulaBreakdown && modifierText && <span className="log-modifier">{modifierText}</span>}
+          {!formulaText && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
-        {data.formulaBreakdown && (
-          <div className="log-formula-breakdown">{data.formulaBreakdown}</div>
+        {formulaText && (
+          <div className="log-formula-breakdown">{formulaText}</div>
         )}
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>

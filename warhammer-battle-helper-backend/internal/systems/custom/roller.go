@@ -277,7 +277,7 @@ func evalDicePoolInts(count int, rollFn func() int) []int {
 
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
 func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	allRolls, diceType, labelStr, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr)
+	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval (pool): %w", err)
 	}
@@ -289,14 +289,16 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 	}
 
 	successes := 0
-	for _, r := range allRolls {
-		if condition == "eq" {
-			if r == threshold {
-				successes++
-			}
-		} else {
-			if r >= threshold {
-				successes++
+	for _, part := range parts {
+		for _, r := range part.Rolls {
+			if condition == "eq" {
+				if r == threshold {
+					successes++
+				}
+			} else {
+				if r >= threshold {
+					successes++
+				}
 			}
 		}
 	}
@@ -317,19 +319,19 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		SkillKey:             skillKey,
 		SkillName:            skillLabel,
 		Modifier:             modifier,
-		PoolRolls:            allRolls,
+		PoolFormula:          parts,
 		PoolSuccesses:        successes,
 		PoolSuccessCondition: condition,
-		FormulaBreakdown:     labelStr,
 	}, nil
 }
 
-// evalFormulaDicePool evaluates the formula for dice-pool mode.
-// Returns all individual dice results, die type, and a display label string.
-// For "d" operations it collects individual dice; arithmetic ops still work as die-count modifiers.
-func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (allRolls []int, diceType int, labelStr string, err error) {
+// evalFormulaDicePool evaluates the formula for dice-pool mode. It returns the
+// formula as a list of parts — text fragments and die terms carrying their own
+// rolls — plus the face count of the first die rolled (display only).
+// Arithmetic ops still work as die-count modifiers.
+func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (parts []gsys.PoolFormulaPart, diceType int, err error) {
 	if len(blocks) == 0 {
-		return nil, 0, "", fmt.Errorf("formula is empty")
+		return nil, 0, fmt.Errorf("formula is empty")
 	}
 
 	type segment struct {
@@ -338,75 +340,80 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 	}
 
 	var segments []segment
-	var labelParts []string
 	pendingOp := "+"
+
+	// takeCount consumes the preceding part as the multiplier of a "d" operation.
+	// A text part (constant or attribute label) is absorbed into the die term's
+	// CountLabel. A die part stays where it is — its own rolls must survive — and the
+	// new term renders without a multiplier, so "d6d10" reads as "K6K10".
+	takeCount := func() string {
+		if len(parts) == 0 || parts[len(parts)-1].Kind != "text" {
+			return ""
+		}
+		label := parts[len(parts)-1].Text
+		parts = parts[:len(parts)-1]
+		return label
+	}
+
+	// rollTerm appends one die term: `count` dice when it follows a "d" operator,
+	// a single die otherwise. sidesLabel is empty for a literal die (d6) and holds
+	// the source expression when the face count is computed (d(STR)).
+	rollTerm := func(sides int, sidesLabel string) {
+		if diceType == 0 {
+			diceType = sides
+		}
+		roll := func() int { return p.rng.Intn(sides) + 1 }
+
+		if pendingOp == "d" && len(segments) > 0 {
+			count := segments[len(segments)-1].val
+			prevOp := segments[len(segments)-1].op
+			segments = segments[:len(segments)-1]
+			countLabel := takeCount()
+			rolls := evalDicePoolInts(count, roll)
+			total := 0
+			for _, r := range rolls {
+				total += r
+			}
+			segments = append(segments, segment{op: prevOp, val: total})
+			parts = append(parts, gsys.PoolFormulaPart{
+				Kind: "dice", Sides: sides, SidesLabel: sidesLabel, CountLabel: countLabel, Rolls: rolls,
+			})
+		} else {
+			rolled := roll()
+			segments = append(segments, segment{op: pendingOp, val: rolled})
+			parts = append(parts, gsys.PoolFormulaPart{
+				Kind: "dice", Sides: sides, SidesLabel: sidesLabel, Rolls: []int{rolled},
+			})
+		}
+		pendingOp = ""
+	}
+
+	// addText appends a non-die term and records its value as a possible die count.
+	addText := func(text string, val int) {
+		segments = append(segments, segment{op: pendingOp, val: val})
+		parts = append(parts, gsys.PoolFormulaPart{Kind: "text", Text: text})
+		pendingOp = ""
+	}
 
 	for _, b := range blocks {
 		switch b.Type {
 		case "op":
 			if b.Value != "d" {
-				labelParts = append(labelParts, b.Value)
+				parts = append(parts, gsys.PoolFormulaPart{Kind: "text", Text: b.Value})
 			}
 			pendingOp = b.Value
 		case "dice":
-			sides := diceNotationToSides(b.Value)
-			if diceType == 0 {
-				diceType = sides
-			}
-			if pendingOp == "d" && len(segments) > 0 {
-				count := segments[len(segments)-1].val
-				prevOp := segments[len(segments)-1].op
-				countLabel := labelParts[len(labelParts)-1]
-				segments = segments[:len(segments)-1]
-				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
-				allRolls = append(allRolls, rolls...)
-				total := 0
-				for _, r := range rolls {
-					total += r
-				}
-				segments = append(segments, segment{op: prevOp, val: total})
-				labelParts = append(labelParts, fmt.Sprintf("%s%s", countLabel, b.Value))
-			} else {
-				rolled := p.rng.Intn(sides) + 1
-				allRolls = append(allRolls, rolled)
-				segments = append(segments, segment{op: pendingOp, val: rolled})
-				labelParts = append(labelParts, b.Value)
-			}
-			pendingOp = ""
+			rollTerm(diceNotationToSides(b.Value), "")
 		case "dice_attr":
 			sides := stats.Attributes[b.Key].Current
 			if sides < 1 {
 				sides = 1
 			}
-			if diceType == 0 {
-				diceType = sides
-			}
 			lbl := b.Label
 			if lbl == "" {
 				lbl = b.Key
 			}
-			if pendingOp == "d" && len(segments) > 0 {
-				count := segments[len(segments)-1].val
-				prevOp := segments[len(segments)-1].op
-				countLabel := labelParts[len(labelParts)-1]
-				segments = segments[:len(segments)-1]
-				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
-				allRolls = append(allRolls, rolls...)
-				total := 0
-				for _, r := range rolls {
-					total += r
-				}
-				segments = append(segments, segment{op: prevOp, val: total})
-				labelParts = append(labelParts, fmt.Sprintf("%sd(%s)", countLabel, lbl))
-			} else {
-				rolled := p.rng.Intn(sides) + 1
-				allRolls = append(allRolls, rolled)
-				segments = append(segments, segment{op: pendingOp, val: rolled})
-				labelParts = append(labelParts, "d("+lbl+")")
-			}
-			pendingOp = ""
+			rollTerm(sides, lbl)
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
 			sv := skillValue(stats, skillKey)
@@ -414,71 +421,35 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 			if sides < 1 {
 				sides = 1
 			}
-			if diceType == 0 {
-				diceType = sides
+			lbl := strconv.Itoa(sv)
+			if linkedAttr != "" {
+				lbl = fmt.Sprintf("%d+%d", av, sv)
 			}
-			var diceLabel string
-			if linkedAttr == "" {
-				diceLabel = fmt.Sprintf("d(%d)", sv)
-			} else {
-				diceLabel = fmt.Sprintf("d(%d+%d)", av, sv)
-			}
-			if pendingOp == "d" && len(segments) > 0 {
-				count := segments[len(segments)-1].val
-				prevOp := segments[len(segments)-1].op
-				countLabel := labelParts[len(labelParts)-1]
-				segments = segments[:len(segments)-1]
-				labelParts = labelParts[:len(labelParts)-1]
-				rolls := evalDicePoolInts(count, func() int { return p.rng.Intn(sides) + 1 })
-				allRolls = append(allRolls, rolls...)
-				total := 0
-				for _, r := range rolls {
-					total += r
-				}
-				segments = append(segments, segment{op: prevOp, val: total})
-				labelParts = append(labelParts, countLabel+diceLabel)
-			} else {
-				rolled := p.rng.Intn(sides) + 1
-				allRolls = append(allRolls, rolled)
-				segments = append(segments, segment{op: pendingOp, val: rolled})
-				labelParts = append(labelParts, diceLabel)
-			}
-			pendingOp = ""
+			rollTerm(sides, lbl)
 		case "attr":
-			val := stats.Attributes[b.Key].Current
-			segments = append(segments, segment{op: pendingOp, val: val})
 			lbl := b.Label
 			if lbl == "" {
 				lbl = b.Key
 			}
-			labelParts = append(labelParts, lbl)
-			pendingOp = ""
+			addText(lbl, stats.Attributes[b.Key].Current)
 		case "skill":
-			sv := skillValue(stats, skillKey)
-			segments = append(segments, segment{op: pendingOp, val: sv})
-			labelParts = append(labelParts, "umiej.")
-			pendingOp = ""
+			addText("umiej.", skillValue(stats, skillKey))
 		case "attr_linked":
-			av := stats.Attributes[linkedAttr].Current
-			segments = append(segments, segment{op: pendingOp, val: av})
-			if linkedAttr == "" {
-				labelParts = append(labelParts, "0")
-			} else {
-				labelParts = append(labelParts, linkedAttr)
+			lbl := "0"
+			if linkedAttr != "" {
+				lbl = linkedAttr
 			}
-			pendingOp = ""
+			addText(lbl, stats.Attributes[linkedAttr].Current)
 		case "const":
 			v := 0
 			if b.Num != nil {
 				v = int(*b.Num)
 			}
-			segments = append(segments, segment{op: pendingOp, val: v})
-			labelParts = append(labelParts, strconv.Itoa(v))
-			pendingOp = ""
+			addText(strconv.Itoa(v), v)
 		}
 	}
 
-	return allRolls, diceType, strings.Join(labelParts, ""), nil
+	return parts, diceType, nil
 }
 
 // diceNotationToSides parses a "dN" notation into the number of faces. It accepts
