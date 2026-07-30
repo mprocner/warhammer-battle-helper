@@ -58,9 +58,10 @@ oraz osobne `PoolDice` + `PoolFormula` (`sides` w dwóch miejscach).
 
 ### Wzór pod rzędem żetonów
 
-Kolejność w logu: opis → żetony + licznik sukcesów → wzór → werdykt. Tryb
-tradycyjny zachowuje wzór nad wynikiem, więc gałęzie renderu pozostają
-rozdzielone.
+Kolejność w logu: opis → żetony + licznik sukcesów → wzór → werdykt. To ten sam
+element `<div className="log-formula-breakdown">` w obu trybach, w tym samym
+miejscu drzewa — tryb tradycyjny po prostu nie ma rzędu żetonów nad nim, więc
+wzór wygląda, jakby siedział bezpośrednio pod opisem.
 
 ## Kontrakt backendu
 
@@ -153,11 +154,13 @@ Reguła renderu członu w `formatPoolFormula`:
   + `onMouseLeave={hideTooltip}`, z `usePortalTooltip()` w domyślnym trybie
   `placement: 'above'` — żetony leżą w poziomym rzędzie, tooltip po lewej
   zasłaniałby sąsiedni żeton
-- pod rzędem żetonów `<div className="log-formula-breakdown">{formatPoolFormula(...)}</div>`
-- warunek ukrywania `diceLabel` i `modifierText` w linii opisu (dziś
-  `!data.formulaBreakdown`) musi objąć też pulę, która `formulaBreakdown` już
-  nie dostaje — jedna zmienna `hasFormula` użyta w obu miejscach
-- gałąź `else if (data.formulaBreakdown)` dla trybu tradycyjnego bez zmian
+- jedna zmienna `formulaText = poolFormulaText || data.formulaBreakdown` zasila
+  oba miejsca: pulę wygrywa `formatPoolFormula(...)`, gdy go brak — string
+  trybu tradycyjnego. Pod rzędem żetonów renderuje się ten sam element w obu
+  trybach: `{formulaText ? <div className="log-formula-breakdown">{formulaText}</div> : null}`
+- warunek ukrywania `diceLabel` i `modifierText` w linii opisu to
+  `hasFormula = Boolean(formulaText)` — ta sama zmienna, która steruje
+  renderem linii wzoru, więc oba miejsca fizycznie nie mogą się rozjechać
 
 ### i18n
 

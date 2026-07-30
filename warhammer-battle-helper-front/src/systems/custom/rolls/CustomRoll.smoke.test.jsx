@@ -37,10 +37,14 @@ describe('CustomRoll', () => {
 
   it('renders the formula line for a pool roll whose formula has only text parts (no dice)', () => {
     // e.g. attribute STR + op "+" + const 2 — a formula the builder permits with no die block.
+    // diceType and modifier are also set here to pin that hasFormula suppresses BOTH the
+    // die label and the modifier in the description line whenever a formula is shown.
     const data = {
       outcome: 'regular_success',
       roll: 2,
       target: 0,
+      diceType: 6,
+      modifier: 2,
       poolFormula: [
         { kind: 'text', text: 'STR' },
         { kind: 'text', text: '+' },
@@ -54,5 +58,7 @@ describe('CustomRoll', () => {
     const formulaLine = container.querySelector('.log-formula-breakdown');
     expect(formulaLine).not.toBeNull();
     expect(formulaLine.textContent).toBe('STR+2');
+
+    expect(container.querySelector('.log-modifier')).toBeNull();
   });
 });
