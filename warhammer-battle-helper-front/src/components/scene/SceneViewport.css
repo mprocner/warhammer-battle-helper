@@ -464,6 +464,16 @@
 .scene-context-menu__item--duplicate {
   gap: 6px;
   justify-content: flex-start;
+  cursor: default;
+}
+
+.scene-context-menu__item--duplicate:hover {
+  background: transparent;
+}
+
+/* Pinned to the right edge of the duplicate row. */
+.scene-context-menu__ok-btn--duplicate {
+  margin-left: auto;
 }
 
 .scene-context-menu__dup-input {

@@ -77,19 +77,14 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
 
       <div className="scene-context-menu__divider" />
 
-      {/* Duplicate N× — the whole row triggers it except the number input. */}
-      <div
-        className="scene-context-menu__item scene-context-menu__item--duplicate"
-        onClick={() => onDuplicate(Math.max(1, parseInt(dupCount, 10) || 1))}
-      >
+      {/* Duplicate N× — only the OK button (or Enter in the input) triggers it. */}
+      <div className="scene-context-menu__item scene-context-menu__item--duplicate">
         <span>{t('scenes.duplicate')}</span>
         <input
           type="number"
           min="1"
           value={dupCount}
           onChange={(e) => setDupCount(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -100,6 +95,12 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
           className="scene-context-menu__dup-input"
         />
         <span>{t('scenes.times')}</span>
+        <button
+          className="scene-context-menu__ok-btn scene-context-menu__ok-btn--duplicate"
+          onClick={() => onDuplicate(Math.max(1, parseInt(dupCount, 10) || 1))}
+        >
+          OK
+        </button>
       </div>
 
       <div className="scene-context-menu__divider" />
