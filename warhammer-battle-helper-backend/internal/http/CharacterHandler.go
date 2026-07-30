@@ -3,10 +3,12 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/systems"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -46,6 +48,25 @@ type UpdateVisibilityRequest struct {
 	VisibleTo []string `json:"visibleTo" binding:"required"`
 }
 
+// defaultStatsFor builds a blank stats document for the system, with the character's name
+// written into whichever stats field that system treats as its display name (Warhammer keeps
+// it in basicInfo.name; systems that store the name only on the Character get it untouched).
+// Returns nil when the system cannot produce defaults — the character is then created with
+// empty stats, which every plugin's decoder tolerates.
+func defaultStatsFor(sys systems.GameSystem, name string) bson.Raw {
+	raw, err := sys.DefaultStats()
+	if err != nil {
+		log.Printf("defaultStatsFor: DefaultStats failed: %v", err)
+		return nil
+	}
+	named, err := sys.SetDisplayName(raw, name)
+	if err != nil {
+		log.Printf("defaultStatsFor: SetDisplayName failed: %v", err)
+		return raw
+	}
+	return named
+}
+
 // GetGameCharacters returns characters for a game.
 // GM gets all characters; player gets only characters where their userId is in VisibleTo.
 func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
@@ -77,6 +98,8 @@ func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
 		if sys, sysErr := registry.Get(char.GameSystem); sysErr == nil {
 			if derived, derivedErr := sys.ComputeDerived(char.Stats); derivedErr == nil {
 				char.Stats = derived
+			} else {
+				log.Printf("GetGameCharacters: ComputeDerived failed for character %s (system %q): %v", char.ID.Hex(), char.GameSystem, derivedErr)
 			}
 		}
 
@@ -148,10 +171,20 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 		gameSystem = game.GameSystem
 	}
 
-	// Run derived-stat computation (e.g. wounds/movement for Warhammer)
 	if sys, sysErr := registry.Get(gameSystem); sysErr == nil {
+		// A create without stats gets the system's own blank sheet. Owning the blank shape here
+		// instead of in the client keeps each system's stat layout in one place: the client used
+		// to post a Warhammer-shaped skeleton for every system, so custom characters were born
+		// with `weapons` as an array where the custom plugin stores a map — every later roll then
+		// died in decodeStats.
+		if len(statsRaw) == 0 {
+			statsRaw = defaultStatsFor(sys, req.Name)
+		}
+		// Run derived-stat computation (e.g. wounds/movement for Warhammer)
 		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
 			statsRaw = derived
+		} else {
+			log.Printf("CreateGameCharacter: ComputeDerived failed for system %q: %v", gameSystem, derivedErr)
 		}
 	}
 
@@ -242,6 +275,8 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	if sys, sysErr := registry.Get(existingCharacter.GameSystem); sysErr == nil {
 		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
 			statsRaw = derived
+		} else {
+			log.Printf("UpdateGameCharacter: ComputeDerived failed for character %s (system %q): %v", charID, existingCharacter.GameSystem, derivedErr)
 		}
 	}
 
@@ -596,6 +631,8 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 		// Recompute derived stats for the clone
 		if derived, derivedErr := sys.ComputeDerived(clone.Stats); derivedErr == nil {
 			clone.Stats = derived
+		} else {
+			log.Printf("CloneGameCharacter: ComputeDerived failed for source %s (system %q): %v", original.ID.Hex(), original.GameSystem, derivedErr)
 		}
 
 		if err := h.CharacterRepo.Create(&clone); err != nil {

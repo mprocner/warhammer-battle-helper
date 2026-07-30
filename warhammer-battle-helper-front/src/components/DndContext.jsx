@@ -616,38 +616,14 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [gameId, token]);
 
-  // Handle adding a new character - creates minimal character and opens sheet for editing
+  // Handle adding a new character - creates minimal character and opens sheet for editing.
+  // Stats are deliberately omitted: the backend fills them from the game system's own
+  // DefaultStats(), so each system gets its own blank shape (this used to post a
+  // Warhammer-shaped skeleton for every system, which broke custom-system rolls).
   const handleAddCharacter = useCallback(async () => {
     try {
-      // Create minimal character with required structure
       const newCharacter = {
         name: t('character.newCharacter'),
-        stats: {
-          basicInfo: {
-            name: t('character.newCharacter'),
-            type: 'ally',
-            species: '',
-            career: '',
-            careerLevel: '',
-            status: '',
-            careerPath: '',
-            class: '',
-            age: '',
-            height: '',
-            hair: '',
-            eyes: '',
-            avatar: ''
-          },
-          characteristics: {
-            initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-            advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-            current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
-          },
-          basicSkills: {},
-          advancedSkills: {},
-          weapons: [],
-          talents: []
-        }
       };
 
       const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {
@@ -673,35 +649,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
   const handleAddNPC = useCallback(async () => {
     try {
+      // See handleAddCharacter: stats come from the system's DefaultStats() on the backend.
       const newCharacter = {
         name: t('character.newCharacter'),
         isNPC: true,
-        stats: {
-          basicInfo: {
-            name: t('character.newCharacter'),
-            type: 'enemy',
-            species: '',
-            career: '',
-            careerLevel: '',
-            status: '',
-            careerPath: '',
-            class: '',
-            age: '',
-            height: '',
-            hair: '',
-            eyes: '',
-            avatar: ''
-          },
-          characteristics: {
-            initial: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-            advances: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 },
-            current: { WS: 0, BS: 0, S: 0, T: 0, I: 0, Ag: 0, Dex: 0, Int: 0, WP: 0, Fel: 0 }
-          },
-          basicSkills: {},
-          advancedSkills: {},
-          weapons: [],
-          talents: []
-        }
       };
 
       const res = await fetch(`${getApiUrl()}/games/${gameId}/characters`, {

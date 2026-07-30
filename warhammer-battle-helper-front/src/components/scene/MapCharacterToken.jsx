@@ -242,7 +242,9 @@ function MapCharacterToken({
 
   const displayName = character.basicInfo?.name || character.name;
   const displayAvatar = character.avatar || character.basicInfo?.avatar;
-  const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo);
+  // basicInfo.type is Warhammer-only and starts empty on a fresh character, so a blank type
+  // falls back to the system-agnostic isNPC flag rather than silently reading as "ally".
+  const isEnemy = character.basicInfo?.type === 'enemy' || (character.isNPC && !character.basicInfo?.type);
   // Group drag: while this token is part of an in-progress group drag, offset its render by the
   // controller's single shared delta (in cells) — pos.col/row stay untouched, the controller
   // commits the real move on mouseup (see useGroupDrag).
