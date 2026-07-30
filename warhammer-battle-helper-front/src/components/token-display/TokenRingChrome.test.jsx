@@ -134,6 +134,36 @@ test('deselecting the token clears the active slot', () => {
   expect(container.querySelector('.token-slot-zone.is-active')).toBeNull();
 });
 
+// `is-clickable` is what CSS hangs the pointer cursor (and the icon hover highlight) on, so these
+// two tests pin the affordance to real behaviour: a class only where a click does something.
+test('an icon slot is clickable only when the caller supplied onBump', () => {
+  const onBump = jest.fn();
+  const iconSlot = (over = {}) => ({ id: 'stun', variant: 'icon', active: true, level: 1, label: 'Stunned', showAtRest: true, ...over });
+  const { container } = renderRing([iconSlot({ onBump }), iconSlot({ id: 'blind' })]);
+  const [editable, readOnly] = container.querySelectorAll('.token-slot--icon');
+
+  expect(editable.className).toContain('is-clickable');
+  expect(readOnly.className).not.toContain('is-clickable');
+
+  fireEvent.click(readOnly);
+  fireEvent.click(editable);
+  expect(onBump).toHaveBeenCalledTimes(1);
+  expect(onBump).toHaveBeenCalledWith(1);
+});
+
+test('a chip is clickable only when it can step or cycle', () => {
+  const { container } = renderRing([
+    editableSlot(),
+    { id: 'stance', variant: 'chip', value: 'Full', cap: 'STANCE', showAtRest: true, onClick: () => {} },
+    { id: 'ws', variant: 'chip', value: 3, cap: 'WS', showAtRest: true },
+  ]);
+  const [stepper, select, readOnly] = container.querySelectorAll('.token-slot--num');
+
+  expect(stepper.className).toContain('is-clickable');
+  expect(select.className).toContain('is-clickable');
+  expect(readOnly.className).not.toContain('is-clickable');
+});
+
 test('a read-only chip gets no hit-zone handlers and never opens a stepper', () => {
   const { container } = renderRing([{ id: 'ro', variant: 'chip', value: 3, cap: 'WS', showAtRest: true }]);
   const zone = container.querySelector('.token-slot-zone');

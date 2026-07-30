@@ -43,9 +43,16 @@
   background: #e8dcc4;
 }
 
-/* Grab cursor only over the scene itself, not the surrounding empty space */
+/* Grab cursor only over the scene itself, not the surrounding empty space.
+   The `*` + !important exists to beat the INLINE cursors that tokens and scene images set for their
+   own edit modes (MapCharacterToken / SceneImage) — nothing weaker can. But it is a sledgehammer:
+   it also flattened every cursor inside a selected token's ring overlay, so the pointer/caret
+   affordances in style.css (.token-slot--icon.is-clickable, .token-slot__input, …) never showed in
+   pan mode. Excluding the overlay subtree hands those rules back their normal, !important-free
+   cascade; overlay parts that declare no cursor of their own still inherit grab (cursor inherits),
+   so the pan affordance over the token's body is unchanged. */
 .scene-viewport--grab .scene-viewport__sizer,
-.scene-viewport--grab .scene-viewport__sizer * {
+.scene-viewport--grab .scene-viewport__sizer *:not(.token-overlay, .token-overlay *) {
   cursor: grab !important;
 }
 

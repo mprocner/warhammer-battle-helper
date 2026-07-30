@@ -74,13 +74,17 @@ function TokenSlot({ slot, index, radius, selected, isActive, onHoverChange, onF
   if (slot.variant === 'icon') {
     const posStyle = { left: '50%', top: '50%', transform: `translate(calc(-50% + ${off.x}px), calc(-50% + ${off.y}px))` };
     const Ico = slot.Icon;
+    // `is-clickable` carries the pointer cursor and the hover highlight, so it must mean exactly
+    // "clicking here does something": selected AND the caller handed us a bump. Read-only viewers
+    // (the card-less projection, a non-GM image token) pass no onBump and keep the default cursor.
+    const canBump = selected && !!slot.onBump;
     return (
-      <div className={`token-slot token-slot--icon ${slot.active ? 'is-active' : 'is-inactive'}`}
+      <div className={`token-slot token-slot--icon ${slot.active ? 'is-active' : 'is-inactive'} ${canBump ? 'is-clickable' : ''}`}
         style={posStyle}
         onMouseEnter={slot.label ? (e) => showTooltip(slot.label, e.currentTarget) : undefined}
         onMouseLeave={slot.label ? hideTooltip : undefined}
-        onClick={(e) => { if (selected) { e.stopPropagation(); slot.onBump(+1); } }}
-        onContextMenu={(e) => { if (!selected) return; e.preventDefault(); e.stopPropagation(); slot.onBump(-1); }}>
+        onClick={canBump ? (e) => { e.stopPropagation(); slot.onBump(+1); } : undefined}
+        onContextMenu={canBump ? (e) => { e.preventDefault(); e.stopPropagation(); slot.onBump(-1); } : undefined}>
         {Ico ? <Ico sx={{ fontSize: selected ? 14 : 11 }} /> : '?'}
         {slot.active && slot.level > 1 && <span className="token-slot__level">{slot.level}</span>}
       </div>

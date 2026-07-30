@@ -57,7 +57,7 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
       return {
         id: slot.id, variant: 'icon', active, level: slot.level || 0,
         Icon: resolveIcon(slot.icon), label: slot.conditionLabel || slot.conditionKey,
-        onBump: (d) => bumpSlot(slot.id, d), showAtRest: active,
+        onBump: canEdit ? (d) => bumpSlot(slot.id, d) : undefined, showAtRest: active,
       };
     }
     return {
