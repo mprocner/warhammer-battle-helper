@@ -28,6 +28,7 @@ import {
   moveHandout,
   reorderHandoutFolders,
 } from '../../api/handouts';
+import { appendUnique } from '../../utils/appendUnique';
 import HandoutItem from './handouts/HandoutItem';
 import HandoutFolderSection from './handouts/HandoutFolderSection';
 import HandoutCreateModal from './handouts/HandoutCreateModal';
@@ -211,11 +212,12 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
   const handleCreateHandout = async (formData) => {
     try {
       const newHandout = await createHandout(gameId, formData);
+      // The WS broadcast of this same create may already have landed via gameState.
       if (createForFolderId) {
         await moveHandout(gameId, newHandout.id, createForFolderId);
-        setHandouts((prev) => [...prev, { ...newHandout, folderId: createForFolderId }]);
+        setHandouts((prev) => appendUnique(prev, { ...newHandout, folderId: createForFolderId }));
       } else {
-        setHandouts((prev) => [...prev, newHandout]);
+        setHandouts((prev) => appendUnique(prev, newHandout));
       }
       setCreateForFolderId(undefined);
       setIsCreateModalOpen(false);
@@ -255,7 +257,7 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
   const handleFolderCreated = async (name) => {
     try {
       const folder = await createHandoutFolder(gameId, name);
-      setFolders((prev) => [...prev, folder]);
+      setFolders((prev) => appendUnique(prev, folder));
       setExpandedFolders((prev) => new Set([...prev, folder.id]));
     } catch (err) {
       console.error('Failed to create folder:', err);

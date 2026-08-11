@@ -23,6 +23,7 @@ import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
 import ToastStack from './ToastStack';
 import { useToastQueue } from '../hooks/useToastQueue';
+import { appendUnique } from '../utils/appendUnique';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
@@ -320,7 +321,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
       case WS_EVENTS.HANDOUT_CREATED:
         setGameState(prev => {
           if (!prev) return prev;
-          return { ...prev, handouts: [...(prev.handouts || []), message.payload.handout] };
+          // A full fetchGameState may already carry this handout — appending blindly
+          // would leave two entries sharing one id.
+          return { ...prev, handouts: appendUnique(prev.handouts, message.payload.handout) };
         });
         break;
 
@@ -357,7 +360,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
       case WS_EVENTS.HANDOUT_FOLDER_CREATED:
         setGameState(prev => {
           if (!prev) return prev;
-          return { ...prev, handoutFolders: [...(prev.handoutFolders || []), message.payload.folder] };
+          return { ...prev, handoutFolders: appendUnique(prev.handoutFolders, message.payload.folder) };
         });
         break;
 

@@ -522,6 +522,46 @@ func (r *GameRepository) DeleteHandout(gameID string, handoutID primitive.Object
 	return nil
 }
 
+// applyHandoutOrder arranges the game's handouts according to the order requested by a client.
+//
+// The requested list is a hint, never the source of truth: a repeated id yields one entry
+// (a client whose local list duplicated a handout must not be able to store that duplicate),
+// unknown ids are dropped, and handouts the client never saw are appended in their stored
+// order so a concurrent create is not wiped out by a reorder.
+func applyHandoutOrder(existing []models.Handout, handoutIDs []primitive.ObjectID) []models.Handout {
+	handoutMap := make(map[primitive.ObjectID]models.Handout)
+	for _, h := range existing {
+		handoutMap[h.ID] = h
+	}
+
+	now := time.Now()
+	placed := make(map[primitive.ObjectID]bool, len(existing))
+	reordered := make([]models.Handout, 0, len(existing))
+
+	appendHandout := func(handout models.Handout) {
+		handout.Order = len(reordered)
+		handout.UpdatedAt = now
+		placed[handout.ID] = true
+		reordered = append(reordered, handout)
+	}
+
+	for _, id := range handoutIDs {
+		handout, ok := handoutMap[id]
+		if !ok || placed[id] {
+			continue
+		}
+		appendHandout(handout)
+	}
+
+	for _, handout := range existing {
+		if !placed[handout.ID] {
+			appendHandout(handout)
+		}
+	}
+
+	return reordered
+}
+
 // ReorderHandouts updates the order of handouts in the game
 func (r *GameRepository) ReorderHandouts(gameID string, handoutIDs []primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -539,21 +579,7 @@ func (r *GameRepository) ReorderHandouts(gameID string, handoutIDs []primitive.O
 		return fmt.Errorf("failed to get game: %w", err)
 	}
 
-	// Create a map of handout ID to handout for quick lookup
-	handoutMap := make(map[primitive.ObjectID]models.Handout)
-	for _, h := range game.Handouts {
-		handoutMap[h.ID] = h
-	}
-
-	// Reorder handouts based on the provided order
-	reorderedHandouts := make([]models.Handout, 0, len(handoutIDs))
-	for i, id := range handoutIDs {
-		if handout, ok := handoutMap[id]; ok {
-			handout.Order = i
-			handout.UpdatedAt = time.Now()
-			reorderedHandouts = append(reorderedHandouts, handout)
-		}
-	}
+	reorderedHandouts := applyHandoutOrder(game.Handouts, handoutIDs)
 
 	// Update the game with reordered handouts
 	filter := bson.M{"_id": objectID}
