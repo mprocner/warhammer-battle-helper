@@ -210,12 +210,14 @@ export const PRESETS = {
 };
 
 export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
+export const MAX_PASSTHROUGH_BYTES = 15 * 1024 * 1024;   // = storage.MaxFileSize
 export const PNG_MAX_PIXELS = 1024 * 1024;
 
 export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
-export function shouldPassthrough(preset, cropArea, srcW, srcH) -> boolean
+export function shouldPassthrough(preset, cropArea, srcW, srcH, srcBytes) -> boolean
 export function sourceMayHaveAlpha(file) -> boolean
 export function pickEncoding(width, height) -> { type, quality }
+export function resolveAspect(preset, naturalWidth, naturalHeight) -> number
 export async function processImage(file, preset, cropArea = null) -> File
 ```
 
@@ -230,9 +232,16 @@ Kroki `processImage`:
 2. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
    konieczny — zdjęcia z telefonu noszą obrót w EXIF, a `drawImage` bez niego rysuje
    avatar położony na boku.
-3. `shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height)` — jeśli nie ma
-   `cropArea` i obraz mieści się w `maxEdge`, `bitmap.close()` i zwróć **oryginalny
-   `File`**. Bez tego bezstratny PNG 900 px przechodziłby stratną konwersję bez powodu.
+3. `shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height, file.size)` —
+   jeśli nie ma `cropArea`, obraz mieści się w `maxEdge` **i waży poniżej
+   `MAX_PASSTHROUGH_BYTES`**, wtedy `bitmap.close()` i zwróć **oryginalny `File`**.
+   Bez tego bezstratny PNG 900 px przechodziłby stratną konwersję bez powodu.
+
+   Próg bajtowy dopisany po przeglądzie całej gałęzi. Przepuszczenie pliku pomija
+   przekodowanie, które by go zmniejszyło, więc bez tego progu fotograficzny PNG
+   4000×3000 o wadze 25 MB przechodził nietknięty i odbijał się od limitu serwera —
+   podczas gdy ten sam obraz w 4200 px był skalowany do ~2 MB WebP i przechodził.
+   Uskok dokładnie na `maxEdge`, w odwrotną stronę niż intuicja.
 4. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
    powiększamy; rozciągnięcie tokena 200 px do 4096 px to sam szum i megabajty.
 5. `ctx.imageSmoothingQuality = 'high'` przed rysowaniem. Wartość domyślna to `'low'`,
@@ -294,9 +303,6 @@ Dzięki temu ramka startowa obejmuje cały obraz, czyli zachodzi to, co „swobo
 w praktyce znaczyć: zatwierdzenie bez dotykania niczego zwraca obraz w całości.
 Użytkownik może przyciąć proporcjonalny wycinek, ale nie zmieni proporcji kadru —
 ograniczenie biblioteki, przyjęte świadomie.
-
-Kadrownik startuje z ramką obejmującą cały obraz, więc „nie chcę przycinać" to
-zatwierdzenie bez dotykania czegokolwiek.
 
 Style przenoszą się z `GeneralTab.css:658–716` do nowego `ImageCropModal.css`
 z prefiksem `.image-crop-modal` zamiast `.game-image-cropper`. Stare klasy i stary kod
@@ -364,7 +370,8 @@ kadrownika z `GeneralTab` (`settings.gameImageCropTitle` i sąsiednie) — skaso
 
 | Sytuacja | Zachowanie |
 |---|---|
-| Obraz poniżej `maxEdge`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
+| Obraz poniżej `maxEdge` i poniżej `MAX_PASSTHROUGH_BYTES`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
+| Obraz poniżej `maxEdge`, ale ponad `MAX_PASSTHROUGH_BYTES` | Przekodowany mimo mieszczących się wymiarów — inaczej serwer by go odrzucił |
 | Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, format z `pickEncoding`; nigdy nie powiększamy |
 | Zdjęcie z telefonu z obrotem w EXIF | `imageOrientation: 'from-image'` prostuje przed rysowaniem |
 | Wynik do 1 MP (avatar, kafelek gry, przycięty token) | Bezstratny PNG, bez ścieżki zapasowej |
@@ -384,9 +391,14 @@ do czystych funkcji, które są testowane:
 
 - `computeTargetSize(w, h, maxEdge)` — skalowanie dla orientacji poziomej i pionowej,
   brak powiększania, kwadrat, wymiar dokładnie równy limitowi;
-- `shouldPassthrough(preset, cropArea, srcW, srcH)` — prawda dla obrazu poniżej limitu
-  bez kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit,
-  prawda dla wymiarów dokładnie równych limitowi;
+- `shouldPassthrough(preset, cropArea, srcW, srcH, srcBytes)` — prawda dla obrazu
+  poniżej limitu bez kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz
+  przekracza limit pikseli, prawda dla wymiarów dokładnie równych limitowi, oraz
+  fałsz dla pliku poniżej limitu pikseli, ale powyżej `MAX_PASSTHROUGH_BYTES`;
+- `resolveAspect(preset, naturalWidth, naturalHeight)` — proporcje presetu gdy je ma,
+  w przeciwnym razie proporcje źródła; osobny przypadek pilnuje, że dla presetu bez
+  `aspect` wynik **nie** wychodzi 4:3, czyli tego, co robiła domyślna wartość
+  `react-easy-crop`;
 - `sourceMayHaveAlpha(file)` — prawda dla `image/png` i `image/webp`, fałsz dla
   `image/jpeg`; steruje tym, czy ścieżce zapasowej z D3 wolno zejść do JPEG;
 - `pickEncoding(w, h)` — PNG dokładnie na progu `PNG_MAX_PIXELS`, WebP jeden piksel
