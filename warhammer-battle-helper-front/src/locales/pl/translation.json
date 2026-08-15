@@ -1,4 +1,10 @@
 {
+  "imageCrop": {
+    "title": "Przytnij obraz",
+    "zoom": "Powiększenie",
+    "sourceTooLarge": "Ten obraz jest za duży do przetworzenia (maks. 80MB).",
+    "processingFailed": "Nie udało się przetworzyć tego obrazu."
+  },
   "token": {
     "killed": "Zabity",
     "hideFromPlayers": "Ukryj przed graczami",

@@ -1,4 +1,10 @@
 {
+  "imageCrop": {
+    "title": "Crop image",
+    "zoom": "Zoom",
+    "sourceTooLarge": "This image is too large to process (max 80MB).",
+    "processingFailed": "Could not process this image."
+  },
   "token": {
     "killed": "Killed",
     "hideFromPlayers": "Hide from players",
