@@ -5,19 +5,22 @@ import { resolveFileUrl } from '../../../utils/fileUrl';
 import HandoutTypeIcon from './HandoutTypeIcon';
 import ModalHeader from '../../common/ModalHeader';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import ImageCropModal from '../../common/ImageCropModal';
+import { PRESETS } from '../../../utils/imageProcessing';
 import './HandoutCreateModal.css';
 
 const HANDOUT_TYPES = ['map', 'letter', 'document', 'image', 'clue', 'poster'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const ALLOWED_FILE_TYPES = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
-  'image/gif': '.gif',
   'image/webp': '.webp',
   'application/pdf': '.pdf',
   'text/plain': '.txt'
 };
+
+// PDF and TXT skip the cropper — there is nothing to crop and nothing to downscale.
+const CROPPABLE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
  * Modal for creating or editing a handout (draggable, minimizable, no overlay)
@@ -45,6 +48,7 @@ const HandoutCreateModal = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
+  const [pickedFile, setPickedFile] = useState(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: Math.max(150, window.innerWidth / 2 - 250), y: 50 });
   const [isDragging, setIsDragging] = useState(false);
@@ -139,22 +143,7 @@ const HandoutCreateModal = ({
     }
   };
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!ALLOWED_FILE_TYPES[file.type]) {
-      setUploadError(t('handouts.invalidFileType'));
-      return;
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setUploadError(t('handouts.fileTooLarge'));
-      return;
-    }
-
+  const uploadFile = async (file) => {
     setUploadError('');
     setIsUploading(true);
 
@@ -162,16 +151,37 @@ const HandoutCreateModal = ({
       const result = await uploadHandoutFile(gameId, file);
       setFormData(prev => ({ ...prev, fileUrl: result.url }));
       setPreviewUrl(result.url);
-
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadError(t('handouts.uploadFailed'));
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (!file) return;
+
+    if (!ALLOWED_FILE_TYPES[file.type]) {
+      setUploadError(t('handouts.invalidFileType'));
+      return;
+    }
+
+    if (CROPPABLE_TYPES.includes(file.type)) {
+      setPickedFile(file);
+      return;
+    }
+
+    uploadFile(file);
+  };
+
+  const handleCropConfirmed = (processed) => {
+    setPickedFile(null);
+    uploadFile(processed);
   };
 
   const handleSubmit = (e) => {
@@ -207,6 +217,7 @@ const HandoutCreateModal = ({
   };
 
   return (
+    <>
     <div
       ref={popupRef}
       className={`handout-modal ${isMinimized ? 'handout-modal--minimized' : ''}`}
@@ -371,7 +382,7 @@ const HandoutCreateModal = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.txt"
+                accept=".jpg,.jpeg,.png,.webp,.pdf,.txt"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
@@ -399,6 +410,15 @@ const HandoutCreateModal = ({
         </form>
       )}
     </div>
+    {pickedFile && (
+      <ImageCropModal
+        file={pickedFile}
+        preset={PRESETS.handout}
+        onConfirm={handleCropConfirmed}
+        onCancel={() => setPickedFile(null)}
+      />
+    )}
+    </>
   );
 };
 
