@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
@@ -28,8 +28,10 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
   const [touched, setTouched] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [naturalSize, setNaturalSize] = useState(null);
+  const [imgBox, setImgBox] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const imgRef = useRef(null);
 
   // Keyed on `file` so a swapped file gets a fresh preview AND fresh crop state.
   // Without the resets, a call site that changes `file` without remounting would
@@ -42,20 +44,25 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     setTouched(false);
     setZoom(1);
     setNaturalSize(null);
+    setImgBox(null);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
   const onImageLoad = useCallback((e) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     setNaturalSize({ width: naturalWidth, height: naturalHeight });
+    // Rendered size at zoom 1 — the zoom frame multiplies this, it does not
+    // recompute it, so it has to be read from the DOM once, here.
+    const box = e.currentTarget.getBoundingClientRect();
+    setImgBox({ width: box.width, height: box.height });
     setCrop(
-      preset.aspect
-        ? centerCrop(
+      preset.aspect == null
+        ? WHOLE_IMAGE_CROP
+        : centerCrop(
             makeAspectCrop({ unit: '%', width: 100 }, preset.aspect, naturalWidth, naturalHeight),
             naturalWidth,
             naturalHeight
           )
-        : WHOLE_IMAGE_CROP
     );
   }, [preset.aspect]);
 
@@ -98,28 +105,35 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
       <div className="image-crop-modal">
         <h4 className="image-crop-modal__title">{t('imageCrop.title')}</h4>
         <div className="image-crop-modal__area">
-          {imageSrc && (
-            <ReactCrop
-              crop={crop ?? undefined}
-              onChange={(_pixelCrop, percentCrop) => {
-                setCrop(percentCrop);
-                setTouched(true);
-              }}
-              aspect={preset.aspect ?? undefined}
-              keepSelection
+          <div
+            className="image-crop-modal__zoom-frame"
+            style={imgBox ? { width: imgBox.width * zoom, height: imgBox.height * zoom } : undefined}
+          >
+            <div
+              className="image-crop-modal__scaler"
+              style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
             >
-              {/* Zoom is the image's real width, not a transform: a transform
-                  leaves the layout box unscaled, so the frame would be measured
-                  against the unzoomed rectangle and every crop would need
-                  unwinding afterwards. */}
-              <img
-                src={imageSrc}
-                alt=""
-                style={{ width: `${zoom * 100}%`, display: 'block' }}
-                onLoad={onImageLoad}
-              />
-            </ReactCrop>
-          )}
+              {imageSrc && (
+                <ReactCrop
+                  crop={crop ?? undefined}
+                  onChange={(_pixelCrop, percentCrop) => {
+                    setCrop(percentCrop);
+                    setTouched(true);
+                  }}
+                  aspect={preset.aspect ?? undefined}
+                  keepSelection
+                >
+                  <img
+                    ref={imgRef}
+                    src={imageSrc}
+                    alt=""
+                    className="image-crop-modal__image"
+                    onLoad={onImageLoad}
+                  />
+                </ReactCrop>
+              )}
+            </div>
+          </div>
         </div>
         <div className="image-crop-modal__zoom">
           <input

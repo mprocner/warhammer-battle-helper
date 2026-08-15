@@ -32,10 +32,18 @@ jest.mock('react-image-crop', () => {
       ),
     // The real helpers are the library's business; what matters here is that the
     // component routes a fixed-aspect preset through them and sends the result on.
+    // makeAspectCrop is a jest.fn so a test can assert what the component actually
+    // passed it — e.g. preset.aspect rather than the whole preset, or the natural
+    // dimensions in the right order. Its return value is set in beforeEach, not
+    // here: CRA's jest preset runs with resetMocks: true, which strips a fake
+    // implementation given at creation before every test, not just calls.
     centerCrop: (crop) => crop,
-    makeAspectCrop: () => ({ unit: '%', x: 25, y: 0, width: 50, height: 100 }),
+    makeAspectCrop: jest.fn(),
   };
 });
+
+const { makeAspectCrop } = require('react-image-crop');
+const FIXED_ASPECT_CROP = { unit: '%', x: 25, y: 0, width: 50, height: 100 };
 
 jest.mock('../../utils/imageProcessing', () => ({
   ...jest.requireActual('../../utils/imageProcessing'),
@@ -52,6 +60,7 @@ beforeEach(() => {
   global.URL.createObjectURL = jest.fn(() => 'blob:stub');
   global.URL.revokeObjectURL = jest.fn();
   processImage.mockReset();
+  makeAspectCrop.mockReturnValue(FIXED_ASPECT_CROP);
 });
 
 const sourceFile = () => new File(['x'], 'map.png', { type: 'image/png' });
@@ -112,6 +121,15 @@ test('an untouched frame on a fixed-aspect preset still sends a rectangle', asyn
 
   renderModal(PRESETS.avatar);
   loadImage(1600, 900);
+
+  // Catches passing the whole preset instead of preset.aspect, or swapping
+  // width and height in the natural-size arguments.
+  expect(makeAspectCrop).toHaveBeenCalledWith(
+    { unit: '%', width: 100 },
+    PRESETS.avatar.aspect,
+    1600,
+    900
+  );
 
   await userEvent.click(screen.getByRole('button', { name: 'common.save' }));
 

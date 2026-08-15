@@ -39,7 +39,6 @@ export function computeTargetSize(srcW, srcH, maxEdge) {
   return { width: Math.round(srcW * scale), height: Math.round(srcH * scale) };
 }
 
-
 // Deliberately blind to preset.aspect, which puts a requirement on callers:
 // a preset carrying an aspect MUST only be used behind a crop dialog that
 // refuses to confirm until it has a crop area. Nothing here enforces that —
@@ -68,10 +67,10 @@ export function pickEncoding(width, height) {
     : { type: 'image/webp', quality: 0.85 };
 }
 
-// Turns react-image-crop's percentage selection into the source-pixel rectangle
-// processImage expects. Takes plain numbers rather than the library's PercentCrop
-// object on purpose: the maths is universal, so it should survive the next change
-// of cropping library. Unpacking the library's object stays in the component.
+// Turns a percentage crop selection into the source-pixel rectangle processImage
+// expects. Takes plain numbers rather than a cropping library's own crop object
+// on purpose: the maths is universal, so it should survive the next change of
+// cropping library. Unpacking the library's object stays in the component.
 //
 // No clamping: the library keeps its selection inside the image, and silently
 // correcting an out-of-range rectangle here would hide a real bug rather than
