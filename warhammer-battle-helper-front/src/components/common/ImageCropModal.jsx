@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
@@ -31,7 +31,6 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
   const [imgBox, setImgBox] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const imgRef = useRef(null);
 
   // Keyed on `file` so a swapped file gets a fresh preview AND fresh crop state.
   // Without the resets, a call site that changes `file` without remounting would
@@ -107,11 +106,27 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
         <div className="image-crop-modal__area">
           <div
             className="image-crop-modal__zoom-frame"
+            // The transform on the scaler below alone cannot make the area
+            // scroll — it does not change the layout box — so this frame is
+            // sized to the scaled result and gives the scrollbars something
+            // to measure.
             style={imgBox ? { width: imgBox.width * zoom, height: imgBox.height * zoom } : undefined}
           >
             <div
               className="image-crop-modal__scaler"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+              // Frozen at the UNSCALED size on purpose, asymmetric with the
+              // frame above: the frame grows with zoom so the area has
+              // something to scroll, but if this box also grew, `max-width:
+              // 100%` on .ReactCrop and its <img> would let them re-lay-out
+              // larger at that bigger containing block, and the transform
+              // would then scale that already-enlarged layout again —
+              // magnifying by roughly zoom² instead of zoom. Keeping this
+              // box fixed makes the transform purely visual.
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
+                ...(imgBox ? { width: imgBox.width, height: imgBox.height } : null),
+              }}
             >
               {imageSrc && (
                 <ReactCrop
@@ -124,10 +139,16 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
                   keepSelection
                 >
                   <img
-                    ref={imgRef}
                     src={imageSrc}
                     alt=""
                     className="image-crop-modal__image"
+                    // Inline, not in the stylesheet: react-image-crop ships
+                    // `.ReactCrop__child-wrapper > img { max-height: inherit }`
+                    // at higher specificity than the class rule here, which
+                    // resolves to `none` through its ancestors and wins
+                    // regardless of import order. An inline style beats the
+                    // cascade without touching the library's stylesheet.
+                    style={{ maxHeight: '300px' }}
                     onLoad={onImageLoad}
                   />
                 </ReactCrop>

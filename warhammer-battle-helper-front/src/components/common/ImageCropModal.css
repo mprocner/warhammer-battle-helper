@@ -43,13 +43,6 @@
   border-radius: 4px;
 }
 
-/* The transform alone cannot make the area scroll — it does not change the
-   layout box — so this frame is sized to the scaled result and gives the
-   scrollbars something to measure. */
-.image-crop-modal__zoom-frame {
-  position: relative;
-}
-
 /* Scales the whole ReactCrop element, overlay included. Scaling the image
    alone would leave the crop frame at 1:1, misaligned with the picture. */
 .image-crop-modal__scaler {
@@ -58,10 +51,14 @@
 
 /* The library fits nothing to the box, so a portrait image would open showing
    only its top strip. Percentages are relative to whatever gets rendered, so
-   constraining the height does not affect the crop maths. */
+   constraining the height does not affect the crop maths. The max-height
+   itself is set inline on the <img>, not here: react-image-crop ships
+   `.ReactCrop__child-wrapper > img { max-height: inherit }` at higher
+   specificity than a class selector, which would win over this rule and
+   resolve to `none`. Do not move it back here — it will silently stop
+   applying. */
 .image-crop-modal__image {
   display: block;
-  max-height: 300px;
 }
 
 .image-crop-modal__zoom {
