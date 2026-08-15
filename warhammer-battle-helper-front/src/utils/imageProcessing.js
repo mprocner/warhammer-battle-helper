@@ -53,3 +53,84 @@ export function pickEncoding(width, height) {
     ? { type: 'image/png', quality: undefined }
     : { type: 'image/webp', quality: 0.85 };
 }
+
+export class ImageProcessingError extends Error {
+  constructor(reason) {
+    super(`image processing failed: ${reason}`);
+    this.name = 'ImageProcessingError';
+    this.reason = reason;
+  }
+}
+
+function encode(canvas, type, quality) {
+  return new Promise(resolve => canvas.toBlob(resolve, type, quality));
+}
+
+function renameTo(originalName, mimeType) {
+  const ext = mimeType === 'image/png' ? '.png' : mimeType === 'image/webp' ? '.webp' : '.jpg';
+  return originalName.replace(/\.[^.]+$/, '') + ext;
+}
+
+/**
+ * Prepare an image for upload: crop it, downscale it to the preset's limit and
+ * re-encode it. Returns the ORIGINAL file untouched when neither is needed.
+ *
+ * @param {File} file
+ * @param {object} preset - one of PRESETS
+ * @param {?{x:number, y:number, width:number, height:number}} cropArea - source-pixel
+ *   rectangle, exactly what react-easy-crop reports as croppedAreaPixels
+ * @returns {Promise<File>}
+ * @throws {ImageProcessingError}
+ */
+export async function processImage(file, preset, cropArea = null) {
+  if (file.size > MAX_SOURCE_BYTES) {
+    throw new ImageProcessingError('source-too-large');
+  }
+
+  let bitmap;
+  try {
+    // imageOrientation is not optional: phone photos carry rotation in EXIF and
+    // drawImage without it renders the avatar lying on its side.
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    throw new ImageProcessingError('decode-failed');
+  }
+
+  const source = cropArea || { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
+
+  if (shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height)) {
+    bitmap.close();
+    return file;
+  }
+
+  const { width, height } = computeTargetSize(source.width, source.height, preset.maxEdge);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  // Defaults to 'low', which aliases visibly on a 10000px -> 4096px downscale.
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bitmap, source.x, source.y, source.width, source.height, 0, 0, width, height);
+  // Release the raw RGBA now rather than waiting for GC — FilesTab processes
+  // files serially, so a queue of large maps would otherwise pile up gigabytes.
+  bitmap.close();
+
+  const { type, quality } = pickEncoding(width, height);
+  let blob = await encode(canvas, type, quality);
+
+  if (!blob) {
+    // Only WebP can fail here (iOS Safari caps canvas area at 16.7M pixels, and
+    // 4096x4096 sits exactly on that line). Falling back to JPEG is safe only
+    // without alpha — a token silently gaining a black background is the exact
+    // failure WebP was chosen to prevent.
+    if (type === 'image/webp' && !sourceMayHaveAlpha(file)) {
+      blob = await encode(canvas, 'image/jpeg', 0.85);
+    }
+    if (!blob) {
+      throw new ImageProcessingError('encode-failed');
+    }
+  }
+
+  return new File([blob], renameTo(file.name, blob.type), { type: blob.type });
+}
