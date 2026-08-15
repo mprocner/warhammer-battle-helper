@@ -168,10 +168,21 @@ Statyczny GIF nie jest przy tym niczego wart: 256 kolorów i kompresja gorsza od
 o rząd wielkości. Tracimy wyłącznie animowane tokeny — sztuczkę lubianą w Foundry
 i Roll20, niszową i możliwą do przywrócenia później osobnym ficzerem.
 
-Istniejące dane pozostają sprawne. `GetFile` (`FileHandler.go:576`) bierze
-`contentType` ze `Storage.Get`, czyli z pliku na dysku, i nie zagląda w listy
-dozwolonych typów — te filtrują wyłącznie upload. GIF-y wgrane wcześniej dalej się
-wyświetlają.
+Istniejące dane pozostają sprawne, ale **wymaga to osobnej zmiany**. Pierwotnie
+zapisałem tu, że listy dozwolonych typów filtrują wyłącznie upload. To było błędne:
+`LocalStorage.Get` (`storage/local.go:146`) ustala `Content-Type` serwowanego pliku,
+przeszukując te same listy **odwrotnie**, po rozszerzeniu. Usunięcie `image/gif`
+z list sprawiłoby więc, że zapisane wcześniej GIF-y zaczęłyby wychodzić jako
+`application/octet-stream`.
+
+Poprawka: serwowanie dostaje własną mapę `ServedContentTypes`, kluczowaną po
+rozszerzeniu, i `Get` korzysta wyłącznie z niej. To rozprzęga „co serwer przyjmuje"
+od „co serwer oddaje" — dwie rzeczy, które właśnie się rozjechały i nie ma powodu,
+by dzieliły jedną strukturę.
+
+Przy okazji znika istniejąca usterka: `AllowedMusicTypes` mapuje na `.wav` zarówno
+`audio/wav`, jak i `audio/x-wav`, a Go losuje kolejność iteracji po mapie — więc plik
+`.wav` serwował się raz jako jeden typ, raz jako drugi.
 
 Przyjęte ograniczenie: animowany WebP ma ten sam problem, a nie jest blokowany, bo WebP
 to nasz format wyjściowy. Taki plik przejdzie przez canvas i wyjdzie jako pojedyncza
