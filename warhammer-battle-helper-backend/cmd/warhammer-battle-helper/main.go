@@ -84,6 +84,11 @@ func main() {
 		}
 	}
 
+	// Before the CORS middleware on purpose: that one returns early when a request
+	// carries no Origin, leaving cacheable static-file responses without a Vary
+	// header. See VaryOrigin's doc comment for what that broke.
+	r.Use(http.VaryOrigin())
+
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"},

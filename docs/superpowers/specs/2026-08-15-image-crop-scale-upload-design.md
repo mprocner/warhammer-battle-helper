@@ -327,11 +327,27 @@ w CRA — nieopłacalne przy tej skali.
 
 ### Przepływ kadrowania w bibliotece
 
-Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`; to samo origin, więc
-canvas się nie zabrudzi) i otwiera `ImageCropModal` z presetem `libraryImage`.
-`onConfirm` wysyła nowy plik do tego samego
-`folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje, sceny
-nietknięte, backend bez zmian.
+Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`) i otwiera
+`ImageCropModal` z presetem `libraryImage`. `onConfirm` wysyła nowy plik do tego
+samego `folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje,
+sceny nietknięte, backend bez zmian.
+
+Napisałem tu pierwotnie, że canvas się nie zabrudzi, „bo to samo origin". To było
+podwójnie błędne. Po pierwsze, w developmencie front stoi na `:3000`, a backend na
+`:8080` — inny port to **inny origin**, więc żądanie jest jak najbardziej
+międzyźródłowe. Po drugie, prawdziwy powód, dla którego canvas jest bezpieczny, jest
+inny: idziemy przez `fetch` → `Blob` → `File`, więc canvas nigdy nie ładuje obcego
+adresu, tylko dane, które już mamy lokalnie.
+
+Ta pomyłka miała skutek praktyczny. Pliki statyczne wychodzą z `Cache-Control:
+public, max-age=86400` i są pobierane na dwa sposoby: miniatura przez `<img src>`,
+która **nie wysyła nagłówka `Origin`**, oraz `fetch` w trybie CORS, który go wysyła.
+`gin-contrib/cors` przy braku `Origin` wychodzi wcześnie i nie dokłada ani
+`Access-Control-Allow-Origin`, ani `Vary`. Przeglądarka zapisywała więc odpowiedź
+miniatury jako jedyny wariant URL-a i podawała ją potem `fetch`owi, który odrzucał ją
+za brak nagłówka CORS — przerywanie, bo tylko gdy miniatura zdążyła trafić do cache.
+Naprawione middlewarem `VaryOrigin`, zarejestrowanym **przed** CORS-em, który
+bezwarunkowo oznacza odpowiedzi jako zależne od `Origin`.
 
 ## Zmiany w backendzie
 
