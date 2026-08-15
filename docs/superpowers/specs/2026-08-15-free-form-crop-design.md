@@ -46,22 +46,63 @@ Kasujemy funkcję i jej cztery testy. To jedyny fragment czystego modułu, któr
 zamiana niszczy — i powstał dokładnie dlatego, że zachowanie konkretnej biblioteki
 wyciekło poza warstwę, która ją opakowuje. Patrz D6.
 
-### D3 — Zoom przez szerokość obrazu, nie przez `transform`
+### D3 — Zoom przez `transform` nałożony na cały `.ReactCrop`, w kontenerze o jawnym rozmiarze
 
-Suwak powiększenia zostaje. Realizuje go **rzeczywista szerokość** obrazu —
-`style={{ width: `${zoom * 100}%` }}` — w kontenerze z `overflow: auto`, a nie
-`transform: scale()`.
+```jsx
+<div className="image-crop-modal__area">                 {/* overflow: auto */}
+  <div style={{ width: shownW * zoom, height: shownH * zoom }}>
+    <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+      <ReactCrop …><img … /></ReactCrop>
+    </div>
+  </div>
+</div>
+```
 
-Powód jest rachunkowy. `transform: scale()` powiększa obraz wizualnie, ale **nie
-zmienia jego pudełka layoutu**, więc ramka kadru mierzy się dalej względem
-niepowiększonego prostokąta. Rozjazd trzeba potem odkręcać — dlatego helpery
-biblioteki przyjmują osobny argument `scale`. Przy zmianie szerokości obraz naprawdę
-jest większy, ramka mierzy się względem niego, a `percentCrop` pozostaje wprost
-prawdziwy. Najbardziej ryzykowny fragment całej zamiany po prostu nie powstaje.
+**Wersja pierwotna tej decyzji była błędna i nie działała.** Zapisałem tu, że zoom
+realizuje rzeczywista szerokość obrazu (`width: ${zoom * 100}%`), bo wtedy `percentCrop`
+pozostaje wprost przeliczalny. Rachunek się zgadzał, ale nie sprawdziłem, czy model
+pudełkowy biblioteki na to pozwala. Nie pozwala — `ReactCrop.css` narzuca:
 
-Koszt: panoramowanie paskami przewijania zamiast przeciągania obrazu. Nie jest to
-realna strata — przeciągnięcie po obrazie tworzy ramkę, więc gest przeciągania i tak
-jest zajęty.
+```css
+.ReactCrop { max-width: 100%; display: inline-block }
+.ReactCrop__child-wrapper { overflow: hidden }
+.ReactCrop__child-wrapper > img { max-width: 100%; max-height: inherit }
+```
+
+`max-width: 100%` przycinał powiększoną szerokość, a `overflow: hidden` obciąłby to, co
+mimo wszystko wystaje. Suwak nie robił nic. Wyszło dopiero w przeglądzie całej gałęzi;
+punkt weryfikacji ręcznej, który by to złapał, nie został wykonany.
+
+Poprawka nakłada `transform: scale()` **na cały element `.ReactCrop`**, a nie na sam
+obraz — i to jest cała różnica względem dema biblioteki. Skalowanie samego obrazu
+zostawiłoby nakładkę z ramką kadru w skali 1:1, rozjechaną z tym, co widać.
+
+Trzy konsekwencje, wszystkie korzystne:
+
+- **Nakładka skaluje się razem z obrazem**, więc ramka jest tam, gdzie ją widać.
+- **`percentCrop` pozostaje nietknięty.** Biblioteka liczy procenty względem prostokąta
+  elementu, a `getBoundingClientRect` zwraca wymiary **po** transformacji. Procenty
+  wychodzą poprawne bez korekty, więc cel pierwotnego D3 — „przeliczenie to jedno
+  mnożenie" — zostaje zachowany. Nie używamy helperów `cropToCanvas`/`cropToImg`, więc
+  ich argument `scale` jest nam niepotrzebny.
+- **Panoramowanie działa.** Sam `transform` nie powiększa pudełka layoutu, więc obszar
+  nie miałby czego przewijać; robi to zewnętrzny kontener o jawnie ustawionym rozmiarze
+  równym rozmiarowi po przeskalowaniu.
+
+Zero nadpisań cudzego stylesheetu. To był argument rozstrzygający przy wyborze między
+tym rozwiązaniem a przebiciem `max-width` z zewnątrz: nadpisania psują się **cicho**
+przy aktualizacji biblioteki i żaden test w tym repozytorium ich nie widzi — czyli
+dokładnie tak, jak zawiodła pierwotna wersja tej decyzji. Błąd w przeliczaniu
+współrzędnych psuje się głośno i da się go objąć testem czystej funkcji.
+
+Osobno: obraz dostaje `max-height`, żeby przy zoomie 1 mieścił się w obszarze. Stara
+biblioteka wpasowywała media w pudełko sama; ta tego nie robi, więc bez tego zdjęcie
+pionowe otwierałoby się przycięte do górnego paska. Na matematykę to nie wpływa —
+procenty są liczone względem wyrenderowanego obrazu, jakikolwiek by nie był.
+
+Znane ograniczenie: biblioteka ustawia `touch-action: none` na obrazie, więc na
+urządzeniu dotykowym nie da się przewinąć powiększonego obrazu palcem. Aplikacja jest
+narzędziem stołowym używanym na desktopie; nie naprawiamy tego.
 
 ### D4 — „Nie ruszałem ramki" rozpoznawane przez flagę, nie przez próg
 
