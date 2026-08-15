@@ -34,7 +34,6 @@ func NewLocalStorage(basePath, baseURL string) (*LocalStorage, error) {
 var AllowedImageTypes = map[string]string{
 	"image/jpeg": ".jpg",
 	"image/png":  ".png",
-	"image/gif":  ".gif",
 	"image/webp": ".webp",
 }
 
@@ -42,14 +41,20 @@ var AllowedImageTypes = map[string]string{
 var AllowedHandoutTypes = map[string]string{
 	"image/jpeg":      ".jpg",
 	"image/png":       ".png",
-	"image/gif":       ".gif",
 	"image/webp":      ".webp",
 	"application/pdf": ".pdf",
 	"text/plain":      ".txt",
 }
 
-// MaxFileSize is the maximum allowed file size (5MB)
-const MaxFileSize = 5 * 1024 * 1024
+// MaxFileSize is the maximum allowed file size (15MB).
+// Images are downscaled client-side before upload, so this is a safety net for
+// requests that bypass the frontend, not the working limit.
+const MaxFileSize = 15 * 1024 * 1024
+
+// MaxMultipartMemory is how much of a multipart request Go keeps in RAM before
+// spilling to temp files. Deliberately NOT derived from MaxFileSize — it is a
+// memory budget, not a size limit, and size is validated separately per file.
+const MaxMultipartMemory = 32 * 1024 * 1024
 
 // MaxMusicFileSize is the maximum allowed music file size (50MB)
 const MaxMusicFileSize = 50 * 1024 * 1024
@@ -65,14 +70,14 @@ var AllowedMusicTypes = map[string]string{
 func ValidateFile(file multipart.File, header *multipart.FileHeader) (string, error) {
 	// Check file size
 	if header.Size > MaxFileSize {
-		return "", fmt.Errorf("file too large: maximum size is 5MB")
+		return "", fmt.Errorf("file too large: maximum size is %dMB", MaxFileSize/(1024*1024))
 	}
 
 	// Check content type
 	contentType := header.Header.Get("Content-Type")
 	ext, ok := AllowedImageTypes[contentType]
 	if !ok {
-		return "", fmt.Errorf("invalid file type: only JPEG, PNG, GIF, and WebP are allowed")
+		return "", fmt.Errorf("invalid file type: only JPEG, PNG, and WebP are allowed")
 	}
 
 	return ext, nil

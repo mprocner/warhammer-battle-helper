@@ -653,13 +653,13 @@ func (h *GameHandler) deleteImageFile(imageUrl string) {
 }
 
 // UploadGameImage handles POST /games/:id/image — sets the game's lobby image (GM only).
-// Accepts multipart form field "image" (JPEG/PNG/GIF/WebP, max 5MB), stores the file
+// Accepts multipart form field "image" (JPEG/PNG/WebP, max 15MB), stores the file
 // in user-files storage and saves its URL on the game document.
 func (h *GameHandler) UploadGameImage(c *gin.Context) {
 	gameID := c.Param("id")
 	userID := mustUserID(c)
 
-	if err := c.Request.ParseMultipartForm(storage.MaxFileSize); err != nil {
+	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}

@@ -22,7 +22,7 @@ type UploadAvatarResponse struct {
 // @Tags avatars
 // @Accept multipart/form-data
 // @Produce json
-// @Param avatar formData file true "Avatar image file (JPEG, PNG, GIF, WebP, max 5MB)"
+// @Param avatar formData file true "Avatar image file (JPEG, PNG, WebP, max 15MB)"
 // @Success 200 {object} UploadAvatarResponse
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -30,8 +30,8 @@ type UploadAvatarResponse struct {
 // @Security BearerAuth
 // @Router /avatars [post]
 func (h *AvatarHandler) UploadAvatar(c *gin.Context) {
-	// Parse multipart form with max 5MB
-	if err := c.Request.ParseMultipartForm(storage.MaxFileSize); err != nil {
+	// Parse multipart form with max storage.MaxMultipartMemory
+	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}
@@ -74,7 +74,7 @@ func (h *AvatarHandler) UploadAvatar(c *gin.Context) {
 // @Summary Get avatar image
 // @Description Retrieves an avatar image by filename
 // @Tags avatars
-// @Produce image/jpeg,image/png,image/gif,image/webp
+// @Produce image/jpeg,image/png,image/webp
 // @Param filename path string true "Avatar filename"
 // @Success 200 {file} binary "Avatar image"
 // @Failure 404 {object} map[string]string "Avatar not found"
