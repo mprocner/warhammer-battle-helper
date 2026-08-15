@@ -73,7 +73,13 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     }
   };
 
-  return (
+  // Portaled to document.body: AvatarUpload's five mount points sit inside
+  // popups that create their own stacking contexts (the character sheet
+  // popup's inline z-index from WindowManagerContext, PlayerSettingsPopup's
+  // 9999), which clamp this dialog's z-index regardless of its own value.
+  // React events still bubble through the React tree, not the DOM tree, so
+  // AvatarUpload's stopPropagation wrapper keeps working on the portaled node.
+  return createPortal(
     <div className="image-crop-modal__overlay">
       <div className="image-crop-modal">
         <h4 className="image-crop-modal__title">{t('imageCrop.title')}</h4>
@@ -132,7 +138,8 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

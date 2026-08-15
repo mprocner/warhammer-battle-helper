@@ -17,6 +17,12 @@ export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
 // in WebP, and every player re-downloads scene images on each scene switch.
 export const PNG_MAX_PIXELS = 1024 * 1024;
 
+// Matches the server's MaxFileSize (internal/storage/local.go). Passing a file
+// through untouched skips the re-encode that would have shrunk it, so without
+// this an image UNDER the pixel limit can be rejected by the server while a
+// larger one sails through after being downscaled.
+export const MAX_PASSTHROUGH_BYTES = 15 * 1024 * 1024;
+
 // Whether a path shows the cropper is decided by the call site, not by the
 // preset — FilesTab uses libraryImage both ways (bulk upload without the modal,
 // single-file crop with it), so a `crop` flag here would be dead weight.
@@ -49,8 +55,15 @@ export function resolveAspect(preset, naturalWidth, naturalHeight) {
 // refuses to confirm until it has a crop area. Nothing here enforces that —
 // pass such a preset a null cropArea and a wrongly-shaped image sails through
 // untouched. Presets with aspect: null impose no shape, so they are unaffected.
-export function shouldPassthrough(preset, cropArea, srcW, srcH) {
+//
+// Also bounded by MAX_PASSTHROUGH_BYTES: the pixel check alone only predicts
+// what re-encoding WOULD do, not what the original file already weighs. A
+// photographic PNG can sit well under maxEdge in pixels yet far over the
+// server's size limit — re-encoding is exactly what would have shrunk it, so
+// passthrough must not skip that step once the file is this large.
+export function shouldPassthrough(preset, cropArea, srcW, srcH, srcBytes) {
   if (cropArea) return false;
+  if (srcBytes >= MAX_PASSTHROUGH_BYTES) return false;
   return Math.max(srcW, srcH) <= preset.maxEdge;
 }
 
@@ -109,7 +122,7 @@ export async function processImage(file, preset, cropArea = null) {
 
   const source = cropArea || { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
 
-  if (shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height)) {
+  if (shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height, file.size)) {
     bitmap.close();
     return file;
   }

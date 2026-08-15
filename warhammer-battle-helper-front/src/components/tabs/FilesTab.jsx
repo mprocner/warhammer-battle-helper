@@ -320,6 +320,12 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
 
   // Handle file upload (from the picker or an external drag)
   const handleUpload = async (fileList) => {
+    // Single choke point for both callers (click picker and drag-drop): a
+    // second overlapping batch would share `progress` and `error` state with
+    // the first — one batch's finally clears the spinner while the other is
+    // still processing, and one batch's error message erases the other's.
+    if (isUploading) return;
+
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const picked = Array.from(fileList).filter(file => validTypes.includes(file.type));
 

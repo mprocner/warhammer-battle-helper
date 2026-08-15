@@ -2,12 +2,15 @@ import {
   PRESETS,
   PNG_MAX_PIXELS,
   GAME_IMAGE_ASPECT,
+  MAX_PASSTHROUGH_BYTES,
   computeTargetSize,
   resolveAspect,
   shouldPassthrough,
   sourceMayHaveAlpha,
   pickEncoding,
 } from './imageProcessing';
+
+const SMALL_BYTES = 1024;
 
 describe('computeTargetSize', () => {
   it('scales a landscape image down by its longer edge', () => {
@@ -53,25 +56,25 @@ describe('shouldPassthrough', () => {
   const preset = PRESETS.libraryImage;
 
   it('passes through an image under the limit with no crop', () => {
-    expect(shouldPassthrough(preset, null, 300, 300)).toBe(true);
+    expect(shouldPassthrough(preset, null, 300, 300, SMALL_BYTES)).toBe(true);
   });
 
   it('passes through an image exactly at the limit', () => {
-    expect(shouldPassthrough(preset, null, 4096, 4096)).toBe(true);
+    expect(shouldPassthrough(preset, null, 4096, 4096, SMALL_BYTES)).toBe(true);
   });
 
   it('does not pass through when a crop area is given', () => {
-    expect(shouldPassthrough(preset, { x: 0, y: 0, width: 250, height: 250 }, 300, 300)).toBe(false);
+    expect(shouldPassthrough(preset, { x: 0, y: 0, width: 250, height: 250 }, 300, 300, SMALL_BYTES)).toBe(false);
   });
 
   it('does not pass through an image over the limit', () => {
-    expect(shouldPassthrough(preset, null, 10000, 10000)).toBe(false);
+    expect(shouldPassthrough(preset, null, 10000, 10000, SMALL_BYTES)).toBe(false);
   });
 
   it('never passes through an aspect-bearing preset once a crop area exists', () => {
     const area = { x: 0, y: 0, width: 300, height: 300 };
-    expect(shouldPassthrough(PRESETS.avatar, area, 400, 400)).toBe(false);
-    expect(shouldPassthrough(PRESETS.gameImage, area, 400, 400)).toBe(false);
+    expect(shouldPassthrough(PRESETS.avatar, area, 400, 400, SMALL_BYTES)).toBe(false);
+    expect(shouldPassthrough(PRESETS.gameImage, area, 400, 400, SMALL_BYTES)).toBe(false);
   });
 
   it('would pass a wrongly-shaped image through if the crop area were missing', () => {
@@ -79,7 +82,18 @@ describe('shouldPassthrough', () => {
     // not square, yet passes the avatar preset untouched. Safe only because the
     // crop dialog never confirms without a crop area. If that guard is ever
     // removed, this test is the record of what breaks.
-    expect(shouldPassthrough(PRESETS.avatar, null, 500, 300)).toBe(true);
+    expect(shouldPassthrough(PRESETS.avatar, null, 500, 300, SMALL_BYTES)).toBe(true);
+  });
+
+  it('does not pass through a file at or over the byte ceiling, even under the pixel limit', () => {
+    // A photographic PNG well under maxEdge in pixels can still weigh more
+    // than the server accepts — passthrough must not skip the re-encode that
+    // would have shrunk it.
+    expect(shouldPassthrough(preset, null, 300, 300, MAX_PASSTHROUGH_BYTES)).toBe(false);
+  });
+
+  it('passes through a file just under the byte ceiling', () => {
+    expect(shouldPassthrough(preset, null, 300, 300, MAX_PASSTHROUGH_BYTES - 1)).toBe(true);
   });
 });
 
