@@ -47,11 +47,12 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     setCroppedAreaPixels(areaPixels);
   }, []);
 
-  // react-easy-crop reports the decoded image's real pixel size once it has
-  // loaded it, which for a null-aspect preset is the ratio resolveAspect needs.
-  // Until this fires, mediaAspect is null and resolveAspect falls back to 1 —
-  // harmless, since componentDidUpdate recomputes the crop size the moment the
-  // aspect prop changes.
+  // react-easy-crop emits its first croppedAreaPixels BEFORE calling
+  // onMediaLoaded, so that first emission is computed at the fallback
+  // aspect rather than the source's. The confirm guard does not catch it —
+  // croppedAreaPixels is already set. What makes it safe is that changing
+  // the aspect prop synchronously recomputes and re-emits the crop area,
+  // sub-frame, so the stale rectangle is replaced before anyone can click.
   const onMediaLoaded = useCallback((mediaSize) => {
     setMediaAspect(mediaSize.naturalWidth / mediaSize.naturalHeight);
   }, []);

@@ -654,6 +654,11 @@
   color: #8a7d6a;
 }
 
+.general-tab__game-image-hint--error {
+  color: #8b2f2f;
+  font-style: normal;
+}
+
 /* Map settings — segmented control (snap/free placement, distance metric).
    Segmented over <select> on purpose: the active choice is visible at a glance
    during a live session. */

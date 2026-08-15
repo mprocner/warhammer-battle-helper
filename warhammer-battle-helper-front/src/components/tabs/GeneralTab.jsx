@@ -324,7 +324,7 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
               )}
             </div>
             <p className="general-tab__game-image-hint">{t('settings.gameImageHint')}</p>
-            {imageError && <p className="general-tab__game-image-hint">{imageError}</p>}
+            {imageError && <p className="general-tab__game-image-hint general-tab__game-image-hint--error">{imageError}</p>}
             <input
               ref={fileInputRef}
               type="file"
