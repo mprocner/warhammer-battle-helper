@@ -194,7 +194,7 @@ export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
 export const PNG_MAX_PIXELS = 1024 * 1024;
 
 export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
-export function shouldPassthrough(file, preset, cropArea) -> boolean
+export function shouldPassthrough(preset, cropArea, srcW, srcH) -> boolean
 export function sourceMayHaveAlpha(file) -> boolean
 export function pickEncoding(width, height) -> { type, quality }
 export async function processImage(file, preset, cropArea = null) -> File
@@ -205,14 +205,15 @@ eksportuje stałą domenową, co jest odwróconą zależnością.
 
 Kroki `processImage`:
 
-1. `shouldPassthrough` — jeśli nie ma `cropArea` i obraz mieści się w `maxEdge`,
-   zwróć oryginalny `File`. Bez tego bezstratny PNG 900 px przechodziłby stratną
-   konwersję bez powodu.
-2. Strażnik na wejściu — `file.size > MAX_SOURCE_BYTES` kończy się błędem, **zanim
-   cokolwiek zostanie zdekodowane** (uzasadnienie niżej).
-3. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
+1. Strażnik na wejściu — `file.size > MAX_SOURCE_BYTES` kończy się błędem, **zanim
+   cokolwiek zostanie zdekodowane** (uzasadnienie niżej). Działa na bajtach, więc jako
+   jedyny sprawdzian może wyprzedzić dekodowanie.
+2. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
    konieczny — zdjęcia z telefonu noszą obrót w EXIF, a `drawImage` bez niego rysuje
    avatar położony na boku.
+3. `shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height)` — jeśli nie ma
+   `cropArea` i obraz mieści się w `maxEdge`, `bitmap.close()` i zwróć **oryginalny
+   `File`**. Bez tego bezstratny PNG 900 px przechodziłby stratną konwersję bez powodu.
 4. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
    powiększamy; rozciągnięcie tokena 200 px do 4096 px to sam szum i megabajty.
 5. `ctx.imageSmoothingQuality = 'high'` przed rysowaniem. Wartość domyślna to `'low'`,
@@ -223,8 +224,10 @@ Kroki `processImage`:
 8. `pickEncoding(targetW, targetH)` i `canvas.toBlob` z wybranym typem oraz jakością;
    nazwa `<podstawa>.png` albo `<podstawa>.webp`, zgodnie z tym, co wyszło.
 
-Krok 1 jest sprawdzany przed krokiem 3, więc plik przechodzący bez zmian nigdy nie
-trafia na canvas ani nie jest dekodowany.
+Sprawdzenie z kroku 3 **musi** wypaść po dekodowaniu, bo potrzebuje wymiarów obrazu,
+a wymiarów nie da się w przeglądarce poznać taniej — i `createImageBitmap`, i
+`new Image()` dekodują całość. Passthrough oszczędza więc ponowne **kodowanie**, nie
+dekodowanie; to kodowanie jest jedynym krokiem stratnym, więc korzyść pozostaje.
 
 **Dlaczego strażnik i `close()`.** `createImageBitmap` rozpakowuje obraz do surowego
 RGBA, niezależnie od tego jak dobrze był skompresowany na dysku. PNG 10000×10000 to
@@ -343,8 +346,9 @@ do czystych funkcji, które są testowane:
 
 - `computeTargetSize(w, h, maxEdge)` — skalowanie dla orientacji poziomej i pionowej,
   brak powiększania, kwadrat, wymiar dokładnie równy limitowi;
-- `shouldPassthrough(file, preset, cropArea)` — prawda dla obrazu poniżej limitu bez
-  kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit;
+- `shouldPassthrough(preset, cropArea, srcW, srcH)` — prawda dla obrazu poniżej limitu
+  bez kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit,
+  prawda dla wymiarów dokładnie równych limitowi;
 - `sourceMayHaveAlpha(file)` — prawda dla `image/png` i `image/webp`, fałsz dla
   `image/jpeg`; steruje tym, czy ścieżce zapasowej z D3 wolno zejść do JPEG;
 - `pickEncoding(w, h)` — PNG dokładnie na progu `PNG_MAX_PIXELS`, WebP jeden piksel
