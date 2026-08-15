@@ -889,7 +889,10 @@
     "fileMoveError": "Nie udało się przenieść pliku",
     "renameFile": "Zmień nazwę pliku",
     "fileRenameError": "Nie udało się zmienić nazwy pliku",
-    "root": "Główny"
+    "root": "Główny",
+    "cropFile": "Przytnij obraz",
+    "croppedSuffix": "przycięty",
+    "cropLoadFailed": "Nie udało się wczytać tego pliku do kadrowania."
   },
   "dice": {
     "label": "K{{sides}}",

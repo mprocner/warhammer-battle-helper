@@ -13,6 +13,7 @@ import {
 import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, renameFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
 import { addSceneImage } from '../../api/scenes';
 import ConfirmModal from '../common/ConfirmModal';
+import ImageCropModal from '../common/ImageCropModal';
 import DraggableFileItem from './files/DraggableFileItem';
 import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
@@ -62,6 +63,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const [addToSceneFile, setAddToSceneFile] = useState(null);
   const [addToSceneLayer, setAddToSceneLayer] = useState('background');
+  const [cropTarget, setCropTarget] = useState(null); // { file, source } — source is the fetched File
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, file: null, message: '', isLoading: false });
 
   useEffect(() => {
@@ -95,6 +97,54 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     } catch (err) {
       console.error('Failed to add image to scene:', err);
       setError(t('scenes.addImageError'));
+    }
+  };
+
+  // Cropping an existing library file writes a COPY. SceneImage references files
+  // by fileUrl (not fileId), and one file can be used by scenes across several
+  // games, so overwriting in place would mean rewriting every reference plus
+  // cache-busting a UUID filename. The copy costs nothing on the backend — it's
+  // an ordinary uploadFiles call with the same folderId.
+  const handleCropFile = async (file) => {
+    setError('');
+    try {
+      const res = await fetch(resolveFileUrl(file.fileUrl));
+      const blob = await res.blob();
+      setCropTarget({ file, source: new File([blob], file.name, { type: blob.type }) });
+    } catch (err) {
+      console.error('Failed to load file for cropping:', err);
+      setError(t('files.cropLoadFailed'));
+    }
+  };
+
+  const handleCropConfirmed = async (processed) => {
+    const original = cropTarget.file;
+    setCropTarget(null);
+    setIsUploading(true);
+    setError('');
+    try {
+      const base = original.name.replace(/\.[^.]+$/, '');
+      // The extension comes from the processed file, not the original: a large
+      // crop is re-encoded as .webp and a small one as .png, so the source
+      // extension would be wrong more often than not.
+      const ext = processed.name.slice(processed.name.lastIndexOf('.'));
+      const named = new File(
+        [processed],
+        `${base} (${t('files.croppedSuffix')})${ext}`,
+        { type: processed.type }
+      );
+      const result = await uploadFiles([named], currentFolderId);
+      if (result.files && result.files.length > 0) {
+        setFiles(prev => [...prev, ...result.files]);
+      }
+      if (result.errors && result.errors.length > 0) {
+        setError(result.errors.join(', '));
+      }
+    } catch (err) {
+      console.error('Failed to upload cropped file:', err);
+      setError(t('files.uploadError'));
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -603,6 +653,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
               onAddToScene={gameId && currentSceneId ? (file) => { setAddToSceneFile(file); setAddToSceneLayer(imageEditLayer); } : null}
+              onCrop={handleCropFile}
               onRename={startRenameFile}
               renamingFile={renamingFile}
               renameFileValue={renameFileValue}
@@ -724,6 +775,15 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
         confirmLabel={t('common.delete')}
         isLoading={deleteConfirm.isLoading}
       />
+
+      {cropTarget && (
+        <ImageCropModal
+          file={cropTarget.source}
+          preset={PRESETS.libraryImage}
+          onConfirm={handleCropConfirmed}
+          onCancel={() => setCropTarget(null)}
+        />
+      )}
 
       {/* Drag overlay */}
       <DragOverlay dropAnimation={null}>

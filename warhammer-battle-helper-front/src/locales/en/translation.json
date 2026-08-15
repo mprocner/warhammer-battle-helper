@@ -889,7 +889,10 @@
     "fileMoveError": "Failed to move file",
     "renameFile": "Rename file",
     "fileRenameError": "Failed to rename file",
-    "root": "Root"
+    "root": "Root",
+    "cropFile": "Crop image",
+    "croppedSuffix": "cropped",
+    "cropLoadFailed": "Could not load this file for cropping."
   },
   "dice": {
     "label": "D{{sides}}",
