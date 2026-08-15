@@ -120,13 +120,15 @@ jest polem presetu.
 |---|---|---|---|
 | `avatar` | 512 px | 1:1 wymuszone | tak |
 | `gameImage` | 800 px | `GAME_IMAGE_ASPECT` (5/4) | tak |
-| `handout` | 2048 px | swobodne | tak |
-| `libraryImage` | 4096 px | swobodne | nie (patrz D5) |
+| `handout` | 2048 px | jak źródło | tak |
+| `libraryImage` | 4096 px | jak źródło | nie (patrz D5) |
 
 4096 px dla map to jakość porównywalna z Foundry VTT, ostra przy mocnym zoomie.
 W WebP q0.85 to zwykle 1,5–3 MB.
 
-Kolumna „Kadrownik" opisuje zachowanie miejsca wywołania, nie pole presetu.
+Kolumna „Kadrownik" opisuje zachowanie miejsca wywołania, nie pole presetu. „Jak
+źródło" znaczy `aspect: null` w preseście i proporcje wzięte z wgranego obrazu —
+szczegóły i powód w opisie `ImageCropModal` niżej.
 
 ### D5 — Kadrowanie w bibliotece jako ikona przy pliku
 
@@ -271,8 +273,27 @@ przezroczystości po cichu.
 Propy: `file`, `preset`, `onConfirm(processedFile)`, `onCancel`.
 
 W środku `react-easy-crop` ze stanem `crop` / `zoom` / `croppedAreaPixels` — kod
-przeniesiony z `GeneralTab.jsx:63–118` bez zmian w logice. `aspect={preset.aspect ??
-undefined}` — `undefined` oznacza w `react-easy-crop` swobodne proporcje.
+przeniesiony z `GeneralTab.jsx:63–118` bez zmian w logice.
+
+**Proporcje przy presecie bez `aspect`.** Pierwotnie napisałem tu, że wystarczy podać
+`aspect={preset.aspect ?? undefined}`, bo `undefined` oznacza w `react-easy-crop`
+swobodne proporcje. To było błędne i wyszło dopiero w przeglądzie całej gałęzi.
+Biblioteka ma `Cropper.defaultProps = { aspect: 4 / 3 }`, a `defaultProps` klas nadal
+działa w React 19 — więc `undefined` nie wyłącza proporcji, tylko włącza 4:3. Handouty
+i pliki z biblioteki byłyby po cichu kadrowane do 4:3, co dla mapy 16:9 oznacza utratę
+treści bez żadnego sygnału.
+
+`react-easy-crop` w ogóle nie ma trybu w pełni swobodnego. Preset bez własnego
+`aspect` bierze więc **proporcje samego obrazu źródłowego**, odczytane z `onMediaLoaded`:
+
+```js
+resolveAspect(preset, naturalWidth, naturalHeight)
+```
+
+Dzięki temu ramka startowa obejmuje cały obraz, czyli zachodzi to, co „swobodne" miało
+w praktyce znaczyć: zatwierdzenie bez dotykania niczego zwraca obraz w całości.
+Użytkownik może przyciąć proporcjonalny wycinek, ale nie zmieni proporcji kadru —
+ograniczenie biblioteki, przyjęte świadomie.
 
 Kadrownik startuje z ramką obejmującą cały obraz, więc „nie chcę przycinać" to
 zatwierdzenie bez dotykania czegokolwiek.
