@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ImageCropModal from './ImageCropModal';
 import { PRESETS } from '../../utils/imageProcessing';
@@ -128,6 +128,36 @@ test('maps a too-large source to its own message', async () => {
 
   expect(await screen.findByText('imageCrop.sourceTooLarge')).toBeInTheDocument();
   expect(onConfirm).not.toHaveBeenCalled();
+});
+
+test('stays busy until an async onConfirm settles', async () => {
+  processImage.mockResolvedValue(new File(['y'], 'map.webp', { type: 'image/webp' }));
+
+  let releaseUpload;
+  const onConfirm = jest.fn(() => new Promise((resolve) => { releaseUpload = resolve; }));
+
+  render(
+    <ImageCropModal
+      file={sourceFile()}
+      preset={PRESETS.libraryImage}
+      onConfirm={onConfirm}
+      onCancel={jest.fn()}
+    />
+  );
+
+  const save = screen.getByRole('button', { name: 'common.save' });
+  const cancel = screen.getByRole('button', { name: 'common.cancel' });
+
+  await userEvent.click(save);
+  await waitFor(() => expect(onConfirm).toHaveBeenCalled());
+
+  // The upload has not resolved yet. Both buttons must still be locked.
+  expect(save).toBeDisabled();
+  expect(cancel).toBeDisabled();
+
+  await act(async () => { releaseUpload(); });
+
+  await waitFor(() => expect(save).not.toBeDisabled());
 });
 
 test('cancel closes without processing', async () => {

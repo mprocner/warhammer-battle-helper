@@ -48,7 +48,11 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     setBusy(true);
     setError('');
     try {
-      onConfirm(await processImage(file, preset, croppedAreaPixels));
+      // onConfirm is awaited, not fired and forgotten: every call site uploads
+      // inside it, and busy is what keeps Save and Cancel disabled. Without the
+      // await they re-enable while the request is still in flight, and a second
+      // click starts a second concurrent upload.
+      await onConfirm(await processImage(file, preset, croppedAreaPixels));
     } catch (err) {
       const reason = err instanceof ImageProcessingError ? err.reason : null;
       setError(t(ERROR_KEYS[reason] || 'imageCrop.processingFailed'));
