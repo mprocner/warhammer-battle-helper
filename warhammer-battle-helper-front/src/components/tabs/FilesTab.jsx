@@ -255,6 +255,11 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     }
   };
 
+  // Both the client-side processing loop and the server's per-file errors array
+  // can fail parts of one batch. They used to each call setError, so whichever
+  // landed second erased the other and the user only heard half the story.
+  const joinProblems = (problems) => problems.join(' — ');
+
   // Handle file upload (from the picker or an external drag)
   const handleUpload = async (fileList) => {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -274,6 +279,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     // and lets the counter render.
     const prepared = [];
     const failed = [];
+    const problems = [];
     for (let i = 0; i < picked.length; i++) {
       setProgress({ current: i + 1, total: picked.length });
       try {
@@ -285,10 +291,11 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     setProgress(null);
 
     if (failed.length > 0) {
-      setError(t('files.processingFailed', { names: failed.join(', ') }));
+      problems.push(t('files.processingFailed', { names: failed.join(', ') }));
     }
 
     if (prepared.length === 0) {
+      setError(joinProblems(problems));
       setIsUploading(false);
       return;
     }
@@ -301,11 +308,14 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
       }
 
       if (result.errors && result.errors.length > 0) {
-        setError(result.errors.join(', '));
+        problems.push(result.errors.join(', '));
       }
+
+      setError(joinProblems(problems));
     } catch (err) {
       console.error('Failed to upload files:', err);
-      setError(t('files.uploadError'));
+      problems.push(t('files.uploadError'));
+      setError(joinProblems(problems));
     } finally {
       setIsUploading(false);
     }
