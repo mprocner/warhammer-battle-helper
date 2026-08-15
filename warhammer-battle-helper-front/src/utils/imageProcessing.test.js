@@ -43,6 +43,20 @@ describe('shouldPassthrough', () => {
   it('does not pass through an image over the limit', () => {
     expect(shouldPassthrough(preset, null, 10000, 10000)).toBe(false);
   });
+
+  it('never passes through an aspect-bearing preset once a crop area exists', () => {
+    const area = { x: 0, y: 0, width: 300, height: 300 };
+    expect(shouldPassthrough(PRESETS.avatar, area, 400, 400)).toBe(false);
+    expect(shouldPassthrough(PRESETS.gameImage, area, 400, 400)).toBe(false);
+  });
+
+  it('would pass a wrongly-shaped image through if the crop area were missing', () => {
+    // Pins the invariant documented on shouldPassthrough: this 500x300 image is
+    // not square, yet passes the avatar preset untouched. Safe only because the
+    // crop dialog never confirms without a crop area. If that guard is ever
+    // removed, this test is the record of what breaks.
+    expect(shouldPassthrough(PRESETS.avatar, null, 500, 300)).toBe(true);
+  });
 });
 
 describe('sourceMayHaveAlpha', () => {
