@@ -1440,6 +1440,11 @@ Dodaj handlery:
     setError('');
     try {
       const res = await fetch(resolveFileUrl(file.fileUrl));
+      // fetch only rejects on a network failure; a 404 for a server-side deleted
+      // file resolves like any other response, and blob() would happily wrap the
+      // error page. Without this the dialog opens on garbage the user cannot
+      // confirm and cannot diagnose.
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       const blob = await res.blob();
       setCropTarget({ file, source: new File([blob], file.name, { type: blob.type }) });
     } catch (err) {
