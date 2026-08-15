@@ -33,10 +33,11 @@ export function computeTargetSize(srcW, srcH, maxEdge) {
   return { width: Math.round(srcW * scale), height: Math.round(srcH * scale) };
 }
 
-// Deliberately blind to preset.aspect. Presets that carry one (avatar,
-// gameImage) are only ever used behind the crop dialog, which will not confirm
-// without a crop area — so cropArea is non-null for them and the passthrough
-// branch is unreachable. Presets with aspect: null impose no shape to violate.
+// Deliberately blind to preset.aspect, which puts a requirement on callers:
+// a preset carrying an aspect MUST only be used behind a crop dialog that
+// refuses to confirm until it has a crop area. Nothing here enforces that —
+// pass such a preset a null cropArea and a wrongly-shaped image sails through
+// untouched. Presets with aspect: null impose no shape, so they are unaffected.
 export function shouldPassthrough(preset, cropArea, srcW, srcH) {
   if (cropArea) return false;
   return Math.max(srcW, srcH) <= preset.maxEdge;
