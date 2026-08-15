@@ -1,0 +1,267 @@
+# FEATURE-132 — Kadrowanie i skalowanie obrazów przy uploadzie
+
+Data: 2026-08-15
+
+## Problem
+
+Kadrowanie obrazu istnieje dziś w jednym miejscu — przy ustawianiu kafelka gry w
+`GeneralTab.jsx`. Pozostałe trzy ścieżki uploadu obrazów (avatar postaci, obrazek
+handoutu, biblioteka plików) wysyłają plik surowy, bez kadrowania i bez skalowania.
+Efekty:
+
+- avatar wgrany jako portret w pionie zostaje przycięty automatycznie i losowo przez
+  CSS, bez kontroli użytkownika;
+- mapa 6000×4000 px trafia na serwer w oryginale albo odbija się od limitu 5 MB;
+- logika kadrowania jest zamknięta w `GeneralTab` i nie da się jej użyć ponownie.
+
+## Zakres
+
+W zakresie: cztery ścieżki uploadu obrazów — kafelek gry, avatar postaci, obrazek
+handoutu, biblioteka plików (`FilesTab`). Poza zakresem: upload muzyki (limit 50 MB
+zostaje bez zmian), PDF i TXT w handoutach (nie da się ich skalować).
+
+## Decyzje
+
+### D1 — Kadrowanie przy pojedynczym obrazie, samo skalowanie przy wielu
+
+Zasada obowiązująca w całej aplikacji: **pojedynczy obraz otwiera kadrownik, wiele
+obrazów naraz przechodzi tylko przez skalowanie.**
+
+Kadrowanie każdego z dwudziestu plików po kolei jest męczarnią, a `FilesTab` to
+biblioteka assetów — mapy wstawia się na scenę, która ma własny transform, więc
+kadrowanie przy wgrywaniu rzadko jest potrzebne. Skalowanie jest potrzebne zawsze.
+
+Kadrowanie w bibliotece pozostaje dostępne po fakcie, jako osobna akcja na pliku
+(D5).
+
+### D2 — Kadrowanie pliku w bibliotece tworzy kopię
+
+Przycięcie pliku leżącego już w bibliotece zapisuje **nowy** plik obok oryginału.
+Oryginał zostaje nietknięty, sceny go używające działają dalej.
+
+Alternatywa — nadpisanie w miejscu — została odrzucona jako nieproporcjonalnie droga.
+`SceneImage` (`models/Game.go:431`) wskazuje plik przez `FileURL` (string), nie przez
+`fileId`, a jeden plik bywa używany w wielu scenach i wielu grach (istnieje endpoint
+`GET /files/:fileId/usage` właśnie po to). Nadpisanie wymagałoby nowego endpointu na
+podmianę treści, cache-bustingu (nazwa pliku to UUID, więc ten sam URL oznacza stary
+obraz w cache przeglądarki), przeliczenia `width`/`height` w każdej `SceneImage`
+wskazującej ten URL we wszystkich grach oraz modala ostrzegawczego. Kopia nie wymaga
+żadnej zmiany w backendzie — to zwykłe `POST /files/upload` z tym samym `folderId`.
+
+Przyjęty koszt: duplikaty w bibliotece i to, że scena dalej trzyma stary obraz.
+Akceptowalny, bo główna ścieżka to „przytnij zanim wstawisz".
+
+### D3 — Format wyjściowy: WebP
+
+Przetworzony obraz wychodzi jako `image/webp`, jakość 0.85.
+
+Obecny `cropImageToBlob` w `GeneralTab.jsx:38` wypluwa zawsze JPEG. Dla kafelka gry to
+działa, ale JPEG nie ma kanału alpha — token z przezroczystym tłem wgrany przez
+`FilesTab` dostałby czarne albo białe tło. WebP rozwiązuje konflikt „przezroczystość
+kontra rozmiar" naraz: kompresuje jak JPEG, zachowuje alpha jak PNG. Backend już
+akceptuje `image/webp` (`storage/local.go:38`).
+
+Zapasowa ścieżka: jeśli `canvas.toBlob` zwróci `null` dla WebP, powtarzamy z
+`image/jpeg` q0.85.
+
+### D4 — Limity rozmiaru per zastosowanie
+
+Jeden globalny limit pikseli nie działa: avatar wyświetlany w kółku nie potrzebuje
+więcej niż 512 px, a mapa bitewna przy 512 px to rozmazana plama przy zoomie. Limit
+jest polem presetu.
+
+| Preset | Dłuższa krawędź | Proporcje | Kadrownik |
+|---|---|---|---|
+| `avatar` | 512 px | 1:1 wymuszone | tak |
+| `gameImage` | 800 px | `GAME_IMAGE_ASPECT` (5/4) | tak |
+| `handout` | 2048 px | swobodne | tak |
+| `libraryImage` | 4096 px | swobodne | nie (patrz D5) |
+
+4096 px dla map to jakość porównywalna z Foundry VTT, ostra przy mocnym zoomie.
+W WebP q0.85 to zwykle 1,5–3 MB.
+
+### D5 — Kadrowanie w bibliotece jako ikona przy pliku
+
+`DraggableFileItem.jsx:83` ma już rząd ikon (dodaj do sceny / zmień nazwę / usuń).
+Kadrowanie dochodzi jako czwarta ikona `CropIcon`. Menu kontekstowe pod prawym
+przyciskiem zostało odrzucone — wprowadzałoby nowy mechanizm (portal, pozycjonowanie,
+zamykanie na klik poza obszarem) dla jednej akcji, przy istniejącym i działającym
+wzorcu obok.
+
+### D6 — Limit rozmiaru pliku: 5 MB → 15 MB
+
+`storage.MaxFileSize` rośnie z 5 MB do 15 MB.
+
+5 MB było kalibrowane na czasy, gdy klient wysyłał plik surowy — limit służył za
+hamulec przed wgraniem zdjęcia prosto z aparatu. Po wprowadzeniu skalowania po stronie
+klienta jego rola się zmienia: staje się siatką bezpieczeństwa na wypadek ominięcia
+frontendu i strzału prosto w API. Siatka bezpieczeństwa może być luźniejsza.
+
+Przy 4096 px mapa rysowana ręcznie, z dużą ilością detalu i tekstur, kompresuje się
+gorzej niż fotografia i potrafi dobić do 4–6 MB. Przy limicie 5 MB trafiałaby w ścianę
+losowo, zależnie od „szumności" obrazka — błąd nie do przewidzenia po obejrzeniu pliku.
+
+Ta sama stała obsługuje handouty (`HandoutHandler.go:35`), gdzie siedzi PDF, którego
+nie da się przeskalować. Zeskanowany handout ponad 5 MB to realny problem dzisiaj, więc
+podniesienie pomaga w obu miejscach naraz. Limit muzyki (50 MB) bez zmian.
+
+### D7 — GIF zablokowany przy uploadzie
+
+`image/gif` znika z list dozwolonych typów uploadu.
+
+Canvas widzi tylko pierwszą klatkę, więc przepuszczenie animowanego GIF-a przez
+skalowanie zamieniłoby go w obrazek statyczny. Wyjątek („GIF przechodzi nietknięty")
+kosztowałby gałąź w `processImage`, ukrywanie ikony kadrowania w `DraggableFileItem`
+oraz plik omijający limit `maxEdge` — animowany GIF 3000 px szedłby na serwer
+nieprzeskalowany. Blokada wejścia usuwa to wszystko naraz i zostawia pipeline z jedną
+ścieżką.
+
+Statyczny GIF nie jest przy tym niczego wart: 256 kolorów i kompresja gorsza od WebP
+o rząd wielkości. Tracimy wyłącznie animowane tokeny — sztuczkę lubianą w Foundry
+i Roll20, niszową i możliwą do przywrócenia później osobnym ficzerem.
+
+Istniejące dane pozostają sprawne. `GetFile` (`FileHandler.go:576`) bierze
+`contentType` ze `Storage.Get`, czyli z pliku na dysku, i nie zagląda w listy
+dozwolonych typów — te filtrują wyłącznie upload. GIF-y wgrane wcześniej dalej się
+wyświetlają.
+
+Przyjęte ograniczenie: animowany WebP ma ten sam problem, a nie jest blokowany, bo WebP
+to nasz format wyjściowy. Taki plik przejdzie przez canvas i wyjdzie jako pojedyncza
+klatka. Skutek widać natychmiast w miniaturze biblioteki, więc jest to widoczna
+niespodzianka, nie cicha utrata danych.
+
+## Architektura
+
+### Warstwa czysta — `src/utils/imageProcessing.js`
+
+Bez Reacta, bez `fetch`, bez i18n.
+
+```js
+export const PRESETS = {
+  avatar:       { maxEdge: 512,  aspect: 1,                 crop: true  },
+  gameImage:    { maxEdge: 800,  aspect: GAME_IMAGE_ASPECT, crop: true  },
+  handout:      { maxEdge: 2048, aspect: null,              crop: true  },
+  libraryImage: { maxEdge: 4096, aspect: null,              crop: false },
+};
+
+export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
+export function shouldPassthrough(file, preset, cropArea) -> boolean
+export async function processImage(file, preset, cropArea = null) -> File
+```
+
+`GAME_IMAGE_ASPECT` przenosi się tutaj z `GeneralTab.jsx:28`. Dziś komponent widoku
+eksportuje stałą domenową, co jest odwróconą zależnością.
+
+Kroki `processImage`:
+
+1. `shouldPassthrough` — jeśli nie ma `cropArea` i obraz mieści się w `maxEdge`,
+   zwróć oryginalny `File`. Bez tego bezstratny PNG 900 px przechodziłby stratną
+   konwersję bez powodu.
+2. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
+   konieczny — zdjęcia z telefonu noszą obrót w EXIF, a `drawImage` bez niego rysuje
+   avatar położony na boku.
+3. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
+   powiększamy; rozciągnięcie tokena 200 px do 4096 px to sam szum i megabajty.
+4. `drawImage` z prostokątem źródłowym `cropArea` albo całym obrazem.
+5. `canvas.toBlob(cb, 'image/webp', 0.85)`, nazwa `<podstawa>.webp`.
+
+Krok 1 jest sprawdzany przed krokiem 2, więc plik przechodzący bez zmian nigdy nie
+trafia na canvas.
+
+### Warstwa UI — `src/components/common/ImageCropModal.jsx`
+
+Propy: `file`, `preset`, `onConfirm(processedFile)`, `onCancel`.
+
+W środku `react-easy-crop` ze stanem `crop` / `zoom` / `croppedAreaPixels` — kod
+przeniesiony z `GeneralTab.jsx:63–118` bez zmian w logice. `aspect={preset.aspect ??
+undefined}` — `undefined` oznacza w `react-easy-crop` swobodne proporcje.
+
+Kadrownik startuje z ramką obejmującą cały obraz, więc „nie chcę przycinać" to
+zatwierdzenie bez dotykania czegokolwiek.
+
+Style przenoszą się z `GeneralTab.css:658–716` do nowego `ImageCropModal.css`
+z prefiksem `.image-crop-modal` zamiast `.game-image-cropper`. Stare klasy i stary kod
+kadrowania w `GeneralTab` znikają w tej samej zmianie.
+
+### Miejsca wywołania
+
+| Plik | Zmiana |
+|---|---|
+| `GeneralTab.jsx` | Traci własny kadrownik i `cropImageToBlob`. Zostaje `<ImageCropModal preset={PRESETS.gameImage}>` plus wysyłka. |
+| `AvatarUpload.jsx` | Nowy stan `pickedFile`. Po wyborze pliku nie wysyła od razu — pokazuje modal z `PRESETS.avatar`, wysyła dopiero z `onConfirm`. |
+| `HandoutCreateModal.jsx` | Modal tylko dla obrazów. PDF i TXT idą starą ścieżką prosto do `uploadHandoutFile`. |
+| `FilesTab.jsx` | Bez modala przy uploadzie. `handleUpload` (`:257`) przepuszcza pliki przez `processImage(f, PRESETS.libraryImage)` szeregowo, z licznikiem postępu, potem jeden `POST /files/upload`. |
+| `DraggableFileItem.jsx` | Nowa ikona `CropIcon` w rzędzie akcji (`:83`). |
+
+Przetwarzanie w `FilesTab` jest **szeregowe**, nie przez `Promise.all` — dekodowanie
+i narysowanie obrazu 4096 px to około 100 ms głównego wątku. Dwadzieścia plików
+równolegle zamraża UI na kilka sekund bez informacji zwrotnej; szeregowo z `await`
+sterowanie wraca do pętli zdarzeń między plikami i da się pokazać postęp „3/20".
+Worker z `OffscreenCanvas` usunąłby zacinanie do końca, ale wymaga konfiguracji workera
+w CRA — nieopłacalne przy tej skali.
+
+### Przepływ kadrowania w bibliotece
+
+Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`; to samo origin, więc
+canvas się nie zabrudzi) i otwiera `ImageCropModal` z presetem `libraryImage`
+i lokalnie nadpisanym `crop: true`. `onConfirm` wysyła nowy plik do tego samego
+`folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje, sceny
+nietknięte, backend bez zmian.
+
+## Zmiany w backendzie
+
+Żadna nie dotyka logiki biznesowej.
+
+1. `storage/local.go:52` — `MaxFileSize` z `5 * 1024 * 1024` na `15 * 1024 * 1024`,
+   wraz z komentarzem dokumentacyjnym nad stałą (`:51`), który podaje 5MB.
+2. Nowa stała `storage.MaxMultipartMemory = 32 * 1024 * 1024`, podstawiona w czterech
+   wywołaniach `ParseMultipartForm`: `FileHandler.go:108`, `GameHandler.go:662`,
+   `HandoutHandler.go:88`, `AvatarHandler.go:34`. Argument tej funkcji to **maxMemory**
+   — ile bajtów Go trzyma w RAM zanim zacznie zrzucać resztę do plików tymczasowych —
+   a nie limit rozmiaru. Dziś `FileHandler.go:108` liczy `10 * storage.MaxFileSize`, co
+   po podniesieniu stałej dałoby 150 MB w pamięci na jeden multi-upload. Rozmiar i tak
+   jest sprawdzany osobno w `ValidateImageFile` (`FileHandler.go:57`).
+3. Komunikat `"file too large: maximum size is 5MB"` w `local.go:67` i
+   `FileHandler.go:58` ma zaszytą liczbę — idzie do formatowania ze stałej, żeby nie
+   rozjechał się przy następnej zmianie.
+4. Usunięcie `"image/gif"` z `local.go:37` (`AllowedImageTypes`), `local.go:45`
+   (`AllowedHandoutTypes`), `FileHandler.go:51` (`AllowedFileImageTypes`),
+   `HandoutHandler.go:26`. Poprawka komentarza Swaggera w `AvatarHandler.go:77`.
+   Komunikaty o dozwolonych typach wymieniające GIF z nazwy — zaktualizowane.
+
+## Zmiany w i18n
+
+Nowe klucze: tytuł i przyciski `ImageCropModal`, sufiks `files.croppedSuffix`, tytuł
+akcji kadrowania w `DraggableFileItem`, komunikat postępu przetwarzania w `FilesTab`.
+Zaktualizowane klucze wymieniające GIF: `files.allowedFormats`,
+`handouts.invalidFileType`, `characterSheet.invalidFileType`. Klucze po angielsku,
+tłumaczenia równolegle w `locales/en` i `locales/pl`. Klucze osierocone po usunięciu
+kadrownika z `GeneralTab` (`settings.gameImageCropTitle` i sąsiednie) — skasowane.
+
+## Przypadki brzegowe
+
+| Sytuacja | Zachowanie |
+|---|---|
+| Obraz poniżej `maxEdge`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
+| Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, wychodzi WebP; nigdy nie powiększamy |
+| Zdjęcie z telefonu z obrotem w EXIF | `imageOrientation: 'from-image'` prostuje przed rysowaniem |
+| `toBlob` zwraca `null` dla WebP | Ponowna próba z `image/jpeg` q0.85 |
+| `createImageBitmap` rzuca (uszkodzony plik) | Ten plik pomijany z komunikatem, reszta paczki leci dalej — `UploadFiles` już zbiera `errors[]` per plik |
+| Anulowanie modala | `input.value = ''`, żeby ten sam plik dało się wybrać ponownie (wzorzec z `AvatarUpload.jsx:51`) |
+| Plik nadal ponad limit po przetworzeniu | Serwer odrzuca, front pokazuje błąd; przy 4096 px i WebP praktycznie nieosiągalne |
+| Próba wgrania GIF-a | Odrzucone przez `accept` w inpucie i przez walidację serwera |
+
+## Testy
+
+Canvas i `createImageBitmap` nie istnieją w jsdom, więc `processImage` w całości nie
+jest sensownie testowalny bez ciężkich atrap. Dlatego logika decyzyjna wychodzi z niego
+do czystych funkcji, które są testowane:
+
+- `computeTargetSize(w, h, maxEdge)` — skalowanie dla orientacji poziomej i pionowej,
+  brak powiększania, kwadrat, wymiar dokładnie równy limitowi;
+- `shouldPassthrough(file, preset, cropArea)` — prawda dla obrazu poniżej limitu bez
+  kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit.
+
+Reszta `processImage` to sekwencja wywołań API przeglądarki bez rozgałęzień —
+testowanie jej sprowadzałoby się do testowania atrap. Backend nie dostaje nowej logiki,
+więc bez nowych testów Go.
