@@ -344,6 +344,13 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     const prepared = [];
     const failed = [];
     const problems = [];
+
+    // A mixed drop (some valid images, some not) silently drops the invalid
+    // ones above — the type filter has already run by this point, so surface
+    // that loss the same way every other partial failure is surfaced.
+    if (picked.length < fileList.length) {
+      problems.push(t('files.invalidFileType'));
+    }
     for (let i = 0; i < picked.length; i++) {
       setProgress({ current: i + 1, total: picked.length });
       try {

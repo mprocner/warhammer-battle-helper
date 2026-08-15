@@ -555,7 +555,8 @@
     "gameImageAdd": "Dodaj obrazek",
     "gameImageChange": "Zmień obrazek",
     "gameImageDelete": "Usuń obrazek",
-    "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy."
+    "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy.",
+    "gameImageUploadFailed": "Nie udało się wgrać obrazka gry."
   },
   "handouts": {
     "title": "Handouty",
@@ -880,8 +881,6 @@
     "uploading": "Wgrywanie...",
     "processing": "Przetwarzanie {{current}} z {{total}}…",
     "processingFailed": "Nie udało się przetworzyć: {{names}}",
-    "uploadSuccess": "Wgrano {{count}} plik(ów)",
-    "uploadPartial": "Wgrano {{success}} plik(ów), {{failed}} nie udało się",
     "folderName": "Nazwa Folderu",
     "folderNamePlaceholder": "Wprowadź nazwę folderu...",
     "renameFolder": "Zmień nazwę",

@@ -43,6 +43,7 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
   // Game image (lobby tile) — GM only
   const [pickedFile, setPickedFile] = useState(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState('');
   const fileInputRef = useRef(null);
 
   // Token display is a per-user singleton per hardcoded system (one "my Warhammer
@@ -79,9 +80,16 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
   const onImageFileSelected = (e) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow picking the same file again later
-    if (file) setPickedFile(file);
+    if (file) {
+      setPickedFile(file);
+      setImageError('');
+    }
   };
 
+  // Errors are handled here, not rethrown: onConfirm is awaited by
+  // ImageCropModal, which would otherwise render them through its own
+  // ERROR_KEYS map as "could not process this image" — the wrong verb for a
+  // failure that happens after processing, during upload.
   const uploadCroppedImage = async (processed) => {
     setImageBusy(true);
     try {
@@ -93,8 +101,14 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
         headers: getApiHeaders({ Authorization: `Bearer ${token}` }),
         body: form,
       });
-      if (res.ok) setPickedFile(null); // game state refreshes via WS broadcast
-    } catch { /* ignore */ } finally {
+      if (res.ok) {
+        setPickedFile(null); // game state refreshes via WS broadcast
+      } else {
+        setImageError(t('settings.gameImageUploadFailed'));
+      }
+    } catch {
+      setImageError(t('settings.gameImageUploadFailed'));
+    } finally {
       setImageBusy(false);
     }
   };
@@ -310,6 +324,7 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
               )}
             </div>
             <p className="general-tab__game-image-hint">{t('settings.gameImageHint')}</p>
+            {imageError && <p className="general-tab__game-image-hint">{imageError}</p>}
             <input
               ref={fileInputRef}
               type="file"

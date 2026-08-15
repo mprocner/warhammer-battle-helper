@@ -312,9 +312,9 @@ nietknięte, backend bez zmian.
 
 1. `storage/local.go:52` — `MaxFileSize` z `5 * 1024 * 1024` na `15 * 1024 * 1024`,
    wraz z komentarzem dokumentacyjnym nad stałą (`:51`), który podaje 5MB.
-2. Nowa stała `storage.MaxMultipartMemory = 32 * 1024 * 1024`, podstawiona w czterech
+2. Nowa stała `storage.MaxMultipartMemory = 32 * 1024 * 1024`, podstawiona w pięciu
    wywołaniach `ParseMultipartForm`: `FileHandler.go:108`, `GameHandler.go:662`,
-   `HandoutHandler.go:88`, `AvatarHandler.go:34`. Argument tej funkcji to **maxMemory**
+   `HandoutHandler.go:88`, `AvatarHandler.go:34`, `MusicHandler.go:156`. Argument tej funkcji to **maxMemory**
    — ile bajtów Go trzyma w RAM zanim zacznie zrzucać resztę do plików tymczasowych —
    a nie limit rozmiaru. Dziś `FileHandler.go:108` liczy `10 * storage.MaxFileSize`, co
    po podniesieniu stałej dałoby 150 MB w pamięci na jeden multi-upload. Rozmiar i tak

@@ -555,7 +555,8 @@
     "gameImageAdd": "Add image",
     "gameImageChange": "Change image",
     "gameImageDelete": "Remove image",
-    "gameImageHint": "Shown on the game tile in the lobby. Visible to all players."
+    "gameImageHint": "Shown on the game tile in the lobby. Visible to all players.",
+    "gameImageUploadFailed": "Could not upload the game image."
   },
   "handouts": {
     "title": "Handouts",
@@ -880,8 +881,6 @@
     "uploading": "Uploading...",
     "processing": "Processing {{current}} of {{total}}…",
     "processingFailed": "Could not process: {{names}}",
-    "uploadSuccess": "{{count}} file(s) uploaded successfully",
-    "uploadPartial": "{{success}} file(s) uploaded, {{failed}} failed",
     "folderName": "Folder Name",
     "folderNamePlaceholder": "Enter folder name...",
     "renameFolder": "Rename",
