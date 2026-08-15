@@ -8,11 +8,20 @@ import { PRESETS } from '../../utils/imageProcessing';
 // provides. The stub reports a crop area immediately so the confirm path runs.
 // React is required inside the factory: jest.mock factories are hoisted above
 // the imports and may not reference out-of-scope variables.
+//
+// One stub for the whole file. mockReportsArea switches whether it behaves like
+// a cropper that has finished layout (reports an area) or one that has not yet.
+// Swapping the module per-test instead would reload React into a second
+// registry and crash with an "Invalid hook call".
+let mockReportsArea = true;
+
 jest.mock('react-easy-crop', () => {
   const ReactInner = require('react');
   return ({ onCropComplete }) => {
     ReactInner.useEffect(() => {
-      onCropComplete({}, { x: 0, y: 0, width: 100, height: 100 });
+      if (mockReportsArea) {
+        onCropComplete({}, { x: 0, y: 0, width: 100, height: 100 });
+      }
     }, [onCropComplete]);
     return ReactInner.createElement('div', { 'data-testid': 'cropper' });
   };
@@ -33,6 +42,7 @@ beforeEach(() => {
   global.URL.createObjectURL = jest.fn(() => 'blob:stub');
   global.URL.revokeObjectURL = jest.fn();
   processImage.mockReset();
+  mockReportsArea = true;
 });
 
 const sourceFile = () => new File(['x'], 'map.png', { type: 'image/png' });
@@ -77,19 +87,13 @@ test('shows an error and does not confirm when processing fails', async () => {
 });
 
 test('save stays disabled until a crop area is reported', () => {
-  // The module-level stub reports an area on mount, so this test needs a
-  // cropper that never does — the state ImageCropModal is in between opening
-  // and react-easy-crop finishing layout. Confirming there would hand
-  // processImage a null crop area, which bypasses the preset's aspect ratio.
-  jest.resetModules();
-  jest.doMock('react-easy-crop', () => {
-    const ReactInner = require('react');
-    return () => ReactInner.createElement('div', { 'data-testid': 'cropper' });
-  });
-  const SilentModal = require('./ImageCropModal').default;
+  // The state ImageCropModal is in between opening and react-easy-crop
+  // finishing layout. Confirming here would hand processImage a null crop
+  // area, which bypasses the preset's aspect ratio entirely.
+  mockReportsArea = false;
 
   render(
-    <SilentModal
+    <ImageCropModal
       file={sourceFile()}
       preset={PRESETS.avatar}
       onConfirm={jest.fn()}
