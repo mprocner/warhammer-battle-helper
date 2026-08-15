@@ -64,6 +64,12 @@ test('hands the processed file to onConfirm', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'common.save' }));
 
   await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(processed));
+
+  expect(processImage).toHaveBeenCalledWith(
+    expect.objectContaining({ name: 'map.png' }),
+    PRESETS.libraryImage,
+    { x: 0, y: 0, width: 100, height: 100 }
+  );
 });
 
 test('shows an error and does not confirm when processing fails', async () => {
@@ -102,6 +108,26 @@ test('save stays disabled until a crop area is reported', () => {
   );
 
   expect(screen.getByRole('button', { name: 'common.save' })).toBeDisabled();
+});
+
+test('maps a too-large source to its own message', async () => {
+  const { ImageProcessingError } = jest.requireActual('../../utils/imageProcessing');
+  processImage.mockRejectedValue(new ImageProcessingError('source-too-large'));
+  const onConfirm = jest.fn();
+
+  render(
+    <ImageCropModal
+      file={sourceFile()}
+      preset={PRESETS.libraryImage}
+      onConfirm={onConfirm}
+      onCancel={jest.fn()}
+    />
+  );
+
+  await userEvent.click(screen.getByRole('button', { name: 'common.save' }));
+
+  expect(await screen.findByText('imageCrop.sourceTooLarge')).toBeInTheDocument();
+  expect(onConfirm).not.toHaveBeenCalled();
 });
 
 test('cancel closes without processing', async () => {

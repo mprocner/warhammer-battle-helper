@@ -26,9 +26,17 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // Keyed on `file` so a swapped file gets a fresh preview AND fresh crop state.
+  // Without the resets, a call site that changes `file` without remounting would
+  // keep the previous image's crop rectangle — and since croppedAreaPixels would
+  // already be set, the confirm button would be enabled before the new image has
+  // been cropped at all.
   useEffect(() => {
     const url = URL.createObjectURL(file);
     setImageSrc(url);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
