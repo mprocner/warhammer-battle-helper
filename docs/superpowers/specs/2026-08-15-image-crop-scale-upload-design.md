@@ -120,13 +120,15 @@ jest polem presetu.
 |---|---|---|---|
 | `avatar` | 512 px | 1:1 wymuszone | tak |
 | `gameImage` | 800 px | `GAME_IMAGE_ASPECT` (5/4) | tak |
-| `handout` | 2048 px | swobodne | tak |
-| `libraryImage` | 4096 px | swobodne | nie (patrz D5) |
+| `handout` | 2048 px | jak źródło | tak |
+| `libraryImage` | 4096 px | jak źródło | nie (patrz D5) |
 
 4096 px dla map to jakość porównywalna z Foundry VTT, ostra przy mocnym zoomie.
 W WebP q0.85 to zwykle 1,5–3 MB.
 
-Kolumna „Kadrownik" opisuje zachowanie miejsca wywołania, nie pole presetu.
+Kolumna „Kadrownik" opisuje zachowanie miejsca wywołania, nie pole presetu. „Jak
+źródło" znaczy `aspect: null` w preseście i proporcje wzięte z wgranego obrazu —
+szczegóły i powód w opisie `ImageCropModal` niżej.
 
 ### D5 — Kadrowanie w bibliotece jako ikona przy pliku
 
@@ -168,10 +170,21 @@ Statyczny GIF nie jest przy tym niczego wart: 256 kolorów i kompresja gorsza od
 o rząd wielkości. Tracimy wyłącznie animowane tokeny — sztuczkę lubianą w Foundry
 i Roll20, niszową i możliwą do przywrócenia później osobnym ficzerem.
 
-Istniejące dane pozostają sprawne. `GetFile` (`FileHandler.go:576`) bierze
-`contentType` ze `Storage.Get`, czyli z pliku na dysku, i nie zagląda w listy
-dozwolonych typów — te filtrują wyłącznie upload. GIF-y wgrane wcześniej dalej się
-wyświetlają.
+Istniejące dane pozostają sprawne, ale **wymaga to osobnej zmiany**. Pierwotnie
+zapisałem tu, że listy dozwolonych typów filtrują wyłącznie upload. To było błędne:
+`LocalStorage.Get` (`storage/local.go:146`) ustala `Content-Type` serwowanego pliku,
+przeszukując te same listy **odwrotnie**, po rozszerzeniu. Usunięcie `image/gif`
+z list sprawiłoby więc, że zapisane wcześniej GIF-y zaczęłyby wychodzić jako
+`application/octet-stream`.
+
+Poprawka: serwowanie dostaje własną mapę `ServedContentTypes`, kluczowaną po
+rozszerzeniu, i `Get` korzysta wyłącznie z niej. To rozprzęga „co serwer przyjmuje"
+od „co serwer oddaje" — dwie rzeczy, które właśnie się rozjechały i nie ma powodu,
+by dzieliły jedną strukturę.
+
+Przy okazji znika istniejąca usterka: `AllowedMusicTypes` mapuje na `.wav` zarówno
+`audio/wav`, jak i `audio/x-wav`, a Go losuje kolejność iteracji po mapie — więc plik
+`.wav` serwował się raz jako jeden typ, raz jako drugi.
 
 Przyjęte ograniczenie: animowany WebP ma ten sam problem, a nie jest blokowany, bo WebP
 to nasz format wyjściowy. Taki plik przejdzie przez canvas i wyjdzie jako pojedyncza
@@ -197,12 +210,14 @@ export const PRESETS = {
 };
 
 export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
+export const MAX_PASSTHROUGH_BYTES = 15 * 1024 * 1024;   // = storage.MaxFileSize
 export const PNG_MAX_PIXELS = 1024 * 1024;
 
 export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
-export function shouldPassthrough(preset, cropArea, srcW, srcH) -> boolean
+export function shouldPassthrough(preset, cropArea, srcW, srcH, srcBytes) -> boolean
 export function sourceMayHaveAlpha(file) -> boolean
 export function pickEncoding(width, height) -> { type, quality }
+export function resolveAspect(preset, naturalWidth, naturalHeight) -> number
 export async function processImage(file, preset, cropArea = null) -> File
 ```
 
@@ -217,9 +232,16 @@ Kroki `processImage`:
 2. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
    konieczny — zdjęcia z telefonu noszą obrót w EXIF, a `drawImage` bez niego rysuje
    avatar położony na boku.
-3. `shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height)` — jeśli nie ma
-   `cropArea` i obraz mieści się w `maxEdge`, `bitmap.close()` i zwróć **oryginalny
-   `File`**. Bez tego bezstratny PNG 900 px przechodziłby stratną konwersję bez powodu.
+3. `shouldPassthrough(preset, cropArea, bitmap.width, bitmap.height, file.size)` —
+   jeśli nie ma `cropArea`, obraz mieści się w `maxEdge` **i waży poniżej
+   `MAX_PASSTHROUGH_BYTES`**, wtedy `bitmap.close()` i zwróć **oryginalny `File`**.
+   Bez tego bezstratny PNG 900 px przechodziłby stratną konwersję bez powodu.
+
+   Próg bajtowy dopisany po przeglądzie całej gałęzi. Przepuszczenie pliku pomija
+   przekodowanie, które by go zmniejszyło, więc bez tego progu fotograficzny PNG
+   4000×3000 o wadze 25 MB przechodził nietknięty i odbijał się od limitu serwera —
+   podczas gdy ten sam obraz w 4200 px był skalowany do ~2 MB WebP i przechodził.
+   Uskok dokładnie na `maxEdge`, w odwrotną stronę niż intuicja.
 4. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
    powiększamy; rozciągnięcie tokena 200 px do 4096 px to sam szum i megabajty.
 5. `ctx.imageSmoothingQuality = 'high'` przed rysowaniem. Wartość domyślna to `'low'`,
@@ -260,11 +282,27 @@ przezroczystości po cichu.
 Propy: `file`, `preset`, `onConfirm(processedFile)`, `onCancel`.
 
 W środku `react-easy-crop` ze stanem `crop` / `zoom` / `croppedAreaPixels` — kod
-przeniesiony z `GeneralTab.jsx:63–118` bez zmian w logice. `aspect={preset.aspect ??
-undefined}` — `undefined` oznacza w `react-easy-crop` swobodne proporcje.
+przeniesiony z `GeneralTab.jsx:63–118` bez zmian w logice.
 
-Kadrownik startuje z ramką obejmującą cały obraz, więc „nie chcę przycinać" to
-zatwierdzenie bez dotykania czegokolwiek.
+**Proporcje przy presecie bez `aspect`.** Pierwotnie napisałem tu, że wystarczy podać
+`aspect={preset.aspect ?? undefined}`, bo `undefined` oznacza w `react-easy-crop`
+swobodne proporcje. To było błędne i wyszło dopiero w przeglądzie całej gałęzi.
+Biblioteka ma `Cropper.defaultProps = { aspect: 4 / 3 }`, a `defaultProps` klas nadal
+działa w React 19 — więc `undefined` nie wyłącza proporcji, tylko włącza 4:3. Handouty
+i pliki z biblioteki byłyby po cichu kadrowane do 4:3, co dla mapy 16:9 oznacza utratę
+treści bez żadnego sygnału.
+
+`react-easy-crop` w ogóle nie ma trybu w pełni swobodnego. Preset bez własnego
+`aspect` bierze więc **proporcje samego obrazu źródłowego**, odczytane z `onMediaLoaded`:
+
+```js
+resolveAspect(preset, naturalWidth, naturalHeight)
+```
+
+Dzięki temu ramka startowa obejmuje cały obraz, czyli zachodzi to, co „swobodne" miało
+w praktyce znaczyć: zatwierdzenie bez dotykania niczego zwraca obraz w całości.
+Użytkownik może przyciąć proporcjonalny wycinek, ale nie zmieni proporcji kadru —
+ograniczenie biblioteki, przyjęte świadomie.
 
 Style przenoszą się z `GeneralTab.css:658–716` do nowego `ImageCropModal.css`
 z prefiksem `.image-crop-modal` zamiast `.game-image-cropper`. Stare klasy i stary kod
@@ -289,11 +327,27 @@ w CRA — nieopłacalne przy tej skali.
 
 ### Przepływ kadrowania w bibliotece
 
-Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`; to samo origin, więc
-canvas się nie zabrudzi) i otwiera `ImageCropModal` z presetem `libraryImage`.
-`onConfirm` wysyła nowy plik do tego samego
-`folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje, sceny
-nietknięte, backend bez zmian.
+Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`) i otwiera
+`ImageCropModal` z presetem `libraryImage`. `onConfirm` wysyła nowy plik do tego
+samego `folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje,
+sceny nietknięte, backend bez zmian.
+
+Napisałem tu pierwotnie, że canvas się nie zabrudzi, „bo to samo origin". To było
+podwójnie błędne. Po pierwsze, w developmencie front stoi na `:3000`, a backend na
+`:8080` — inny port to **inny origin**, więc żądanie jest jak najbardziej
+międzyźródłowe. Po drugie, prawdziwy powód, dla którego canvas jest bezpieczny, jest
+inny: idziemy przez `fetch` → `Blob` → `File`, więc canvas nigdy nie ładuje obcego
+adresu, tylko dane, które już mamy lokalnie.
+
+Ta pomyłka miała skutek praktyczny. Pliki statyczne wychodzą z `Cache-Control:
+public, max-age=86400` i są pobierane na dwa sposoby: miniatura przez `<img src>`,
+która **nie wysyła nagłówka `Origin`**, oraz `fetch` w trybie CORS, który go wysyła.
+`gin-contrib/cors` przy braku `Origin` wychodzi wcześnie i nie dokłada ani
+`Access-Control-Allow-Origin`, ani `Vary`. Przeglądarka zapisywała więc odpowiedź
+miniatury jako jedyny wariant URL-a i podawała ją potem `fetch`owi, który odrzucał ją
+za brak nagłówka CORS — przerywanie, bo tylko gdy miniatura zdążyła trafić do cache.
+Naprawione middlewarem `VaryOrigin`, zarejestrowanym **przed** CORS-em, który
+bezwarunkowo oznacza odpowiedzi jako zależne od `Origin`.
 
 ## Zmiany w backendzie
 
@@ -301,9 +355,9 @@ nietknięte, backend bez zmian.
 
 1. `storage/local.go:52` — `MaxFileSize` z `5 * 1024 * 1024` na `15 * 1024 * 1024`,
    wraz z komentarzem dokumentacyjnym nad stałą (`:51`), który podaje 5MB.
-2. Nowa stała `storage.MaxMultipartMemory = 32 * 1024 * 1024`, podstawiona w czterech
+2. Nowa stała `storage.MaxMultipartMemory = 32 * 1024 * 1024`, podstawiona w pięciu
    wywołaniach `ParseMultipartForm`: `FileHandler.go:108`, `GameHandler.go:662`,
-   `HandoutHandler.go:88`, `AvatarHandler.go:34`. Argument tej funkcji to **maxMemory**
+   `HandoutHandler.go:88`, `AvatarHandler.go:34`, `MusicHandler.go:156`. Argument tej funkcji to **maxMemory**
    — ile bajtów Go trzyma w RAM zanim zacznie zrzucać resztę do plików tymczasowych —
    a nie limit rozmiaru. Dziś `FileHandler.go:108` liczy `10 * storage.MaxFileSize`, co
    po podniesieniu stałej dałoby 150 MB w pamięci na jeden multi-upload. Rozmiar i tak
@@ -332,7 +386,8 @@ kadrownika z `GeneralTab` (`settings.gameImageCropTitle` i sąsiednie) — skaso
 
 | Sytuacja | Zachowanie |
 |---|---|
-| Obraz poniżej `maxEdge`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
+| Obraz poniżej `maxEdge` i poniżej `MAX_PASSTHROUGH_BYTES`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
+| Obraz poniżej `maxEdge`, ale ponad `MAX_PASSTHROUGH_BYTES` | Przekodowany mimo mieszczących się wymiarów — inaczej serwer by go odrzucił |
 | Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, format z `pickEncoding`; nigdy nie powiększamy |
 | Zdjęcie z telefonu z obrotem w EXIF | `imageOrientation: 'from-image'` prostuje przed rysowaniem |
 | Wynik do 1 MP (avatar, kafelek gry, przycięty token) | Bezstratny PNG, bez ścieżki zapasowej |
@@ -352,9 +407,14 @@ do czystych funkcji, które są testowane:
 
 - `computeTargetSize(w, h, maxEdge)` — skalowanie dla orientacji poziomej i pionowej,
   brak powiększania, kwadrat, wymiar dokładnie równy limitowi;
-- `shouldPassthrough(preset, cropArea, srcW, srcH)` — prawda dla obrazu poniżej limitu
-  bez kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit,
-  prawda dla wymiarów dokładnie równych limitowi;
+- `shouldPassthrough(preset, cropArea, srcW, srcH, srcBytes)` — prawda dla obrazu
+  poniżej limitu bez kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz
+  przekracza limit pikseli, prawda dla wymiarów dokładnie równych limitowi, oraz
+  fałsz dla pliku poniżej limitu pikseli, ale powyżej `MAX_PASSTHROUGH_BYTES`;
+- `resolveAspect(preset, naturalWidth, naturalHeight)` — proporcje presetu gdy je ma,
+  w przeciwnym razie proporcje źródła; osobny przypadek pilnuje, że dla presetu bez
+  `aspect` wynik **nie** wychodzi 4:3, czyli tego, co robiła domyślna wartość
+  `react-easy-crop`;
 - `sourceMayHaveAlpha(file)` — prawda dla `image/png` i `image/webp`, fałsz dla
   `image/jpeg`; steruje tym, czy ścieżce zapasowej z D3 wolno zejść do JPEG;
 - `pickEncoding(w, h)` — PNG dokładnie na progu `PNG_MAX_PIXELS`, WebP jeden piksel

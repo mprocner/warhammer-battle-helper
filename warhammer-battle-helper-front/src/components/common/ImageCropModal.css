@@ -1,0 +1,90 @@
+/* Shared crop dialog for every single-image upload path. */
+.image-crop-modal__overlay {
+  position: fixed;
+  inset: 0;
+  /* Above every modal in the app (the stack tops out at 10002 in style.css) —
+     this dialog opens from HandoutCreateModal at 9999 and must cover it. Below
+     .pointer-ping's 1000000, which is meant to stay on top of everything. */
+  z-index: 10003;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 4, 0.6);
+}
+
+.image-crop-modal {
+  width: min(520px, calc(100vw - 32px));
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 3px solid #7a5c42;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-crop-modal__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #6b4423;
+  margin: 0;
+}
+
+.image-crop-modal__area {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #2a2218;
+  border: 2px solid #8b6b3d;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.image-crop-modal__zoom {
+  display: flex;
+  align-items: center;
+}
+
+.image-crop-modal__zoom-slider {
+  width: 100%;
+  accent-color: #c9975b;
+}
+
+.image-crop-modal__error {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  color: #8b2f2f;
+}
+
+.image-crop-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.image-crop-modal__btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: #3a2f1f;
+  background: #fff9f0;
+  border: 2px solid #c4a882;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.image-crop-modal__btn:hover:not(:disabled) {
+  border-color: #7a5c42;
+}
+
+.image-crop-modal__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-crop-modal__btn--primary {
+  background: #c9975b;
+  border-color: #7a5c42;
+}

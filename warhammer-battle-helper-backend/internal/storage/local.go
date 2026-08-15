@@ -34,7 +34,6 @@ func NewLocalStorage(basePath, baseURL string) (*LocalStorage, error) {
 var AllowedImageTypes = map[string]string{
 	"image/jpeg": ".jpg",
 	"image/png":  ".png",
-	"image/gif":  ".gif",
 	"image/webp": ".webp",
 }
 
@@ -42,14 +41,20 @@ var AllowedImageTypes = map[string]string{
 var AllowedHandoutTypes = map[string]string{
 	"image/jpeg":      ".jpg",
 	"image/png":       ".png",
-	"image/gif":       ".gif",
 	"image/webp":      ".webp",
 	"application/pdf": ".pdf",
 	"text/plain":      ".txt",
 }
 
-// MaxFileSize is the maximum allowed file size (5MB)
-const MaxFileSize = 5 * 1024 * 1024
+// MaxFileSize is the maximum allowed file size (15MB).
+// Images are downscaled client-side before upload, so this is a safety net for
+// requests that bypass the frontend, not the working limit.
+const MaxFileSize = 15 * 1024 * 1024
+
+// MaxMultipartMemory is how much of a multipart request Go keeps in RAM before
+// spilling to temp files. Deliberately NOT derived from MaxFileSize — it is a
+// memory budget, not a size limit, and size is validated separately per file.
+const MaxMultipartMemory = 32 * 1024 * 1024
 
 // MaxMusicFileSize is the maximum allowed music file size (50MB)
 const MaxMusicFileSize = 50 * 1024 * 1024
@@ -61,18 +66,37 @@ var AllowedMusicTypes = map[string]string{
 	"audio/x-wav": ".wav",
 }
 
+// ServedContentTypes maps a stored file's extension to the Content-Type used
+// when serving it back. Deliberately separate from the upload allow-lists:
+// those govern what the server ACCEPTS, and the two drifted apart when GIF
+// uploads were dropped (FEATURE-132) while already-stored GIFs still have to
+// render. Keying by extension also makes .wav deterministic — reverse-scanning
+// AllowedMusicTypes picked between audio/wav and audio/x-wav at random,
+// because Go randomises map iteration order.
+var ServedContentTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".webp": "image/webp",
+	".pdf":  "application/pdf",
+	".txt":  "text/plain",
+	".mp3":  "audio/mpeg",
+	".wav":  "audio/wav",
+}
+
 // ValidateFile checks if the file is a valid image and within size limits
 func ValidateFile(file multipart.File, header *multipart.FileHeader) (string, error) {
 	// Check file size
 	if header.Size > MaxFileSize {
-		return "", fmt.Errorf("file too large: maximum size is 5MB")
+		return "", fmt.Errorf("file too large: maximum size is %dMB", MaxFileSize/(1024*1024))
 	}
 
 	// Check content type
 	contentType := header.Header.Get("Content-Type")
 	ext, ok := AllowedImageTypes[contentType]
 	if !ok {
-		return "", fmt.Errorf("invalid file type: only JPEG, PNG, GIF, and WebP are allowed")
+		return "", fmt.Errorf("invalid file type: only JPEG, PNG, and WebP are allowed")
 	}
 
 	return ext, nil
@@ -140,34 +164,9 @@ func (s *LocalStorage) Get(filename string) (io.ReadCloser, string, error) {
 
 	// Determine content type from extension
 	ext := strings.ToLower(filepath.Ext(filename))
-	contentType := "application/octet-stream"
-
-	// Check image types first
-	for ct, e := range AllowedImageTypes {
-		if e == ext || (ext == ".jpeg" && e == ".jpg") {
-			contentType = ct
-			break
-		}
-	}
-
-	// Check handout types (PDF, text)
-	if contentType == "application/octet-stream" {
-		for ct, e := range AllowedHandoutTypes {
-			if e == ext {
-				contentType = ct
-				break
-			}
-		}
-	}
-
-	// Check music types
-	if contentType == "application/octet-stream" {
-		for ct, e := range AllowedMusicTypes {
-			if e == ext {
-				contentType = ct
-				break
-			}
-		}
+	contentType, ok := ServedContentTypes[ext]
+	if !ok {
+		contentType = "application/octet-stream"
 	}
 
 	return file, contentType, nil

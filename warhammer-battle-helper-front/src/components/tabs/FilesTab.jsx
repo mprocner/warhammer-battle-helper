@@ -13,10 +13,12 @@ import {
 import { getFiles, uploadFiles, deleteFile, getFileUsage, moveFile, renameFile, createFolder, renameFolder, deleteFolder } from '../../api/files';
 import { addSceneImage } from '../../api/scenes';
 import ConfirmModal from '../common/ConfirmModal';
+import ImageCropModal from '../common/ImageCropModal';
 import DraggableFileItem from './files/DraggableFileItem';
 import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
 import { resolveFileUrl } from '../../utils/fileUrl';
+import { processImage, PRESETS } from '../../utils/imageProcessing';
 import './FilesTab.css';
 
 const getImageDimensions = (url) => new Promise((resolve) => {
@@ -47,6 +49,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
   const [error, setError] = useState('');
 
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(null); // { current, total } while preprocessing
   const [isDragOver, setIsDragOver] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -60,6 +63,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const [addToSceneFile, setAddToSceneFile] = useState(null);
   const [addToSceneLayer, setAddToSceneLayer] = useState('background');
+  const [cropTarget, setCropTarget] = useState(null); // { file, source } — source is the fetched File
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, file: null, message: '', isLoading: false });
 
   useEffect(() => {
@@ -93,6 +97,62 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     } catch (err) {
       console.error('Failed to add image to scene:', err);
       setError(t('scenes.addImageError'));
+    }
+  };
+
+  // Cropping an existing library file writes a COPY. SceneImage references files
+  // by fileUrl (not fileId), and one file can be used by scenes across several
+  // games, so overwriting in place would mean rewriting every reference plus
+  // cache-busting a UUID filename. The copy costs nothing on the backend — it's
+  // an ordinary uploadFiles call with the same folderId.
+  const handleCropFile = async (file) => {
+    setError('');
+    try {
+      const res = await fetch(resolveFileUrl(file.fileUrl));
+      // fetch only rejects on a network failure; a 404 for a server-side deleted
+      // file resolves like any other response, and blob() would happily wrap the
+      // error page. Without this the dialog opens on garbage the user cannot
+      // confirm and cannot diagnose.
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+      const blob = await res.blob();
+      setCropTarget({ file, source: new File([blob], file.name, { type: blob.type }) });
+    } catch (err) {
+      console.error('Failed to load file for cropping:', err);
+      setError(t('files.cropLoadFailed'));
+    }
+  };
+
+  const handleCropConfirmed = async (processed) => {
+    const original = cropTarget.file;
+    setCropTarget(null);
+    setIsUploading(true);
+    setError('');
+    const problems = [];
+    try {
+      const base = original.name.replace(/\.[^.]+$/, '');
+      // The extension comes from the processed file, not the original: a large
+      // crop is re-encoded as .webp and a small one as .png, so the source
+      // extension would be wrong more often than not.
+      const ext = processed.name.slice(processed.name.lastIndexOf('.'));
+      const named = new File(
+        [processed],
+        `${base} (${t('files.croppedSuffix')})${ext}`,
+        { type: processed.type }
+      );
+      const result = await uploadFiles([named], currentFolderId);
+      if (result.files && result.files.length > 0) {
+        setFiles(prev => [...prev, ...result.files]);
+      }
+      if (result.errors && result.errors.length > 0) {
+        problems.push(result.errors.join(', '));
+      }
+      setError(joinProblems(problems));
+    } catch (err) {
+      console.error('Failed to upload cropped file:', err);
+      problems.push(t('files.uploadError'));
+      setError(joinProblems(problems));
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -253,39 +313,80 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     }
   };
 
-  // Handle file upload (from external drag)
-  const handleUpload = async (fileList) => {
-    const validFiles = Array.from(fileList).filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        return false;
-      }
-      return true;
-    });
+  // Both the client-side processing loop and the server's per-file errors array
+  // can fail parts of one batch. They used to each call setError, so whichever
+  // landed second erased the other and the user only heard half the story.
+  const joinProblems = (problems) => problems.join(' — ');
 
-    if (validFiles.length === 0) {
+  // Handle file upload (from the picker or an external drag)
+  const handleUpload = async (fileList) => {
+    // Single choke point for both callers (click picker and drag-drop): a
+    // second overlapping batch would share `progress` and `error` state with
+    // the first — one batch's finally clears the spinner while the other is
+    // still processing, and one batch's error message erases the other's.
+    if (isUploading) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const picked = Array.from(fileList).filter(file => validTypes.includes(file.type));
+
+    if (picked.length === 0) {
       setError(t('files.invalidFileType'));
       return;
     }
 
+    setIsUploading(true);
+    setError('');
+
+    // Serial, not Promise.all: decoding and redrawing a 4096px image costs
+    // ~100ms of main thread, so twenty at once freeze the UI for seconds with
+    // no feedback. Awaiting between files hands control back to the event loop
+    // and lets the counter render.
+    const prepared = [];
+    const failed = [];
+    const problems = [];
+
+    // A mixed drop (some valid images, some not) silently drops the invalid
+    // ones above — the type filter has already run by this point, so surface
+    // that loss the same way every other partial failure is surfaced.
+    if (picked.length < fileList.length) {
+      problems.push(t('files.invalidFileType'));
+    }
+    for (let i = 0; i < picked.length; i++) {
+      setProgress({ current: i + 1, total: picked.length });
+      try {
+        prepared.push(await processImage(picked[i], PRESETS.libraryImage));
+      } catch {
+        failed.push(picked[i].name);
+      }
+    }
+    setProgress(null);
+
+    if (failed.length > 0) {
+      problems.push(t('files.processingFailed', { names: failed.join(', ') }));
+    }
+
+    if (prepared.length === 0) {
+      setError(joinProblems(problems));
+      setIsUploading(false);
+      return;
+    }
+
     try {
-      setIsUploading(true);
-      setError('');
-      const result = await uploadFiles(validFiles, currentFolderId);
+      const result = await uploadFiles(prepared, currentFolderId);
 
       if (result.files && result.files.length > 0) {
         setFiles(prev => [...prev, ...result.files]);
       }
 
       if (result.errors && result.errors.length > 0) {
-        setError(result.errors.join(', '));
+        problems.push(result.errors.join(', '));
       }
+
+      setError(joinProblems(problems));
     } catch (err) {
       console.error('Failed to upload files:', err);
-      setError(t('files.uploadError'));
+      problems.push(t('files.uploadError'));
+      setError(joinProblems(problems));
     } finally {
       setIsUploading(false);
     }
@@ -495,14 +596,18 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".jpg,.jpeg,.png,.gif,.webp"
+            accept=".jpg,.jpeg,.png,.webp"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
           />
           {isUploading ? (
             <>
               <div className="loading-spinner" />
-              <span>{t('files.uploading')}</span>
+              <span>
+                {progress
+                  ? t('files.processing', { current: progress.current, total: progress.total })
+                  : t('files.uploading')}
+              </span>
             </>
           ) : (
             <>
@@ -569,6 +674,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
               onDelete={handleDeleteFile}
               onHover={setHoveredFile}
               onAddToScene={gameId && currentSceneId ? (file) => { setAddToSceneFile(file); setAddToSceneLayer(imageEditLayer); } : null}
+              onCrop={handleCropFile}
               onRename={startRenameFile}
               renamingFile={renamingFile}
               renameFileValue={renameFileValue}
@@ -690,6 +796,15 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
         confirmLabel={t('common.delete')}
         isLoading={deleteConfirm.isLoading}
       />
+
+      {cropTarget && (
+        <ImageCropModal
+          file={cropTarget.source}
+          preset={PRESETS.libraryImage}
+          onConfirm={handleCropConfirmed}
+          onCancel={() => setCropTarget(null)}
+        />
+      )}
 
       {/* Drag overlay */}
       <DragOverlay dropAnimation={null}>

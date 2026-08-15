@@ -151,8 +151,9 @@ func (h *MusicHandler) UploadMusic(c *gin.Context) {
 		return
 	}
 
-	// Parse multipart form with max 500MB (for multiple large music files)
-	if err := c.Request.ParseMultipartForm(10 * storage.MaxMusicFileSize); err != nil {
+	// maxMemory, not a size cap — larger parts spill to temp files, and per-file
+	// size is enforced against MaxMusicFileSize separately.
+	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}

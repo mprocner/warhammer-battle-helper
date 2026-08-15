@@ -1,4 +1,10 @@
 {
+  "imageCrop": {
+    "title": "Przytnij obraz",
+    "zoom": "Powiększenie",
+    "sourceTooLarge": "Ten obraz jest za duży do przetworzenia (maks. 80MB).",
+    "processingFailed": "Nie udało się przetworzyć tego obrazu."
+  },
   "token": {
     "killed": "Zabity",
     "hideFromPlayers": "Ukryj przed graczami",
@@ -348,8 +354,7 @@
     "addSpell": "Dodaj Zaklęcie",
     "clickToChangeAvatar": "Kliknij, aby zmienić",
     "avatarUploadFailed": "Nie udało się przesłać awatara",
-    "invalidFileType": "Nieprawidłowy typ pliku. Prześlij obraz (JPEG, PNG, GIF lub WebP).",
-    "fileTooLarge": "Plik jest za duży. Maksymalny rozmiar to 5MB.",
+    "invalidFileType": "Nieprawidłowy typ pliku. Prześlij obraz (JPEG, PNG lub WebP).",
     "favoriteWeapon": "Przełącz ulubioną broń",
     "addCustomSkill": "Dodaj Własną Umiejętność",
     "addCustomTalent": "Dodaj Własny Talent",
@@ -551,8 +556,7 @@
     "gameImageChange": "Zmień obrazek",
     "gameImageDelete": "Usuń obrazek",
     "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy.",
-    "gameImageCropTitle": "Przytnij obrazek gry",
-    "gameImageZoom": "Powiększenie"
+    "gameImageUploadFailed": "Nie udało się wgrać obrazka gry."
   },
   "handouts": {
     "title": "Handouty",
@@ -587,11 +591,10 @@
     "selectedPlayers": "{{count}} gracz(y)",
     "file": "Plik",
     "fileRequired": "Proszę wgrać plik",
-    "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone: JPEG, PNG, GIF, WebP, PDF, TXT",
-    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
+    "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone: JPEG, PNG, WebP, PDF, TXT",
     "uploadFailed": "Nie udało się wgrać pliku",
     "clickToUpload": "Kliknij, aby wgrać plik",
-    "allowedFormats": "JPEG, PNG, GIF, WebP, PDF, TXT (max 5MB)",
+    "allowedFormats": "JPEG, PNG, WebP, PDF, TXT (max 15MB)",
     "changeFile": "Zmień Plik",
     "pdfUploaded": "Plik PDF wgrany",
     "textUploaded": "Plik tekstowy wgrany",
@@ -874,19 +877,21 @@
     "confirmDeleteFolder": "Czy na pewno chcesz usunąć folder \"{{name}}\"?",
     "confirmDeleteFolderWithContents": "Folder \"{{name}}\" zawiera pliki. Usunąć folder i całą zawartość?",
     "dropOrClick": "Upuść pliki tutaj lub kliknij, aby wgrać",
-    "allowedFormats": "JPEG, PNG, GIF, WebP (max 5MB każdy)",
+    "allowedFormats": "JPEG, PNG, WebP (max 15MB każdy)",
     "uploading": "Wgrywanie...",
-    "uploadSuccess": "Wgrano {{count}} plik(ów)",
-    "uploadPartial": "Wgrano {{success}} plik(ów), {{failed}} nie udało się",
+    "processing": "Przetwarzanie {{current}} z {{total}}…",
+    "processingFailed": "Nie udało się przetworzyć: {{names}}",
     "folderName": "Nazwa Folderu",
     "folderNamePlaceholder": "Wprowadź nazwę folderu...",
     "renameFolder": "Zmień nazwę",
     "invalidFileType": "Nieprawidłowy typ pliku. Dozwolone tylko obrazy.",
-    "fileTooLarge": "Plik za duży. Maksymalny rozmiar to 5MB",
     "fileMoveError": "Nie udało się przenieść pliku",
     "renameFile": "Zmień nazwę pliku",
     "fileRenameError": "Nie udało się zmienić nazwy pliku",
-    "root": "Główny"
+    "root": "Główny",
+    "cropFile": "Przytnij obraz",
+    "croppedSuffix": "przycięty",
+    "cropLoadFailed": "Nie udało się wczytać tego pliku do kadrowania."
   },
   "dice": {
     "label": "K{{sides}}",

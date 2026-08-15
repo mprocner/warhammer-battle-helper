@@ -5,6 +5,7 @@ import MapIcon from '@mui/icons-material/Map';
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
+import CropIcon from '@mui/icons-material/Crop';
 import { resolveFileUrl } from '../../../utils/fileUrl';
 
 const DraggableFileItem = ({
@@ -13,6 +14,7 @@ const DraggableFileItem = ({
   onDelete,
   onHover,
   onAddToScene,
+  onCrop,
   onRename,
   renamingFile,
   renameFileValue,
@@ -115,6 +117,13 @@ const DraggableFileItem = ({
                 <MapIcon fontSize="inherit" />
               </button>
             )}
+            <button
+              className="list-action-btn"
+              onClick={(e) => { e.stopPropagation(); onHover(null); onCrop(file); }}
+              title={t('files.cropFile')}
+            >
+              <CropIcon fontSize="inherit" />
+            </button>
             <button
               className="list-action-btn"
               onClick={(e) => { e.stopPropagation(); onHover(null); onRename(file, e); }}

@@ -5,6 +5,7 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/storage"
 	"battle-helper/internal/websocket"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -48,19 +49,18 @@ type UploadFilesResponse struct {
 var AllowedFileImageTypes = map[string]string{
 	"image/jpeg": ".jpg",
 	"image/png":  ".png",
-	"image/gif":  ".gif",
 	"image/webp": ".webp",
 }
 
 // ValidateImageFile checks if the file is a valid image and within size limits
 func ValidateImageFile(contentType string, size int64) (string, error) {
 	if size > storage.MaxFileSize {
-		return "", &ValidationError{"file too large: maximum size is 5MB"}
+		return "", &ValidationError{fmt.Sprintf("file too large: maximum size is %dMB", storage.MaxFileSize/(1024*1024))}
 	}
 
 	ext, ok := AllowedFileImageTypes[contentType]
 	if !ok {
-		return "", &ValidationError{"invalid file type: only JPEG, PNG, GIF, and WebP images are allowed"}
+		return "", &ValidationError{"invalid file type: only JPEG, PNG, and WebP images are allowed"}
 	}
 
 	return ext, nil
@@ -104,8 +104,8 @@ func (h *FileHandler) UploadFiles(c *gin.Context) {
 		return
 	}
 
-	// Parse multipart form with max 50MB (for multiple files)
-	if err := c.Request.ParseMultipartForm(10 * storage.MaxFileSize); err != nil {
+	// maxMemory, not a size cap — per-file size is checked in ValidateImageFile below.
+	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}

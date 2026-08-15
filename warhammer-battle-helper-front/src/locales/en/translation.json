@@ -1,4 +1,10 @@
 {
+  "imageCrop": {
+    "title": "Crop image",
+    "zoom": "Zoom",
+    "sourceTooLarge": "This image is too large to process (max 80MB).",
+    "processingFailed": "Could not process this image."
+  },
   "token": {
     "killed": "Killed",
     "hideFromPlayers": "Hide from players",
@@ -348,8 +354,7 @@
     "addSpell": "Add Spell",
     "clickToChangeAvatar": "Click to change",
     "avatarUploadFailed": "Failed to upload avatar",
-    "invalidFileType": "Invalid file type. Please upload an image (JPEG, PNG, GIF, or WebP).",
-    "fileTooLarge": "File too large. Maximum size is 5MB.",
+    "invalidFileType": "Invalid file type. Please upload an image (JPEG, PNG or WebP).",
     "favoriteWeapon": "Toggle favorite weapon",
     "addCustomSkill": "Add Custom Skill",
     "addCustomTalent": "Add Custom Talent",
@@ -551,8 +556,7 @@
     "gameImageChange": "Change image",
     "gameImageDelete": "Remove image",
     "gameImageHint": "Shown on the game tile in the lobby. Visible to all players.",
-    "gameImageCropTitle": "Crop game image",
-    "gameImageZoom": "Zoom"
+    "gameImageUploadFailed": "Could not upload the game image."
   },
   "handouts": {
     "title": "Handouts",
@@ -587,11 +591,10 @@
     "selectedPlayers": "{{count}} player(s)",
     "file": "File",
     "fileRequired": "Please upload a file",
-    "invalidFileType": "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, PDF, TXT",
-    "fileTooLarge": "File too large. Maximum size is 5MB",
+    "invalidFileType": "Invalid file type. Allowed: JPEG, PNG, WebP, PDF, TXT",
     "uploadFailed": "Failed to upload file",
     "clickToUpload": "Click to upload file",
-    "allowedFormats": "JPEG, PNG, GIF, WebP, PDF, TXT (max 5MB)",
+    "allowedFormats": "JPEG, PNG, WebP, PDF, TXT (max 15MB)",
     "changeFile": "Change File",
     "pdfUploaded": "PDF file uploaded",
     "textUploaded": "Text file uploaded",
@@ -874,19 +877,21 @@
     "confirmDeleteFolder": "Are you sure you want to delete folder \"{{name}}\"?",
     "confirmDeleteFolderWithContents": "Folder \"{{name}}\" contains files. Delete folder and all contents?",
     "dropOrClick": "Drop files here or click to upload",
-    "allowedFormats": "JPEG, PNG, GIF, WebP (max 5MB each)",
+    "allowedFormats": "JPEG, PNG, WebP (max 15MB each)",
     "uploading": "Uploading...",
-    "uploadSuccess": "{{count}} file(s) uploaded successfully",
-    "uploadPartial": "{{success}} file(s) uploaded, {{failed}} failed",
+    "processing": "Processing {{current}} of {{total}}…",
+    "processingFailed": "Could not process: {{names}}",
     "folderName": "Folder Name",
     "folderNamePlaceholder": "Enter folder name...",
     "renameFolder": "Rename",
     "invalidFileType": "Invalid file type. Only images allowed.",
-    "fileTooLarge": "File too large. Maximum size is 5MB",
     "fileMoveError": "Failed to move file",
     "renameFile": "Rename file",
     "fileRenameError": "Failed to rename file",
-    "root": "Root"
+    "root": "Root",
+    "cropFile": "Crop image",
+    "croppedSuffix": "cropped",
+    "cropLoadFailed": "Could not load this file for cropping."
   },
   "dice": {
     "label": "D{{sides}}",

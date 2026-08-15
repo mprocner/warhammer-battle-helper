@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
 	"battle-helper/internal/storage"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -23,7 +24,6 @@ type HandoutHandler struct {
 var AllowedHandoutTypes = map[string]string{
 	"image/jpeg":      ".jpg",
 	"image/png":       ".png",
-	"image/gif":       ".gif",
 	"image/webp":      ".webp",
 	"application/pdf": ".pdf",
 	"text/plain":      ".txt",
@@ -31,15 +31,15 @@ var AllowedHandoutTypes = map[string]string{
 
 // ValidateHandoutFile checks if the file is a valid handout type and within size limits
 func ValidateHandoutFile(contentType string, size int64) (string, error) {
-	// Check file size (5MB)
+	// Check file size
 	if size > storage.MaxFileSize {
-		return "", &ValidationError{"file too large: maximum size is 5MB"}
+		return "", &ValidationError{fmt.Sprintf("file too large: maximum size is %dMB", storage.MaxFileSize/(1024*1024))}
 	}
 
 	// Check content type
 	ext, ok := AllowedHandoutTypes[contentType]
 	if !ok {
-		return "", &ValidationError{"invalid file type: only JPEG, PNG, GIF, WebP, PDF, and TXT are allowed"}
+		return "", &ValidationError{"invalid file type: only JPEG, PNG, WebP, PDF, and TXT are allowed"}
 	}
 
 	return ext, nil
@@ -84,8 +84,8 @@ func (h *HandoutHandler) UploadHandoutFile(c *gin.Context) {
 		return
 	}
 
-	// Parse multipart form with max 5MB
-	if err := c.Request.ParseMultipartForm(storage.MaxFileSize); err != nil {
+	// maxMemory, not a size cap — per-file size is checked in ValidateHandoutFile.
+	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
 	}

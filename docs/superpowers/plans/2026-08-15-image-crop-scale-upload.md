@@ -454,7 +454,7 @@ export async function processImage(file, preset, cropArea = null) {
 - [ ] **Step 2: Potwierdź, że testy predykatów dalej przechodzą**
 
 Run: `cd warhammer-battle-helper-front && CI=true npx react-scripts test --testPathPattern imageProcessing`
-Expected: PASS, 14 testów (nowych nie przybyło).
+Expected: PASS, 16 testów (nowych nie przybyło).
 
 - [ ] **Step 3: Commit**
 
@@ -522,14 +522,23 @@ import ImageCropModal from './ImageCropModal';
 import { PRESETS } from '../../utils/imageProcessing';
 
 // react-easy-crop needs real layout and image loading, neither of which jsdom
-// provides. The stub reports a crop area immediately so the confirm path runs.
-// React is required inside the factory: jest.mock factories are hoisted above
-// the imports and may not reference out-of-scope variables.
+// provides. One stub for the whole file; mockReportsArea switches whether it
+// behaves like a cropper that has finished layout (reports an area) or one that
+// has not yet. Swapping the module per-test with jest.resetModules instead
+// would reload React into a second registry and crash on an invalid hook call.
+//
+// React is required inside the factory, and the flag is named with a "mock"
+// prefix: jest.mock factories are hoisted above the imports, and only
+// mock-prefixed out-of-scope bindings are allowed through.
+let mockReportsArea = true;
+
 jest.mock('react-easy-crop', () => {
   const ReactInner = require('react');
   return ({ onCropComplete }) => {
     ReactInner.useEffect(() => {
-      onCropComplete({}, { x: 0, y: 0, width: 100, height: 100 });
+      if (mockReportsArea) {
+        onCropComplete({}, { x: 0, y: 0, width: 100, height: 100 });
+      }
     }, [onCropComplete]);
     return ReactInner.createElement('div', { 'data-testid': 'cropper' });
   };
@@ -546,13 +555,13 @@ jest.mock('react-i18next', () => ({
 
 const { processImage } = require('../../utils/imageProcessing');
 
-beforeAll(() => {
+// Not beforeAll: this project runs with CRA's resetMocks default, which would
+// wipe these before every test.
+beforeEach(() => {
   global.URL.createObjectURL = jest.fn(() => 'blob:stub');
   global.URL.revokeObjectURL = jest.fn();
-});
-
-beforeEach(() => {
   processImage.mockReset();
+  mockReportsArea = true;
 });
 
 const sourceFile = () => new File(['x'], 'map.png', { type: 'image/png' });
@@ -594,6 +603,24 @@ test('shows an error and does not confirm when processing fails', async () => {
 
   expect(await screen.findByText('imageCrop.processingFailed')).toBeInTheDocument();
   expect(onConfirm).not.toHaveBeenCalled();
+});
+
+test('save stays disabled until a crop area is reported', () => {
+  // The state ImageCropModal is in between opening and react-easy-crop
+  // finishing layout. Confirming here would hand processImage a null crop
+  // area, which bypasses the preset's aspect ratio entirely.
+  mockReportsArea = false;
+
+  render(
+    <ImageCropModal
+      file={sourceFile()}
+      preset={PRESETS.avatar}
+      onConfirm={jest.fn()}
+      onCancel={jest.fn()}
+    />
+  );
+
+  expect(screen.getByRole('button', { name: 'common.save' })).toBeDisabled();
 });
 
 test('cancel closes without processing', async () => {
@@ -667,7 +694,11 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     setBusy(true);
     setError('');
     try {
-      onConfirm(await processImage(file, preset, croppedAreaPixels));
+      // onConfirm is awaited, not fired and forgotten: every call site uploads
+      // inside it, and busy is what keeps Save and Cancel disabled. Without the
+      // await they re-enable while the request is still in flight, and a second
+      // click starts a second concurrent upload.
+      await onConfirm(await processImage(file, preset, croppedAreaPixels));
     } catch (err) {
       const reason = err instanceof ImageProcessingError ? err.reason : null;
       setError(t(ERROR_KEYS[reason] || 'imageCrop.processingFailed'));
@@ -717,7 +748,12 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
           <button
             className="image-crop-modal__btn image-crop-modal__btn--primary"
             onClick={handleConfirm}
-            disabled={busy}
+            // Waiting for croppedAreaPixels is load-bearing, not cosmetic:
+            // processImage passes a null crop area straight to
+            // shouldPassthrough, which ignores preset.aspect. Confirming
+            // before react-easy-crop reports an area would upload a
+            // non-square avatar untouched.
+            disabled={busy || !croppedAreaPixels}
           >
             {busy ? t('common.saving') : t('common.save')}
           </button>
@@ -827,7 +863,7 @@ Utwórz `src/components/common/ImageCropModal.css` — przeniesione z `GeneralTa
 - [ ] **Step 6: Uruchom test i potwierdź, że przechodzi**
 
 Run: `cd warhammer-battle-helper-front && CI=true npx react-scripts test --testPathPattern ImageCropModal`
-Expected: PASS, 3 testy.
+Expected: PASS, 4 testy.
 
 - [ ] **Step 7: Commit**
 
@@ -1404,6 +1440,11 @@ Dodaj handlery:
     setError('');
     try {
       const res = await fetch(resolveFileUrl(file.fileUrl));
+      // fetch only rejects on a network failure; a 404 for a server-side deleted
+      // file resolves like any other response, and blob() would happily wrap the
+      // error page. Without this the dialog opens on garbage the user cannot
+      // confirm and cannot diagnose.
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       const blob = await res.blob();
       setCropTarget({ file, source: new File([blob], file.name, { type: blob.type }) });
     } catch (err) {
