@@ -8,6 +8,7 @@ import {
   shouldPassthrough,
   sourceMayHaveAlpha,
   pickEncoding,
+  percentCropToSourceRect,
 } from './imageProcessing';
 
 const SMALL_BYTES = 1024;
@@ -126,5 +127,29 @@ describe('pickEncoding', () => {
   it('sends maps and large handouts to WebP', () => {
     expect(pickEncoding(2048, 1536).type).toBe('image/webp');
     expect(pickEncoding(4096, 4096).type).toBe('image/webp');
+  });
+});
+
+describe('percentCropToSourceRect', () => {
+  it('maps a full-frame selection to the whole source', () => {
+    expect(percentCropToSourceRect(0, 0, 100, 100, 1600, 900))
+      .toEqual({ x: 0, y: 0, width: 1600, height: 900 });
+  });
+
+  it('maps a bottom-right quarter', () => {
+    expect(percentCropToSourceRect(50, 50, 50, 50, 1600, 900))
+      .toEqual({ x: 800, y: 450, width: 800, height: 450 });
+  });
+
+  it('scales each axis by its own dimension', () => {
+    // A portrait source: the same percentage means different pixel counts on
+    // each axis, so a single shared scale factor would fail this.
+    expect(percentCropToSourceRect(0, 0, 100, 50, 800, 1600))
+      .toEqual({ x: 0, y: 0, width: 800, height: 800 });
+  });
+
+  it('rounds to whole pixels', () => {
+    expect(percentCropToSourceRect(33.333, 0, 33.333, 100, 900, 600))
+      .toEqual({ x: 300, y: 0, width: 300, height: 600 });
   });
 });

@@ -78,6 +78,23 @@ export function pickEncoding(width, height) {
     : { type: 'image/webp', quality: 0.85 };
 }
 
+// Turns react-image-crop's percentage selection into the source-pixel rectangle
+// processImage expects. Takes plain numbers rather than the library's PercentCrop
+// object on purpose: the maths is universal, so it should survive the next change
+// of cropping library. Unpacking the library's object stays in the component.
+//
+// No clamping: the library keeps its selection inside the image, and silently
+// correcting an out-of-range rectangle here would hide a real bug rather than
+// surface it.
+export function percentCropToSourceRect(xPct, yPct, widthPct, heightPct, naturalWidth, naturalHeight) {
+  return {
+    x: Math.round((xPct / 100) * naturalWidth),
+    y: Math.round((yPct / 100) * naturalHeight),
+    width: Math.round((widthPct / 100) * naturalWidth),
+    height: Math.round((heightPct / 100) * naturalHeight),
+  };
+}
+
 export class ImageProcessingError extends Error {
   constructor(reason) {
     super(`image processing failed: ${reason}`);
