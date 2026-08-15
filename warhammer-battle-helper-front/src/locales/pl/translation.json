@@ -556,9 +556,7 @@
     "gameImageAdd": "Dodaj obrazek",
     "gameImageChange": "Zmień obrazek",
     "gameImageDelete": "Usuń obrazek",
-    "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy.",
-    "gameImageCropTitle": "Przytnij obrazek gry",
-    "gameImageZoom": "Powiększenie"
+    "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy."
   },
   "handouts": {
     "title": "Handouty",
