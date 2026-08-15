@@ -17,6 +17,7 @@ import DraggableFileItem from './files/DraggableFileItem';
 import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
 import { resolveFileUrl } from '../../utils/fileUrl';
+import { processImage, PRESETS } from '../../utils/imageProcessing';
 import './FilesTab.css';
 
 const getImageDimensions = (url) => new Promise((resolve) => {
@@ -47,6 +48,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
   const [error, setError] = useState('');
 
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(null); // { current, total } while preprocessing
   const [isDragOver, setIsDragOver] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -253,28 +255,46 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     }
   };
 
-  // Handle file upload (from external drag)
+  // Handle file upload (from the picker or an external drag)
   const handleUpload = async (fileList) => {
-    const validFiles = Array.from(fileList).filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        return false;
-      }
-      return true;
-    });
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const picked = Array.from(fileList).filter(file => validTypes.includes(file.type));
 
-    if (validFiles.length === 0) {
+    if (picked.length === 0) {
       setError(t('files.invalidFileType'));
       return;
     }
 
+    setIsUploading(true);
+    setError('');
+
+    // Serial, not Promise.all: decoding and redrawing a 4096px image costs
+    // ~100ms of main thread, so twenty at once freeze the UI for seconds with
+    // no feedback. Awaiting between files hands control back to the event loop
+    // and lets the counter render.
+    const prepared = [];
+    const failed = [];
+    for (let i = 0; i < picked.length; i++) {
+      setProgress({ current: i + 1, total: picked.length });
+      try {
+        prepared.push(await processImage(picked[i], PRESETS.libraryImage));
+      } catch {
+        failed.push(picked[i].name);
+      }
+    }
+    setProgress(null);
+
+    if (failed.length > 0) {
+      setError(t('files.processingFailed', { names: failed.join(', ') }));
+    }
+
+    if (prepared.length === 0) {
+      setIsUploading(false);
+      return;
+    }
+
     try {
-      setIsUploading(true);
-      setError('');
-      const result = await uploadFiles(validFiles, currentFolderId);
+      const result = await uploadFiles(prepared, currentFolderId);
 
       if (result.files && result.files.length > 0) {
         setFiles(prev => [...prev, ...result.files]);
@@ -495,14 +515,18 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".jpg,.jpeg,.png,.gif,.webp"
+            accept=".jpg,.jpeg,.png,.webp"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
           />
           {isUploading ? (
             <>
               <div className="loading-spinner" />
-              <span>{t('files.uploading')}</span>
+              <span>
+                {progress
+                  ? t('files.processing', { current: progress.current, total: progress.total })
+                  : t('files.uploading')}
+              </span>
             </>
           ) : (
             <>
