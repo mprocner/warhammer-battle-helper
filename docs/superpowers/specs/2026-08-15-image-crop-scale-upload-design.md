@@ -61,8 +61,15 @@ działa, ale JPEG nie ma kanału alpha — token z przezroczystym tłem wgrany p
 kontra rozmiar" naraz: kompresuje jak JPEG, zachowuje alpha jak PNG. Backend już
 akceptuje `image/webp` (`storage/local.go:38`).
 
-Zapasowa ścieżka: jeśli `canvas.toBlob` zwróci `null` dla WebP, powtarzamy z
-`image/jpeg` q0.85.
+Zapasowa ścieżka: jeśli `canvas.toBlob` zwróci `null` dla WebP, powtarzamy
+z `image/jpeg` q0.85 — ale **tylko dla źródeł bez kanału alfa** (czyli JPEG).
+Dla źródłowego PNG albo WebP zwracamy błąd i pomijamy plik.
+
+Bezwarunkowa ścieżka zapasowa byłaby szkodliwa: token PNG z przezroczystym tłem
+dostałby po cichu tło czarne — dokładnie ta katastrofa, przed którą WebP ma chronić.
+Lepiej powiedzieć „nie umiem przetworzyć tego pliku" niż oddać zepsuty token.
+Rozpoznanie po typie MIME wystarczy — JPEG z definicji nie ma alfy, PNG i WebP mogą
+ją mieć.
 
 ### D4 — Limity rozmiaru per zastosowanie
 
@@ -144,8 +151,11 @@ export const PRESETS = {
   libraryImage: { maxEdge: 4096, aspect: null,              crop: false },
 };
 
+export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
+
 export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
 export function shouldPassthrough(file, preset, cropArea) -> boolean
+export function sourceMayHaveAlpha(file) -> boolean
 export async function processImage(file, preset, cropArea = null) -> File
 ```
 
@@ -157,16 +167,42 @@ Kroki `processImage`:
 1. `shouldPassthrough` — jeśli nie ma `cropArea` i obraz mieści się w `maxEdge`,
    zwróć oryginalny `File`. Bez tego bezstratny PNG 900 px przechodziłby stratną
    konwersję bez powodu.
-2. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
+2. Strażnik na wejściu — `file.size > MAX_SOURCE_BYTES` kończy się błędem, **zanim
+   cokolwiek zostanie zdekodowane** (uzasadnienie niżej).
+3. `createImageBitmap(file, { imageOrientation: 'from-image' })`. Drugi argument jest
    konieczny — zdjęcia z telefonu noszą obrót w EXIF, a `drawImage` bez niego rysuje
    avatar położony na boku.
-3. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
+4. `computeTargetSize` — skala to `min(1, maxEdge / max(w, h))`. Nigdy nie
    powiększamy; rozciągnięcie tokena 200 px do 4096 px to sam szum i megabajty.
-4. `drawImage` z prostokątem źródłowym `cropArea` albo całym obrazem.
-5. `canvas.toBlob(cb, 'image/webp', 0.85)`, nazwa `<podstawa>.webp`.
+5. `ctx.imageSmoothingQuality = 'high'` przed rysowaniem. Wartość domyślna to `'low'`,
+   a przy dużym skoku skali (mapa 10000 px → 4096 px) domyślne filtrowanie daje
+   widoczny aliasing na cienkich liniach.
+6. `drawImage` z prostokątem źródłowym `cropArea` albo całym obrazem.
+7. `bitmap.close()` natychmiast po `drawImage`.
+8. `canvas.toBlob(cb, 'image/webp', 0.85)`, nazwa `<podstawa>.webp`.
 
-Krok 1 jest sprawdzany przed krokiem 2, więc plik przechodzący bez zmian nigdy nie
-trafia na canvas.
+Krok 1 jest sprawdzany przed krokiem 3, więc plik przechodzący bez zmian nigdy nie
+trafia na canvas ani nie jest dekodowany.
+
+**Dlaczego strażnik i `close()`.** `createImageBitmap` rozpakowuje obraz do surowego
+RGBA, niezależnie od tego jak dobrze był skompresowany na dysku. PNG 10000×10000 to
+10000 × 10000 × 4 = **400 MB** w pamięci przeglądarki, przy pliku źródłowym rzędu
+100 MB. Limit `MaxFileSize` tego nie łapie, bo dotyczy tego, co wychodzi na serwer po
+przetworzeniu — użytkownik może więc wybrać plik, który wywali kartę przeglądarki,
+zanim jakikolwiek bajt poleci w sieć. Stąd próg na `file.size` przed dekodowaniem.
+
+`bitmap.close()` zwalnia te setki megabajtów natychmiast, zamiast czekać, aż zbierze je
+garbage collector. Ma to znaczenie właśnie dlatego, że `FilesTab` przetwarza pliki
+szeregowo w pętli — bez jawnego zwolnienia dwadzieścia dużych map kumuluje gigabajty
+zanim GC zdąży zareagować.
+
+**Znany limit powierzchni canvasu.** Safari na iOS odrzuca canvas powyżej 16 777 216
+pikseli powierzchni, a preset `libraryImage` przy obrazie kwadratowym daje
+4096 × 4096 = dokładnie 16 777 216. Na takich urządzeniach `toBlob` zwróci `null`,
+co uruchamia ścieżkę zapasową z D3: JPEG dla źródeł bez alfy, błąd dla PNG i WebP.
+Aplikacja jest narzędziem stołowym używanym na desktopie, więc nie zmieniamy dla tego
+przypadku limitu presetu — wystarczy, że degradacja jest jawna i nie psuje
+przezroczystości po cichu.
 
 ### Warstwa UI — `src/components/common/ImageCropModal.jsx`
 
@@ -232,7 +268,10 @@ nietknięte, backend bez zmian.
 ## Zmiany w i18n
 
 Nowe klucze: tytuł i przyciski `ImageCropModal`, sufiks `files.croppedSuffix`, tytuł
-akcji kadrowania w `DraggableFileItem`, komunikat postępu przetwarzania w `FilesTab`.
+akcji kadrowania w `DraggableFileItem`, komunikat postępu przetwarzania w `FilesTab`,
+komunikat o pliku źródłowym przekraczającym `MAX_SOURCE_BYTES` oraz komunikat
+o nieudanym przetworzeniu obrazu (uszkodzony plik albo `toBlob` bez WebP przy źródle
+z alfą).
 Zaktualizowane klucze wymieniające GIF: `files.allowedFormats`,
 `handouts.invalidFileType`, `characterSheet.invalidFileType`. Klucze po angielsku,
 tłumaczenia równolegle w `locales/en` i `locales/pl`. Klucze osierocone po usunięciu
@@ -245,8 +284,10 @@ kadrownika z `GeneralTab` (`settings.gameImageCropTitle` i sąsiednie) — skaso
 | Obraz poniżej `maxEdge`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
 | Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, wychodzi WebP; nigdy nie powiększamy |
 | Zdjęcie z telefonu z obrotem w EXIF | `imageOrientation: 'from-image'` prostuje przed rysowaniem |
-| `toBlob` zwraca `null` dla WebP | Ponowna próba z `image/jpeg` q0.85 |
-| `createImageBitmap` rzuca (uszkodzony plik) | Ten plik pomijany z komunikatem, reszta paczki leci dalej — `UploadFiles` już zbiera `errors[]` per plik |
+| `toBlob` zwraca `null` dla WebP, źródło bez alfy (JPEG) | Ponowna próba z `image/jpeg` q0.85 |
+| `toBlob` zwraca `null` dla WebP, źródło z alfą (PNG/WebP) | Błąd, plik pomijany — nigdy cicha utrata przezroczystości |
+| Plik źródłowy ponad `MAX_SOURCE_BYTES` (80 MB) | Odrzucony przed dekodowaniem, z komunikatem; chroni kartę przeglądarki przed padem na 400 MB bitmapy |
+| `createImageBitmap` rzuca (uszkodzony plik, brak pamięci) | Ten plik pomijany z komunikatem, reszta paczki leci dalej — `UploadFiles` już zbiera `errors[]` per plik |
 | Anulowanie modala | `input.value = ''`, żeby ten sam plik dało się wybrać ponownie (wzorzec z `AvatarUpload.jsx:51`) |
 | Plik nadal ponad limit po przetworzeniu | Serwer odrzuca, front pokazuje błąd; przy 4096 px i WebP praktycznie nieosiągalne |
 | Próba wgrania GIF-a | Odrzucone przez `accept` w inpucie i przez walidację serwera |
@@ -260,7 +301,9 @@ do czystych funkcji, które są testowane:
 - `computeTargetSize(w, h, maxEdge)` — skalowanie dla orientacji poziomej i pionowej,
   brak powiększania, kwadrat, wymiar dokładnie równy limitowi;
 - `shouldPassthrough(file, preset, cropArea)` — prawda dla obrazu poniżej limitu bez
-  kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit.
+  kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit;
+- `sourceMayHaveAlpha(file)` — prawda dla `image/png` i `image/webp`, fałsz dla
+  `image/jpeg`; steruje tym, czy ścieżka zapasowa z D3 wolno zejść do JPEG.
 
 Reszta `processImage` to sekwencja wywołań API przeglądarki bez rozgałęzień —
 testowanie jej sprowadzałoby się do testowania atrap. Backend nie dostaje nowej logiki,
