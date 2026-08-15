@@ -2,7 +2,10 @@
 .image-crop-modal__overlay {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  /* Above every modal in the app (the stack tops out at 10002 in style.css) —
+     this dialog opens from HandoutCreateModal at 9999 and must cover it. Below
+     .pointer-ping's 1000000, which is meant to stay on top of everything. */
+  z-index: 10003;
   display: flex;
   align-items: center;
   justify-content: center;
