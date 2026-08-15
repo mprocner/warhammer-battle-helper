@@ -66,6 +66,25 @@ var AllowedMusicTypes = map[string]string{
 	"audio/x-wav": ".wav",
 }
 
+// ServedContentTypes maps a stored file's extension to the Content-Type used
+// when serving it back. Deliberately separate from the upload allow-lists:
+// those govern what the server ACCEPTS, and the two drifted apart when GIF
+// uploads were dropped (FEATURE-132) while already-stored GIFs still have to
+// render. Keying by extension also makes .wav deterministic — reverse-scanning
+// AllowedMusicTypes picked between audio/wav and audio/x-wav at random,
+// because Go randomises map iteration order.
+var ServedContentTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".webp": "image/webp",
+	".pdf":  "application/pdf",
+	".txt":  "text/plain",
+	".mp3":  "audio/mpeg",
+	".wav":  "audio/wav",
+}
+
 // ValidateFile checks if the file is a valid image and within size limits
 func ValidateFile(file multipart.File, header *multipart.FileHeader) (string, error) {
 	// Check file size
@@ -145,34 +164,9 @@ func (s *LocalStorage) Get(filename string) (io.ReadCloser, string, error) {
 
 	// Determine content type from extension
 	ext := strings.ToLower(filepath.Ext(filename))
-	contentType := "application/octet-stream"
-
-	// Check image types first
-	for ct, e := range AllowedImageTypes {
-		if e == ext || (ext == ".jpeg" && e == ".jpg") {
-			contentType = ct
-			break
-		}
-	}
-
-	// Check handout types (PDF, text)
-	if contentType == "application/octet-stream" {
-		for ct, e := range AllowedHandoutTypes {
-			if e == ext {
-				contentType = ct
-				break
-			}
-		}
-	}
-
-	// Check music types
-	if contentType == "application/octet-stream" {
-		for ct, e := range AllowedMusicTypes {
-			if e == ext {
-				contentType = ct
-				break
-			}
-		}
+	contentType, ok := ServedContentTypes[ext]
+	if !ok {
+		contentType = "application/octet-stream"
 	}
 
 	return file, contentType, nil
