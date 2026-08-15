@@ -51,25 +51,64 @@ wskazującej ten URL we wszystkich grach oraz modala ostrzegawczego. Kopia nie w
 Przyjęty koszt: duplikaty w bibliotece i to, że scena dalej trzyma stary obraz.
 Akceptowalny, bo główna ścieżka to „przytnij zanim wstawisz".
 
-### D3 — Format wyjściowy: WebP
+### D3 — Format wyjściowy zależny od wielkości: PNG poniżej 1 MP, WebP powyżej
 
-Przetworzony obraz wychodzi jako `image/webp`, jakość 0.85.
+```js
+export const PNG_MAX_PIXELS = 1024 * 1024;   // 1 MP
+
+pickEncoding(width, height)
+  -> { type: 'image/png',  quality: undefined }  // gdy w * h <= PNG_MAX_PIXELS
+  -> { type: 'image/webp', quality: 0.85 }       // w przeciwnym razie
+```
+
+Wymiary w regule to wymiary **wyniku**, po skalowaniu i kadrowaniu, nie źródła.
+
+Punkt wyjścia: `canvas.toBlob` **zawsze koduje od zera**. Canvas trzyma surowe RGBA
+i nie pamięta, w czym obraz przyszedł, więc ścieżka „przeskaluj, ale zachowaj
+oryginalne kodowanie" nie istnieje. To samo dotyczy kadrowania. Wybór nie brzmi
+„kodować czy nie", tylko „którym koderem".
 
 Obecny `cropImageToBlob` w `GeneralTab.jsx:38` wypluwa zawsze JPEG. Dla kafelka gry to
-działa, ale JPEG nie ma kanału alpha — token z przezroczystym tłem wgrany przez
-`FilesTab` dostałby czarne albo białe tło. WebP rozwiązuje konflikt „przezroczystość
-kontra rozmiar" naraz: kompresuje jak JPEG, zachowuje alpha jak PNG. Backend już
-akceptuje `image/webp` (`storage/local.go:38`).
+działa, ale JPEG nie ma kanału alfa — token z przezroczystym tłem wgrany przez
+`FilesTab` dostałby czarne albo białe tło. Odpada.
 
-Zapasowa ścieżka: jeśli `canvas.toBlob` zwróci `null` dla WebP, powtarzamy
-z `image/jpeg` q0.85 — ale **tylko dla źródeł bez kanału alfa** (czyli JPEG).
-Dla źródłowego PNG albo WebP zwracamy błąd i pomijamy plik.
+Zostają PNG i WebP, i one wygrywają w rozłącznych przedziałach wielkości.
 
-Bezwarunkowa ścieżka zapasowa byłaby szkodliwa: token PNG z przezroczystym tłem
-dostałby po cichu tło czarne — dokładnie ta katastrofa, przed którą WebP ma chronić.
-Lepiej powiedzieć „nie umiem przetworzyć tego pliku" niż oddać zepsuty token.
-Rozpoznanie po typie MIME wystarczy — JPEG z definicji nie ma alfy, PNG i WebP mogą
-ją mieć.
+**Czemu nie sam PNG.** PNG kompresuje bezstratnie, algorytmem DEFLATE po przefiltrowanych
+rzędach pikseli. Świetnie radzi sobie z płaskimi barwami i ostrymi krawędziami, fatalnie
+z gradientami, teksturami i szumem. Mapa 4096×4096 waży w PNG 20–40 MB wobec 1,5–3 MB
+w WebP q0.85 — różnica dziesięcio- do piętnastokrotna. Uderza w trzy miejsca: plik nie
+mieści się w limicie 15 MB (D6); biblioteka trzydziestu map zajmuje 1 GB zamiast 60 MB;
+a przede wszystkim **obraz sceny pobiera każdy gracz przy każdym przełączeniu sceny** —
+pięciu graczy razy 30 MB to 150 MB z łącza serwera na jedno przełączenie, czyli minuty
+patrzenia w pustą mapę. Sam PNG byłby wykonalny tylko przy mapach rzędu 1500 px, co
+unieważnia D4.
+
+**Czemu nie sam WebP.** `canvas.toBlob` nie wystawia trybu bezstratnego WebP, więc każde
+wyjście byłoby stratne — także tam, gdzie bezstratność jest tania. Token 250×250 w PNG
+to około 60 KB; oszczędność z kompresji stratnej jest tu bez znaczenia, a koszt realny:
+ostry kontur na przezroczystym tle dostaje przy stratnej kompresji brudną obwódkę,
+i narasta to przy każdym kolejnym kadrowaniu tego samego pliku.
+
+Próg po wielkości dobrze pokrywa się z rodzajem treści w tej aplikacji: małe obrazy to
+tokeny i avatary, czyli grafika płaska, gdzie PNG jest bezstratny *i* mały; duże to
+malowane mapy, gdzie PNG jest bezstratny i nie do uniesienia. Pod tą regułą avatar (512),
+kafelek gry (800×640) i każdy przycięty token wychodzą bezstratnie, a stratna kompresja
+dotyka wyłącznie map i dużych handoutów, gdzie PNG i tak jest nie do użycia.
+
+Backend akceptuje oba formaty bez zmian (`storage/local.go:35–38`).
+
+**Ścieżka zapasowa** dotyczy tylko gałęzi WebP — PNG jest wspierany wszędzie, gdzie
+canvas w ogóle działa. Jeśli `toBlob` zwróci `null` dla WebP, powtarzamy z `image/jpeg`
+q0.85, ale **tylko dla źródeł bez kanału alfa** (czyli JPEG). Dla źródłowego PNG albo
+WebP zwracamy błąd i pomijamy plik. Bezwarunkowa ścieżka zapasowa byłaby szkodliwa:
+token z przezroczystym tłem dostałby po cichu tło czarne. Rozpoznanie po typie MIME
+wystarczy — JPEG z definicji nie ma alfy, PNG i WebP mogą ją mieć.
+
+Świadomie odrzucone: kodowanie do PNG i sięganie po WebP dopiero gdy wynik przekroczy
+budżet bajtów. Reguła byłaby samostrojąca, ale kodowanie PNG obrazu 4096×4096 to ~1–2 s
+pracy, którą przy szeregowej pętli w `FilesTab` płaci się za każdy plik dwa razy. Próg
+liczony z wymiarów kosztuje jedno mnożenie.
 
 ### D4 — Limity rozmiaru per zastosowanie
 
@@ -152,10 +191,12 @@ export const PRESETS = {
 };
 
 export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
+export const PNG_MAX_PIXELS = 1024 * 1024;
 
 export function computeTargetSize(srcW, srcH, maxEdge) -> { width, height }
 export function shouldPassthrough(file, preset, cropArea) -> boolean
 export function sourceMayHaveAlpha(file) -> boolean
+export function pickEncoding(width, height) -> { type, quality }
 export async function processImage(file, preset, cropArea = null) -> File
 ```
 
@@ -179,7 +220,8 @@ Kroki `processImage`:
    widoczny aliasing na cienkich liniach.
 6. `drawImage` z prostokątem źródłowym `cropArea` albo całym obrazem.
 7. `bitmap.close()` natychmiast po `drawImage`.
-8. `canvas.toBlob(cb, 'image/webp', 0.85)`, nazwa `<podstawa>.webp`.
+8. `pickEncoding(targetW, targetH)` i `canvas.toBlob` z wybranym typem oraz jakością;
+   nazwa `<podstawa>.png` albo `<podstawa>.webp`, zgodnie z tym, co wyszło.
 
 Krok 1 jest sprawdzany przed krokiem 3, więc plik przechodzący bez zmian nigdy nie
 trafia na canvas ani nie jest dekodowany.
@@ -282,8 +324,9 @@ kadrownika z `GeneralTab` (`settings.gameImageCropTitle` i sąsiednie) — skaso
 | Sytuacja | Zachowanie |
 |---|---|
 | Obraz poniżej `maxEdge`, bez kadrowania | Oryginał leci nietknięty, bez stratnej konwersji |
-| Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, wychodzi WebP; nigdy nie powiększamy |
+| Obraz poniżej `maxEdge`, z kadrowaniem | Przechodzi przez canvas, format z `pickEncoding`; nigdy nie powiększamy |
 | Zdjęcie z telefonu z obrotem w EXIF | `imageOrientation: 'from-image'` prostuje przed rysowaniem |
+| Wynik do 1 MP (avatar, kafelek gry, przycięty token) | Bezstratny PNG, bez ścieżki zapasowej |
 | `toBlob` zwraca `null` dla WebP, źródło bez alfy (JPEG) | Ponowna próba z `image/jpeg` q0.85 |
 | `toBlob` zwraca `null` dla WebP, źródło z alfą (PNG/WebP) | Błąd, plik pomijany — nigdy cicha utrata przezroczystości |
 | Plik źródłowy ponad `MAX_SOURCE_BYTES` (80 MB) | Odrzucony przed dekodowaniem, z komunikatem; chroni kartę przeglądarki przed padem na 400 MB bitmapy |
@@ -303,7 +346,9 @@ do czystych funkcji, które są testowane:
 - `shouldPassthrough(file, preset, cropArea)` — prawda dla obrazu poniżej limitu bez
   kadrowania, fałsz gdy podano `cropArea`, fałsz gdy obraz przekracza limit;
 - `sourceMayHaveAlpha(file)` — prawda dla `image/png` i `image/webp`, fałsz dla
-  `image/jpeg`; steruje tym, czy ścieżka zapasowa z D3 wolno zejść do JPEG.
+  `image/jpeg`; steruje tym, czy ścieżce zapasowej z D3 wolno zejść do JPEG;
+- `pickEncoding(w, h)` — PNG dokładnie na progu `PNG_MAX_PIXELS`, WebP jeden piksel
+  powyżej, oraz wynik dla wymiarów każdego z czterech presetów.
 
 Reszta `processImage` to sekwencja wywołań API przeglądarki bez rozgałęzień —
 testowanie jej sprowadzałoby się do testowania atrap. Backend nie dostaje nowej logiki,
