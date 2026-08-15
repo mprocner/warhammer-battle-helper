@@ -109,6 +109,11 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     setError('');
     try {
       const res = await fetch(resolveFileUrl(file.fileUrl));
+      // fetch only rejects on a network failure; a 404 for a server-side deleted
+      // file resolves like any other response, and blob() would happily wrap the
+      // error page. Without this the dialog opens on garbage the user cannot
+      // confirm and cannot diagnose.
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       const blob = await res.blob();
       setCropTarget({ file, source: new File([blob], file.name, { type: blob.type }) });
     } catch (err) {
@@ -122,6 +127,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
     setCropTarget(null);
     setIsUploading(true);
     setError('');
+    const problems = [];
     try {
       const base = original.name.replace(/\.[^.]+$/, '');
       // The extension comes from the processed file, not the original: a large
@@ -138,11 +144,13 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
         setFiles(prev => [...prev, ...result.files]);
       }
       if (result.errors && result.errors.length > 0) {
-        setError(result.errors.join(', '));
+        problems.push(result.errors.join(', '));
       }
+      setError(joinProblems(problems));
     } catch (err) {
       console.error('Failed to upload cropped file:', err);
-      setError(t('files.uploadError'));
+      problems.push(t('files.uploadError'));
+      setError(joinProblems(problems));
     } finally {
       setIsUploading(false);
     }
