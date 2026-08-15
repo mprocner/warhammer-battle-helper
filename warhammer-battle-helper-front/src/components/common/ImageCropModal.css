@@ -32,14 +32,15 @@
   margin: 0;
 }
 
+/* Scrolls rather than clips: zoom widens the image past this box on purpose,
+   and dragging inside it creates the crop frame, so panning is by scrollbar. */
 .image-crop-modal__area {
-  position: relative;
   width: 100%;
   height: 320px;
+  overflow: auto;
   background: #2a2218;
   border: 2px solid #8b6b3d;
   border-radius: 4px;
-  overflow: hidden;
 }
 
 .image-crop-modal__zoom {
