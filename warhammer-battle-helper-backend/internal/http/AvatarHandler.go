@@ -30,7 +30,7 @@ type UploadAvatarResponse struct {
 // @Security BearerAuth
 // @Router /avatars [post]
 func (h *AvatarHandler) UploadAvatar(c *gin.Context) {
-	// Parse multipart form with max storage.MaxMultipartMemory
+	// maxMemory, not a size cap — per-file size is checked in ValidateFile.
 	if err := c.Request.ParseMultipartForm(storage.MaxMultipartMemory); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form: " + err.Error()})
 		return
