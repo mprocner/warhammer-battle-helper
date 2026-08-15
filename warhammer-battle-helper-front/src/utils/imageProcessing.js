@@ -39,17 +39,6 @@ export function computeTargetSize(srcW, srcH, maxEdge) {
   return { width: Math.round(srcW * scale), height: Math.round(srcH * scale) };
 }
 
-// react-easy-crop has no free-form mode: its defaultProps set aspect to 4/3, so
-// passing undefined silently crops every image to 4:3 rather than leaving it
-// alone. A preset with no aspect of its own therefore takes the source image's,
-// which makes the opening frame the whole image — the behaviour "no aspect" was
-// meant to describe.
-export function resolveAspect(preset, naturalWidth, naturalHeight) {
-  if (preset.aspect) return preset.aspect;
-  if (!naturalWidth || !naturalHeight) return 1;
-  return naturalWidth / naturalHeight;
-}
-
 // Deliberately blind to preset.aspect, which puts a requirement on callers:
 // a preset carrying an aspect MUST only be used behind a crop dialog that
 // refuses to confirm until it has a crop area. Nothing here enforces that —
@@ -78,6 +67,23 @@ export function pickEncoding(width, height) {
     : { type: 'image/webp', quality: 0.85 };
 }
 
+// Turns a percentage crop selection into the source-pixel rectangle processImage
+// expects. Takes plain numbers rather than a cropping library's own crop object
+// on purpose: the maths is universal, so it should survive the next change of
+// cropping library. Unpacking the library's object stays in the component.
+//
+// No clamping: the library keeps its selection inside the image, and silently
+// correcting an out-of-range rectangle here would hide a real bug rather than
+// surface it.
+export function percentCropToSourceRect(xPct, yPct, widthPct, heightPct, naturalWidth, naturalHeight) {
+  return {
+    x: Math.round((xPct / 100) * naturalWidth),
+    y: Math.round((yPct / 100) * naturalHeight),
+    width: Math.round((widthPct / 100) * naturalWidth),
+    height: Math.round((heightPct / 100) * naturalHeight),
+  };
+}
+
 export class ImageProcessingError extends Error {
   constructor(reason) {
     super(`image processing failed: ${reason}`);
@@ -102,7 +108,7 @@ function renameTo(originalName, mimeType) {
  * @param {File} file
  * @param {object} preset - one of PRESETS
  * @param {?{x:number, y:number, width:number, height:number}} cropArea - source-pixel
- *   rectangle, exactly what react-easy-crop reports as croppedAreaPixels
+ *   rectangle, or null if no crop was applied
  * @returns {Promise<File>}
  * @throws {ImageProcessingError}
  */

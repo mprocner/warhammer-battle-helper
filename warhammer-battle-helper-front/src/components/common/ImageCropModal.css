@@ -32,14 +32,33 @@
   margin: 0;
 }
 
+/* Scrolls rather than clips: zoom widens the image past this box on purpose,
+   and dragging inside it creates the crop frame, so panning is by scrollbar. */
 .image-crop-modal__area {
-  position: relative;
   width: 100%;
   height: 320px;
+  overflow: auto;
   background: #2a2218;
   border: 2px solid #8b6b3d;
   border-radius: 4px;
-  overflow: hidden;
+}
+
+/* Scales the whole ReactCrop element, overlay included. Scaling the image
+   alone would leave the crop frame at 1:1, misaligned with the picture. */
+.image-crop-modal__scaler {
+  transform-origin: top left;
+}
+
+/* The library fits nothing to the box, so a portrait image would open showing
+   only its top strip. Percentages are relative to whatever gets rendered, so
+   constraining the height does not affect the crop maths. The max-height
+   itself is set inline on the <img>, not here: react-image-crop ships
+   `.ReactCrop__child-wrapper > img { max-height: inherit }` at higher
+   specificity than a class selector, which would win over this rule and
+   resolve to `none`. Do not move it back here — it will silently stop
+   applying. */
+.image-crop-modal__image {
+  display: block;
 }
 
 .image-crop-modal__zoom {

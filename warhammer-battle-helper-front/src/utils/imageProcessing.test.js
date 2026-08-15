@@ -1,13 +1,12 @@
 import {
   PRESETS,
   PNG_MAX_PIXELS,
-  GAME_IMAGE_ASPECT,
   MAX_PASSTHROUGH_BYTES,
   computeTargetSize,
-  resolveAspect,
   shouldPassthrough,
   sourceMayHaveAlpha,
   pickEncoding,
+  percentCropToSourceRect,
 } from './imageProcessing';
 
 const SMALL_BYTES = 1024;
@@ -27,28 +26,6 @@ describe('computeTargetSize', () => {
 
   it('leaves an image exactly at the limit alone', () => {
     expect(computeTargetSize(4096, 4096, 4096)).toEqual({ width: 4096, height: 4096 });
-  });
-});
-
-describe('resolveAspect', () => {
-  it('uses the preset ratio when it has one', () => {
-    expect(resolveAspect(PRESETS.avatar, 800, 600)).toBe(1);
-    expect(resolveAspect(PRESETS.gameImage, 800, 600)).toBe(GAME_IMAGE_ASPECT);
-  });
-
-  it("falls back to the source's own ratio when the preset has none", () => {
-    expect(resolveAspect(PRESETS.libraryImage, 1600, 900)).toBeCloseTo(16 / 9);
-    expect(resolveAspect(PRESETS.handout, 1000, 1000)).toBe(1);
-  });
-
-  it('never returns 4/3 by accident for a null-aspect preset', () => {
-    // Pins the actual defect: react-easy-crop's defaultProps would have made
-    // this 4/3 when the component passed undefined.
-    expect(resolveAspect(PRESETS.libraryImage, 1600, 900)).not.toBeCloseTo(4 / 3);
-  });
-
-  it('is defensive about a missing media size', () => {
-    expect(resolveAspect(PRESETS.libraryImage, 0, 0)).toBe(1);
   });
 });
 
@@ -126,5 +103,29 @@ describe('pickEncoding', () => {
   it('sends maps and large handouts to WebP', () => {
     expect(pickEncoding(2048, 1536).type).toBe('image/webp');
     expect(pickEncoding(4096, 4096).type).toBe('image/webp');
+  });
+});
+
+describe('percentCropToSourceRect', () => {
+  it('maps a full-frame selection to the whole source', () => {
+    expect(percentCropToSourceRect(0, 0, 100, 100, 1600, 900))
+      .toEqual({ x: 0, y: 0, width: 1600, height: 900 });
+  });
+
+  it('maps a bottom-right quarter', () => {
+    expect(percentCropToSourceRect(50, 50, 50, 50, 1600, 900))
+      .toEqual({ x: 800, y: 450, width: 800, height: 450 });
+  });
+
+  it('scales each axis by its own dimension', () => {
+    // A portrait source: the same percentage means different pixel counts on
+    // each axis, so a single shared scale factor would fail this.
+    expect(percentCropToSourceRect(0, 0, 100, 50, 800, 1600))
+      .toEqual({ x: 0, y: 0, width: 800, height: 800 });
+  });
+
+  it('rounds to whole pixels', () => {
+    expect(percentCropToSourceRect(33.333, 0, 33.333, 100, 900, 600))
+      .toEqual({ x: 300, y: 0, width: 300, height: 600 });
   });
 });

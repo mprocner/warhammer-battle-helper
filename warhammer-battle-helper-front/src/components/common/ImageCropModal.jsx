@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import Cropper from 'react-easy-crop';
-import { processImage, resolveAspect, ImageProcessingError } from '../../utils/imageProcessing';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import { processImage, percentCropToSourceRect, ImageProcessingError } from '../../utils/imageProcessing';
 import './ImageCropModal.css';
 
 const ERROR_KEYS = {
@@ -10,6 +11,8 @@ const ERROR_KEYS = {
   'decode-failed': 'imageCrop.processingFailed',
   'encode-failed': 'imageCrop.processingFailed',
 };
+
+const WHOLE_IMAGE_CROP = { unit: '%', x: 0, y: 0, width: 100, height: 100 };
 
 /**
  * Crop-and-downscale dialog shared by every single-image upload path.
@@ -21,51 +24,67 @@ const ERROR_KEYS = {
 const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
   const { t } = useTranslation();
   const [imageSrc, setImageSrc] = useState(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [crop, setCrop] = useState(null);
+  const [touched, setTouched] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [mediaAspect, setMediaAspect] = useState(null);
+  const [naturalSize, setNaturalSize] = useState(null);
+  const [imgBox, setImgBox] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   // Keyed on `file` so a swapped file gets a fresh preview AND fresh crop state.
   // Without the resets, a call site that changes `file` without remounting would
-  // keep the previous image's crop rectangle — and since croppedAreaPixels would
-  // already be set, the confirm button would be enabled before the new image has
-  // been cropped at all.
+  // keep the previous image's frame and its touched flag, and could crop the new
+  // image to the old bounds.
   useEffect(() => {
     const url = URL.createObjectURL(file);
     setImageSrc(url);
-    setCrop({ x: 0, y: 0 });
+    setCrop(null);
+    setTouched(false);
     setZoom(1);
-    setCroppedAreaPixels(null);
-    setMediaAspect(null);
+    setNaturalSize(null);
+    setImgBox(null);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const onCropComplete = useCallback((_area, areaPixels) => {
-    setCroppedAreaPixels(areaPixels);
-  }, []);
-
-  // react-easy-crop emits its first croppedAreaPixels BEFORE calling
-  // onMediaLoaded, so that first emission is computed at the fallback
-  // aspect rather than the source's. The confirm guard does not catch it —
-  // croppedAreaPixels is already set. What makes it safe is that changing
-  // the aspect prop synchronously recomputes and re-emits the crop area,
-  // sub-frame, so the stale rectangle is replaced before anyone can click.
-  const onMediaLoaded = useCallback((mediaSize) => {
-    setMediaAspect(mediaSize.naturalWidth / mediaSize.naturalHeight);
-  }, []);
+  const onImageLoad = useCallback((e) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    setNaturalSize({ width: naturalWidth, height: naturalHeight });
+    // Rendered size at zoom 1 — the zoom frame multiplies this, it does not
+    // recompute it, so it has to be read from the DOM once, here.
+    const box = e.currentTarget.getBoundingClientRect();
+    setImgBox({ width: box.width, height: box.height });
+    setCrop(
+      preset.aspect == null
+        ? WHOLE_IMAGE_CROP
+        : centerCrop(
+            makeAspectCrop({ unit: '%', width: 100 }, preset.aspect, naturalWidth, naturalHeight),
+            naturalWidth,
+            naturalHeight
+          )
+    );
+  }, [preset.aspect]);
 
   const handleConfirm = async () => {
     setBusy(true);
     setError('');
     try {
+      // An untouched frame counts as "no crop" ONLY where the preset forces no
+      // shape. For avatar and gameImage the opening frame is already a centred
+      // crop, so skipping it would upload the whole, wrongly-shaped image — the
+      // failure the previous library's confirm guard existed to prevent.
+      const cropArea =
+        preset.aspect == null && !touched
+          ? null
+          : percentCropToSourceRect(
+              crop.x, crop.y, crop.width, crop.height,
+              naturalSize.width, naturalSize.height
+            );
       // onConfirm is awaited, not fired and forgotten: every call site uploads
       // inside it, and busy is what keeps Save and Cancel disabled. Without the
       // await they re-enable while the request is still in flight, and a second
       // click starts a second concurrent upload.
-      await onConfirm(await processImage(file, preset, croppedAreaPixels));
+      await onConfirm(await processImage(file, preset, cropArea));
     } catch (err) {
       const reason = err instanceof ImageProcessingError ? err.reason : null;
       setError(t(ERROR_KEYS[reason] || 'imageCrop.processingFailed'));
@@ -85,24 +104,57 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
       <div className="image-crop-modal">
         <h4 className="image-crop-modal__title">{t('imageCrop.title')}</h4>
         <div className="image-crop-modal__area">
-          {imageSrc && (
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              // mediaAspect is already a naturalWidth/naturalHeight ratio (see
-              // onMediaLoaded below), so it is fed through resolveAspect as a
-              // width over a height of 1 — the division inside then returns
-              // the ratio unchanged. mediaAspect stays null until layout, in
-              // which case resolveAspect's own "no media size yet" guard falls
-              // back to 1 rather than 0/1.
-              aspect={resolveAspect(preset, mediaAspect ?? 0, 1)}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-              onMediaLoaded={onMediaLoaded}
-            />
-          )}
+          <div
+            className="image-crop-modal__zoom-frame"
+            // The transform on the scaler below alone cannot make the area
+            // scroll — it does not change the layout box — so this frame is
+            // sized to the scaled result and gives the scrollbars something
+            // to measure.
+            style={imgBox ? { width: imgBox.width * zoom, height: imgBox.height * zoom } : undefined}
+          >
+            <div
+              className="image-crop-modal__scaler"
+              // Frozen at the UNSCALED size on purpose, asymmetric with the
+              // frame above: the frame grows with zoom so the area has
+              // something to scroll, but if this box also grew, `max-width:
+              // 100%` on .ReactCrop and its <img> would let them re-lay-out
+              // larger at that bigger containing block, and the transform
+              // would then scale that already-enlarged layout again —
+              // magnifying by roughly zoom² instead of zoom. Keeping this
+              // box fixed makes the transform purely visual.
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
+                ...(imgBox ? { width: imgBox.width, height: imgBox.height } : null),
+              }}
+            >
+              {imageSrc && (
+                <ReactCrop
+                  crop={crop ?? undefined}
+                  onChange={(_pixelCrop, percentCrop) => {
+                    setCrop(percentCrop);
+                    setTouched(true);
+                  }}
+                  aspect={preset.aspect ?? undefined}
+                  keepSelection
+                >
+                  <img
+                    src={imageSrc}
+                    alt=""
+                    className="image-crop-modal__image"
+                    // Inline, not in the stylesheet: react-image-crop ships
+                    // `.ReactCrop__child-wrapper > img { max-height: inherit }`
+                    // at higher specificity than the class rule here, which
+                    // resolves to `none` through its ancestors and wins
+                    // regardless of import order. An inline style beats the
+                    // cascade without touching the library's stylesheet.
+                    style={{ maxHeight: '300px' }}
+                    onLoad={onImageLoad}
+                  />
+                </ReactCrop>
+              )}
+            </div>
+          </div>
         </div>
         <div className="image-crop-modal__zoom">
           <input
@@ -128,12 +180,10 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
           <button
             className="image-crop-modal__btn image-crop-modal__btn--primary"
             onClick={handleConfirm}
-            // Waiting for croppedAreaPixels is load-bearing, not cosmetic:
-            // processImage passes a null crop area straight to
-            // shouldPassthrough, which ignores preset.aspect. Confirming
-            // before react-easy-crop reports an area would upload a
-            // non-square avatar untouched.
-            disabled={busy || !croppedAreaPixels}
+            // Waiting for naturalSize is load-bearing: before the image loads
+            // there is no intrinsic size, so no percentage can be converted to
+            // source pixels and there is nothing meaningful to confirm.
+            disabled={busy || !naturalSize}
           >
             {busy ? t('common.saving') : t('common.save')}
           </button>
