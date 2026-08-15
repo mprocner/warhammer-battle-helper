@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Cropper from 'react-easy-crop';
-import { processImage, ImageProcessingError } from '../../utils/imageProcessing';
+import { processImage, resolveAspect, ImageProcessingError } from '../../utils/imageProcessing';
 import './ImageCropModal.css';
 
 const ERROR_KEYS = {
@@ -23,6 +24,7 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [mediaAspect, setMediaAspect] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,11 +39,21 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+    setMediaAspect(null);
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
   const onCropComplete = useCallback((_area, areaPixels) => {
     setCroppedAreaPixels(areaPixels);
+  }, []);
+
+  // react-easy-crop reports the decoded image's real pixel size once it has
+  // loaded it, which for a null-aspect preset is the ratio resolveAspect needs.
+  // Until this fires, mediaAspect is null and resolveAspect falls back to 1 —
+  // harmless, since componentDidUpdate recomputes the crop size the moment the
+  // aspect prop changes.
+  const onMediaLoaded = useCallback((mediaSize) => {
+    setMediaAspect(mediaSize.naturalWidth / mediaSize.naturalHeight);
   }, []);
 
   const handleConfirm = async () => {
@@ -71,10 +83,17 @@ const ImageCropModal = ({ file, preset, onConfirm, onCancel }) => {
               image={imageSrc}
               crop={crop}
               zoom={zoom}
-              aspect={preset.aspect ?? undefined}
+              // mediaAspect is already a naturalWidth/naturalHeight ratio (see
+              // onMediaLoaded below), so it is fed through resolveAspect as a
+              // width over a height of 1 — the division inside then returns
+              // the ratio unchanged. mediaAspect stays null until layout, in
+              // which case resolveAspect's own "no media size yet" guard falls
+              // back to 1 rather than 0/1.
+              aspect={resolveAspect(preset, mediaAspect ?? 0, 1)}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              onMediaLoaded={onMediaLoaded}
             />
           )}
         </div>

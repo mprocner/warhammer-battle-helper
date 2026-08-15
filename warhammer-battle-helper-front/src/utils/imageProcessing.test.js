@@ -1,7 +1,9 @@
 import {
   PRESETS,
   PNG_MAX_PIXELS,
+  GAME_IMAGE_ASPECT,
   computeTargetSize,
+  resolveAspect,
   shouldPassthrough,
   sourceMayHaveAlpha,
   pickEncoding,
@@ -22,6 +24,28 @@ describe('computeTargetSize', () => {
 
   it('leaves an image exactly at the limit alone', () => {
     expect(computeTargetSize(4096, 4096, 4096)).toEqual({ width: 4096, height: 4096 });
+  });
+});
+
+describe('resolveAspect', () => {
+  it('uses the preset ratio when it has one', () => {
+    expect(resolveAspect(PRESETS.avatar, 800, 600)).toBe(1);
+    expect(resolveAspect(PRESETS.gameImage, 800, 600)).toBe(GAME_IMAGE_ASPECT);
+  });
+
+  it("falls back to the source's own ratio when the preset has none", () => {
+    expect(resolveAspect(PRESETS.libraryImage, 1600, 900)).toBeCloseTo(16 / 9);
+    expect(resolveAspect(PRESETS.handout, 1000, 1000)).toBe(1);
+  });
+
+  it('never returns 4/3 by accident for a null-aspect preset', () => {
+    // Pins the actual defect: react-easy-crop's defaultProps would have made
+    // this 4/3 when the component passed undefined.
+    expect(resolveAspect(PRESETS.libraryImage, 1600, 900)).not.toBeCloseTo(4 / 3);
+  });
+
+  it('is defensive about a missing media size', () => {
+    expect(resolveAspect(PRESETS.libraryImage, 0, 0)).toBe(1);
   });
 });
 
