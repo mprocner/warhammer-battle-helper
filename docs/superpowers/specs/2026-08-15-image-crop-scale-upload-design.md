@@ -126,6 +126,8 @@ jest polem presetu.
 4096 px dla map to jakość porównywalna z Foundry VTT, ostra przy mocnym zoomie.
 W WebP q0.85 to zwykle 1,5–3 MB.
 
+Kolumna „Kadrownik" opisuje zachowanie miejsca wywołania, nie pole presetu.
+
 ### D5 — Kadrowanie w bibliotece jako ikona przy pliku
 
 `DraggableFileItem.jsx:83` ma już rząd ikon (dodaj do sceny / zmień nazwę / usuń).
@@ -183,11 +185,15 @@ niespodzianka, nie cicha utrata danych.
 Bez Reacta, bez `fetch`, bez i18n.
 
 ```js
+// Preset carries the limit and the proportions only. Whether a path shows the
+// cropper is decided by the call site: FilesTab uses libraryImage both ways —
+// bulk upload without the modal, single-file crop with it — so a `crop` flag
+// here would be dead weight.
 export const PRESETS = {
-  avatar:       { maxEdge: 512,  aspect: 1,                 crop: true  },
-  gameImage:    { maxEdge: 800,  aspect: GAME_IMAGE_ASPECT, crop: true  },
-  handout:      { maxEdge: 2048, aspect: null,              crop: true  },
-  libraryImage: { maxEdge: 4096, aspect: null,              crop: false },
+  avatar:       { maxEdge: 512,  aspect: 1 },
+  gameImage:    { maxEdge: 800,  aspect: GAME_IMAGE_ASPECT },
+  handout:      { maxEdge: 2048, aspect: null },
+  libraryImage: { maxEdge: 4096, aspect: null },
 };
 
 export const MAX_SOURCE_BYTES = 80 * 1024 * 1024;
@@ -284,8 +290,8 @@ w CRA — nieopłacalne przy tej skali.
 ### Przepływ kadrowania w bibliotece
 
 Klik na `CropIcon` pobiera plik z jego URL-a (`fetch` → `blob`; to samo origin, więc
-canvas się nie zabrudzi) i otwiera `ImageCropModal` z presetem `libraryImage`
-i lokalnie nadpisanym `crop: true`. `onConfirm` wysyła nowy plik do tego samego
+canvas się nie zabrudzi) i otwiera `ImageCropModal` z presetem `libraryImage`.
+`onConfirm` wysyła nowy plik do tego samego
 `folderId` pod nazwą z sufiksem `t('files.croppedSuffix')`. Oryginał zostaje, sceny
 nietknięte, backend bez zmian.
 
