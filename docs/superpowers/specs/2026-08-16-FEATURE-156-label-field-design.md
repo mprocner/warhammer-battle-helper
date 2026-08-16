@@ -16,7 +16,7 @@ identyczny na każdej postaci utworzonej z tego szablonu.
 | 2 | Wielkość czcionki = 4 presety (`small`/`normal`/`large`/`heading`) | wartości semantyczne; skala typografii karty zostaje w jednym miejscu (CSS) |
 | 3 | Kolor = paleta 8 swatchy, zapis jako hex | paleta gwarantuje kontrast na kremowym tle karty; hex (nie indeks) sprawia, że zmiana kolejności swatchy nie przemalowuje istniejących szablonów |
 | 4 | Treść w nowym polu `text` (wieloliniowe); `label` = nazwa robocza tylko w kreatorze | długi akapit nie rozpycha kafelków w kreatorze; `label` NIE renderuje się na karcie |
-| 5 | Tekst wyłącznie szablonowy, brak nadpisania per-postać | zero zapisu w `Character.Stats`, zero migracji; edycja w kreatorze propaguje się natychmiast |
+| 5 | Tekst wyłącznie szablonowy, brak nadpisania per-postać | zero zapisu w `Character.Stats`, zero migracji; edycja w kreatorze dociera do wszystkich postaci w grze po synchronizacji szablonu (patrz niżej) |
 | 6 | Styl trzymany w płaskich polach `FieldDef`, nie w zagnieżdżonym `LabelConfig` | trzy skalary z jasnymi domyślnymi; zgodne z `abbr`/`advancesLabel`/`options` |
 
 Odrzucone: nadpisywanie treści per-postać (do tego służy `text_long` z wartością
@@ -52,6 +52,19 @@ do typowanego structa, więc klucze nieopisane w modelu wyparowałyby przy pierw
 
 `Key` etykiety dalej jest generowany (`genId('label')`) i unikalny — React używa go jako
 `key` przy renderze listy pól — ale nigdy nie trafia do bazy postaci.
+
+### Propagacja zmian do istniejących gier
+
+Gra trzyma **osadzoną kopię** szablonu (`models/Game.go:59`, `Game.CustomSystemTemplate`),
+a nie referencję. Edycja etykiety w kreatorze nie zmienia więc kart w trwających grach,
+dopóki MG nie kliknie synchronizacji szablonu w lobby
+(`POST /games/:id/syncTemplate` → `GameService.SyncTemplate`). Po synchronizacji nowy
+tekst pojawia się od razu u wszystkich postaci, bo etykieta nie ma wartości per-postać —
+render czyta wyłącznie szablon.
+
+To zachowanie odróżnia etykietę od `text_long` z wartością domyślną: tam synchronizacja
+zaktualizuje szablon, ale wartości już utworzonych postaci zostaną stare, bo domyślne
+wartości zasiewa się tylko przy tworzeniu postaci (`SeedDefaults`).
 
 ## Kreator (`components/creator/TemplateBuilder.jsx`)
 
@@ -191,6 +204,8 @@ Weryfikacja ręczna (checklist):
 - zmiana koloru i rozmiaru widoczna natychmiast w podglądzie kreatora,
 - zapis szablonu → przeładowanie strony → ustawienia przetrwały,
 - otwarcie karty istniejącej postaci z tego szablonu → etykieta jest, statsy nietknięte,
+- zmiana tekstu etykiety w kreatorze przy trwającej grze → karty pokazują starą treść
+  do czasu synchronizacji szablonu z lobby, po niej nową,
 - długie słowo bez spacji w gridzie 3-kolumnowym nie rozpycha layoutu,
 - `\n` w tekście łamie linię na karcie.
 
