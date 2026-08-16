@@ -190,7 +190,13 @@ git commit -m "feat(creator): FEATURE-159 add duplicateFieldInSections helper"
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `creator.copySuffix` and `creator.fieldDuplicate` translation keys, used by Task 3.
+- Produces: the `creator.fieldDuplicate` translation key, used by Task 3.
+
+> **Correction applied after the final review (commit 2f4eba7):** `creator.copySuffix`
+> already existed at line 1130 in both files and is consumed by
+> `useTemplates.cloneTemplate` for naming cloned templates. Adding a second one inside the
+> same `creator` object created a duplicate JSON key that silently shadowed it. Only
+> `creator.fieldDuplicate` is new; the steps below are kept as written for the record.
 
 - [ ] **Step 1: Add the English keys**
 

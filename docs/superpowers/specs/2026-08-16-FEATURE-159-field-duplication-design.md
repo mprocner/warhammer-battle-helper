@@ -97,10 +97,12 @@ do zmiany.
 
 ## C. i18n
 
-Nowy klucz w obu plikach równolegle:
+`creator.copySuffix` (`"(copy)"` / `"(kopia)"`) **już istnieje** w obu plikach i jest
+konsumowany przez `useTemplates.cloneTemplate` przy nazywaniu sklonowanych szablonów.
+Duplikacja pola używa tego samego klucza — nie dodajemy drugiego.
 
-- `src/locales/en/translation.json` → `creator.copySuffix`: `"(copy)"`
-- `src/locales/pl/translation.json` → `creator.copySuffix`: `"(kopia)"`
+Nowy klucz to tylko `creator.fieldDuplicate` (`"Duplicate field"` / `"Duplikuj pole"`),
+aria-label przycisku.
 
 Sufiks jest rozwijany w momencie duplikacji i zapisywany do szablonu jako zwykły tekst,
 więc jego język to język UI GM-a w chwili kliknięcia. To celowe — etykiety pól są

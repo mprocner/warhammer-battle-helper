@@ -1233,6 +1233,7 @@
     "propsClickHint": "Click a section or field to configure it",
     "colSuffix": "col.",
     "duplicateKeyWarn": "Duplicate key — change key",
+    "fieldDuplicate": "Duplicate field",
     "sectionProperties": "Section properties",
     "sectionTitleLabel": "Section title",
     "sectionColumns": "Column count",
