@@ -7731,6 +7731,16 @@ align-items: center;
     justify-content: center;
 }
 
+/* Tabela umiejętności/broni ma stałą minimalną szerokość kolumn (patrz
+   .custom-sheet__skill-table-header / --advances), która w węższej, wielokolumnowej
+   sekcji potrafi przekroczyć szerokość toru siatki (`minmax(0, 1fr)`, patrz wyżej).
+   Zamiast malować się na sąsiednim polu, nadmiar ma przewijać się wewnątrz własnej
+   komórki. */
+.custom-sheet__field--skill-table,
+.custom-sheet__field--weapon-table {
+    overflow-x: auto;
+}
+
 .custom-sheet__label-text {
     font-family: 'Crimson Text', serif;
     color: #3a2f1f;
