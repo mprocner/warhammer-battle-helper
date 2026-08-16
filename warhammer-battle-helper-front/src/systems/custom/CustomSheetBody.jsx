@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
+import { usePortalTooltip } from '../../components/common/PortalTooltip';
 
 // genId mints a stable, opaque key for a player-added skill node — never derived from the
 // typed name, so two skills can share a name and renaming never affects the key. Matches the
@@ -181,6 +182,10 @@ function CustomSheetBody({
   const attrByKey = Object.fromEntries(
     (sections || []).flatMap(s => s.fields || []).filter(f => f.type === 'attr').map(f => [f.key, f])
   );
+
+  // Jedna instancja na całą kartę: jeden stan i jeden portal niezależnie od liczby pól.
+  // Hook per etykieta dałby 40 niezależnych stanów przy karcie z 40 polami.
+  const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
 
   const [expanded,        setExpanded]        = useState({});
   const [addingUnderPath, setAddingUnderPath] = useState(null);
@@ -433,6 +438,23 @@ function CustomSheetBody({
     );
   };
 
+  // renderFieldLabel emits a field's name truncated to its grid column. The tooltip fires only
+  // when the text is actually clipped: the ellipsis is what tells the player there is more to
+  // read, so a label that fits needs no hover hint. scrollWidth is the untruncated content
+  // width, clientWidth the visible box — they differ exactly when overflow:hidden cut something.
+  const renderFieldLabel = (text) => (
+    <label
+      className="custom-sheet__field-label"
+      onMouseEnter={e => {
+        const el = e.currentTarget;
+        if (el.scrollWidth > el.clientWidth) showTooltip(text, el);
+      }}
+      onMouseLeave={hideTooltip}
+    >
+      {text}
+    </label>
+  );
+
   const renderField = (field) => {
     switch (field.type) {
       case 'attr': {
@@ -452,7 +474,7 @@ function CustomSheetBody({
           return (
             <div key={field.key} className="custom-sheet__attr">
               <div className="custom-sheet__attr-header">
-                <label className="custom-sheet__field-label">{field.label}</label>
+                {renderFieldLabel(field.label)}
                 {rollBtn}
               </div>
               <div className="custom-sheet__attr-rows">
@@ -490,7 +512,7 @@ function CustomSheetBody({
         return (
           <div key={field.key} className="custom-sheet__attr custom-sheet__attr--simple">
             <div className="custom-sheet__attr-header">
-              <label className="custom-sheet__field-label">{field.label}</label>
+              {renderFieldLabel(field.label)}
               {rollBtn}
             </div>
             <input
@@ -509,7 +531,7 @@ function CustomSheetBody({
       case 'number':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--number">
-            <label className="custom-sheet__field-label">{field.label}</label>
+            {renderFieldLabel(field.label)}
             <input
               type="number"
               className="custom-sheet__number-input"
@@ -525,7 +547,7 @@ function CustomSheetBody({
       case 'progress':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--progress">
-            <label className="custom-sheet__field-label">{field.label}</label>
+            {renderFieldLabel(field.label)}
             <div className="custom-sheet__progress-row">
               <input
                 type="number"
@@ -551,7 +573,7 @@ function CustomSheetBody({
       case 'text_short':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--text">
-            <label className="custom-sheet__field-label">{field.label}</label>
+            {renderFieldLabel(field.label)}
             <input
               type="text"
               className="custom-sheet__text-input"
@@ -565,7 +587,7 @@ function CustomSheetBody({
       case 'text_long':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--text">
-            <label className="custom-sheet__field-label">{field.label}</label>
+            {renderFieldLabel(field.label)}
             <textarea
               className="custom-sheet__textarea"
               value={texts[field.key] || ''}
@@ -609,7 +631,7 @@ function CustomSheetBody({
       case 'select':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--select">
-            <label className="custom-sheet__field-label">{field.label}</label>
+            {renderFieldLabel(field.label)}
             <select
               className="custom-sheet__select"
               value={texts[field.key] || ''}
@@ -912,18 +934,21 @@ function CustomSheetBody({
   };
 
   return (
-    <div className="custom-sheet__sections">
-      {(sections || []).map(section => (
-        <div key={section.id} className="custom-sheet__section">
-          {section.title && (
-            <div className="custom-sheet__section-heading">{section.title}</div>
-          )}
-          <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
-            {(section.fields || []).map(renderField)}
+    <>
+      <div className="custom-sheet__sections">
+        {(sections || []).map(section => (
+          <div key={section.id} className="custom-sheet__section">
+            {section.title && (
+              <div className="custom-sheet__section-heading">{section.title}</div>
+            )}
+            <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
+              {(section.fields || []).map(renderField)}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      {tooltipNode}
+    </>
   );
 }
 
