@@ -7667,33 +7667,37 @@ align-items: center;
     gap: 8px;
 }
 
+/* minmax(0, …) zamiast gołego 1fr: `1fr` to skrót od `minmax(auto, 1fr)`, a to `auto`
+   zabrania zwężenia toru poniżej min-content zawartości. Etykieta z `white-space: nowrap`
+   ma min-content równy pełnej szerokości napisu, więc długa nazwa rozpychała tor, suma
+   torów przekraczała kartę i pozostałe pola wyjeżdżały poza jej ramkę. */
 .custom-sheet__fields--2-col {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
 }
 
 .custom-sheet__fields--3-col {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
 }
 
 .custom-sheet__fields--4-col {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
 }
 
 .custom-sheet__fields--5-col {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
 }
 
 .custom-sheet__fields--6-col {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 8px;
 }
 
@@ -7704,6 +7708,11 @@ align-items: center;
     gap: 4px;
 }
 
+/* `overflow: hidden` robi tu podwójną robotę: przycina napis do komórki ORAZ zeruje
+   automatyczny rozmiar minimalny etykiety jako elementu flex, dzięki czemu
+   .custom-sheet__field i .custom-sheet__attr same przestają wymuszać szerokość na siatce.
+   `min-width: 0` zabezpiecza wiersz .custom-sheet__attr-header, gdzie etykieta stoi
+   obok kostki. `nowrap` zostaje — chcemy jednej linii z wielokropkiem, nie zawijania. */
 .custom-sheet__field-label {
     font-family: 'Cinzel', serif;
     font-size: 10px;
@@ -7712,6 +7721,10 @@ align-items: center;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .custom-sheet__field--label {
@@ -7842,6 +7855,9 @@ align-items: center;
     justify-content: center;
     transition: color 0.15s;
     border-radius: 3px;
+    /* W .custom-sheet__attr-header (flex row) ścisnąć ma się etykieta, nie przycisk —
+       bez tego ikona 14 px robi się owalna. */
+    flex-shrink: 0;
 }
 
 .custom-sheet__roll-btn:hover {
