@@ -454,7 +454,7 @@ Oczekiwane: `Tests: 2 passed, 2 total`.
 CI=true npx react-scripts test
 ```
 
-Oczekiwane: wszystkie testy przechodzą. `CustomSheetBody` jest importowany przez `TemplateBuilder` i `CharacterSheet`, więc ten przebieg pilnuje, że fragment w `return` niczego nie zepsuł.
+Oczekiwane: `Test Suites: 1 failed, 23 passed, 24 total`, `Tests: 182 passed, 182 total`. Jedyny failing suite to `src/App.test.js` — pada z `SyntaxError: Cannot use import statement outside a module` przy imporcie `axios` (`node_modules/axios/index.js`, ESM bez transformu w konfiguracji jesta z CRA). To wada preexisting, niezwiązana z tą gałęzią — `CustomSheetBody` jest importowany przez `TemplateBuilder` i `CharacterSheet`, a wszystkie 23 pozostałe pakiety (w tym te dwa) przechodzą, więc ten przebieg pilnuje, że fragment w `return` niczego nie zepsuł.
 
 - [ ] **Step 10: Zweryfikuj dymkę ręcznie**
 
