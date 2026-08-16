@@ -79,8 +79,10 @@ wartości zasiewa się tylko przy tworzeniu postaci (`SeedDefaults`).
    - `<TextField multiline rows={3}>` na `text`,
    - rząd 8 swatchy koloru (`<button>` z tłem, aktywny obrysowany), zapis hex,
    - `<Select>` rozmiaru: mała / normalna / duża / nagłówek.
-   Dodatkowo istniejący TextField `label` dostaje warunkowy `helperText`
-   (`creator.fieldLabelHintLabel`) informujący, że to nazwa tylko dla kreatora.
+   Dodatkowo istniejący TextField `label` dla typu `label` zmienia podpis na
+   `creator.labelInternalName` i dostaje `helperText` = `creator.labelInternalNameHint`.
+   Podpis musi się różnić od domyślnego `creator.fieldLabel`, bo ten po polsku brzmi
+   "Etykieta" — czyli dokładnie tak jak nazwa typu pola, co myliłoby MG.
 5. Kafelek na kanwie (~linia 840) dla typu `label` pokazuje `field.label || field.text`
    (skrócone) — inaczej pole bez nazwy roboczej byłoby pustym prostokątem.
 
@@ -182,7 +184,8 @@ Nowe klucze w `locales/en/translation.json` i `locales/pl/translation.json`
 | `creator.labelSizeNormal` | Normal | Normalna |
 | `creator.labelSizeLarge` | Large | Duża |
 | `creator.labelSizeHeading` | Heading | Nagłówek |
-| `creator.fieldLabelHintLabel` | Creator-only name, not shown on the sheet | Nazwa tylko dla kreatora, nie pokazuje się na karcie |
+| `creator.labelInternalName` | Name (creator only) | Nazwa (tylko kreator) |
+| `creator.labelInternalNameHint` | Not shown on the character sheet | Nie pokazuje się na karcie postaci |
 
 Swatche kolorów nie mają podpisów — kolor jest widoczny bezpośrednio.
 
