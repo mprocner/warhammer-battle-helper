@@ -44,8 +44,17 @@ duplicateFieldInSections(sections, sectionIdx, fieldIdx, { newKey, copySuffix })
 
 Zwraca nową tablicę sekcji. Zasady:
 
-- **deep clone** pola przez `structuredClone`. Płytki spread (`{ ...src }`) współdzieliłby
-  referencje do `skills[]`, `columns[]`, `presetWeapons[]`, `tree` z oryginałem.
+- **deep clone** pola przez `JSON.parse(JSON.stringify(field))`. Płytki spread (`{ ...src }`)
+  współdzieliłby referencje do `skills[]`, `columns[]`, `presetWeapons[]`, `tree`
+  z oryginałem — edytory kreatora aktualizują niemutująco, więc bug byłby latentny
+  i odpaliłby się przy pierwszym `push` / `splice` dopisanym kiedyś w edytorze.
+
+  Dlaczego JSON round-trip, a nie `structuredClone`: pole i tak przechodzi przez
+  `JSON.stringify` przy każdym autosave (`saveTemplate`), więc wartość, którą JSON gubi
+  (`Date`, `Map`, `Set`, `undefined`, cykle), w tym modelu danych istnieć nie może.
+  Dodatkowo `react-scripts 5.0.1` ciągnie jsdom 16.7 / jest-environment-jsdom 27.5,
+  które nie wystawiają globalnego `structuredClone` — test jednostkowy wymagałby
+  polyfilla w `setupTests.js` pod zdolność, której te dane nie używają.
 - `key` = przekazany `newKey` (wołający liczy `genId(field.type)`). Klucz jest opaque
   identyfikatorem, pod którym leżą dane postaci (`attributes.<key>.current`,
   `numbers.<key>`, `progress.<key>.max`), bindy paska HP w token display oraz bloki
