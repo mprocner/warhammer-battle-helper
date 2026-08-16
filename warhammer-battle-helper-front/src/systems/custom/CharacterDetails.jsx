@@ -120,16 +120,17 @@ function CustomCharacterDetails({
           if (opt) return { skillKey: key, label: opt.label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
         }
         if (f.type === 'skill_tree') {
-          const treeRoot = f.tree;
-          const children = treeRoot?.children || (treeRoot ? [treeRoot] : []);
-          const found = findNodeLabel(children, key, treeRoot?.children ? f.key : '');
+          // Ścieżki węzłów zaczynają się od f.key — korzeń drzewa jest kontenerem i nigdy
+          // nie jest umiejętnością, więc przeszukujemy wyłącznie jego dzieci (FEATURE-160).
+          const found = findNodeLabel(f.tree?.children || [], key, f.key);
           if (found) return { skillKey: key, label: found, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
         }
       }
-      // 3. Fallback: prettify last key segment
-      const label = key.split('.').pop().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      return { skillKey: key, label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
-    });
+      // 3. Klucz bez definicji w szablonie ani w customSkillNodes to sierota — wartość zapisana
+      // pod kluczem, którego już (albo nigdy) nie da się rozwiązać do rzutu. Nie zgadujemy nazwy
+      // z klucza: dałoby to nierzucalny przycisk podpisany "Node 1786908597489 832657".
+      return null;
+    }).filter(Boolean);
   }, [stats, template]);
 
   // Favourite weapons are stored as a flat list of weapon ids covering both player-added rows
