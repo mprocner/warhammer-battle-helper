@@ -907,11 +907,13 @@ function CustomSheetBody({
           <div key={field.key} className="custom-sheet__field custom-sheet__field--skill-tree">
             <div className="custom-sheet__section-title">{field.label}</div>
             <div className="custom-sheet__skill-tree">
-              {field.tree?.children?.map(child =>
+              {/* Korzeń drzewa jest kontenerem, nie umiejętnością: kreator edytuje wyłącznie
+                  tree.children, więc korzeń nie ma nazwy nadanej przez GM, a jego klucz nie
+                  wchodzi do żadnej ścieżki skilla. Renderowany jako wiersz zapisywałby wartość
+                  pod gołym kluczem korzenia, bez prefiksu field.key — klucz-sierotę, którego
+                  backend nie umie rozwiązać do rzutu (FEATURE-160). */}
+              {(field.tree?.children || []).map(child =>
                 renderTreeNode(child, 0, field.key, allowPlayerAdd, fieldRollable, fieldAssignAttr)
-              ) || (field.tree
-                ? [renderTreeNode(field.tree, 0, '', allowPlayerAdd, fieldRollable, fieldAssignAttr)]
-                : []
               )}
               {renderCustomNodes(field.key, 0, allowPlayerAdd, fieldRollable, fieldAssignAttr)}
               {allowPlayerAdd && onAddCustomSkill && (
