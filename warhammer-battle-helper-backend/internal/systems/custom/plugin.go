@@ -60,6 +60,46 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	return out, nil
 }
 
+// SeedDefaults writes each field's FieldDef.Default into a stats document, which is how a
+// freshly created character starts with GM-chosen values instead of blanks (FEATURE-158).
+// Attr fields land in Attributes[key].Base with Advances left at 0 — advances are earned in
+// play, not granted at creation — so a later ComputeDerived sets current = base. Number fields
+// land in Numbers[key]. Fields with a nil Default, and every type other than "attr"/"number",
+// are left untouched: nil means "no default", which is not the same as a default of 0.
+//
+// This hangs off *Plugin rather than the systems.GameSystem interface for the same reason as
+// RollWithTemplate: only the custom system has a template to read.
+func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.Raw, error) {
+	if tmpl == nil {
+		return raw, nil
+	}
+	s, err := decodeStats(raw)
+	if err != nil {
+		return raw, err
+	}
+	if s.Numbers == nil {
+		s.Numbers = map[string]int{}
+	}
+	for _, section := range tmpl.Sections {
+		for _, field := range section.Fields {
+			if field.Default == nil {
+				continue
+			}
+			switch field.Type {
+			case "attr":
+				s.Attributes[field.Key] = AttrValue{Base: *field.Default}
+			case "number":
+				s.Numbers[field.Key] = *field.Default
+			}
+		}
+	}
+	out, err := bson.Marshal(s)
+	if err != nil {
+		return raw, err
+	}
+	return out, nil
+}
+
 // GetDisplayName returns "" — name is stored on Character, not in stats.
 func (p *Plugin) GetDisplayName(_ bson.Raw) string { return "" }
 
