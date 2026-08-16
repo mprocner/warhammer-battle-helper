@@ -24,6 +24,7 @@ import TableRowsIcon from '@mui/icons-material/TableRows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import GavelIcon from '@mui/icons-material/Gavel';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
 import {
@@ -46,6 +47,7 @@ import CustomSheetBody, { collectSkillOptions, renderDamageFormula } from '../..
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
+import { duplicateFieldInSections } from '../../utils/templateFields';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -811,7 +813,7 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
 
 // ── FieldCard (in section canvas) ────────────────────────────────────────────
 
-function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, onMoveUp, onMoveDown, isFirst, isLast }) {
+function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) {
   const { t } = useTranslation();
   const ti = typeInfo(field.type);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -842,6 +844,7 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
       <div className="creator__canvas-field-actions">
         <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst}><ArrowUpwardIcon style={{ fontSize: 11 }} /></button>
         <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveDown(); }} disabled={isLast}><ArrowDownwardIcon style={{ fontSize: 11 }} /></button>
+        <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onDuplicate(); }} aria-label={t('creator.fieldDuplicate')}><ContentCopyIcon style={{ fontSize: 11 }} /></button>
         <button className="creator__canvas-field-action-btn creator__canvas-field-action-btn--danger" onClick={e => { e.stopPropagation(); onRemove(); }}><DeleteIcon style={{ fontSize: 11 }} /></button>
       </div>
     </div>
@@ -854,7 +857,7 @@ function SectionCanvas({
   id, section, sectionIdx, selected, totalSections,
   onSelectSection, onSelectField,
   onUpdateSection, onRemoveSection, onMoveSection,
-  onAddField, onRemoveField, onMoveField,
+  onAddField, onRemoveField, onMoveField, onDuplicateField,
   addingToSection, onToggleAdding,
   duplicateKeys,
 }) {
@@ -927,6 +930,7 @@ function SectionCanvas({
                     isDuplicateKey={duplicateKeys?.has(field.key)}
                     onClick={() => onSelectField(sectionIdx, fieldIdx)}
                     onRemove={() => onRemoveField(sectionIdx, fieldIdx)}
+                    onDuplicate={() => onDuplicateField(sectionIdx, fieldIdx)}
                     onMoveUp={() => onMoveField(sectionIdx, fieldIdx, -1)}
                     onMoveDown={() => onMoveField(sectionIdx, fieldIdx, +1)}
                     isFirst={fieldIdx === 0}
@@ -1169,6 +1173,22 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     const next = sections.map((sec, si) => si === sectionIdx ? { ...sec, fields: newFields } : sec);
     setSections(next);
     setSelected({ sectionIdx, fieldIdx: target });
+    triggerSave(next, name);
+  };
+
+  const duplicateField = (sectionIdx, fieldIdx) => {
+    const source = sections[sectionIdx]?.fields?.[fieldIdx];
+    if (!source) return;
+    const next = duplicateFieldInSections(sections, sectionIdx, fieldIdx, {
+      newKey: genId(source.type),
+      copySuffix: t('creator.copySuffix'),
+    });
+    setSections(next);
+    // The insert shifts every field behind the original by one, so the stored fieldIdx
+    // would start pointing at the neighbour. Keep the panel on the same field.
+    if (selected?.sectionIdx === sectionIdx && selected?.fieldIdx > fieldIdx) {
+      setSelected({ sectionIdx, fieldIdx: selected.fieldIdx + 1 });
+    }
     triggerSave(next, name);
   };
 
@@ -1554,6 +1574,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                       onAddField={addField}
                       onRemoveField={removeField}
                       onMoveField={moveField}
+                      onDuplicateField={duplicateField}
                       addingToSection={addingToSection}
                       onToggleAdding={idx => setAddingToSection(prev => prev === idx ? null : idx)}
                       duplicateKeys={duplicateKeys}
