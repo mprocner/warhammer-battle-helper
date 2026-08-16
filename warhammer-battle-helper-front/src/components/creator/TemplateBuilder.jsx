@@ -588,10 +588,15 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
         />
       )}
 
+      {/* type="number" only rejects non-numeric input, not decimals — a value like "2.5" would
+          reach the backend as *int and 400 the whole template PATCH. saveTemplate swallows that
+          error silently, so every later edit to the template would appear to vanish with no
+          visible cause. Truncate to an integer here so that can never happen. */}
       {(field.type === 'attr' || field.type === 'number') && (
         <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
-          <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Number(e.target.value) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
-          <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Number(e.target.value) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+          <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+          <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+          <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
         </Box>
       )}
 

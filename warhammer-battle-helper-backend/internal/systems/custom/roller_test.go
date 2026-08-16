@@ -916,3 +916,142 @@ func TestRollWithTemplate_UnknownFormulaType(t *testing.T) {
 		t.Error("expected error for unknown formulaType, got nil")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// SeedDefaults (FEATURE-158)
+// ---------------------------------------------------------------------------
+
+func intPtr(v int) *int { return &v }
+
+// seedTemplate builds a one-section template out of the given fields.
+func seedTemplate(fields ...models.FieldDef) *models.SystemTemplate {
+	return &models.SystemTemplate{
+		Sections: []models.SectionDef{{ID: "s1", Title: "Stats", Columns: 1, Fields: fields}},
+	}
+}
+
+// seedBlank runs SeedDefaults over a fresh DefaultStats() document and decodes the result.
+func seedBlank(t *testing.T, tmpl *models.SystemTemplate) *Stats {
+	t.Helper()
+	p := New()
+	blank, err := p.DefaultStats()
+	if err != nil {
+		t.Fatalf("DefaultStats() error: %v", err)
+	}
+	out, err := p.SeedDefaults(blank, tmpl)
+	if err != nil {
+		t.Fatalf("SeedDefaults() error: %v", err)
+	}
+	s, err := decodeStats(out)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	return s
+}
+
+func TestSeedDefaults_AttrSeedsBaseAdvancesStayZero(t *testing.T) {
+	s := seedBlank(t, seedTemplate(models.FieldDef{Key: "attr_1", Type: "attr", Default: intPtr(5)}))
+
+	av, ok := s.Attributes["attr_1"]
+	if !ok {
+		t.Fatal("expected Attributes[\"attr_1\"] to be seeded")
+	}
+	if av.Base != 5 {
+		t.Errorf("base = %d, want 5", av.Base)
+	}
+	if av.Advances != 0 {
+		t.Errorf("advances = %d, want 0", av.Advances)
+	}
+}
+
+func TestSeedDefaults_AttrZeroIsSeeded(t *testing.T) {
+	s := seedBlank(t, seedTemplate(models.FieldDef{Key: "attr_1", Type: "attr", Default: intPtr(0)}))
+
+	av, ok := s.Attributes["attr_1"]
+	if !ok {
+		t.Fatal("a default of 0 must still create the key — nil and zero are different states")
+	}
+	if av.Base != 0 {
+		t.Errorf("base = %d, want 0", av.Base)
+	}
+}
+
+func TestSeedDefaults_NilDefaultLeavesKeyAbsent(t *testing.T) {
+	s := seedBlank(t, seedTemplate(models.FieldDef{Key: "attr_1", Type: "attr"}))
+
+	if _, ok := s.Attributes["attr_1"]; ok {
+		t.Error("field without a Default must not be seeded")
+	}
+}
+
+func TestSeedDefaults_NumberSeedsNumbersMap(t *testing.T) {
+	s := seedBlank(t, seedTemplate(models.FieldDef{Key: "num_1", Type: "number", Default: intPtr(7)}))
+
+	if got := s.Numbers["num_1"]; got != 7 {
+		t.Errorf("Numbers[\"num_1\"] = %d, want 7", got)
+	}
+	if _, ok := s.Attributes["num_1"]; ok {
+		t.Error("a number field must not land in Attributes")
+	}
+}
+
+func TestSeedDefaults_OtherTypesIgnored(t *testing.T) {
+	s := seedBlank(t, seedTemplate(
+		models.FieldDef{Key: "prog_1", Type: "progress", Default: intPtr(3)},
+		models.FieldDef{Key: "txt_1", Type: "text_short", Default: intPtr(3)},
+		models.FieldDef{Key: "tbl_1", Type: "skill_table", Default: intPtr(3)},
+	))
+
+	if len(s.Attributes) != 0 {
+		t.Errorf("Attributes = %v, want empty", s.Attributes)
+	}
+	if len(s.Numbers) != 0 {
+		t.Errorf("Numbers = %v, want empty", s.Numbers)
+	}
+}
+
+func TestSeedDefaults_AllSectionsAreVisited(t *testing.T) {
+	tmpl := &models.SystemTemplate{Sections: []models.SectionDef{
+		{ID: "s1", Fields: []models.FieldDef{{Key: "attr_1", Type: "attr", Default: intPtr(1)}}},
+		{ID: "s2", Fields: []models.FieldDef{{Key: "attr_2", Type: "attr", Default: intPtr(2)}}},
+	}}
+
+	s := seedBlank(t, tmpl)
+
+	if s.Attributes["attr_1"].Base != 1 || s.Attributes["attr_2"].Base != 2 {
+		t.Errorf("attributes = %v, want attr_1 base 1 and attr_2 base 2", s.Attributes)
+	}
+}
+
+func TestSeedDefaults_NilTemplateIsANoOp(t *testing.T) {
+	p := New()
+	blank, _ := p.DefaultStats()
+
+	out, err := p.SeedDefaults(blank, nil)
+	if err != nil {
+		t.Fatalf("SeedDefaults(nil template) error: %v", err)
+	}
+	s, _ := decodeStats(out)
+	if len(s.Attributes) != 0 || len(s.Numbers) != 0 {
+		t.Errorf("expected untouched stats, got attributes=%v numbers=%v", s.Attributes, s.Numbers)
+	}
+}
+
+func TestSeedDefaults_ComputeDerivedMakesCurrentEqualBase(t *testing.T) {
+	p := New()
+	blank, _ := p.DefaultStats()
+	tmpl := seedTemplate(models.FieldDef{Key: "attr_1", Type: "attr", Default: intPtr(5)})
+
+	seeded, err := p.SeedDefaults(blank, tmpl)
+	if err != nil {
+		t.Fatalf("SeedDefaults() error: %v", err)
+	}
+	derived, err := p.ComputeDerived(seeded)
+	if err != nil {
+		t.Fatalf("ComputeDerived() error: %v", err)
+	}
+	s, _ := decodeStats(derived)
+	if s.Attributes["attr_1"].Current != 5 {
+		t.Errorf("current = %d, want 5", s.Attributes["attr_1"].Current)
+	}
+}

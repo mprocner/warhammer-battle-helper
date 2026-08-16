@@ -1142,6 +1142,7 @@
     "fieldKeyHint": "Unique identifier (auto-generated from label)",
     "fieldAbbr": "Abbreviation",
     "fieldAbbrHint": "Short label used in compact views",
+    "fieldDefault": "Default",
     "showOnShortCard": "Show on short character card",
     "showToPlayer": "Show to player",
     "rollable": "Rollable",

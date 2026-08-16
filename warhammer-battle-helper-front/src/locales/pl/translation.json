@@ -1142,6 +1142,7 @@
     "fieldKeyHint": "Unikalny identyfikator (generowany automatycznie z etykiety)",
     "fieldAbbr": "Skrót",
     "fieldAbbrHint": "Krótka nazwa używana w widoku kompaktowym",
+    "fieldDefault": "Domyślna",
     "showOnShortCard": "Pokaż na skróconej karcie",
     "showToPlayer": "Pokaż graczowi",
     "rollable": "Można rzucać",

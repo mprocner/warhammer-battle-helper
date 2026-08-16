@@ -155,12 +155,17 @@ type SystemTemplate struct {
 
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
-	Key                string         `bson:"key" json:"key"`
-	Type               string         `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"
-	Label              string         `bson:"label" json:"label"`
-	Abbr               string         `bson:"abbr,omitempty" json:"abbr,omitempty"`
-	Min                *int           `bson:"min,omitempty" json:"min,omitempty"`
-	Max                *int           `bson:"max,omitempty" json:"max,omitempty"`
+	Key   string `bson:"key" json:"key"`
+	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"
+	Label string `bson:"label" json:"label"`
+	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
+	Min   *int   `bson:"min,omitempty" json:"min,omitempty"`
+	Max   *int   `bson:"max,omitempty" json:"max,omitempty"`
+	// Default is the value written into a freshly created character's stats for this field
+	// ("attr" and "number" only). Nil = no default; the character starts with the key absent,
+	// exactly as before. A pointer, not an int, because 0 is a legal default and `omitempty`
+	// on a plain int would erase it.
+	Default            *int           `bson:"default,omitempty" json:"default,omitempty"`
 	ShowToPlayer       bool           `bson:"showToPlayer" json:"showToPlayer"`
 	ShowOnShortCard    bool           `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
 	Rollable           bool           `bson:"rollable" json:"rollable"`

@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
 	"battle-helper/internal/systems"
+	"battle-helper/internal/systems/custom"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"encoding/json"
@@ -179,6 +180,17 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 		// died in decodeStats.
 		if len(statsRaw) == 0 {
 			statsRaw = defaultStatsFor(sys, req.Name)
+			// FEATURE-158: a custom game's template can give attr/number fields a default value,
+			// which the character starts with. Seeding here (and not in the client) keeps the whole
+			// blank-sheet shape on the backend, and running before ComputeDerived below means the
+			// seeded base already reaches the client with current computed.
+			if customPlugin, ok := sys.(*custom.Plugin); ok && game.CustomSystemTemplate != nil {
+				if seeded, seedErr := customPlugin.SeedDefaults(statsRaw, game.CustomSystemTemplate); seedErr == nil {
+					statsRaw = seeded
+				} else {
+					log.Printf("CreateGameCharacter: SeedDefaults failed for game %s: %v", gameID, seedErr)
+				}
+			}
 		}
 		// Run derived-stat computation (e.g. wounds/movement for Warhammer)
 		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
