@@ -1055,3 +1055,25 @@ func TestSeedDefaults_ComputeDerivedMakesCurrentEqualBase(t *testing.T) {
 		t.Errorf("current = %d, want 5", s.Attributes["attr_1"].Current)
 	}
 }
+
+// A label field is template-only decoration (FEATURE-156). Even if a stale Default survives on
+// it from an earlier field type, seeding must not create a stats key for it — otherwise every
+// character would carry a phantom value nothing reads.
+func TestSeedDefaults_LabelFieldIsNeverSeeded(t *testing.T) {
+	s := seedBlank(t, seedTemplate(models.FieldDef{
+		Key:     "label_1",
+		Type:    "label",
+		Text:    "Uwaga: mgła",
+		Default: intPtr(3),
+	}))
+
+	if _, ok := s.Attributes["label_1"]; ok {
+		t.Error("a label field must not land in Attributes")
+	}
+	if _, ok := s.Numbers["label_1"]; ok {
+		t.Error("a label field must not land in Numbers")
+	}
+	if _, ok := s.Texts["label_1"]; ok {
+		t.Error("a label field must not land in Texts")
+	}
+}

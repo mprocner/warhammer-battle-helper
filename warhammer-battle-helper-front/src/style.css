@@ -7714,6 +7714,37 @@ align-items: center;
     white-space: nowrap;
 }
 
+.custom-sheet__field--label {
+    justify-content: center;
+}
+
+.custom-sheet__label-text {
+    font-family: 'Crimson Text', serif;
+    color: #3a2f1f;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.custom-sheet__label-text--small {
+    font-size: 0.8rem;
+}
+
+.custom-sheet__label-text--normal {
+    font-size: 0.95rem;
+}
+
+.custom-sheet__label-text--large {
+    font-size: 1.2rem;
+}
+
+.custom-sheet__label-text--heading {
+    font-size: 1.45rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .custom-sheet__number-input {
     background: #fff9f0;
     border: 1px solid #c4a882;
@@ -9135,6 +9166,27 @@ align-items: center;
     justify-content: center;
     height: 160px;
     padding: 16px;
+}
+
+/* Label colour swatches */
+
+.creator__label-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s, border-color 0.12s;
+}
+
+.creator__label-swatch:hover {
+    transform: scale(1.1);
+}
+
+.creator__label-swatch--active {
+    border-color: #c9975b;
+    box-shadow: 0 0 0 2px rgba(201, 151, 91, 0.35);
 }
 
 /* Roll config */

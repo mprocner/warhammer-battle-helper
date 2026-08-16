@@ -23,6 +23,7 @@ import ListIcon from '@mui/icons-material/List';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import GavelIcon from '@mui/icons-material/Gavel';
+import LabelIcon from '@mui/icons-material/Label';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
@@ -99,14 +100,20 @@ const FIELD_TYPES = [
   { type: 'skill_table',   labelKey: 'creator.fieldType.skillTable',    icon: <TableRowsIcon fontSize="small" />,  desc: 'creator.fieldType.skillTableDesc' },
   { type: 'weapons_table', labelKey: 'creator.fieldType.weaponsTable',  icon: <GavelIcon fontSize="small" />,      desc: 'creator.fieldType.weaponsTableDesc' },
   { type: 'skill_tree',    labelKey: 'creator.fieldType.skillTree',     icon: <AccountTreeIcon fontSize="small" />, desc: 'creator.fieldType.skillTreeDesc' },
+  { type: 'label',         labelKey: 'creator.fieldType.label',         icon: <LabelIcon fontSize="small" />,       desc: 'creator.fieldType.labelDesc' },
 ];
 
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
-  { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long'] },
+  { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
   { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'skill_tree'] },
 ];
+
+// Label colours (FEATURE-156). A fixed set, not a free colour picker: the character sheet sits on a
+// light cream background, so an unrestricted picker lets a GM choose white and make the text vanish.
+// The hex is what gets stored — not an index — so reordering this list never repaints existing templates.
+const LABEL_COLORS = ['#3a2f1f', '#7a5c42', '#c9975b', '#8b2c2c', '#3f6b3f', '#2f4a6b', '#5c3a6b', '#4a4a4a'];
 
 function makeDefaultField(type) {
   const base = {
@@ -124,6 +131,7 @@ function makeDefaultField(type) {
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
   if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
+  if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
   return base;
 }
 
@@ -569,9 +577,55 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
 
       {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
           so renaming a field never orphans player data stored under it. Not shown to the GM. */}
-      <TextField size="small" fullWidth label={t('creator.fieldLabel')} value={field.label}
+      {/* A label field renames this input: in Polish creator.fieldLabel reads "Etykieta", the same
+          word as the field type itself, so a label's panel would show "Etykieta" inside "Etykieta". */}
+      <TextField size="small" fullWidth
+        label={field.type === 'label' ? t('creator.labelInternalName') : t('creator.fieldLabel')}
+        helperText={field.type === 'label' ? t('creator.labelInternalNameHint') : undefined}
+        value={field.label}
         onChange={e => up({ label: e.target.value })}
         sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+
+      {field.type === 'label' && (
+        <>
+          <TextField size="small" fullWidth multiline rows={3}
+            label={t('creator.labelText')}
+            helperText={t('creator.labelTextHint')}
+            value={field.text || ''}
+            onChange={e => up({ text: e.target.value })}
+            sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+
+          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('creator.labelColor')}
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+            {LABEL_COLORS.map(hex => (
+              <button
+                key={hex}
+                type="button"
+                aria-label={hex}
+                className={`creator__label-swatch${(field.textColor || LABEL_COLORS[0]) === hex ? ' creator__label-swatch--active' : ''}`}
+                style={{ background: hex }}
+                onClick={() => up({ textColor: hex })}
+              />
+            ))}
+          </Box>
+
+          <FormControl size="small" fullWidth sx={{ mb: 1.5 }}>
+            <InputLabel>{t('creator.labelSize')}</InputLabel>
+            <Select
+              label={t('creator.labelSize')}
+              value={field.textSize || 'normal'}
+              onChange={e => up({ textSize: e.target.value })}
+            >
+              <MenuItem value="small">{t('creator.labelSizeSmall')}</MenuItem>
+              <MenuItem value="normal">{t('creator.labelSizeNormal')}</MenuItem>
+              <MenuItem value="large">{t('creator.labelSizeLarge')}</MenuItem>
+              <MenuItem value="heading">{t('creator.labelSizeHeading')}</MenuItem>
+            </Select>
+          </FormControl>
+        </>
+      )}
 
       {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
         <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
@@ -837,7 +891,9 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
       <div className="creator__canvas-field-type-tag">{t(ti?.labelKey, { defaultValue: field.type })}</div>
       {field.abbr
         ? <div className="creator__canvas-field-abbr">{field.abbr}</div>
-        : <div className="creator__canvas-field-abbr creator__canvas-field-abbr--empty">{field.label || <em>—</em>}</div>
+        : <div className="creator__canvas-field-abbr creator__canvas-field-abbr--empty">
+            {field.label || (field.type === 'label' && field.text) || <em>—</em>}
+          </div>
       }
       {field.abbr && <div className="creator__canvas-field-label">{field.label}</div>}
       {(field.type === 'attr' || field.type === 'number') && (field.min != null || field.max != null) && (

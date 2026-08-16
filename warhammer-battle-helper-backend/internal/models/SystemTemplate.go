@@ -156,9 +156,17 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"
+	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
+
+	// Label-only fields (type == "label"). A label is pure sheet decoration: it holds no
+	// per-character value, so its Key never appears in Character.Stats. Label carries the
+	// creator-facing name; Text is what renders on the sheet.
+	Text      string `bson:"text,omitempty" json:"text,omitempty"`
+	TextColor string `bson:"textColor,omitempty" json:"textColor,omitempty"` // hex; empty = default sheet text color
+	TextSize  string `bson:"textSize,omitempty" json:"textSize,omitempty"`   // "small"|"normal"|"large"|"heading"; empty = "normal"
+
 	Min   *int   `bson:"min,omitempty" json:"min,omitempty"`
 	Max   *int   `bson:"max,omitempty" json:"max,omitempty"`
 	// Default is the value written into a freshly created character's stats for this field

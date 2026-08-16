@@ -576,6 +576,21 @@ function CustomSheetBody({
           </div>
         );
 
+      // A label renders template text only — it has no per-character value, hence no <label>
+      // element (there is no control to label) and no onChange path. field.text stays plain
+      // text: the GM writes it, but every player in the session renders it.
+      case 'label':
+        return (
+          <div key={field.key} className="custom-sheet__field custom-sheet__field--label">
+            <div
+              className={`custom-sheet__label-text custom-sheet__label-text--${field.textSize || 'normal'}`}
+              style={field.textColor ? { color: field.textColor } : undefined}
+            >
+              {field.text}
+            </div>
+          </div>
+        );
+
       case 'checkbox':
         return (
           <div key={field.key} className="custom-sheet__field custom-sheet__field--checkbox">
