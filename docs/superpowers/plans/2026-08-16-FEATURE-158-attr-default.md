@@ -478,9 +478,26 @@ Log in, open the character sheet creator, and on a template you own:
 
 - [ ] **Step 3: Create a character in a game on that template**
 
-Create (or open) a game using that template, then use "Add character" and "Add NPC".
+`SeedDefaults` reads `game.CustomSystemTemplate`, a snapshot of the template embedded when the
+game was created — not a live reference. A default added after the game already exists only
+reaches new characters once that snapshot is refreshed via "Sync template to game"
+(`creator.syncTemplate`, `POST /games/:id/syncTemplate`). Verify both halves of that explicitly,
+rather than "create or open a game", which would only exercise one branch depending on which
+you pick:
 
-Expected on the freshly opened sheet:
+1. **New game, created after Step 2's edits**: start a fresh game on that template, then use
+   "Add character" and "Add NPC".
+2. **Existing game, created before Step 2's edits, not yet synced**: open a game on that
+   template that already existed before you set the defaults, and use "Add character" without
+   clicking "Sync template to game" first. Expected: the new character's attr/number fields are
+   blank, exactly as before this feature — the game's embedded template snapshot predates the
+   defaults, so there is nothing yet for `SeedDefaults` to seed.
+3. **Same existing game, now synced**: in the lobby, click "Sync template to game" for that
+   game, then use "Add character" again. Expected: this new character now shows the defaults,
+   because the sync refreshed `game.CustomSystemTemplate`. The character created in sub-step 2
+   must remain unchanged — sync affects only characters created after it runs.
+
+Expected on the freshly opened sheet (sub-steps 1 and 3):
 - the first attr shows `20`
 - the `number` field shows `3`
 - the zero-default attr and the no-default attr both look empty (an attr input renders `0` as blank — `value={base || ''}` in `CustomSheetBody.jsx`); this is the known, accepted display behaviour, not a bug in the seed

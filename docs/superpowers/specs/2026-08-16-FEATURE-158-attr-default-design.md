@@ -104,6 +104,16 @@ tak jak dziś; brak defaultów nie jest powodem, by odmówić utworzenia karty.
   własne staty, dostaje własne staty. W praktyce front nigdy ich nie przysyła
   (`DndContext.jsx` — `handleAddCharacter` i `handleAddNPC` wysyłają samą nazwę), więc seed
   łapie każdą nową postać i każdego NPC-a.
+- **Istniejąca gra, dopóki GM jej nie zsynchronizuje z szablonem** — `SeedDefaults` czyta
+  `game.CustomSystemTemplate`, czyli zatrzaśniętą kopię szablonu osadzoną w grze w chwili jej
+  utworzenia, a nie żywe odwołanie do bieżącej wersji szablonu. Default dodany do szablonu
+  po utworzeniu gry nie trafi do nowych postaci w tej grze, dopóki GM nie użyje
+  „Sync template to game" (`creator.syncTemplate`, `POST /games/:id/syncTemplate`,
+  `internal/service/GameService.go:2877-2901`) — dopiero synchronizacja odświeża
+  `CustomSystemTemplate` w dokumencie gry. Gry utworzone po edycji szablonu dostają aktualną
+  kopię od razu i niczego nie wymagają. To zachowanie zgodne z tym, jak dziś działa każda inna
+  zmiana szablonu wobec już trwających gier — nie jest to defekt tej funkcji, ale warto je
+  spisać, bo to najbardziej prawdopodobny sposób, w jaki ktoś zgłosi ją jako niedziałającą.
 
 ## C. Kreator (UI)
 
