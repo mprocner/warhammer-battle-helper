@@ -676,15 +676,23 @@ func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 		visibleTo = append(visibleTo, objID)
 	}
 
+	// A GM tab that never saw the player leave still holds his id in its cached visibleTo
+	// and submits the whole set on save, which would resurrect the revoked access.
+	visibleTo = service.FilterVisibleToParticipants(game, visibleTo)
+
 	if err := h.CharacterRepo.UpdateVisibility(charID, visibleTo); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if h.Hub != nil {
+		visibleHex := make([]string, 0, len(visibleTo))
+		for _, id := range visibleTo {
+			visibleHex = append(visibleHex, id.Hex())
+		}
 		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterVisibilityUpdated, map[string]interface{}{
 			"characterId": charID,
-			"visibleTo":   req.VisibleTo,
+			"visibleTo":   visibleHex,
 		})
 	}
 
