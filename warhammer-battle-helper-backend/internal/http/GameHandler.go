@@ -624,13 +624,22 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	go client.ReadPump()
 
 	// Send initial game state only to the connecting client, with notes filtered for them.
-	// `game` was already fetched above for the participation check.
-	h.attachTokenConfig(game)
-	service.FilterNotesForUser(game, userID)
-	service.FilterSceneImageTokensForUser(game, userID)
-	h.GameService.FilterSceneCharacterTokensForUser(game, userID)
+	//
+	// Re-fetch rather than reuse the `game` fetched above for the participation check: that
+	// fetch happened before the client was registered with the hub, so any broadcast landing
+	// in the gap between the fetch and h.Hub.Register above would have been missed by this
+	// client entirely — absent from both the snapshot and the event stream. Fetching the
+	// snapshot after registration (and after the client's pumps are running) closes that gap.
+	snapshotGame, err := h.GameService.GetGame(gameID)
+	if err != nil {
+		return
+	}
+	h.attachTokenConfig(snapshotGame)
+	service.FilterNotesForUser(snapshotGame, userID)
+	service.FilterSceneImageTokensForUser(snapshotGame, userID)
+	h.GameService.FilterSceneCharacterTokensForUser(snapshotGame, userID)
 	h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
-		"game": game,
+		"game": snapshotGame,
 	}, []string{userID.Hex()})
 }
 
