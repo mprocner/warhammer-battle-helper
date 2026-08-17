@@ -27,11 +27,11 @@ func CanAccessGame(game *models.Game, userID primitive.ObjectID) bool {
 // CreatedBy deliberately does NOT grant edit rights on its own: it survives a player
 // leaving the game, so honouring it would keep a departed player's write access alive.
 func CanEditCharacter(ch *models.Character, userID primitive.ObjectID, isGM bool) bool {
-	if isGM {
-		return true
-	}
 	if ch == nil {
 		return false
+	}
+	if isGM {
+		return true
 	}
 	for _, visID := range ch.VisibleTo {
 		if visID == userID {

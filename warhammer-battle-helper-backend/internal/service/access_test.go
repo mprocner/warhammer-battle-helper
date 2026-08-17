@@ -38,7 +38,7 @@ func TestCanEditCharacter(t *testing.T) {
 	owner := primitive.NewObjectID()
 	holder := primitive.NewObjectID()
 
-	// Karta stworzona przez ownera, ale GM odebrał mu widoczność i oddał ją holderowi.
+	// Card created by the owner, but the GM revoked their visibility and handed it to the holder.
 	ch := &models.Character{
 		CreatedBy: owner,
 		VisibleTo: []primitive.ObjectID{holder},
@@ -60,6 +60,9 @@ func TestCanEditCharacter(t *testing.T) {
 	}
 	if CanEditCharacter(nil, owner, false) {
 		t.Error("nil character must not be editable")
+	}
+	if CanEditCharacter(nil, owner, true) {
+		t.Error("nil character must not be editable even by a GM")
 	}
 }
 
