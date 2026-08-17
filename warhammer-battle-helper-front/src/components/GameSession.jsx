@@ -228,6 +228,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
             characters: stripUserFromCharacters(prev.characters, message.payload.userId),
           };
         });
+        setCharacterDataTrigger(prev => prev + 1);
         break;
 
       case WS_EVENTS.PARTICIPANT_UPDATED: {
