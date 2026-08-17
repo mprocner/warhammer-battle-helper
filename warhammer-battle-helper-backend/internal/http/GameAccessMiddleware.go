@@ -24,7 +24,15 @@ func GameParticipantMiddleware(gameRepo *repository.GameRepository) gin.HandlerF
 
 		game, err := gameRepo.GetAccessFieldsByID(c.Param("id"))
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+			// "game not found" is the sentinel text GameRepository uses when the query matched
+			// no document (see GetByID/GetAccessFieldsByID) — the same convention GameHandler
+			// already relies on elsewhere. Anything else (timeout, connectivity failure) is our
+			// fault, not a missing game, and must not be reported as 404.
+			if err.Error() == "game not found" {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to load game"})
+			}
 			return
 		}
 
