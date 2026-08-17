@@ -216,11 +216,15 @@ func main() {
 	noteHandler := http.NoteHandler{NoteService: noteService}
 	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
 
-	game := r.Group("/games/:id").Use(http.JWTAuthMiddleware())
+	// POST /join is called by someone who is not a participant yet, so it lives in its own
+	// group without the participation guard.
+	gameJoin := r.Group("/games/:id", http.JWTAuthMiddleware())
+	gameJoin.POST("/join", gameHandler.JoinGame)
+
+	game := r.Group("/games/:id", http.JWTAuthMiddleware(), http.GameParticipantMiddleware(gameRepo))
 
 	game.DELETE("", gameHandler.DeleteGame)
 	game.POST("/invite", gameHandler.InvitePlayer)
-	game.POST("/join", gameHandler.JoinGame)
 	game.POST("/leave", gameHandler.LeaveGame)
 	game.DELETE("/participants/:userId", gameHandler.KickPlayer)
 	game.PATCH("/participant", gameHandler.UpdateParticipant)
