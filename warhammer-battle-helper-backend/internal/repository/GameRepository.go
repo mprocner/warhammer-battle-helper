@@ -60,6 +60,32 @@ func (r *GameRepository) GetByID(id string) (*models.Game, error) {
 	return &game, nil
 }
 
+// GetAccessFieldsByID loads only the fields an access check needs. The full document carries
+// every scene's fog and drawing paths, so decoding it on each guarded request — one per
+// drawing stroke — would be wasteful.
+func (r *GameRepository) GetAccessFieldsByID(gameID string) (*models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	var game models.Game
+	filter := bson.M{"_id": objectID, "deletedAt": bson.M{"$exists": false}}
+	opts := options.FindOne().SetProjection(bson.M{"gameMasterId": 1, "participants": 1})
+	err = r.Collection.FindOne(ctx, filter, opts).Decode(&game)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("game not found")
+		}
+		return nil, fmt.Errorf("failed to get game: %w", err)
+	}
+
+	return &game, nil
+}
+
 // GetAll retrieves all active games
 func (r *GameRepository) GetAll() ([]models.Game, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

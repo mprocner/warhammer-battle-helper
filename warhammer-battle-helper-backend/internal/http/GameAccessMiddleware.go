@@ -22,7 +22,7 @@ func GameParticipantMiddleware(gameRepo *repository.GameRepository) gin.HandlerF
 			return
 		}
 
-		game, err := gameRepo.GetByID(c.Param("id"))
+		game, err := gameRepo.GetAccessFieldsByID(c.Param("id"))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 			return
