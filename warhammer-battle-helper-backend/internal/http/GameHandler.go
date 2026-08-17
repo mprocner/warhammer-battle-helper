@@ -587,6 +587,19 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	userIDStr := claims["user_id"].(string)
 	userID, _ := primitive.ObjectIDFromHex(userIDStr)
 
+	// Check participation BEFORE upgrading, so a rejected client gets a plain HTTP response
+	// instead of a broken handshake. A valid JWT alone used to be enough to keep streaming
+	// GAME_STATE to a player who had already left.
+	game, err := h.GameService.GetGame(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+	if !service.CanAccessGame(game, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a participant of this game"})
+		return
+	}
+
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -610,17 +623,15 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	go client.WritePump()
 	go client.ReadPump()
 
-	// Send initial game state only to the connecting client, with notes filtered for them
-	game, err := h.GameService.GetGame(gameID)
-	if err == nil {
-		h.attachTokenConfig(game)
-		service.FilterNotesForUser(game, userID)
-		service.FilterSceneImageTokensForUser(game, userID)
-		h.GameService.FilterSceneCharacterTokensForUser(game, userID)
-		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
-			"game": game,
-		}, []string{userID.Hex()})
-	}
+	// Send initial game state only to the connecting client, with notes filtered for them.
+	// `game` was already fetched above for the participation check.
+	h.attachTokenConfig(game)
+	service.FilterNotesForUser(game, userID)
+	service.FilterSceneImageTokensForUser(game, userID)
+	h.GameService.FilterSceneCharacterTokensForUser(game, userID)
+	h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
+		"game": game,
+	}, []string{userID.Hex()})
 }
 
 // SyncTemplate re-fetches the source template and updates the game's embedded copy.
