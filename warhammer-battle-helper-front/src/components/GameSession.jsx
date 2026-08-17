@@ -24,6 +24,7 @@ import { WS_EVENTS } from '../websocket/events';
 import ToastStack from './ToastStack';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
+import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
@@ -221,7 +222,11 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         addLogMessage(`A player left the game`, 'info');
         setGameState(prev => {
           if (!prev) return prev;
-          return { ...prev, participants: (prev.participants || []).filter(p => p.userId !== message.payload.userId) };
+          return {
+            ...prev,
+            participants: (prev.participants || []).filter(p => p.userId !== message.payload.userId),
+            characters: stripUserFromCharacters(prev.characters, message.payload.userId),
+          };
         });
         break;
 
