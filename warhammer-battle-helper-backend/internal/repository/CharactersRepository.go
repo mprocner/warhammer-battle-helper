@@ -184,3 +184,25 @@ func (r *CharactersRepository) UpdateVisibility(id string, visibleTo []primitive
 	})
 	return err
 }
+
+// RemoveUserFromAllVisibility strips userID from visibleTo across every character of the
+// game in one UpdateMany. Called when a player leaves or is kicked: without it the database
+// keeps claiming the departed player may see those characters.
+//
+// Characters left with an empty visibleTo are kept, not deleted — the GM sees every
+// character in his game regardless of visibleTo and can hand the card to someone else.
+func (r *CharactersRepository) RemoveUserFromAllVisibility(gameID string, userID primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	gameObjID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.Collection.UpdateMany(ctx,
+		bson.M{"gameId": gameObjID},
+		bson.M{"$pull": bson.M{"visibleTo": userID}},
+	)
+	return err
+}
