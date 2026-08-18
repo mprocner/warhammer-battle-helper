@@ -3,6 +3,7 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"battle-helper/internal/service"
 	"battle-helper/internal/systems"
 	"battle-helper/internal/systems/custom"
 	"battle-helper/internal/systems/registry"
@@ -244,20 +245,9 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 		return
 	}
 
-	if !isGM {
-		canEdit := existingCharacter.CreatedBy == userObjID
-		if !canEdit {
-			for _, visID := range existingCharacter.VisibleTo {
-				if visID == userObjID {
-					canEdit = true
-					break
-				}
-			}
-		}
-		if !canEdit {
-			c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
-			return
-		}
+	if !service.CanEditCharacter(existingCharacter, userObjID, isGM) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
+		return
 	}
 
 	var req UpdateCharacterRequest
@@ -349,8 +339,8 @@ type PatchStateRequest struct {
 	Delta        int    `json:"delta"`
 }
 
-// authorizeCharacterEdit loads the game + character and enforces the same edit rule as
-// UpdateGameCharacter (GM, owner, or in VisibleTo). Returns the character on success.
+// authorizeCharacterEdit resolves the character and checks edit rights: GM, or present in
+// VisibleTo. CreatedBy alone is not enough — it outlives a player leaving the game.
 func (h *CharacterHandler) authorizeCharacterEdit(c *gin.Context) (*models.Character, bool) {
 	gameID := c.Param("id")
 	charID := c.Param("charId")
@@ -369,18 +359,9 @@ func (h *CharacterHandler) authorizeCharacterEdit(c *gin.Context) (*models.Chara
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return nil, false
 	}
-	if game.GameMasterID != userObjID {
-		canEdit := ch.CreatedBy == userObjID
-		for _, visID := range ch.VisibleTo {
-			if visID == userObjID {
-				canEdit = true
-				break
-			}
-		}
-		if !canEdit {
-			c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
-			return nil, false
-		}
+	if !service.CanEditCharacter(ch, userObjID, game.GameMasterID == userObjID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this character"})
+		return nil, false
 	}
 	return ch, true
 }
@@ -695,15 +676,23 @@ func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 		visibleTo = append(visibleTo, objID)
 	}
 
+	// A GM tab that never saw the player leave still holds his id in its cached visibleTo
+	// and submits the whole set on save, which would resurrect the revoked access.
+	visibleTo = service.FilterVisibleToParticipants(game, visibleTo)
+
 	if err := h.CharacterRepo.UpdateVisibility(charID, visibleTo); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if h.Hub != nil {
+		visibleHex := make([]string, 0, len(visibleTo))
+		for _, id := range visibleTo {
+			visibleHex = append(visibleHex, id.Hex())
+		}
 		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterVisibilityUpdated, map[string]interface{}{
 			"characterId": charID,
-			"visibleTo":   req.VisibleTo,
+			"visibleTo":   visibleHex,
 		})
 	}
 

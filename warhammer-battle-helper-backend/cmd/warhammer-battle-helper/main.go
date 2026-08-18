@@ -166,12 +166,10 @@ func main() {
 	// --- FEATURE TOGGLES ---
 	ft := features.Load("./feature-toggles.json")
 
-	// GET /games/:id is JWT-optional (event visibility filtering)
 	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft, UserFiles: userFilesStorage}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
-	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// WebSocket (auth handled inside handler via token query param)
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
@@ -216,11 +214,16 @@ func main() {
 	noteHandler := http.NoteHandler{NoteService: noteService}
 	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
 
-	game := r.Group("/games/:id").Use(http.JWTAuthMiddleware())
+	// POST /join is called by someone who is not a participant yet, so it lives in its own
+	// group without the participation guard.
+	gameJoin := r.Group("/games/:id", http.JWTAuthMiddleware())
+	gameJoin.POST("/join", gameHandler.JoinGame)
 
+	game := r.Group("/games/:id", http.JWTAuthMiddleware(), http.GameParticipantMiddleware(gameRepo))
+
+	game.GET("", gameHandler.GetGame)
 	game.DELETE("", gameHandler.DeleteGame)
 	game.POST("/invite", gameHandler.InvitePlayer)
-	game.POST("/join", gameHandler.JoinGame)
 	game.POST("/leave", gameHandler.LeaveGame)
 	game.DELETE("/participants/:userId", gameHandler.KickPlayer)
 	game.PATCH("/participant", gameHandler.UpdateParticipant)

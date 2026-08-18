@@ -27,15 +27,10 @@ func (s *DrawingService) isParticipant(gameID string, userID primitive.ObjectID)
 	if err != nil {
 		return err
 	}
-	if game.GameMasterID == userID {
-		return nil
+	if !CanAccessGame(game, userID) {
+		return fmt.Errorf("user is not a participant of this game")
 	}
-	for _, p := range game.Participants {
-		if p.UserID == userID {
-			return nil
-		}
-	}
-	return fmt.Errorf("user is not a participant of this game")
+	return nil
 }
 
 // isGM checks whether a user is the game master

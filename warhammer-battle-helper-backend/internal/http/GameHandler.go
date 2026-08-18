@@ -171,24 +171,17 @@ func (h *GameHandler) InvitePlayer(c *gin.Context) {
 }
 
 // GetGame returns a specific game, filtering events based on the requesting user's visibility.
-// This route is public so JWT is optional — unauthenticated callers only see "all" events.
 func (h *GameHandler) GetGame(c *gin.Context) {
 	gameID := c.Param("id")
 
-	// Extract requesting user ID from JWT if present (route is public, so JWT may be absent)
-	var requestingUserID primitive.ObjectID
-	hasUser := false
-	if tokenRaw, exists := c.Get("jwt"); exists && tokenRaw != nil {
-		if jwtToken, ok := tokenRaw.(*jwt.Token); ok {
-			if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok {
-				if userIDStr, ok := claims["user_id"].(string); ok {
-					if id, err := primitive.ObjectIDFromHex(userIDStr); err == nil {
-						requestingUserID = id
-						hasUser = true
-					}
-				}
-			}
-		}
+	token, _ := c.Get("jwt")
+	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
+	userIDStr := claims["user_id"].(string)
+
+	requestingUserID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
 	}
 
 	game, err := h.GameService.GetGame(gameID)
@@ -203,17 +196,17 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	for _, e := range game.Events {
 		switch e.Visibility {
 		case "gm_only":
-			if hasUser && requestingUserID == game.GameMasterID {
+			if requestingUserID == game.GameMasterID {
 				filteredEvents = append(filteredEvents, e)
 			}
 		case "gm_and_roller":
-			if hasUser && (requestingUserID == game.GameMasterID || requestingUserID == e.RollerUserID) {
+			if requestingUserID == game.GameMasterID || requestingUserID == e.RollerUserID {
 				filteredEvents = append(filteredEvents, e)
 			}
 		case "all", "": // "all" or legacy events without visibility
 			filteredEvents = append(filteredEvents, e)
 		default: // targeted to a specific user id — only the roller and that user see it
-			if hasUser && (requestingUserID == e.RollerUserID || requestingUserID.Hex() == e.Visibility) {
+			if requestingUserID == e.RollerUserID || requestingUserID.Hex() == e.Visibility {
 				filteredEvents = append(filteredEvents, e)
 			}
 		}
@@ -221,22 +214,9 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	game.Events = filteredEvents
 
 	// Filter private notes: only show notes that are public or created by the requesting user
-	if hasUser {
-		service.FilterNotesForUser(game, requestingUserID)
-	} else {
-		// No authenticated user — only show public notes
-		publicNotes := make([]models.Note, 0)
-		for _, n := range game.Notes {
-			if !n.IsPrivate {
-				publicNotes = append(publicNotes, n)
-			}
-		}
-		game.Notes = publicNotes
-	}
+	service.FilterNotesForUser(game, requestingUserID)
 
-	// Mask hidden HP bars on image-tokens for anyone who is not the GM (a missing user is never
-	// the GM). requestingUserID is the zero ObjectID when hasUser is false, which never equals a
-	// real GameMasterID, so this correctly masks for anonymous viewers too.
+	// Mask hidden HP bars on image-tokens for anyone who is not the GM.
 	service.FilterSceneImageTokensForUser(game, requestingUserID)
 	h.GameService.FilterSceneCharacterTokensForUser(game, requestingUserID)
 
@@ -587,6 +567,19 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	userIDStr := claims["user_id"].(string)
 	userID, _ := primitive.ObjectIDFromHex(userIDStr)
 
+	// Check participation BEFORE upgrading, so a rejected client gets a plain HTTP response
+	// instead of a broken handshake. A valid JWT alone used to be enough to keep streaming
+	// GAME_STATE to a player who had already left.
+	game, err := h.GameService.GetGame(gameID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+	if !service.CanAccessGame(game, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a participant of this game"})
+		return
+	}
+
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -610,17 +603,24 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	go client.WritePump()
 	go client.ReadPump()
 
-	// Send initial game state only to the connecting client, with notes filtered for them
-	game, err := h.GameService.GetGame(gameID)
-	if err == nil {
-		h.attachTokenConfig(game)
-		service.FilterNotesForUser(game, userID)
-		service.FilterSceneImageTokensForUser(game, userID)
-		h.GameService.FilterSceneCharacterTokensForUser(game, userID)
-		h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
-			"game": game,
-		}, []string{userID.Hex()})
+	// Send initial game state only to the connecting client, with notes filtered for them.
+	//
+	// Re-fetch rather than reuse the `game` fetched above for the participation check: that
+	// fetch happened before the client was registered with the hub, so any broadcast landing
+	// in the gap between the fetch and h.Hub.Register above would have been missed by this
+	// client entirely — absent from both the snapshot and the event stream. Fetching the
+	// snapshot after registration (and after the client's pumps are running) closes that gap.
+	snapshotGame, err := h.GameService.GetGame(gameID)
+	if err != nil {
+		return
 	}
+	h.attachTokenConfig(snapshotGame)
+	service.FilterNotesForUser(snapshotGame, userID)
+	service.FilterSceneImageTokensForUser(snapshotGame, userID)
+	h.GameService.FilterSceneCharacterTokensForUser(snapshotGame, userID)
+	h.Hub.BroadcastToUsers(gameID, "GAME_STATE", map[string]interface{}{
+		"game": snapshotGame,
+	}, []string{userID.Hex()})
 }
 
 // SyncTemplate re-fetches the source template and updates the game's embedded copy.

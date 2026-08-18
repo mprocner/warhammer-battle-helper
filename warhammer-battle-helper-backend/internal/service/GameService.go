@@ -520,14 +520,19 @@ func (s *GameService) UpdateMapSettings(gameID string, gmID primitive.ObjectID, 
 	return nil
 }
 
-// LeaveGame removes a user from a game
-func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, username string) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+// removeUserFromGame revokes everything a departing user held: card visibility, participation,
+// scene assignments and live sockets. Shared by LeaveGame and KickPlayer.
+//
+// The order matters because there is no transaction. Failing on step 1 leaves the user fully
+// in the game — a consistent, retryable state. DisconnectUser goes last: only after
+// RemoveParticipant does the participation guard reject his reconnect, so cutting the socket
+// earlier would leave a window for the client to come back in.
+func (s *GameService) removeUserFromGame(game *models.Game, gameID string, userID primitive.ObjectID) error {
+	if err := s.charRepo.RemoveUserFromAllVisibility(gameID, userID); err != nil {
 		return err
 	}
 
-	// GM is not stored as a participant, so skip RemoveParticipant
+	// The GM is not necessarily stored as a participant on older games.
 	if game.GameMasterID != userID {
 		if err := s.gameRepo.RemoveParticipant(gameID, userID); err != nil {
 			return err
@@ -535,6 +540,22 @@ func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, userna
 	}
 
 	if err := s.gameRepo.RemovePlayerFromAllScenes(gameID, userID); err != nil {
+		return err
+	}
+
+	s.hub.DisconnectUser(gameID, userID)
+
+	return nil
+}
+
+// LeaveGame removes a user from a game
+func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, username string) error {
+	game, err := s.gameRepo.GetByID(gameID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.removeUserFromGame(game, gameID, userID); err != nil {
 		return err
 	}
 
@@ -573,11 +594,7 @@ func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, tar
 		return fmt.Errorf("cannot kick the game master")
 	}
 
-	if err := s.gameRepo.RemoveParticipant(gameID, targetUserID); err != nil {
-		return err
-	}
-
-	if err := s.gameRepo.RemovePlayerFromAllScenes(gameID, targetUserID); err != nil {
+	if err := s.removeUserFromGame(game, gameID, targetUserID); err != nil {
 		return err
 	}
 

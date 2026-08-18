@@ -111,6 +111,31 @@ func (h *Hub) unregisterClient(client *Client) {
 	h.removeClient(client)
 }
 
+// DisconnectUser closes every connection userID holds in gameID. Used when a player leaves
+// or is kicked: the REST guard blocks his next request, but an already-open socket would
+// keep streaming GAME_STATE and every later broadcast until he closed the tab himself.
+func (h *Hub) DisconnectUser(gameID string, userID primitive.ObjectID) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	clients, ok := h.Games[gameID]
+	if !ok {
+		return
+	}
+
+	// Collect first, remove second — removeClient deletes from the map we are ranging over.
+	var targets []*Client
+	for client := range clients {
+		if client.ID == userID {
+			targets = append(targets, client)
+		}
+	}
+
+	for _, client := range targets {
+		h.removeClient(client)
+	}
+}
+
 // removeClient removes a client and closes its session if no other tabs remain.
 // Must be called with h.mu held (write lock).
 func (h *Hub) removeClient(client *Client) {

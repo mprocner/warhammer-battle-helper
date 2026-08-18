@@ -42,15 +42,7 @@ func NewNoteService(noteRepo *repository.NoteRepository, hub *websocket.Hub) *No
 
 // isParticipant checks whether a user is the GM or an active participant
 func (s *NoteService) isParticipant(game *models.Game, userID primitive.ObjectID) bool {
-	if game.GameMasterID == userID {
-		return true
-	}
-	for _, p := range game.Participants {
-		if p.UserID == userID {
-			return true
-		}
-	}
-	return false
+	return CanAccessGame(game, userID)
 }
 
 // findNote finds a note by ID in the game's notes array
