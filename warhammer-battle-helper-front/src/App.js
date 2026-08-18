@@ -87,6 +87,7 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setUser(null);
+        setLobbyNotice(null);
         addLogMessage('User logged out', 'info');
     };
 

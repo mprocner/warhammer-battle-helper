@@ -95,6 +95,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     setLogs((prev) => [...prev, { id: crypto.randomUUID(), createdAt: now.getTime(), message, type, timestamp, data }]);
   }, []);
 
+  // Resolves true when the game state loaded successfully, and false when the session
+  // ended (access revoked / game gone) or the request failed. useWebSocket uses this
+  // answer to decide whether to re-arm the socket after a reconnect probe.
   const fetchGameState = useCallback(async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games/${gameId}`, {
@@ -104,7 +107,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       });
 
       const reason = sessionEndReasonForStatus(response.status);
-      if (reason) { onSessionEnded(reason); return; }
+      if (reason) { setLoading(false); onSessionEnded(reason); return false; }
 
       if (!response.ok) throw new Error('Failed to fetch game state');
 
@@ -157,10 +160,12 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       setLoading(false);
+      return true;
     } catch (err) {
       console.error('Failed to fetch game state:', err);
       setError(err.message);
       setLoading(false);
+      return false;
     }
   }, [gameId, token, historyLoaded, syncFromGame, onSessionEnded]);
 
@@ -188,7 +193,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.GAME_DELETED:
-        onGoToGameList();
+        onSessionEnded('gameNotFound');
         break;
 
       case WS_EVENTS.TOKEN_CONFIG_UPDATED:
@@ -841,7 +846,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onGoToGameList, pushToast]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
