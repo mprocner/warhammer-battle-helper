@@ -112,18 +112,19 @@ describe('useGameMusic — GM volume', () => {
       });
     });
 
+    // The knob must not jump to the echo's stale value while a newer commit is pending.
+    expect(result.current.musicState.gmVolume).toBe(0.73);
+
     act(() => {
       jest.advanceTimersByTime(300);
     });
 
     // The pending value from the last knob movement is what reaches the server,
     // regardless of the mid-flight echo carrying a now-stale value.
-    // NOTE: this only covers the network side. handleMusicMessage's MUSIC_VOLUME
-    // branch overwrites musicState.gmVolume unconditionally (unlike syncFromGame,
-    // which now checks volumeTimerRef), so the displayed knob briefly shows the
-    // echo's 0.4 until a later sync/echo corrects it — out of scope for this fix wave.
     expect(setVolume).toHaveBeenCalledTimes(1);
     expect(setVolume).toHaveBeenCalledWith('game-1', 0.73);
+    // The echo must not yank the knob back either — same guard as syncFromGame.
+    expect(result.current.musicState.gmVolume).toBe(0.73);
   });
 
   it('flushes a pending change when the hook unmounts', () => {

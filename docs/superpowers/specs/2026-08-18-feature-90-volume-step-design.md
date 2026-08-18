@@ -127,13 +127,21 @@ useEffect(() => () => {
 
 `onGmVolumeChange` dochodzi do obiektu zwracanego przez hook.
 
-Handler `WS_EVENTS.MUSIC_VOLUME` (`useGameMusic.js:181`) pozostaje **bez zmian**.
-
 `syncFromGame` (wywoływane po każdym `fetchGameState()`) dostało jeden warunek: dopóki
 `volumeTimerRef.current` jest ustawiony (commit MG wciąż czeka), pole `gmVolume` w
 `setMusicState` zachowuje wartość lokalną zamiast nadpisywać ją danymi z serwera —
 inaczej gałka MG cofałaby się w trakcie przeciągania, gdy WS-owy `fetchGameState()`
 przyleci w złym momencie.
+
+Handler `WS_EVENTS.MUSIC_VOLUME` (`useGameMusic.js:225`) początkowo zostawiono **bez
+zmian** — założenie było, że echo zawsze niesie wartość już trzymaną lokalnie, więc
+nadpisanie jest no-opem. To prawda tylko dla jednego MG w grze: gdy drugi MG (drugi tab
+tego samego konta albo współ-MG) zmieni głośność w trakcie gdy commit tego taba wciąż
+czeka, echo niesie CUDZĄ, inną wartość — gałka i audio tego taba skakały na moment do
+wartości z cudzego echa, po czym wracały, gdy przyleciało echo własnego commitu. Finalna
+wartość i tak była poprawna (własny commit ląduje jako ostatni), ale widać i słychać było
+mignięcie. Poprawka: ten sam warunek co w `syncFromGame` — dopóki `volumeTimerRef.current`
+jest ustawiony, echo nie nadpisuje `gmVolume`.
 
 ## Obsługa błędów
 
@@ -153,10 +161,10 @@ Plik `src/hooks/useGameMusic.volume.test.js`, wzorowany na
    drugiego `setVolume` (echo nie wraca ścieżką commitu).
 4. Echo WS `MUSIC_VOLUME` z INNĄ (nieaktualną) wartością, które przyjdzie w trakcie
    oczekiwania na commit, nie zmienia tego, co finalnie trafia do `setVolume` — wygrywa
-   wartość z ostatniego ruchu gałką, a nie echo w locie. (Test celowo nie sprawdza
-   `musicState.gmVolume` po tym scenariuszu: handler `MUSIC_VOLUME` nadpisuje je
-   bezwarunkowo, więc gałka na chwilę pokazuje wartość z echa, zanim skoryguje ją kolejna
-   synchronizacja — to osobna nierówność, poza zakresem tej serii poprawek.)
+   wartość z ostatniego ruchu gałką, a nie echo w locie. Test sprawdza też
+   `musicState.gmVolume`: dzięki guardowi w handlerze `MUSIC_VOLUME` gałka w ogóle nie
+   skacze do wartości z echa, tylko zostaje na lokalnej wartości przez cały czas
+   oczekiwania na commit.
 5. Oczekująca zmiana jest wysyłana (flush) przy odmontowaniu hooka.
 
 Weryfikacja ręczna: przeciągnięcie suwaka MG w zakładce Sieć pokazuje jeden request

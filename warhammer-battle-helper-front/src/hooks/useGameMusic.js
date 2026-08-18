@@ -223,7 +223,12 @@ export function useGameMusic(gameId) {
         return true;
       }
       case WS_EVENTS.MUSIC_VOLUME: {
-        setMusicState(prev => ({ ...prev, gmVolume: message.payload.volume }));
+        // A commit is still pending, so the server copy is older than what the GM is
+        // dragging right now — keep the local value rather than yanking the knob back.
+        setMusicState(prev => ({
+          ...prev,
+          gmVolume: volumeTimerRef.current ? prev.gmVolume : message.payload.volume,
+        }));
         return true;
       }
       case WS_EVENTS.MUSIC_LOOP: {
