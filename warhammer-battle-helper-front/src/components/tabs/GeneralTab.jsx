@@ -351,7 +351,7 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
               type="range"
               min="0"
               max="1"
-              step="0.05"
+              step="0.01"
               value={playerVolume}
               onChange={(e) => onPlayerVolumeChange(parseFloat(e.target.value))}
               className="general-tab__volume-slider"
