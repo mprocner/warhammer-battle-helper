@@ -183,6 +183,8 @@
     "gameRooms": "Pokoje Gier",
     "createNewGame": "Utwórz Nową Grę",
     "noActiveGames": "Brak aktywnych gier. Utwórz jedną, aby rozpocząć swoją przygodę!",
+    "accessRevoked": "Nie masz już dostępu do tej gry.",
+    "gameNotFound": "Ta gra już nie istnieje.",
     "gameMaster": "Mistrz Gry",
     "active": "Aktywna",
     "characterCards": "Karty Postaci",

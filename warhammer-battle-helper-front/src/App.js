@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -30,6 +30,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [currentGameId, setCurrentGameId] = useState(null);
     const [allowedSystems, setAllowedSystems] = useState(null);
+    const [lobbyNotice, setLobbyNotice] = useState(null);
 
     // Example: Add a new log message
     const addLogMessage = (text, type = 'info') => {
@@ -94,6 +95,7 @@ function App() {
     };
 
     const handleJoinGame = (gameId) => {
+        setLobbyNotice(null);
         setCurrentGameId(gameId);
         addLogMessage(`Joining game ${gameId}`, 'info');
     };
@@ -102,6 +104,14 @@ function App() {
         setCurrentGameId(null);
         addLogMessage('Returned to game list', 'info');
     };
+
+    // Reason is the i18n key suffix under `game.` produced by sessionEndReasonForStatus.
+    // useCallback keeps the reference stable: GameSession puts it in fetchGameState's deps,
+    // and an unstable one would refetch the whole game state on every App render.
+    const handleSessionEnded = useCallback((reason) => {
+        setCurrentGameId(null);
+        setLobbyNotice(reason);
+    }, []);
 
     // Show loading spinner while checking auth status
     if (loading) {
@@ -175,6 +185,7 @@ function App() {
                                             gameId={currentGameId}
                                             token={user.token}
                                             onGoToGameList={handleGoToGameList}
+                                            onSessionEnded={handleSessionEnded}
                                             onLogout={handleLogout}
                                         />
                                     ) : (
@@ -183,6 +194,8 @@ function App() {
                                             token={user.token}
                                             userEmail={user.email}
                                             allowedSystems={allowedSystems}
+                                            notice={lobbyNotice}
+                                            onDismissNotice={() => setLobbyNotice(null)}
                                         />
                                     )}
                                 </ProtectedRoute>

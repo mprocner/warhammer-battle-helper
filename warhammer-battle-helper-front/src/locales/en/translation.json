@@ -183,6 +183,8 @@
     "gameRooms": "Game Rooms",
     "createNewGame": "Create New Game",
     "noActiveGames": "No active games. Create one to start your adventure!",
+    "accessRevoked": "You no longer have access to this game.",
+    "gameNotFound": "This game no longer exists.",
     "gameMaster": "Game Master",
     "active": "Active",
     "characterCards": "Character Cards",

@@ -25,13 +25,14 @@ import ToastStack from './ToastStack';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
+import { sessionEndReasonForStatus } from '../utils/sessionAccess';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
  */
-const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
+const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }) => {
   const { t } = useTranslation();
   const [gameState, setGameState] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -102,6 +103,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         })
       });
 
+      const reason = sessionEndReasonForStatus(response.status);
+      if (reason) { onSessionEnded(reason); return; }
+
       if (!response.ok) throw new Error('Failed to fetch game state');
 
       const game = await response.json();
@@ -158,7 +162,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
       setError(err.message);
       setLoading(false);
     }
-  }, [gameId, token, historyLoaded, syncFromGame]);
+  }, [gameId, token, historyLoaded, syncFromGame, onSessionEnded]);
 
   const removePing = useCallback((pingId) => {
     setPointerPings(prev => prev.filter(p => p.id !== pingId));
