@@ -75,7 +75,7 @@ describe('useGameMusic — GM volume', () => {
     expect(setVolume).not.toHaveBeenCalled();
   });
 
-  it('does not re-commit when the WS echo arrives after the commit already fired', () => {
+  it('settles as a no-op when the WS echo of our own commit arrives', () => {
     const { result } = renderHook(() => useGameMusic('game-1'));
 
     act(() => {
@@ -92,7 +92,10 @@ describe('useGameMusic — GM volume', () => {
       });
     });
 
-    // The echo must not re-enter the commit path — still exactly one POST.
+    // Documents the settled state, not a regression guard: by now the commit has fired and
+    // nulled volumeTimerRef, so the guard in the MUSIC_VOLUME branch is deliberately
+    // inactive here. The echo carries the value already held locally, so it changes nothing.
+    // The mid-flight case, where the guard IS active, is the next test.
     expect(setVolume).toHaveBeenCalledTimes(1);
     expect(result.current.musicState.gmVolume).toBe(0.73);
   });

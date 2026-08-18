@@ -157,8 +157,11 @@ Plik `src/hooks/useGameMusic.volume.test.js`, wzorowany na
 1. Dziesięć szybkich wywołań `onGmVolumeChange` → dokładnie jedno wywołanie `setVolume`,
    z ostatnią wartością.
 2. `musicState.gmVolume` zmienia się natychmiast po wywołaniu, przed upływem timera.
-3. Echo WS `MUSIC_VOLUME` przychodzące PO tym, jak commit już poleciał, nie wywołuje
-   drugiego `setVolume` (echo nie wraca ścieżką commitu).
+3. Echo WS `MUSIC_VOLUME` przychodzące PO tym, jak commit już poleciał, jest no-opem:
+   ani nie wywołuje drugiego `setVolume`, ani nie zmienia stanu. Ten test opisuje stan
+   ustalony, nie jest strażnikiem regresji — timer jest już wyzerowany, więc guard w
+   handlerze `MUSIC_VOLUME` celowo nie działa, a echo niesie wartość już trzymaną lokalnie.
+   Przypadek, w którym guard faktycznie działa, pokrywa test 4.
 4. Echo WS `MUSIC_VOLUME` z INNĄ (nieaktualną) wartością, które przyjdzie w trakcie
    oczekiwania na commit, nie zmienia tego, co finalnie trafia do `setVolume` — wygrywa
    wartość z ostatniego ruchu gałką, a nie echo w locie. Test sprawdza też
