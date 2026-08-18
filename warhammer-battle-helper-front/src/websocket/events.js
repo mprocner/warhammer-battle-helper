@@ -10,6 +10,8 @@ export const WS_EVENTS = {
   PARTICIPANT_LEFT:    'PARTICIPANT_LEFT',
   PARTICIPANT_UPDATED: 'PARTICIPANT_UPDATED',
   USERS_ONLINE:        'USERS_ONLINE',
+  // Sent only to the player being kicked, on his still-live socket.
+  KICKED_FROM_GAME:    'KICKED_FROM_GAME',
 
   // Characters (grid)
   CHARACTER_ADDED:              'CHARACTER_ADDED',

@@ -535,6 +535,15 @@ func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, tar
 		return fmt.Errorf("cannot kick the game master")
 	}
 
+	// Tell the player before cutting his socket. removeUserFromGame ends in DisconnectUser,
+	// which closes the client's Send channel — and WritePump drains that channel before closing
+	// the connection, so a message queued here still reaches him. Without it he learns nothing:
+	// a browser hides the HTTP status of a rejected handshake, so his client can only find out
+	// by probing over HTTP once the reconnect backoff runs out, some 25 seconds later.
+	s.hub.BroadcastToUsers(gameID, websocket.EventKickedFromGame, map[string]interface{}{
+		"gameId": gameID,
+	}, []string{targetUserID.Hex()})
+
 	if err := s.removeUserFromGame(game, gameID, targetUserID); err != nil {
 		return err
 	}

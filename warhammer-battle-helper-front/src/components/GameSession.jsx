@@ -196,6 +196,13 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         onSessionEnded('gameNotFound');
         break;
 
+      // The GM kicked us. Arrives on the still-live socket, just before the server closes it,
+      // so we leave immediately instead of waiting out the reconnect backoff and probing.
+      // Unmounting runs the hook's cleanup, which suppresses the reconnect loop.
+      case WS_EVENTS.KICKED_FROM_GAME:
+        onSessionEnded('kickedFromGame');
+        break;
+
       case WS_EVENTS.TOKEN_CONFIG_UPDATED:
         // The GM's per-user token config changed; re-fetch so resolve-on-read supplies
         // the fresh config to every connected client (players included).
@@ -984,7 +991,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {wsError && (
         <Alert severity="warning" sx={{ m: 2 }}>
-          WebSocket error: {wsError}
+          {t('game.connectionLost')}
         </Alert>
       )}
 
