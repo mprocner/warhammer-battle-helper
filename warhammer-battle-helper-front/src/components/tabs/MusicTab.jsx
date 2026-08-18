@@ -11,7 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
-import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setVolume, setLoop, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
+import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setLoop, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
 import {
   DndContext,
   DragOverlay,
@@ -33,7 +33,7 @@ import DraggableMusicItem from './music/DraggableMusicItem';
 import SortablePlaylistItem from './music/SortablePlaylistItem';
 import './MusicTab.css';
 
-const MusicTab = ({ gameId, token, musicState, audioRef }) => {
+const MusicTab = ({ gameId, token, musicState, audioRef, onGmVolumeChange }) => {
   const { t } = useTranslation();
   const [musicFiles, setMusicFiles] = useState([]);
   const [folders, setFolders] = useState([]);
@@ -391,13 +391,8 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
     }
   };
 
-  const handleVolumeChange = async (e) => {
-    const vol = parseFloat(e.target.value);
-    try {
-      await setVolume(gameId, vol);
-    } catch (err) {
-      console.error('Failed to set volume:', err);
-    }
+  const handleVolumeChange = (e) => {
+    onGmVolumeChange(parseFloat(e.target.value));
   };
 
   const handlePlayPlaylist = async (playlist) => {
@@ -657,7 +652,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef }) => {
             type="range"
             min="0"
             max="1"
-            step="0.05"
+            step="0.01"
             value={musicState.gmVolume}
             onChange={handleVolumeChange}
             className="music-tab__volume-slider"

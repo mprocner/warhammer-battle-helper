@@ -42,6 +42,7 @@ const RightPanel = ({
   audioRef,
   playerVolume,
   onPlayerVolumeChange,
+  onGmVolumeChange,
   onlineUserIds = [],
   onParticipantUpdated,
   rollVisibility = 'all',
@@ -279,6 +280,7 @@ const RightPanel = ({
                   token={token}
                   musicState={musicState}
                   audioRef={audioRef}
+                  onGmVolumeChange={onGmVolumeChange}
                 />
               </div>
             )}

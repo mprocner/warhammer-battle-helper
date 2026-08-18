@@ -62,7 +62,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
-  const { audioRef, musicState, playerVolume, onPlayerVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
+  const { audioRef, musicState, playerVolume, onPlayerVolumeChange, onGmVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
   const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools();
   const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode, imageEditLayer, setImageEditLayer } = useFogTools();
 
@@ -1092,6 +1092,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           audioRef={audioRef}
           playerVolume={playerVolume}
           onPlayerVolumeChange={onPlayerVolumeChange}
+          onGmVolumeChange={onGmVolumeChange}
           onlineUserIds={onlineUserIds}
           onParticipantUpdated={fetchGameState}
           rollVisibility={rollVisibility}
