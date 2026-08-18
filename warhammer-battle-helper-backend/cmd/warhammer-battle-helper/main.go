@@ -171,7 +171,10 @@ func main() {
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
 
-	// WebSocket (auth handled inside handler via token query param)
+	// WebSocket. The JWT arrives as a query param, so this route cannot sit behind
+	// JWTAuthMiddleware or the participation guard — HandleWebSocket performs both checks
+	// itself (service.CanAccessGame) before upgrading. Any future query-param-authenticated
+	// game route must do the same, or it reopens the hole FEATURE-170 closed.
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
 
 	// --- PROTECTED (JWT required for all routes below) ---
