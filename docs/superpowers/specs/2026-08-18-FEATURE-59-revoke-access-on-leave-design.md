@@ -82,7 +82,16 @@ Dwa wyjątki, o które trzeba zadbać:
 - `POST /games/:id/join` zostaje przed guardem;
 - **GM nie jest zapisany jako participant** — guard musi go przepuszczać jawnie po `game.GameMasterID`.
 
-`GET /games/:id` (`main.go:174`) zostaje bez zmian — jest celowo `JWTOptionalMiddleware` i obsługuje ekran dołączania.
+`GET /games/:id` (`main.go:174`) też trafia za guard. Pierwsza wersja tego specu zostawiała go otwartym,
+uzasadniając to ekranem dołączania — **taki ekran nie istnieje**: frontend nie ma wejścia do gry z URL-a
+(`App.js` prowadzi przez lobby, które i tak listuje tylko gry użytkownika), a obaj wołający
+(`GameSession.jsx:99`, `DndContext.jsx:764`) wysyłają nagłówek `Authorization`. Endpoint zwraca największy
+payload w aplikacji — sceny z fogiem, rysunkami i placementami, handouty, notatki, uczestnicy — więc
+zostawienie go otwartym niweczyłoby połowę tego feature'u.
+
+Konsekwencja: `GetGame` przestaje obsługiwać anonimowego wołającego. Flaga `hasUser`, filtr eventów
+ograniczony do `"all"` i osobna ścieżka budująca `publicNotes` stają się martwym kodem i znikają razem ze
+zmianą routingu.
 
 ## Warstwa 3 — uprawnienia do postaci
 
@@ -114,11 +123,23 @@ func (h *Hub) DisconnectUser(gameID string, userID primitive.ObjectID) {
 
 Zbieramy przed usuwaniem, żeby nie mutować mapy w trakcie iteracji — ten sam wzorzec co lista `stale` w `broadcastMessage` (`hub.go:168`). `removeClient` (`:116`) wymaga trzymanego write locka i już robi `close(client.Send)` oraz zamknięcie sesji online, więc nie dokładamy nowej logiki cyklu życia.
 
+Sprawdzenie uczestnictwa wymaga wczytania gry przed `Upgrade`, ale **początkowy `GAME_STATE` bierzemy z
+osobnego, drugiego pobrania — już po `Hub.Register`**. Kuszące jest ponowne użycie dokumentu z guardu i
+oszczędzenie zapytania, ale wtedy snapshot powstaje przed rejestracją klienta i każdy broadcast, który
+wpadnie w tę szczelinę, ginie: nie ma go ani w snapshocie, ani w strumieniu zdarzeń. Połączenia WebSocket
+są rzadkie, jedno dodatkowe zapytanie jest tańsze niż zgubiony event przy reconnekcie.
+
 ## Warstwa 5 — frontend
 
 `CharacterVisibilityModal` seeduje `selectedIds` z `character.visibleTo` (`CharacterVisibilityModal.jsx:11`) i przy zapisie wysyła **cały set** (`:47`), nie tylko widoczne checkboxy. Handler `PARTICIPANT_LEFT` (`GameSession.jsx:220`) czyści tylko `participants`, nie rusza `characters[].visibleTo`. Skutkiem jest wskrzeszenie: GM otwiera modal po wyjściu gracza, zapisuje, usunięty wpis wraca do bazy.
 
 Fix: rozszerzyć ten sam handler `PARTICIPANT_LEFT` o usunięcie `userId` z `visibleTo` każdej postaci. Zero nowych broadcastów — zdarzenie już leci.
+
+**Korekta po review.** Sam strip nie wystarcza. `gameState.characters` nie jest przez nikogo czytane —
+modal dostaje postać z `visibilityTarget` (`DndContext.jsx:1146`), seedowanego z `initialCharacters`,
+czyli własnego stanu `DragAndDropContext` ładowanego przez `fetchCharacters`. Handler musi więc dodatkowo
+bumpnąć `characterDataTrigger`, na który `DndContext` reaguje refetchem (`DndContext.jsx:868`). Dopiero to
+odmładza dane, z których modal się seeduje.
 
 Logika idzie do czystego helpera `stripUserFromCharacters(characters, userId)` w `src/utils/`, zamiast testowania switcha wewnątrz `GameSession.jsx`. Wzorzec jak `src/utils/appendUnique.test.js`.
 
@@ -141,3 +162,17 @@ Wszystkie bez Mongo, zgodnie z konwencją projektu.
 ## Poza zakresem
 
 Tokeny i placementy odchodzącego gracza zostają na scenach. To jego postacie na mapie, nie kwestia dostępu — GM usuwa je ręcznie. Wciąganie tego rozjeżdża feature.
+
+**Wyrzucony gracz może wrócić jednym requestem — FEATURE-170.** `JoinGame` (`GameService.go:399`) nie
+sprawdza ani zaproszenia, ani listy wyrzuconych, a `POST /games/:id/join` z definicji stoi poza guardem.
+Wyrzucony gracz, który zna id gry, wywołuje join i znów przechodzi `CanAccessGame` wszędzie. Jego stare
+karty pozostają odebrane — `visibleTo` zostało wyczyszczone, a `createdBy` już nie daje prawa edycji — więc
+połowa dotycząca postaci trzyma się mocno. To zachowanie istniało przed tym feature'em i nie jest regresją;
+domknięcie (lista `kickedUsers` albo dołączanie tylko na zaproszenie) idzie do osobnego zadania FEATURE-170,
+bo niesie decyzję produktową: czy GM może cofnąć kick.
+
+**Stare dokumenty w bazie nie są czyszczone.** Gry sprzed tej zmiany dalej niosą przy postaciach id graczy,
+którzy odeszli. Dziś to martwy zapis — guard i tak ich nie wpuszcza — ale ożyje, jeśli GM zaprosi taką osobę
+ponownie: `InvitePlayer` dodaje ją jako uczestnika i wszystkie stare karty z jej id znów stają się dla niej
+widoczne. Świadoma decyzja: nie piszemy migracji. Gdyby okazała się potrzebna, wystarczy jednorazowy skrypt
+przycinający `visibleTo` do aktualnych uczestników plus GM.
