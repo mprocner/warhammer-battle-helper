@@ -166,12 +166,10 @@ func main() {
 	// --- FEATURE TOGGLES ---
 	ft := features.Load("./feature-toggles.json")
 
-	// GET /games/:id is JWT-optional (event visibility filtering)
 	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft, UserFiles: userFilesStorage}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
-	r.GET("/games/:id", http.JWTOptionalMiddleware(), gameHandler.GetGame)
 
 	// WebSocket (auth handled inside handler via token query param)
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
@@ -223,6 +221,7 @@ func main() {
 
 	game := r.Group("/games/:id", http.JWTAuthMiddleware(), http.GameParticipantMiddleware(gameRepo))
 
+	game.GET("", gameHandler.GetGame)
 	game.DELETE("", gameHandler.DeleteGame)
 	game.POST("/invite", gameHandler.InvitePlayer)
 	game.POST("/leave", gameHandler.LeaveGame)
