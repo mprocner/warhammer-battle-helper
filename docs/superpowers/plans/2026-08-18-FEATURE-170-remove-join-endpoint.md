@@ -351,7 +351,7 @@ Wpina helper w `fetchGameState` i doprowadza powód do lobby. Po tym tasku dzia�
 
 **Files:**
 - Modify: `warhammer-battle-helper-front/src/components/GameSession.jsx:34`, `:97-105`
-- Modify: `warhammer-battle-helper-front/src/App.js:31`, `:97-103`, `:174-186`
+- Modify: `warhammer-battle-helper-front/src/App.js:1`, `:31`, `:97-103`, `:174-186`
 - Modify: `warhammer-battle-helper-front/src/components/GameLobby.jsx:19`, `:94`
 - Modify: `warhammer-battle-helper-front/src/locales/en/translation.json`, `src/locales/pl/translation.json`
 
@@ -413,14 +413,26 @@ Obok istniejących stanów (po linii 31):
 ```
 
 Obok `handleGoToGameList` (po linii 103) — osobny handler, nie dodatkowy argument do `handleGoToGameList`,
-bo tamten jest w dwóch miejscach podpięty wprost jako `onClick` i dostałby `SyntheticEvent` zamiast powodu:
+bo tamten jest w dwóch miejscach podpięty wprost jako `onClick` i dostałby `SyntheticEvent` zamiast powodu.
+
+Handler musi być owinięty w `useCallback`, inaczej dostaje nową referencję przy każdym renderze `App`,
+przez co `fetchGameState` (który ma go w zależnościach) też — a `useEffect` na linii `GameSession.jsx:851`
+przeładowywałby cały stan gry przy każdym renderze `App`. Obie settery są stabilne, więc tablica jest pusta:
 
 ```js
     // Reason is the i18n key suffix under `game.` produced by sessionEndReasonForStatus.
-    const handleSessionEnded = (reason) => {
+    // useCallback keeps the reference stable: GameSession puts it in fetchGameState's deps,
+    // and an unstable one would refetch the whole game state on every App render.
+    const handleSessionEnded = useCallback((reason) => {
         setCurrentGameId(null);
         setLobbyNotice(reason);
-    };
+    }, []);
+```
+
+Dopisz `useCallback` do importu Reacta (linia 1):
+
+```js
+import React, {useState, useEffect, useCallback} from 'react';
 ```
 
 W `handleJoinGame` (linia 96) wyczyść komunikat, żeby nie wisiał po wejściu do innej gry:
