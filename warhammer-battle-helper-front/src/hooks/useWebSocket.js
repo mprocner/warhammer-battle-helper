@@ -14,6 +14,8 @@ const getWsUrl = () => {
  * @param {function} onMessage - Callback for handling incoming messages
  * @param {function} [onReconnectFailed] - Called once the reconnect attempts run out. A failed
  *   handshake hides its HTTP status from the browser, so the caller probes over HTTP instead.
+ *   May return (or resolve to) a truthy value to tell the hook the server is reachable, in
+ *   which case the hook re-arms the socket instead of staying dead forever.
  */
 const useWebSocket = (gameId, token, onMessage, onReconnectFailed) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -90,7 +92,13 @@ const useWebSocket = (gameId, token, onMessage, onReconnectFailed) => {
             }, delay);
           } else {
             setError('Failed to connect after multiple attempts');
-            onReconnectFailedRef.current?.();
+            // The probe answers whether the server is reachable at all. If it is, the outage
+            // was a restart rather than lost access, so re-arm instead of staying dead forever.
+            Promise.resolve(onReconnectFailedRef.current?.()).then((serverReachable) => {
+              if (!serverReachable || manuallyDisconnectedRef.current) return;
+              reconnectAttemptsRef.current = 0;
+              connect();
+            });
           }
         }
       };
