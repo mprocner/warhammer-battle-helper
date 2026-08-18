@@ -106,11 +106,15 @@ curl -X GET http://localhost:8080/games/$GAME_ID
 
 ---
 
-## Step 5: Join Game as Player
+## Step 5: Invite the Player to the Game
+
+Inviting is the only way a player enters a game — there is no self-service join.
 
 ```bash
-curl -X POST http://localhost:8080/games/$GAME_ID/join \
-  -H "Authorization: Bearer $PLAYER_TOKEN"
+curl -X POST http://localhost:8080/games/$GAME_ID/invite \
+  -H "Authorization: Bearer $GM_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "player@example.com"}'
 ```
 
 **Expected:** Player is added to participants list, all connected WebSocket clients receive `PARTICIPANT_JOINED` event.
