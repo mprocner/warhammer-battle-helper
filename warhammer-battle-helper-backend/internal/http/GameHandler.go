@@ -223,31 +223,6 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
-// JoinGame adds current user to a game
-func (h *GameHandler) JoinGame(c *gin.Context) {
-	gameID := c.Param("id")
-
-	// Get user from JWT
-	token, _ := c.Get("jwt")
-	claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-	userIDStr := claims["user_id"].(string)
-	username := claims["email"].(string)
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	game, err := h.GameService.JoinGame(gameID, userID, username)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, game)
-}
-
 // DeleteGame deletes a game (GM only)
 func (h *GameHandler) DeleteGame(c *gin.Context) {
 	gameID := c.Param("id")

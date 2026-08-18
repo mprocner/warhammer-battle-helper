@@ -395,65 +395,6 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 	return nil
 }
 
-// JoinGame adds a user to a game
-func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, username string) (*models.Game, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, err
-	}
-
-	// GM can join the game session but should not be added as a participant
-	if game.GameMasterID == userID {
-		return game, nil
-	}
-
-	// Check if user already exists in participants
-	for _, p := range game.Participants {
-		if p.UserID == userID {
-			return nil, fmt.Errorf("user already in game")
-		}
-	}
-
-	participant := models.GameParticipant{
-		UserID:   userID,
-		Username: username,
-		Role:     models.RolePlayer,
-	}
-	if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
-		return nil, err
-	}
-
-	// Add join event
-	event := models.GameEvent{
-		Type:      models.EventTypeJoin,
-		CreatedBy: userID,
-		Username:  username,
-		Data: map[string]interface{}{
-			"message": fmt.Sprintf("%s joined the game", username),
-			"type":    "info",
-		},
-	}
-	s.gameRepo.AddEvent(gameID, event)
-
-	// Enrich participant with account-level avatar/signature for the broadcast
-	broadcastParticipant := models.GameParticipant{
-		UserID:   userID,
-		Username: username,
-		Role:     models.RolePlayer,
-	}
-	if joinedUser, userErr := s.userRepo.FindByID(userID); userErr == nil && joinedUser != nil {
-		broadcastParticipant.AccountAvatar = joinedUser.Avatar
-		broadcastParticipant.AccountSignature = joinedUser.Signature
-	}
-
-	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, websocket.EventParticipantJoined, map[string]interface{}{
-		"participant": broadcastParticipant,
-	})
-
-	return s.gameRepo.GetByID(gameID)
-}
-
 // DeleteGame deletes a game entirely (GM only). Returns the game's lobby image URL
 // (if any) so the handler can remove the file from storage.
 func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) (string, error) {
