@@ -161,3 +161,10 @@ bez nowego protokołu.
 
 **Stare `visibleTo` w bazie.** Bez zmian względem FEATURE-59: gry sprzed tamtej zmiany dalej niosą id
 graczy, którzy odeszli. Guard ich nie wpuszcza, ale ponowne zaproszenie ożywia stare wpisy.
+
+**Pliki handoutów i muzyki bez guardu.** Stwierdzenie, że wyrzucony gracz dostaje `403` wszędzie, jest
+prawdziwe dla `GET /games/:id` i tras pod guardem uczestnictwa — nie dla `GET /handouts/:filename` ani
+`GET /music-files/:filename`. Obie te trasy są zarejestrowane w `main.go` bezpośrednio na gołym routerze,
+w sekcji „Static file serving (no auth)", bez `JWTAuthMiddleware` i bez guardu — kto zna URL pliku, dalej
+go pobierze, nawet po wyrzuceniu z gry. Stan sprzed FEATURE-170, świadomie pozostawiony bez zmian; zamknięcie
+tej furtki wymagałoby osobnego mechanizmu autoryzacji dla plików statycznych.
