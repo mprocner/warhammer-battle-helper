@@ -12,8 +12,10 @@ const getWsUrl = () => {
  * @param {string} gameId - The game ID to connect to
  * @param {string} token - JWT authentication token
  * @param {function} onMessage - Callback for handling incoming messages
+ * @param {function} [onReconnectFailed] - Called once the reconnect attempts run out. A failed
+ *   handshake hides its HTTP status from the browser, so the caller probes over HTTP instead.
  */
-const useWebSocket = (gameId, token, onMessage) => {
+const useWebSocket = (gameId, token, onMessage, onReconnectFailed) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const wsRef = useRef(null);
@@ -24,6 +26,8 @@ const useWebSocket = (gameId, token, onMessage) => {
   const manuallyDisconnectedRef = useRef(false);
   const onMessageRef = useRef(onMessage);
   useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+  const onReconnectFailedRef = useRef(onReconnectFailed);
+  useEffect(() => { onReconnectFailedRef.current = onReconnectFailed; }, [onReconnectFailed]);
 
   const connect = useCallback(() => {
     if (!gameId || !token) {
@@ -86,6 +90,7 @@ const useWebSocket = (gameId, token, onMessage) => {
             }, delay);
           } else {
             setError('Failed to connect after multiple attempts');
+            onReconnectFailedRef.current?.();
           }
         }
       };

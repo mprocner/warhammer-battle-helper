@@ -846,7 +846,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
     token,
-    handleWebSocketMessage
+    handleWebSocketMessage,
+    fetchGameState
   );
 
   useEffect(() => {
