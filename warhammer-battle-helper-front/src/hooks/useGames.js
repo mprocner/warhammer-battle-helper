@@ -52,30 +52,6 @@ export function useGames(token) {
     }
   }, [authHeaders]);
 
-  // Returns true when the caller is in the game and may enter it.
-  const joinGame = useCallback(async (gameId) => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch(`${getApiUrl()}/games/${gameId}/join`, {
-        method: 'POST',
-        headers: authHeaders(),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        // Re-entering a game you never left is success, not an error.
-        if (errorData.error === 'user already in game') return true;
-        throw new Error(errorData.error || 'Failed to join game');
-      }
-      return true;
-    } catch (err) {
-      setError(err.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [authHeaders]);
-
   // Drops the game from the list on success — used by both delete (GM) and leave (player).
   const removeGame = useCallback(async (gameId, path, method) => {
     setLoading(true);
@@ -120,7 +96,7 @@ export function useGames(token) {
 
   return {
     games, error, loading, syncingGameId,
-    setError, fetchGames, createGame, joinGame, deleteGame, leaveGame, syncTemplate,
+    setError, fetchGames, createGame, deleteGame, leaveGame, syncTemplate,
   };
 }
 

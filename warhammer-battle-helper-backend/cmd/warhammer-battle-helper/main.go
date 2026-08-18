@@ -171,7 +171,10 @@ func main() {
 	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
 
-	// WebSocket (auth handled inside handler via token query param)
+	// WebSocket. The JWT arrives as a query param, so this route cannot sit behind
+	// JWTAuthMiddleware or the participation guard — HandleWebSocket performs both checks
+	// itself (service.CanAccessGame) before upgrading. Any future query-param-authenticated
+	// game route must do the same, or it reopens the hole FEATURE-170 closed.
 	r.GET("/games/:id/ws", gameHandler.HandleWebSocket)
 
 	// --- PROTECTED (JWT required for all routes below) ---
@@ -213,11 +216,6 @@ func main() {
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
 	noteHandler := http.NoteHandler{NoteService: noteService}
 	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
-
-	// POST /join is called by someone who is not a participant yet, so it lives in its own
-	// group without the participation guard.
-	gameJoin := r.Group("/games/:id", http.JWTAuthMiddleware())
-	gameJoin.POST("/join", gameHandler.JoinGame)
 
 	game := r.Group("/games/:id", http.JWTAuthMiddleware(), http.GameParticipantMiddleware(gameRepo))
 

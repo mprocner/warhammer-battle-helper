@@ -50,10 +50,15 @@ Authorization: Bearer YOUR_GM_TOKEN
 ### 2. PARTICIPANT MANAGEMENT
 ### ========================================
 
-### Dołącz do gry (PLAYER)
+### Zaproś gracza do gry (GM)
 # Replace YOUR_GAME_ID
-POST http://localhost:8080/games/68f6969184c042e69c0daeca/join
-Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NjEwNzYxMjYsInVzZXJfaWQiOiI2OGQzZjk2OTk3ZTBjMGVkZmQ0MmM4YTQifQ.D5muORN4XEKDXmjrUAEBkjNmJ2gQZpOsAs4F09GbS8Y94rEK0f625uCBNdgKh61qBea8kgKxQC09Xnr2rIjCKopHjItPPjVTkXLzDsGCGt747Aaleb4HeMeZ7Pxt4My5TSxoZM85YYyPJlFijeptqxEo5gcz8FrM0xU515c1RcJ4VbqlQpnU9gIYTfDxJ4bPvyfDdeGEBMIVXIraT1pmALlhQ86lkzEu2qheHdcZj75n1By30QyFZ_IsW9tslVwSamGx7j8tPtX-9c1UTXQ81UQS4N0Hs7kl7yIuBFw4ZgrLbH5G1ZuxdSSFI4-ZCSUlM_gT7RvybofwXWJ2rZZPeQ
+POST http://localhost:8080/games/68f6969184c042e69c0daeca/invite
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "email": "player@example.com"
+}
 
 ###
 
@@ -185,10 +190,15 @@ Authorization: Bearer YOUR_GM_TOKEN
 ### STEP 6: Get all games to verify creation
 GET http://localhost:8080/games
 
-### STEP 7: Join game as Player
-# Use game ID from step 5
-POST http://localhost:8080/games/YOUR_GAME_ID/join
-Authorization: Bearer YOUR_PLAYER_TOKEN
+### STEP 7: Invite player to the game (GM)
+# Use game ID from step 5. Inviting is the only way a player enters a game.
+POST http://localhost:8080/games/YOUR_GAME_ID/invite
+Content-Type: application/json
+Authorization: Bearer YOUR_GM_TOKEN
+
+{
+  "email": "player@example.com"
+}
 
 ### STEP 8: Add character to grid as GM
 POST http://localhost:8080/games/YOUR_GAME_ID/characters

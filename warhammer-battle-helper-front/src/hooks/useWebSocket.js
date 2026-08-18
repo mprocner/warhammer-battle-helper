@@ -12,8 +12,12 @@ const getWsUrl = () => {
  * @param {string} gameId - The game ID to connect to
  * @param {string} token - JWT authentication token
  * @param {function} onMessage - Callback for handling incoming messages
+ * @param {function} [onReconnectFailed] - Called once the reconnect attempts run out. A failed
+ *   handshake hides its HTTP status from the browser, so the caller probes over HTTP instead.
+ *   May return (or resolve to) a truthy value to tell the hook the server is reachable, in
+ *   which case the hook re-arms the socket instead of staying dead forever.
  */
-const useWebSocket = (gameId, token, onMessage) => {
+const useWebSocket = (gameId, token, onMessage, onReconnectFailed) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const wsRef = useRef(null);
@@ -24,6 +28,8 @@ const useWebSocket = (gameId, token, onMessage) => {
   const manuallyDisconnectedRef = useRef(false);
   const onMessageRef = useRef(onMessage);
   useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+  const onReconnectFailedRef = useRef(onReconnectFailed);
+  useEffect(() => { onReconnectFailedRef.current = onReconnectFailed; }, [onReconnectFailed]);
 
   const connect = useCallback(() => {
     if (!gameId || !token) {
@@ -86,6 +92,13 @@ const useWebSocket = (gameId, token, onMessage) => {
             }, delay);
           } else {
             setError('Failed to connect after multiple attempts');
+            // The probe answers whether the server is reachable at all. If it is, the outage
+            // was a restart rather than lost access, so re-arm instead of staying dead forever.
+            Promise.resolve(onReconnectFailedRef.current?.()).then((serverReachable) => {
+              if (!serverReachable || manuallyDisconnectedRef.current) return;
+              reconnectAttemptsRef.current = 0;
+              connect();
+            });
           }
         }
       };

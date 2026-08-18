@@ -15,13 +15,13 @@ import ConfirmDialog from './lobby/ConfirmDialog';
 // The lobby orchestrates three stacked surfaces: the create-game dialog, the template
 // manager on top of it, and the full-screen builder on top of that. Each layer stays
 // mounted underneath, so closing one always reveals the step the user came from.
-const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
+const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDismissNotice }) => {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
 
   const {
     games, error, loading, syncingGameId,
-    setError, fetchGames, createGame, joinGame, deleteGame, leaveGame, syncTemplate,
+    setError, fetchGames, createGame, deleteGame, leaveGame, syncTemplate,
   } = useGames(token);
   const {
     templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, replaceTemplate,
@@ -46,10 +46,6 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
     setCreateOpen(false);
     onJoinGame(game.id);
   }, [createGame, onJoinGame]);
-
-  const handleJoinGame = useCallback(async (gameId) => {
-    if (await joinGame(gameId)) onJoinGame(gameId);
-  }, [joinGame, onJoinGame]);
 
   const openManager = useCallback(() => {
     fetchTemplates();
@@ -91,6 +87,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
             </Button>
           </Box>
 
+          {notice && <Alert severity="warning" sx={{ mb: 3 }} onClose={onDismissNotice}>{t(`game.${notice}`)}</Alert>}
           {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
 
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: 2.5, alignItems: 'stretch' }}>
@@ -109,7 +106,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
                 isGM={game.gameMasterEmail === userEmail}
                 loading={loading}
                 syncing={syncingGameId === game.id}
-                onJoin={handleJoinGame}
+                onJoin={onJoinGame}
                 onSync={syncTemplate}
                 onDelete={(g) => setGamePrompt({ type: 'delete', game: g })}
                 onLeave={(g) => setGamePrompt({ type: 'leave', game: g })}

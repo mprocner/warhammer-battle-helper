@@ -25,13 +25,14 @@ import ToastStack from './ToastStack';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
+import { sessionEndReasonForStatus } from '../utils/sessionAccess';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
  */
-const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
+const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }) => {
   const { t } = useTranslation();
   const [gameState, setGameState] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -94,6 +95,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
     setLogs((prev) => [...prev, { id: crypto.randomUUID(), createdAt: now.getTime(), message, type, timestamp, data }]);
   }, []);
 
+  // Resolves true when the game state loaded successfully, and false when the session
+  // ended (access revoked / game gone) or the request failed. useWebSocket uses this
+  // answer to decide whether to re-arm the socket after a reconnect probe.
   const fetchGameState = useCallback(async () => {
     try {
       const response = await fetch(`${getApiUrl()}/games/${gameId}`, {
@@ -101,6 +105,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
           'Authorization': `Bearer ${token}`
         })
       });
+
+      const reason = sessionEndReasonForStatus(response.status);
+      if (reason) { setLoading(false); onSessionEnded(reason); return false; }
 
       if (!response.ok) throw new Error('Failed to fetch game state');
 
@@ -124,9 +131,6 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
           const timestamp = new Date(event.createdAt).toLocaleTimeString();
 
           switch (event.type) {
-            case 'join':
-              message = `${event.username} joined the game`;
-              return { createdAt, message, type: 'success', timestamp };
             case 'leave':
               message = `${event.username} left the game`;
               return { createdAt, message, type: 'info', timestamp };
@@ -156,12 +160,14 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
       }
 
       setLoading(false);
+      return true;
     } catch (err) {
       console.error('Failed to fetch game state:', err);
       setError(err.message);
       setLoading(false);
+      return false;
     }
-  }, [gameId, token, historyLoaded, syncFromGame]);
+  }, [gameId, token, historyLoaded, syncFromGame, onSessionEnded]);
 
   const removePing = useCallback((pingId) => {
     setPointerPings(prev => prev.filter(p => p.id !== pingId));
@@ -187,7 +193,14 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         break;
 
       case WS_EVENTS.GAME_DELETED:
-        onGoToGameList();
+        onSessionEnded('gameNotFound');
+        break;
+
+      // The GM kicked us. Arrives on the still-live socket, just before the server closes it,
+      // so we leave immediately instead of waiting out the reconnect backoff and probing.
+      // Unmounting runs the hook's cleanup, which suppresses the reconnect loop.
+      case WS_EVENTS.KICKED_FROM_GAME:
+        onSessionEnded('kickedFromGame');
         break;
 
       case WS_EVENTS.TOKEN_CONFIG_UPDATED:
@@ -840,12 +853,13 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onGoToGameList, pushToast]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
     token,
-    handleWebSocketMessage
+    handleWebSocketMessage,
+    fetchGameState
   );
 
   useEffect(() => {
@@ -977,7 +991,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {wsError && (
         <Alert severity="warning" sx={{ m: 2 }}>
-          WebSocket error: {wsError}
+          {t('game.connectionLost')}
         </Alert>
       )}
 

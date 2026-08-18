@@ -186,9 +186,10 @@ POST http://localhost:8080/games
 Headers: { Authorization: Bearer <token> }
 Body: { name: "Game Name" }
 
-// Join game
-POST http://localhost:8080/games/:id/join
+// Invite a player (GM only) — the only way a player enters a game
+POST http://localhost:8080/games/:id/invite
 Headers: { Authorization: Bearer <token> }
+Body: { email: "player@example.com" }
 
 // Leave game
 POST http://localhost:8080/games/:id/leave

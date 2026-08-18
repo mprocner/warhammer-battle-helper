@@ -14,6 +14,9 @@ const (
 	EventParticipantLeft    = "PARTICIPANT_LEFT"
 	EventParticipantUpdated = "PARTICIPANT_UPDATED"
 	EventUsersOnline        = "USERS_ONLINE"
+	// EventKickedFromGame is sent only to the player being removed, and only by KickPlayer —
+	// someone who left on their own did it from the lobby and must not see it.
+	EventKickedFromGame = "KICKED_FROM_GAME"
 
 	// Characters (grid)
 	EventCharacterAdded             = "CHARACTER_ADDED"

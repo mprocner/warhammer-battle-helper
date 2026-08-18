@@ -173,7 +173,6 @@
   },
   "game": {
     "createGame": "Utwórz Grę",
-    "joinGame": "Dołącz do Gry",
     "enterGame": "Wejdź do Gry",
     "gameLobby": "Poczekalnia Gry",
     "startGame": "Rozpocznij Grę",
@@ -184,6 +183,10 @@
     "gameRooms": "Pokoje Gier",
     "createNewGame": "Utwórz Nową Grę",
     "noActiveGames": "Brak aktywnych gier. Utwórz jedną, aby rozpocząć swoją przygodę!",
+    "accessRevoked": "Nie masz już dostępu do tej gry.",
+    "kickedFromGame": "Mistrz Gry usunął Cię z tej gry.",
+    "connectionLost": "Utracono połączenie. Ponawianie…",
+    "gameNotFound": "Ta gra już nie istnieje.",
     "gameMaster": "Mistrz Gry",
     "active": "Aktywna",
     "characterCards": "Karty Postaci",

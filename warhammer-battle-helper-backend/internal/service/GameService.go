@@ -395,65 +395,6 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 	return nil
 }
 
-// JoinGame adds a user to a game
-func (s *GameService) JoinGame(gameID string, userID primitive.ObjectID, username string) (*models.Game, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, err
-	}
-
-	// GM can join the game session but should not be added as a participant
-	if game.GameMasterID == userID {
-		return game, nil
-	}
-
-	// Check if user already exists in participants
-	for _, p := range game.Participants {
-		if p.UserID == userID {
-			return nil, fmt.Errorf("user already in game")
-		}
-	}
-
-	participant := models.GameParticipant{
-		UserID:   userID,
-		Username: username,
-		Role:     models.RolePlayer,
-	}
-	if err := s.gameRepo.AddParticipant(gameID, participant); err != nil {
-		return nil, err
-	}
-
-	// Add join event
-	event := models.GameEvent{
-		Type:      models.EventTypeJoin,
-		CreatedBy: userID,
-		Username:  username,
-		Data: map[string]interface{}{
-			"message": fmt.Sprintf("%s joined the game", username),
-			"type":    "info",
-		},
-	}
-	s.gameRepo.AddEvent(gameID, event)
-
-	// Enrich participant with account-level avatar/signature for the broadcast
-	broadcastParticipant := models.GameParticipant{
-		UserID:   userID,
-		Username: username,
-		Role:     models.RolePlayer,
-	}
-	if joinedUser, userErr := s.userRepo.FindByID(userID); userErr == nil && joinedUser != nil {
-		broadcastParticipant.AccountAvatar = joinedUser.Avatar
-		broadcastParticipant.AccountSignature = joinedUser.Signature
-	}
-
-	// Broadcast to all clients
-	s.hub.BroadcastToGame(gameID, websocket.EventParticipantJoined, map[string]interface{}{
-		"participant": broadcastParticipant,
-	})
-
-	return s.gameRepo.GetByID(gameID)
-}
-
 // DeleteGame deletes a game entirely (GM only). Returns the game's lobby image URL
 // (if any) so the handler can remove the file from storage.
 func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) (string, error) {
@@ -593,6 +534,15 @@ func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, tar
 	if targetUserID == gmUserID {
 		return fmt.Errorf("cannot kick the game master")
 	}
+
+	// Tell the player before cutting his socket. removeUserFromGame ends in DisconnectUser,
+	// which closes the client's Send channel — and WritePump drains that channel before closing
+	// the connection, so a message queued here still reaches him. Without it he learns nothing:
+	// a browser hides the HTTP status of a rejected handshake, so his client can only find out
+	// by probing over HTTP once the reconnect backoff runs out, some 25 seconds later.
+	s.hub.BroadcastToUsers(gameID, websocket.EventKickedFromGame, map[string]interface{}{
+		"gameId": gameID,
+	}, []string{targetUserID.Hex()})
 
 	if err := s.removeUserFromGame(game, gameID, targetUserID); err != nil {
 		return err

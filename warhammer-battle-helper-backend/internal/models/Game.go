@@ -235,7 +235,6 @@ const (
 	EventTypeMessage         EventType = "message"
 	EventTypeCharacterAdd    EventType = "character_add"
 	EventTypeCharacterRemove EventType = "character_remove"
-	EventTypeJoin            EventType = "join"
 	EventTypeLeave           EventType = "leave"
 )
 
@@ -256,11 +255,6 @@ type CreateGameRequest struct {
 	Name             string `json:"name" binding:"required"`
 	GameSystem       string `json:"gameSystem" binding:"required"`
 	CustomTemplateID string `json:"customTemplateId,omitempty"` // required when gameSystem="custom"
-}
-
-// JoinGameRequest is the request body for joining a game
-type JoinGameRequest struct {
-	GameID string `json:"gameId" binding:"required"`
 }
 
 // MoveCharacterRequest is the request body for moving a character (legacy top-level grid).
