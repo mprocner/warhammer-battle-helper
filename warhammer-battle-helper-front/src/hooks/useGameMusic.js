@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getMusic, playTrack, nextTrack } from '../api/music';
+import { getMusic, playTrack, nextTrack, setVolume } from '../api/music';
 import { resolveFileUrl } from '../utils/fileUrl';
 
 import { WS_EVENTS } from '../websocket/events';
+
+// The GM slider is a controlled input fed by server state, so every change used to cost
+// a POST + Mongo write + broadcast. With a 1% step that is ~100 round-trips per drag, so
+// the value is applied locally at once and committed once the GM stops moving the knob.
+const VOLUME_COMMIT_DELAY_MS = 300;
 
 /**
  * Manages all music state: audio playback, GM volume, player volume,
@@ -32,10 +37,39 @@ export function useGameMusic(gameId) {
     musicStateRef.current = musicState;
   }, [musicState]);
 
+  const volumeTimerRef = useRef(null);
+  const pendingVolumeRef = useRef(null);
+
   const onPlayerVolumeChange = useCallback((vol) => {
     setPlayerVolume(vol);
     localStorage.setItem('playerMusicVolume', String(vol));
   }, []);
+
+  const commitGmVolume = useCallback((vol) => {
+    setVolume(gameId, vol).catch(err => console.error('Failed to set volume:', err));
+  }, [gameId]);
+
+  const onGmVolumeChange = useCallback((vol) => {
+    // Optimistic: this also drives audioRef.current.volume through the effect below,
+    // so the GM hears his own change without waiting for the WS echo.
+    setMusicState(prev => ({ ...prev, gmVolume: vol }));
+    pendingVolumeRef.current = vol;
+    if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
+    volumeTimerRef.current = setTimeout(() => {
+      volumeTimerRef.current = null;
+      pendingVolumeRef.current = null;
+      commitGmVolume(vol);
+    }, VOLUME_COMMIT_DELAY_MS);
+  }, [commitGmVolume]);
+
+  // Flush rather than drop: leaving the game within 300ms of a change would otherwise
+  // lose it silently.
+  useEffect(() => () => {
+    if (volumeTimerRef.current) {
+      clearTimeout(volumeTimerRef.current);
+      commitGmVolume(pendingVolumeRef.current);
+    }
+  }, [commitGmVolume]);
 
   // Sync audio volume when gmVolume or playerVolume changes
   useEffect(() => {
@@ -200,6 +234,7 @@ export function useGameMusic(gameId) {
     musicState,
     playerVolume,
     onPlayerVolumeChange,
+    onGmVolumeChange,
     handleMusicMessage,
     handleSceneAssignAll,
     syncFromGame,
