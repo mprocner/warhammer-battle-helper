@@ -173,7 +173,6 @@
   },
   "game": {
     "createGame": "Create Game",
-    "joinGame": "Join Game",
     "enterGame": "Enter Game",
     "gameLobby": "Game Lobby",
     "startGame": "Start Game",

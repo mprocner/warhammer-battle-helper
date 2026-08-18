@@ -21,7 +21,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
 
   const {
     games, error, loading, syncingGameId,
-    setError, fetchGames, createGame, joinGame, deleteGame, leaveGame, syncTemplate,
+    setError, fetchGames, createGame, deleteGame, leaveGame, syncTemplate,
   } = useGames(token);
   const {
     templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, replaceTemplate,
@@ -46,10 +46,6 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
     setCreateOpen(false);
     onJoinGame(game.id);
   }, [createGame, onJoinGame]);
-
-  const handleJoinGame = useCallback(async (gameId) => {
-    if (await joinGame(gameId)) onJoinGame(gameId);
-  }, [joinGame, onJoinGame]);
 
   const openManager = useCallback(() => {
     fetchTemplates();
@@ -109,7 +105,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems }) => {
                 isGM={game.gameMasterEmail === userEmail}
                 loading={loading}
                 syncing={syncingGameId === game.id}
-                onJoin={handleJoinGame}
+                onJoin={onJoinGame}
                 onSync={syncTemplate}
                 onDelete={(g) => setGamePrompt({ type: 'delete', game: g })}
                 onLeave={(g) => setGamePrompt({ type: 'leave', game: g })}

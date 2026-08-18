@@ -124,9 +124,6 @@ const GameSession = ({ gameId, token, onGoToGameList, onLogout }) => {
           const timestamp = new Date(event.createdAt).toLocaleTimeString();
 
           switch (event.type) {
-            case 'join':
-              message = `${event.username} joined the game`;
-              return { createdAt, message, type: 'success', timestamp };
             case 'leave':
               message = `${event.username} left the game`;
               return { createdAt, message, type: 'info', timestamp };
