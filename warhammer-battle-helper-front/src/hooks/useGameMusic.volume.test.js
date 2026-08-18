@@ -75,13 +75,15 @@ describe('useGameMusic — GM volume', () => {
     expect(setVolume).not.toHaveBeenCalled();
   });
 
-  it('does not roll the state back when the WS echo carries the same value', () => {
+  it('does not re-commit when the WS echo arrives after the commit already fired', () => {
     const { result } = renderHook(() => useGameMusic('game-1'));
 
     act(() => {
       result.current.onGmVolumeChange(0.73);
       jest.advanceTimersByTime(300);
     });
+
+    expect(setVolume).toHaveBeenCalledTimes(1);
 
     act(() => {
       result.current.handleMusicMessage({
@@ -90,7 +92,38 @@ describe('useGameMusic — GM volume', () => {
       });
     });
 
+    // The echo must not re-enter the commit path — still exactly one POST.
+    expect(setVolume).toHaveBeenCalledTimes(1);
     expect(result.current.musicState.gmVolume).toBe(0.73);
+  });
+
+  it('lets the pending local value win over a mid-flight echo carrying a stale value', () => {
+    const { result } = renderHook(() => useGameMusic('game-1'));
+
+    act(() => {
+      result.current.onGmVolumeChange(0.73);
+    });
+
+    // An echo for an earlier change lands while the GM's own commit is still pending.
+    act(() => {
+      result.current.handleMusicMessage({
+        type: WS_EVENTS.MUSIC_VOLUME,
+        payload: { volume: 0.4 },
+      });
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+
+    // The pending value from the last knob movement is what reaches the server,
+    // regardless of the mid-flight echo carrying a now-stale value.
+    // NOTE: this only covers the network side. handleMusicMessage's MUSIC_VOLUME
+    // branch overwrites musicState.gmVolume unconditionally (unlike syncFromGame,
+    // which now checks volumeTimerRef), so the displayed knob briefly shows the
+    // echo's 0.4 until a later sync/echo corrects it — out of scope for this fix wave.
+    expect(setVolume).toHaveBeenCalledTimes(1);
+    expect(setVolume).toHaveBeenCalledWith('game-1', 0.73);
   });
 
   it('flushes a pending change when the hook unmounts', () => {

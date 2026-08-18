@@ -67,7 +67,15 @@ export function useGameMusic(gameId) {
   useEffect(() => () => {
     if (volumeTimerRef.current) {
       clearTimeout(volumeTimerRef.current);
-      commitGmVolume(pendingVolumeRef.current);
+      // Null both refs before committing: this cleanup can run again (e.g. gameId
+      // changes and the effect re-subscribes) without a real user action in between.
+      // Leaving stale values behind would let a later, unrelated re-run see a truthy
+      // timer ref and re-fire the commit against the NEW gameId with the OLD volume —
+      // a cross-game write.
+      volumeTimerRef.current = null;
+      const pending = pendingVolumeRef.current;
+      pendingVolumeRef.current = null;
+      commitGmVolume(pending);
     }
   }, [commitGmVolume]);
 
@@ -105,17 +113,19 @@ export function useGameMusic(gameId) {
     if (!gameMusicState) return;
     const audio = audioRef.current;
 
-    setMusicState({
+    setMusicState(prev => ({
       isPlaying: !!gameMusicState.isPlaying,
       trackUrl: gameMusicState.trackUrl || null,
       trackName: gameMusicState.trackName || null,
       position: gameMusicState.position || 0,
-      gmVolume: gameMusicState.volume || 1.0,
+      // A commit is still pending, so the server copy is older than what the GM is
+      // dragging right now — keep the local value rather than yanking the knob back.
+      gmVolume: volumeTimerRef.current ? prev.gmVolume : (gameMusicState.volume || 1.0),
       playlistId: gameMusicState.playlistId || null,
       trackIndex: gameMusicState.trackIndex || 0,
       loop: !!gameMusicState.loop,
       version: gameMusicState.version || 0,
-    });
+    }));
 
     if (gameMusicState.isPlaying && gameMusicState.trackUrl) {
       const url = resolveFileUrl(gameMusicState.trackUrl);
