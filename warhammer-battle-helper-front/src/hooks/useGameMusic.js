@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getMusic, playTrack, nextTrack } from '../api/music';
+import { getMusic, playTrack, nextTrack, setVolume } from '../api/music';
 import { resolveFileUrl } from '../utils/fileUrl';
 
 import { WS_EVENTS } from '../websocket/events';
+
+// The GM slider is a controlled input fed by server state, so every change used to cost
+// a POST + Mongo write + broadcast. With a 1% step that is ~100 round-trips per drag, so
+// the value is applied locally at once and committed once the GM stops moving the knob.
+const VOLUME_COMMIT_DELAY_MS = 300;
 
 /**
  * Manages all music state: audio playback, GM volume, player volume,
@@ -32,10 +37,47 @@ export function useGameMusic(gameId) {
     musicStateRef.current = musicState;
   }, [musicState]);
 
+  const volumeTimerRef = useRef(null);
+  const pendingVolumeRef = useRef(null);
+
   const onPlayerVolumeChange = useCallback((vol) => {
     setPlayerVolume(vol);
     localStorage.setItem('playerMusicVolume', String(vol));
   }, []);
+
+  const commitGmVolume = useCallback((vol) => {
+    setVolume(gameId, vol).catch(err => console.error('Failed to set volume:', err));
+  }, [gameId]);
+
+  const onGmVolumeChange = useCallback((vol) => {
+    // Optimistic: this also drives audioRef.current.volume through the effect below,
+    // so the GM hears his own change without waiting for the WS echo.
+    setMusicState(prev => ({ ...prev, gmVolume: vol }));
+    pendingVolumeRef.current = vol;
+    if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
+    volumeTimerRef.current = setTimeout(() => {
+      volumeTimerRef.current = null;
+      pendingVolumeRef.current = null;
+      commitGmVolume(vol);
+    }, VOLUME_COMMIT_DELAY_MS);
+  }, [commitGmVolume]);
+
+  // Flush rather than drop: leaving the game within 300ms of a change would otherwise
+  // lose it silently.
+  useEffect(() => () => {
+    if (volumeTimerRef.current) {
+      clearTimeout(volumeTimerRef.current);
+      // Null both refs before committing: this cleanup can run again (e.g. gameId
+      // changes and the effect re-subscribes) without a real user action in between.
+      // Leaving stale values behind would let a later, unrelated re-run see a truthy
+      // timer ref and re-fire the commit against the NEW gameId with the OLD volume —
+      // a cross-game write.
+      volumeTimerRef.current = null;
+      const pending = pendingVolumeRef.current;
+      pendingVolumeRef.current = null;
+      commitGmVolume(pending);
+    }
+  }, [commitGmVolume]);
 
   // Sync audio volume when gmVolume or playerVolume changes
   useEffect(() => {
@@ -71,17 +113,19 @@ export function useGameMusic(gameId) {
     if (!gameMusicState) return;
     const audio = audioRef.current;
 
-    setMusicState({
+    setMusicState(prev => ({
       isPlaying: !!gameMusicState.isPlaying,
       trackUrl: gameMusicState.trackUrl || null,
       trackName: gameMusicState.trackName || null,
       position: gameMusicState.position || 0,
-      gmVolume: gameMusicState.volume || 1.0,
+      // A commit is still pending, so the server copy is older than what the GM is
+      // dragging right now — keep the local value rather than yanking the knob back.
+      gmVolume: volumeTimerRef.current ? prev.gmVolume : (gameMusicState.volume || 1.0),
       playlistId: gameMusicState.playlistId || null,
       trackIndex: gameMusicState.trackIndex || 0,
       loop: !!gameMusicState.loop,
       version: gameMusicState.version || 0,
-    });
+    }));
 
     if (gameMusicState.isPlaying && gameMusicState.trackUrl) {
       const url = resolveFileUrl(gameMusicState.trackUrl);
@@ -179,7 +223,12 @@ export function useGameMusic(gameId) {
         return true;
       }
       case WS_EVENTS.MUSIC_VOLUME: {
-        setMusicState(prev => ({ ...prev, gmVolume: message.payload.volume }));
+        // A commit is still pending, so the server copy is older than what the GM is
+        // dragging right now — keep the local value rather than yanking the knob back.
+        setMusicState(prev => ({
+          ...prev,
+          gmVolume: volumeTimerRef.current ? prev.gmVolume : message.payload.volume,
+        }));
         return true;
       }
       case WS_EVENTS.MUSIC_LOOP: {
@@ -200,6 +249,7 @@ export function useGameMusic(gameId) {
     musicState,
     playerVolume,
     onPlayerVolumeChange,
+    onGmVolumeChange,
     handleMusicMessage,
     handleSceneAssignAll,
     syncFromGame,
