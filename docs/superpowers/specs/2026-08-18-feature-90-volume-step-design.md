@@ -53,8 +53,13 @@ i ~100 broadcastów do każdego klienta, a gałka szarpałaby się na spóźnion
    Strzałki klawiatury nie generują `pointerup` — dosłowne „puszczenie gałki"
    wymagałoby dodatkowo `onKeyUp` i `onBlur` i psuło dostępność.
 5. **Flush przy odmontowaniu.** Oczekujący POST jest wysyłany (fire-and-forget),
-   a nie porzucany — inaczej wyjście z gry w ciągu 300 ms od ruchu gałką cicho gubi
-   ustawienie.
+   a nie porzucany — inaczej wyjście z gry (np. przejście do innego widoku w ramach
+   aplikacji) w ciągu 300 ms od ruchu gałką cicho gubi ustawienie.
+   Dotyczy to wyłącznie nawigacji wewnątrz aplikacji — React nie odpala cleanupów
+   efektów przy zamknięciu karty ani odświeżeniu strony, więc zamknięcie/reload w tym
+   samym oknie 300 ms nadal cicho gubi zmianę. `sendBeacon`, który przetrwałby takie
+   zamknięcie, nie potrafi nieść nagłówka `Authorization`, na którym opiera się to API —
+   luka jest świadomie akceptowana, nie domykana.
 6. **Wysyłka zostaje na HTTP POST, nie przechodzi na WebSocket.**
    `hub.go:321` rozgłasza przychodzące wiadomości WS ślepo — bez sprawdzenia, czy nadawca
    jest MG, i bez zapisu do bazy. Ścieżka HTTP przechodzi przez `SetVolumePersist`
@@ -86,36 +91,49 @@ W `useGameMusic.js`:
 ```js
 const VOLUME_COMMIT_DELAY_MS = 300;
 
-const volumeTimerRef = useRef(null);   // id timera
-const pendingValueRef = useRef(null);    // wartość czekająca na wysłanie
+const volumeTimerRef = useRef(null);     // id timera
+const pendingVolumeRef = useRef(null);   // wartość czekająca na wysłanie
 
-const commitVolume = useCallback((vol) => {
+const commitGmVolume = useCallback((vol) => {
   setVolume(gameId, vol).catch(err => console.error('Failed to set volume:', err));
 }, [gameId]);
 
 const onGmVolumeChange = useCallback((vol) => {
   setMusicState(prev => ({ ...prev, gmVolume: vol }));  // natychmiast: gałka + audio MG
-  pendingValueRef.current = vol;
+  pendingVolumeRef.current = vol;
   if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
   volumeTimerRef.current = setTimeout(() => {
     volumeTimerRef.current = null;
-    pendingValueRef.current = null;
-    commitVolume(vol);
+    pendingVolumeRef.current = null;
+    commitGmVolume(vol);
   }, VOLUME_COMMIT_DELAY_MS);
-}, [commitVolume]);
+}, [commitGmVolume]);
 
 // flush przy odmontowaniu
 useEffect(() => () => {
   if (volumeTimerRef.current) {
     clearTimeout(volumeTimerRef.current);
-    commitVolume(pendingValueRef.current);
+    // Zerujemy oba refy PRZED commitem: to samo cleanup może odpalić się ponownie
+    // (np. przy zmianie gameId, bez żadnej realnej akcji użytkownika pomiędzy), a wtedy
+    // truthy volumeTimerRef.current sprawiłby, że drugi commit poleciałby do NOWEGO
+    // gameId z głośnością STAREJ gry — zapis między grami.
+    volumeTimerRef.current = null;
+    const pending = pendingVolumeRef.current;
+    pendingVolumeRef.current = null;
+    commitGmVolume(pending);
   }
-}, [commitVolume]);
+}, [commitGmVolume]);
 ```
 
 `onGmVolumeChange` dochodzi do obiektu zwracanego przez hook.
 
 Handler `WS_EVENTS.MUSIC_VOLUME` (`useGameMusic.js:181`) pozostaje **bez zmian**.
+
+`syncFromGame` (wywoływane po każdym `fetchGameState()`) dostało jeden warunek: dopóki
+`volumeTimerRef.current` jest ustawiony (commit MG wciąż czeka), pole `gmVolume` w
+`setMusicState` zachowuje wartość lokalną zamiast nadpisywać ją danymi z serwera —
+inaczej gałka MG cofałaby się w trakcie przeciągania, gdy WS-owy `fetchGameState()`
+przyleci w złym momencie.
 
 ## Obsługa błędów
 
@@ -125,13 +143,21 @@ naprawia kolejny `syncFromGame`.
 
 ## Testy
 
-Nowy plik `src/hooks/useGameMusic.volume.test.js`, wzorowany na
+Plik `src/hooks/useGameMusic.volume.test.js`, wzorowany na
 `src/components/tabs/HandoutsTab.wsRace.test.jsx`. Fake timery + zamockowane `api/music`:
 
 1. Dziesięć szybkich wywołań `onGmVolumeChange` → dokładnie jedno wywołanie `setVolume`,
    z ostatnią wartością.
 2. `musicState.gmVolume` zmienia się natychmiast po wywołaniu, przed upływem timera.
-3. Zdarzenie WS `MUSIC_VOLUME` z tą samą wartością nie cofa stanu lokalnego.
+3. Echo WS `MUSIC_VOLUME` przychodzące PO tym, jak commit już poleciał, nie wywołuje
+   drugiego `setVolume` (echo nie wraca ścieżką commitu).
+4. Echo WS `MUSIC_VOLUME` z INNĄ (nieaktualną) wartością, które przyjdzie w trakcie
+   oczekiwania na commit, nie zmienia tego, co finalnie trafia do `setVolume` — wygrywa
+   wartość z ostatniego ruchu gałką, a nie echo w locie. (Test celowo nie sprawdza
+   `musicState.gmVolume` po tym scenariuszu: handler `MUSIC_VOLUME` nadpisuje je
+   bezwarunkowo, więc gałka na chwilę pokazuje wartość z echa, zanim skoryguje ją kolejna
+   synchronizacja — to osobna nierówność, poza zakresem tej serii poprawek.)
+5. Oczekująca zmiana jest wysyłana (flush) przy odmontowaniu hooka.
 
 Weryfikacja ręczna: przeciągnięcie suwaka MG w zakładce Sieć pokazuje jeden request
 zamiast kilkunastu; suwak gracza w `GeneralTab` przeskakuje co 1% i przeżywa reload.
