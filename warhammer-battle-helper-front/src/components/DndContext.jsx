@@ -941,7 +941,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     if (!gameId || !currentSceneId || !id) return;
     try {
       await deleteDrawingPath(gameId, currentSceneId, id);
-      setSelectedDrawingPathId(null);
+      // Only clear when we deleted the actual selection (toolbar/keyboard call with no
+      // explicit pathId). The right-click call site passes an explicit pathId that may be
+      // a different path than the current selection — the effect above already clears the
+      // selection if that path is the one that disappears, so it doesn't need this too.
+      if (!pathId) setSelectedDrawingPathId(null);
       // WS DRAWING_PATH_REMOVED will update game state
     } catch (err) {
       console.error('Failed to delete drawing path:', err);

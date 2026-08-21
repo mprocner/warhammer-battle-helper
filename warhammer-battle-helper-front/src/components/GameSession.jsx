@@ -899,7 +899,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
   const handleDrawingPathComplete = useCallback(async (path) => {
     if (!displayScene) return;
-    const tempPath = { ...path, id: `temp-${Date.now()}` };
+    const tempPath = { ...path, id: `temp-${Date.now()}`, userId };
     setGameState(prev => {
       if (!prev) return prev;
       return {
@@ -938,7 +938,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         };
       });
     }
-  }, [gameId, displayScene]);
+  }, [gameId, displayScene, userId]);
 
   const handleDeleteDrawingPath = useCallback(async (pathId) => {
     if (!displayScene || !pathId) return;

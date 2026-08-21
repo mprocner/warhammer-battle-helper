@@ -841,7 +841,7 @@
     "drawingUndo": "Undo stroke",
     "drawingClear": "Clear all",
     "drawingTool_select": "Select & Delete",
-    "drawingDelete": "Delete selected",
+    "drawingDelete": "Delete selected (or right-click a drawing)",
     "linkedMusic": "Linked music",
     "linkMusic": "Link music...",
     "noMusicLinked": "No music linked",

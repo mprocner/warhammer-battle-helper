@@ -841,6 +841,8 @@ const SceneViewport = ({
                     selectedPathId={selectedPathId}
                     onSelectionChange={onSelectionChange}
                     onDeletePath={onDeletePath}
+                    userId={userId}
+                    isGM={isGM}
                     canvasWidth={canvasSize.width}
                     canvasHeight={canvasSize.height}
                   />

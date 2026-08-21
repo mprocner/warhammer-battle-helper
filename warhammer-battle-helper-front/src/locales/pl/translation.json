@@ -841,7 +841,7 @@
     "drawingUndo": "Cofnij pociągnięcie",
     "drawingClear": "Wyczyść wszystko",
     "drawingTool_select": "Zaznacz i usuń",
-    "drawingDelete": "Usuń zaznaczony",
+    "drawingDelete": "Usuń zaznaczony (lub prawy klik na rysunku)",
     "linkedMusic": "Muzyka sceny",
     "linkMusic": "Przypisz muzykę...",
     "noMusicLinked": "Brak muzyki",

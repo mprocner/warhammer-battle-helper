@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 /**
  * DrawingLayer — canvas for freehand annotations visible to all participants.
@@ -16,6 +16,10 @@ import React, { useRef, useEffect, useCallback } from 'react';
  *  - circle: [[cx,cy], [edgeX,edgeY]] — radius = hypot(edge - center)
  *  - text: [[x,y]]
  *  - select: no drawing — click to select/deselect paths
+ *
+ * Right button (every tool): deletes the topmost path under the cursor that the user may
+ * delete, or abandons the in-progress shape when pressed mid-stroke.
+ * Hover: the same path the right button would delete gets a faint cyan glow.
  *
  * Coordinate space: scene space (identical to FogLayer).
  */
@@ -78,6 +82,18 @@ function hitTestPath(path, px, py, tolerance = 10) {
   }
 }
 
+// Topmost path under (px, py) that the caller is allowed to delete.
+// Paths the predicate rejects are skipped, not treated as blockers — a player
+// right-clicking through the GM's line still reaches their own drawing beneath it.
+export function findDeletablePathAt(paths, px, py, canDelete) {
+  for (let i = paths.length - 1; i >= 0; i--) {
+    const path = paths[i];
+    if (!canDelete(path)) continue;
+    if (hitTestPath(path, px, py)) return path.id;
+  }
+  return null;
+}
+
 const DrawingLayer = ({
   scene,
   isDrawingMode,
@@ -90,6 +106,8 @@ const DrawingLayer = ({
   selectedPathId = null,
   onSelectionChange,
   onDeletePath,
+  userId = null,
+  isGM = false,
   canvasWidth,
   canvasHeight,
 }) => {
@@ -97,6 +115,13 @@ const DrawingLayer = ({
   const currentPathRef = useRef(null);
   const shapeStartRef = useRef(null);
   const isDrawingRef = useRef(false);
+  const [hoveredPathId, setHoveredPathId] = useState(null);
+
+  // Leaving drawing mode drops the hover — the canvas stops receiving mouse events,
+  // so there would be no later event to clear it.
+  useEffect(() => {
+    if (!isDrawingMode) setHoveredPathId(null);
+  }, [isDrawingMode]);
 
   // Draw a single path onto the given context
   const drawPath = useCallback((ctx, path) => {
@@ -186,8 +211,8 @@ const DrawingLayer = ({
     ctx.restore();
   }, []);
 
-  // Draw a cyan dashed selection highlight over a path
-  const drawSelectionHighlight = useCallback((ctx, path) => {
+  // Cyan glow over a path. Selection is bright and dashed; hover is faint and solid.
+  const drawHighlight = useCallback((ctx, path, { alpha = 0.7, dashed = true } = {}) => {
     if (!path || !path.points || path.points.length === 0) return;
     ctx.save();
     ctx.strokeStyle = '#00e5ff';
@@ -195,8 +220,8 @@ const DrawingLayer = ({
     ctx.lineWidth = (path.brushSize || 3) + 5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.setLineDash([8, 4]);
-    ctx.globalAlpha = 0.7;
+    ctx.setLineDash(dashed ? [8, 4] : []);
+    ctx.globalAlpha = alpha;
 
     switch (path.tool) {
       case 'freehand': {
@@ -242,7 +267,7 @@ const DrawingLayer = ({
         const [tx, ty] = path.points[0];
         ctx.font = `${path.fontSize || 16}px sans-serif`;
         ctx.lineWidth = 1;
-        ctx.setLineDash([]);
+        ctx.setLineDash(dashed ? [8, 4] : []);
         ctx.strokeStyle = '#00e5ff';
         const textWidth = path.text.length * (path.fontSize || 16) * 0.6;
         const textHeight = (path.fontSize || 16) * 1.2;
@@ -266,12 +291,17 @@ const DrawingLayer = ({
     const allPaths = extraPath ? [...savedPaths, extraPath] : savedPaths;
     allPaths.forEach(path => drawPath(ctx, path));
 
-    // Draw selection highlight on top
+    // Hover first, selection over it — selection is the durable state, hover is transient.
+    if (hoveredPathId) {
+      const hov = savedPaths.find(p => p.id === hoveredPathId);
+      if (hov) drawHighlight(ctx, hov, { alpha: 0.35, dashed: false });
+    }
+
     if (selectedPathId) {
       const sel = savedPaths.find(p => p.id === selectedPathId);
-      if (sel) drawSelectionHighlight(ctx, sel);
+      if (sel) drawHighlight(ctx, sel);
     }
-  }, [scene?.drawingPaths, drawPath, drawSelectionHighlight, selectedPathId]);
+  }, [scene?.drawingPaths, drawPath, drawHighlight, selectedPathId, hoveredPathId]);
 
   // Re-render when saved paths or selection changes
   useEffect(() => {
@@ -305,24 +335,52 @@ const DrawingLayer = ({
     return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
   }, []);
 
+  // Client-side convenience only — the server re-checks owner-or-GM on DELETE.
+  const canDelete = useCallback(
+    (path) => isGM || path.userId === userId,
+    [isGM, userId]
+  );
+
+  const handleContextMenu = useCallback((e) => {
+    if (!isDrawingMode || activeTool === 'pan') return;
+    e.preventDefault();
+
+    // Right-click mid-stroke abandons the shape. Zeroing currentPathRef matters as much
+    // as the isDrawingRef flag: the render effect reads that ref for the live preview,
+    // so a leftover value would repaint the abandoned shape on the next re-render.
+    if (isDrawingRef.current) {
+      isDrawingRef.current = false;
+      currentPathRef.current = null;
+      shapeStartRef.current = null;
+      render(null);
+      return;
+    }
+
+    const [px, py] = getSceneCoords(e);
+    const id = findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete);
+    if (id) onDeletePath?.(id);
+  }, [isDrawingMode, activeTool, getSceneCoords, render, scene?.drawingPaths, canDelete, onDeletePath]);
+
   const handleMouseDown = useCallback((e) => {
     if (!isDrawingMode) return;
-    if (e.button !== 0) return; // right button → pan (handled by the viewport), never draw
+    // Only a plain left button draws; the right button deletes (see handleContextMenu).
+    // Ctrl+left-click is also rejected: on macOS it's the OS-level secondary-click
+    // emulation, so the browser dispatches both `contextmenu` and this `mousedown` for the
+    // same physical click, in an order that varies by browser. Letting it through here
+    // would start a stroke under either ordering — masking the delete when mousedown fires
+    // first, or saving a degenerate dot when contextmenu fires first and this mousedown/the
+    // following mouseup still complete a "stroke" from a single click.
+    if (e.button !== 0 || e.ctrlKey) return;
+    setHoveredPathId(null);
     e.preventDefault();
     e.stopPropagation();
 
     if (activeTool === 'select') {
-      // Hit-test paths (topmost first)
+      // Selection exists to feed the trash button and the Delete key, so it follows the same
+      // rule as the right button: you can only pick a path you may delete, and someone else's
+      // path is skipped rather than blocking the one underneath it. A miss deselects.
       const [px, py] = getSceneCoords(e);
-      const paths = scene?.drawingPaths || [];
-      for (let i = paths.length - 1; i >= 0; i--) {
-        if (hitTestPath(paths[i], px, py)) {
-          onSelectionChange?.(paths[i].id);
-          return;
-        }
-      }
-      // Clicked empty area → deselect
-      onSelectionChange?.(null);
+      onSelectionChange?.(findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete));
       return;
     }
 
@@ -341,9 +399,18 @@ const DrawingLayer = ({
       shapeStartRef.current = [x, y];
       currentPathRef.current = [[x, y], [x, y]];
     }
-  }, [isDrawingMode, activeTool, getSceneCoords, onTextPlacement, onSelectionChange, scene?.drawingPaths]);
+  }, [isDrawingMode, activeTool, getSceneCoords, onTextPlacement, onSelectionChange, scene?.drawingPaths, canDelete]);
 
   const handleMouseMove = useCallback((e) => {
+    // Hover runs only between strokes — one gesture at a time. Returning `prev`
+    // unchanged makes React bail out, so the canvas repaints on enter/leave only,
+    // not on every mouse event.
+    if (isDrawingMode && !isDrawingRef.current) {
+      const [hx, hy] = getSceneCoords(e);
+      const hoverId = findDeletablePathAt(scene?.drawingPaths || [], hx, hy, canDelete);
+      setHoveredPathId(prev => (prev === hoverId ? prev : hoverId));
+    }
+
     if (!isDrawingRef.current || !isDrawingMode) return;
     e.preventDefault();
 
@@ -362,10 +429,16 @@ const DrawingLayer = ({
       color,
       fontSize,
     });
-  }, [isDrawingMode, activeTool, getSceneCoords, render, brushSize, color, fontSize]);
+  }, [isDrawingMode, activeTool, getSceneCoords, render, brushSize, color, fontSize, scene?.drawingPaths, canDelete]);
 
   const handleMouseUp = useCallback((e) => {
-    if (!isDrawingRef.current || !isDrawingMode) return;
+    // Mirrors handleMouseDown's button guard. Without it, a right-button release during
+    // a left-drag can reach here first on browsers/OSes that fire mouseup before
+    // contextmenu (event order is unspecified across browsers) — completing and saving
+    // the stroke the user meant to abandon, instead of leaving it for handleContextMenu's
+    // abandon branch. Safe for the mouseleave→handleMouseUp relay below: per spec, button
+    // is only meaningful for press/release events and defaults to 0 otherwise.
+    if (!isDrawingRef.current || !isDrawingMode || e.button !== 0) return;
     e.preventDefault();
 
     isDrawingRef.current = false;
@@ -386,6 +459,7 @@ const DrawingLayer = ({
   }, [isDrawingMode, activeTool, onPathComplete, brushSize, color, fontSize, render]);
 
   const handleMouseLeave = useCallback((e) => {
+    setHoveredPathId(null);
     if (isDrawingRef.current) {
       handleMouseUp(e);
     }
@@ -419,6 +493,7 @@ const DrawingLayer = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
     />
   );
 };
