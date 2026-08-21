@@ -2,8 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import EditIcon from '@mui/icons-material/Edit';
-import CloudIcon from '@mui/icons-material/Cloud';
 import PanToolIcon from '@mui/icons-material/PanTool';
 import BrushIcon from '@mui/icons-material/Brush';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
@@ -13,7 +11,6 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PolylineIcon from '@mui/icons-material/Polyline';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import NearMeIcon from '@mui/icons-material/NearMe';
-import StraightenIcon from '@mui/icons-material/Straighten';
 import BlurCircularIcon from '@mui/icons-material/BlurCircular';
 import UndoIcon from '@mui/icons-material/Undo';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -22,7 +19,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import FoggyIcon from '@mui/icons-material/Foggy';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
+import { modesForRole } from './sceneModes';
 import './DrawingToolbar.css';
 
 const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
@@ -73,73 +70,27 @@ const DrawingToolbar = ({
   const isActive = editingLayer === 'drawing' || editingLayer === 'fog';
   const isFogMode = editingLayer === 'fog';
 
-  const handleToggle = () => {
-    onEditingLayerChange(isActive ? null : 'drawing');
-  };
-
   const handleUndo = isFogMode ? onUndoFog : onUndoDrawing;
   const handleClear = isFogMode ? onClearFog : onClearDrawing;
   const undoEnabled = isFogMode ? !!canUndoFog : !!canUndo;
 
   return (
-    <div className={`drawing-toolbar ${isActive ? 'drawing-toolbar--active' : ''}`}>
-      {/* Toggle / Tabs */}
-      {isGM ? (
-        <div className="drawing-toolbar__tabs">
+    <div className="drawing-toolbar">
+      {/* Mode tabs — rendered from sceneModes so the toolbar and the middle-click
+          cycle can never disagree about which modes exist or in what order. */}
+      <div className="drawing-toolbar__tabs">
+        {modesForRole(isGM).map(({ value, Icon, labelKey }) => (
           <button
-            className={`drawing-toolbar__tab ${editingLayer === null ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(null)}
+            key={value ?? 'pan'}
+            className={`drawing-toolbar__tab ${editingLayer === value ? 'drawing-toolbar__tab--active' : ''}`}
+            onClick={() => onEditingLayerChange(editingLayer === value ? null : value)}
+            aria-pressed={editingLayer === value}
           >
-            <PanToolIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.panLayer')}</span>
+            <Icon style={{ fontSize: 22 }} />
+            <span className="drawing-toolbar__tooltip">{t(labelKey)}</span>
           </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'select' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'select' ? null : 'select')}
-          >
-            <HighlightAltIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.selectLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'measure' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
-          >
-            <StraightenIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'fog' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'fog' ? null : 'fog')}
-          >
-            <CloudIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.fogLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__tab ${editingLayer === 'drawing' ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'drawing' ? null : 'drawing')}
-          >
-            <EditIcon style={{ fontSize: 22 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
-          </button>
-        </div>
-      ) : (
-        <div className="drawing-toolbar__tabs">
-          <button
-            className={`drawing-toolbar__toggle ${isActive ? 'drawing-toolbar__toggle--on' : ''}`}
-            onClick={handleToggle}
-          >
-            <EditIcon style={{ fontSize: 24 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.drawingLayer')}</span>
-          </button>
-          <button
-            className={`drawing-toolbar__toggle ${editingLayer === 'measure' ? 'drawing-toolbar__toggle--on' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === 'measure' ? null : 'measure')}
-          >
-            <StraightenIcon style={{ fontSize: 24 }} />
-            <span className="drawing-toolbar__tooltip">{t('scenes.measureLayer')}</span>
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Measure-tool options — AoE circle toggle. */}
       {editingLayer === 'measure' && (

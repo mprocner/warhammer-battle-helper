@@ -1,0 +1,25 @@
+/* Mode switch feedback — ephemeral label at the cursor. Fixed positioning: the
+   coordinates are raw clientX/clientY, unaffected by scene pan and zoom. */
+@keyframes mode-switch-label {
+  0%   { opacity: 0; transform: translate(-50%, -60%)  scale(0.92); }
+  12%  { opacity: 1; transform: translate(-50%, -125%) scale(1); }
+  65%  { opacity: 1; transform: translate(-50%, -140%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -175%) scale(1); }
+}
+
+.mode-switch-label {
+  position: fixed;
+  z-index: 3000;
+  pointer-events: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
+  border: 1px solid #c9975b;
+  color: #3a2f1f;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.35);
+  animation: mode-switch-label 800ms ease-out forwards;
+}

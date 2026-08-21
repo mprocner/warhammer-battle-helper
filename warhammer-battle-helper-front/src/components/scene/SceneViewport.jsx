@@ -9,6 +9,8 @@ import MapRulerOverlay from './MapRulerOverlay';
 import MapTokensLayer from './MapTokensLayer';
 import MarqueeOverlay from './MarqueeOverlay';
 import SceneTokenMultiContextMenu from './SceneTokenMultiContextMenu';
+import ModeSwitchLabel from './ModeSwitchLabel';
+import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE } from '../../constants/scene';
@@ -30,7 +32,7 @@ const PING_HOLD_MS = 500;
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
-  scene, isGM, gameId, editingLayer, imageEditLayer = 'background', gridWidth, gridHeight, children,
+  scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'background', gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing,
   brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
@@ -265,6 +267,15 @@ const SceneViewport = ({
   useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
   const activeToolRef = useRef(activeTool);
   useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+  const isGMRef = useRef(isGM);
+  useEffect(() => { isGMRef.current = isGM; }, [isGM]);
+  const onEditingLayerChangeRef = useRef(onEditingLayerChange);
+  useEffect(() => { onEditingLayerChangeRef.current = onEditingLayerChange; }, [onEditingLayerChange]);
+
+  // Mode-switch feedback. seq forces a remount so two clicks in a row restart
+  // the animation instead of continuing the first one.
+  const [switchLabel, setSwitchLabel] = useState(null);
+  const labelSeqRef = useRef(0);
 
   const schemeRef = useRef(controlScheme);
   useEffect(() => {
@@ -273,6 +284,21 @@ const SceneViewport = ({
   }, [controlScheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleViewportMouseDown = useCallback((e) => {
+    // Middle click cycles scene modes. Must run before the control-scheme check
+    // below — the shortcut works in both 'modern' and 'classic'.
+    if (isModeCycleClick(e, document.activeElement)) {
+      e.preventDefault(); // kills the native autoscroll on Chrome/Firefox (Windows/Linux)
+      const target = nextMode(editingLayerRef.current, isGMRef.current);
+      onEditingLayerChangeRef.current(target);
+      setSwitchLabel({
+        x: e.clientX,
+        y: e.clientY,
+        labelKey: modeLabelKey(target),
+        seq: ++labelSeqRef.current,
+      });
+      return;
+    }
+
     // Left button — modern-scheme pan on the grid layer only (existing behaviour).
     // Right button no longer pans; it opens the native context menu on scene images.
     if (schemeRef.current !== 'modern') return;
@@ -878,6 +904,16 @@ const SceneViewport = ({
             </div>
           </div>
         </div>
+
+        {switchLabel && (
+          <ModeSwitchLabel
+            key={switchLabel.seq}
+            x={switchLabel.x}
+            y={switchLabel.y}
+            labelKey={switchLabel.labelKey}
+            onDone={() => setSwitchLabel(null)}
+          />
+        )}
       </div>
     </ZoomContext.Provider>
   );

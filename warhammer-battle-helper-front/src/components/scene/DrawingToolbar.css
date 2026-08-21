@@ -22,10 +22,8 @@
   pointer-events: auto;
 }
 
-/* ── Przycisk toggle (okrągły ołówek) ── */
 /* ── Tooltip (pergaminowy, pojawia się po lewej przycisku) ── */
 .drawing-toolbar__tab,
-.drawing-toolbar__toggle,
 .drawing-toolbar__tool,
 .drawing-toolbar__action {
   position: relative;
@@ -66,49 +64,13 @@
 }
 
 .drawing-toolbar__tab:hover .drawing-toolbar__tooltip,
-.drawing-toolbar__toggle:hover .drawing-toolbar__tooltip,
 .drawing-toolbar__tool:hover .drawing-toolbar__tooltip,
 .drawing-toolbar__action:hover .drawing-toolbar__tooltip {
   visibility: visible;
   opacity: 1;
 }
 
-.drawing-toolbar__toggle {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 2px solid #c9975b;
-  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
-  color: #6b4423;
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.25);
-}
-
-.drawing-toolbar__toggle:hover {
-  border-color: #7a5c42;
-  background: linear-gradient(135deg, #ffffff 0%, #fff9f0 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.35);
-}
-
-.drawing-toolbar__toggle--on {
-  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
-  border-color: #7a5c42;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(107, 68, 35, 0.4);
-}
-
-.drawing-toolbar__toggle--on:hover {
-  background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
-  transform: translateY(-1px);
-}
-
-/* ── Taby GM (Mgła + Rysowanie) ── */
+/* ── Zakładki trybów sceny (GM i gracz) ── */
 .drawing-toolbar__tabs {
   display: flex;
   gap: 6px;
