@@ -10,6 +10,7 @@ import MapTokensLayer from './MapTokensLayer';
 import MarqueeOverlay from './MarqueeOverlay';
 import SceneTokenMultiContextMenu from './SceneTokenMultiContextMenu';
 import ModeSwitchLabel from './ModeSwitchLabel';
+import { useDrawingTextInput } from './useDrawingTextInput';
 import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
@@ -67,8 +68,6 @@ const SceneViewport = ({
   const [isCovering, setIsCovering] = useState(false);
 
   const panStartRef = useRef(null);
-  const [textInputPos, setTextInputPos] = useState(null);
-  const [textInputValue, setTextInputValue] = useState('');
   const viewportRef = useRef(null);
 
   const zoomRef = useRef(zoom);
@@ -549,25 +548,20 @@ const SceneViewport = ({
 
   const isDrawingMode = editingLayer === 'drawing';
 
-  const handleTextPlacement = useCallback((coords) => {
-    setTextInputPos(coords);
-    setTextInputValue('');
-  }, []);
+  // The hook owns when a label is saved or dropped; the styling of the resulting path is
+  // this component's business, so it stays here.
+  const handleTextCommit = useCallback(({ coords, text }) => {
+    onDrawingPathComplete?.({
+      tool: 'text',
+      points: [coords],
+      brushSize,
+      color: drawingColor,
+      fontSize: drawingFontSize,
+      text,
+    });
+  }, [brushSize, drawingColor, drawingFontSize, onDrawingPathComplete]);
 
-  const commitText = useCallback((value) => {
-    if (value.trim() && textInputPos && onDrawingPathComplete) {
-      onDrawingPathComplete({
-        tool: 'text',
-        points: [textInputPos],
-        brushSize,
-        color: drawingColor,
-        fontSize: drawingFontSize,
-        text: value.trim(),
-      });
-    }
-    setTextInputPos(null);
-    setTextInputValue('');
-  }, [textInputPos, brushSize, drawingColor, drawingFontSize, onDrawingPathComplete]);
+  const textInput = useDrawingTextInput({ onCommit: handleTextCommit });
 
   const scenePings = useMemo(
     () => pointerPings.filter(p => p.sceneId === displayedScene?.id),
@@ -837,7 +831,7 @@ const SceneViewport = ({
                     color={drawingColor}
                     fontSize={drawingFontSize}
                     onPathComplete={onDrawingPathComplete}
-                    onTextPlacement={handleTextPlacement}
+                    onTextPlacement={textInput.placeAt}
                     selectedPathId={selectedPathId}
                     onSelectionChange={onSelectionChange}
                     onDeletePath={onDeletePath}
@@ -867,21 +861,21 @@ const SceneViewport = ({
                   />
                 )}
 
-                {textInputPos && (
+                {textInput.pos && (
                   <input
                     autoFocus
                     type="text"
-                    value={textInputValue}
-                    onChange={e => setTextInputValue(e.target.value)}
+                    value={textInput.value}
+                    onChange={e => textInput.setValue(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === 'Enter') commitText(textInputValue);
-                      if (e.key === 'Escape') { setTextInputPos(null); setTextInputValue(''); }
+                      if (e.key === 'Enter') textInput.commit();
+                      if (e.key === 'Escape') textInput.cancel();
                     }}
-                    onBlur={() => commitText(textInputValue)}
+                    onBlur={textInput.commit}
                     style={{
                       position: 'absolute',
-                      left: textInputPos[0],
-                      top: textInputPos[1],
+                      left: textInput.pos[0],
+                      top: textInput.pos[1],
                       zIndex: 30,
                       background: 'rgba(0,0,0,0.7)',
                       color: drawingColor,
