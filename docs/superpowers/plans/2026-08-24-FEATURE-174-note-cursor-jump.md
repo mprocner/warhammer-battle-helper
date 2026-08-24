@@ -55,7 +55,7 @@ describe('shouldApplyRemoteNote', () => {
       incomingUpdatedAt: STAMP_THEIRS,
       ownSaveStamp: STAMP_MINE,
       isDirty: true,
-    })).toBe(true === false);
+    })).toBe(false);
   });
 
   it('accepts a remote revision when the editor is idle', () => {
@@ -83,8 +83,6 @@ describe('shouldApplyRemoteNote', () => {
   });
 });
 ```
-
-Uwaga do drugiego testu: `toBe(true === false)` to celowo zapisane `false` — jeśli wolisz, wpisz wprost `.toBe(false)`. Sens: brudny edytor odrzuca wszystko.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -188,19 +186,6 @@ const noteAt = (updatedAt, content) => ({
   creatorId: 'u-1',
 });
 
-const renderEditor = (note, onSave) =>
-  render(
-    <WindowManagerProvider>
-      <NoteEditorModal
-        isOpen
-        note={note}
-        windowKey="note-n-1"
-        onClose={() => {}}
-        onSave={onSave}
-      />
-    </WindowManagerProvider>
-  );
-
 const editorWith = (note, onSave) => (
   <WindowManagerProvider>
     <NoteEditorModal
@@ -212,6 +197,8 @@ const editorWith = (note, onSave) => (
     />
   </WindowManagerProvider>
 );
+
+const renderEditor = (note, onSave) => render(editorWith(note, onSave));
 
 describe('NoteEditorModal — echo autozapisu', () => {
   beforeEach(() => {
