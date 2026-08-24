@@ -16,6 +16,15 @@ import React, { useRef, useEffect, useCallback } from 'react';
  *  at position:absolute inside scene-viewport__content, so no extra transform
  *  is needed — CSS zoom/scale handles the rest.
  */
+
+/**
+ * Minimalna liczba wierzchołków, przy której wielokąt jest figurą, a nie odcinkiem.
+ * Poniżej tego progu nie ma czego zapisać — zamknięcie zamienia się w porzucenie.
+ */
+const MIN_POLYGON_POINTS = 3;
+
+export const canClosePolygon = (points) => points.length >= MIN_POLYGON_POINTS;
+
 const FogLayer = ({
   scene,
   isGM,
@@ -91,7 +100,7 @@ const FogLayer = ({
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
       } else if (path.shape === 'polygon') {
-        if (path.points.length >= 3) {
+        if (canClosePolygon(path.points)) {
           ctx.beginPath();
           ctx.moveTo(path.points[0][0], path.points[0][1]);
           for (let i = 1; i < path.points.length; i++) {
@@ -143,7 +152,7 @@ const FogLayer = ({
         const rect2 = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect2.width;
         const snapDist = Math.hypot(cx - fx, cy - fy) / scaleX; // w px ekranu
-        const isSnapping = pts.length >= 3 && snapDist < 15;
+        const isSnapping = canClosePolygon(pts) && snapDist < 15;
 
         ctx.lineCap = 'round';
 
@@ -192,21 +201,40 @@ const FogLayer = ({
     render(currentPathRef.current ? { points: currentPathRef.current, brushSize } : null);
   }, [render, brushSize]);
 
+  /**
+   * Kończy aktywny wielokąt — zapisem albo porzuceniem.
+   * Kopia punktów musi powstać PRZED wyzerowaniem refa: `render` czyta te refy przy
+   * przerysowaniu, więc zostawiona zawartość odmalowałaby porzuconą figurę.
+   */
+  const finishPolygon = useCallback((commit) => {
+    const pts = polygonPointsRef.current;
+    const completed = commit ? [...pts] : null;
+
+    polygonPointsRef.current = [];
+    polygonActiveRef.current = false;
+    polygonCursorRef.current = null;
+    render(null);
+
+    if (completed && onPathComplete) {
+      onPathComplete({ points: completed, brushSize, shape: 'polygon', cover: fogCoverMode });
+    }
+  }, [render, onPathComplete, brushSize, fogCoverMode]);
+
   // Escape key — cancel active polygon
   useEffect(() => {
     if (!isEditingFog || fogTool !== 'polygon') return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && polygonActiveRef.current) {
-        polygonPointsRef.current = [];
-        polygonActiveRef.current = false;
-        polygonCursorRef.current = null;
-        render(null);
+        finishPolygon(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditingFog, fogTool, render]);
+  }, [isEditingFog, fogTool, finishPolygon]);
 
+  // Reset lokalny, nie finishPolygon: ten efekt ma odpalać się wyłącznie przy zmianie
+  // narzędzia, a finishPolygon zależy od brushSize i fogCoverMode — wciągnięcie go do
+  // tablicy zależności dokładałoby przebiegi bez powodu.
   // Cancel polygon when switching away from polygon tool
   useEffect(() => {
     if (fogTool !== 'polygon' && polygonActiveRef.current) {
@@ -229,7 +257,11 @@ const FogLayer = ({
   // Mouse event handlers — only active when GM is editing fog layer
   const handleMouseDown = useCallback((e) => {
     if (!isEditingFog) return;
-    if (e.button !== 0) return; // right button never edits fog
+    // Rysuje wyłącznie goły lewy przycisk. Ctrl+lewy jest odrzucany, bo na macOS to
+    // systemowa emulacja prawego przycisku: przeglądarka wysyła wtedy OBA zdarzenia —
+    // `contextmenu` i to `mousedown` z button 0 — w kolejności, której spec nie ustala.
+    // Bez tego warunku jedno kliknięcie dokłada wierzchołek I zamyka wielokąt.
+    if (e.button !== 0 || e.ctrlKey) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -250,16 +282,8 @@ const FogLayer = ({
       const rect2 = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect2.width;
       const snapDist = Math.hypot(x - pts[0][0], y - pts[0][1]) / scaleX;
-      if (pts.length >= 3 && snapDist < 15) {
-        // Zamknij wielokąt
-        const completed = [...pts];
-        polygonPointsRef.current = [];
-        polygonActiveRef.current = false;
-        polygonCursorRef.current = null;
-        render(null);
-        if (onPathComplete) {
-          onPathComplete({ points: completed, brushSize, shape: 'polygon', cover: fogCoverMode });
-        }
+      if (canClosePolygon(pts) && snapDist < 15) {
+        finishPolygon(true);
         return;
       }
       // Dodaj nowy punkt
@@ -280,7 +304,7 @@ const FogLayer = ({
     } else {
       currentPathRef.current = [[x, y]];
     }
-  }, [isEditingFog, fogTool, fogCoverMode, brushSize, onPathComplete, getSceneCoords, render]);
+  }, [isEditingFog, fogTool, fogCoverMode, getSceneCoords, render, finishPolygon]);
 
   const handleMouseMove = useCallback((e) => {
     if (!isEditingFog) return;
@@ -318,7 +342,12 @@ const FogLayer = ({
   }, [isEditingFog, fogTool, fogCoverMode, getSceneCoords, render, brushSize]);
 
   const handleMouseUp = useCallback((e) => {
-    if (!isDrawingRef.current || !isEditingFog) return;
+    // Lustro guardu z handleMouseDown. Bez `e.button !== 0` zwolnienie prawego przycisku
+    // w trakcie ciągnięcia prostokąta zapisuje kształt, który miał zostać porzucony — na
+    // przeglądarkach, gdzie `mouseup` wyprzedza `contextmenu` (kolejność jest niezdefiniowana).
+    // Bezpieczne dla relaya handleMouseLeave → handleMouseUp: wg specyfikacji `button` ma
+    // znaczenie tylko przy wciśnięciu/zwolnieniu, a poza nimi wynosi 0.
+    if (!isDrawingRef.current || !isEditingFog || e.button !== 0) return;
     e.preventDefault();
 
     isDrawingRef.current = false;
@@ -333,6 +362,33 @@ const FogLayer = ({
       onPathComplete({ points: pts, brushSize, shape, cover: fogCoverMode });
     }
   }, [isEditingFog, fogTool, fogCoverMode, onPathComplete, brushSize]);
+
+  /**
+   * Prawy przycisk = „skończ to, co robisz".
+   * Wielokąt: zamknij (>= 3 wierzchołki) albo porzuć. Pozostałe narzędzia: porzuć kształt
+   * ciągnięty w tej chwili. Ten sam gest co w warstwie rysowania (DrawingLayer).
+   */
+  const handleContextMenu = useCallback((e) => {
+    // Narzędzie `pan` i tryb bez edycji mgły przepuszczają natywne menu przeglądarki.
+    if (!isEditingFog) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (fogTool === 'polygon' && polygonActiveRef.current) {
+      finishPolygon(canClosePolygon(polygonPointsRef.current));
+      return;
+    }
+
+    // Porzucenie kształtu w trakcie. Wyzerowanie currentPathRef liczy się tak samo jak
+    // flaga isDrawingRef: render czyta ten ref przy podglądzie, więc zostawiona zawartość
+    // odmalowałaby porzucony kształt przy najbliższym przerysowaniu.
+    if (isDrawingRef.current) {
+      isDrawingRef.current = false;
+      currentPathRef.current = null;
+      rectStartRef.current = null;
+      render(null);
+    }
+  }, [isEditingFog, fogTool, finishPolygon, render]);
 
   const handleMouseLeave = useCallback((e) => {
     polygonCursorRef.current = null;
@@ -371,6 +427,7 @@ const FogLayer = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onContextMenu={handleContextMenu}
     />
   );
 };
