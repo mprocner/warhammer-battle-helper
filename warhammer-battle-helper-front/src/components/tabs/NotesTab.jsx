@@ -195,13 +195,14 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
       if (editor.noteId) {
         const updated = await updateNote(gameId, editor.noteId, data);
         setNotes(prev => prev.map(n => n.id === updated.id ? updated : n));
-      } else {
-        const created = await createNote(gameId, data);
-        // Powiąż edytor z utworzoną notatką (kolejne zapisy = update)
-        setOpenEditors(prev => prev.map(e => e.key === editor.key ? { ...e, noteId: created.id } : e));
-        // Prepend locally — consistent with backend AddNoteToOrder ($position: 0)
-        setNotes(prev => [created, ...prev]);
+        return updated;
       }
+      const created = await createNote(gameId, data);
+      // Powiąż edytor z utworzoną notatką (kolejne zapisy = update)
+      setOpenEditors(prev => prev.map(e => e.key === editor.key ? { ...e, noteId: created.id } : e));
+      // Prepend locally — consistent with backend AddNoteToOrder ($position: 0)
+      setNotes(prev => [created, ...prev]);
+      return created;
     } catch (err) {
       console.error('Failed to save note:', err);
       throw err;
