@@ -639,7 +639,8 @@
     "loadError": "Failed to load notes",
     "createError": "Failed to create note",
     "updateError": "Failed to update note",
-    "deleteError": "Failed to delete note"
+    "deleteError": "Failed to delete note",
+    "notSavedYet": "Not saved yet"
   },
   "rightPanel": {
     "title": "Settings",

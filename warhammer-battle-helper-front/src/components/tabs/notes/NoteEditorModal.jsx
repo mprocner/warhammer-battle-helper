@@ -14,6 +14,10 @@ import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import TitleIcon from '@mui/icons-material/Title';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CheckIcon from '@mui/icons-material/Check';
+import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const AUTOSAVE_DELAY = 1500;
 
@@ -246,6 +250,24 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const isEdit = !!note;
   const modalTitle = isEdit ? (note.title || t('notes.editNote')) : t('notes.newNote');
 
+  // Status autozapisu mieszka w pasku nagłówka, bo ten ma stałą wysokość wymuszoną
+  // przez przyciski okna. Wskaźnik w kolumnie body przepychał layout przy każdym zapisie.
+  // Slot jest zawsze zajęty — ikona się zmienia, ale nigdy nie znika.
+  // „Zapisana" = notatka ma id na serwerze; nowa notatka dostaje je po pierwszym autozapisie.
+  const saveStatus = saveError ? 'error' : isSaving ? 'saving' : isEdit ? 'saved' : 'unsaved';
+  const saveStatusIcon = {
+    error: <ErrorOutlineIcon style={{ fontSize: 16 }} />,
+    saving: <HourglassEmptyIcon style={{ fontSize: 16 }} />,
+    saved: <CheckIcon style={{ fontSize: 16 }} />,
+    unsaved: <CloudOutlinedIcon style={{ fontSize: 16 }} />,
+  }[saveStatus];
+  const saveStatusTitle = {
+    error: saveError,
+    saving: t('common.saving'),
+    saved: t('common.saved'),
+    unsaved: t('notes.notSavedYet'),
+  }[saveStatus];
+
   const toolbarButtons = [
     { icon: <FormatBoldIcon fontSize="small" />, action: () => editor?.chain().focus().toggleBold().run(), active: editor?.isActive('bold') },
     { icon: <FormatItalicIcon fontSize="small" />, action: () => editor?.chain().focus().toggleItalic().run(), active: editor?.isActive('italic') },
@@ -278,6 +300,15 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
         draggable
         minimizeTitle={t('common.minimize')}
         expandTitle={t('common.expand')}
+        extraButtons={
+          <span
+            className={`note-editor__save-status note-editor__save-status--${saveStatus}`}
+            data-state={saveStatus}
+            title={saveStatusTitle}
+          >
+            {saveStatusIcon}
+          </span>
+        }
       />
 
       {/* Body */}
@@ -336,12 +367,6 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
           <div className="note-editor__content">
             <EditorContent editor={editor} />
           </div>
-
-          {/* Error */}
-          {saveError && <div className="note-editor__error">{saveError}</div>}
-
-          {/* Autosave status */}
-          {isSaving && <span className="note-editor__autosave-indicator">{t('common.saving')}</span>}
         </div>
       )}
 

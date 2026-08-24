@@ -639,7 +639,8 @@
     "loadError": "Nie udało się załadować notatek",
     "createError": "Nie udało się utworzyć notatki",
     "updateError": "Nie udało się zaktualizować notatki",
-    "deleteError": "Nie udało się usunąć notatki"
+    "deleteError": "Nie udało się usunąć notatki",
+    "notSavedYet": "Jeszcze niezapisana"
   },
   "rightPanel": {
     "title": "Ustawienia",

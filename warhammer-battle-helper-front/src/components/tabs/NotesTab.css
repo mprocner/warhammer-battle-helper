@@ -484,19 +484,31 @@
   border-radius: 3px;
 }
 
-/* Error */
-.note-editor__error {
-  font-size: 12px;
-  color: #c0392b;
-  padding: 4px 0;
+/* Auto-save status — stały slot w pasku nagłówka, ikona nigdy nie znika */
+.note-editor__save-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  cursor: default;
+  transition: color 200ms ease, opacity 200ms ease;
 }
 
-/* Auto-save indicator */
-.note-editor__autosave-indicator {
-  font-size: 11px;
+.note-editor__save-status--unsaved {
   color: #9a7a5a;
-  font-style: italic;
-  text-align: right;
+  opacity: 0.6;
+}
+
+.note-editor__save-status--saving {
+  color: #c9975b;
+}
+
+.note-editor__save-status--saved {
+  color: #4a7c59;
+}
+
+.note-editor__save-status--error {
+  color: #c0392b;
 }
 
 /* Resize handle */
