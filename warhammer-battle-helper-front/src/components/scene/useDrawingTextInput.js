@@ -24,6 +24,7 @@ export function useDrawingTextInput({ onCommit }) {
     setValueState('');
   }, []);
 
+  // Plain values only: a functional updater would land in the ref as a function.
   const setValue = useCallback((next) => {
     valueRef.current = next;
     setValueState(next);
@@ -35,7 +36,7 @@ export function useDrawingTextInput({ onCommit }) {
     // Close first: a blur that arrives after the input is gone then finds pos === null and
     // cannot save the same label a second time.
     close();
-    if (coords && text) onCommit?.({ coords, text });
+    if (coords && text) onCommit({ coords, text });
   }, [close, onCommit]);
 
   const placeAt = useCallback((coords) => {

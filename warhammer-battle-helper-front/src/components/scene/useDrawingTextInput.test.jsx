@@ -70,4 +70,28 @@ describe('useDrawingTextInput', () => {
     act(() => view.result.current.commit());
     expect(onCommit).toHaveBeenCalledTimes(1);
   });
+
+  it('does nothing when cancel is called on an already-closed field', () => {
+    const { view, onCommit } = setup();
+    act(() => view.result.current.cancel());
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(view.result.current.pos).toBeNull();
+  });
+
+  it('does nothing when commit is called from initial mount', () => {
+    const { view, onCommit } = setup();
+    act(() => view.result.current.commit());
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(view.result.current.pos).toBeNull();
+  });
+
+  it('reopens at the new coordinates with an empty value after a commit', () => {
+    const { view } = setup();
+    place(view, [10, 20]);
+    type(view, 'Ambush');
+    act(() => view.result.current.commit());
+    place(view, [30, 40]);
+    expect(view.result.current.pos).toEqual([30, 40]);
+    expect(view.result.current.value).toBe('');
+  });
 });
