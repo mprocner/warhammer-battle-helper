@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ModalHeader from '../../common/ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
+import { shouldApplyRemoteNote } from '../../../utils/noteSync';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
@@ -38,6 +39,8 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const onSaveRef = useRef(onSave);
   const prevNoteIdRef = useRef(null);
   const isProgrammaticUpdateRef = useRef(false); // gate: prevent setContent from triggering auto-save
+  const ownSaveStampRef = useRef(null); // updatedAt ostatniego zapisu z tego edytora
+  const isSavingRef = useRef(false);    // lustro isSaving — state bywa stale w domknięciu
 
   useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
   useEffect(() => { titleRef.current = title; }, [title]);
@@ -67,20 +70,30 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
 
   // Fire the auto-save
   const doAutoSave = useCallback(async () => {
+    autoSaveTimerRef.current = null;
     const currentTitle = titleRef.current;
     if (!currentTitle.trim()) return;
     const content = editorRef.current?.getHTML() || '';
+    isSavingRef.current = true;
     setIsSaving(true);
     setSaveError('');
     try {
-      await onSaveRef.current({
+      const saved = await onSaveRef.current({
         title: currentTitle.trim(),
         content,
         isPrivate: isPrivateRef.current,
       });
+      if (saved) {
+        // Stempel serwera — po nim rozpoznamy echo własnego zapisu, gdy wróci propem.
+        ownSaveStampRef.current = saved.updatedAt;
+        // Pierwszy zapis nowej notatki: przypisz id od razu, żeby przyjście propu
+        // nie wyglądało na otwarcie nowego dokumentu (reset pozycji okna).
+        prevNoteIdRef.current = saved.id;
+      }
     } catch {
       setSaveError(t('notes.updateError'));
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
   }, [t]);
@@ -90,6 +103,9 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(doAutoSave, AUTOSAVE_DELAY);
   }, [doAutoSave]);
+
+  // „Brudny" = użytkownik pisze właśnie teraz: tyka debounce albo leci request.
+  const isDirty = useCallback(() => autoSaveTimerRef.current !== null || isSavingRef.current, []);
 
   // Clear timer on unmount / close
   useEffect(() => {
@@ -111,6 +127,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   useEffect(() => {
     if (!isOpen) {
       prevNoteIdRef.current = null;
+      ownSaveStampRef.current = null;
       return;
     }
 
@@ -123,7 +140,14 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
         setIsMinimized(false);
       }
 
-      // Apply incoming data (only from other users — backend excludes sender from WS broadcast)
+      // Echo własnego zapisu oraz zmiany przychodzące w trakcie pisania nie ruszają formularza.
+      const applies = shouldApplyRemoteNote({
+        incomingUpdatedAt: note.updatedAt,
+        ownSaveStamp: ownSaveStampRef.current,
+        isDirty: isDirty(),
+      });
+      if (!applies) return;
+
       if (note.title !== titleRef.current) {
         setTitle(note.title || '');
       }
@@ -143,7 +167,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
       setIsMinimized(false);
       setPosition({ x: Math.max(50, window.innerWidth / 2 - 450) + index * 30, y: 50 + index * 30 });
     }
-  }, [isOpen, note, editor, setEditorContent, index]);
+  }, [isOpen, note, editor, setEditorContent, index, isDirty]);
 
   // Drag handlers
   const handleMouseDown = useCallback((e) => {
