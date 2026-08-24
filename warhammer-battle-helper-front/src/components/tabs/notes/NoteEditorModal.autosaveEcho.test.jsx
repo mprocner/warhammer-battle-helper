@@ -79,4 +79,18 @@ describe('NoteEditorModal — echo autozapisu', () => {
 
     expect(mockEditor.commands.setContent.mock.calls.length).toBe(callsAfterMount);
   });
+
+  it('applies a remote revision and puts the caret back where it was', () => {
+    const onSave = jest.fn().mockResolvedValue(noteAt(STAMP_SAVED, '<p>tekst</p>'));
+    const { rerender } = renderEditor(noteAt(STAMP_OPEN, '<p>tekst</p>'), onSave);
+
+    mockEditor.commands.setContent.mockClear();
+    mockEditor.commands.setTextSelection.mockClear();
+
+    const remote = { ...noteAt(STAMP_SAVED, '<p>zdalne</p>'), updatedAt: '2026-08-24T10:00:09.000000009Z' };
+    rerender(editorWith(remote, onSave));
+
+    expect(mockEditor.commands.setContent).toHaveBeenCalledWith('<p>zdalne</p>', { emitUpdate: false });
+    expect(mockEditor.commands.setTextSelection).toHaveBeenCalledWith(3);
+  });
 });

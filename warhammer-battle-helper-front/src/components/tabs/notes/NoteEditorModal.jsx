@@ -38,7 +38,6 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const isPrivateRef = useRef(true);
   const onSaveRef = useRef(onSave);
   const prevNoteIdRef = useRef(null);
-  const isProgrammaticUpdateRef = useRef(false); // gate: prevent setContent from triggering auto-save
   const ownSaveStampRef = useRef(null); // updatedAt ostatniego zapisu z tego edytora
   const isSavingRef = useRef(false);    // lustro isSaving — state bywa stale w domknięciu
 
@@ -59,7 +58,6 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
     content: '',
     onUpdate: () => {
       forceUpdate(n => n + 1);
-      if (isProgrammaticUpdateRef.current) return;
       scheduleAutoSave();
     },
     onSelectionUpdate: () => forceUpdate(n => n + 1),
@@ -115,13 +113,21 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
     }
   }, [isOpen]);
 
-  // Helper: set editor content without triggering onUpdate → auto-save
-  const setEditorContent = useCallback((content) => {
-    if (!editor) return;
-    isProgrammaticUpdateRef.current = true;
-    editor.commands.setContent(content, false);
-    isProgrammaticUpdateRef.current = false;
-  }, [editor]);
+  // Wgraj treść do edytora, zachowując pozycję karetki. Selekcję odtwarzamy tylko
+  // wtedy, gdy edytor miał focus — inaczej ukradlibyśmy kursor z pola tytułu.
+  const applyRemoteContent = useCallback((content) => {
+    const ed = editorRef.current;
+    if (!ed) return;
+    const next = content || '';
+    if (next === ed.getHTML()) return;
+    const hadFocus = ed.isFocused;
+    const { from } = ed.state.selection;
+    ed.commands.setContent(next, { emitUpdate: false });
+    if (hadFocus) {
+      // Zdalna wersja bywa krótsza — pozycja musi zmieścić się w nowym dokumencie.
+      ed.commands.setTextSelection(Math.min(from, ed.state.doc.content.size));
+    }
+  }, []);
 
   // Sync form from note prop (open + WS updates from other users)
   useEffect(() => {
@@ -151,9 +157,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
       if (note.title !== titleRef.current) {
         setTitle(note.title || '');
       }
-      if (editor && note.content !== editor.getHTML()) {
-        setEditorContent(note.content || '');
-      }
+      applyRemoteContent(note.content);
 
       setIsPrivate(note.isPrivate ?? true);
       setSaveError('');
@@ -162,12 +166,12 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
       prevNoteIdRef.current = null;
       setTitle('');
       setIsPrivate(true);
-      setEditorContent('');
+      applyRemoteContent('');
       setSaveError('');
       setIsMinimized(false);
       setPosition({ x: Math.max(50, window.innerWidth / 2 - 450) + index * 30, y: 50 + index * 30 });
     }
-  }, [isOpen, note, editor, setEditorContent, index, isDirty]);
+  }, [isOpen, note, editor, applyRemoteContent, index, isDirty]);
 
   // Drag handlers
   const handleMouseDown = useCallback((e) => {
