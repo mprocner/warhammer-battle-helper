@@ -16,10 +16,11 @@ import TitleIcon from '@mui/icons-material/Title';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CheckIcon from '@mui/icons-material/Check';
-import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const AUTOSAVE_DELAY = 1500;
+// Jak długo ptaszek potwierdzenia zostaje po udanym zapisie, zanim zgaśnie.
+const SAVED_VISIBLE_DELAY = 2000;
 
 const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }) => {
   const { t } = useTranslation();
@@ -29,6 +30,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const [isPrivate, setIsPrivate] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [justSaved, setJustSaved] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 50 });
   const [size, setSize] = useState({ width: 900, height: 700 });
@@ -44,6 +46,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const prevNoteIdRef = useRef(null);
   const ownSaveStampRef = useRef(null); // updatedAt ostatniego zapisu z tego edytora
   const isSavingRef = useRef(false);    // lustro isSaving — state bywa stale w domknięciu
+  const savedTimerRef = useRef(null);   // odlicza do zgaszenia ptaszka
 
   useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
   useEffect(() => { titleRef.current = title; }, [title]);
@@ -92,6 +95,11 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
         // nie wyglądało na otwarcie nowego dokumentu (reset pozycji okna).
         prevNoteIdRef.current = saved.id;
       }
+      // Ptaszek to potwierdzenie chwilowe, nie stały znaczek stanu — każdy kolejny
+      // zapis odlicza swoje własne okno, więc kasujemy poprzednie odliczanie.
+      clearTimeout(savedTimerRef.current);
+      setJustSaved(true);
+      savedTimerRef.current = setTimeout(() => setJustSaved(false), SAVED_VISIBLE_DELAY);
     } catch {
       setSaveError(t('notes.updateError'));
     } finally {
@@ -116,6 +124,10 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
       autoSaveTimerRef.current = null;
     }
   }, [isOpen]);
+
+  // Odliczanie do zgaszenia ptaszka przeżyłoby zamknięcie okna — setState po
+  // odmontowaniu nic nie robi, ale timer trzymałby komponent przy życiu.
+  useEffect(() => () => clearTimeout(savedTimerRef.current), []);
 
   // Wgraj treść do edytora, zachowując pozycję karetki. Selekcję odtwarzamy tylko
   // wtedy, gdy edytor miał focus — inaczej ukradlibyśmy kursor z pola tytułu.
@@ -252,20 +264,20 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
 
   // Status autozapisu mieszka w pasku nagłówka, bo ten ma stałą wysokość wymuszoną
   // przez przyciski okna. Wskaźnik w kolumnie body przepychał layout przy każdym zapisie.
-  // Slot jest zawsze zajęty — ikona się zmienia, ale nigdy nie znika.
-  // „Zapisana" = notatka ma id na serwerze; nowa notatka dostaje je po pierwszym autozapisie.
-  const saveStatus = saveError ? 'error' : isSaving ? 'saving' : isEdit ? 'saved' : 'unsaved';
+  // Slot trzyma szerokość zawsze, ale w stanie idle jest przezroczysty — sam autozapis
+  // ma być niewidoczny, wskaźnik pokazuje się tylko wtedy, gdy ma coś do powiedzenia.
+  const saveStatus = saveError ? 'error' : isSaving ? 'saving' : justSaved ? 'saved' : 'idle';
   const saveStatusIcon = {
     error: <ErrorOutlineIcon style={{ fontSize: 16 }} />,
     saving: <HourglassEmptyIcon style={{ fontSize: 16 }} />,
     saved: <CheckIcon style={{ fontSize: 16 }} />,
-    unsaved: <CloudOutlinedIcon style={{ fontSize: 16 }} />,
+    idle: null,
   }[saveStatus];
   const saveStatusTitle = {
     error: saveError,
     saving: t('common.saving'),
     saved: t('common.saved'),
-    unsaved: t('notes.notSavedYet'),
+    idle: '',
   }[saveStatus];
 
   const toolbarButtons = [

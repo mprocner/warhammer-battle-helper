@@ -484,31 +484,42 @@
   border-radius: 3px;
 }
 
-/* Auto-save status — stały slot w pasku nagłówka, ikona nigdy nie znika */
+/* Auto-save status — stały slot w pasku nagłówka.
+   Szerokość trzyma zawsze, żeby pojawienie się ikony nie przesuwało przycisków okna;
+   w stanie idle jest tylko przezroczysty. Kształt jak .modal-header__btn, ale to nie
+   przycisk — notatki zapisują się same, nie ma czego kliknąć. */
 .note-editor__save-status {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid transparent;
   cursor: default;
-  transition: color 200ms ease, opacity 200ms ease;
-}
-
-.note-editor__save-status--unsaved {
-  color: #9a7a5a;
-  opacity: 0.6;
+  opacity: 0;
+  transition: opacity 300ms ease, background-color 300ms ease, border-color 300ms ease;
 }
 
 .note-editor__save-status--saving {
-  color: #c9975b;
+  opacity: 1;
+  background: rgba(58, 47, 31, 0.25);
+  border-color: #7a5c42;
+  color: #f4e8d8;
 }
 
 .note-editor__save-status--saved {
-  color: #4a7c59;
+  opacity: 1;
+  background: rgba(74, 124, 89, 0.6);
+  border-color: #4a7c59;
+  color: #fff9f0;
 }
 
 .note-editor__save-status--error {
-  color: #c0392b;
+  opacity: 1;
+  background: rgba(139, 36, 36, 0.5);
+  border-color: #8b2424;
+  color: #fff9f0;
 }
 
 /* Resize handle */

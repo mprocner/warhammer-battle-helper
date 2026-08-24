@@ -64,12 +64,12 @@ describe('NoteEditorModal — wskaźnik zapisu w nagłówku', () => {
     expect(document.querySelector('.note-editor__autosave-indicator')).toBeNull();
   });
 
-  it('marks a saved note as saved and a brand new one as unsaved', () => {
+  it('stays idle on open — both for an existing note and a brand new one', () => {
     const { rerender } = render(editorWith(null, jest.fn()));
-    expect(status().dataset.state).toBe('unsaved');
+    expect(status().dataset.state).toBe('idle');
 
     rerender(editorWith(noteAt(STAMP_OPEN, '<p>tekst</p>'), jest.fn()));
-    expect(status().dataset.state).toBe('saved');
+    expect(status().dataset.state).toBe('idle');
   });
 
   it('shows the saving state while the autosave request is in flight', async () => {
@@ -90,6 +90,55 @@ describe('NoteEditorModal — wskaźnik zapisu w nagłówku', () => {
       resolveSave(noteAt(STAMP_SAVED, '<p>tekst</p>'));
     });
 
+    expect(status().dataset.state).toBe('saved');
+  });
+
+  it('fades the confirmation back to idle a moment after the save', async () => {
+    const onSave = jest.fn().mockResolvedValue(noteAt(STAMP_SAVED, '<p>tekst</p>'));
+    render(editorWith(noteAt(STAMP_OPEN, '<p>tekst</p>'), onSave));
+
+    fireEvent.change(document.querySelector('.note-editor__input'), {
+      target: { value: 'Notatka po edycji' },
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(status().dataset.state).toBe('saved');
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(status().dataset.state).toBe('idle');
+  });
+
+  it('keeps a second save from cutting the previous confirmation short', async () => {
+    const onSave = jest.fn().mockResolvedValue(noteAt(STAMP_SAVED, '<p>tekst</p>'));
+    render(editorWith(noteAt(STAMP_OPEN, '<p>tekst</p>'), onSave));
+
+    const input = document.querySelector('.note-editor__input');
+
+    fireEvent.change(input, { target: { value: 'Pierwsza zmiana' } });
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    // Drugi zapis 1s po pierwszym — jego własne okno potwierdzenia startuje od nowa.
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    fireEvent.change(input, { target: { value: 'Druga zmiana' } });
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(status().dataset.state).toBe('saved');
+
+    // Gdyby timer pierwszego zapisu nie został skasowany, tu byłoby już 'idle'.
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
     expect(status().dataset.state).toBe('saved');
   });
 
