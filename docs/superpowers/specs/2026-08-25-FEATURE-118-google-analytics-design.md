@@ -97,10 +97,33 @@ opiera się na eventach, nie na pageview'ach.
 
 ## Zgoda i prywatność
 
+### Inwentarz danych przechowywanych na urządzeniu
+
+Podstawa prawna (ePrivacy art. 5(3), Prawo telekomunikacyjne art. 173) dotyczy
+*przechowywania i dostępu do informacji na urządzeniu użytkownika* — `localStorage`
+podlega jej tak samo jak cookies. Kryterium zwolnienia to niezbędność dla usługi,
+o którą użytkownik sam poprosił.
+
+| Co | Gdzie | Kategoria | Zgoda |
+|---|---|---|---|
+| `token` | localStorage | uwierzytelnienie | nie |
+| `i18nextLng` | localStorage (`i18n.js:52`) | preferencja języka | nie |
+| `playerMusicVolume` | localStorage | preferencja UI | nie |
+| `analytics-consent` | localStorage | zapis samej decyzji | nie |
+| `_ga`, `_ga_<ID>` | cookie (nowe) | analityka | **tak** |
+
+`document.cookie` nie występuje dziś nigdzie w kodzie frontu. GA jest pierwszą
+i jedyną rzeczą wymagającą zgody — baner z tego ticketu pokrywa więc całość
+obowiązku dla serwisu.
+
 **Baner.** Widoczny na każdej stronie (także `/login`, `/register`), dopóki
 `localStorage['analytics-consent']` jest puste. Dwa przyciski o **równej wadze
 wizualnej** — „Akceptuję" i „Odrzucam". To wymóg RODO, nie estetyka: odmowa musi być
 tak samo łatwa jak zgoda. Trzeci element: link do `/privacy`.
+
+Treść banera nazywa **konkretny cel**, nie ogólne „pliki cookies" — zgoda musi być
+konkretna i świadoma, więc wąska formuła („zgoda na analitykę Google Analytics")
+jest mocniejsza prawnie niż szeroka. Ogólnikowego „Akceptuję cookies" nie używamy.
 
 **Wycofanie zgody.** Przełącznik w `SettingsPage`, czytający ten sam `ConsentContext`.
 Przy cofnięciu: zapis `'denied'` + kasowanie cookies `_ga*`. Przeładowanie strony tego
