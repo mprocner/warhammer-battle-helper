@@ -339,6 +339,76 @@ function CustomCharacterSheet({
     onToggleFavorite={toggleFavoriteSkill}
   />;
 
+  const sheetContent = (
+    <div className="custom-sheet">
+      {/* Roll modifier modal */}
+      {rollModal && (
+        <div className="custom-roll-overlay">
+          <div className="custom-roll-overlay__backdrop" onClick={() => { setRollModal(null); setModifier(0); }} />
+          <div className="custom-roll-overlay__card">
+            <div className="custom-roll-overlay__title">
+              {t('combat.rollFor')}: <strong>{rollModal.label}</strong>
+            </div>
+            <div className="custom-roll-overlay__row">
+              <label className="custom-roll-overlay__label">{t('combat.modifier')}</label>
+              <input
+                type="number"
+                className="custom-roll-overlay__input"
+                value={modifier}
+                onChange={e => setModifier(Number(e.target.value))}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') confirmRoll(modifier); if (e.key === 'Escape') { setRollModal(null); setModifier(0); } }}
+              />
+            </div>
+            <div className="custom-roll-overlay__actions">
+              <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
+                {t('common.cancel')}
+              </button>
+              <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
+                <CasinoIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />
+                {t('combat.roll')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!template ? (
+        <div className="custom-sheet__no-template">{t('creator.noTemplate')}</div>
+      ) : (
+        <>
+          {/* Character name */}
+          <div className="custom-sheet__char-header">
+            <input
+              className="custom-sheet__char-name-input"
+              value={charName}
+              onChange={e => {
+                setCharName(e.target.value);
+                charNameRef.current = e.target.value;
+                triggerAutoSave(edited, e.target.value);
+              }}
+              placeholder={t('character.name')}
+            />
+            <span className="custom-sheet__template-name">{template.name}</span>
+          </div>
+
+          {renderBody()}
+        </>
+      )}
+    </div>
+  );
+
+  // Osobne okno (/character-sheet) żyje poza WindowManagerProvider, więc DraggablePopup
+  // — a przez niego useWindowManager — nie może się tam znaleźć. Tak samo robią
+  // warhammer4e, coc7e i dnd5e.
+  if (isStandalone) {
+    return (
+      <div className="sheet-standalone character-sheet-popup">
+        <div className="sheet-standalone__content">{sheetContent}</div>
+      </div>
+    );
+  }
+
   return (
     <DraggablePopup
       title={template ? `${template.name} — ${charName || character?.name}` : (character?.name || '')}
@@ -348,62 +418,7 @@ function CustomCharacterSheet({
       windowId={`characterSheet:${character.id}`}
       windowKind="characterSheet"
     >
-      <div className="custom-sheet">
-        {/* Roll modifier modal */}
-        {rollModal && (
-          <div className="custom-roll-overlay">
-            <div className="custom-roll-overlay__backdrop" onClick={() => { setRollModal(null); setModifier(0); }} />
-            <div className="custom-roll-overlay__card">
-              <div className="custom-roll-overlay__title">
-                {t('combat.rollFor')}: <strong>{rollModal.label}</strong>
-              </div>
-              <div className="custom-roll-overlay__row">
-                <label className="custom-roll-overlay__label">{t('combat.modifier')}</label>
-                <input
-                  type="number"
-                  className="custom-roll-overlay__input"
-                  value={modifier}
-                  onChange={e => setModifier(Number(e.target.value))}
-                  autoFocus
-                  onKeyDown={e => { if (e.key === 'Enter') confirmRoll(modifier); if (e.key === 'Escape') { setRollModal(null); setModifier(0); } }}
-                />
-              </div>
-              <div className="custom-roll-overlay__actions">
-                <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
-                  {t('common.cancel')}
-                </button>
-                <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
-                  <CasinoIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />
-                  {t('combat.roll')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!template ? (
-          <div className="custom-sheet__no-template">{t('creator.noTemplate')}</div>
-        ) : (
-          <>
-            {/* Character name */}
-            <div className="custom-sheet__char-header">
-              <input
-                className="custom-sheet__char-name-input"
-                value={charName}
-                onChange={e => {
-                  setCharName(e.target.value);
-                  charNameRef.current = e.target.value;
-                  triggerAutoSave(edited, e.target.value);
-                }}
-                placeholder={t('character.name')}
-              />
-              <span className="custom-sheet__template-name">{template.name}</span>
-            </div>
-
-            {renderBody()}
-          </>
-        )}
-      </div>
+      {sheetContent}
     </DraggablePopup>
   );
 }
