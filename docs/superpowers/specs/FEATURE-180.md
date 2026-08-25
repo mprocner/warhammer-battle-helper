@@ -1,4 +1,4 @@
-# FEATURE-172 — Podpis odległości przy linijce skaluje się z zoomem
+# FEATURE-180 — Podpis odległości przy linijce skaluje się z zoomem
 
 **Status:** backlog
 **Znalezione:** 2026-08-21, podczas brainstormingu FEATURE-100

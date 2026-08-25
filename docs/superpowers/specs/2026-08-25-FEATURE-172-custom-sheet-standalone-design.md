@@ -3,10 +3,6 @@
 **Status:** zaprojektowane
 **Data:** 2026-08-25
 
-> **Uwaga o numeracji:** plik `docs/superpowers/specs/FEATURE-172.md` opisuje inny temat
-> (podpis odległości przy linijce, backlog z 2026-08-21). Numery się dublują — do rozstrzygnięcia
-> osobno, ten dokument dotyczy karty postaci.
-
 ## Objaw
 
 Gra w systemie `custom`. Otwarcie karty postaci, klik „Otwórz w nowym oknie" — nowe okno wywala się:
