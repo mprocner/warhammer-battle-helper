@@ -147,7 +147,7 @@ nikt nie zmierzył. Dodamy, jeśli payload zaboli.
 
 | Sytuacja | Zachowanie |
 |---|---|
-| brak `characterId` | „Character not found" — bez zmian |
+| brak `characterId` | dziś wisi na „Loading..." (`setLoading(false)` tylko w `finally`); po zmianie „Character not found" |
 | `GET /games/:id` pada | `setError`, tak jak przy postaciach |
 | gra bez `customSystemTemplate` | karta pokazuje `creator.noTemplate` — istniejące zachowanie |
 | brak `gameId` | nie może wystąpić; fallback usunięty |
