@@ -316,7 +316,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
     }
   }, [gameId, token, character.id, rollVisibility]);
 
-  const handlePopOut = usePopOut(character.id, gameId);
+  const handlePopOut = usePopOut(character.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
   const sheetContent = (

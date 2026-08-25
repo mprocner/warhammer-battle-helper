@@ -114,7 +114,7 @@ function CharacterSheetPopup({ character, onClose, onCharacterUpdate, addLogMess
         return current[shortKey] || 0;
     }, [editedCharacter.characteristics]);
 
-    const handlePopOut = usePopOut(character.id, gameId);
+    const handlePopOut = usePopOut(character.id, gameId, rollVisibility);
     const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
     const sharedSkillProps = {

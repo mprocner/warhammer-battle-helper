@@ -431,7 +431,7 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
     } catch (err) { console.error('Spell roll error:', err); }
   }, [gameId, token, character.id, rollVisibility]);
 
-  const handlePopOut = usePopOut(character.id, gameId);
+  const handlePopOut = usePopOut(character.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave: handleSave, onPopOut: () => { handlePopOut(); onClose?.(); }, isStandalone, t });
 
   const pb = edited.derived?.proficiencyBonus ?? 2;

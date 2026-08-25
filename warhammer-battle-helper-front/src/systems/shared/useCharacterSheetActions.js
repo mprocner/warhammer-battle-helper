@@ -4,12 +4,17 @@ import SaveIcon from '@mui/icons-material/Save';
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
-export function usePopOut(characterId, gameId) {
+// rollVisibility jest w GameSession ulotnym useState — nowe okno to osobny kontekst JS
+// i nie ma jak go odczytać, więc przenosimy go parametrem URL. Snapshot z chwili
+// otwarcia: zmiana ustawienia w oknie głównym nie dotrze do już otwartego okna.
+export function usePopOut(characterId, gameId, rollVisibility = 'all') {
     return useCallback(() => {
         const params = new URLSearchParams({ characterId });
         if (gameId) params.set('gameId', gameId);
+        // 'all' jest domyślne po stronie CharacterSheetPage — nie zaśmiecamy URL.
+        if (rollVisibility && rollVisibility !== 'all') params.set('rollVisibility', rollVisibility);
         window.open(`/character-sheet?${params.toString()}`, '_blank', 'width=1400,height=900,noopener');
-    }, [characterId, gameId]);
+    }, [characterId, gameId, rollVisibility]);
 }
 
 export function useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave, onPopOut, isStandalone, t }) {

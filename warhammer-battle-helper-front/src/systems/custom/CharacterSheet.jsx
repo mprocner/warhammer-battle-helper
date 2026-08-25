@@ -302,7 +302,7 @@ function CustomCharacterSheet({
     }
   };
 
-  const handlePopOut = usePopOut(character?.id, gameId);
+  const handlePopOut = usePopOut(character?.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({
     isSaving, saveSuccess, isStandalone,
     onSave: () => saveCharacter(edited, charNameRef.current),
