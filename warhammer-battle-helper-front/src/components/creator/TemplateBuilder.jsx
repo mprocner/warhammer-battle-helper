@@ -128,9 +128,9 @@ function makeDefaultField(type) {
   if (type === 'number') return { ...base, min: 0, max: 100, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: false };
   if (type === 'select') return { ...base, options: [] };
-  if (type === 'skill_table') return { ...base, skills: [], rollable: true, showOnShortCard: false, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
-  if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, showOnShortCard: false, playerCanAddSkills: false, assignAttrToSkill: false };
+  if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
   if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
   return base;
 }
@@ -634,7 +634,9 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
           sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
       )}
 
-      {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
+      {/* Skróconą kartę renderują tylko te trzy typy (BUG-176) — skill_table i skill_tree trafiają
+          tam wyłącznie przez gwiazdki gracza, więc flaga byłaby na nich martwa. */}
+      {(field.type === 'attr' || field.type === 'number' || field.type === 'progress') && (
         <FormControlLabel
           control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}
           label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
