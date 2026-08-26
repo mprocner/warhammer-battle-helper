@@ -48,22 +48,30 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const prevCharIdRef = useRef(character.id);
+  // Czy mamy edycje jeszcze niezapisane na serwerze. Zdejmowane dopiero po udanym
+  // zapisie — po nieudanym zostaje, bo lokalna wersja jest wtedy jedyną, która istnieje.
+  const dirtyRef = useRef(false);
 
-  // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
-  // postaci zachowujemy lokalne edycje — nie nadpisujemy ich danymi z refetchu
-  // po evencie WS (inaczej kasowałoby wpisywany właśnie tekst).
+  // Re-sync z propsa przy zmianie postaci, a dla tej samej postaci tylko wtedy, gdy
+  // nie mamy niezapisanych edycji.
+  //
+  // Oba warunki są potrzebne. Bez drugiego refetch po evencie WS (np. po rzucie innego
+  // gracza) kasowałby tekst wpisywany właśnie w tej karcie. Bez pierwszego karta nie
+  // pokazywałaby zmian tej samej postaci wprowadzonych gdzie indziej — np. w jej
+  // drugim oknie otwartym przez „Otwórz w nowym oknie".
   React.useEffect(() => {
     const s = character.stats || {};
-    if (character.id === prevCharIdRef.current) {
-      // Same character updated externally (HP changed from the token bar, another
-      // player, or server-computed maxes). Pull `resources` in without wiping local
-      // edits — merge over prev so untouched leaves survive.
+    if (character.id === prevCharIdRef.current && dirtyRef.current) {
+      // Mamy własne, niezapisane zmiany — wpuszczamy tylko to, czego i tak nie
+      // edytujemy tutaj: HP zmienione z paska tokena, przez innego gracza albo
+      // policzone przez serwer. Merge nad prev, żeby nietknięte liście przetrwały.
       if (s.resources) {
         setEdited(prev => ({ ...prev, resources: { ...prev.resources, ...s.resources } }));
       }
       return;
     }
     prevCharIdRef.current = character.id;
+    dirtyRef.current = false;
     const weps = s.weapons || [];
     const first = weps[0] || {};
     if (autoSaveTimer.current) {
@@ -131,6 +139,8 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
           },
         }));
       }
+      // Nasze edycje są już na serwerze, więc przychodzące dane mogą je nadpisać.
+      dirtyRef.current = false;
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
       if (onCharacterUpdate) onCharacterUpdate(response.data || payload);
@@ -146,6 +156,7 @@ function CoCCharacterSheet({ character, onClose, onCharacterUpdate, addLogMessag
   }, [character, charName, charAvatar, edited, saveCharacter]);
 
   const scheduleAutoSave = useCallback(() => {
+    dirtyRef.current = true;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       setEdited(prev => {

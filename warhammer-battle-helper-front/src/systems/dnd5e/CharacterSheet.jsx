@@ -65,15 +65,20 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
   const charNameRef    = useRef(character.name || '');
   const charAvatarRef  = useRef(character.avatar || '');
   const prevCharIdRef  = useRef(character.id);
+  // Czy mamy edycje jeszcze niezapisane na serwerze. Zdejmowane dopiero po udanym
+  // zapisie — po nieudanym zostaje, bo lokalna wersja jest wtedy jedyną, która istnieje.
+  const dirtyRef       = useRef(false);
 
-  // Full reset only when switching to a different character.
-  // For same-character prop updates (own save echo, WS derived update) — only refresh derived.
+  // Full reset when switching characters, and also for a same-character update when we
+  // have nothing unsaved — since FEATURE-172 the same character can be open in a second
+  // window, so any field may change from outside. While we DO have unsaved edits, keep
+  // them and pull in only what the server owns.
   React.useEffect(() => {
     const st = character.stats || {};
     const isNewCharacter = character.id !== prevCharIdRef.current;
     prevCharIdRef.current = character.id;
 
-    if (!isNewCharacter) {
+    if (!isNewCharacter && dirtyRef.current) {
       // Keep all local edits — only pull in values the server owns / that can change
       // from outside the sheet: computed `derived`, and `resources` (HP edited from the
       // token HP bar or by another player). Merge over prev so untouched leaves survive.
@@ -85,7 +90,9 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
       return;
     }
 
-    // Switched to a different character — full reset
+    if (isNewCharacter) dirtyRef.current = false;
+
+    // Full reset
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = null;
@@ -139,6 +146,8 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
       if (updatedStats?.derived) {
         setEdited(prev => ({ ...prev, derived: updatedStats.derived }));
       }
+      // Nasze edycje są już na serwerze, więc przychodzące dane mogą je nadpisać.
+      dirtyRef.current = false;
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
       if (onCharacterUpdate) onCharacterUpdate(payload);
@@ -154,6 +163,7 @@ function DnD5eCharacterSheet({ character, onClose, onCharacterUpdate, addLogMess
   }, [character, charName, charAvatar, edited, saveCharacter]);
 
   const scheduleAutoSave = useCallback(() => {
+    dirtyRef.current = true;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       setEdited(prev => {

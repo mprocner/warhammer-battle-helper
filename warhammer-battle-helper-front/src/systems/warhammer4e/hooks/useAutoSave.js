@@ -28,13 +28,23 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
     const saveTimeoutRef = useRef(null);
     const editedCharacterRef = useRef(editedCharacter);
     const prevCharIdRef = useRef(character?.id);
+    // hasChanges w postaci refa — efekt niżej zależy od [character] i czytałby stan
+    // z nieaktualnego domknięcia. Przypisanie w trakcie renderu, tak samo jak
+    // editedCharacterRef poniżej.
+    const hasChangesRef = useRef(false);
+    hasChangesRef.current = hasChanges;
 
-    // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
-    // postaci NIE nadpisujemy lokalnych edycji danymi z refetchu po evencie WS
-    // — inaczej rzut innego gracza kasowałby właśnie wpisywany tekst.
+    // Re-sync z propsa przy zmianie postaci, a dla tej samej postaci tylko wtedy, gdy
+    // nie mamy niezapisanych edycji.
+    //
+    // Oba warunki są potrzebne. Bez drugiego refetch po evencie WS (np. po rzucie innego
+    // gracza) kasowałby tekst wpisywany właśnie w tej karcie. Bez pierwszego karta nie
+    // pokazywałaby zmian tej samej postaci wprowadzonych gdzie indziej — np. w jej
+    // drugim oknie otwartym przez „Otwórz w nowym oknie".
     // (Stan początkowy ustawia już inicjalizator useState powyżej.)
     useEffect(() => {
-        if (character?.id === prevCharIdRef.current) return;
+        const isSameCharacter = character?.id === prevCharIdRef.current;
+        if (isSameCharacter && hasChangesRef.current) return;
         prevCharIdRef.current = character?.id;
         setEditedCharacter({
             ...character,

@@ -43,13 +43,23 @@ function CustomCharacterSheet({
   const autoSaveTimer  = useRef(null);
   const charNameRef    = useRef(charName);
   const prevCharIdRef  = useRef(character?.id);
+  // Czy mamy edycje jeszcze niezapisane na serwerze. Ustawiane przy każdej zmianie
+  // pola, zdejmowane dopiero po udanym zapisie — po nieudanym zostaje, żeby przychodzące
+  // dane nie skasowały tego, czego nie udało się utrwalić.
+  const dirtyRef       = useRef(false);
 
-  // Re-sync z propsa tylko przy zmianie postaci (inne id). Dla tej samej
-  // postaci zachowujemy lokalne edycje — nie nadpisujemy ich danymi z refetchu
-  // po evencie WS (inaczej kasowałoby wpisywany właśnie tekst).
+  // Re-sync z propsa przy zmianie postaci, a dla tej samej postaci tylko wtedy, gdy
+  // nie mamy niezapisanych edycji.
+  //
+  // Oba warunki są potrzebne. Bez drugiego refetch po evencie WS (np. po rzucie innego
+  // gracza) kasowałby tekst wpisywany właśnie w tej karcie. Bez pierwszego karta nie
+  // pokazywałaby zmian tej samej postaci wprowadzonych gdzie indziej — a od FEATURE-172
+  // ta sama postać bywa otwarta w dwóch oknach naraz.
   useEffect(() => {
-    if (character?.id === prevCharIdRef.current) return;
+    const isSameCharacter = character?.id === prevCharIdRef.current;
+    if (isSameCharacter && dirtyRef.current) return;
     prevCharIdRef.current = character?.id;
+    if (!isSameCharacter) dirtyRef.current = false;
     const s = character?.stats || {};
     setEdited({
       attributes:       s.attributes        || {},
@@ -91,6 +101,10 @@ function CustomCharacterSheet({
         body: JSON.stringify(updated),
       });
       if (!res.ok) throw new Error('Save failed');
+      // Dopiero teraz nasze edycje są na serwerze, więc przychodzące dane mogą
+      // je nadpisać. Przy błędzie zapisu flaga zostaje — lokalna wersja jest
+      // wtedy jedyną, która istnieje.
+      dirtyRef.current = false;
       onCharacterUpdate(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
@@ -102,6 +116,7 @@ function CustomCharacterSheet({
   }, [character, gameId, token, onCharacterUpdate, addLogMessage, t]);
 
   const triggerAutoSave = useCallback((e, name) => {
+    dirtyRef.current = true;
     clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => saveCharacter(e, name), 800);
   }, [saveCharacter]);
