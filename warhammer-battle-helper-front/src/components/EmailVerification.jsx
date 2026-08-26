@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { trackEvent } from '../analytics/gtag';
 import axios from 'axios';
 import {
     Container,
@@ -31,7 +32,10 @@ const EmailVerification = () => {
         }
 
         axios.get(`${getApiUrl()}/verify-email?token=${token}`, { headers: getApiHeaders() })
-            .then(() => setStatus('success'))
+            .then(() => {
+                setStatus('success');
+                trackEvent('email_verified');
+            })
             .catch(() => setStatus('error'));
     }, []);
 

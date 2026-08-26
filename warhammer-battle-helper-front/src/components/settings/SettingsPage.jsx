@@ -5,11 +5,13 @@ import SettingsSidebar from './SettingsSidebar';
 import ChangePasswordForm from './ChangePasswordForm';
 import AccountSettingsForm from './AccountSettingsForm';
 import RollStatisticsSettings from './RollStatisticsSettings';
+import PrivacySettings from './PrivacySettings';
 
 const SECTION_COMPONENTS = {
     account: <AccountSettingsForm />,
     changePassword: <ChangePasswordForm />,
     statistics: <RollStatisticsSettings />,
+    privacy: <PrivacySettings />,
 };
 
 const SettingsPage = () => {

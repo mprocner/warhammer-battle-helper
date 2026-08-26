@@ -55,7 +55,8 @@
     "login": "Login",
     "logout": "Logout",
     "register": "Register",
-    "settings": "Settings"
+    "settings": "Settings",
+    "privacy": "Privacy policy"
   },
   "auth": {
     "email": "Email Address",
@@ -102,6 +103,29 @@
       "requestNewLink": "Request new reset link"
     }
   },
+  "consent": {
+    "title": "Analytics consent",
+    "message": "We use Google Analytics to see how the site is used. It stores cookies on your device and sends data to Google. Nothing happens until you decide.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "privacyLink": "Privacy policy"
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "intro": "This page explains what data PlayRPG stores on your device and what we send to third parties.",
+    "necessaryTitle": "Data required for the service",
+    "necessaryBody": "We store your login token, your interface language and your music volume in your browser's local storage. These are required for the site to work and do not need your consent. We never share them with any third party.",
+    "analyticsTitle": "Analytics",
+    "analyticsBody": "If you accept, we load Google Analytics 4. It stores the cookies _ga and _ga_<ID> on your device and sends Google your IP address, browser information, the pages you open and the actions listed below. Google acts as a separate controller and processes this data outside the European Economic Area, including in the United States.",
+    "eventsTitle": "What we measure",
+    "eventsBody": "Page views, account registration, e-mail confirmation, logging in and creating a game. We never send your e-mail address or any other data that identifies you directly.",
+    "userIdTitle": "Account identifier",
+    "userIdBody": "While you are logged in we send Google your account identifier — a random string of characters, never your e-mail. It lets us tell whether the same person came back on another device.",
+    "withdrawTitle": "Withdrawing consent",
+    "withdrawBody": "You can withdraw your consent at any time on this Privacy page, or in Settings, under Privacy, if you are logged in. We then stop sending data and delete the analytics cookies. Declining costs you nothing — the site works exactly the same.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about your data: noreply@playrpg.net"
+  },
   "userSettings": {
     "title": "Account Settings",
     "selectOption": "Select an option from the menu",
@@ -129,6 +153,12 @@
     },
     "statistics": {
       "title": "Statistics"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "analyticsLabel": "Google Analytics",
+      "analyticsHelp": "Helps us see how the site is used. You can change this at any time — the site works the same either way.",
+      "unavailable": "Analytics is not enabled on this installation."
     }
   },
   "stats": {

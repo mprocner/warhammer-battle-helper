@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { trackEvent } from '../analytics/gtag';
 import {
     Container,
     Box,
@@ -62,6 +63,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
 
             addLogMessage(`Successfully registered user ${formData.email}`, 'success');
             setSuccess(t('auth.registrationSuccess'));
+            trackEvent('sign_up', { method: 'email' });
 
             setFormData({
                 email: '',

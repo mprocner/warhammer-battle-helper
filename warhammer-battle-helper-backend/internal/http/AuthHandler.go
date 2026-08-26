@@ -122,7 +122,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "user_id": user.ID.Hex()})
 }
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {

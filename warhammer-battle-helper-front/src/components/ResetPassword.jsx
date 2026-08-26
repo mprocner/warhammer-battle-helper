@@ -103,7 +103,16 @@ const ResetPassword = () => {
                     )}
 
                     {status === 'idle' && (
-                        <Box component="form" onSubmit={handleSubmit}>
+                        // Bez action="/reset-password" HTMLFormElement.action zwraca URL bieżącego
+                        // dokumentu (razem z ?token=...). GA4 enhanced measurement czyta dokładnie tę
+                        // wartość i wysyła ją do Google jako form_destination przy form_start — czyli
+                        // przy pierwszym kliknięciu w pole hasła, zanim token zostanie zużyty. Ta strona
+                        // zawsze nosi żywy token w query stringu, więc jawny, czysty action jest
+                        // obowiązkowy. handleSubmit robi preventDefault(), więc atrybut nie zmienia
+                        // zachowania formularza — wyłącza tylko to jedno przeciekanie.
+                        // Zasada ogólna: każdy formularz na trasie, której URL może nieść sekret,
+                        // musi mieć jawny action.
+                        <Box component="form" action="/reset-password" onSubmit={handleSubmit}>
                             <TextField
                                 margin="normal"
                                 required

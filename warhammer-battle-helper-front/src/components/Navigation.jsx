@@ -16,7 +16,8 @@ import {
     PersonAdd as PersonAddIcon,
     Logout as LogoutIcon,
     Language as LanguageIcon,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Policy as PolicyIcon
 } from '@mui/icons-material';
 
 const Navigation = ({ user, onLogout, inGame }) => {
@@ -57,6 +58,16 @@ const Navigation = ({ user, onLogout, inGame }) => {
                             <Typography variant="caption" sx={{ ml: 0.5 }}>
                                 {i18n.language.toUpperCase()}
                             </Typography>
+                        </IconButton>
+                        {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
+                            (user może być null), więc to jedyne trwałe miejsce, z którego
+                            polityka prywatności jest osiągalna po zamknięciu banera zgody. */}
+                        <IconButton
+                            color="inherit"
+                            onClick={() => navigate('/privacy')}
+                            title={t('navigation.privacy')}
+                        >
+                            <PolicyIcon />
                         </IconButton>
                         {user ? (
                             <>

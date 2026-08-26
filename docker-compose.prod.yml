@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
+        REACT_APP_GA_MEASUREMENT_ID: ${REACT_APP_GA_MEASUREMENT_ID:-}
     ports:
       - "3000:80"
     restart: unless-stopped

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Box, Button, Card, Container, Typography } from '@mui/material';
+import { trackEvent } from '../analytics/gtag';
 import AddIcon from '@mui/icons-material/Add';
 import { useGames } from '../hooks/useGames';
 import { useTemplates } from '../hooks/useTemplates';
@@ -43,6 +44,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
   const handleCreateGame = useCallback(async (payload) => {
     const game = await createGame(payload);
     if (!game) return;
+    trackEvent('game_created', { game_system: game.gameSystem });
     setCreateOpen(false);
     onJoinGame(game.id);
   }, [createGame, onJoinGame]);

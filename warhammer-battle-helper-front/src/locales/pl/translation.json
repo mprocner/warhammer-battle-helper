@@ -55,7 +55,8 @@
     "login": "Zaloguj",
     "logout": "Wyloguj",
     "register": "Zarejestruj",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "privacy": "Polityka prywatności"
   },
   "auth": {
     "email": "Adres Email",
@@ -102,6 +103,29 @@
       "requestNewLink": "Poproś o nowy link"
     }
   },
+  "consent": {
+    "title": "Zgoda na analitykę",
+    "message": "Używamy Google Analytics, żeby zobaczyć, jak korzystacie z serwisu. Zapisuje to pliki cookie na Twoim urządzeniu i wysyła dane do Google. Nic się nie dzieje, dopóki nie zdecydujesz.",
+    "accept": "Akceptuję",
+    "decline": "Odrzucam",
+    "privacyLink": "Polityka prywatności"
+  },
+  "privacy": {
+    "title": "Polityka prywatności",
+    "intro": "Ta strona wyjaśnia, co PlayRPG zapisuje na Twoim urządzeniu i co wysyłamy podmiotom trzecim.",
+    "necessaryTitle": "Dane niezbędne do działania serwisu",
+    "necessaryBody": "W pamięci lokalnej przeglądarki zapisujemy Twój token logowania, wybrany język interfejsu i głośność muzyki. Są niezbędne do działania serwisu i nie wymagają Twojej zgody. Nigdy nie udostępniamy ich żadnym podmiotom trzecim.",
+    "analyticsTitle": "Analityka",
+    "analyticsBody": "Jeśli wyrazisz zgodę, ładujemy Google Analytics 4. Zapisuje on na Twoim urządzeniu pliki cookie _ga oraz _ga_<ID> i przesyła Google Twój adres IP, informacje o przeglądarce, otwierane strony oraz zdarzenia wymienione niżej. Google jest odrębnym administratorem tych danych i przetwarza je poza Europejskim Obszarem Gospodarczym, w tym w Stanach Zjednoczonych.",
+    "eventsTitle": "Co mierzymy",
+    "eventsBody": "Odsłony stron, rejestrację konta, potwierdzenie adresu e-mail, logowanie oraz utworzenie gry. Nigdy nie wysyłamy Twojego adresu e-mail ani innych danych identyfikujących Cię bezpośrednio.",
+    "userIdTitle": "Identyfikator konta",
+    "userIdBody": "Gdy jesteś zalogowany, wysyłamy do Google identyfikator Twojego konta — losowy ciąg znaków, nigdy adres e-mail. Pozwala nam rozpoznać, że ta sama osoba wróciła na innym urządzeniu.",
+    "withdrawTitle": "Wycofanie zgody",
+    "withdrawBody": "Zgodę możesz wycofać w każdej chwili na tej stronie Prywatność albo, jeśli jesteś zalogowany/a, w Ustawieniach, w sekcji Prywatność. Przestajemy wtedy wysyłać dane i kasujemy pliki cookie analityki. Odmowa nic Cię nie kosztuje — serwis działa dokładnie tak samo.",
+    "contactTitle": "Kontakt",
+    "contactBody": "Pytania o Twoje dane: noreply@playrpg.net"
+  },
   "userSettings": {
     "title": "Ustawienia konta",
     "selectOption": "Wybierz opcję z menu",
@@ -129,6 +153,12 @@
     },
     "statistics": {
       "title": "Statystyki"
+    },
+    "privacy": {
+      "title": "Prywatność",
+      "analyticsLabel": "Google Analytics",
+      "analyticsHelp": "Pomaga nam zobaczyć, jak korzystacie z serwisu. Możesz to zmienić w każdej chwili — serwis działa tak samo w obu przypadkach.",
+      "unavailable": "Analityka nie jest włączona w tej instalacji."
     }
   },
   "stats": {

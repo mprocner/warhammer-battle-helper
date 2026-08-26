@@ -1,12 +1,13 @@
 import React from 'react';
 import { List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { LockReset as LockResetIcon, AccountCircle as AccountCircleIcon, BarChart as BarChartIcon } from '@mui/icons-material';
+import { LockReset as LockResetIcon, AccountCircle as AccountCircleIcon, BarChart as BarChartIcon, PrivacyTip as PrivacyTipIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
 const SECTIONS = [
     { key: 'account', icon: <AccountCircleIcon /> },
     { key: 'changePassword', icon: <LockResetIcon /> },
     { key: 'statistics', icon: <BarChartIcon /> },
+    { key: 'privacy', icon: <PrivacyTipIcon /> },
 ];
 
 const SettingsSidebar = ({ activeSection, onSelect }) => {

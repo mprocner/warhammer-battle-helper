@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { trackEvent } from '../analytics/gtag';
 import {
     Container,
     Box,
@@ -47,11 +48,12 @@ const Login = ({ onLogin, addLogMessage }) => {
                 headers: getApiHeaders()
             });
 
-            const { token } = response.data;
+            const { token, user_id: userId } = response.data;
             localStorage.setItem('token', token);
 
             addLogMessage(`Successfully logged in as ${formData.email}`, 'success');
-            onLogin(formData.email, token);
+            trackEvent('login', { method: 'email' });
+            onLogin(formData.email, token, userId);
 
         } catch (error) {
             const errorMessage = error.response?.data?.error || 'Login failed';

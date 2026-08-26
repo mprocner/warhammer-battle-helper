@@ -82,3 +82,13 @@ Now your friends can open the frontend URL and play with you!
 - The `.env` file is in `.gitignore` and won't be committed
 - Use `.env.example` as a template for others
 - Remember to restart the dev server after changing `.env`
+
+### Google Analytics
+
+`REACT_APP_GA_MEASUREMENT_ID` przechowuje identyfikator strumienia danych GA4
+(format `G-XXXXXXXXXX`). Zmienna jest odczytywana w czasie budowania — po jej
+zmianie trzeba przebudować obraz, samo `restart` nie wystarczy.
+
+Pusta wartość (domyślna w dev) wyłącza analitykę całkowicie: skrypt Google nie jest
+ładowany, a baner zgody się nie pokazuje. Zostaw ją pustą lokalnie, żeby `npm start`
+nie zaśmiecał produkcyjnych danych.

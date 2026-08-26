@@ -10,12 +10,25 @@ import Register from './components/Register';
 import EmailVerification from './components/EmailVerification';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
 import CharacterSheetPage from './components/CharacterSheetPage';
 import SettingsPage from './components/settings/SettingsPage';
+import { ConsentProvider } from './analytics/ConsentContext';
+import AnalyticsGate from './analytics/AnalyticsGate';
+import ConsentBanner from './components/consent/ConsentBanner';
+import { usePageViews } from './analytics/usePageViews';
+import { setUserId } from './analytics/gtag';
+
+// usePageViews potrzebuje useLocation, a więc kontekstu Routera. App renderuje
+// Router dopiero w swoim JSX, dlatego hook mieszka w osobnym komponencie w środku.
+const PageViewTracker = () => {
+    usePageViews();
+    return null;
+};
 
 function App() {
     const [, setLogs] = useState([
@@ -53,6 +66,7 @@ function App() {
                         email: response.data.email,
                         token
                     });
+                    setUserId(response.data.user_id);
 
                     try {
                         const featuresRes = await axiosInstance.get('/features');
@@ -74,8 +88,9 @@ function App() {
         checkAuthStatus();
     }, []);
 
-    const handleLogin = async (email, token) => {
+    const handleLogin = async (email, token, userId) => {
         setUser({ email, token });
+        setUserId(userId);
         try {
             const featuresRes = await axiosInstance.get('/features');
             setAllowedSystems(featuresRes.data.allowedSystems);
@@ -87,6 +102,7 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setUser(null);
+        setUserId(null);
         setLobbyNotice(null);
         addLogMessage('User logged out', 'info');
     };
@@ -132,82 +148,92 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Router>
-                <div className="App">
-                    {window.location.pathname !== '/character-sheet' && (
-                        <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
-                    )}
+            <ConsentProvider>
+                {/* Musi wyrenderować się przed <Router> — usePageViews (w PageViewTracker
+                    niżej) zależy teraz też od consent, więc na ścieżce „zgoda już zapisana
+                    przy starcie" ta kolejność gwarantuje, że efekt enable() z AnalyticsGate
+                    commituje się przed efektem page_view i nie ma podwójnego wysyłania. */}
+                <AnalyticsGate />
+                <Router>
+                    <ConsentBanner />
+                    <PageViewTracker />
+                    <div className="App">
+                        {window.location.pathname !== '/character-sheet' && (
+                            <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
+                        )}
 
-                    <Routes>
-                    <Route
-                        path="/login"
-                        element={
-                            user ?
-                            <Navigate to="/" replace /> :
-                            <Login onLogin={handleLogin} addLogMessage={addLogMessage} />
-                        }
-                    />
-                    <Route
-                        path="/register"
-                        element={
-                            user ?
-                            <Navigate to="/" replace /> :
-                            <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
-                        }
-                    />
+                        <Routes>
+                        <Route
+                            path="/login"
+                            element={
+                                user ?
+                                <Navigate to="/" replace /> :
+                                <Login onLogin={handleLogin} addLogMessage={addLogMessage} />
+                            }
+                        />
+                        <Route
+                            path="/register"
+                            element={
+                                user ?
+                                <Navigate to="/" replace /> :
+                                <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
+                            }
+                        />
 
-                    <Route
-                        path="/settings"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <SettingsPage />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route path="/verify-email" element={<EmailVerification />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-
-                    {/* Standalone character sheet window */}
-                    <Route
-                        path="/character-sheet"
-                        element={<CharacterSheetPage />}
-                    />
-
-                    {/* Game Lobby - Main multiplayer hub */}
-                    <Route
-                        path="/"
-                        element={
-                            user ? (
+                        <Route
+                            path="/settings"
+                            element={
                                 <ProtectedRoute user={user}>
-                                    {currentGameId ? (
-                                        <GameSession
-                                            gameId={currentGameId}
-                                            token={user.token}
-                                            onGoToGameList={handleGoToGameList}
-                                            onSessionEnded={handleSessionEnded}
-                                            onLogout={handleLogout}
-                                        />
-                                    ) : (
-                                        <GameLobby
-                                            onJoinGame={handleJoinGame}
-                                            token={user.token}
-                                            userEmail={user.email}
-                                            allowedSystems={allowedSystems}
-                                            notice={lobbyNotice}
-                                            onDismissNotice={() => setLobbyNotice(null)}
-                                        />
-                                    )}
+                                    <SettingsPage />
                                 </ProtectedRoute>
-                            ) : (
-                                <Navigate to="/login" replace />
-                            )
-                        }
-                    />
-                    </Routes>
-                </div>
-            </Router>
+                            }
+                        />
+
+                        <Route path="/verify-email" element={<EmailVerification />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+
+                        {/* Standalone character sheet window */}
+                        <Route
+                            path="/character-sheet"
+                            element={<CharacterSheetPage />}
+                        />
+
+                        {/* Game Lobby - Main multiplayer hub */}
+                        <Route
+                            path="/"
+                            element={
+                                user ? (
+                                    <ProtectedRoute user={user}>
+                                        {currentGameId ? (
+                                            <GameSession
+                                                gameId={currentGameId}
+                                                token={user.token}
+                                                onGoToGameList={handleGoToGameList}
+                                                onSessionEnded={handleSessionEnded}
+                                                onLogout={handleLogout}
+                                            />
+                                        ) : (
+                                            <GameLobby
+                                                onJoinGame={handleJoinGame}
+                                                token={user.token}
+                                                userEmail={user.email}
+                                                allowedSystems={allowedSystems}
+                                                notice={lobbyNotice}
+                                                onDismissNotice={() => setLobbyNotice(null)}
+                                            />
+                                        )}
+                                    </ProtectedRoute>
+                                ) : (
+                                    <Navigate to="/login" replace />
+                                )
+                            }
+                        />
+                        </Routes>
+                    </div>
+                </Router>
+            </ConsentProvider>
         </ThemeProvider>
     );
 }
