@@ -7308,18 +7308,23 @@ align-items: center;
 
 /* --- CharacterDetails compact panel --- */
 
-.custom-character-details__resources {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(201, 151, 91, 0.4);
+.custom-character-details__section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px;
+}
+
+/* Linia tylko MIĘDZY grupami — nigdy nad pierwszą ani pod ostatnią. */
+.custom-character-details__section + .custom-character-details__section {
+    border-top: 1px solid rgba(201, 151, 91, 0.4);
 }
 
 .custom-character-details__resource {
     display: flex;
     align-items: center;
     gap: 8px;
+    grid-column: 1 / -1;
 }
 
 .custom-character-details__resource-label {
@@ -7370,13 +7375,6 @@ align-items: center;
 .custom-character-details__resource-max {
     color: rgba(58, 47, 31, 0.5);
     font-size: 0.8rem;
-}
-
-.custom-character-details__attrs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    padding: 8px;
 }
 
 .custom-character-details__attr {
