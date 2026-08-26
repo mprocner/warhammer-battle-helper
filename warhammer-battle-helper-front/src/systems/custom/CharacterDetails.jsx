@@ -118,11 +118,11 @@ function CustomCharacterDetails({
   };
 
   const renderTile = (field) => {
-    // Backend zawsze wylicza current = base + advances; base to zapasowa ścieżka dla postaci,
-    // dla której ComputeDerived jeszcze nie przebiegło.
+    // Backend zawsze wylicza current = base + advances, więc gdy klucz jest obecny w
+    // stats.attributes, current jest zawsze ustawione.
     const value = field.type === 'number'
       ? (numbers[field.key] ?? 0)
-      : (attributes[field.key]?.current ?? attributes[field.key]?.base ?? 0);
+      : (attributes[field.key]?.current ?? 0);
     return (
       <div key={field.key} className="custom-character-details__attr">
         <span className="custom-character-details__attr-abbr">
@@ -133,6 +133,7 @@ function CustomCharacterDetails({
           <button
             className="custom-character-details__roll-btn"
             onClick={() => setRollModal({ skillKey: field.key, label: field.label })}
+            disabled={!gameId}
           >
             <CasinoIcon style={{ fontSize: 14 }} />
           </button>

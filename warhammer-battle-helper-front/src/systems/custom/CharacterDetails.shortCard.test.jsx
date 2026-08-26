@@ -62,6 +62,14 @@ describe('CustomCharacterDetails short card', () => {
     expect(sections.map(s => s.querySelectorAll('.custom-character-details__attr').length)).toEqual([3, 4]);
   });
 
+  it('ignores a legacy skill field left flagged by an older creator', () => {
+    const { container } = renderCard([{ id: 's1', fields: [
+      attr('kept'),
+      { key: 'skills', type: 'skill_table', label: 'SKILLS', showOnShortCard: true, rollable: true, skills: [] },
+    ] }]);
+    expect(container.querySelectorAll('.custom-character-details__attr').length).toBe(1);
+  });
+
   it('skips a section whose fields are all unflagged', () => {
     const { container } = renderCard([
       { id: 's1', fields: [attr('a')] },
@@ -72,16 +80,34 @@ describe('CustomCharacterDetails short card', () => {
   });
 
   it('shows the dice button only on rollable fields and opens the modifier modal', () => {
-    const { container } = renderCard([{ id: 's1', fields: [
-      attr('plain'),
-      attr('rolls', { rollable: true }),
-    ] }]);
+    const { container } = renderCard(
+      [{ id: 's1', fields: [
+        attr('plain'),
+        attr('rolls', { rollable: true }),
+      ] }],
+      {},
+      { gameId: 'g1' }
+    );
 
     const tiles = [...container.querySelectorAll('.custom-character-details__attr')];
     expect(tiles[0].querySelector('.custom-character-details__roll-btn')).toBeNull();
 
     fireEvent.click(tiles[1].querySelector('.custom-character-details__roll-btn'));
     expect(container.querySelector('.custom-roll-overlay')).not.toBeNull();
+  });
+
+  it('disables the tile dice button without a gameId and enables it with one', () => {
+    const { container: withoutGame } = renderCard([{ id: 's1', fields: [
+      attr('rolls', { rollable: true }),
+    ] }]);
+    expect(withoutGame.querySelector('.custom-character-details__roll-btn').disabled).toBe(true);
+
+    const { container: withGame } = renderCard(
+      [{ id: 's1', fields: [attr('rolls', { rollable: true })] }],
+      {},
+      { gameId: 'g1' }
+    );
+    expect(withGame.querySelector('.custom-character-details__roll-btn').disabled).toBe(false);
   });
 
   it('reads an attribute tile from current and a number tile from stats.numbers', () => {

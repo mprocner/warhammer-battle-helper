@@ -103,6 +103,9 @@ const FIELD_TYPES = [
   { type: 'label',         labelKey: 'creator.fieldType.label',         icon: <LabelIcon fontSize="small" />,       desc: 'creator.fieldType.labelDesc' },
 ];
 
+// Skróconą kartę renderują tylko te trzy typy pól (BUG-176).
+const SHORT_CARD_FIELD_TYPES = ['attr', 'number', 'progress'];
+
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
@@ -126,7 +129,7 @@ function makeDefaultField(type) {
   };
   if (type === 'attr') return { ...base, min: 0, max: 100, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'number') return { ...base, min: 0, max: 100, showOnShortCard: false };
-  if (type === 'progress') return { ...base, showOnShortCard: false };
+  if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
@@ -636,7 +639,7 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
 
       {/* Skróconą kartę renderują tylko te trzy typy (BUG-176) — skill_table i skill_tree trafiają
           tam wyłącznie przez gwiazdki gracza, więc flaga byłaby na nich martwa. */}
-      {(field.type === 'attr' || field.type === 'number' || field.type === 'progress') && (
+      {SHORT_CARD_FIELD_TYPES.includes(field.type) && (
         <FormControlLabel
           control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}
           label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
@@ -902,7 +905,7 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
         <div className="creator__canvas-field-range">{field.min ?? '?'} – {field.max ?? '?'}</div>
       )}
       {field.rollable && <div className="creator__canvas-field-roll-badge">⚄</div>}
-      {field.showOnShortCard && <div className="creator__canvas-field-short-badge" title={t('creator.showOnShortCard')}>▤</div>}
+      {field.showOnShortCard && SHORT_CARD_FIELD_TYPES.includes(field.type) && <div className="creator__canvas-field-short-badge" title={t('creator.showOnShortCard')}>▤</div>}
       {isDuplicateKey && <div className="creator__canvas-field-dupe-warn" title={t('creator.duplicateKeyWarn')}>⚠ dup</div>}
       <div className="creator__canvas-field-actions">
         <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst}><ArrowUpwardIcon style={{ fontSize: 11 }} /></button>
