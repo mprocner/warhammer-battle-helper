@@ -93,10 +93,14 @@ konsument, więc bez nowego pliku w `utils/`):
 export function isPrivateDrag(tokens, { images = [], characters = [] }) { ... }
 ```
 
-- `kind: 'image'` → `!!images.find(i => i.id === id)?.hidden`; nierozpoznane id ⇒ `true`
+- `kind: 'image'` → obrazek jest prywatny gdy `image.hidden` **lub** `image.layer === 'gm'`
+  (warstwa `gm` jest niewidoczna dla graczy tak samo jak `hidden` — patrz „## Zakres");
+  nierozpoznane id ⇒ `true`
 - `kind: 'char'` → `!!characters.find(c => c.characterId === id)?.hidden`; nierozpoznane id ⇒ `true`
+- `kind` inny niż `'image'` trafia do gałęzi postaci, więc literówka w `kind` też kończy się
+  `true` — fail closed w każdym kierunku
 - pusta lub brakująca lista tokenów ⇒ `false` (nie ma czego chronić)
-- grupa ⇒ `tokens.some(...)`: jeden ukryty przewraca całe zaznaczenie
+- grupa ⇒ `tokens.some(...)`: jeden prywatny token przewraca całe zaznaczenie
 
 ### 3. Punkty wywołania
 
@@ -128,6 +132,23 @@ nie odpala. `SceneImage` swoje propsy zachowuje — dostaje je z `MapTokensLayer
 5. nierozpoznane id — brak wysyłki (fail closed)
 6. throttle — dwa `move` w tym samym oknie 50 ms dają jedną wysyłkę (kod jest przenoszony, więc
    zachowanie trzeba przygwoździć)
+
+Dołożone po przeglądzie finalnym (razem 19 przypadków):
+
+7. obrazek na warstwie `gm` bez flagi `hidden` — prywatny, sprawdzone i na predykacie, i na dragu
+8. obrazek na warstwie `tokens` bez `hidden` — publiczny (kontrola, że warunek nie łapie za szeroko)
+9. `onMeasureEnd` bez poprzedzającego `start` — brak wysyłki (guard `if (from)`)
+10. `dragRuler === null` po `onMeasureEnd`
+11. aktualizacja sceny w trakcie dragu nie przewraca prywatnego dragu na publiczny — `rerender`
+    hooka z tokenem już nieukrytym, potem `move`/`end`, `sendMessage` nadal niewołane
+12. `kind` spoza `'char'`/`'image'` — prywatny (fail closed)
+13. `start` w oknie throttle'a poprzedniego dragu — klatka `active: true` i tak wychodzi
+    (`lastSendRef` zerowany na starcie)
+
+Bez dedykowanego testu: przełączenie mirroru `sceneRef` z `useEffect` na `useLayoutEffect`. `act()`
+z React Testing Library flushuje oba rodzaje efektów synchronicznie, więc unit nie rozróżnia
+kolejności — zmiana jest zabezpieczeniem na wypadek zdarzenia wejściowego dostarczonego między
+renderem a passywnym efektem, nie zmianą obserwowalnego zachowania.
 
 Bez zmian: backend, i18n, CSS.
 
