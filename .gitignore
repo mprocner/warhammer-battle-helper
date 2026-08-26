@@ -1,2 +1,5 @@
 .env
 .env.prod
+
+# Worktrees tworzone przez Claude Code — pełne checkouty repo, nie należą do historii
+.claude/worktrees/
