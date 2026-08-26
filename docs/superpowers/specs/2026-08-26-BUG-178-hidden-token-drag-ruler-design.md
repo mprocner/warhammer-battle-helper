@@ -32,17 +32,26 @@ występuje w kodzie backendu w ogóle.
 
 ## Zakres
 
-Ukrycie = `placement.hidden` tokena postaci **oraz** `image.hidden` obrazka-tokena. Nic więcej.
+Ukrycie = `placement.hidden` tokena postaci **oraz** `image.hidden` obrazka-tokena **oraz** obrazek na
+warstwie `gm` (przegląd finalny: warstwa `gm` jest niewidoczna dla graczy tak samo jak `hidden`, więc
+grupowy drag niosący obrazek `gm` musi zostać lokalny — patrz `isPrivateDrag` w `useDragRuler.js`).
 
-Świadomie **poza zakresem**: obrazki warstwy `gm`. `SceneViewport.jsx:721,784` nie przekazuje
-`onTokenDragMeasure*` do `SceneLayer`, więc pojedyncze przesuwanie obrazka na `background`/`gm`
-nie mierzy — nie ma czego naprawiać. Wyjątek, który zostaje jak jest: `useGroupDrag` mierzy
-niezależnie od warstwy, więc grupa złożona z obrazków `gm` (bez ukrytego tokena) nadal rozgłasza
-miarkę.
+Wciąż aktualne: pojedyncze przesuwanie obrazka na `background`/`gm` w ogóle nie mierzy.
+`SceneViewport.jsx:721,784` nie przekazuje `onTokenDragMeasure*` do `SceneLayer` dla tych warstw —
+nie ma czego naprawiać, bo nie ma wysyłki do zabronienia. To dotyczy tylko pojedynczego draga;
+grupowy drag (`useGroupDrag`) mierzy niezależnie od warstwy, więc obejmuje go reguła powyżej.
 
 GM w grze jest tylko jeden — rola `gm` jest nadawana wyłącznie twórcy
 (`internal/service/GameService.go:63,197`). Dlatego „nie propaguj do graczy" realizujemy jako
 „nie wysyłaj wcale": nie ma drugiego MG, który by na tym tracił.
+
+**Znany, akceptowany skutek uboczny** (znaleziony w przeglądzie finalnym): gracz, który trzyma kartę
+postaci dla placementu ukrytego przez MG, może przeciągnąć ten token na mapie — i wtedy miarka jest
+ukrywana także przed samym MG, bo `isPrivateDrag` nie rozróżnia, kto ciągnie. To poprawne zachowanie
+fail-closed, nie bug: naprawienie tego wymagałoby przekazywania roli ciągnącego przez WS i
+rozgałęzienia rozgłoszenia po roli (osobny strumień dla MG, osobny dla graczy) — dokładnie tego
+rodzaju „relay świadomy ról", który ten dokument wyżej świadomie wyklucza (hub jest głupim relayem).
+Zapisane tutaj, żeby nie zostało odkryte drugi raz jako bug.
 
 ## Rozwiązanie
 
