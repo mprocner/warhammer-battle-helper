@@ -18,6 +18,7 @@ import { normalizeCharacter } from '../systems/registry';
 import { resolveDisplayName } from '../utils/participants';
 import { buildPlacedCharacters } from '../utils/placedCharacters';
 import { useWindowManager } from '../contexts/WindowManagerContext';
+import useDragRuler from '../hooks/useDragRuler';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -64,39 +65,22 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const distanceUnit = rawUnit === 'custom' ? (game?.mapSettings?.customUnit || '') : rawUnit;
   const userName = resolveDisplayName(participants.find(p => p.userId === userId)) || '';
 
-  // Live measuring ruler while dragging a token (grab point → current position). Shown locally
-  // AND broadcast to other players over the same MAP_RULER channel as the manual ruler tool.
-  const [imageDragRuler, setImageDragRuler] = useState(null);
   const [aoeMeasure, setAoeMeasure] = useState(true); // AoE circle toggle for the manual ruler tool
-  const dragRulerFromRef = useRef(null);
-  const lastDragRulerSendRef = useRef(0);
-  const sendDragRuler = useCallback((from, to, active) => {
-    if (!sendMessage) return;
-    if (active) {
-      const now = Date.now();
-      if (now - lastDragRulerSendRef.current < 50) return; // throttle live updates
-      lastDragRulerSendRef.current = now;
-    }
-    sendMessage('MAP_RULER', { sceneId: currentSceneId, userId, name: userName, from, to, active, aoe: false });
-  }, [sendMessage, currentSceneId, userId, userName]);
 
-  // Image-token drags feed the ruler via callbacks; character drags derive it from activeId/overId.
-  const handleTokenDragMeasureStart = useCallback((center) => {
-    dragRulerFromRef.current = center;
-    setImageDragRuler({ from: center, to: center });
-    sendDragRuler(center, center, true);
-  }, [sendDragRuler]);
-  const handleTokenDragMeasureMove = useCallback((center) => {
-    const from = dragRulerFromRef.current;
-    setImageDragRuler(from ? { from, to: center } : null);
-    if (from) sendDragRuler(from, center, true);
-  }, [sendDragRuler]);
-  const handleTokenDragMeasureEnd = useCallback(() => {
-    const from = dragRulerFromRef.current;
-    dragRulerFromRef.current = null;
-    setImageDragRuler(null);
-    sendDragRuler(from, from, false);
-  }, [sendDragRuler]);
+  // Live drag ruler + its broadcast gate (a hidden token's ruler stays local) — hooks/useDragRuler.js.
+  const {
+    dragRuler,
+    onMeasureStart: handleTokenDragMeasureStart,
+    onMeasureMove: handleTokenDragMeasureMove,
+    onMeasureEnd: handleTokenDragMeasureEnd,
+  } = useDragRuler({
+    sendMessage,
+    sceneId: currentSceneId,
+    userId,
+    userName,
+    images: currentScene?.images || [],
+    characters: currentScene?.characters || [],
+  });
 
   const [, setViewportZoom] = useState(1);
   const hasInitializedRef = useRef(false);
@@ -988,7 +972,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
   // Other players' rulers on this scene (manual tool + broadcast drag rulers).
   const sceneRulers = Object.values(mapRulers).filter(r => r.sceneId === currentSceneId);
-  const dragRuler = imageDragRuler;
 
   // Placed character tokens for the unified layer, built from the scene's server placements — see
   // utils/placedCharacters.js for why the position no longer comes from the fightZones grid.
