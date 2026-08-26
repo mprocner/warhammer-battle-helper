@@ -43,9 +43,11 @@ function CharacterSheetPage() {
                     axiosInstance.get(`/games/${gameId}`),
                 ]);
                 const char = charsRes.data.map(normalizeCharacter).find(c => c.id === characterId);
-                if (!char) throw new Error('Character not found');
-                setCharacter(char);
                 setGame(gameRes.data);
+                // Brak postaci o tym id to nie błąd sieci — zostawiamy character = null
+                // i render pokazuje przetłumaczone t('character.notFound'). Rzucenie wyjątku
+                // trafiłoby w gałąź `error`, która wyświetla nieprzetłumaczony err.message.
+                if (char) setCharacter(char);
             } catch (err) {
                 setError(err.message);
             } finally {
