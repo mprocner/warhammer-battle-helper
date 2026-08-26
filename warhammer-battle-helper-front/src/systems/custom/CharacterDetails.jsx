@@ -7,6 +7,10 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
 
+// Typy pól, które mają sens jako pojedynczy kafelek na skróconej karcie. skill_table i skill_tree
+// to kolekcje — trafiają na kartę wyłącznie przez gwiazdki (stats.favoriteSkills).
+const SHORT_CARD_TYPES = ['attr', 'number', 'progress'];
+
 function CustomCharacterDetails({
   character,
   onCharacterUpdate,
@@ -26,6 +30,7 @@ function CustomCharacterDetails({
   const stats      = useMemo(() => character?.stats || {}, [character?.stats]);
   const attributes = stats.attributes || {};
   const progress   = stats.progress   || {};
+  const numbers    = stats.numbers    || {};
 
   const handleRoll = async (skillKey, mod = 0) => {
     if (!gameId || !character) return;
@@ -88,9 +93,63 @@ function CustomCharacterDetails({
     } catch { /* silent */ }
   }, [character, gameId, token, onCharacterUpdate]);
 
-  const allFields = template?.sections?.flatMap(s => s.fields || []) || [];
-  const rollableFields = allFields.filter(f => f.type === 'attr' && f.rollable);
-  const progressFields = allFields.filter(f => f.type === 'progress');
+  const renderProgress = (field) => {
+    const val = progress[field.key] || { current: 0, max: 0 };
+    return (
+      <div key={field.key} className="custom-character-details__resource">
+        <span className="custom-character-details__resource-label">
+          {field.abbr || field.label}
+        </span>
+        <div className="custom-character-details__resource-track">
+          <button
+            className="custom-character-details__resource-btn"
+            onClick={() => handleProgressDelta(field.key, -1)}
+          >−</button>
+          <span className="custom-character-details__resource-val">
+            {val.current}<span className="custom-character-details__resource-max">/{val.max}</span>
+          </span>
+          <button
+            className="custom-character-details__resource-btn"
+            onClick={() => handleProgressDelta(field.key, +1)}
+          >+</button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTile = (field) => {
+    // Backend zawsze wylicza current = base + advances, więc gdy klucz jest obecny w
+    // stats.attributes, current jest zawsze ustawione.
+    const value = field.type === 'number'
+      ? (numbers[field.key] ?? 0)
+      : (attributes[field.key]?.current ?? 0);
+    return (
+      <div key={field.key} className="custom-character-details__attr">
+        <span className="custom-character-details__attr-abbr">
+          {field.abbr || field.label}
+        </span>
+        <span className="custom-character-details__attr-val">{value}</span>
+        {field.rollable && (
+          <button
+            className="custom-character-details__roll-btn"
+            onClick={() => setRollModal({ skillKey: field.key, label: field.label })}
+            disabled={!gameId}
+          >
+            <CasinoIcon style={{ fontSize: 14 }} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // O zawartości skróconej karty decyduje wyłącznie flaga showOnShortCard z kreatora (BUG-176).
+  // Sekcje bez ani jednego zaznaczonego pola odpadają, żeby nie zostawić pustej grupy z separatorem.
+  const shortCardSections = useMemo(() => (template?.sections || [])
+    .map(s => ({
+      id: s.id,
+      fields: (s.fields || []).filter(f => f.showOnShortCard && SHORT_CARD_TYPES.includes(f.type)),
+    }))
+    .filter(s => s.fields.length > 0), [template]);
 
   const favoriteSkillsData = useMemo(() => {
     const favKeys = stats.favoriteSkills || [];
@@ -170,56 +229,14 @@ function CustomCharacterDetails({
         t={t}
       />
 
-      {/* Progress fields (HP, MP, …) */}
-      {progressFields.length > 0 && (
-        <div className="custom-character-details__resources">
-          {progressFields.map(field => {
-            const val = progress[field.key] || { current: 0, max: 0 };
-            return (
-              <div key={field.key} className="custom-character-details__resource">
-                <span className="custom-character-details__resource-label">
-                  {field.abbr || field.label}
-                </span>
-                <div className="custom-character-details__resource-track">
-                  <button
-                    className="custom-character-details__resource-btn"
-                    onClick={() => handleProgressDelta(field.key, -1)}
-                  >−</button>
-                  <span className="custom-character-details__resource-val">
-                    {val.current}<span className="custom-character-details__resource-max">/{val.max}</span>
-                  </span>
-                  <button
-                    className="custom-character-details__resource-btn"
-                    onClick={() => handleProgressDelta(field.key, +1)}
-                  >+</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Rollable number attributes (max 6 in compact panel) */}
-      {rollableFields.length > 0 && (
-        <div className="custom-character-details__attrs">
-          {rollableFields.slice(0, 6).map(field => (
-            <div key={field.key} className="custom-character-details__attr">
-              <span className="custom-character-details__attr-abbr">
-                {field.abbr || field.label}
-              </span>
-              <span className="custom-character-details__attr-val">
-                {attributes[field.key]?.current ?? 0}
-              </span>
-              <button
-                className="custom-character-details__roll-btn"
-                onClick={() => setRollModal({ skillKey: field.key, label: field.label })}
-              >
-                <CasinoIcon style={{ fontSize: 14 }} />
-              </button>
-            </div>
+      {/* Pola zaznaczone w kreatorze, pogrupowane po sekcjach szablonu (BUG-176) */}
+      {shortCardSections.map(section => (
+        <div key={section.id} className="custom-character-details__section">
+          {section.fields.map(field => (
+            field.type === 'progress' ? renderProgress(field) : renderTile(field)
           ))}
         </div>
-      )}
+      ))}
 
       {/* Favourite skills */}
       {favoriteSkillsData.length > 0 && (
