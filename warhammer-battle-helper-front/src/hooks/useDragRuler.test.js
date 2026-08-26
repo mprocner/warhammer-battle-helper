@@ -2,8 +2,10 @@ import { renderHook, act } from '@testing-library/react';
 import useDragRuler, { isPrivateDrag } from './useDragRuler';
 
 const IMAGES = [
-  { id: 'img-visible', hidden: false },
-  { id: 'img-hidden', hidden: true },
+  { id: 'img-visible', hidden: false, layer: 'tokens' },
+  { id: 'img-hidden', hidden: true, layer: 'tokens' },
+  { id: 'img-gm', layer: 'gm' }, // no `hidden` flag — gm layer alone makes it private
+  { id: 'img-tokens-bare', layer: 'tokens' }, // no `hidden` flag — tokens layer stays public
 ];
 const CHARACTERS = [
   { characterId: 'char-visible', hidden: false },
@@ -48,6 +50,15 @@ describe('isPrivateDrag', () => {
   test('an id it cannot resolve counts as hidden (fail closed)', () => {
     expect(isPrivateDrag([{ kind: 'char', id: 'ghost' }], scene)).toBe(true);
     expect(isPrivateDrag([{ kind: 'image', id: 'ghost' }], scene)).toBe(true);
+  });
+
+  test('a malformed kind fails closed', () => {
+    expect(isPrivateDrag([{ kind: 'blob', id: 'x' }], scene)).toBe(true);
+  });
+
+  test('a gm-layer image is private even without a hidden flag; a tokens-layer image is not', () => {
+    expect(isPrivateDrag([{ kind: 'image', id: 'img-gm' }], scene)).toBe(true);
+    expect(isPrivateDrag([{ kind: 'image', id: 'img-tokens-bare' }], scene)).toBe(false);
   });
 });
 
@@ -97,6 +108,25 @@ describe('useDragRuler', () => {
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
+  test('keeps the ruler local when the dragged image token is on the gm layer', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 0, row: 0 }, [{ kind: 'image', id: 'img-gm' }]));
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test('broadcasts while dragging a tokens-layer image without a hidden flag', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 0, row: 0 }, [{ kind: 'image', id: 'img-tokens-bare' }]));
+
+    expect(sendMessage).toHaveBeenCalledWith('MAP_RULER', expect.objectContaining({ active: true }));
+  });
+
   test('keeps the ruler local when a group holds one hidden token', () => {
     const sendMessage = jest.fn();
     const { result } = setup(sendMessage);
@@ -130,6 +160,80 @@ describe('useDragRuler', () => {
 
     act(() => result.current.onMeasureStart({ col: 2, row: 2 }, [{ kind: 'char', id: 'char-visible' }]));
     expect(sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  test('onMeasureEnd with no prior start sends nothing', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test('dragRuler is null after onMeasureEnd', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 1, row: 1 }, [{ kind: 'char', id: 'char-visible' }]));
+    expect(result.current.dragRuler).not.toBeNull();
+
+    act(() => result.current.onMeasureEnd());
+    expect(result.current.dragRuler).toBeNull();
+  });
+
+  test('a scene update mid-drag cannot flip a private drag public', () => {
+    const sendMessage = jest.fn();
+    const initialProps = {
+      sendMessage,
+      sceneId: 'scene-1',
+      userId: 'gm-1',
+      userName: 'GM',
+      images: IMAGES,
+      characters: CHARACTERS,
+    };
+    const { result, rerender } = renderHook((props) => useDragRuler(props), { initialProps });
+
+    act(() => result.current.onMeasureStart({ col: 1, row: 1 }, [{ kind: 'char', id: 'char-hidden' }]));
+
+    // Scene update mid-drag: the dragged character is no longer hidden.
+    const revealedCharacters = CHARACTERS.map(c => (
+      c.characterId === 'char-hidden' ? { ...c, hidden: false } : c
+    ));
+    rerender({ ...initialProps, characters: revealedCharacters });
+
+    act(() => result.current.onMeasureMove({ col: 2, row: 1 }));
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test("a new drag's start frame is never eaten by the previous drag's throttle window", () => {
+    const sendMessage = jest.fn();
+    const nowSpy = jest.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1000);
+
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 0, row: 0 }, [{ kind: 'char', id: 'char-visible' }]));
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.onMeasureEnd());
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+
+    // Next drag starts 30 ms later — inside the 50 ms throttle window stamped by the first drag's
+    // start send. Without resetting the throttle, this start frame would be silently dropped.
+    nowSpy.mockReturnValue(1030);
+    act(() => result.current.onMeasureStart({ col: 5, row: 5 }, [{ kind: 'char', id: 'char-visible' }]));
+
+    expect(sendMessage).toHaveBeenCalledTimes(3);
+    expect(sendMessage).toHaveBeenLastCalledWith('MAP_RULER', expect.objectContaining({
+      from: { col: 5, row: 5 },
+      to: { col: 5, row: 5 },
+      active: true,
+    }));
+
+    nowSpy.mockRestore();
   });
 
   test('throttles live updates to one send per 50 ms window', () => {

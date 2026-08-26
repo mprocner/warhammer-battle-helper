@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 // Throttle for outgoing MAP_RULER updates during a drag — keeps the WS chatty-but-cheap,
 // same spirit as a cursor stream. Mirrors useMapRuler's SEND_THROTTLE_MS.
@@ -19,7 +19,8 @@ export function isPrivateDrag(tokens, { images = [], characters = [] } = {}) {
   return tokens.some(t => {
     if (t.kind === 'image') {
       const image = images.find(i => i.id === t.id);
-      return image ? !!image.hidden : true;
+      // A gm-layer image is invisible to players just like a hidden one.
+      return image ? (!!image.hidden || image.layer === 'gm') : true;
     }
     const placement = characters.find(c => c.characterId === t.id);
     return placement ? !!placement.hidden : true;
@@ -40,8 +41,11 @@ export default function useDragRuler({ sendMessage, sceneId, userId, userName, i
   // Mirrored so the handlers keep a stable identity: DndContext rebuilds these arrays on every
   // render, and an unstable onMeasureStart would churn every token's mousedown callback.
   // Same trick as sceneIdRef in DndContext.
+  // useLayoutEffect, not useEffect: the mirror must be current before the browser can deliver the
+  // next mousedown/pointerdown, or a drag that starts in that window would read a stale scene and
+  // could misjudge privacy.
   const sceneRef = useRef({ images, characters });
-  useEffect(() => { sceneRef.current = { images, characters }; }, [images, characters]);
+  useLayoutEffect(() => { sceneRef.current = { images, characters }; }, [images, characters]);
 
   const send = useCallback((from, to, active) => {
     if (!sendMessage) return;
@@ -58,6 +62,10 @@ export default function useDragRuler({ sendMessage, sceneId, userId, userName, i
     privateRef.current = isPrivateDrag(tokens, sceneRef.current);
     fromRef.current = center;
     setDragRuler({ from: center, to: center });
+    // Clear the throttle window unconditionally: without this, a drag starting within
+    // SEND_THROTTLE_MS of the previous drag's last move would have its start frame silently
+    // dropped, and a click with no movement would broadcast only `active: false`.
+    lastSendRef.current = 0;
     send(center, center, true);
   }, [send]);
 
@@ -71,7 +79,9 @@ export default function useDragRuler({ sendMessage, sceneId, userId, userName, i
     const from = fromRef.current;
     fromRef.current = null;
     setDragRuler(null);
-    send(from, from, false);
+    // No drag was active (unpaired or duplicate end) — nothing was ever broadcast, so there is
+    // nothing on any player's screen that needs clearing.
+    if (from) send(from, from, false);
     privateRef.current = false;
   }, [send]);
 
