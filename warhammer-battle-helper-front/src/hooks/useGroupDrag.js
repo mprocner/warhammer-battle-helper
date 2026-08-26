@@ -35,7 +35,8 @@ export default function useGroupDrag({ selectedTokens, images, characters, gridW
     startRef.current = { mouseX: e.clientX, mouseY: e.clientY, bbox, center };
     deltaRef.current = { dCol: 0, dRow: 0 };
     // Ruler measures the group's travel: from its bounding-box center to where the drag takes it.
-    onMeasureStart?.({ col: center.col, row: center.row });
+    // The whole selection goes along, so one hidden token in it keeps the ruler off the wire.
+    onMeasureStart?.({ col: center.col, row: center.row }, selectedTokens);
     setDelta({ dCol: 0, dRow: 0 });
   }, [selectedTokens, images, characters, onMeasureStart]);
 

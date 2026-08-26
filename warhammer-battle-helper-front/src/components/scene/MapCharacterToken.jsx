@@ -116,10 +116,13 @@ function MapCharacterToken({
       maxRow: Math.max(0, gridHeight - size.h),
     };
     // Snap mode: the ruler measures cell-to-cell (start cell → landing cell), stepping discretely.
+    // The token descriptor lets the ruler hook decide whether this drag may be broadcast: a
+    // placement hidden from players must not leak its position through the ruler (BUG-178).
     onTokenDragMeasureStart?.(snap
       ? { col: Math.round(pos.col) + size.w / 2, row: Math.round(pos.row) + size.h / 2 }
-      : { col: pos.col + size.w / 2, row: pos.row + size.h / 2 });
-  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, imageEditLayer, onTokenDragMeasureStart, multiSelected, onGroupDragStart]);
+      : { col: pos.col + size.w / 2, row: pos.row + size.h / 2 },
+      [{ kind: 'char', id: character.id }]);
+  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, imageEditLayer, onTokenDragMeasureStart, multiSelected, onGroupDragStart, character.id]);
 
   useEffect(() => {
     if (!isDragging) return;

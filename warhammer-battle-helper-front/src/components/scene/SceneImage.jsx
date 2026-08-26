@@ -140,8 +140,10 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
     };
     // Live distance readout from the grab point (token center) to the current position.
     // snapCoord quantizes to the cell in snap mode (identity otherwise) → ruler steps cell-to-cell.
-    onTokenDragMeasureStart?.({ col: (snapCoord(pos.x) + size.width / 2) / CELL_SIZE, row: (snapCoord(pos.y) + size.height / 2) / CELL_SIZE });
-  }, [editingLayer, multiSelected, onGroupDragStart, canDragImage, image.locked, pos, zoom, size, gridWidth, gridHeight, snapCoord, onTokenDragMeasureStart]);
+    // The descriptor gates the broadcast: an image token hidden from players keeps its ruler local.
+    onTokenDragMeasureStart?.({ col: (snapCoord(pos.x) + size.width / 2) / CELL_SIZE, row: (snapCoord(pos.y) + size.height / 2) / CELL_SIZE },
+      [{ kind: 'image', id: image.id }]);
+  }, [editingLayer, multiSelected, onGroupDragStart, canDragImage, image.locked, image.id, pos, zoom, size, gridWidth, gridHeight, snapCoord, onTokenDragMeasureStart]);
 
   useEffect(() => {
     if (!isDragging) return;
