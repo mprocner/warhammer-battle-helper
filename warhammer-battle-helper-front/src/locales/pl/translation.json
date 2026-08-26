@@ -278,6 +278,7 @@
     "speciesPlaceholder": "np. Człowiek, Krasnolud, Elf",
     "careerPlaceholder": "np. Żołnierz, Kupiec",
     "nameRequired": "Imię postaci jest wymagane",
+    "notFound": "Nie znaleziono postaci",
     "saveFailed": "Nie udało się zapisać postaci",
     "createError": "Nie udało się utworzyć postaci",
     "cloneError": "Nie udało się sklonować postaci",

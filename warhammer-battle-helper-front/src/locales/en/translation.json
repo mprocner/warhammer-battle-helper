@@ -278,6 +278,7 @@
     "speciesPlaceholder": "e.g., Human, Dwarf, Elf",
     "careerPlaceholder": "e.g., Soldier, Merchant",
     "nameRequired": "Character name is required",
+    "notFound": "Character not found",
     "saveFailed": "Failed to save character",
     "createError": "Failed to create character",
     "cloneError": "Failed to clone character",

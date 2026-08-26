@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axiosInstance from '../api/axios';
 import { getSystem, normalizeCharacter } from '../systems/registry';
 import useWebSocket from '../hooks/useWebSocket';
@@ -16,6 +17,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
  * osobny kontekst JS nie ma jak go odczytać. To snapshot z chwili otwarcia okna.
  */
 function CharacterSheetPage() {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const characterId = searchParams.get('characterId');
     const gameId = searchParams.get('gameId');
@@ -68,9 +70,9 @@ function CharacterSheetPage() {
         setCharacter(normalizeCharacter(updated));
     };
 
-    if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
-    if (error) return <div style={{ padding: 20, color: 'red' }}>Error: {error}</div>;
-    if (!character) return <div style={{ padding: 20 }}>Character not found</div>;
+    if (loading) return <div style={{ padding: 20 }}>{t('common.loading')}</div>;
+    if (error) return <div style={{ padding: 20, color: 'red' }}>{t('common.error')}: {error}</div>;
+    if (!character) return <div style={{ padding: 20 }}>{t('character.notFound')}</div>;
 
     const system = getSystem(character.gameSystem);
     const CharacterSheet = system.CharacterSheet;
