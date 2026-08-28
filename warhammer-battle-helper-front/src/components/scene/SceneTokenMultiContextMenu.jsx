@@ -11,11 +11,11 @@ const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSe
   const ref = useRef(null);
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    // mousedown only — see the note in SceneImageContextMenu: a `contextmenu` listener here closed
+    // the menu on Windows, where the trusted event trails pointerup (FEATURE-142).
     document.addEventListener('mousedown', h, true);
-    document.addEventListener('contextmenu', h, true);
     return () => {
       document.removeEventListener('mousedown', h, true);
-      document.removeEventListener('contextmenu', h, true);
     };
   }, [onClose]);
 

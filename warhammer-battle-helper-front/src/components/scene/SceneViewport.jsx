@@ -11,6 +11,7 @@ import MarqueeOverlay from './MarqueeOverlay';
 import SceneTokenMultiContextMenu from './SceneTokenMultiContextMenu';
 import ModeSwitchLabel from './ModeSwitchLabel';
 import { useDrawingTextInput } from './useDrawingTextInput';
+import { useRightDragPan } from './useRightDragPan';
 import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
@@ -299,6 +300,13 @@ const SceneViewport = ({
     if (canvasSizeRef.current) handleFit();
   }, [controlScheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Right-button drag pans the map on every layer and in both schemes; a right-CLICK still reaches
+  // the layer's own menu (image, group, fog polygon, drawing stroke). See useRightDragPan for why
+  // the native contextmenu is suppressed and replayed.
+  const rightDragPan = useRightDragPan({
+    viewportRef, panOffsetRef, schemeRef, setPanOffset, setIsPanning,
+  });
+
   const handleViewportMouseDown = useCallback((e) => {
     // Middle click cycles scene modes. Must run before the control-scheme check
     // below — the shortcut works in both 'modern' and 'classic'.
@@ -316,7 +324,8 @@ const SceneViewport = ({
     }
 
     // Left button — modern-scheme pan on the grid layer only (existing behaviour).
-    // Right button no longer pans; it opens the native context menu on scene images.
+    // Right-button pan lives in useRightDragPan (pointer events — Chrome on macOS never fires
+    // mouseup for the secondary button), so this handler only ever deals with the left button.
     if (schemeRef.current !== 'modern') return;
     // Pan when in the default layer, or when the pan tool is active inside fog/drawing mode.
     if (e.button !== 0 || (editingLayerRef.current !== null && activeToolRef.current !== 'pan')) return;
@@ -709,6 +718,8 @@ const SceneViewport = ({
         <div
           ref={viewportRef}
           onMouseDownCapture={handleViewportMouseDown}
+          onPointerDownCapture={rightDragPan.onPointerDownCapture}
+          onContextMenuCapture={rightDragPan.onContextMenuCapture}
           className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : (controlScheme === 'modern' && editingLayer === null) ? ' scene-viewport--grab' : ''}`}
         >
           <div

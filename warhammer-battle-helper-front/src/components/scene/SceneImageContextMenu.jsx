@@ -16,12 +16,15 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
     };
     // Capture phase: fires on document before any element's onMouseDown, so it works even over
     // images / drawing / fog layers whose handlers call stopPropagation (which would otherwise
-    // keep a bubble-phase listener from ever seeing the click). Also catch right-clicks/pans.
+    // keep a bubble-phase listener from ever seeing the click). mousedown alone covers the right
+    // button too — every platform fires it on a right press.
+    //
+    // Deliberately NOT listening for `contextmenu`: on Windows the trusted contextmenu arrives
+    // after pointerup, i.e. after useRightDragPan has already replayed the click that opened this
+    // menu, and dismissing on it closed the menu the user had just asked for (FEATURE-142).
     document.addEventListener('mousedown', handleClickOutside, true);
-    document.addEventListener('contextmenu', handleClickOutside, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
-      document.removeEventListener('contextmenu', handleClickOutside, true);
     };
   }, [onClose]);
 
