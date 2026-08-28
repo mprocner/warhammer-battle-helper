@@ -1,4 +1,4 @@
-import { CELL_SIZE } from '../constants/scene';
+import { CELL_SIZE, OFFSCENE_MARGIN_CELLS } from '../constants/scene';
 
 // Canonical token geometry shared by BOTH kinds of map tokens (characters + images).
 //
@@ -161,14 +161,63 @@ export function selectTokensInRect(rect, candidates) {
     .map(({ kind, id }) => ({ kind, id }));
 }
 
-// Clamp a cell-space drag delta so the group's bounding box stays fully inside the grid.
-// Clamping the WHOLE group's bbox (not per-token) preserves the tokens' relative layout.
-export function clampGroupDelta(delta, bbox, gridWidth, gridHeight) {
-  let dCol = delta.dCol;
-  let dRow = delta.dRow;
-  dCol = Math.max(dCol, -bbox.col);
-  dCol = Math.min(dCol, gridWidth - (bbox.col + bbox.w));
-  dRow = Math.max(dRow, -bbox.row);
-  dRow = Math.min(dRow, gridHeight - (bbox.row + bbox.h));
+// Clamp a cell-space drag delta so the whole selection stays in bounds. Clamping the group's
+// bounding box (not each token) preserves the tokens' relative layout.
+//
+// The two kinds obey different limits: character tokens must stay inside the grid, images may
+// travel into the off-scene margin. A mixed selection moves as one vector, so BOTH constraints
+// apply and the tighter one wins on each axis. Either bbox may be null when the selection holds
+// only one kind.
+export function clampGroupDelta(delta, { charBbox, imageBbox }, gridWidth, gridHeight) {
+  let { dCol, dRow } = delta;
+
+  const applyBounds = (bbox, minCol, minRow, maxCol, maxRow) => {
+    if (!bbox) return;
+    dCol = Math.max(dCol, minCol - bbox.col);
+    dCol = Math.min(dCol, maxCol - (bbox.col + bbox.w));
+    dRow = Math.max(dRow, minRow - bbox.row);
+    dRow = Math.min(dRow, maxRow - (bbox.row + bbox.h));
+  };
+
+  applyBounds(charBbox, 0, 0, gridWidth, gridHeight);
+  applyBounds(
+    imageBbox,
+    -OFFSCENE_MARGIN_CELLS,
+    -OFFSCENE_MARGIN_CELLS,
+    gridWidth + OFFSCENE_MARGIN_CELLS,
+    gridHeight + OFFSCENE_MARGIN_CELLS,
+  );
+
   return { dCol, dRow };
+}
+
+// Clamp an image's pixel position to the GM workspace: the grid plus the off-scene margin on every
+// side. Images — unlike character tokens, which stay inside the grid — may be staged out here and
+// slid in mid-game. Operates on the raw (unrotated) rect, matching what SceneImage stores.
+export function clampToWorkspace(x, y, width, height, gridWidth, gridHeight) {
+  const margin = OFFSCENE_MARGIN_CELLS * CELL_SIZE;
+  // For an image wider/taller than the workspace, this can come out below -margin; the outer
+  // Math.max(-margin, ...) below still floors the result there, so the image stays draggable
+  // instead of becoming unreachable.
+  const maxX = gridWidth * CELL_SIZE + margin - width;
+  const maxY = gridHeight * CELL_SIZE + margin - height;
+  return {
+    x: Math.max(-margin, Math.min(x, maxX)),
+    y: Math.max(-margin, Math.min(y, maxY)),
+  };
+}
+
+// Caps an image's size at the workspace span (grid + margin on both sides) on each axis
+// independently. An image wider or taller than the whole workspace has no position that keeps
+// it inside — clampToWorkspace's own floor (see the comment above) would otherwise leave its far
+// edge sticking out past the margin no matter where it's dragged, and the server rejects that
+// write outright. Capping the size first is what makes a valid position exist at all.
+export function clampSizeToWorkspace(width, height, gridWidth, gridHeight) {
+  const span = OFFSCENE_MARGIN_CELLS * CELL_SIZE * 2;
+  const maxWidth = gridWidth * CELL_SIZE + span;
+  const maxHeight = gridHeight * CELL_SIZE + span;
+  return {
+    width: Math.min(width, maxWidth),
+    height: Math.min(height, maxHeight),
+  };
 }

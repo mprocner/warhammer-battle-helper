@@ -13,6 +13,8 @@ import {
   unionRect,
   selectTokensInRect,
   clampGroupDelta,
+  clampToWorkspace,
+  clampSizeToWorkspace,
 } from './tokenGeometry';
 
 // CELL_SIZE is 50 (constants/scene.js).
@@ -235,16 +237,50 @@ describe('selectTokensInRect', () => {
 });
 
 describe('clampGroupDelta', () => {
-  it('passes through when in bounds', () => {
-    expect(clampGroupDelta({ dCol: 1, dRow: 1 }, { col: 2, row: 2, w: 1, h: 1 }, 10, 10))
-      .toEqual({ dCol: 1, dRow: 1 });
+  const GRID = 10;
+  const MARGIN = 100; // OFFSCENE_MARGIN_CELLS
+
+  it('keeps a character-only group inside the grid', () => {
+    const charBbox = { col: 0, row: 0, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: -5, dRow: -5 }, { charBbox, imageBbox: null }, GRID, GRID))
+      .toEqual({ dCol: 0, dRow: 0 });
   });
-  it('clamps against left/top edge', () => {
-    expect(clampGroupDelta({ dCol: -5, dRow: -5 }, { col: 2, row: 3, w: 1, h: 1 }, 10, 10))
-      .toEqual({ dCol: -2, dRow: -3 });
+
+  it('lets an image-only group travel into the margin', () => {
+    const imageBbox = { col: 0, row: 0, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: -5, dRow: -5 }, { charBbox: null, imageBbox }, GRID, GRID))
+      .toEqual({ dCol: -5, dRow: -5 });
   });
-  it('clamps against right/bottom edge', () => {
-    expect(clampGroupDelta({ dCol: 5, dRow: 5 }, { col: 8, row: 8, w: 2, h: 2 }, 10, 10))
+
+  it('clamps an image-only group at the far edge of the margin', () => {
+    const imageBbox = { col: 0, row: 0, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: -999, dRow: 0 }, { charBbox: null, imageBbox }, GRID, GRID))
+      .toEqual({ dCol: -MARGIN, dRow: 0 });
+  });
+
+  it('applies the tighter constraint to a mixed group', () => {
+    // The image could go to -10, but the character pins the group at the grid edge.
+    const charBbox = { col: 0, row: 0, w: 2, h: 2 };
+    const imageBbox = { col: 4, row: 4, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: -5, dRow: 0 }, { charBbox, imageBbox }, GRID, GRID))
+      .toEqual({ dCol: 0, dRow: 0 });
+  });
+
+  it('clamps a mixed group on the far side too', () => {
+    const charBbox = { col: 8, row: 0, w: 2, h: 2 };  // already flush against the right grid edge
+    const imageBbox = { col: 0, row: 0, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: 5, dRow: 0 }, { charBbox, imageBbox }, GRID, GRID))
+      .toEqual({ dCol: 0, dRow: 0 });
+  });
+
+  it('applies the tighter constraint to a mixed group when the IMAGE is the tighter bound', () => {
+    // The character has room to travel to -5, but the image is already flush against the margin
+    // edge, so the image — not the character — pins the whole group's delta at 0. This is the
+    // mirror image of the earlier "tighter constraint" cases, which both had the character as the
+    // tighter bound; FEATURE-166 is exactly what introduces the margin an image can be pinned to.
+    const charBbox = { col: 5, row: 0, w: 2, h: 2 };
+    const imageBbox = { col: -MARGIN, row: 0, w: 2, h: 2 };
+    expect(clampGroupDelta({ dCol: -5, dRow: 0 }, { charBbox, imageBbox }, GRID, GRID))
       .toEqual({ dCol: 0, dRow: 0 });
   });
 });
@@ -258,5 +294,71 @@ describe('characterToMapToken rotation', () => {
   it('defaults to 0 for a placement saved before rotation existed', () => {
     const tk = characterToMapToken({ characterId: 'c1', positionX: 1, positionY: 2, w: 1, h: 1 });
     expect(tk.rotation).toBe(0);
+  });
+});
+
+describe('clampToWorkspace', () => {
+  // Grid 10x10 = 500x500 px, margin 100 cells = 5000 px → workspace [-5000, 5500] on both axes.
+  const GRID = 10;
+
+  it('leaves a position inside the grid untouched', () => {
+    expect(clampToWorkspace(100, 200, 50, 50, GRID, GRID)).toEqual({ x: 100, y: 200 });
+  });
+
+  it('allows an image to sit fully in the off-scene margin', () => {
+    expect(clampToWorkspace(-3000, -2500, 50, 50, GRID, GRID)).toEqual({ x: -3000, y: -2500 });
+  });
+
+  it('clamps at the far edge of the margin, not at the grid edge', () => {
+    expect(clampToWorkspace(-99999, -99999, 50, 50, GRID, GRID)).toEqual({ x: -5000, y: -5000 });
+  });
+
+  it('clamps the bottom-right so the image stays fully within the workspace', () => {
+    // maxX = 500 (grid) + 5000 (margin) - 50 (width) = 5450
+    expect(clampToWorkspace(99999, 99999, 50, 50, GRID, GRID)).toEqual({ x: 5450, y: 5450 });
+  });
+
+  it('never lets the lower bound exceed the upper bound for an oversized image', () => {
+    // A 12000px-wide image cannot satisfy both bounds; the lower bound wins so it stays draggable.
+    const { x } = clampToWorkspace(-99999, 0, 12000, 50, GRID, GRID);
+    expect(x).toBe(-5000);
+  });
+
+  it('keeps axes independent: asymmetric grid, size and offset each clamp against their own axis', () => {
+    // gridWidth=6 (300px), gridHeight=12 (600px); width=40, height=80 — every value differs per
+    // axis, so a swapped width/height or gridWidth/gridHeight pairing would fail this. Both x and
+    // y are driven toward their own ceiling (not one toward its floor), so the maxY formula is
+    // actually evaluated and pinned — a floor-bound y would return -margin regardless of maxY.
+    // maxX = 300 + 5000 - 40 = 5260; maxY = 600 + 5000 - 80 = 5520
+    expect(clampToWorkspace(99999, 99999, 40, 80, 6, 12)).toEqual({ x: 5260, y: 5520 });
+  });
+});
+
+describe('clampSizeToWorkspace', () => {
+  // Grid 10x10 = 500x500 px, margin 100 cells = 5000 px → workspace span 500 + 2*5000 = 10500.
+  const GRID = 10;
+  const MARGIN = 5000;
+
+  it('leaves a size within the workspace untouched', () => {
+    expect(clampSizeToWorkspace(50, 50, GRID, GRID)).toEqual({ width: 50, height: 50 });
+  });
+
+  it('caps a width larger than the workspace span to exactly the span', () => {
+    // span = gridWidth*50 + 2*margin = 500 + 10000 = 10500
+    expect(clampSizeToWorkspace(99999, 50, GRID, GRID)).toEqual({ width: 10500, height: 50 });
+  });
+
+  it('caps a height larger than its own span — width/height and gridWidth/gridHeight are all distinct here, so a swap of either pair in the implementation fails this test', () => {
+    // gridWidth=6, gridHeight=12, width=40, height=99999.
+    // span height = gridHeight*50 + 2*margin = 600 + 10000 = 10600
+    expect(clampSizeToWorkspace(40, 99999, 6, 12)).toEqual({ width: 40, height: 10600 });
+  });
+
+  it('produces a size that, once positioned by clampToWorkspace, satisfies the backend workspace rule', () => {
+    const { width, height } = clampSizeToWorkspace(99999, 99999, GRID, GRID);
+    const { x, y } = clampToWorkspace(99999, 99999, width, height, GRID, GRID);
+    // Backend rule: X+Width <= gridWidth*50+margin (and same for Y/height).
+    expect(x + width).toBeLessThanOrEqual(GRID * 50 + MARGIN);
+    expect(y + height).toBeLessThanOrEqual(GRID * 50 + MARGIN);
   });
 });

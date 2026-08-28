@@ -11,28 +11,33 @@ import { imageToMapToken, characterToMapToken, unionRect, clampGroupDelta, rectP
 // {character,col,row,w,h}), which would give characterToMapToken the wrong fields.
 export default function useGroupDrag({ selectedTokens, images, characters, gridWidth, gridHeight, snap, zoom, onCommit, onMeasureStart, onMeasureMove, onMeasureEnd }) {
   const [delta, setDelta] = useState(null); // {dCol,dRow} while dragging, else null
-  const startRef = useRef(null);            // { mouseX, mouseY, bbox, center }
+  const startRef = useRef(null);            // { mouseX, mouseY, charBbox, imageBbox, center }
   const deltaRef = useRef({ dCol: 0, dRow: 0 });
 
   const begin = useCallback((e) => {
     if (!selectedTokens.length) return;
     const imgById = new Map((images || []).map(i => [i.id, i]));
     const charById = new Map((characters || []).map(c => [c.characterId, c]));
-    const rects = [];
+    const imgRects = [];
+    const charRects = [];
     selectedTokens.forEach(t => {
-      if (t.kind === 'image' && imgById.has(t.id)) rects.push(imageToMapToken(imgById.get(t.id)));
+      if (t.kind === 'image' && imgById.has(t.id)) imgRects.push(imageToMapToken(imgById.get(t.id)));
       // Characters render on a whole cell (fightZones), while positionX/Y can be fractional in free
       // mode. Round to the rendered cell so the bounding box — and the ruler drawn from its center —
       // matches where the token actually sits, instead of drifting off it.
       if (t.kind === 'char' && charById.has(t.id)) {
         const tk = characterToMapToken(charById.get(t.id));
-        rects.push({ col: Math.round(tk.col), row: Math.round(tk.row), w: tk.w, h: tk.h });
+        charRects.push({ col: Math.round(tk.col), row: Math.round(tk.row), w: tk.w, h: tk.h });
       }
     });
-    const bbox = unionRect(rects);
-    if (!bbox) return;
-    const center = centerOf(bbox);
-    startRef.current = { mouseX: e.clientX, mouseY: e.clientY, bbox, center };
+    const charBbox = unionRect(charRects);
+    const imageBbox = unionRect(imgRects);
+    // Ruler and rendering key off the whole selection's box, but only its center is ever needed
+    // past this point, so nothing keeps the combined box itself around.
+    const combinedBbox = unionRect([...charRects, ...imgRects]);
+    if (!combinedBbox) return;
+    const center = centerOf(combinedBbox);
+    startRef.current = { mouseX: e.clientX, mouseY: e.clientY, charBbox, imageBbox, center };
     deltaRef.current = { dCol: 0, dRow: 0 };
     // Ruler measures the group's travel: from its bounding-box center to where the drag takes it.
     // The whole selection goes along, so one hidden token in it keeps the ruler off the wire.
@@ -50,7 +55,7 @@ export default function useGroupDrag({ selectedTokens, images, characters, gridW
       let dCol = (e.clientX - s.mouseX) / zoom / CELL_SIZE;
       let dRow = (e.clientY - s.mouseY) / zoom / CELL_SIZE;
       if (snap) { dCol = Math.round(dCol); dRow = Math.round(dRow); }
-      const clamped = clampGroupDelta({ dCol, dRow }, s.bbox, gridWidth, gridHeight);
+      const clamped = clampGroupDelta({ dCol, dRow }, { charBbox: s.charBbox, imageBbox: s.imageBbox }, gridWidth, gridHeight);
       deltaRef.current = clamped;
       onMeasureMove?.({ col: s.center.col + clamped.dCol, row: s.center.row + clamped.dRow });
       setDelta(clamped);

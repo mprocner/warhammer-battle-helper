@@ -14,7 +14,7 @@ import { useDrawingTextInput } from './useDrawingTextInput';
 import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
-import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE } from '../../constants/scene';
+import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE, OFFSCENE_MARGIN_CELLS } from '../../constants/scene';
 import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween, selectTokensInRect } from '../../utils/tokenGeometry';
 import './SceneViewport.css';
 
@@ -26,6 +26,9 @@ const rulerColorFor = (id) => {
 };
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
+// GM staging margin in px. Module-level (not derived from canvasSize) so handleFit can use the
+// same value as the render below without depending on render-scope state.
+const OFFSCENE_MARGIN = OFFSCENE_MARGIN_CELLS * CELL_SIZE;
 
 const ZOOM_STEP = 0.1;
 const WHEEL_ZOOM_FACTOR = 0.001;
@@ -113,14 +116,28 @@ const SceneViewport = ({
     setZoom(fitZoom);
     zoomRef.current = fitZoom;
     if (schemeRef.current === 'classic') {
-      // Classic: scroll to center after React re-renders sizer with new dimensions
+      // Classic: scroll to center the GRID (not the staging area) after React re-renders the
+      // sizer with new dimensions. For the GM, `scene-viewport__transform` is anchored
+      // OFFSCENE_MARGIN px inside the sizer (see its style below) so the grid no longer starts
+      // at the sizer's origin — that anchor must be added back in before halving the slack, or
+      // this would center the whole sizer (grid + staging area) instead of the grid alone. For a
+      // player the anchor is 0, so this reduces to the pre-fix formula exactly.
+      const anchor = (isGMRef.current ? OFFSCENE_MARGIN : 0) * fitZoom;
       const scaledW = totalW * fitZoom;
       const scaledH = totalH * fitZoom;
       requestAnimationFrame(() => {
-        el.scrollLeft = Math.max(0, (scaledW - el.clientWidth) / 2);
-        el.scrollTop = Math.max(0, (scaledH - el.clientHeight) / 2);
+        el.scrollLeft = Math.max(0, anchor + (scaledW - el.clientWidth) / 2);
+        el.scrollTop = Math.max(0, anchor + (scaledH - el.clientHeight) / 2);
       });
     } else {
+      // Modern positions purely by transform, so any scroll offset left over from classic mode is
+      // pure displacement — and `overflow: hidden` KEEPS that offset (it only hides the scrollbars
+      // and blocks user scrolling), while nothing on the modern path ever writes scrollLeft/Top.
+      // Without this reset a GM switching classic -> modern kept the classic scroll, which for a GM
+      // is the ~OFFSCENE_MARGIN anchor — parking the viewport deep in the staging margin where only
+      // the veil is visible, with no way back since fit only moved panOffset.
+      el.scrollLeft = 0;
+      el.scrollTop = 0;
       const sw = totalW * fitZoom;
       const sh = totalH * fitZoom;
       const newOffset = { x: (el.clientWidth - sw) / 2, y: (el.clientHeight - sh) / 2 };
@@ -596,6 +613,17 @@ const SceneViewport = ({
   const dGridWidth = displayedScene?.gridWidth ?? gridWidth;
   const dGridHeight = displayedScene?.gridHeight ?? gridHeight;
 
+  // GM staging area: the grid plus the off-scene margin on every side. Players never render it,
+  // and `content` keeps its own size/offset, so coordinates are unaffected. handleFit uses the
+  // module-level OFFSCENE_MARGIN constant directly (see there for why); kept as a local alias here
+  // since this render path reads it repeatedly (gmAnchor, the sizer's size, the veil's box).
+  const offsceneMargin = OFFSCENE_MARGIN;
+  // GM-in-classic anchor shift (pre-scale px) applied to `scene-viewport__transform` below, so the
+  // grid — and the staging area around it — lands entirely inside the enlarged sizer's positive
+  // coordinate space instead of spilling to the left/top where scroll can never reach. 0 for a
+  // player or in modern mode, matching the unshifted anchor used before this margin existed.
+  const gmAnchor = (controlScheme === 'classic' && isGM) ? offsceneMargin : 0;
+
   // Own live ruler + every other player's (relayed over WS), rendered read-only.
   const displayRulers = [];
   if (ruler.ruler) {
@@ -686,13 +714,26 @@ const SceneViewport = ({
           <div
             className="scene-viewport__sizer"
             style={controlScheme === 'classic'
-              ? { width: (canvasSize.width + FRAME_SIZE * 2) * zoom, height: (canvasSize.height + FRAME_SIZE * 2) * zoom }
+              ? {
+                  // GM only: pad the scrollable sizer by the staging margin so classic-mode scroll
+                  // can reach it. The CSS scroll model can never reach negative-offset overflow, so
+                  // `scene-viewport__transform` below shifts its anchor by the same margin, moving
+                  // the grid (and the staging area around it) entirely into positive sizer space.
+                  // handleFit's centering math accounts for that shift. Modern mode needs no
+                  // equivalent change: panning there is unconstrained already.
+                  width: (canvasSize.width + FRAME_SIZE * 2 + (isGM ? offsceneMargin * 2 : 0)) * zoom,
+                  height: (canvasSize.height + FRAME_SIZE * 2 + (isGM ? offsceneMargin * 2 : 0)) * zoom,
+                }
               : { transform: `translate(${panOffset.x}px, ${panOffset.y}px)` }
             }
           >
             <div
               className="scene-viewport__transform"
-              style={{ transform: `scale(${zoom})`, transformOrigin: '0 0' }}
+              // translate() runs in the transform's own pre-scale coordinate space (applied before
+              // scale in the composed matrix), so gmAnchor lines up with the same offsceneMargin
+              // used for `content`'s and the veil's positions — everything inside moves as one unit.
+              // gmAnchor is 0 for a player/modern, so this is `scale(zoom)` unchanged for them.
+              style={{ transform: `scale(${zoom}) translate(${gmAnchor}px, ${gmAnchor}px)`, transformOrigin: '0 0' }}
             >
               <div
                 ref={contentRef}
@@ -796,6 +837,24 @@ const SceneViewport = ({
                     multiSelectActive={selectedTokens.length > 1}
                     groupDragDelta={groupDrag.delta}
                     onGroupDragStart={groupDrag.begin}
+                  />
+                )}
+
+                {isGM && (
+                  <div
+                    className="scene-offscene-veil"
+                    style={{
+                      // Positioned relative to `content` so its content box lands exactly on the
+                      // grid; the border (content-box sizing, see CSS) then extends outward by
+                      // offsceneMargin on every side, greying the staging ring around it exactly —
+                      // no clip-path needed.
+                      left: -offsceneMargin,
+                      top: -offsceneMargin,
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      borderWidth: offsceneMargin,
+                      zIndex: 11, // above every image layer (background 1, tokens 5, gm 10)
+                    }}
                   />
                 )}
 

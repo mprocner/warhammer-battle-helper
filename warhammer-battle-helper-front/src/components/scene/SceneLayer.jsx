@@ -11,7 +11,11 @@ const SceneLayer = ({ images, layerName, isGM, gameId, sceneId, editingLayer, im
 
   return (
     <div
-      className={`scene-layer scene-layer--${layerName}`}
+      // scene-layer--gm-viewer (viewer role) lifts the layer's overflow:hidden so the GM can see
+      // and click images parked in the off-scene staging margin; see SceneViewport.css for why.
+      // Not to be confused with scene-layer--gm below, which names the "gm" LAYER (layerName),
+      // an unrelated axis — a scene has background/tokens/gm layers regardless of who is viewing.
+      className={`scene-layer scene-layer--${layerName}${isGM ? ' scene-layer--gm-viewer' : ''}`}
       style={{
         position: 'absolute',
         inset: 0,

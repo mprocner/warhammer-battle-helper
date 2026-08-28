@@ -262,14 +262,63 @@
   content: '• ';
 }
 
+/* Off-scene staging area — FEATURE-166, GM only.
+   A ring-shaped veil around the grid, drawn as a single border: box-sizing:content-box (below)
+   keeps the border purely additive to the element's box, so a box sized and positioned exactly on
+   the grid gets a border that extends outward by the margin on every side — the ring, with no
+   clip-path needed. Deliberately light — resize handles and selection outlines sit underneath and
+   must stay readable.
+   No backdrop-filter: OFFSCENE_MARGIN_CELLS is 100 (CELL_SIZE 50px), so on a 20x20 scene this veil
+   is roughly 11000x11000px — about 121 million pixels. backdrop-filter forces the browser to
+   resample and recomposite everything beneath it on every paint, and the GM pans/zooms this view
+   constantly; at this size that would visibly stutter. The dark wash plus the absent grid lines
+   are enough on their own to read as "not the scene". */
+.scene-offscene-veil {
+  position: absolute;
+  pointer-events: none;
+  /* Global `* { box-sizing: border-box; }` (style.css) would otherwise make the border eat into
+     width/height instead of extending past them — content-box keeps the border purely additive,
+     so the content box lands exactly on the grid and the border box exactly on the staging rect. */
+  box-sizing: content-box;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
 /* Scene layers */
+/* Player clip — FEATURE-166. overflow:hidden clips hit-testing along with paint, so this must stay
+   OFF for the GM: a GM view with the unconditional clip makes anything dragged into the off-scene
+   staging margin both invisible AND unclickable (recoverable only via marquee-select, which touches
+   data, not hit-testing). scene-layer--gm-viewer (below) lifts it for the GM's own view only.
+   Player clipping is NOT weakened by that exception: every image also goes through the per-image
+   .scene-image-clip wrapper (further down), which clips players unconditionally regardless of what
+   this layer-level rule does. Do not restore an unconditional overflow:hidden here. */
 .scene-layer {
   pointer-events: none;
   overflow: hidden;
 }
 
+.scene-layer--gm-viewer {
+  overflow: visible;
+}
+
 .scene-layer--gm {
   outline: 2px dashed rgba(255, 100, 100, 0.3);
+}
+
+/* Clip wrapper for a scene image — FEATURE-166.
+   Spans exactly the grid and is never rotated, so overflow:hidden cuts in scene space no matter
+   how the image inside is rotated. Players get the clip; the GM sees the whole image, including
+   whatever sits in the off-scene staging margin. */
+.scene-image-clip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none; /* the image inside re-enables its own pointer events */
+}
+
+.scene-image-clip--gm {
+  overflow: visible;
 }
 
 /* Scene Image */

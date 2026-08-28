@@ -5,6 +5,7 @@ import { resolveFileUrl } from '../../utils/fileUrl';
 import SceneImageContextMenu from './SceneImageContextMenu';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
+import { clampToWorkspace, clampSizeToWorkspace } from '../../utils/tokenGeometry';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
@@ -135,32 +136,43 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       startX: pos.x,
       startY: pos.y,
       z: zoom,
-      maxX: Math.max(0, gridWidth * CELL_SIZE - size.width),
-      maxY: Math.max(0, gridHeight * CELL_SIZE - size.height),
     };
     // Live distance readout from the grab point (token center) to the current position.
     // snapCoord quantizes to the cell in snap mode (identity otherwise) → ruler steps cell-to-cell.
     // The descriptor gates the broadcast: an image token hidden from players keeps its ruler local.
     onTokenDragMeasureStart?.({ col: (snapCoord(pos.x) + size.width / 2) / CELL_SIZE, row: (snapCoord(pos.y) + size.height / 2) / CELL_SIZE },
       [{ kind: 'image', id: image.id }]);
-  }, [editingLayer, multiSelected, onGroupDragStart, canDragImage, image.locked, image.id, pos, zoom, size, gridWidth, gridHeight, snapCoord, onTokenDragMeasureStart]);
+  }, [editingLayer, multiSelected, onGroupDragStart, canDragImage, image.locked, image.id, pos, zoom, size, snapCoord, onTokenDragMeasureStart]);
 
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e) => {
-      const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
+      const { mouseX, mouseY, startX, startY, z } = dragStartRef.current;
       if (Math.abs(e.clientX - mouseX) + Math.abs(e.clientY - mouseY) > 3) movedRef.current = true;
-      const x = Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX));
-      const y = Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY));
+      const { x, y } = clampToWorkspace(
+        startX + (e.clientX - mouseX) / z,
+        startY + (e.clientY - mouseY) / z,
+        size.width, size.height, gridWidth, gridHeight,
+      );
       setPos({ x, y });
       onTokenDragMeasureMove?.({ col: (snapCoord(x) + size.width / 2) / CELL_SIZE, row: (snapCoord(y) + size.height / 2) / CELL_SIZE });
     };
 
     const handleMouseUpFinal = (e) => {
-      const { mouseX, mouseY, startX, startY, z, maxX, maxY } = dragStartRef.current;
-      const finalX = snapCoord(Math.max(0, Math.min(startX + (e.clientX - mouseX) / z, maxX)));
-      const finalY = snapCoord(Math.max(0, Math.min(startY + (e.clientY - mouseY) / z, maxY)));
+      const { mouseX, mouseY, startX, startY, z } = dragStartRef.current;
+      const clamped = clampToWorkspace(
+        startX + (e.clientX - mouseX) / z,
+        startY + (e.clientY - mouseY) / z,
+        size.width, size.height, gridWidth, gridHeight,
+      );
+      // Snapping can round a non-cell-aligned width/height outward past the far workspace edge
+      // (maxX/maxY aren't generally multiples of CELL_SIZE) — re-clamp the snapped value so the
+      // commit never lands past the boundary the server enforces. A no-op when already aligned.
+      const snapped = { x: snapCoord(clamped.x), y: snapCoord(clamped.y) };
+      const reClamped = clampToWorkspace(snapped.x, snapped.y, size.width, size.height, gridWidth, gridHeight);
+      const finalX = reClamped.x;
+      const finalY = reClamped.y;
       setPos({ x: finalX, y: finalY });
       justFinishedDraggingRef.current = true;
       setIsDragging(false);
@@ -174,7 +186,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUpFinal);
     };
-  }, [isDragging, savePosition, snapCoord, size, onTokenDragMeasureMove, onTokenDragMeasureEnd]);
+  }, [isDragging, savePosition, snapCoord, size, gridWidth, gridHeight, onTokenDragMeasureMove, onTokenDragMeasureEnd]);
 
   // --- Resize ---
   const handleResizeStart = useCallback((e, handle) => {
@@ -248,10 +260,20 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
 
     const handleMouseUp = (e) => {
       const raw = computeResize(e);
-      const newW = snapDim(raw.newW);
-      const newH = snapDim(raw.newH);
-      const newX = snapCoord(raw.newX);
-      const newY = snapCoord(raw.newY);
+      const snappedW = snapDim(raw.newW);
+      const snappedH = snapDim(raw.newH);
+      // An image resized past the whole workspace has no valid position at all — cap the size
+      // BEFORE the position clamp below, which needs the final size to compute maxX/maxY. Runs
+      // after snapDim (not before): the cap target is always a multiple of CELL_SIZE (both the
+      // grid and the margin are), so capping an already-snapped size can't reintroduce
+      // misalignment, and this way the cap is the true last word on size no matter how snapDim's
+      // own rounding behaves.
+      const { width: newW, height: newH } = clampSizeToWorkspace(snappedW, snappedH, gridWidth, gridHeight);
+      // Resize used to skip clamping entirely, so an image could be stretched past the workspace.
+      // Same clamp as the drag path, applied to the capped, snapped size.
+      const clamped = clampToWorkspace(raw.newX, raw.newY, newW, newH, gridWidth, gridHeight);
+      const newX = snapCoord(clamped.x);
+      const newY = snapCoord(clamped.y);
 
       setPos({ x: newX, y: newY });
       setSize({ width: newW, height: newH });
@@ -266,7 +288,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing, savePosition, snapCoord, snapDim]);
+  }, [isResizing, savePosition, snapCoord, snapDim, gridWidth, gridHeight]);
 
   // --- Context menu ---
   const handleContextMenu = useCallback((e) => {
@@ -409,116 +431,127 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
 
   return (
     <>
+      {/* Clip wrapper — FEATURE-166. Unrotated and sized to the grid, so overflow:hidden cuts
+          in scene space regardless of the image's own rotation. GM sees the whole image,
+          including whatever sits in the off-scene staging margin. No handlers, no z-index: the
+          inner .scene-image keeps its own zIndex and the interleaved tokens layer order is
+          unaffected. */}
       <div
-        ref={containerRef}
-        data-scene-layer={image.layer}
-        className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}`}
-        style={{
-          position: 'absolute',
-          left: pos.x + groupDx,
-          top: pos.y + groupDy,
-          width: size.width,
-          height: size.height,
-          zIndex: image.zIndex || 0,
-          pointerEvents: 'auto',
-          cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isGM && (editingLayer === null || activeTool === 'pan') ? 'pointer' : 'default'),
-          transform: `rotate(${rotation}deg)`,
-        }}
-        onMouseDown={handleMouseDown}
-        onClick={handleClick}
-        onContextMenu={handleContextMenu}
+        className={`scene-image-clip${isGM ? ' scene-image-clip--gm' : ''}`}
+        style={{ width: gridWidth * CELL_SIZE, height: gridHeight * CELL_SIZE }}
       >
-        {/* Snap preview — the grid cell the token image will land in (snap mode only). */}
-        {isDragging && snapEnabled && (
-          <div className="token-snap-preview" style={{
-            left: Math.round(pos.x / CELL_SIZE) * CELL_SIZE - pos.x,
-            top: Math.round(pos.y / CELL_SIZE) * CELL_SIZE - pos.y,
+        <div
+          ref={containerRef}
+          data-scene-layer={image.layer}
+          className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}`}
+          style={{
+            position: 'absolute',
+            left: pos.x + groupDx,
+            top: pos.y + groupDy,
             width: size.width,
             height: size.height,
-          }} />
-        )}
-
-        <img
-          src={resolveFileUrl(image.fileUrl)}
-          alt={image.fileName}
-          draggable={false}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'fill',
-            pointerEvents: 'none',
-            userSelect: 'none',
+            zIndex: image.zIndex || 0,
+            pointerEvents: 'auto',
+            cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isGM && (editingLayer === null || activeTool === 'pan') ? 'pointer' : 'default'),
+            transform: `rotate(${rotation}deg)`,
           }}
-        />
+          onMouseDown={handleMouseDown}
+          onClick={handleClick}
+          onContextMenu={handleContextMenu}
+        >
+          {/* Snap preview — the grid cell the token image will land in (snap mode only). */}
+          {isDragging && snapEnabled && (
+            <div className="token-snap-preview" style={{
+              left: Math.round(pos.x / CELL_SIZE) * CELL_SIZE - pos.x,
+              top: Math.round(pos.y / CELL_SIZE) * CELL_SIZE - pos.y,
+              width: size.width,
+              height: size.height,
+            }} />
+          )}
 
-        {/* GM layer badge */}
-        {image.layer === 'gm' && (
-          <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
-        )}
-
-        {/* States/HP ring for tokens-layer images. Counter-rotated so HP numbers stay readable
-            while the artwork turns: .token-overlay is inset:0, so its origin is the container
-            centre and rotate(-r) exactly undoes the container's rotate(r). */}
-        {isToken && (
-          <div
-            className="scene-image__upright"
-            style={{ transform: `rotate(${-rotation}deg)` }}
-          >
-            <ImageTokenOverlay
-              image={image}
-              gameId={gameId}
-              sceneId={sceneId}
-              selected={selected}
-              canEdit={isGM}
-              gameSystem={gameSystem}
-            />
-          </div>
-        )}
-
-        {/* Lock badge (GM only) */}
-        {isGM && image.locked && (
-          <span className="scene-image__lock-badge">🔒</span>
-        )}
-
-        {/* Background/GM images: full editor (8 handles + rotate) on the armed image layer. */}
-        {!isToken && isGM && !image.locked && isLayerArmed && RESIZE_HANDLES.map(handle => (
-          <div
-            key={handle}
-            className={`scene-image__handle scene-image__handle--${handle}`}
-            style={{ cursor: cursorMap[handle] }}
-            onMouseDown={(e) => handleResizeStart(e, handle)}
+          <img
+            src={resolveFileUrl(image.fileUrl)}
+            alt={image.fileName}
+            draggable={false}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
           />
-        ))}
-        {!isToken && isGM && !image.locked && isLayerArmed && (
-          <div
-            className="scene-image__rotate-handle"
-            onMouseDown={handleRotateStart}
-            title={t('scenes.rotateImage')}
-          >
-            <RotateRightIcon style={{ fontSize: 14 }} />
-          </div>
-        )}
 
-        {/* Token images: the SAME shared chrome as character tokens — resize handles plus a rotate
-            handle, shown for a lone token under either the pan or the select tool. */}
-        {isToken && canManipulateToken({
-          allowed: isGM,
-          locked: image.locked,
-          editingLayer,
-          activeTool,
-          imageEditLayer,
-          activeSelected: selected,
-          groupSelected: multiSelected,
-          multiSelectActive,
-        }) && (
-          <>
-            <TokenResizeHandles onResizeStart={handleResizeStart} />
-            <TokenRotateHandle onRotateStart={handleRotateStart} />
-          </>
-        )}
+          {/* GM layer badge */}
+          {image.layer === 'gm' && (
+            <span className="scene-image__gm-badge">{t('scenes.gmBadge')}</span>
+          )}
+
+          {/* States/HP ring for tokens-layer images. Counter-rotated so HP numbers stay readable
+              while the artwork turns: .token-overlay is inset:0, so its origin is the container
+              centre and rotate(-r) exactly undoes the container's rotate(r). */}
+          {isToken && (
+            <div
+              className="scene-image__upright"
+              style={{ transform: `rotate(${-rotation}deg)` }}
+            >
+              <ImageTokenOverlay
+                image={image}
+                gameId={gameId}
+                sceneId={sceneId}
+                selected={selected}
+                canEdit={isGM}
+                gameSystem={gameSystem}
+              />
+            </div>
+          )}
+
+          {/* Lock badge (GM only) */}
+          {isGM && image.locked && (
+            <span className="scene-image__lock-badge">🔒</span>
+          )}
+
+          {/* Background/GM images: full editor (8 handles + rotate) on the armed image layer. */}
+          {!isToken && isGM && !image.locked && isLayerArmed && RESIZE_HANDLES.map(handle => (
+            <div
+              key={handle}
+              className={`scene-image__handle scene-image__handle--${handle}`}
+              style={{ cursor: cursorMap[handle] }}
+              onMouseDown={(e) => handleResizeStart(e, handle)}
+            />
+          ))}
+          {!isToken && isGM && !image.locked && isLayerArmed && (
+            <div
+              className="scene-image__rotate-handle"
+              onMouseDown={handleRotateStart}
+              title={t('scenes.rotateImage')}
+            >
+              <RotateRightIcon style={{ fontSize: 14 }} />
+            </div>
+          )}
+
+          {/* Token images: the SAME shared chrome as character tokens — resize handles plus a rotate
+              handle, shown for a lone token under either the pan or the select tool. */}
+          {isToken && canManipulateToken({
+            allowed: isGM,
+            locked: image.locked,
+            editingLayer,
+            activeTool,
+            imageEditLayer,
+            activeSelected: selected,
+            groupSelected: multiSelected,
+            multiSelectActive,
+          }) && (
+            <>
+              <TokenResizeHandles onResizeStart={handleResizeStart} />
+              <TokenRotateHandle onRotateStart={handleRotateStart} />
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Context menu */}
+      {/* Context menu — stays outside the clip: it renders at viewport coordinates and must
+          never be cut off by the wrapper. */}
       {contextMenu && (
         <SceneImageContextMenu
           x={contextMenu.x}

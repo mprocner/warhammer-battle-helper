@@ -1809,10 +1809,29 @@ func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID,
 		return nil, err
 	}
 
-	s.hub.BroadcastToGame(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+	gmID := game.GameMasterID.Hex()
+	s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
 		"image":   createdImage,
-	})
+	}, []string{gmID})
+
+	// A GM can drop a fresh image straight into the off-scene margin to stage it; players must
+	// not receive it until it reaches the grid. Unlike the other player-facing broadcasts in this
+	// file, this one is not run through MaskImageTokenForPlayer: a just-created image is built from
+	// AddSceneImageRequest above, which carries no TokenOverlay field, so createdImage.TokenOverlay
+	// is always nil here and there is nothing to mask.
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		if PlayerCanSeeSceneImage(*createdImage, game.Scenes[si].GridWidth, game.Scenes[si].GridHeight) {
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+				"sceneId": sceneID.Hex(),
+				"image":   createdImage,
+			}, gmID)
+		}
+		break
+	}
 
 	return createdImage, nil
 }
@@ -1873,19 +1892,23 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 		return fmt.Errorf("image not found")
 	}
 
-	// Grid canvas is GridWidth*cell px (cell matches the frontend CELL_SIZE). Clamp copies inside it.
-	const cell = 50.0
-	maxX := float64(scene.GridWidth)*cell - src.Width
-	maxY := float64(scene.GridHeight)*cell - src.Height
-	if maxX < 0 {
-		maxX = 0
+	// Workspace is the grid plus the off-scene margin on every side (matches
+	// SceneImageWithinWorkspace) — NOT just the grid. Clamping to the grid alone would drag a copy
+	// of an image staged in the margin onto the grid, which is a reveal: PlayerCanSeeSceneImage
+	// below would then broadcast the copy to every player in full.
+	margin := OffSceneMarginCells * CellSizePx
+	minX, minY := -margin, -margin
+	maxX := float64(scene.GridWidth)*CellSizePx + margin - src.Width
+	maxY := float64(scene.GridHeight)*CellSizePx + margin - src.Height
+	if maxX < minX {
+		maxX = minX
 	}
-	if maxY < 0 {
-		maxY = 0
+	if maxY < minY {
+		maxY = minY
 	}
-	clamp := func(v, hi float64) float64 {
-		if v < 0 {
-			return 0
+	clamp := func(v, lo, hi float64) float64 {
+		if v < lo {
+			return lo
 		}
 		if v > hi {
 			return hi
@@ -1896,8 +1919,8 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 	for k := 1; k <= count; k++ {
 		dup := *src
 		dup.ID = primitive.NilObjectID // AddSceneImage assigns a fresh id + timestamps
-		dup.X = clamp(src.X+30*float64(k), maxX)
-		dup.Y = clamp(src.Y+30*float64(k), maxY)
+		dup.X = clamp(src.X+30*float64(k), minX, maxX)
+		dup.Y = clamp(src.Y+30*float64(k), minY, maxY)
 		dup.Locked = false
 		dup.Killed = false
 		dup.TokenOverlay = cloneImageTokenOverlay(src.TokenOverlay)
@@ -1912,12 +1935,18 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 			"sceneId": sceneID.Hex(),
 			"image":   created,
 		}, []string{gmID})
-		maskedImg := *created
-		maskedImg.TokenOverlay = MaskImageTokenForPlayer(created.TokenOverlay)
-		s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
-			"sceneId": sceneID.Hex(),
-			"image":   maskedImg,
-		}, gmID)
+
+		// The clamp above confines every copy to the workspace (grid + margin), not the grid, so a
+		// copy of a staged image stays staged. This gate is what actually keeps it from players —
+		// it also still blocks a duplicate of a Hidden original from reaching them.
+		if PlayerCanSeeSceneImage(*created, scene.GridWidth, scene.GridHeight) {
+			maskedImg := *created
+			maskedImg.TokenOverlay = MaskImageTokenForPlayer(created.TokenOverlay)
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+				"sceneId": sceneID.Hex(),
+				"image":   maskedImg,
+			}, gmID)
+		}
 	}
 
 	return nil
@@ -1949,51 +1978,101 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 		}
 	}
 
+	// Locate the pre-update image and its scene's grid dimensions in one pass — both come from the
+	// same scene, so there is no need to scan game.Scenes twice.
+	var current *models.SceneImage
+	gridW, gridH := 0, 0
+	for si := range game.Scenes {
+		if game.Scenes[si].ID != sceneID {
+			continue
+		}
+		gridW = game.Scenes[si].GridWidth
+		gridH = game.Scenes[si].GridHeight
+		for ii := range game.Scenes[si].Images {
+			if game.Scenes[si].Images[ii].ID == imageID {
+				current = &game.Scenes[si].Images[ii]
+			}
+		}
+		break
+	}
+
+	// Reject a write that would put the image outside the GM workspace. The client clamps first;
+	// this only catches a broken or hand-rolled request. Gated to requests that actually move or
+	// resize the image: applySceneImageUpdate inherits X/Y/Width/Height from the stored image when
+	// the request omits them, so without this gate a shrunk grid (UpdateScene accepts a smaller
+	// GridWidth/GridHeight with no image reconciliation) can strand an existing image outside the
+	// new workspace and this guard would then reject even a hide/lock/z-index toggle on it — a
+	// non-geometry update that never touches its position.
+	if current != nil && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil) &&
+		!SceneImageWithinWorkspace(applySceneImageUpdate(*current, req), gridW, gridH) {
+		return fmt.Errorf("image position is outside the scene workspace")
+	}
+
 	if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, imageID, req); err != nil {
 		return err
 	}
 
 	gmID := game.GameMasterID.Hex()
 
-	// Locate the pre-update image so we can tell whether it's hidden and, on unhide, re-send its
-	// full data to players (a player may have joined while it was hidden and never received it).
-	var current *models.SceneImage
-	for si := range game.Scenes {
-		if game.Scenes[si].ID != sceneID {
-			continue
-		}
-		for ii := range game.Scenes[si].Images {
-			if game.Scenes[si].Images[ii].ID == imageID {
-				current = &game.Scenes[si].Images[ii]
-			}
-		}
-	}
-
-	// Visibility toggle: a hidden token must never reach a player, so we don't broadcast the raw
-	// update to them. Hiding → players drop the token (DELETE); unhiding → players receive the full
-	// masked token (ADD). The GM always gets the plain update to flip its own dimmed styling.
-	if req.Hidden != nil {
+	// The image (or its scene) is gone — the repository write above only fails on a game id
+	// mismatch, so a deleted image or a stale imageId from the GM's client lands here. Treat
+	// unknown state as invisible to players and stop: there is nothing to diff against, and
+	// falling through to the catch-all broadcast below would leak the raw request to everyone.
+	if current == nil {
 		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
 			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
 		}, []string{gmID})
-		if *req.Hidden {
-			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageDeleted, map[string]interface{}{
-				"sceneId": sceneID.Hex(), "imageId": imageID.Hex(),
-			}, gmID)
-		} else if current != nil {
-			shown := *current
-			shown.Hidden = false
-			shown.TokenOverlay = MaskImageTokenForPlayer(current.TokenOverlay)
-			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
-				"sceneId": sceneID.Hex(), "image": shown,
-			}, gmID)
-		}
 		return nil
 	}
 
-	// Any other update on an already-hidden token stays GM-only — players don't have it and must
-	// not start receiving its position/appearance.
-	if current != nil && current.Hidden {
+	// One predicate decides what players get: Hidden and the scene boundary are the same question
+	// ("should a player hold this image at all"), so they are answered together. Comparing it
+	// before and after the update yields the event — an image crossing INTO the scene is an ADD
+	// for players, one crossing OUT is a DELETE. The GM always receives the plain update so its
+	// own dimmed/off-scene styling stays in sync.
+	after := applySceneImageUpdate(*current, req)
+
+	switch DecideSceneImageBroadcast(*current, after, gridW, gridH) {
+	case SceneImageAddForPlayers:
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
+		}, []string{gmID})
+
+		shown := after
+		shown.TokenOverlay = MaskImageTokenForPlayer(current.TokenOverlay)
+		if req.TokenOverlay != nil {
+			shown.TokenOverlay = MaskImageTokenForPlayer(req.TokenOverlay)
+		}
+		s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "image": shown,
+		}, gmID)
+		return nil
+
+	case SceneImageDeleteForPlayers:
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
+		}, []string{gmID})
+
+		s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageDeleted, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(),
+		}, gmID)
+		return nil
+
+	case SceneImageGMOnly:
+		// Still invisible to players on both sides — they don't have the image and must not start
+		// receiving its position or appearance.
+		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
+			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
+		}, []string{gmID})
+		return nil
+
+	case SceneImageUpdateForPlayers:
+		// Visible before and after — handled by the tail below (masked-overlay split or plain
+		// broadcast). Listed explicitly so the switch covers all four enum values by name.
+
+	default:
+		// An unrecognized value (a fifth constant, a reordered iota) must fail closed rather than
+		// fall into the tail below and broadcast the raw request to every player by default.
 		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageUpdated, map[string]interface{}{
 			"sceneId": sceneID.Hex(), "imageId": imageID.Hex(), "update": req,
 		}, []string{gmID})
@@ -2029,9 +2108,11 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 	return nil
 }
 
-// BatchMoveSceneTokens persists a group drag (GM only) and broadcasts once. Hidden images must not
-// leak their new position to players, so we split: GM gets the full set, players get every character
-// (character moves are already whole-game, unknown ids no-op client-side) plus only NON-hidden images.
+// BatchMoveSceneTokens persists a group drag (GM only) and broadcasts once. Players must not learn
+// about images they cannot see, so images are split by PlayerCanSeeSceneImage before and after the
+// move: still-visible ones ride along in the batch, images crossing the scene boundary (or the
+// hidden flag) get their own ADD/DELETE, invisible ones are withheld. Characters always go whole-game
+// (unknown ids no-op client-side).
 func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.BatchMoveTokensRequest) error {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
@@ -2041,21 +2122,37 @@ func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.Obje
 		return fmt.Errorf("only the game master can move scene tokens")
 	}
 
-	if err := s.gameRepo.BatchMoveSceneTokens(gameID, sceneID, req); err != nil {
-		return err
-	}
-
-	// Hidden-image id set (from pre-move game) — used to withhold their positions from players.
-	hidden := map[string]bool{}
+	// Pre-move state, keyed by id: needed to tell which images cross the visibility boundary.
+	gridW, gridH := 0, 0
+	before := map[string]models.SceneImage{}
 	for si := range game.Scenes {
 		if game.Scenes[si].ID != sceneID {
 			continue
 		}
-		for _, img := range game.Scenes[si].Images {
-			if img.Hidden {
-				hidden[img.ID.Hex()] = true
-			}
+		gridW = game.Scenes[si].GridWidth
+		gridH = game.Scenes[si].GridHeight
+		for _, im := range game.Scenes[si].Images {
+			before[im.ID.Hex()] = im
 		}
+	}
+
+	// Reject the whole batch if any moved image would land outside the GM workspace, before any
+	// write happens — the client clamps first, this only catches a broken or hand-rolled request.
+	for _, moved := range req.Images {
+		prev, ok := before[moved.ID]
+		if !ok {
+			continue
+		}
+		next := prev
+		next.X = moved.X
+		next.Y = moved.Y
+		if !SceneImageWithinWorkspace(next, gridW, gridH) {
+			return fmt.Errorf("image position is outside the scene workspace")
+		}
+	}
+
+	if err := s.gameRepo.BatchMoveSceneTokens(gameID, sceneID, req); err != nil {
+		return err
 	}
 
 	gmID := game.GameMasterID.Hex()
@@ -2067,13 +2164,34 @@ func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.Obje
 		"characters": req.Characters,
 	}, []string{gmID})
 
-	// Players: non-hidden images only + all characters.
+	// Players: the same boundary rule as the single-image path, applied per moved image.
+	// Still-visible → position rides along in the batch. Crossed in → ADD (they don't have it).
+	// Crossed out → DELETE. Invisible on both sides → nothing.
 	visibleImages := make([]models.BatchImagePos, 0, len(req.Images))
-	for _, img := range req.Images {
-		if !hidden[img.ID] {
-			visibleImages = append(visibleImages, img)
+	for _, moved := range req.Images {
+		next, decision, ok := classifyBatchImageMove(before, moved, gridW, gridH)
+		if !ok {
+			continue
+		}
+
+		switch decision {
+		case SceneImageGMOnly:
+			// Players hold nothing before or after; there is nothing to send them for this image.
+		case SceneImageAddForPlayers:
+			shown := next
+			shown.TokenOverlay = MaskImageTokenForPlayer(next.TokenOverlay)
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
+				"sceneId": sceneID.Hex(), "image": shown,
+			}, gmID)
+		case SceneImageDeleteForPlayers:
+			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageDeleted, map[string]interface{}{
+				"sceneId": sceneID.Hex(), "imageId": moved.ID,
+			}, gmID)
+		case SceneImageUpdateForPlayers:
+			visibleImages = append(visibleImages, moved)
 		}
 	}
+
 	s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneTokensMoved, map[string]interface{}{
 		"sceneId":    sceneID.Hex(),
 		"images":     visibleImages,
@@ -2158,7 +2276,14 @@ func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, us
 		}
 	}
 
-	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID)
+	var gridW, gridH int
+	for i := range game.Scenes {
+		if game.Scenes[i].ID == sceneID {
+			gridW, gridH = game.Scenes[i].GridWidth, game.Scenes[i].GridHeight
+			break
+		}
+	}
+	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID, PlayerCanSeeSceneImage(*img, gridW, gridH))
 	return nil
 }
 
@@ -2204,7 +2329,14 @@ func (s *GameService) PatchSceneImageTokenSlot(gameID string, sceneID, imageID, 
 		}
 	}
 
-	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID)
+	var gridW, gridH int
+	for i := range game.Scenes {
+		if game.Scenes[i].ID == sceneID {
+			gridW, gridH = game.Scenes[i].GridWidth, game.Scenes[i].GridHeight
+			break
+		}
+	}
+	s.broadcastImageTokenUpdated(gameID, sceneID, imageID, img.TokenOverlay, game.GameMasterID, PlayerCanSeeSceneImage(*img, gridW, gridH))
 	return nil
 }
 
@@ -2274,20 +2406,28 @@ func (s *GameService) ApplyImageTokenSlot(gameID string, sceneID, userID primiti
 		if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, img.ID, models.UpdateSceneImageRequest{TokenOverlay: overlay}); err != nil {
 			return err
 		}
-		s.broadcastImageTokenUpdated(gameID, sceneID, img.ID, overlay, game.GameMasterID)
+		s.broadcastImageTokenUpdated(gameID, sceneID, img.ID, overlay, game.GameMasterID, PlayerCanSeeSceneImage(*img, scene.GridWidth, scene.GridHeight))
 	}
 
 	return nil
 }
 
-// broadcastImageTokenUpdated sends the fresh overlay to the GM in full and to every other player
-// masked (hidden HP bars keep their Hidden flag but lose their numbers).
-func (s *GameService) broadcastImageTokenUpdated(gameID string, sceneID, imageID primitive.ObjectID, overlay *models.ImageTokenOverlay, gmID primitive.ObjectID) {
+// broadcastImageTokenUpdated sends the fresh overlay to the GM in full, unconditionally, and to
+// every other player masked (hidden HP bars keep their Hidden flag but lose their numbers) —
+// but only when playerVisible is true. Callers compute that with PlayerCanSeeSceneImage on the
+// image and its scene's grid, the same predicate every other player-facing scene-image route goes
+// through; without it, an HP or slot edit on an image parked in the GM's off-scene margin (or
+// Hidden) would otherwise reach every player socket, even though nothing renders client-side.
+func (s *GameService) broadcastImageTokenUpdated(gameID string, sceneID, imageID primitive.ObjectID, overlay *models.ImageTokenOverlay, gmID primitive.ObjectID, playerVisible bool) {
 	s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageTokenUpdated, map[string]interface{}{
 		"sceneId":      sceneID.Hex(),
 		"imageId":      imageID.Hex(),
 		"tokenOverlay": overlay,
 	}, []string{gmID.Hex()})
+
+	if !playerVisible {
+		return
+	}
 
 	s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageTokenUpdated, map[string]interface{}{
 		"sceneId":      sceneID.Hex(),
@@ -2335,19 +2475,24 @@ func MaskImageTokenForPlayer(overlay *models.ImageTokenOverlay) *models.ImageTok
 	return &masked
 }
 
-// FilterSceneImageTokensForUser masks hidden HP bars on every tokens-layer image for a non-GM
-// viewer, in place on the game payload. The GM sees the real numbers untouched. Mirrors
-// FilterNotesForUser — called wherever the full game state is serialized to a specific viewer.
+// FilterSceneImageTokensForUser is the snapshot-fetch counterpart of PlayerCanSeeSceneImage, for a
+// non-GM viewer, in place on the game payload. It drops every image the viewer must not hold at
+// all — Hidden, or parked in the GM's off-scene margin — and, on what remains, masks hidden HP
+// bars/slots on every tokens-layer image. The GM sees every image and its real numbers untouched.
+// Mirrors FilterNotesForUser — called wherever the full game state is serialized to a specific
+// viewer.
 func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID) {
 	if game.GameMasterID == userID {
 		return
 	}
 	for si := range game.Scenes {
-		kept := make([]models.SceneImage, 0, len(game.Scenes[si].Images))
-		for _, img := range game.Scenes[si].Images {
-			// A hidden image is dropped entirely for players — never sent, so it can't be read from
-			// the payload (mirrors how a character absent from VisibleTo never reaches the player).
-			if img.Hidden {
+		scene := &game.Scenes[si]
+		kept := make([]models.SceneImage, 0, len(scene.Images))
+		for _, img := range scene.Images {
+			// Dropped entirely for players — never sent, so it can't be read from the payload
+			// (mirrors how a character absent from VisibleTo never reaches the player). Covers
+			// both a hidden image and one parked in the GM's off-scene margin.
+			if !PlayerCanSeeSceneImage(img, scene.GridWidth, scene.GridHeight) {
 				continue
 			}
 			if img.TokenOverlay != nil {
@@ -2355,7 +2500,7 @@ func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID)
 			}
 			kept = append(kept, img)
 		}
-		game.Scenes[si].Images = kept
+		scene.Images = kept
 	}
 }
 
