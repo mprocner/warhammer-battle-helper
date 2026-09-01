@@ -927,12 +927,15 @@
     "croppedSuffix": "cropped",
     "cropLoadFailed": "Could not load this file for cropping."
   },
+  "chat": {
+    "placeholder": "Send a message...",
+    "send": "Send",
+    "charCount": "{{current}}/{{max}}"
+  },
   "dice": {
     "label": "D{{sides}}",
     "custom": "Custom",
     "roll": "Roll",
-    "chatPlaceholder": "Send a message...",
-    "send": "Send",
     "dieNotation": "D",
     "numberOfDice": "Number of dice",
     "numberOfSides": "Number of sides",

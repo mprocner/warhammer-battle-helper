@@ -1,0 +1,71 @@
+/* ================== CHAT INPUT ================== */
+/* The --log-* variables come from :root in components/LogWindow.css. */
+
+.chat-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
+
+.chat-input__field-wrap {
+  position: relative;
+  display: flex;
+  flex-grow: 1;
+}
+
+.chat-input__field {
+  flex-grow: 1;
+  border: 1px solid var(--log-brown-light);
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--log-brown-text);
+  font-family: var(--log-font-body);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  resize: none;
+  overflow-y: auto;
+  max-height: 120px;
+}
+
+.chat-input__field:hover,
+.chat-input__field:focus {
+  border-color: #a67c52;
+  outline: none;
+}
+
+.chat-input__counter {
+  position: absolute;
+  right: 8px;
+  bottom: -14px;
+  font-size: 0.7rem;
+  color: var(--log-brown-muted);
+  pointer-events: none;
+}
+
+.chat-input__counter--full {
+  color: var(--log-red-medium);
+}
+
+.chat-input__send {
+  border: 1px solid var(--log-brown-light);
+  color: var(--log-brown-dark);
+  background: transparent;
+  padding: 6px 12px;
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+
+.chat-input__send:hover {
+  border-color: #a67c52;
+  background: rgba(201, 151, 91, 0.1);
+}
+
+.chat-input__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

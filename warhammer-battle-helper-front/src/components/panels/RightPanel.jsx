@@ -11,6 +11,7 @@ import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
 import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
+import ChatInput from '../log/ChatInput';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
@@ -286,7 +287,8 @@ const RightPanel = ({
             )}
           </div>
 
-          <DiceRollControls onRoll={rollDice} onSendMessage={sendMessage} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} participants={gameState?.participants || []} currentUserId={userId} />
+          <DiceRollControls onRoll={rollDice} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} participants={gameState?.participants || []} currentUserId={userId} />
+          <ChatInput onSend={sendMessage} />
         </div>
       </div>
     </aside>

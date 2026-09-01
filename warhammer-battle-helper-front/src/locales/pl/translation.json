@@ -927,12 +927,15 @@
     "croppedSuffix": "przycięty",
     "cropLoadFailed": "Nie udało się wczytać tego pliku do kadrowania."
   },
+  "chat": {
+    "placeholder": "Wyślij wiadomość...",
+    "send": "Wyślij",
+    "charCount": "{{current}}/{{max}}"
+  },
   "dice": {
     "label": "K{{sides}}",
     "custom": "Własna",
     "roll": "Rzuć",
-    "chatPlaceholder": "Wyślij wiadomość...",
-    "send": "Wyślij",
     "dieNotation": "K",
     "numberOfDice": "Liczba kości",
     "numberOfSides": "Liczba ścian",

@@ -661,6 +661,11 @@ func (s *GameService) RemoveCharacter(gameID string, characterID primitive.Objec
 
 // AddLogMessage adds a message to the game log
 func (s *GameService) AddLogMessage(gameID string, message string, messageType string, userID primitive.ObjectID, username string, visibility string) error {
+	message, err := NormalizeChatMessage(message)
+	if err != nil {
+		return err
+	}
+
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
 		return fmt.Errorf("game not found: %w", err)

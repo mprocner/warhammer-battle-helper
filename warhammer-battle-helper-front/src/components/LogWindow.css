@@ -355,6 +355,8 @@
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--log-brown-text);
+  white-space: pre-wrap;      /* newlines visible, long lines still wrap */
+  overflow-wrap: anywhere;    /* a pasted space-less URL cannot widen the panel */
 }
 
 .log-simple-message__timestamp {
@@ -441,7 +443,7 @@
 
 /* ================== DICE ROLL CONTROLS ================== */
 .dice-controls {
-  padding: 16px;
+  padding: 16px 16px 0;
   border-top: 2px solid var(--log-brown-accent);
 }
 
@@ -489,50 +491,6 @@
 .dice-controls__input:focus {
   border-color: #a67c52;
   outline: none;
-}
-
-.dice-controls__chat-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.dice-controls__chat-input {
-  flex-grow: 1;
-  border: 1px solid var(--log-brown-light);
-  padding: 6px 12px;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--log-brown-text);
-  font-family: var(--log-font-body);
-}
-
-.dice-controls__chat-input:hover,
-.dice-controls__chat-input:focus {
-  border-color: #a67c52;
-  outline: none;
-}
-
-.dice-controls__send-button {
-  border: 1px solid var(--log-brown-light);
-  color: var(--log-brown-dark);
-  background: transparent;
-  padding: 6px 12px;
-  font-family: var(--log-font-display);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 4px;
-}
-
-.dice-controls__send-button:hover {
-  border-color: #a67c52;
-  background: rgba(201, 151, 91, 0.1);
-}
-
-.dice-controls__send-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* ================== ROLL VISIBILITY SELECT ================== */

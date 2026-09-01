@@ -6,14 +6,14 @@ import DiceRollControls from './DiceRollControls';
 describe('DiceRollControls custom roll', () => {
     it('rolls a single preset die when no custom count is set', () => {
         const onRoll = jest.fn();
-        render(<DiceRollControls onRoll={onRoll} onSendMessage={() => {}} />);
+        render(<DiceRollControls onRoll={onRoll} />);
         fireEvent.click(screen.getByText('D6'));
         expect(onRoll).toHaveBeenCalledWith(6, 1);
     });
 
     it('opens custom popup, rolls XDY', () => {
         const onRoll = jest.fn();
-        render(<DiceRollControls onRoll={onRoll} onSendMessage={() => {}} />);
+        render(<DiceRollControls onRoll={onRoll} />);
 
         // open popup
         const toggle = document.querySelector('.dice-controls__dice-toggle');
@@ -29,7 +29,7 @@ describe('DiceRollControls custom roll', () => {
 
     it('uses custom count X when clicking a preset die', () => {
         const onRoll = jest.fn();
-        render(<DiceRollControls onRoll={onRoll} onSendMessage={() => {}} />);
+        render(<DiceRollControls onRoll={onRoll} />);
 
         const toggle = document.querySelector('.dice-controls__dice-toggle');
         fireEvent.click(toggle);

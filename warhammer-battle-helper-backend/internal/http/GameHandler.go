@@ -8,6 +8,7 @@ import (
 	"battle-helper/internal/storage"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -466,6 +467,10 @@ func (h *GameHandler) SendMessage(c *gin.Context) {
 
 	err = h.GameService.AddLogMessage(gameID, req.Message, "info", userID, username, req.Visibility)
 	if err != nil {
+		if errors.Is(err, service.ErrChatMessageEmpty) || errors.Is(err, service.ErrChatMessageTooLong) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

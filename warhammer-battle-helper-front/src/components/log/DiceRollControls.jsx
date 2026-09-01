@@ -9,28 +9,13 @@ const DEFAULT_DICE = [4, 6, 8, 10, 12, 20, 100];
 const MAX_DICE_COUNT = 20;
 const MAX_DICE_SIDES = 10000;
 
-const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList, participants = [], currentUserId = null }) => {
+const DiceRollControls = ({ onRoll, rollVisibility = 'all', onVisibilityChange, onlyMyRolls = false, onToggleOnlyMyRolls, diceList, participants = [], currentUserId = null }) => {
     const DICE = (Array.isArray(diceList) && diceList.length) ? diceList : DEFAULT_DICE;
     const otherPlayers = participants.filter(p => p.userId && p.userId !== currentUserId);
     const { t } = useTranslation();
-    const [chatMessage, setChatMessage] = useState('');
     const [isCustomPopupOpen, setIsCustomPopupOpen] = useState(false);
     const [customCount, setCustomCount] = useState('');
     const [customSides, setCustomSides] = useState('');
-
-    const handleSendMessage = () => {
-        const trimmed = chatMessage.trim();
-        if (trimmed) {
-            onSendMessage(trimmed);
-            setChatMessage('');
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleSendMessage();
-        }
-    };
 
     const getCustomCount = () => {
         const parsed = parseInt(customCount, 10);
@@ -147,23 +132,6 @@ const DiceRollControls = ({ onRoll, onSendMessage, rollVisibility = 'all', onVis
                         )}
                     </button>
                 ))}
-            </div>
-            <div className="dice-controls__chat-row">
-                <input
-                    type="text"
-                    className="dice-controls__chat-input"
-                    value={chatMessage}
-                    onChange={(e) => setChatMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={t('dice.chatPlaceholder')}
-                />
-                <button
-                    className="dice-controls__send-button"
-                    onClick={handleSendMessage}
-                    disabled={!chatMessage.trim()}
-                >
-                    {t('dice.send')}
-                </button>
             </div>
         </div>
     );
