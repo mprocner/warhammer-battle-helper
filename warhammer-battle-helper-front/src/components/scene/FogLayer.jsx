@@ -25,11 +25,28 @@ const MIN_POLYGON_POINTS = 3;
 
 export const canClosePolygon = (points) => points.length >= MIN_POLYGON_POINTS;
 
+/**
+ * Who sees the fog layer. The single place this decision is made — SceneViewport mounts
+ * FogLayer unconditionally, exactly like the neighbouring DrawingLayer.
+ * The `|| inFogMode` term preserves painting ahead of time: with fog disabled for players
+ * the GM still sees the layer once in fog mode and can prepare the reveals.
+ */
+export const fogVisibleFor = ({ isGM, fogEnabled, inFogMode }) =>
+  isGM ? (fogEnabled || inFogMode) : fogEnabled;
+
+/**
+ * How see-through the fog canvas is. The only line in this file that could leak map
+ * information: a player must always get full, opaque fog — the GM's own preview
+ * preference (`fogGmOpacity`) never applies to them.
+ */
+export const fogCssOpacity = ({ isGM, fogGmOpacity }) => (isGM ? fogGmOpacity : 1.0);
+
 const FogLayer = ({
   scene,
   isGM,
   editingLayer,
   brushSize = 30,
+  fogGmOpacity = 0.5,
   fogTool = 'freehand',
   fogCoverMode = false,
   onPathComplete,
@@ -48,9 +65,8 @@ const FogLayer = ({
   const polygonActiveRef  = useRef(false); // czy trwa rysowanie wielokąta
 
   const fogEnabled = scene?.fogEnabled || false;
-  const fogOpacity = scene?.fogOpacity || 0.85;
-  // In fog mode the GM always SEES the fog; the pan tool only suspends painting/interaction so
-  // tokens can be moved underneath while the fog stays visible.
+  // The GM always sees fog that the scene has enabled; fog mode only adds visibility for
+  // fog that is disabled. The `pan` tool suspends painting, not visibility.
   const inFogMode = isGM && editingLayer === 'fog';
   const isEditingFog = inFogMode && fogTool !== 'pan';
 
@@ -400,12 +416,9 @@ const FogLayer = ({
     }
   }, [handleMouseUp, render]);
 
-  // GM: whenever in fog mode (incl. pan). Players: only when fog is enabled by GM.
-  if (isGM && !inFogMode) return null;
-  if (!isGM && !fogEnabled) return null;
+  if (!fogVisibleFor({ isGM, fogEnabled, inFogMode })) return null;
 
-  // CSS opacity: players see full fog; GM sees a see-through 50% while in fog mode (edit or pan).
-  const cssOpacity = !isGM ? 1.0 : inFogMode ? 0.5 : fogOpacity;
+  const cssOpacity = fogCssOpacity({ isGM, fogGmOpacity });
 
   return (
     <canvas

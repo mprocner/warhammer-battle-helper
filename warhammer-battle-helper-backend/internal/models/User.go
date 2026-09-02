@@ -28,7 +28,16 @@ type UserFolder struct {
 }
 
 type UserSettings struct {
-	SceneControlScheme string `bson:"sceneControlScheme,omitempty" json:"sceneControlScheme,omitempty"`
+	SceneControlScheme string  `bson:"sceneControlScheme,omitempty" json:"sceneControlScheme,omitempty"`
+	FogGmOpacity       float64 `bson:"fogGmOpacity,omitempty" json:"fogGmOpacity,omitempty"`
+}
+
+// UpdateSettingsRequest is the PATCH /settings body. Pointers distinguish "field absent"
+// from "field sent with a zero value", so the repository can write a partial $set —
+// a PATCH carrying one preference must never wipe the others.
+type UpdateSettingsRequest struct {
+	SceneControlScheme *string  `json:"sceneControlScheme"`
+	FogGmOpacity       *float64 `json:"fogGmOpacity" binding:"omitempty,min=0.1,max=1"`
 }
 
 type User struct {

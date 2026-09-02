@@ -8,6 +8,7 @@ import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
+import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { useDrawingTools } from '../hooks/useDrawingTools';
@@ -53,6 +54,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
+  const [fogGmOpacity, setFogGmOpacity] = useFogGmOpacity();
   const [minigameState, setMinigameState] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
 
@@ -700,11 +702,11 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       case WS_EVENTS.FOG_TOGGLED:
         setGameState(prev => {
           if (!prev) return prev;
-          const { sceneId, fogEnabled, fogOpacity } = message.payload;
+          const { sceneId, fogEnabled } = message.payload;
           return {
             ...prev,
             scenes: prev.scenes.map(s =>
-              s.id === sceneId ? { ...s, fogEnabled, fogOpacity } : s
+              s.id === sceneId ? { ...s, fogEnabled } : s
             ),
           };
         });
@@ -1060,6 +1062,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
             onActiveToolChange={setActiveTool}
             brushSize={brushSize}
             onBrushSizeChange={setBrushSize}
+            fogGmOpacity={fogGmOpacity}
+            onFogGmOpacityChange={setFogGmOpacity}
             drawingColor={drawingColor}
             onDrawingColorChange={setDrawingColor}
             drawingFontSize={drawingFontSize}

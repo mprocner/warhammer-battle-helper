@@ -851,6 +851,7 @@
     "fogCover": "Zakryj",
     "fogRevealAll": "Odkryj wszystko",
     "fogCoverAll": "Zakryj wszystko",
+    "fogGmOpacity": "Krycie podglądu mgły (tylko Ty)",
     "drawingLayer": "Rysowanie",
     "measureLayer": "Pomiar odległości",
     "selectLayer": "Zaznacz żetony",

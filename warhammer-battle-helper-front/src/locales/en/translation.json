@@ -851,6 +851,7 @@
     "fogCover": "Cover",
     "fogRevealAll": "Reveal all",
     "fogCoverAll": "Cover all",
+    "fogGmOpacity": "Fog preview opacity (only you)",
     "drawingLayer": "Drawing",
     "measureLayer": "Measure distance",
     "selectLayer": "Select tokens",

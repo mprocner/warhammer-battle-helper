@@ -38,19 +38,13 @@ func (s *FogService) ToggleFog(gameID string, sceneID primitive.ObjectID, userID
 		return err
 	}
 
-	opacity := req.FogOpacity
-	if opacity <= 0 {
-		opacity = 0.85
-	}
-
-	if err := s.fogRepo.ToggleFog(gameID, sceneID, req.Enabled, opacity); err != nil {
+	if err := s.fogRepo.ToggleFog(gameID, sceneID, req.Enabled); err != nil {
 		return err
 	}
 
 	s.hub.BroadcastToGame(gameID, websocket.EventFogToggled, map[string]interface{}{
 		"sceneId":    sceneID.Hex(),
 		"fogEnabled": req.Enabled,
-		"fogOpacity": opacity,
 	})
 	return nil
 }

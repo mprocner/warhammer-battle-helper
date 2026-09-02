@@ -47,7 +47,7 @@ Game
     ├── Images []SceneImage (layer: "background"|"gm")
     ├── Characters []GameCharacter (pozycje na tej scenie)
     ├── AssignedPlayers []primitive.ObjectID
-    ├── FogEnabled, FogOpacity
+    ├── FogEnabled
     ├── RevealPaths []FogPath     ← fog of war
     └── DrawingPaths []DrawingPath ← drawing layer
 ```

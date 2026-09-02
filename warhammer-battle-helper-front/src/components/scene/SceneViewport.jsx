@@ -39,7 +39,7 @@ const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 const SceneViewport = ({
   scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'background', gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing,
-  brushSize = 10, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
+  brushSize = 10, fogGmOpacity = 0.5, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
@@ -878,12 +878,13 @@ const SceneViewport = ({
                   />
                 ))}
 
-                {(isGM ? editingLayer === 'fog' : displayedScene?.fogEnabled) && (
+                {displayedScene && (
                   <FogLayer
                     scene={displayedScene}
                     isGM={isGM}
                     editingLayer={editingLayer}
                     brushSize={brushSize}
+                    fogGmOpacity={fogGmOpacity}
                     fogTool={activeTool}
                     fogCoverMode={fogCoverMode}
                     onPathComplete={onFogPathComplete}

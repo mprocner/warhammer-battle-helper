@@ -97,3 +97,35 @@ describe('DrawingToolbar mode tabs', () => {
     expect(calls).toEqual(['fog']);
   });
 });
+
+describe('fog preview opacity slider', () => {
+  const fogProps = { fogGmOpacity: 0.5, onFogGmOpacityChange: () => {} };
+
+  // In drawing mode with the `select` tool only the brushSize slider is visible (the
+  // fontSize slider appears for the `text` tool alone), so the slider count tells the
+  // modes apart without reaching for labels.
+  it('appears in fog mode only', () => {
+    const { container, rerender } = render(
+      <DrawingToolbar {...baseProps} {...fogProps} editingLayer="drawing" />
+    );
+    expect(container.querySelectorAll('input[type="range"]').length).toBe(1);
+
+    rerender(<DrawingToolbar {...baseProps} {...fogProps} editingLayer="fog" />);
+    expect(container.querySelectorAll('input[type="range"]').length).toBe(2);
+  });
+
+  it('reports a number, not the input string', () => {
+    const calls = [];
+    const { container } = render(
+      <DrawingToolbar
+        {...baseProps}
+        editingLayer="fog"
+        fogGmOpacity={0.5}
+        onFogGmOpacityChange={v => calls.push(v)}
+      />
+    );
+    const slider = container.querySelectorAll('input[type="range"]')[1];
+    fireEvent.change(slider, { target: { value: '0.3' } });
+    expect(calls).toEqual([0.3]);
+  });
+});

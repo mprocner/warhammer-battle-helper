@@ -20,8 +20,8 @@ func NewFogRepository(collection *mongo.Collection) *FogRepository {
 	return &FogRepository{Collection: collection}
 }
 
-// ToggleFog sets fogEnabled and optionally fogOpacity on a scene
-func (r *FogRepository) ToggleFog(gameID string, sceneID primitive.ObjectID, enabled bool, opacity float64) error {
+// ToggleFog sets fogEnabled on a scene
+func (r *FogRepository) ToggleFog(gameID string, sceneID primitive.ObjectID, enabled bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -34,9 +34,6 @@ func (r *FogRepository) ToggleFog(gameID string, sceneID primitive.ObjectID, ena
 		"scenes.$.fogEnabled": enabled,
 		"scenes.$.updatedAt":  time.Now(),
 		"updatedAt":           time.Now(),
-	}
-	if opacity > 0 {
-		setFields["scenes.$.fogOpacity"] = opacity
 	}
 
 	filter := bson.M{

@@ -395,7 +395,6 @@ type Scene struct {
 	AssignedPlayers []primitive.ObjectID `bson:"assignedPlayers" json:"assignedPlayers"`
 	IsDefault       bool                 `bson:"isDefault" json:"isDefault"`
 	FogEnabled      bool                 `bson:"fogEnabled" json:"fogEnabled"`
-	FogOpacity      float64              `bson:"fogOpacity" json:"fogOpacity"`
 	RevealPaths     []FogPath            `bson:"revealPaths" json:"revealPaths"`
 	DrawingPaths    []DrawingPath        `bson:"drawingPaths" json:"drawingPaths"`
 	SceneMusicId    string               `bson:"sceneMusicId,omitempty" json:"sceneMusicId,omitempty"`
@@ -545,8 +544,7 @@ type AddSceneImageRequest struct {
 
 // ToggleFogRequest is the request body for toggling fog of war
 type ToggleFogRequest struct {
-	Enabled    bool    `json:"enabled"`
-	FogOpacity float64 `json:"fogOpacity"`
+	Enabled bool `json:"enabled"`
 }
 
 // AddFogPathRequest is the request body for adding a fog reveal/cover path

@@ -51,6 +51,8 @@ const DrawingToolbar = ({
   onActiveToolChange,
   brushSize,
   onBrushSizeChange,
+  fogGmOpacity = 0.5,
+  onFogGmOpacityChange,
   drawingColor,
   onDrawingColorChange,
   drawingFontSize,
@@ -202,6 +204,24 @@ const DrawingToolbar = ({
               className="drawing-toolbar__slider"
             />
           </div>
+
+          {/* Fog preview opacity — a GM preference, not a scene setting.
+              Changes only what the GM sees; players always get full fog. */}
+          {isFogMode && (
+            <div className="drawing-toolbar__slider-row">
+              <span className="drawing-toolbar__label">{Math.round(fogGmOpacity * 100)}%</span>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                value={fogGmOpacity}
+                onChange={e => onFogGmOpacityChange(Number(e.target.value))}
+                className="drawing-toolbar__slider"
+                title={t('scenes.fogGmOpacity')}
+              />
+            </div>
+          )}
 
           {/* Font size — tylko dla narzędzia tekst */}
           {!isFogMode && activeTool === 'text' && (

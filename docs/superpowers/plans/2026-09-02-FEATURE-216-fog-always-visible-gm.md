@@ -16,6 +16,7 @@
 - Żadnych stringów wpisanych wprost w JSX — każdy tekst przez `t('klucz')`, klucz **angielski**, tłumaczenie dodane równolegle w `src/locales/en/translation.json` **i** `src/locales/pl/translation.json`.
 - Brak backward compat — usuwane pola znikają w całości, bez migracji i bez odczytu starych danych.
 - Nie używaj MUI `<Tooltip>`. Ikony wyłącznie z `@mui/icons-material`.
+- **Kod, komentarze i nazwy przypadków testowych w plikach źródłowych: angielski.** Dotyczy też plików, które dziś mają komentarze polskie (`FogLayer.jsx`, `FogLayer.test.js`, `DrawingToolbar.jsx`) — nowy kod jest angielski, istniejącego nie tłumaczymy. Proza planu i teksty UI to osobna sprawa.
 - Nie dokładaj `pointerEvents` ani listenerów na warstwie mgły — wymaganie „nie łapać zdarzeń poza trybem mgły" jest już spełnione przez istniejące `pointerEvents: isEditingFog ? 'auto' : 'none'`. Zadanie polega na **niezepsuciu** tego.
 - Commity w konwencji repo: `feat(front): FEATURE-216 …`, `refactor(back): FEATURE-216 …`.
 
@@ -39,25 +40,25 @@ Dziś warunek montażu jest rozpisany w dwóch plikach naraz (`SceneViewport.jsx
 Dopisz na końcu `warhammer-battle-helper-front/src/components/scene/FogLayer.test.js` i **zmień pierwszą linię importu** na `import { canClosePolygon, fogVisibleFor } from './FogLayer';`:
 
 ```js
-// Pełna tablica prawdy — predykat musi być totalny, także dla kombinacji, których
-// dzisiejsze wywołanie nie produkuje (gracz nigdy nie ma inFogMode).
+// Full truth table — the predicate must be total, including combinations today's caller
+// never produces (a player never has inFogMode).
 describe('fogVisibleFor', () => {
-  it('gracz widzi mgłę wyłącznie wtedy, gdy jest włączona w scenie', () => {
+  it('a player sees fog only when the scene has it enabled', () => {
     expect(fogVisibleFor({ isGM: false, fogEnabled: true, inFogMode: false })).toBe(true);
     expect(fogVisibleFor({ isGM: false, fogEnabled: false, inFogMode: false })).toBe(false);
   });
 
-  it('MG widzi włączoną mgłę niezależnie od trybu — to jest ten feature', () => {
+  it('the GM sees enabled fog in every mode — this is the feature', () => {
     expect(fogVisibleFor({ isGM: true, fogEnabled: true, inFogMode: false })).toBe(true);
     expect(fogVisibleFor({ isGM: true, fogEnabled: true, inFogMode: true })).toBe(true);
   });
 
-  it('przy wyłączonej mgle MG widzi warstwę tylko w trybie mgły — malowanie na zapas', () => {
+  it('with fog disabled the GM sees the layer only in fog mode — painting ahead of time', () => {
     expect(fogVisibleFor({ isGM: true, fogEnabled: false, inFogMode: true })).toBe(true);
     expect(fogVisibleFor({ isGM: true, fogEnabled: false, inFogMode: false })).toBe(false);
   });
 
-  it('flaga trybu mgły nie odsłania niczego graczowi', () => {
+  it('the fog-mode flag reveals nothing to a player', () => {
     expect(fogVisibleFor({ isGM: false, fogEnabled: false, inFogMode: true })).toBe(false);
     expect(fogVisibleFor({ isGM: false, fogEnabled: true, inFogMode: true })).toBe(true);
   });
@@ -78,10 +79,10 @@ Pod istniejącym `export const canClosePolygon = ...` (linia 26) dopisz:
 
 ```js
 /**
- * Kto widzi warstwę mgły. Jedyne miejsce, w którym ta decyzja zapada — SceneViewport
- * montuje FogLayer bezwarunkowo, tak jak sąsiedni DrawingLayer.
- * Człon `|| inFogMode` zachowuje malowanie „na zapas": przy mgle wyłączonej dla graczy
- * MG i tak widzi warstwę po wejściu w tryb mgły i może przygotować odsłonięcia.
+ * Who sees the fog layer. The single place this decision is made — SceneViewport mounts
+ * FogLayer unconditionally, exactly like the neighbouring DrawingLayer.
+ * The `|| inFogMode` term preserves painting ahead of time: with fog disabled for players
+ * the GM still sees the layer once in fog mode and can prepare the reveals.
  */
 export const fogVisibleFor = ({ isGM, fogEnabled, inFogMode }) =>
   isGM ? (fogEnabled || inFogMode) : fogEnabled;
@@ -106,8 +107,8 @@ Usuń linię 51 w całości (pole jest martwe, a po tej zmianie nikt go nie czyt
 Zastąp komentarz z linii 47-49 wraz z `inFogMode`:
 
 ```js
-  // MG widzi mgłę zawsze, gdy jest włączona w scenie — tryb mgły dokłada widoczność już
-  // tylko w przypadku mgły wyłączonej. Narzędzie `pan` zawiesza malowanie, nie widoczność.
+  // The GM always sees fog that the scene has enabled; fog mode only adds visibility for
+  // fog that is disabled. The `pan` tool suspends painting, not visibility.
   const inFogMode = isGM && editingLayer === 'fog';
   const isEditingFog = inFogMode && fogTool !== 'pan';
 ```
@@ -117,9 +118,9 @@ Zastąp linie 403-408 (dwa `return null` plus komentarz i wyliczenie `cssOpacity
 ```js
   if (!fogVisibleFor({ isGM, fogEnabled, inFogMode })) return null;
 
-  // Gracz dostaje pełną, nieprześwitującą mgłę. MG zawsze prześwitującą — inaczej,
-  // przy mgle widocznej w każdym trybie, straciłby z oczu mapę pod spodem.
-  // Stała 0.5 znika w Task 4 na rzecz preferencji użytkownika.
+  // Players get full, opaque fog. The GM always gets see-through fog — otherwise, with fog
+  // visible in every mode, the map underneath would be lost.
+  // The 0.5 constant is replaced by a user preference in Task 4.
   const cssOpacity = isGM ? 0.5 : 1.0;
 ```
 
@@ -326,14 +327,14 @@ import (
 	"testing"
 )
 
-// PATCH /settings niesie jedno pole naraz — front tak właśnie zapisuje preferencje.
-// Zapis musi więc dotykać wyłącznie przysłanych kluczy: całościowy $set na poddokumencie
-// `settings` kasował sąsiednie pole.
+// PATCH /settings carries one field at a time — that is how the frontend saves preferences.
+// The write must therefore touch only the keys that were sent: a whole-document $set on the
+// `settings` subdocument wiped the neighbouring field.
 func TestSettingsUpdateFields(t *testing.T) {
 	scheme := "classic"
 	opacity := 0.35
 
-	t.Run("samo fogGmOpacity nie rusza sceneControlScheme", func(t *testing.T) {
+	t.Run("fogGmOpacity alone leaves sceneControlScheme untouched", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{FogGmOpacity: &opacity})
 		if len(fields) != 1 {
 			t.Fatalf("expected exactly 1 field, got %d: %v", len(fields), fields)
@@ -346,7 +347,7 @@ func TestSettingsUpdateFields(t *testing.T) {
 		}
 	})
 
-	t.Run("samo sceneControlScheme nie rusza fogGmOpacity", func(t *testing.T) {
+	t.Run("sceneControlScheme alone leaves fogGmOpacity untouched", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{SceneControlScheme: &scheme})
 		if len(fields) != 1 {
 			t.Fatalf("expected exactly 1 field, got %d: %v", len(fields), fields)
@@ -356,7 +357,7 @@ func TestSettingsUpdateFields(t *testing.T) {
 		}
 	})
 
-	t.Run("oba pola naraz zapisują się oba", func(t *testing.T) {
+	t.Run("both fields sent, both written", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{
 			SceneControlScheme: &scheme,
 			FogGmOpacity:       &opacity,
@@ -366,7 +367,7 @@ func TestSettingsUpdateFields(t *testing.T) {
 		}
 	})
 
-	t.Run("puste żądanie nie daje czego zapisać", func(t *testing.T) {
+	t.Run("an empty request has nothing to write", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{})
 		if len(fields) != 0 {
 			t.Fatalf("expected empty map, got %v", fields)
@@ -504,13 +505,13 @@ Wartość z Task 3 trzeba pobrać, przekazać przez łańcuch komponentów do `F
 Dopisz na końcu `warhammer-battle-helper-front/src/components/scene/DrawingToolbar.smoke.test.jsx`:
 
 ```jsx
-describe('suwak krycia podglądu mgły', () => {
+describe('fog preview opacity slider', () => {
   const fogProps = { fogGmOpacity: 0.5, onFogGmOpacityChange: () => {} };
 
-  // W trybie rysowania z narzędziem `select` widoczny jest tylko suwak brushSize
-  // (suwak fontSize wychodzi wyłącznie dla narzędzia `text`), więc liczba suwaków
-  // odróżnia tryby bez sięgania po etykiety.
-  it('pojawia się tylko w trybie mgły', () => {
+  // In drawing mode with the `select` tool only the brushSize slider is visible (the
+  // fontSize slider appears for the `text` tool alone), so the slider count tells the
+  // modes apart without reaching for labels.
+  it('appears in fog mode only', () => {
     const { container, rerender } = render(
       <DrawingToolbar {...baseProps} {...fogProps} editingLayer="drawing" />
     );
@@ -520,7 +521,7 @@ describe('suwak krycia podglądu mgły', () => {
     expect(container.querySelectorAll('input[type="range"]').length).toBe(2);
   });
 
-  it('raportuje liczbę, nie string z inputa', () => {
+  it('reports a number, not the input string', () => {
     const calls = [];
     const { container } = render(
       <DrawingToolbar
@@ -571,8 +572,8 @@ Do listy propsów (linie 43-68) dopisz po `onBrushSizeChange`:
 Bezpośrednio po bloku `{/* Brush size — zawsze widoczny */}` (kończy się na linii 204) wstaw:
 
 ```jsx
-          {/* Krycie podglądu mgły — preferencja MG, nie ustawienie sceny.
-              Zmienia tylko to, co widzi MG; gracz zawsze ma pełną mgłę. */}
+          {/* Fog preview opacity — a GM preference, not a scene setting.
+              Changes only what the GM sees; players always get full fog. */}
           {isFogMode && (
             <div className="drawing-toolbar__slider-row">
               <span className="drawing-toolbar__label">{Math.round(fogGmOpacity * 100)}%</span>
@@ -608,8 +609,8 @@ Utwórz `warhammer-battle-helper-front/src/hooks/useFogGmOpacity.js`:
 import { useState, useEffect, useCallback } from 'react';
 import { getSettings, updateSettings } from '../api/settings';
 
-// Odpowiada stałej, którą FogLayer miał wpisaną na sztywno — użytkownik bez zapisanej
-// preferencji widzi mgłę dokładnie tak jak przed tą zmianą.
+// Matches the constant FogLayer used to hardcode — a user with no saved preference sees
+// the fog exactly as before this change.
 export const DEFAULT_FOG_GM_OPACITY = 0.5;
 
 export function useFogGmOpacity() {
@@ -699,7 +700,7 @@ W liście propsów (linie 28-40) dopisz po `brushSize = 30,`:
 Zastąp wyliczenie `cssOpacity` z Task 1:
 
 ```js
-  // Gracz dostaje pełną, nieprześwitującą mgłę — suwak MG nie ma jak odsłonić mu mapy.
+  // Players get full, opaque fog — the GM's slider cannot reveal the map to them.
   const cssOpacity = isGM ? fogGmOpacity : 1.0;
 ```
 

@@ -69,12 +69,30 @@ func (r *UserRepository) FindByID(id primitive.ObjectID) (*models.User, error) {
 	return &user, nil
 }
 
-func (r *UserRepository) UpdateSettings(id primitive.ObjectID, settings models.UserSettings) error {
+// settingsUpdateFields builds a partial $set document — one key per field present in the
+// request. An empty map means the caller sent nothing worth writing.
+func settingsUpdateFields(req models.UpdateSettingsRequest) bson.M {
+	fields := bson.M{}
+	if req.SceneControlScheme != nil {
+		fields["settings.sceneControlScheme"] = *req.SceneControlScheme
+	}
+	if req.FogGmOpacity != nil {
+		fields["settings.fogGmOpacity"] = *req.FogGmOpacity
+	}
+	return fields
+}
+
+func (r *UserRepository) UpdateSettings(id primitive.ObjectID, req models.UpdateSettingsRequest) error {
+	fields := settingsUpdateFields(req)
+	if len(fields) == 0 {
+		return nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_, err := r.Collection.UpdateOne(ctx,
 		bson.M{"_id": id},
-		bson.M{"$set": bson.M{"settings": settings}},
+		bson.M{"$set": fields},
 	)
 	return err
 }

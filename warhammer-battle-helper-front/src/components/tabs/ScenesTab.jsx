@@ -193,7 +193,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
   const handleToggleFog = async (enabled) => {
     if (!selectedSceneId) return;
     try {
-      await toggleFog(gameId, selectedSceneId, { enabled, fogOpacity: selectedScene?.fogOpacity || 0.85 });
+      await toggleFog(gameId, selectedSceneId, { enabled });
       setScenes(prev => prev.map(s =>
         s.id === selectedSceneId ? { ...s, fogEnabled: enabled } : s
       ));

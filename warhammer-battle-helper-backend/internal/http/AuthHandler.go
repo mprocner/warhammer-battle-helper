@@ -336,7 +336,7 @@ func (h *AuthHandler) GetSettings(c *gin.Context) {
 }
 
 func (h *AuthHandler) UpdateSettings(c *gin.Context) {
-	var req models.UserSettings
+	var req models.UpdateSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
