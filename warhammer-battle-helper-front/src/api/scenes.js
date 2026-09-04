@@ -66,7 +66,7 @@ export const patchSceneImageTokenSlot = async (gameId, sceneId, imageId, data) =
   return response.data;
 };
 
-// Shares/unshares one ring position across all tokens-layer images in the scene (GM only).
+// Shares/unshares one ring position across every tokens-layer image in every scene of the game (GM only).
 // data = { position, locked, slot? }. slot required only when locked=true.
 export const applyImageTokenSlot = async (gameId, sceneId, data) => {
   const response = await axiosInstance.put(`/games/${gameId}/scenes/${sceneId}/tokenSlotConfig`, data);

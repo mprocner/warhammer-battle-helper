@@ -1809,6 +1809,12 @@ func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID,
 		ZIndex:   0,
 	}
 
+	// A tokens-layer image starts under the game's locked-position rule, so a token added after the
+	// GM set the padlock comes with the slot already on it (FEATURE-179).
+	if req.Layer == "tokens" {
+		image.TokenOverlay = ApplyTemplateToOverlay(game.TokenSlotTemplate, nil)
+	}
+
 	createdImage, err := s.gameRepo.AddSceneImage(gameID, sceneID, image)
 	if err != nil {
 		return nil, err
@@ -1821,18 +1827,19 @@ func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID,
 	}, []string{gmID})
 
 	// A GM can drop a fresh image straight into the off-scene margin to stage it; players must
-	// not receive it until it reaches the grid. Unlike the other player-facing broadcasts in this
-	// file, this one is not run through MaskImageTokenForPlayer: a just-created image is built from
-	// AddSceneImageRequest above, which carries no TokenOverlay field, so createdImage.TokenOverlay
-	// is always nil here and there is nothing to mask.
+	// not receive it until it reaches the grid. A created image can now carry a seeded overlay
+	// (FEATURE-179), and a seeded slot may be Hidden, so the player copy goes through
+	// MaskImageTokenForPlayer — the GM broadcast above keeps the full overlay.
 	for si := range game.Scenes {
 		if game.Scenes[si].ID != sceneID {
 			continue
 		}
 		if PlayerCanSeeSceneImage(*createdImage, game.Scenes[si].GridWidth, game.Scenes[si].GridHeight) {
+			shown := *createdImage
+			shown.TokenOverlay = MaskImageTokenForPlayer(createdImage.TokenOverlay)
 			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
 				"sceneId": sceneID.Hex(),
-				"image":   createdImage,
+				"image":   shown,
 			}, gmID)
 		}
 		break
@@ -2011,6 +2018,33 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 	if current != nil && (req.X != nil || req.Y != nil || req.Width != nil || req.Height != nil) &&
 		!SceneImageWithinWorkspace(applySceneImageUpdate(*current, req), gridW, gridH) {
 		return fmt.Errorf("image position is outside the scene workspace")
+	}
+
+	// An image can be added on any layer and promoted to tokens later; without this, a promoted
+	// image would miss the game's locked-position rule and reproduce FEATURE-179 by another route.
+	// current.Layer != "tokens" restricts this to an actual promotion: a request that merely
+	// re-sends layer:"tokens" for an image already on that layer must not re-enforce the template,
+	// since that would reset the slot's live Level/Number the GM has since set from the map (the
+	// image's own layer-set-to-itself case is exactly what ApplyImageTokenSlot's fan-out already
+	// keeps in sync, so no coverage is lost by excluding it here).
+	// This runs even when the image already carries a configured overlay: a token can be built up
+	// on the "background" layer, then padlocked into the game-wide rule while parked there (the
+	// padlock's fan-out only touches images already on the "tokens" layer), then promoted — and
+	// that promotion must enforce the rule onto its existing overlay, not just seed a fresh one
+	// when there was none. ApplyTemplateToOverlay handles both: nil overlay behaves like the old
+	// fresh-token seed, a non-nil one gets its locked positions enforced in place (own ids kept,
+	// live values reset) and any stale Locked flag cleared — a position unlocked while this image
+	// was parked off the tokens layer was missed by that same fan-out.
+	// Injecting into req rather than writing separately keeps every broadcast branch below correct:
+	// the two player-facing branches below already mask req.TokenOverlay before it goes on the wire.
+	// req.TokenOverlay == nil guards against clobbering a caller-supplied overlay riding along on
+	// the same request. Pointer identity against the applied result skips the write and broadcast
+	// entirely when there is nothing to enforce and nothing stale to clear — ApplyTemplateToOverlay
+	// returns the input pointer verbatim in that case, and only in that case.
+	if req.Layer != nil && *req.Layer == "tokens" && current != nil && current.Layer != "tokens" && req.TokenOverlay == nil {
+		if o := ApplyTemplateToOverlay(game.TokenSlotTemplate, current.TokenOverlay); o != current.TokenOverlay {
+			req.TokenOverlay = o
+		}
 	}
 
 	if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, imageID, req); err != nil {
@@ -2345,10 +2379,13 @@ func (s *GameService) PatchSceneImageTokenSlot(gameID string, sceneID, imageID, 
 	return nil
 }
 
-// ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in the
-// scene (GM only). Locked=true copies req.Slot's config onto that position on all such images —
-// keeping each image's own slot id, resetting the live Level/Number, and marking it Locked.
-// Locked=false just clears the Locked flag at that position (config and values are left intact).
+// ApplyImageTokenSlot locks or unlocks one ring position for the whole game (GM only). Locking
+// stores the position's config as the game-wide rule (models.Game.TokenSlotTemplate) and copies it
+// onto every tokens-layer image in every scene — keeping each image's own slot id, resetting the
+// live Level/Number, and marking it Locked. Unlocking clears the rule and just drops the Locked
+// flag everywhere (config and values are left intact). The rule is what makes a token added later,
+// or an already-configured token promoted to the tokens layer, come with the slot already on it:
+// see ApplyTemplateToOverlay and its two call sites.
 func (s *GameService) ApplyImageTokenSlot(gameID string, sceneID, userID primitive.ObjectID, req models.ApplyImageTokenSlotRequest) error {
 	if req.Position < 0 || req.Position >= 8 {
 		return fmt.Errorf("invalid slot position")
@@ -2365,53 +2402,68 @@ func (s *GameService) ApplyImageTokenSlot(gameID string, sceneID, userID primiti
 		return fmt.Errorf("only the game master can share token slots")
 	}
 
-	var scene *models.Scene
+	// The scene id still has to name a real scene — the padlock is always clicked from one, and a
+	// bogus id means a broken client, not a game-wide edit worth committing.
+	sceneExists := false
 	for i := range game.Scenes {
 		if game.Scenes[i].ID == sceneID {
-			scene = &game.Scenes[i]
+			sceneExists = true
 			break
 		}
 	}
-	if scene == nil {
+	if !sceneExists {
 		return fmt.Errorf("scene not found")
 	}
 
-	for i := range scene.Images {
-		img := &scene.Images[i]
-		if img.Layer != "tokens" {
-			continue
-		}
-		overlay := img.TokenOverlay
-		if overlay == nil {
-			if !req.Locked {
-				continue // nothing to unlock on a token with no overlay
-			}
-			overlay = &models.ImageTokenOverlay{Enabled: true}
-		}
-		// Ensure 8 fixed ring positions so the index is always valid.
-		for len(overlay.Slots) < 8 {
-			overlay.Slots = append(overlay.Slots, models.ImageTokenSlot{ID: primitive.NewObjectID().Hex(), Type: "empty"})
-		}
-		cur := overlay.Slots[req.Position]
-		if req.Locked {
-			id := cur.ID
-			if id == "" {
-				id = primitive.NewObjectID().Hex()
-			}
-			ns := *req.Slot // config from the initiating token
-			ns.ID = id      // keep this token's own slot id (value patches key on it)
-			ns.Level = 0    // config is shared; the live value resets and stays per-token
-			ns.Number = 0
-			ns.Locked = true
-			overlay.Slots[req.Position] = ns
-		} else {
-			overlay.Slots[req.Position].Locked = false
-		}
+	// Persist the rule first: it is what new tokens read, and it must hold even if a later
+	// per-image write fails halfway through the fan-out.
+	var entry *models.ImageTokenSlot
+	if req.Locked {
+		entry = req.Slot
+	}
+	if err := s.gameRepo.UpdateGameTokenSlotTemplate(gameID, SetTokenSlotTemplateEntry(game.TokenSlotTemplate, req.Position, entry)); err != nil {
+		return err
+	}
 
-		if err := s.gameRepo.UpdateSceneImage(gameID, sceneID, img.ID, models.UpdateSceneImageRequest{TokenOverlay: overlay}); err != nil {
-			return err
+	for si := range game.Scenes {
+		scene := &game.Scenes[si]
+		for i := range scene.Images {
+			img := &scene.Images[i]
+			if img.Layer != "tokens" {
+				continue
+			}
+			overlay := img.TokenOverlay
+			if overlay == nil {
+				if !req.Locked {
+					continue // nothing to unlock on a token with no overlay
+				}
+				overlay = &models.ImageTokenOverlay{Enabled: true}
+			}
+			// Ensure 8 fixed ring positions so the index is always valid.
+			for len(overlay.Slots) < 8 {
+				overlay.Slots = append(overlay.Slots, models.ImageTokenSlot{ID: primitive.NewObjectID().Hex(), Type: "empty"})
+			}
+			cur := overlay.Slots[req.Position]
+			if req.Locked {
+				id := cur.ID
+				if id == "" {
+					id = primitive.NewObjectID().Hex()
+				}
+				ns := *req.Slot // config from the initiating token
+				ns.ID = id      // keep this token's own slot id (value patches key on it)
+				ns.Level = 0    // config is shared; the live value resets and stays per-token
+				ns.Number = 0
+				ns.Locked = true
+				overlay.Slots[req.Position] = ns
+			} else {
+				overlay.Slots[req.Position].Locked = false
+			}
+
+			if err := s.gameRepo.UpdateSceneImage(gameID, scene.ID, img.ID, models.UpdateSceneImageRequest{TokenOverlay: overlay}); err != nil {
+				return err
+			}
+			s.broadcastImageTokenUpdated(gameID, scene.ID, img.ID, overlay, game.GameMasterID, PlayerCanSeeSceneImage(*img, scene.GridWidth, scene.GridHeight))
 		}
-		s.broadcastImageTokenUpdated(gameID, sceneID, img.ID, overlay, game.GameMasterID, PlayerCanSeeSceneImage(*img, scene.GridWidth, scene.GridHeight))
 	}
 
 	return nil

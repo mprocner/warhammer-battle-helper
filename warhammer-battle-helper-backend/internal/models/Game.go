@@ -60,9 +60,18 @@ type Game struct {
 	TemplateSourceID     primitive.ObjectID `bson:"templateSourceId,omitempty" json:"templateSourceId,omitempty"`
 	ImageUrl             string             `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
 	MapSettings          MapSettings        `bson:"mapSettings" json:"mapSettings"`               // per-game map rules (snap/free, distance metric)
-	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt            time.Time          `bson:"updatedAt" json:"updatedAt"`
-	DeletedAt            *time.Time         `bson:"deletedAt,omitempty" json:"-"`
+	// TokenSlotTemplate is the game-wide locked-position rule for token ring slots: index = ring
+	// position (0..7), nil = that position is not locked. Every tokens-layer image in every scene
+	// seeds its slots from it. Entries carry config only — ID/Level/Number are per-token and are
+	// generated on seed. Written by GameService.ApplyImageTokenSlot (the padlock).
+	// json:"-" — a locked entry may be Hidden:true, and this field is never masked before a Game is
+	// serialized to a player (GET /games/:id, the WS GAME_STATE snapshot, and the lobby list all send
+	// the raw struct). Nothing on the frontend reads tokenSlotTemplate; the template is only ever
+	// consumed server-side to seed SceneImage.TokenOverlay, which IS masked per-viewer.
+	TokenSlotTemplate []*ImageTokenSlot `bson:"tokenSlotTemplate,omitempty" json:"-"`
+	CreatedAt         time.Time         `bson:"createdAt" json:"createdAt"`
+	UpdatedAt         time.Time         `bson:"updatedAt" json:"updatedAt"`
+	DeletedAt         *time.Time        `bson:"deletedAt,omitempty" json:"-"`
 }
 
 // MapSettings holds per-game rules for the scene map, configured by the GM in GeneralTab.
@@ -357,7 +366,7 @@ type ImageTokenSlot struct {
 	NumberLabel    string  `bson:"numberLabel,omitempty" json:"numberLabel,omitempty"`
 	Number         float64 `bson:"number,omitempty" json:"number,omitempty"`
 	Hidden         bool    `bson:"hidden,omitempty" json:"hidden,omitempty"` // hidden from players (masked to empty)
-	// Locked = this ring position is shared across every tokens-layer image in the scene: its
+	// Locked = this ring position is shared across every tokens-layer image in the game: its
 	// config is identical everywhere and editing it propagates to all. The live value
 	// (Level/Number) stays per-token. All tokens at this position carry the same Locked value.
 	Locked bool `bson:"locked,omitempty" json:"locked,omitempty"`
@@ -623,10 +632,10 @@ type DuplicateSceneImageRequest struct {
 }
 
 // ApplyImageTokenSlotRequest shares (or unshares) one ring position across every tokens-layer
-// image in the scene. Locked=true applies Slot's config to that position on all tokens (keeping
-// each token's own slot id, resetting the live Level/Number) and marks it locked. Locked=false
-// just clears the locked flag at that position on all tokens (config/values kept). Slot is
-// required only when Locked is true.
+// image in every scene of the game. Locked=true applies Slot's config to that position on all
+// tokens (keeping each token's own slot id, resetting the live Level/Number) and marks it locked.
+// Locked=false just clears the locked flag at that position on all tokens (config/values kept).
+// Slot is required only when Locked is true.
 type ApplyImageTokenSlotRequest struct {
 	Position int             `json:"position"`
 	Locked   bool            `json:"locked"`

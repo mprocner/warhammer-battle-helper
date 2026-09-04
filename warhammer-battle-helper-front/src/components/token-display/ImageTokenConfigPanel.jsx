@@ -87,16 +87,16 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
     setDraft(d => ({ ...d, slots: d.slots.map((s, i) => i === index ? { ...s, hidden: !s.hidden } : s) }));
   };
 
-  // Config-only view of a slot (no id, no live value) for the "apply to all scene tokens" call.
+  // Config-only view of a slot (no id, no live value) for the "apply to all game tokens" call.
   const slotConfigOf = (s) => ({
     type: s.type, icon: s.icon, conditionKey: s.conditionKey,
     conditionLabel: s.conditionLabel, numberLabel: s.numberLabel, hidden: !!s.hidden,
   });
 
   // Share (locked=true) or unshare (false) a ring position across every tokens-layer image in the
-  // scene. Fire-and-forget to the backend, and mirror the effect into the local draft so the panel
+  // game. Fire-and-forget to the backend, and mirror the effect into the local draft so the panel
   // stays consistent (locking resets this slot's live value here too).
-  const applyToScene = (index, toLocked) => {
+  const applyToGame = (index, toLocked) => {
     const slot = draft.slots[index];
     applyImageTokenSlot(gameId, sceneId, {
       position: index,
@@ -112,7 +112,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
   };
 
   // Keep the slot's id and any live level/number; swap in the modal's config fields. If the slot is
-  // locked (shared), editing it propagates the new config to every scene token (values reset).
+  // locked (shared), editing it propagates the new config to every token in the game (values reset).
   const saveSlot = (base) => {
     const index = editingSlot;
     const wasLocked = !!draft.slots[index]?.locked;
@@ -296,7 +296,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
         isOpen={!!confirmLock}
         message={confirmLock?.toLocked ? t('imageToken.shareAllConfirm') : t('imageToken.unshareAllConfirm')}
         confirmLabel={t('common.confirm')}
-        onConfirm={() => { applyToScene(confirmLock.index, confirmLock.toLocked); setConfirmLock(null); }}
+        onConfirm={() => { applyToGame(confirmLock.index, confirmLock.toLocked); setConfirmLock(null); }}
         onCancel={() => setConfirmLock(null)}
       />
       {tooltipNode}

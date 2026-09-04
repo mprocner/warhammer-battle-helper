@@ -474,8 +474,8 @@ func (h *SceneHandler) DuplicateSceneImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Image duplicated"})
 }
 
-// ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in the
-// scene (GM only).
+// ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in
+// every scene of the game (GM only).
 func (h *SceneHandler) ApplyImageTokenSlot(c *gin.Context) {
 	gameID := c.Param("id")
 	sceneID, err := primitive.ObjectIDFromHex(c.Param("sceneId"))

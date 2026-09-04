@@ -1646,9 +1646,9 @@
     "noSlots": "No states or numbers yet.",
     "number": "Number",
     "sunHint": "Click a ring position to add a state or number counter.",
-    "shareAll": "Set for all tokens on the scene",
-    "unshareAll": "Unlock for all tokens on the scene",
-    "shareAllConfirm": "Set this slot for all tokens on the scene? Their live values reset; editing this slot will then change every token.",
-    "unshareAllConfirm": "Unlock this slot for all tokens on the scene? Edits will affect only this token again."
+    "shareAll": "Set for all tokens in the game",
+    "unshareAll": "Unlock for all tokens in the game",
+    "shareAllConfirm": "Set this slot for all tokens in the game, on every scene? Their live values reset, new tokens will get this slot too, and editing it will then change every token.",
+    "unshareAllConfirm": "Unlock this slot for all tokens in the game? New tokens stop getting it and edits affect only this token again."
   }
 }

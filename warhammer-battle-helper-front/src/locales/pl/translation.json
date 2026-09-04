@@ -1646,9 +1646,9 @@
     "noSlots": "Brak stanów ani liczb.",
     "number": "Liczba",
     "sunHint": "Kliknij pozycję w pierścieniu, aby dodać stan lub licznik.",
-    "shareAll": "Ustaw dla wszystkich tokenów na scenie",
-    "unshareAll": "Odblokuj dla wszystkich tokenów na scenie",
-    "shareAllConfirm": "Ustawić ten slot dla wszystkich tokenów na scenie? Wartości zostaną zresetowane, a edycja tego slotu będzie zmieniać wszystkie tokeny.",
-    "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów na scenie? Zmiany będą znów dotyczyć tylko tego tokena."
+    "shareAll": "Ustaw dla wszystkich tokenów w grze",
+    "unshareAll": "Odblokuj dla wszystkich tokenów w grze",
+    "shareAllConfirm": "Ustawić ten slot dla wszystkich tokenów w grze, na każdej scenie? Wartości zostaną zresetowane, nowe tokeny też dostaną ten slot, a jego edycja będzie zmieniać wszystkie tokeny.",
+    "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów w grze? Nowe tokeny przestaną go dostawać, a zmiany będą znów dotyczyć tylko tego tokena."
   }
 }
