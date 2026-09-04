@@ -322,6 +322,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           };
         });
         setCharacterDataTrigger(prev => prev + 1);
+        // Granting/revoking a card also changes which hidden tokens we may receive —
+        // FilterSceneCharacterTokensForUser decides that, so refetch the scene. The local
+        // visibleTo update above stays: the visibility modal must react instantly.
+        fetchGameState();
         break;
       }
 
@@ -531,26 +535,11 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.SCENE_CHARACTER_UPDATED: {
-        // Token visibility toggled. Update the placement's hidden flag locally (drives the GM's
-        // dimmed styling + eye state) and refetch scene characters — the server filter then drops
-        // the token for players without the card.
-        const { sceneId: scuSceneId, characterId: scuCharId, hidden: scuHidden } = message.payload;
-        setGameState(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            scenes: (prev.scenes || []).map(s =>
-              s.id === scuSceneId
-                ? {
-                    ...s,
-                    characters: (s.characters || []).map(c =>
-                      c.characterId === scuCharId ? { ...c, hidden: scuHidden } : c
-                    ),
-                  }
-                : s
-            ),
-          };
-        });
+        // Token visibility toggled. Refetch instead of mutating locally: the rule
+        // "hidden && no card" lives only in FilterSceneCharacterTokensForUser, so only a
+        // refetch drops the token for a player without the card, keeps it for a card-holder,
+        // and delivers the hidden flag the GM's dimming needs. The event payload is bare.
+        fetchGameState();
         setCharacterUpdateTrigger(prev => prev + 1);
         break;
       }

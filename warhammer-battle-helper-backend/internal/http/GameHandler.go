@@ -190,7 +190,7 @@ func (h *GameHandler) GetGame(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	h.attachTokenConfig(game)
+	attachTokenConfig(h.TemplateService, game)
 
 	// Filter events based on visibility and requesting user
 	filteredEvents := []models.GameEvent{}
@@ -594,7 +594,7 @@ func (h *GameHandler) HandleWebSocket(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	h.attachTokenConfig(snapshotGame)
+	attachTokenConfig(h.TemplateService, snapshotGame)
 	service.FilterNotesForUser(snapshotGame, userID)
 	service.FilterSceneImageTokensForUser(snapshotGame, userID)
 	h.GameService.FilterSceneCharacterTokensForUser(snapshotGame, userID)
@@ -759,11 +759,15 @@ func (h *GameHandler) GetTokenFields(c *gin.Context) {
 // system and embeds it into the game payload (computed, never persisted). Custom
 // games carry their own full template and are left untouched. This is the read side
 // of the "live singleton" model — a game is a viewer of its GM's current config.
-func (h *GameHandler) attachTokenConfig(game *models.Game) {
+//
+// Package-level (not a GameHandler method) so any handler with a *service.TemplateService
+// can attach the config before running the scene-character filter, which reads the blueprint
+// this function supplies (see GameService.FilterSceneCharacterTokensForUser).
+func attachTokenConfig(templateService *service.TemplateService, game *models.Game) {
 	if game == nil || game.GameSystem == "" || game.GameSystem == "custom" {
 		return
 	}
-	if tmpl, err := h.TemplateService.FindTokenConfig(game.GameMasterID, game.GameSystem); err == nil && tmpl != nil {
+	if tmpl, err := templateService.FindTokenConfig(game.GameMasterID, game.GameSystem); err == nil && tmpl != nil {
 		game.CustomSystemTemplate = tmpl
 	}
 }

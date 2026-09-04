@@ -1529,11 +1529,15 @@ func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primit
 	// Visibility toggle → tell every client to refetch scene characters. The refetch re-applies the
 	// server filter (FilterSceneCharacterTokensForUser), which drops the token for players without
 	// the card and keeps it for the GM (dimmed) and card-holders — no per-user targeting needed here.
+	// The payload is deliberately bare: characterId + hidden would tell every player that a hidden
+	// token exists under that character, and nobody reads them now that the client refetches.
+	// No frontend handler reads sceneId from this payload either — the client refetches the whole
+	// game state regardless of which scene changed. It stays anyway: it is the event's only handle
+	// in a WebSocket log, and it is the one field a future per-scene (rather than whole-game) skip
+	// would need.
 	if req.Hidden != nil {
 		s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterUpdated, map[string]interface{}{
-			"sceneId":     sceneID.Hex(),
-			"characterId": characterID.Hex(),
-			"hidden":      *req.Hidden,
+			"sceneId": sceneID.Hex(),
 		})
 		return nil
 	}
@@ -2561,10 +2565,23 @@ func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID)
 	}
 }
 
+// keepSceneCharacterForViewer is the pure drop decision behind FilterSceneCharacterTokensForUser:
+// a placement flagged Hidden is dropped UNLESS the viewer holds the character card (hasCard) —
+// token visibility is separate from card visibility, and a card-holder must always see the token.
+// This is the sole enforcement point for the feature; keep the rule here and nowhere else.
+func keepSceneCharacterForViewer(gc models.GameCharacter, hasCard map[primitive.ObjectID]bool) bool {
+	return !gc.Hidden || hasCard[gc.CharacterID]
+}
+
 // FilterSceneCharacterTokensForUser drops hidden character-token placements from every scene for a
 // non-GM viewer, in place on the game payload. A placement flagged Hidden is removed UNLESS the
 // viewer holds the character card (is in the character's VisibleTo) — token visibility is separate
 // from card visibility, and a card-holder must always see the token. The GM sees everything.
+//
+// This only covers game.Scenes. The legacy top-level Game.Characters array (models/Game.go) is
+// deliberately out of scope: no code path sets Hidden on it, so there is nothing to filter today —
+// see models.GameCharacter.Hidden and the frontend fallback in DndContext.jsx. Do not assume this
+// function covers it if that array is ever revived for placements.
 func (s *GameService) FilterSceneCharacterTokensForUser(game *models.Game, userID primitive.ObjectID) {
 	if game.GameMasterID == userID {
 		return
@@ -2596,7 +2613,7 @@ func (s *GameService) FilterSceneCharacterTokensForUser(game *models.Game, userI
 	for si := range game.Scenes {
 		kept := make([]models.GameCharacter, 0, len(game.Scenes[si].Characters))
 		for _, gc := range game.Scenes[si].Characters {
-			if gc.Hidden && !hasCard[gc.CharacterID] {
+			if !keepSceneCharacterForViewer(gc, hasCard) {
 				continue // hidden placement: dropped entirely for a viewer without the card
 			}
 			if !hasCard[gc.CharacterID] {
@@ -3031,16 +3048,6 @@ func (s *GameService) ComputeMusicPosition(game *models.Game) {
 			return
 		}
 	}
-}
-
-// GetScenes returns all scenes for a game
-func (s *GameService) GetScenes(gameID string) ([]models.Scene, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, err
-	}
-
-	return game.Scenes, nil
 }
 
 // SyncTemplate re-fetches the source template and updates the game's embedded copy.

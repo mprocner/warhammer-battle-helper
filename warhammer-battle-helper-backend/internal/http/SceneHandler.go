@@ -11,7 +11,8 @@ import (
 )
 
 type SceneHandler struct {
-	GameService *service.GameService
+	GameService     *service.GameService
+	TemplateService *service.TemplateService
 }
 
 // helper to extract user ID from JWT
@@ -22,17 +23,29 @@ func getUserIDFromContext(c *gin.Context) (primitive.ObjectID, error) {
 	return primitive.ObjectIDFromHex(userIDStr)
 }
 
-// GetScenes returns all scenes for a game
+// GetScenes returns all scenes for a game, with hidden character-token placements and hidden/
+// off-scene images filtered for the requesting user — same pipeline as GameHandler.GetGame, so a
+// player calling this endpoint directly gets the same masked view they'd get from the game payload.
 func (h *SceneHandler) GetScenes(c *gin.Context) {
 	gameID := c.Param("id")
 
-	scenes, err := h.GameService.GetScenes(gameID)
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	game, err := h.GameService.GetGame(gameID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	attachTokenConfig(h.TemplateService, game)
 
-	c.JSON(http.StatusOK, scenes)
+	service.FilterSceneImageTokensForUser(game, userID)
+	h.GameService.FilterSceneCharacterTokensForUser(game, userID)
+
+	c.JSON(http.StatusOK, game.Scenes)
 }
 
 // CreateScene creates a new scene

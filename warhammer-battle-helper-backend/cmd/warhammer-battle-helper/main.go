@@ -211,7 +211,7 @@ func main() {
 
 	// Per-game actions
 	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
-	sceneHandler := http.SceneHandler{GameService: gameService}
+	sceneHandler := http.SceneHandler{GameService: gameService, TemplateService: templateService}
 	fogHandler := http.FogHandler{FogService: fogService}
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
 	noteHandler := http.NoteHandler{NoteService: noteService}
