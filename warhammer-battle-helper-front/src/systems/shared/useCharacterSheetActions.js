@@ -24,7 +24,7 @@ export function useCharacterSheetHeaderButtons({ isSaving, saveSuccess, onSave, 
                 <button
                     className="pop-out-btn-sheet"
                     onClick={(e) => { e.stopPropagation(); onPopOut(); }}
-                    title={t('characterSheet.popOut', 'Open in new window')}
+                    title={t('characterSheet.popOut')}
                 >
                     <OpenInNewIcon style={{ fontSize: 16 }} />
                 </button>

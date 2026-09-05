@@ -519,7 +519,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
                       const playlists = (musicPickerData?.playlists || []).filter(p => p.name.toLowerCase().includes(search));
                       const tracks = (musicPickerData?.music || []).filter(f => f.name.toLowerCase().includes(search));
                       if (playlists.length === 0 && tracks.length === 0) {
-                        return <div className="scenes-tab__music-picker-empty">{t('common.noResults', 'No results')}</div>;
+                        return <div className="scenes-tab__music-picker-empty">{t('common.noResults')}</div>;
                       }
                       return [
                         ...playlists.map(p => (

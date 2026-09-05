@@ -37,6 +37,7 @@
     "next": "Dalej",
     "submit": "Wyślij",
     "loading": "Ładowanie...",
+    "noResults": "Brak wyników",
     "error": "Błąd",
     "success": "Sukces",
     "create": "Utwórz",
@@ -297,6 +298,7 @@
   },
   "characterSheet": {
     "title": "Karta Postaci",
+    "popOut": "Otwórz w nowym oknie",
     "characterInformation": "Informacje o Postaci",
     "movement": "Szybkość",
     "wounds": "Rany",

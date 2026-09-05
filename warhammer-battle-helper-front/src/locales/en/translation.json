@@ -37,6 +37,7 @@
     "next": "Next",
     "submit": "Submit",
     "loading": "Loading...",
+    "noResults": "No results",
     "error": "Error",
     "success": "Success",
     "create": "Create",
@@ -297,6 +298,7 @@
   },
   "characterSheet": {
     "title": "Character Sheet",
+    "popOut": "Open in new window",
     "characterInformation": "Character Information",
     "movement": "Movement",
     "wounds": "Wounds",
