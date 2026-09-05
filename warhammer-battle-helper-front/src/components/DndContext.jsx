@@ -67,7 +67,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
   const [aoeMeasure, setAoeMeasure] = useState(true); // AoE circle toggle for the manual ruler tool
 
-  // Live drag ruler + its broadcast gate (a hidden token's ruler stays local) — hooks/useDragRuler.js.
+  // Live drag ruler + its broadcast gate (a hidden token's ruler, or one starting in the GM staging
+  // margin, stays local) — hooks/useDragRuler.js.
   const {
     dragRuler,
     onMeasureStart: handleTokenDragMeasureStart,
@@ -80,6 +81,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     userName,
     images: currentScene?.images || [],
     characters: currentScene?.characters || [],
+    gridWidth,
+    gridHeight,
   });
 
   const [, setViewportZoom] = useState(1);

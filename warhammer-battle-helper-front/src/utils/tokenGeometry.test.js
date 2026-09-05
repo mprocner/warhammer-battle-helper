@@ -9,6 +9,9 @@ import {
   snapPointToTokens,
   characterToMapToken,
   imageToMapToken,
+  isCharacterPlacementPrivate,
+  isImagePrivate,
+  buildRulerSnapTargets,
   rectsIntersect,
   unionRect,
   selectTokensInRect,
@@ -360,5 +363,67 @@ describe('clampSizeToWorkspace', () => {
     // Backend rule: X+Width <= gridWidth*50+margin (and same for Y/height).
     expect(x + width).toBeLessThanOrEqual(GRID * 50 + MARGIN);
     expect(y + height).toBeLessThanOrEqual(GRID * 50 + MARGIN);
+  });
+});
+
+describe('token privacy predicates', () => {
+  it('treats a character placement as private only when it is hidden', () => {
+    expect(isCharacterPlacementPrivate({ characterId: 'a' })).toBe(false);
+    expect(isCharacterPlacementPrivate({ characterId: 'a', hidden: false })).toBe(false);
+    expect(isCharacterPlacementPrivate({ characterId: 'a', hidden: true })).toBe(true);
+  });
+
+  it('treats an image as private when hidden or on the gm layer', () => {
+    expect(isImagePrivate({ id: 'i', layer: 'tokens' })).toBe(false);
+    expect(isImagePrivate({ id: 'i', layer: 'tokens', hidden: true })).toBe(true);
+    expect(isImagePrivate({ id: 'i', layer: 'gm' })).toBe(true);
+  });
+});
+
+describe('buildRulerSnapTargets', () => {
+  // 2x2 character at cell (2,3) -> centre (3,4), radius 1.
+  const visibleChar = { characterId: 'c-visible', positionX: 2, positionY: 3, w: 2, h: 2 };
+  const hiddenChar = { characterId: 'c-hidden', positionX: 8, positionY: 8, w: 2, h: 2, hidden: true };
+  // 50x50 px image at (500,250) -> cell (10,5), 1x1 -> centre (10.5,5.5), radius 0.5.
+  const visibleImage = { id: 'i-visible', layer: 'tokens', x: 500, y: 250, width: 50, height: 50 };
+  const hiddenImage = { id: 'i-hidden', layer: 'tokens', hidden: true, x: 0, y: 0, width: 50, height: 50 };
+  const gmImage = { id: 'i-gm', layer: 'gm', x: 100, y: 100, width: 50, height: 50 };
+  const backgroundImage = { id: 'i-bg', layer: 'background', x: 0, y: 0, width: 500, height: 500 };
+
+  it('returns the centre and radius of a visible character token', () => {
+    expect(buildRulerSnapTargets({ characters: [visibleChar] }))
+      .toEqual([{ col: 3, row: 4, radius: 1 }]);
+  });
+
+  it('returns the centre and radius of a visible tokens-layer image', () => {
+    expect(buildRulerSnapTargets({ images: [visibleImage] }))
+      .toEqual([{ col: 10.5, row: 5.5, radius: 0.5 }]);
+  });
+
+  it('excludes a hidden character placement — snapping to it would broadcast its exact centre', () => {
+    expect(buildRulerSnapTargets({ characters: [visibleChar, hiddenChar] }))
+      .toEqual([{ col: 3, row: 4, radius: 1 }]);
+  });
+
+  it('excludes a hidden image and a gm-layer image', () => {
+    expect(buildRulerSnapTargets({ images: [visibleImage, hiddenImage, gmImage] }))
+      .toEqual([{ col: 10.5, row: 5.5, radius: 0.5 }]);
+  });
+
+  it('excludes images that are not on the tokens layer, as before', () => {
+    expect(buildRulerSnapTargets({ images: [backgroundImage] })).toEqual([]);
+  });
+
+  it('handles a missing scene and missing arrays', () => {
+    expect(buildRulerSnapTargets()).toEqual([]);
+    expect(buildRulerSnapTargets({})).toEqual([]);
+  });
+
+  it('handles null arrays — Go marshals a nil slice as JSON null, and defaults never catch null', () => {
+    expect(buildRulerSnapTargets({ characters: null, images: null })).toEqual([]);
+    expect(buildRulerSnapTargets({ characters: null, images: [visibleImage] }))
+      .toEqual([{ col: 10.5, row: 5.5, radius: 0.5 }]);
+    expect(buildRulerSnapTargets({ characters: [visibleChar], images: null }))
+      .toEqual([{ col: 3, row: 4, radius: 1 }]);
   });
 });

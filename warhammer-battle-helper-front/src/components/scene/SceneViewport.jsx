@@ -16,7 +16,7 @@ import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE, OFFSCENE_MARGIN_CELLS } from '../../constants/scene';
-import { centerOf, characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween, selectTokensInRect } from '../../utils/tokenGeometry';
+import { characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween, selectTokensInRect, buildRulerSnapTargets } from '../../utils/tokenGeometry';
 import './SceneViewport.css';
 
 // Deterministic colour per measuring player, so remote rulers are distinguishable.
@@ -96,13 +96,16 @@ const SceneViewport = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [zoomDropdownOpen]);
 
+  // Grid dimensions of the scene actually on screen: displayedScene lags the `scene` prop during a
+  // transition, and the props are the fallback until the first scene lands. Declared up here, above
+  // the `if (!scene) return` exit below, so every consumer in the file can use the one expression.
+  const dGridWidth = displayedScene?.gridWidth ?? gridWidth;
+  const dGridHeight = displayedScene?.gridHeight ?? gridHeight;
+
   // canvasSize for rendering — derived from displayedScene so it only updates when the scene swap happens
   const canvasSize = useMemo(
-    () => getCanvasSize(
-      displayedScene?.gridWidth ?? gridWidth,
-      displayedScene?.gridHeight ?? gridHeight
-    ),
-    [displayedScene, gridWidth, gridHeight]
+    () => getCanvasSize(dGridWidth, dGridHeight),
+    [dGridWidth, dGridHeight]
   );
 
   // Fit scene to viewport — reads canvasSizeRef directly so it works correctly when called
@@ -376,22 +379,12 @@ const SceneViewport = ({
   const contentRef = useRef(null);
   const [isMeasuring, setIsMeasuring] = useState(false);
 
-  // Token centers the ruler magnetizes to (characters + token-layer images), so large
-  // tokens are measured center-to-center.
-  const rulerSnapTargets = useMemo(() => {
-    const targets = [];
-    (displayedScene?.characters || []).forEach(gc => {
-      const tk = characterToMapToken(gc);
-      const c = centerOf(tk);
-      targets.push({ col: c.col, row: c.row, radius: Math.max(tk.w, tk.h) / 2 });
-    });
-    (displayedScene?.images || []).filter(img => img.layer === 'tokens').forEach(img => {
-      const tk = imageToMapToken(img);
-      const c = centerOf(tk);
-      targets.push({ col: c.col, row: c.row, radius: Math.max(tk.w, tk.h) / 2 });
-    });
-    return targets;
-  }, [displayedScene?.characters, displayedScene?.images]);
+  // Token centers the ruler magnetizes to — characters + tokens-layer images, minus everything
+  // players cannot see (see buildRulerSnapTargets for why that filter is a privacy gate).
+  const rulerSnapTargets = useMemo(
+    () => buildRulerSnapTargets({ characters: displayedScene?.characters, images: displayedScene?.images }),
+    [displayedScene?.characters, displayedScene?.images],
+  );
 
   // Ruler endpoint snapping: a token center wins when close (measure large tokens center-to-center);
   // otherwise, in snap mode, quantize to the cell center so distances are measured grid-cell to
@@ -406,6 +399,9 @@ const SceneViewport = ({
   const ruler = useMapRuler({
     metric: measurementMetric, sendMessage, sceneId: displayedScene?.id,
     userId, userName, snapPoint, aoeEnabled,
+    // Grid dimensions feed the off-scene broadcast gates (FEATURE-135).
+    gridWidth: dGridWidth,
+    gridHeight: dGridHeight,
   });
   const { start: rulerStart, move: rulerMove, end: rulerEnd } = ruler;
 
@@ -430,7 +426,7 @@ const SceneViewport = ({
   // Marquee candidates: tokens on the armed image layer. On the 'tokens' layer, character
   // placements join the token-layer images. Locked images are never selectable.
   // Characters are read from displayedScene.characters (SceneCharacter placements) — the same
-  // characterToMapToken(gc) call convention rulerSnapTargets uses above — NOT placedCharacters,
+  // characterToMapToken(gc) call convention buildRulerSnapTargets uses — NOT placedCharacters,
   // whose items carry col/row from fightZones rather than positionX/positionY and would give
   // characterToMapToken the wrong shape (all candidates collapsing to col:0,row:0).
   const marqueeCandidates = useMemo(() => {
@@ -602,8 +598,8 @@ const SceneViewport = ({
     selectedTokens,
     images: (displayedScene?.images || []),
     characters: (displayedScene?.characters || []),
-    gridWidth: displayedScene?.gridWidth ?? gridWidth,
-    gridHeight: displayedScene?.gridHeight ?? gridHeight,
+    gridWidth: dGridWidth,
+    gridHeight: dGridHeight,
     snap: tokenPlacementMode === 'snap',
     zoom,
     onCommit: onCommitGroupMove,
@@ -619,8 +615,6 @@ const SceneViewport = ({
   const backgroundImages = (displayedScene?.images || []).filter(img => img.layer === 'background');
   const gmImages = (displayedScene?.images || []).filter(img => img.layer === 'gm');
   const tokenImages = (displayedScene?.images || []).filter(img => img.layer === 'tokens');
-  const dGridWidth = displayedScene?.gridWidth ?? gridWidth;
-  const dGridHeight = displayedScene?.gridHeight ?? gridHeight;
 
   // GM staging area: the grid plus the off-scene margin on every side. Players never render it,
   // and `content` keeps its own size/offset, so coordinates are unaffected. handleFit uses the
@@ -633,15 +627,18 @@ const SceneViewport = ({
   // player or in modern mode, matching the unshifted anchor used before this margin existed.
   const gmAnchor = (controlScheme === 'classic' && isGM) ? offsceneMargin : 0;
 
-  // Own live ruler + every other player's (relayed over WS), rendered read-only.
-  const displayRulers = [];
+  // Rulers are split across two overlays so the fog layer can sit between them (FEATURE-135):
+  // other players' rulers render under the fog (a token moved under fog must not leak its path),
+  // the local one stays on top (you keep your own line and readout when measuring toward fog).
+  const selfRulers = [];
+  const remoteRulers = [];
   if (ruler.ruler) {
     // Manual ruler tool → AoE circle when the toggle is on.
-    displayRulers.push({ key: 'self', from: ruler.ruler.from, to: ruler.ruler.to, distance: ruler.distance, name: null, color: '#ffe08a', aoe: aoeEnabled });
+    selfRulers.push({ key: 'self', from: ruler.ruler.from, to: ruler.ruler.to, distance: ruler.distance, name: null, color: '#ffe08a', aoe: aoeEnabled });
   }
   // Live readout while dragging a token (local to the dragger) — no AoE circle.
   if (dragRuler) {
-    displayRulers.push({
+    selfRulers.push({
       key: 'drag',
       from: dragRuler.from,
       to: dragRuler.to,
@@ -653,7 +650,7 @@ const SceneViewport = ({
   }
   mapRulers.forEach(r => {
     if (r.userId === userId) return; // own echo — already shown locally
-    displayRulers.push({
+    remoteRulers.push({
       key: r.userId,
       from: r.from,
       to: r.to,
@@ -913,8 +910,22 @@ const SceneViewport = ({
                   />
                 )}
 
+                {/* Other players' rulers: below FogLayer (30) — see MapRulerOverlay for why.
+                    clip keeps everything they draw inside the canvas rect, so the fog canvas
+                    covers all of it — the distance badge near the top edge included. */}
                 <MapRulerOverlay
-                  rulers={displayRulers}
+                  rulers={remoteRulers}
+                  cellDistance={cellDistance}
+                  unit={distanceUnit}
+                  canvasWidth={canvasSize.width}
+                  canvasHeight={canvasSize.height}
+                  zIndex={28}
+                  clip
+                />
+
+                {/* Own ruler: above the fog, so measuring toward a fogged area stays readable. */}
+                <MapRulerOverlay
+                  rulers={selfRulers}
                   cellDistance={cellDistance}
                   unit={distanceUnit}
                   canvasWidth={canvasSize.width}

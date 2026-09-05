@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import useDragRuler, { isPrivateDrag } from './useDragRuler';
+import useDragRuler, { isPrivateDrag, isOffscenePoint } from './useDragRuler';
 
 const IMAGES = [
   { id: 'img-visible', hidden: false, layer: 'tokens' },
@@ -12,7 +12,9 @@ const CHARACTERS = [
   { characterId: 'char-hidden', hidden: true },
 ];
 
-function setup(sendMessage) {
+const GRID = { gridWidth: 20, gridHeight: 20 };
+
+function setup(sendMessage, overrides = {}) {
   return renderHook(() => useDragRuler({
     sendMessage,
     sceneId: 'scene-1',
@@ -20,6 +22,8 @@ function setup(sendMessage) {
     userName: 'GM',
     images: IMAGES,
     characters: CHARACTERS,
+    ...GRID,
+    ...overrides,
   }));
 }
 
@@ -253,6 +257,93 @@ describe('useDragRuler', () => {
     nowSpy.mockReturnValue(1060);
     act(() => result.current.onMeasureMove({ col: 2, row: 0 }));
     expect(sendMessage).toHaveBeenCalledTimes(2);
+
+    nowSpy.mockRestore();
+  });
+});
+
+describe('isOffscenePoint', () => {
+  const grid = { gridWidth: 20, gridHeight: 20 };
+
+  test('a point inside the grid is on-scene', () => {
+    expect(isOffscenePoint({ col: 0, row: 0 }, grid)).toBe(false);
+    expect(isOffscenePoint({ col: 10.5, row: 3.5 }, grid)).toBe(false);
+    expect(isOffscenePoint({ col: 20, row: 20 }, grid)).toBe(false); // the far edge still counts
+  });
+
+  test('a point in the staging margin is off-scene', () => {
+    expect(isOffscenePoint({ col: -5, row: 10 }, grid)).toBe(true);
+    expect(isOffscenePoint({ col: 25, row: 10 }, grid)).toBe(true);
+    expect(isOffscenePoint({ col: 10, row: -0.5 }, grid)).toBe(true);
+    expect(isOffscenePoint({ col: 10, row: 20.5 }, grid)).toBe(true);
+  });
+
+  test('unusable grid dimensions fail closed', () => {
+    expect(isOffscenePoint({ col: 1, row: 1 }, {})).toBe(true);
+    expect(isOffscenePoint({ col: 1, row: 1 }, { gridWidth: 20 })).toBe(true);
+    expect(isOffscenePoint({ col: 1, row: 1 }, { gridWidth: NaN, gridHeight: 20 })).toBe(true);
+  });
+
+  test('an unusable point fails closed', () => {
+    expect(isOffscenePoint(null, grid)).toBe(true);
+    expect(isOffscenePoint({ col: NaN, row: 1 }, grid)).toBe(true);
+  });
+});
+
+describe('useDragRuler off-scene gate', () => {
+  test('keeps the ruler local when the drag starts in the staging margin', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: -4, row: 5 }, [{ kind: 'char', id: 'char-visible' }]));
+
+    // The dragger still gets their own readout — only the broadcast is suppressed.
+    expect(result.current.dragRuler).toEqual({ from: { col: -4, row: 5 }, to: { col: -4, row: 5 } });
+
+    act(() => result.current.onMeasureMove({ col: 6, row: 5 }));
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test('keeps the ruler local when the drag starts past the far grid edge', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 5, row: 24 }, [{ kind: 'char', id: 'char-visible' }]));
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test('keeps the ruler local when the grid dimensions are missing', () => {
+    const sendMessage = jest.fn();
+    const { result } = setup(sendMessage, { gridWidth: undefined, gridHeight: undefined });
+
+    act(() => result.current.onMeasureStart({ col: 1, row: 1 }, [{ kind: 'char', id: 'char-visible' }]));
+    act(() => result.current.onMeasureEnd());
+
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  test('a drag that starts on-scene and moves off-scene keeps broadcasting', () => {
+    const sendMessage = jest.fn();
+    // Mock Date.now, same as the file's other throttle-sensitive tests: back-to-back act() calls
+    // land within the 50 ms SEND_THROTTLE_MS window in real time, which would swallow the move's
+    // send regardless of isOffscenePoint and falsely fail this assertion.
+    const nowSpy = jest.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1000);
+    const { result } = setup(sendMessage);
+
+    act(() => result.current.onMeasureStart({ col: 3, row: 3 }, [{ kind: 'char', id: 'char-visible' }]));
+    nowSpy.mockReturnValue(1060);
+    act(() => result.current.onMeasureMove({ col: -8, row: 3 }));
+
+    expect(sendMessage).toHaveBeenLastCalledWith('MAP_RULER', expect.objectContaining({
+      from: { col: 3, row: 3 },
+      to: { col: -8, row: 3 },
+      active: true,
+    }));
 
     nowSpy.mockRestore();
   });

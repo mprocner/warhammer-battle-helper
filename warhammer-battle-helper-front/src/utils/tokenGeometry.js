@@ -130,6 +130,56 @@ export function imageToMapToken(img) {
   };
 }
 
+// --- Player visibility -----------------------------------------------------------------
+// What "players cannot see this token" means, in the RAW (pre-adapter) shapes. Both privacy gates
+// on the map read these, so the drag ruler (isPrivateDrag) and the measuring ruler's snap targets
+// can never drift apart on the definition.
+
+// A character placement is private purely by its hidden flag.
+export function isCharacterPlacementPrivate(gc) {
+  return !!gc.hidden;
+}
+
+// An image is private when hidden OR when it lives on the gm layer, which players never render.
+export function isImagePrivate(img) {
+  return !!img.hidden || img.layer === 'gm';
+}
+
+// Token centres the measuring ruler magnetizes to, so large tokens are measured centre-to-centre.
+// Returns [{ col, row, radius }] in cells, for snapPointToTokens.
+//
+// Tokens players cannot see are EXCLUDED (FEATURE-135). The manual ruler broadcasts its endpoints,
+// so snapping one onto a hidden token would publish that token's exact centre — BUG-178's leak,
+// reopened through the manual tool. Accepted trade-off: the GM loses centre-snapping onto a hidden
+// token; freehand measuring to it still works. Players who do NOT hold the character's card are
+// unaffected — the backend strips hidden placements from their scene payload
+// (keepSceneCharacterForViewer = !gc.Hidden || hasCard), so their target list never held them.
+// A player who DOES hold the card receives the hidden placement, and therefore loses centre-snapping
+// on a token they can legitimately see. Harmless (freehand measuring still works) but real: the
+// filter is by hidden flag, not by what this particular viewer can see.
+//
+// `null` is guarded INSIDE, not by a default parameter: defaults apply to `undefined` only, while Go
+// marshals a nil slice as JSON `null` and neither Scene.Characters nor Scene.Images carries
+// `omitempty` (models/Game.go) — a freshly created scene really does arrive as `characters: null`.
+// Without the guard this throws during SceneViewport's render, blanking the whole scene.
+export function buildRulerSnapTargets({ characters, images } = {}) {
+  const targets = [];
+  const push = (tk) => {
+    const c = centerOf(tk);
+    targets.push({ col: c.col, row: c.row, radius: Math.max(tk.w, tk.h) / 2 });
+  };
+  (characters || []).forEach(gc => {
+    if (isCharacterPlacementPrivate(gc)) return;
+    push(characterToMapToken(gc));
+  });
+  (images || []).forEach(img => {
+    // Only the tokens layer measures centre-to-centre; background/gm art is not a ruler target.
+    if (img.layer !== 'tokens' || isImagePrivate(img)) return;
+    push(imageToMapToken(img));
+  });
+  return targets;
+}
+
 // AABB overlap in cell units. Edge-touch (shared boundary, zero area) counts as NO overlap,
 // so a marquee that merely grazes a token's edge doesn't grab it.
 export function rectsIntersect(a, b) {

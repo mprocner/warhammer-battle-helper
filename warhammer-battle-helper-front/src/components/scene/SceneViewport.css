@@ -151,18 +151,6 @@
   border-top: none;
 }
 
-.scene-viewport__grid-layer {
-  position: relative;
-  z-index: 27;
-}
-
-/* Drawing mode: make tokens inert so mouse events fall through to the drawing
-   canvas below. Universal + !important because .fight-zone .character-wrapper
-   re-enables pointer-events with higher specificity in style.css. */
-.scene-viewport__grid-layer--drawing * {
-  pointer-events: none !important;
-}
-
 /* Zoom toolbar — fixed to top-right of viewport wrapper */
 .scene-viewport__zoom-toolbar {
   position: absolute;

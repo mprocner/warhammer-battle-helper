@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { isCharacterPlacementPrivate, isImagePrivate } from '../utils/tokenGeometry';
 
 // Throttle for outgoing MAP_RULER updates during a drag — keeps the WS chatty-but-cheap,
 // same spirit as a cursor stream. Mirrors useMapRuler's SEND_THROTTLE_MS.
@@ -19,19 +20,39 @@ export function isPrivateDrag(tokens, { images = [], characters = [] } = {}) {
   return tokens.some(t => {
     if (t.kind === 'image') {
       const image = images.find(i => i.id === t.id);
-      // A gm-layer image is invisible to players just like a hidden one.
-      return image ? (!!image.hidden || image.layer === 'gm') : true;
+      // A gm-layer image is invisible to players just like a hidden one — see isImagePrivate.
+      return image ? isImagePrivate(image) : true;
     }
     const placement = characters.find(c => c.characterId === t.id);
-    return placement ? !!placement.hidden : true;
+    return placement ? isCharacterPlacementPrivate(placement) : true;
   });
+}
+
+// True when a point lies outside the grid — the GM staging ring, or anything past an edge. Players
+// never render that area, so a ruler endpoint sitting there tells them a token is coming onto the
+// map and from which side, even when the token itself is perfectly visible (FEATURE-135).
+//
+// The name is deliberately position-neutral: the two rulers apply it to different ends of the line.
+// The DRAG ruler judges only the START (see onMeasureStart below); the MANUAL ruler judges the start
+// AND every endpoint it would broadcast (see useMapRuler). Same predicate, two policies.
+//
+// Fail closed like isPrivateDrag: a point or grid size we cannot read counts as off-scene.
+export function isOffscenePoint(point, { gridWidth, gridHeight } = {}) {
+  if (!point || !Number.isFinite(point.col) || !Number.isFinite(point.row)) return true;
+  if (!Number.isFinite(gridWidth) || !Number.isFinite(gridHeight)) return true;
+  return point.col < 0 || point.col > gridWidth || point.row < 0 || point.row > gridHeight;
 }
 
 // Live measuring ruler while dragging a token (grab point → current position). Shown locally to the
 // dragger AND broadcast to other players over the same MAP_RULER channel as the manual ruler tool —
-// unless the drag carries a token hidden from players, in which case the readout stays on this
-// client. Ephemeral, never persisted: the hub relays MAP_RULER to the whole game like POINTER_PING.
-export default function useDragRuler({ sendMessage, sceneId, userId, userName, images, characters }) {
+// unless the drag carries a token hidden from players (isPrivateDrag) or STARTS in the GM staging
+// margin (isOffscenePoint), in which case the readout stays on this client. Either way only the
+// broadcast is suppressed; the dragger keeps their own line and distance.
+//
+// Only the START is judged here, unlike the manual ruler: a token dragged OUT of the scene is
+// visible to players for the whole gesture, so there is nothing left to hide once it leaves.
+// Ephemeral, never persisted: the hub relays MAP_RULER to the whole game like POINTER_PING.
+export default function useDragRuler({ sendMessage, sceneId, userId, userName, images, characters, gridWidth, gridHeight }) {
   const [dragRuler, setDragRuler] = useState(null); // { from: {col,row}, to: {col,row} } | null
   const fromRef = useRef(null);
   const lastSendRef = useRef(0);
@@ -44,8 +65,8 @@ export default function useDragRuler({ sendMessage, sceneId, userId, userName, i
   // useLayoutEffect, not useEffect: the mirror must be current before the browser can deliver the
   // next mousedown/pointerdown, or a drag that starts in that window would read a stale scene and
   // could misjudge privacy.
-  const sceneRef = useRef({ images, characters });
-  useLayoutEffect(() => { sceneRef.current = { images, characters }; }, [images, characters]);
+  const sceneRef = useRef({ images, characters, gridWidth, gridHeight });
+  useLayoutEffect(() => { sceneRef.current = { images, characters, gridWidth, gridHeight }; }, [images, characters, gridWidth, gridHeight]);
 
   const send = useCallback((from, to, active) => {
     if (!sendMessage) return;
@@ -59,7 +80,8 @@ export default function useDragRuler({ sendMessage, sceneId, userId, userName, i
   }, [sendMessage, sceneId, userId, userName]);
 
   const onMeasureStart = useCallback((center, tokens) => {
-    privateRef.current = isPrivateDrag(tokens, sceneRef.current);
+    privateRef.current = isPrivateDrag(tokens, sceneRef.current)
+      || isOffscenePoint(center, sceneRef.current);
     fromRef.current = center;
     setDragRuler({ from: center, to: center });
     // Clear the throttle window unconditionally: without this, a drag starting within

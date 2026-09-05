@@ -6,12 +6,23 @@ import './MapRulerOverlay.css';
 // Presentational overlay for measuring rulers — the local one plus every other player's,
 // all ephemeral. Coordinates are in canvas pixels (col/row * CELL_SIZE); the parent already
 // lives in scene space (zoom is applied by an ancestor transform).
-export default function MapRulerOverlay({ rulers, cellDistance = 1, unit = '', canvasWidth, canvasHeight }) {
+//
+// zIndex is a prop because the stack is split (FEATURE-135): other players' rulers render BELOW
+// FogLayer (30) so a token moved under fog does not leak its path, while the local ruler stays on
+// top so measuring toward a fogged area still shows you your own line and readout.
+//
+// `clip` confines everything this overlay draws to the canvas rect, making it exactly congruent
+// with FogLayer's canvas — set it on the under-fog instance. Without it the fog cannot hide the
+// distance badge near the map edges: the badge is translated ~28px ABOVE its midpoint
+// (MapRulerOverlay.css), and the SVG is overflow:visible, so a ruler in the top row paints its
+// readout on the frame above the map where no fog exists. Same for the left/right overhang and for
+// any geometry that lands outside the grid.
+export default function MapRulerOverlay({ rulers, cellDistance = 1, unit = '', canvasWidth, canvasHeight, zIndex = 40, clip = false }) {
   if (!rulers.length) return null;
   return (
     <div
       className="map-ruler-overlay"
-      style={{ position: 'absolute', top: 0, left: 0, width: canvasWidth, height: canvasHeight, pointerEvents: 'none', zIndex: 40 }}
+      style={{ position: 'absolute', top: 0, left: 0, width: canvasWidth, height: canvasHeight, pointerEvents: 'none', zIndex, overflow: clip ? 'hidden' : 'visible' }}
     >
       <svg width={canvasWidth} height={canvasHeight} style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}>
         {rulers.map(r => {
