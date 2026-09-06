@@ -123,7 +123,7 @@ func main() {
 	go hub.Run()
 
 	// Initialize services
-	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo, sessionRepo)
+	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo, sessionRepo, templateService)
 
 	fogRepo := repository.NewFogRepository(db.GamesCollection)
 	fogService := service.NewFogService(fogRepo, hub)
@@ -210,7 +210,7 @@ func main() {
 	auth.POST("/games", gameHandler.CreateGame)
 
 	// Per-game actions
-	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub}
+	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub, GameService: gameService}
 	sceneHandler := http.SceneHandler{GameService: gameService, TemplateService: templateService}
 	fogHandler := http.FogHandler{FogService: fogService}
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}

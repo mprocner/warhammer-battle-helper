@@ -23,6 +23,9 @@ type CharacterHandler struct {
 	CharacterRepo *repository.CharactersRepository
 	GameRepo      *repository.GameRepository
 	Hub           *websocket.Hub
+	// GameService supplies the masked token-view broadcast: a card-less player never receives the
+	// Character document, so a card change only reaches their token through that projection.
+	GameService *service.GameService
 }
 
 // CreateCharacterRequest accepts the character name, system-specific stats as raw JSON,
@@ -398,17 +401,34 @@ func statNumberAtPath(stats bson.Raw, path string) (float64, bool) {
 	}
 }
 
-// broadcastCharacterUpdated re-reads the character and emits EventCharacterUpdated so
-// every client refetches (reuses the existing conditions-toggle sync path).
+// broadcastCharacterUpdated re-reads the character and emits EventCharacterUpdated so every viewer
+// WHO HOLDS THE CARD refreshes, then refreshes the card-less viewers' tokens.
+//
+// Two audiences, two payloads. The event carries raw Stats and every State, so it goes only to the
+// GM and the card-holders — GET /games/:id/characters filters the same way, and a card-less client
+// could never use it anyway (the character is absent from its list, so its .map() is a no-op).
+// Card-less players instead get the baked, leak-free token view, which is the only channel through
+// which a card change (condition level, killed, a stat leaf) reaches their token before the next
+// full game fetch.
 func (h *CharacterHandler) broadcastCharacterUpdated(gameID, charID string) *models.Character {
 	updated, err := h.CharacterRepo.GetByID(charID)
 	if err != nil {
 		return nil
 	}
 	if h.Hub != nil {
-		h.Hub.BroadcastToGame(gameID, websocket.EventCharacterUpdated, map[string]interface{}{
+		recipients := []string{}
+		if game, gErr := h.GameRepo.GetByID(gameID); gErr == nil {
+			recipients = append(recipients, game.GameMasterID.Hex())
+		}
+		for _, v := range updated.VisibleTo {
+			recipients = append(recipients, v.Hex())
+		}
+		h.Hub.BroadcastToUsers(gameID, websocket.EventCharacterUpdated, map[string]interface{}{
 			"character": updated,
-		})
+		}, recipients)
+	}
+	if h.GameService != nil {
+		h.GameService.BroadcastTokenViewsForCharacter(gameID, updated.ID)
 	}
 	return updated
 }

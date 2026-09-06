@@ -20,12 +20,13 @@ import (
 )
 
 type GameService struct {
-	gameRepo    *repository.GameRepository
-	userRepo    *repository.UserRepository
-	charRepo    *repository.CharactersRepository
-	hub         *websocket.Hub
-	statsRepo   *repository.RollStatsRepository
-	sessionRepo *repository.OnlineSessionRepository
+	gameRepo        *repository.GameRepository
+	userRepo        *repository.UserRepository
+	charRepo        *repository.CharactersRepository
+	hub             *websocket.Hub
+	statsRepo       *repository.RollStatsRepository
+	sessionRepo     *repository.OnlineSessionRepository
+	templateService *TemplateService
 }
 
 func NewGameService(
@@ -35,14 +36,16 @@ func NewGameService(
 	hub *websocket.Hub,
 	statsRepo *repository.RollStatsRepository,
 	sessionRepo *repository.OnlineSessionRepository,
+	templateService *TemplateService,
 ) *GameService {
 	return &GameService{
-		gameRepo:    gameRepo,
-		userRepo:    userRepo,
-		charRepo:    charRepo,
-		hub:         hub,
-		statsRepo:   statsRepo,
-		sessionRepo: sessionRepo,
+		gameRepo:        gameRepo,
+		userRepo:        userRepo,
+		charRepo:        charRepo,
+		hub:             hub,
+		statsRepo:       statsRepo,
+		sessionRepo:     sessionRepo,
+		templateService: templateService,
 	}
 }
 
@@ -158,19 +161,8 @@ func (s *GameService) enrichSceneCharacters(game *models.Game) {
 			gc := &game.Scenes[si].Characters[ci]
 			if ch, ok := charMap[gc.CharacterID]; ok {
 				gc.Name = ch.Name
-				gc.Avatar = ch.Avatar
+				gc.Avatar = characterTokenAvatar(ch)
 				gc.Killed = ch.Killed // computed-only; lets a card-less token show the dead strike
-				// Fallback: some systems (e.g. warhammer4e) keep the avatar in stats.basicInfo.avatar
-				// rather than the top-level field. A card-less player only ever sees this placement
-				// avatar (no full character), so resolve it here or their token shows a placeholder.
-				if gc.Avatar == "" && len(ch.Stats) > 0 {
-					var statsDoc bson.M
-					if bson.Unmarshal(ch.Stats, &statsDoc) == nil {
-						if a, ok := statByPath(statsDoc, "basicInfo.avatar").(string); ok {
-							gc.Avatar = a
-						}
-					}
-				}
 			}
 		}
 	}
@@ -1586,9 +1578,8 @@ func (s *GameService) requireGM(gameID string, userID primitive.ObjectID) (*mode
 }
 
 // broadcastCharTokenGear re-reads the fresh placement gear and sends it to the GM + card-holders
-// (character's VisibleTo) only — raw gear may carry hidden values, so card-less players are NOT sent
-// it here; they pick up the masked state on the next full game fetch. (A targeted masked live
-// broadcast to card-less players is a Phase-3 refinement, once the masking engine exists.)
+// (character's VisibleTo) only — raw gear may carry hidden values, so it must not reach a card-less
+// player. Those players get the masked projection instead, in a second message (FEATURE-183).
 func (s *GameService) broadcastCharTokenGear(gameID string, sceneID, placementID primitive.ObjectID) {
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
@@ -1607,11 +1598,13 @@ func (s *GameService) broadcastCharTokenGear(gameID string, sceneID, placementID
 			}
 		}
 	}
+	var character *models.Character
 	recipients := []string{game.GameMasterID.Hex()}
 	if chars, err := s.charRepo.GetByGameID(gameID); err == nil {
-		for _, ch := range chars {
-			if ch.ID == charID {
-				for _, v := range ch.VisibleTo {
+		for i := range chars {
+			if chars[i].ID == charID {
+				character = &chars[i]
+				for _, v := range character.VisibleTo {
 					recipients = append(recipients, v.Hex())
 				}
 			}
@@ -1622,6 +1615,10 @@ func (s *GameService) broadcastCharTokenGear(gameID string, sceneID, placementID
 		"placementId": placementID.Hex(),
 		"tokenGear":   gear,
 	}, recipients)
+
+	// Everyone else in the game is card-less for this character: they get the baked, leak-free view
+	// of this one placement instead of the raw gear above.
+	s.broadcastTokenViewsFrom(game, character, &placementID)
 }
 
 // SetCharGear replaces the whole per-token gear (config panel Save). Unlike the granular live-bump
@@ -2571,6 +2568,34 @@ func FilterSceneImageTokensForUser(game *models.Game, userID primitive.ObjectID)
 // This is the sole enforcement point for the feature; keep the rule here and nowhere else.
 func keepSceneCharacterForViewer(gc models.GameCharacter, hasCard map[primitive.ObjectID]bool) bool {
 	return !gc.Hidden || hasCard[gc.CharacterID]
+}
+
+// ResolveTokenBlueprint returns the token-display blueprint a masked token view must be built
+// against, without going through the HTTP read pipeline. A custom game embeds its own template; a
+// hardcoded system resolves the GM's live per-user singleton — the same source attachTokenConfig
+// (internal/http/GameHandler.go) uses on the read side. nil means "no blueprint": tokens render bare.
+//
+// The broadcast path needs its own resolver because attachTokenConfig lives in package http and only
+// runs inside a request. Building a mask against a nil blueprint does not error — it produces an
+// empty view, which would silently wipe the overlay on every card-less client.
+func (s *GameService) ResolveTokenBlueprint(game *models.Game) *models.TokenDisplayConfig {
+	if game == nil {
+		return nil
+	}
+	if game.GameSystem != "" && game.GameSystem != "custom" {
+		if s.templateService == nil {
+			return nil
+		}
+		tmpl, err := s.templateService.FindTokenConfig(game.GameMasterID, game.GameSystem)
+		if err != nil || tmpl == nil {
+			return nil
+		}
+		return tmpl.Settings.TokenDisplay
+	}
+	if game.CustomSystemTemplate != nil {
+		return game.CustomSystemTemplate.Settings.TokenDisplay
+	}
+	return nil
 }
 
 // FilterSceneCharacterTokensForUser drops hidden character-token placements from every scene for a

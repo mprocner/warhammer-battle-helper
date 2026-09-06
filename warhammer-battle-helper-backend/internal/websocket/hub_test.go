@@ -57,3 +57,44 @@ func TestHub_DisconnectUser_UnknownGame(t *testing.T) {
 	// Must not panic on a game with no clients registered.
 	h.DisconnectUser("nope", primitive.NewObjectID())
 }
+
+func TestHub_BroadcastExceptUsers(t *testing.T) {
+	h := NewHub()
+
+	excluded := primitive.NewObjectID()
+	included := primitive.NewObjectID()
+	otherGame := primitive.NewObjectID()
+
+	gmTab := &Client{ID: excluded, GameID: "g1", Send: make(chan []byte, 1)}
+	playerTab := &Client{ID: included, GameID: "g1", Send: make(chan []byte, 1)}
+	elsewhere := &Client{ID: otherGame, GameID: "g2", Send: make(chan []byte, 1)}
+
+	h.Games["g1"] = map[*Client]bool{gmTab: true, playerTab: true}
+	h.Games["g2"] = map[*Client]bool{elsewhere: true}
+
+	h.BroadcastExceptUsers("g1", "SOME_EVENT", map[string]interface{}{"k": "v"}, []string{excluded.Hex()})
+
+	if len(gmTab.Send) != 0 {
+		t.Error("an excluded user must receive nothing")
+	}
+	if len(playerTab.Send) != 1 {
+		t.Errorf("a non-excluded user in the game must receive the message, got %d", len(playerTab.Send))
+	}
+	if len(elsewhere.Send) != 0 {
+		t.Error("a client in another game must receive nothing")
+	}
+}
+
+func TestHub_BroadcastExceptUsers_EmptyExclusionReachesEveryone(t *testing.T) {
+	h := NewHub()
+
+	a := &Client{ID: primitive.NewObjectID(), GameID: "g1", Send: make(chan []byte, 1)}
+	b := &Client{ID: primitive.NewObjectID(), GameID: "g1", Send: make(chan []byte, 1)}
+	h.Games["g1"] = map[*Client]bool{a: true, b: true}
+
+	h.BroadcastExceptUsers("g1", "SOME_EVENT", map[string]interface{}{}, nil)
+
+	if len(a.Send) != 1 || len(b.Send) != 1 {
+		t.Error("an empty exclusion list must reach every client in the game")
+	}
+}

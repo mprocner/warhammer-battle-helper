@@ -26,6 +26,7 @@ import ToastStack from './ToastStack';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
+import { applyTokenViewPatch } from '../utils/applyTokenViewPatch';
 import { sessionEndReasonForStatus } from '../utils/sessionAccess';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
@@ -567,6 +568,22 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           };
         });
         setCharacterUpdateTrigger(prev => prev + 1);
+        break;
+      }
+
+      case WS_EVENTS.SCENE_CHARACTER_TOKEN_VIEW_UPDATED: {
+        // A card-less viewer's live token refresh. The server sends the already-masked projection
+        // (never raw gear), computed once for the whole card-less class. Merged in place, with no
+        // refetch: nothing in this event can change WHICH tokens this viewer may see — every change
+        // that could still goes through SCENE_CHARACTER_UPDATED / CHARACTER_VISIBILITY_UPDATED and
+        // their full fetchGameState().
+        //
+        // Deliberately NO setCharacterUpdateTrigger here, unlike its sibling cases: that trigger
+        // makes DndContext refetch GET /games/:id in full, which is the exact cost this event
+        // exists to avoid — and it could not help anyway, since the map token renders from
+        // currentScene.characters (this very state) and this event's audience never holds the
+        // character document the refetch would return.
+        setGameState(prev => applyTokenViewPatch(prev, message.payload.views));
         break;
       }
 

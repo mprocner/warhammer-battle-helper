@@ -262,6 +262,33 @@ func (h *Hub) BroadcastToUsers(gameID, messageType string, payload map[string]in
 	}
 }
 
+// BroadcastExceptUsers sends to every client in the game EXCEPT the listed users — the denylist twin
+// of BroadcastToUsers. Use it when the audience is naturally a complement ("everyone who does NOT
+// hold this character's card") and enumerating that complement would cost a database read. The hub
+// already holds the connected clients, so subtracting a short exclusion list from them is free.
+func (h *Hub) BroadcastExceptUsers(gameID, messageType string, payload map[string]interface{}, excludeUserIDs []string) {
+	message := Message{Type: messageType, GameID: gameID, Payload: payload}
+	msg, err := json.Marshal(message)
+	if err != nil {
+		return
+	}
+	excluded := make(map[string]bool, len(excludeUserIDs))
+	for _, id := range excludeUserIDs {
+		excluded[id] = true
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for client := range h.Games[gameID] {
+		if excluded[client.ID.Hex()] {
+			continue
+		}
+		select {
+		case client.Send <- msg:
+		default:
+		}
+	}
+}
+
 // GetGameOnlineUserIDs returns the list of connected user IDs for a game (thread-safe)
 func (h *Hub) GetGameOnlineUserIDs(gameID string) []string {
 	h.mu.RLock()
