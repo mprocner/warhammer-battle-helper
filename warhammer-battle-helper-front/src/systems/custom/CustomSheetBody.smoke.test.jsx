@@ -102,3 +102,94 @@ describe('CustomSheetBody field labels', () => {
     }
   });
 });
+
+// FEATURE-157: skok pola. Snapowanie do siatki robi przeglądarka na podstawie atrybutu
+// `step` — jsdom go nie wykonuje, więc testujemy jedyną rzecz, za którą odpowiada nasz kod:
+// czy poprawna wartość trafia na wszystkie cztery inputy i czy fallback łapie oba źródła
+// braku (undefined ze starego szablonu, 0 ze stanu kreatora przed clampem w onBlur).
+describe('CustomSheetBody field step', () => {
+  const stepSections = (fields) => [{ id: 'sec1', title: 'Statystyki', columns: 3, fields }];
+
+  it('puts the configured step on both inputs of an attr field with advances', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_attr', type: 'attr', label: 'Zdolność Walki', hasAdvances: true, step: 5 },
+    ])} />);
+
+    const inputs = container.querySelectorAll('.custom-sheet__attr-input');
+    expect(inputs.length).toBe(2);
+    inputs.forEach(input => expect(input.getAttribute('step')).toBe('5'));
+  });
+
+  it('puts the configured step on a simple attr field', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_attr', type: 'attr', label: 'Siła', step: 10 },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__attr-input').getAttribute('step')).toBe('10');
+  });
+
+  it('puts the configured step on a number field', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia', step: 5 },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('5');
+  });
+
+  it('falls back to 1 when the template predates the feature and has no step', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia' },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('1');
+  });
+
+  // Zero nie przychodzi z Go — omitempty wycina je i z JSON-a, i z BSON-a. Przychodzi ze stanu
+  // Reacta w kreatorze: TemplateBuilder renderuje ten komponent jako live preview nad
+  // edytowanymi sekcjami, więc wpisane 0 dociera tu, zanim onBlur podniesie je do 1.
+  // Dlatego fallback musi być `|| 1`, nie `?? 1`.
+  it('falls back to 1 for a step of 0 coming from the creator preview state', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia', step: 0 },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('1');
+  });
+
+  // Fallback dla step: 0 na obu inputach atrybutu z awansami — łapie zarówno undefined
+  // (szablon sprzed cechy), jak i 0 (stan kreatora przed clampem w onBlur). Testujemy
+  // obydwa inputy, bo każdy ma swój `step` — mutacja jednego nie zabiłaby testu, gdyby
+  // sprawdzał tylko drugi.
+  it('falls back to 1 on both inputs of an attr field with advances when step is 0', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_attr', type: 'attr', label: 'Zdolność Walki', hasAdvances: true, step: 0 },
+    ])} />);
+
+    const inputs = container.querySelectorAll('.custom-sheet__attr-input');
+    expect(inputs.length).toBe(2);
+    inputs.forEach(input => expect(input.getAttribute('step')).toBe('1'));
+  });
+
+  it('falls back to 1 on a simple attr field when step is 0', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_attr', type: 'attr', label: 'Siła', step: 0 },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__attr-input').getAttribute('step')).toBe('1');
+  });
+
+  // Decyzja projektowa ze spec-a (sekcja Zakres): `progress` jest poza zakresem tej cechy —
+  // current/max zostają ze skokiem przeglądarki 1, niezależnie od tego, co GM wpisze w Skok.
+  // Sprawdzamy samą obietnicę tej decyzji — pole progress w ogóle nie niesie skonfigurowanego
+  // skoku na żaden ze swoich dwóch inputów — a nie tylko brak konkretnego stringa atrybutu,
+  // bo `step="1"` (wartość domyślna przeglądarki) też przeszłoby test sprawdzający samą wartość.
+  it('never carries a configured step on a progress field — progress is out of scope for the step feature', () => {
+    const { container } = render(<CustomSheetBody sections={stepSections([
+      { key: 'fld_prog', type: 'progress', label: 'Punkty Życia', step: 5 },
+    ])} />);
+
+    const inputs = container.querySelectorAll('.custom-sheet__progress-input');
+    expect(inputs.length).toBe(2);
+    inputs.forEach(input => expect(input.hasAttribute('step')).toBe(false));
+  });
+});

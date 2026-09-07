@@ -127,8 +127,8 @@ function makeDefaultField(type) {
     showToPlayer: true,
     rollable: false,
   };
-  if (type === 'attr') return { ...base, min: 0, max: 100, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
-  if (type === 'number') return { ...base, min: 0, max: 100, showOnShortCard: false };
+  if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
@@ -659,6 +659,42 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
         </Box>
       )}
 
+      {/* Skok steruje wyłącznie strzałkami inputu na karcie. Przeglądarka nie dodaje skoku do
+          bieżącej wartości — snapuje ją do siatki stepBase + n * step, gdzie stepBase to atrybut
+          min (a bez niego 0). Trunc tak samo obowiązkowy jak wyżej: ułamek 400-uje cały PATCH
+          szablonu, a saveTemplate połyka ten błąd po cichu. Floor na 0 (nie na 1!) w onChange —
+          autosave odpala się 1200 ms po zmianie (triggerSave), więc bez tego floora ujemny
+          skok wpisany i pozostawiony bez blura trafiłby do Mongo na stałe: `Step int` nie ma
+          ochrony przed ujemnymi wartościami, tylko `0` jest wycinane przez `omitempty`. Floor
+          na 1 tutaj zepsułby pisanie — wpisanie "0" z zamiarem "05" skoczyłoby od razu na 1,
+          a kolejny znak dałby "15". `0` jest bezpieczne jako stan przejściowy: karta czyta
+          brakujący/zerowy skok jako 1 przez `field.step || 1`. Podniesienie <1 → 1 zostaje na
+          onBlur, tak jak wcześniej — floor w onChange jest dodatkową siatką bezpieczeństwa na
+          wypadek, gdyby autosave zdążył wystrzelić pierwszy. */}
+      {(field.type === 'attr' || field.type === 'number') && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+          <TextField
+            size="small"
+            label={t('creator.fieldStep')}
+            helperText={t('creator.fieldStepHint')}
+            type="number"
+            value={field.step ?? ''}
+            onChange={e => up({ step: e.target.value === '' ? null : Math.max(0, Math.trunc(Number(e.target.value))) })}
+            onBlur={() => {
+              // Pole sprzed feature'a (undefined) nigdy się nie zapisuje — focus + blur bez edycji
+              // nie może odpalić `up()`, bo to zastępuje cały obiekt pola i planuje PATCH całego
+              // szablonu (BUG scenariusz z finalnego review). Pole zawierające wartość spoza zakresu
+              // (np. z autosave'a) samowylecza się do 1 na blurze.
+              if (field.step === undefined) return;
+              const clamped = field.step == null || field.step < 1 ? 1 : field.step;
+              if (clamped !== field.step) up({ step: clamped });
+            }}
+            sx={{ flex: '0 0 140px' }}
+            InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1, min: 1 } }}
+          />
+        </Box>
+      )}
+
       {field.type === 'attr' && (
         <>
           <FormControlLabel
@@ -901,8 +937,12 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
           </div>
       }
       {field.abbr && <div className="creator__canvas-field-label">{field.label}</div>}
-      {(field.type === 'attr' || field.type === 'number') && (field.min != null || field.max != null) && (
-        <div className="creator__canvas-field-range">{field.min ?? '?'} – {field.max ?? '?'}</div>
+      {(field.type === 'attr' || field.type === 'number') && (field.min != null || field.max != null || field.step > 1) && (
+        <div className="creator__canvas-field-range">
+          {(field.min != null || field.max != null) && `${field.min ?? '?'} – ${field.max ?? '?'}`}
+          {(field.min != null || field.max != null) && field.step > 1 && ' · '}
+          {field.step > 1 && t('creator.canvasStepChip', { step: field.step })}
+        </div>
       )}
       {field.rollable && <div className="creator__canvas-field-roll-badge">⚄</div>}
       {field.showOnShortCard && SHORT_CARD_FIELD_TYPES.includes(field.type) && <div className="creator__canvas-field-short-badge" title={t('creator.showOnShortCard')}>▤</div>}

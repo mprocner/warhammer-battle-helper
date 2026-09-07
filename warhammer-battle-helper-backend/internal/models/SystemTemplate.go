@@ -174,6 +174,11 @@ type FieldDef struct {
 	// exactly as before. A pointer, not an int, because 0 is a legal default and `omitempty`
 	// on a plain int would erase it.
 	Default            *int           `bson:"default,omitempty" json:"default,omitempty"`
+	// Step is the arrow-key / spinner increment for "attr" and "number" inputs on the sheet.
+	// 0 or absent means 1 — it is a plain int, not a pointer, because 0 is not a legal step,
+	// so omitempty cannot erase a meaningful value the way it could for Default. Nothing in Go
+	// reads it: the sheet renderer is the only consumer.
+	Step               int            `bson:"step,omitempty" json:"step,omitempty"`
 	ShowToPlayer       bool           `bson:"showToPlayer" json:"showToPlayer"`
 	ShowOnShortCard    bool           `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
 	Rollable           bool           `bson:"rollable" json:"rollable"`

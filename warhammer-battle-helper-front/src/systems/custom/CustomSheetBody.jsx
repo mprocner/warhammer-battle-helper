@@ -488,6 +488,7 @@ function CustomSheetBody({
                     readOnly={readOnly}
                     min={field.min ?? undefined}
                     max={field.max ?? undefined}
+                    step={field.step || 1}
                   />
                 </div>
                 <div className="custom-sheet__attr-row">
@@ -499,6 +500,7 @@ function CustomSheetBody({
                     onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
                     readOnly={readOnly}
                     min={0}
+                    step={field.step || 1}
                   />
                 </div>
                 <div className="custom-sheet__attr-row">
@@ -523,6 +525,7 @@ function CustomSheetBody({
               readOnly={readOnly}
               min={field.min ?? undefined}
               max={field.max ?? undefined}
+              step={field.step || 1}
             />
           </div>
         );
@@ -540,6 +543,7 @@ function CustomSheetBody({
               readOnly={readOnly}
               min={field.min ?? undefined}
               max={field.max ?? undefined}
+              step={field.step || 1}
             />
           </div>
         );
