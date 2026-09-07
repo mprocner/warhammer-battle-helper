@@ -33,6 +33,7 @@ The single place where the top-left convention is written down, and the only cop
 **Interfaces:**
 - Consumes: nothing.
 - Produces:
+  - `TEXT_BASELINE: string` (`'top'`) — the canvas `ctx.textBaseline` the box geometry assumes.
   - `CHAR_WIDTH_RATIO: number` (`0.6`) — glyph width as a fraction of font size.
   - `LINE_HEIGHT_RATIO: number` (`1.2`) — line height as a fraction of font size.
   - `textPathBox(path: { points: [[number, number]], text: string, fontSize?: number }) => { x: number, y: number, width: number, height: number }` — `x`/`y` are `points[0]`, i.e. the top-left corner.
@@ -97,9 +98,14 @@ Create `warhammer-battle-helper-front/src/components/scene/drawingTextGeometry.j
  * DrawingTextInput places a padding-less input at the very same point. BUG-185 was exactly
  * this convention disagreeing with itself, so it lives here in one copy.
  *
+ * TEXT_BASELINE and textPathBox must agree, and no type can force that — so they sit three
+ * lines apart. Whoever changes the baseline sees the box on the same screen: for 'middle' the
+ * box would have to return `y - height / 2` as its top edge.
+ *
  * The ratios are approximations of a proportional font's metrics. They are good enough for a
  * hit box and a selection frame, and they deliberately avoid measuring the DOM.
  */
+export const TEXT_BASELINE = 'top';
 export const CHAR_WIDTH_RATIO = 0.6;
 export const LINE_HEIGHT_RATIO = 1.2;
 
@@ -143,7 +149,7 @@ agree with each other, so a reviewer cannot sensibly accept one and reject anoth
 - Test: `warhammer-battle-helper-front/src/components/scene/DrawingLayer.test.js`
 
 **Interfaces:**
-- Consumes: `textPathBox` from `./drawingTextGeometry` (Task 1).
+- Consumes: `textPathBox` and `TEXT_BASELINE` from `./drawingTextGeometry` (Task 1).
 - Produces: no new exports. `findDeletablePathAt(paths, px, py, canDelete)` keeps its signature; only its answer for `tool: 'text'` changes.
 
 - [ ] **Step 1: Write the failing test**
@@ -200,7 +206,7 @@ expected. The third case passes already; it is a guard against widening the box 
 
 ```js
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { textPathBox } from './drawingTextGeometry';
+import { textPathBox, TEXT_BASELINE } from './drawingTextGeometry';
 ```
 
 **3b.** Replace the `case 'text'` block inside `hitTestPath` (`:73-79`):
@@ -223,8 +229,9 @@ covers it:
         const [tx, ty] = path.points[0];
         ctx.font = `${path.fontSize || 16}px sans-serif`;
         // points[0] is the top-left corner of the glyph box, not the baseline — see
-        // drawingTextGeometry. The typing input stands on the same point.
-        ctx.textBaseline = 'top';
+        // drawingTextGeometry, which owns both this mode and the matching box geometry.
+        // The typing input stands on the same point.
+        ctx.textBaseline = TEXT_BASELINE;
         ctx.fillText(path.text, tx, ty);
         break;
       }
