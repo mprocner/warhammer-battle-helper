@@ -41,20 +41,23 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		breakdown = fmt.Sprintf("%s = %s = %d", labelStr, valueStr, finalRoll)
 	}
 
-	attrValue := stats.Attributes[linkedAttr].Current
+	attrValue, attrOK := attrLookup(stats, linkedAttr)
 	fmt.Printf("[ROLL] Attribute value: %v, linked: %v", attrValue, linkedAttr)
 	sv := skillValue(stats, skillKey)
 	threshold := evalThreshold(cfg.Threshold)
+	hasThreshold := threshold != 0
 	fmt.Printf("[ROLL] Threshold eval: %v, skill: %v, attribute: %v", threshold, sv, attrValue)
 	if threshold == 0 {
-		if sv > 0 {
+		if skillHasValue(stats, skillKey) {
 			threshold = sv
+			hasThreshold = true
 		} else {
 			threshold = attrValue
+			hasThreshold = attrOK
 		}
 	}
 	fmt.Println("[ROLL] Final threshold:", threshold)
-	outcome := evalOutcome(cfg, finalRoll, threshold)
+	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
 	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
 	return &gsys.RollResult{
@@ -472,7 +475,7 @@ func diceNotationToSides(notation string) int {
 // The larger the attribute + skill, the bigger the die — and therefore
 // the wider the range of outcomes.
 func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr].Current
+	attrValue, _ := attrLookup(stats, linkedAttr)
 	skillValue := skillValue(stats, skillKey)
 
 	diceSize := attrValue + skillValue
@@ -484,10 +487,12 @@ func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate
 	finalRoll := roll + modifier
 
 	threshold := evalThreshold(cfg.Threshold)
+	hasThreshold := threshold != 0
 	if threshold == 0 {
 		threshold = skillValue
+		hasThreshold = skillHasValue(stats, skillKey)
 	}
-	outcome := evalOutcome(cfg, finalRoll, threshold)
+	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
 
 	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
@@ -505,16 +510,18 @@ func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate
 
 // rollFixedD100 implements a classic d100 roll-under mechanic.
 func (p *Plugin) rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr].Current
+	attrValue, attrOK := attrLookup(stats, linkedAttr)
 	sv := skillValue(stats, skillKey)
 
 	roll := p.rng.Intn(100) + 1
 	threshold := evalThreshold(cfg.Threshold)
+	hasThreshold := threshold != 0
 	if threshold == 0 {
 		threshold = attrValue + sv
+		hasThreshold = attrOK || skillHasValue(stats, skillKey)
 	}
 	target := threshold + modifier
-	outcome := evalOutcome(cfg, roll, target)
+	outcome := evalOutcome(cfg, roll, target, hasThreshold)
 
 	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
@@ -532,7 +539,7 @@ func (p *Plugin) rollFixedD100(stats *Stats, template *models.SystemTemplate, sk
 
 // rollFixedD20 implements a d20 + modifier roll.
 func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue := stats.Attributes[linkedAttr].Current
+	attrValue, attrOK := attrLookup(stats, linkedAttr)
 	sv := skillValue(stats, skillKey)
 
 	roll := p.rng.Intn(20) + 1
@@ -540,10 +547,12 @@ func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, ski
 	finalRoll := roll + bonus
 
 	threshold := evalThreshold(cfg.Threshold)
+	hasThreshold := threshold != 0
 	if threshold == 0 {
 		threshold = attrValue
+		hasThreshold = attrOK
 	}
-	outcome := evalOutcome(cfg, finalRoll, threshold)
+	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
 
 	skillLabel := resolveSkillLabel(template, stats, skillKey)
 
@@ -561,15 +570,37 @@ func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, ski
 	}, nil
 }
 
-// skillValue returns the character's effective value for the given skill key:
-// the computed current (base + advances), falling back to base when current
-// has not been derived yet. Skills without advances have current == base.
+// skillValue returns the character's effective value for the given skill key: base +
+// advances. This used to read Current instead, falling back to Base only when Current
+// was 0 — but Current == 0 no longer means "not computed yet": a permanent penalty that
+// cancels the base out (30 base, -30 advances) is a real, computed 0. Summing directly
+// avoids trusting a Current that could be stale or ambiguous either way.
 func skillValue(stats *Stats, key string) int {
 	v := stats.Skills[key]
-	if v.Current != 0 {
-		return v.Current
-	}
-	return v.Base
+	return v.Base + v.Advances
+}
+
+// skillHasValue reports whether the character has any data for this skill. A skill whose
+// base and advances are both zero is indistinguishable from one the character never
+// touched, so it keeps the old fall-back-to-the-attribute behaviour; a skill whose parts
+// are non-zero uses its own total, even when that total is zero or negative (base 30 with
+// advances -30 is a real 0, not a blank). Current is deliberately not consulted: base +
+// advances is the whole truth about a skill's value (see skillValue), so a Current that
+// disagrees can only be stale, and checking it here would report "has value" for the same
+// {Base: 0, Advances: 0} blank shape skillValue reads as 0 — the two functions would agree
+// on nothing.
+func skillHasValue(stats *Stats, key string) bool {
+	v := stats.Skills[key]
+	return v.Base != 0 || v.Advances != 0
+}
+
+// attrLookup returns an attribute's current value and whether the attribute is actually
+// present in stats. A missing key also reads as Current == 0 via Go's zero value, which is
+// indistinguishable from a real, computed 0 unless the presence of the map entry itself is
+// checked — needed to tell "no attribute linked" apart from "attribute cancelled to zero".
+func attrLookup(stats *Stats, key string) (value int, ok bool) {
+	v, ok := stats.Attributes[key]
+	return v.Current, ok
 }
 
 // attrModifier converts a raw attribute value to a D&D-style modifier (attr-10)/2.
@@ -583,9 +614,13 @@ func evalThreshold(expr string) int {
 	return v
 }
 
-// evalOutcome determines the outcome string from roll and threshold.
-func evalOutcome(cfg *models.RollConfig, roll, threshold int) string {
-	if cfg.SuccessType == "raw" || threshold == 0 {
+// evalOutcome determines the outcome string from roll and threshold. hasThreshold tells
+// it whether threshold was actually determined (from an explicit cfg.Threshold override, a
+// skill, or an attribute) as opposed to defaulting to 0 because nothing was configured —
+// threshold == 0 stopped being a usable "no data" sentinel once a fully cancelled skill or
+// attribute (base + advances landing on exactly 0) became a real, computed target.
+func evalOutcome(cfg *models.RollConfig, roll, threshold int, hasThreshold bool) string {
+	if cfg.SuccessType == "raw" || !hasThreshold {
 		return fmt.Sprintf("%d", roll)
 	}
 

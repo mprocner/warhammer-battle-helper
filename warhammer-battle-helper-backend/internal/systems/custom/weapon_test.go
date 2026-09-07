@@ -42,7 +42,7 @@ func weaponTemplate() (*models.SystemTemplate, []byte) {
 
 	stats := Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 8}},
-		Skills:     map[string]AttrValue{"atk": {Current: 10}},
+		Skills:     map[string]AttrValue{"atk": {Base: 10}},
 		Weapons: map[string][]WeaponRow{
 			"weapons": {{
 				ID:    "w1",
@@ -84,6 +84,51 @@ func TestRollWeaponWithTemplate_SuccessRollsDamage(t *testing.T) {
 	}
 	if res.DamageBreakdown == "" {
 		t.Error("DamageBreakdown should be populated on success")
+	}
+}
+
+// TestRollWeaponWithTemplate_CancelledSkillStillRollsDamage covers Finding 1: before the
+// fix, a fully cancelled skill (base 30, advances -30 -> target 0) made evalOutcome fall
+// through its threshold==0 sentinel and return the raw roll string, which contains no
+// "success" substring — so isSuccessOutcome(atk.Outcome) was always false and a weapon
+// attack with a cancelled skill never rolled damage at all, regardless of the die result.
+func TestRollWeaponWithTemplate_CancelledSkillStillRollsDamage(t *testing.T) {
+	template, _ := weaponTemplate()
+	// above_threshold: a target of 0 means every roll succeeds (Finding 8), so this attack
+	// must always roll damage once the skill's cancelled-to-zero target is treated as real.
+	template.Sections[0].Fields[0].RollConfig.SuccessType = "above_threshold"
+
+	stats := Stats{
+		Attributes: map[string]AttrValue{"str": {Current: 8}},
+		Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
+		Weapons: map[string][]WeaponRow{
+			"weapons": {{
+				ID:     "w1",
+				Cells:  map[string]string{"name": "Sword", "skill": "atk"},
+				Damage: map[string]float64{"c1": 2, "d1": 6},
+			}},
+		},
+	}
+	rawStats, err := bson.Marshal(stats)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	// rng order: attack d20 first, then the two damage dice.
+	p := newTestPlugin(4, 3, 5)
+
+	res, err := p.RollWeaponWithTemplate(rawStats, template, "weapons", "w1", 0)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate() error: %v", err)
+	}
+	if res.Outcome != "regular_success" {
+		t.Errorf("Outcome = %q, want regular_success (target 0 under above_threshold)", res.Outcome)
+	}
+	if res.DamageRoll == 0 {
+		t.Error("DamageRoll = 0, want damage to be rolled for a cancelled-skill attack that succeeded")
+	}
+	if res.DamageBreakdown == "" {
+		t.Error("DamageBreakdown should be populated when damage is rolled")
 	}
 }
 

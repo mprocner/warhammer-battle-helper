@@ -18,8 +18,9 @@ type CustomSkillNode struct {
 // Keys in Attributes and Skills match the field keys defined in the SystemTemplate.
 // Skill keys for tree nodes use dot-path notation: "bron_biala.jednorecz.miecz".
 // Skills reuse AttrValue so the same base/advances/current mechanic drives skill_table
-// (with optional advances) and skill_tree (base only, current == base). Rolls read current,
-// falling back to base when current is not yet computed.
+// (with optional advances) and skill_tree (base only, current == base). Rolls sum base +
+// advances directly (see skillValue) rather than trusting current — current is only the
+// persisted convenience copy that ComputeDerived keeps in sync for display.
 type Stats struct {
 	Attributes       map[string]AttrValue       `bson:"attributes"                json:"attributes"`
 	Skills           map[string]AttrValue       `bson:"skills"                    json:"skills"`

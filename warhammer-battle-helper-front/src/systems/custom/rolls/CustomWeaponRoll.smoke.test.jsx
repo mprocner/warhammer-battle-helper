@@ -38,4 +38,39 @@ describe('CustomWeaponRoll', () => {
     expect(formulaLine).not.toBeNull();
     expect(formulaLine.textContent).toBe('2D6+3');
   });
+
+  it('shows the target even when it is negative (a real, cancelled-out skill total)', () => {
+    // FEATURE-162: same guard bug as CustomRoll — a negative attack target used to be
+    // hidden by `data.target > 0`, leaving no target to check the roll against.
+    const data = {
+      outcome: 'failure',
+      roll: 3,
+      target: -10,
+    };
+    const { container } = render(<CustomWeaponRoll data={data} timestamp={null} />);
+
+    const description = container.querySelector('.log-list-item__description');
+    expect(description.textContent).toContain('vs -10');
+  });
+
+  it('hides "vs 0" on a pool roll with no configured success threshold', () => {
+    // FEATURE-162 fix wave 3, finding 1: wave 2's finding 7 fixed this on CustomRoll but
+    // was never copied here, so a pool-mode weapon attack with no configured
+    // PoolSuccessThreshold rendered a meaningless "vs 0" (see roller.go's zero default —
+    // "any die counts"; no die can ever roll 0, so the number carries no information).
+    const data = {
+      outcome: 'regular_success',
+      roll: 2,
+      target: 0,
+      poolFormula: [
+        { kind: 'dice', sides: 6, rolls: [4] },
+        { kind: 'text', text: '+' },
+        { kind: 'dice', sides: 6, rolls: [2] },
+      ],
+    };
+    const { container } = render(<CustomWeaponRoll data={data} timestamp={null} />);
+
+    const description = container.querySelector('.log-list-item__description');
+    expect(description.textContent).not.toContain('vs 0');
+  });
 });

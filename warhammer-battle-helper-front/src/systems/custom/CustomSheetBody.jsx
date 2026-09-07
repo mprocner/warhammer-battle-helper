@@ -499,7 +499,6 @@ function CustomSheetBody({
                     value={adv || ''}
                     onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
                     readOnly={readOnly}
-                    min={0}
                     step={field.step || 1}
                   />
                 </div>
@@ -697,7 +696,6 @@ function CustomSheetBody({
                           value={adv || ''}
                           onChange={onChange ? e => onChange.skillAdvances(skillKey, e.target.value) : undefined}
                           readOnly={readOnly}
-                          min={0}
                         />
                         <span className="custom-sheet__skill-val-total">{total}</span>
                       </>

@@ -61,4 +61,56 @@ describe('CustomRoll', () => {
 
     expect(container.querySelector('.log-modifier')).toBeNull();
   });
+
+  it('shows the target even when it is negative (a real, cancelled-out skill total)', () => {
+    // FEATURE-162: a skill roll target of -10 (base 30, advances -40) used to be hidden
+    // by a `data.target > 0` guard, leaving the player with a roll and no target to check
+    // it against.
+    const data = {
+      outcome: 'failure',
+      roll: 3,
+      target: -10,
+    };
+    const { container } = render(<CustomRoll data={data} timestamp={null} />);
+
+    const description = container.querySelector('.log-list-item__description');
+    expect(description.textContent).toContain('vs -10');
+  });
+
+  it('shows the target when a non-pool roll genuinely computes to zero', () => {
+    // FEATURE-162 finding 1: a fully cancelled skill (base 30, advances -30) now sends a
+    // real Target of 0. It must still render, unlike the pool case below.
+    const data = {
+      outcome: 'regular_success',
+      roll: 6,
+      target: 0,
+    };
+    const { container } = render(<CustomRoll data={data} timestamp={null} />);
+
+    const description = container.querySelector('.log-list-item__description');
+    expect(description.textContent).toContain('vs 0');
+  });
+
+  it('hides "vs 0" on a pool roll with no configured success threshold', () => {
+    // FEATURE-162 finding 7: PoolSuccessThreshold defaults to 0 ("any die counts", see
+    // roller.go) when the GM leaves it unset. Fix wave 1's not-null target guard started
+    // showing "vs 0" here too, but no die can ever roll 0, so an unset threshold and an
+    // explicit "gte 0" behave identically — the number carries no information.
+    const data = {
+      outcome: 'regular_success',
+      roll: 2,
+      target: 0,
+      poolSuccesses: 2,
+      poolSuccessCondition: 'gte',
+      poolFormula: [
+        { kind: 'dice', sides: 6, rolls: [4] },
+        { kind: 'text', text: '+' },
+        { kind: 'dice', sides: 6, rolls: [2] },
+      ],
+    };
+    const { container } = render(<CustomRoll data={data} timestamp={null} />);
+
+    const description = container.querySelector('.log-list-item__description');
+    expect(description.textContent).not.toContain('vs 0');
+  });
 });

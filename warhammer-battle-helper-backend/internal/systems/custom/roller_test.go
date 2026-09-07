@@ -3,6 +3,7 @@ package custom
 import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -41,7 +42,10 @@ func opBlock(o string) models.FormulaBlock   { return models.FormulaBlock{Type: 
 func sampleStats() *Stats {
 	return &Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 8}, "dex": {Current: 5}},
-		Skills:     map[string]AttrValue{"atk": {Current: 10}},
+		// Base (not Current) is the source of truth for skillValue since FEATURE-162: it
+		// sums Base+Advances rather than trusting a possibly-stale Current. Base: 10,
+		// Advances: 0 gives the same effective value as the old Current: 10 fixture.
+		Skills: map[string]AttrValue{"atk": {Base: 10}},
 	}
 }
 
@@ -100,34 +104,93 @@ func TestEvalOutcome(t *testing.T) {
 		name            string
 		successType     string
 		roll, threshold int
+		hasThreshold    bool
 		want            string
 	}{
-		{"raw shows numeric roll", "raw", 7, 50, "7"},
-		{"zero threshold shows numeric roll", "above_threshold", 7, 0, "7"},
-		{"above threshold success", "above_threshold", 50, 40, "regular_success"},
-		{"above threshold failure", "above_threshold", 30, 40, "failure"},
-		{"below threshold success", "below_threshold", 30, 40, "regular_success"},
-		{"below threshold failure", "below_threshold", 50, 40, "failure"},
-		{"default behaves as above", "", 50, 40, "regular_success"},
+		{"raw shows numeric roll", "raw", 7, 50, true, "7"},
+		// FEATURE-162 finding 1: threshold == 0 used to mean "nothing configured" and
+		// forced a raw roll. Since a threshold can now be a real, computed 0 (a fully
+		// cancelled skill or attribute), the caller signals "no threshold was determined"
+		// with hasThreshold instead of inferring it from the value.
+		{"no threshold determined shows numeric roll (genuinely nothing configured)", "above_threshold", 7, 0, false, "7"},
+		{"a real threshold of zero still yields a verdict", "above_threshold", 6, 0, true, "regular_success"},
+		{"a real threshold of zero fails under below_threshold", "below_threshold", 6, 0, true, "failure"},
+		{"above threshold success", "above_threshold", 50, 40, true, "regular_success"},
+		{"above threshold failure", "above_threshold", 30, 40, true, "failure"},
+		{"below threshold success", "below_threshold", 30, 40, true, "regular_success"},
+		{"below threshold failure", "below_threshold", 50, 40, true, "failure"},
+		{"default behaves as above", "", 50, 40, true, "regular_success"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &models.RollConfig{SuccessType: tt.successType}
-			if got := evalOutcome(cfg, tt.roll, tt.threshold); got != tt.want {
-				t.Errorf("evalOutcome(%q, %d, %d) = %q, want %q",
-					tt.successType, tt.roll, tt.threshold, got, tt.want)
+			if got := evalOutcome(cfg, tt.roll, tt.threshold, tt.hasThreshold); got != tt.want {
+				t.Errorf("evalOutcome(%q, %d, %d, hasThreshold=%v) = %q, want %q",
+					tt.successType, tt.roll, tt.threshold, tt.hasThreshold, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestSkillValue(t *testing.T) {
-	stats := &Stats{Skills: map[string]AttrValue{"atk": {Current: 10}}}
-	if got := skillValue(stats, "atk"); got != 10 {
-		t.Errorf("skillValue(atk) = %d, want 10", got)
+	// FEATURE-162: skillValue sums Base+Advances directly. It no longer trusts Current
+	// (which used to be consulted first, falling back to Base only when Current == 0) —
+	// that fallback made a permanent penalty that cancels the base (30 + (-30) = 0)
+	// indistinguishable from "not computed yet", so the roll silently used the
+	// unpenalised base instead of the real 0.
+	tests := []struct {
+		name string
+		v    AttrValue
+		want int
+	}{
+		{"base plus positive advances", AttrValue{Base: 20, Advances: 5}, 25},
+		{"advances cancel the base entirely", AttrValue{Base: 30, Advances: -30}, 0},
+		{"advances partially offset the base", AttrValue{Base: 30, Advances: -10}, 20},
 	}
-	if got := skillValue(stats, "missing"); got != 0 {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stats := &Stats{Skills: map[string]AttrValue{"atk": tt.v}}
+			if got := skillValue(stats, "atk"); got != tt.want {
+				t.Errorf("skillValue() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+	if got := skillValue(&Stats{Skills: map[string]AttrValue{}}, "missing"); got != 0 {
 		t.Errorf("skillValue(missing) = %d, want 0", got)
+	}
+}
+
+func TestSkillHasValue(t *testing.T) {
+	// skillHasValue distinguishes "no data for this skill" (fall back to the linked
+	// attribute) from "a total that really is zero" (base cancelled by advances — use it).
+	// A present-but-all-zero entry (the shape the frontend creates for a freshly added
+	// skill_tree node, addCustomSkillNode) must still read as "no data".
+	tests := []struct {
+		name string
+		v    AttrValue
+		want bool
+	}{
+		{"all zero fields reads as absent", AttrValue{}, false},
+		{"nonzero base has a value", AttrValue{Base: 30}, true},
+		{"nonzero advances alone has a value", AttrValue{Advances: -5}, true},
+		{"base cancelled by advances still has a value", AttrValue{Base: 30, Advances: -30}, true},
+		// FEATURE-162 fix wave 3, finding 2: skillHasValue deliberately does not consult
+		// Current (see the function's doc comment) — base+advances is the whole truth about
+		// a skill's value, and a Current that disagrees can only be stale. Without the
+		// `|| v.Current != 0` term ever being dropped, this case would wrongly read "has
+		// value" from a stale Current alone.
+		{"a stale Current alone is not data", AttrValue{Current: 45}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stats := &Stats{Skills: map[string]AttrValue{"atk": tt.v}}
+			if got := skillHasValue(stats, "atk"); got != tt.want {
+				t.Errorf("skillHasValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+	if got := skillHasValue(&Stats{Skills: map[string]AttrValue{}}, "missing"); got != false {
+		t.Error("skillHasValue(missing) = true, want false")
 	}
 }
 
@@ -341,6 +404,186 @@ func TestRollFromFormula_ThresholdAndOutcome(t *testing.T) {
 	}
 }
 
+// TestRollFromFormula_NegativeAdvancesThreshold covers Finding 2: an empty threshold
+// falls back to the skill value only when the skill has data at all, and the fallback
+// to the linked attribute fires only for a genuinely absent (or present-but-blank)
+// skill — never because the real total happens to be 0 or negative.
+func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
+	template := &models.SystemTemplate{}
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d6")},
+		SuccessType: "above_threshold",
+	}
+
+	t.Run("base 30 advances -30 -> target 0, not the base and not the attribute", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
+		}
+		p := newTestPlugin(5) // d6 -> 6
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0 (the real, cancelled-out skill total)", res.Target)
+		}
+	})
+
+	t.Run("base 30 advances -10 -> target 20", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -10}},
+		}
+		p := newTestPlugin(5)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 20 {
+			t.Errorf("Target = %d, want 20", res.Target)
+		}
+	})
+
+	t.Run("skill absent from the map -> falls back to the linked attribute", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{},
+		}
+		p := newTestPlugin(5)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 40 {
+			t.Errorf("Target = %d, want 40 (attribute fallback)", res.Target)
+		}
+	})
+
+	t.Run("skill present but all-zero -> still falls back to the linked attribute", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {}},
+		}
+		p := newTestPlugin(5)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 40 {
+			t.Errorf("Target = %d, want 40 (attribute fallback — a blank skill entry, not a real zero)", res.Target)
+		}
+	})
+
+	// Finding 6: Current is never trusted, even when it disagrees with Base+Advances.
+	t.Run("Current disagreeing with Base+Advances is ignored", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30, Current: 99}},
+		}
+		p := newTestPlugin(5)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0 (Base+Advances, ignoring the stale Current=99)", res.Target)
+		}
+	})
+}
+
+// TestRollFromFormula_CancelledThresholdProducesRealVerdict covers Finding 1: a threshold
+// that computes to exactly 0 (a fully cancelled skill or attribute) used to fall through
+// evalOutcome's `threshold == 0` sentinel and print the raw roll number instead of a verdict.
+func TestRollFromFormula_CancelledThresholdProducesRealVerdict(t *testing.T) {
+	template := &models.SystemTemplate{}
+
+	t.Run("skill fully cancelled, below_threshold -> a real failure verdict, not the raw roll", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
+		}
+		cfg := &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d6")},
+			SuccessType: "below_threshold",
+		}
+		p := newTestPlugin(5) // d6 -> 6
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0", res.Target)
+		}
+		if res.Outcome != "failure" { // 6 is never <= 0
+			t.Errorf("Outcome = %q, want failure (a real verdict, not the raw roll %q)", res.Outcome, "6")
+		}
+	})
+
+	t.Run("skill fully cancelled, above_threshold -> a real success verdict the frontend's OUTCOME_MAP knows", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 40}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
+		}
+		cfg := &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d6")},
+			SuccessType: "above_threshold",
+		}
+		p := newTestPlugin(5) // d6 -> 6
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		// above_threshold: any roll beats a target of 0 -> automatic success (Finding 8).
+		if res.Outcome != "regular_success" {
+			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		}
+	})
+
+	t.Run("attribute-driven threshold cancelled to zero -> a real verdict", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Base: 20, Advances: -20, Current: 0}},
+			Skills:     map[string]AttrValue{},
+		}
+		cfg := &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d6")},
+			SuccessType: "above_threshold",
+		}
+		p := newTestPlugin(5) // d6 -> 6
+		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0 (the real, cancelled-out attribute total)", res.Target)
+		}
+		if res.Outcome != "regular_success" {
+			t.Errorf("Outcome = %q, want regular_success (a real verdict, not the raw roll)", res.Outcome)
+		}
+	})
+
+	t.Run("genuinely nothing configured -> raw roll behaviour is unchanged", func(t *testing.T) {
+		// No cfg.Threshold, no skill data, and no linked attribute at all — the case the
+		// old threshold==0 sentinel existed to serve. It must keep working.
+		stats := &Stats{
+			Attributes: map[string]AttrValue{},
+			Skills:     map[string]AttrValue{},
+		}
+		cfg := &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d6")},
+			SuccessType: "above_threshold",
+		}
+		p := newTestPlugin(5) // d6 -> 6
+		res, err := p.rollFromFormula(stats, template, "", "", cfg, 0)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Outcome != "6" {
+			t.Errorf("Outcome = %q, want the raw roll %q", res.Outcome, "6")
+		}
+	})
+}
+
 func TestRollFromFormula_ModifierInBreakdown(t *testing.T) {
 	stats := sampleStats()
 	cfg := &models.RollConfig{
@@ -450,54 +693,130 @@ func TestRollFromFormula_DicePoolFormulaParts(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestRollAttrPlusSkill(t *testing.T) {
-	stats := &Stats{
-		Attributes: map[string]AttrValue{"str": {Current: 5}},
-		Skills:     map[string]AttrValue{"atk": {Current: 10}},
-	}
-	cfg := &models.RollConfig{SuccessType: "above_threshold"}
-	// diceSize = attr 5 + skill 10 = 15; Intn(15)=7 -> roll 8.
-	p := newTestPlugin(7)
-	res, err := p.rollAttrPlusSkill(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-	if res.DiceType != 15 || res.Roll != 8 {
-		t.Errorf("got DiceType=%d Roll=%d, want 15/8", res.DiceType, res.Roll)
-	}
-	if res.Target != 10 { // threshold falls back to skill value
-		t.Errorf("Target = %d, want 10", res.Target)
-	}
+	t.Run("threshold falls back to skill value", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 5}},
+			Skills:     map[string]AttrValue{"atk": {Base: 10}},
+		}
+		cfg := &models.RollConfig{SuccessType: "above_threshold"}
+		// diceSize = attr 5 + skill 10 = 15; Intn(15)=7 -> roll 8.
+		p := newTestPlugin(7)
+		res, err := p.rollAttrPlusSkill(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if res.DiceType != 15 || res.Roll != 8 {
+			t.Errorf("got DiceType=%d Roll=%d, want 15/8", res.DiceType, res.Roll)
+		}
+		if res.Target != 10 { // threshold falls back to skill value
+			t.Errorf("Target = %d, want 10", res.Target)
+		}
+		if res.Outcome != "failure" { // roll 8 < threshold 10, above_threshold fails
+			t.Errorf("Outcome = %q, want failure", res.Outcome)
+		}
+	})
+
+	t.Run("a skill cancelled to zero still yields a verdict, not a raw roll", func(t *testing.T) {
+		// FEATURE-162 fix wave 3, finding 3: roller.go:493 sets hasThreshold from
+		// skillHasValue, not from `threshold != 0` — a skill present but cancelled out
+		// (base 30, advances -30) must still produce a real verdict against threshold 0,
+		// not fall through to a raw roll.
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 5}},
+			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
+		}
+		cfg := &models.RollConfig{SuccessType: "above_threshold"}
+		// diceSize = attr 5 + skill 0 = 5; Intn(5)=2 -> roll 3.
+		p := newTestPlugin(2)
+		res, err := p.rollAttrPlusSkill(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0", res.Target)
+		}
+		if res.Outcome != "regular_success" { // roll 3 >= threshold 0
+			t.Errorf("Outcome = %q, want regular_success (a real verdict, not a raw roll)", res.Outcome)
+		}
+	})
 }
 
 func TestRollFixedD100(t *testing.T) {
-	stats := &Stats{
-		Attributes: map[string]AttrValue{"str": {Current: 30}},
-		Skills:     map[string]AttrValue{"atk": {Current: 25}},
-	}
-	cfg := &models.RollConfig{SuccessType: "below_threshold"}
-	// threshold = attr 30 + skill 25 = 55; +modifier 5 -> target 60. Intn(100)=39 -> roll 40.
-	p := newTestPlugin(39)
-	res, _ := p.rollFixedD100(stats, &models.SystemTemplate{}, "atk", "str", cfg, 5)
-	if res.DiceType != 100 || res.Roll != 40 || res.Target != 60 {
-		t.Errorf("got DiceType=%d Roll=%d Target=%d, want 100/40/60", res.DiceType, res.Roll, res.Target)
-	}
-	if res.Outcome != "regular_success" { // 40 <= 60
-		t.Errorf("Outcome = %q, want regular_success", res.Outcome)
-	}
+	t.Run("verdict against a configured attr+skill threshold", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 30}},
+			Skills:     map[string]AttrValue{"atk": {Base: 25}},
+		}
+		cfg := &models.RollConfig{SuccessType: "below_threshold"}
+		// threshold = attr 30 + skill 25 = 55; +modifier 5 -> target 60. Intn(100)=39 -> roll 40.
+		p := newTestPlugin(39)
+		res, _ := p.rollFixedD100(stats, &models.SystemTemplate{}, "atk", "str", cfg, 5)
+		if res.DiceType != 100 || res.Roll != 40 || res.Target != 60 {
+			t.Errorf("got DiceType=%d Roll=%d Target=%d, want 100/40/60", res.DiceType, res.Roll, res.Target)
+		}
+		if res.Outcome != "regular_success" { // 40 <= 60
+			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		}
+	})
+
+	t.Run("an unconfigured roll with a non-zero modifier is raw, not a verdict against the bare modifier", func(t *testing.T) {
+		// FEATURE-162 fix wave 3, finding 4: roller.go:519-524 decides raw-vs-verdict from
+		// hasThreshold, evaluated BEFORE modifier is added. Old behaviour decided from
+		// `threshold + modifier == 0`, so an unconfigured d100 roll with a non-zero
+		// modifier used to produce a verdict against the bare modifier; it must now stay
+		// raw, because a modifier alone is not a threshold.
+		stats := &Stats{} // no attribute, no skill data at all — hasThreshold stays false
+		cfg := &models.RollConfig{SuccessType: "below_threshold"}
+		// Intn(100)=24 -> roll 25. threshold = attr 0 + skill 0 = 0; target = 0 + modifier 5 = 5.
+		p := newTestPlugin(24)
+		res, _ := p.rollFixedD100(stats, &models.SystemTemplate{}, "atk", "str", cfg, 5)
+		if res.Target != 5 {
+			t.Errorf("Target = %d, want 5 (threshold 0 + modifier 5)", res.Target)
+		}
+		wantOutcome := fmt.Sprintf("%d", res.Roll)
+		if res.Outcome != wantOutcome {
+			t.Errorf("Outcome = %q, want %q (raw roll, not a verdict against the modifier)", res.Outcome, wantOutcome)
+		}
+	})
 }
 
 func TestRollFixedD20(t *testing.T) {
-	stats := &Stats{
-		Attributes: map[string]AttrValue{"str": {Current: 14}},
-		Skills:     map[string]AttrValue{"atk": {Current: 3}},
-	}
-	cfg := &models.RollConfig{SuccessType: "above_threshold"}
-	// bonus = attrModifier(14)=2 + skill 3 + modifier 2 = 7; Intn(20)=9 -> roll 10; final 17.
-	p := newTestPlugin(9)
-	res, _ := p.rollFixedD20(stats, &models.SystemTemplate{}, "atk", "str", cfg, 2)
-	if res.D20Roll != 10 || res.BonusTotal != 7 || res.Roll != 17 {
-		t.Errorf("got D20=%d Bonus=%d Roll=%d, want 10/7/17", res.D20Roll, res.BonusTotal, res.Roll)
-	}
+	t.Run("threshold falls back to attribute value", func(t *testing.T) {
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 14}},
+			Skills:     map[string]AttrValue{"atk": {Base: 3}},
+		}
+		cfg := &models.RollConfig{SuccessType: "above_threshold"}
+		// bonus = attrModifier(14)=2 + skill 3 + modifier 2 = 7; Intn(20)=9 -> roll 10; final 17.
+		p := newTestPlugin(9)
+		res, _ := p.rollFixedD20(stats, &models.SystemTemplate{}, "atk", "str", cfg, 2)
+		if res.D20Roll != 10 || res.BonusTotal != 7 || res.Roll != 17 {
+			t.Errorf("got D20=%d Bonus=%d Roll=%d, want 10/7/17", res.D20Roll, res.BonusTotal, res.Roll)
+		}
+		if res.Outcome != "regular_success" { // final roll 17 >= threshold 14
+			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		}
+	})
+
+	t.Run("an attribute cancelled to zero still yields a verdict, not a raw roll", func(t *testing.T) {
+		// FEATURE-162 fix wave 3, finding 3: roller.go:553 sets hasThreshold from attrOK,
+		// not from `threshold != 0` — an attribute present with Current 0 must still
+		// produce a real verdict against threshold 0, not fall through to a raw roll.
+		stats := &Stats{
+			Attributes: map[string]AttrValue{"str": {Current: 0}},
+			Skills:     map[string]AttrValue{"atk": {Base: 3}},
+		}
+		cfg := &models.RollConfig{SuccessType: "above_threshold"}
+		// bonus = attrModifier(0)=-5 + skill 3 + modifier 0 = -2; Intn(20)=9 -> roll 10; final 8.
+		p := newTestPlugin(9)
+		res, _ := p.rollFixedD20(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0", res.Target)
+		}
+		if res.Outcome != "regular_success" { // final roll 8 >= threshold 0
+			t.Errorf("Outcome = %q, want regular_success (a real verdict, not a raw roll)", res.Outcome)
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------
@@ -515,7 +834,7 @@ func TestRollWithTemplate(t *testing.T) {
 	}
 	stats := Stats{
 		Attributes: map[string]AttrValue{"agility": {Current: 14}},
-		Skills:     map[string]AttrValue{"stealth": {Current: 3}},
+		Skills:     map[string]AttrValue{"stealth": {Base: 3}},
 	}
 	raw, err := bson.Marshal(stats)
 	if err != nil {
@@ -863,7 +1182,7 @@ func TestRollWithTemplate_FormulaPath(t *testing.T) {
 	}
 	stats := Stats{
 		Attributes: map[string]AttrValue{"str": {Current: 8}},
-		Skills:     map[string]AttrValue{"atk": {Current: 4}},
+		Skills:     map[string]AttrValue{"atk": {Base: 4}},
 	}
 	raw, _ := bson.Marshal(stats)
 

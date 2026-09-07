@@ -46,6 +46,16 @@ function CustomRoll({ data, timestamp }) {
   const formulaText = poolFormulaText || data.formulaBreakdown;
   const hasFormula = Boolean(formulaText);
 
+  // FEATURE-162 finding 7: a pool roll with no configured PoolSuccessThreshold sends
+  // target 0 ("any die counts" — roller.go's zero default). No die can ever roll 0, so an
+  // unset threshold and an explicit "gte 0" read identically and the number carries no
+  // information; showing "vs 0" here would only confuse. A non-pool roll's target of 0 is
+  // different: FEATURE-162 made that a real, computed value (a fully cancelled skill or
+  // attribute), so it must still be shown.
+  const isPoolRoll = Boolean(data.poolFormula && data.poolFormula.length);
+  const hasTarget = data.target !== undefined && data.target !== null
+    && !(isPoolRoll && data.target === 0);
+
   return (
     <>
       <WaxSealToken
@@ -70,7 +80,10 @@ function CustomRoll({ data, timestamp }) {
           {!hasFormula && diceLabel && <span>{diceLabel}</span>}
           {!hasFormula && diceLabel && ' → '}
           <strong className="log-roll-value" style={{ color: resultColor }}>{data.roll}</strong>
-          {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
+          {/* FEATURE-162: `> 0` hid a negative target (a real, cancelled-out skill total,
+              e.g. base 30 with -40 advances). Only null/undefined means "no target",
+              except an unconfigured pool threshold (see hasTarget above). */}
+          {!isRaw && hasTarget && ` ${t('log.vs')} ${data.target}`}
           {!hasFormula && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {poolDice.length > 0 && (

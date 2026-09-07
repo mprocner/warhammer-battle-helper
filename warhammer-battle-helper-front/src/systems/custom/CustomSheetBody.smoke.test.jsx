@@ -193,3 +193,102 @@ describe('CustomSheetBody field step', () => {
     inputs.forEach(input => expect(input.hasAttribute('step')).toBe(false));
   });
 });
+
+// FEATURE-162: rozwinięcie to modyfikator ze znakiem, nie licznik awansów. Trwała kara
+// (utracona ręka, klątwa) zapisuje się jako wartość ujemna, a baza zostaje wartością
+// „naturalną" postaci. Blokadą był wyłącznie atrybut `min` na inpucie — Go trzyma
+// Advances jako zwykły int i sumuje current = base + advances bez żadnej walidacji.
+//
+// Testy sprawdzają BRAK atrybutu (hasAttribute), nie jego wartość: `min="-999"` też
+// przepuściłoby asercję na konkretny string, a nie o taki wynik nam chodzi.
+describe('CustomSheetBody negative advances', () => {
+  const advSections = (fields) => [{ id: 'sec1', title: 'Statystyki', columns: 3, fields }];
+
+  it('leaves the advances input of an attr field unbounded, so a penalty can go below zero', () => {
+    const { container } = render(<CustomSheetBody sections={advSections([
+      { key: 'fld_attr', type: 'attr', label: 'Zręczność', hasAdvances: true, min: 0, max: 100 },
+    ])} />);
+
+    const adv = container.querySelector('.custom-sheet__attr-input--adv');
+    expect(adv).not.toBeNull();
+    expect(adv.hasAttribute('min')).toBe(false);
+  });
+
+  // Druga strona tej samej decyzji: poluzowaliśmy rozwinięcie, nie całą kartę. Baza dalej
+  // respektuje min z szablonu, bo to wartość „naturalna" postaci i GM ustawia jej zakres
+  // w kreatorze.
+  it('keeps the template min on the base input of the same attr field', () => {
+    const { container } = render(<CustomSheetBody sections={advSections([
+      { key: 'fld_attr', type: 'attr', label: 'Zręczność', hasAdvances: true, min: 0, max: 100 },
+    ])} />);
+
+    const inputs = container.querySelectorAll('.custom-sheet__attr-input');
+    expect(inputs.length).toBe(2);
+    expect(inputs[0].getAttribute('min')).toBe('0');
+  });
+
+  it('leaves the advances input of a skill_table row unbounded', () => {
+    const { container } = render(<CustomSheetBody sections={advSections([
+      {
+        key: 'fld_skills',
+        type: 'skill_table',
+        label: 'Umiejętności',
+        hasAdvances: true,
+        skills: [{ id: 'sk1', label: 'Wspinaczka' }],
+      },
+    ])} />);
+
+    const adv = container.querySelector('.custom-sheet__skill-val-input--adv');
+    expect(adv).not.toBeNull();
+    expect(adv.hasAttribute('min')).toBe(false);
+  });
+
+  it('keeps min 0 on the base input of a skill_table row', () => {
+    const { container } = render(<CustomSheetBody sections={advSections([
+      {
+        key: 'fld_skills',
+        type: 'skill_table',
+        label: 'Umiejętności',
+        hasAdvances: true,
+        skills: [{ id: 'sk1', label: 'Wspinaczka' }],
+      },
+    ])} />);
+
+    expect(container.querySelector('.custom-sheet__skill-val-input--base').getAttribute('min')).toBe('0');
+  });
+
+  // Ścieżka wyświetlania, nie walidacji: input renderuje `adv || ''`, a suma spada poniżej
+  // zera. Gdyby ktoś kiedyś zamienił to na `Math.max(0, adv)` albo na `adv > 0 ? adv : ''`,
+  // atrybutowe testy wyżej dalej by przechodziły, a wartość znikałaby z ekranu.
+  it('renders a negative advances value and a negative total', () => {
+    const { container } = render(<CustomSheetBody
+      sections={advSections([
+        { key: 'fld_attr', type: 'attr', label: 'Zręczność', hasAdvances: true, min: 0, max: 100 },
+      ])}
+      values={{ attributes: { fld_attr: { base: 30, advances: -40, current: -10 } } }}
+    />);
+
+    expect(container.querySelector('.custom-sheet__attr-input--adv').value).toBe('-40');
+    expect(container.querySelector('.custom-sheet__attr-total').textContent).toBe('-10');
+  });
+
+  // Ta sama ścieżka wyświetlania co w teście wyżej, ale dla skill_table. Mutacja
+  // Math.max(0, ...) na obu miejscach naraz przechodziła cały pakiet, dopóki tego nie było.
+  it('renders a negative advances value and a negative total in a skill_table row', () => {
+    const { container } = render(<CustomSheetBody
+      sections={advSections([
+        {
+          key: 'fld_skills',
+          type: 'skill_table',
+          label: 'Umiejętności',
+          hasAdvances: true,
+          skills: [{ id: 'sk1', label: 'Wspinaczka' }],
+        },
+      ])}
+      values={{ skills: { 'fld_skills.sk1': { base: 30, advances: -40, current: -10 } } }}
+    />);
+
+    expect(container.querySelector('.custom-sheet__skill-val-input--adv').value).toBe('-40');
+    expect(container.querySelector('.custom-sheet__skill-val-total').textContent).toBe('-10');
+  });
+});

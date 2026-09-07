@@ -38,6 +38,15 @@ function CustomWeaponRoll({ data, timestamp }) {
   // is left empty by the backend in pool mode); traditional rolls keep formulaBreakdown.
   const formulaText = formatPoolFormula(data.poolFormula, t) || data.formulaBreakdown;
 
+  // FEATURE-162 finding 1 (fix wave 3): mirrors CustomRoll.jsx's isPoolRoll/hasTarget pair.
+  // A pool roll with no configured PoolSuccessThreshold sends target 0 ("any die counts" —
+  // roller.go's zero default); no die can ever roll 0, so an unset threshold and an explicit
+  // "gte 0" read identically and the number carries no information. A non-pool roll's target
+  // of 0 is a real, computed value (a fully cancelled skill or attribute) and must still show.
+  const isPoolRoll = Boolean(data.poolFormula && data.poolFormula.length);
+  const hasTarget = data.target !== undefined && data.target !== null
+    && !(isPoolRoll && data.target === 0);
+
   return (
     <>
       <WaxSealToken
@@ -57,7 +66,10 @@ function CustomWeaponRoll({ data, timestamp }) {
         <div className="log-list-item__description">
           <strong className="log-list-item__character-name">⚔ {weaponLabel}</strong>{' '}
           <strong className="log-roll-value" style={{ color: resultColor }}>{data.roll}</strong>
-          {!isRaw && data.target > 0 && ` ${t('log.vs')} ${data.target}`}
+          {/* FEATURE-162: `> 0` hid a negative target (a real, cancelled-out skill total,
+              e.g. base 30 with -40 advances). Only null/undefined means "no target",
+              except an unconfigured pool threshold (see hasTarget above). */}
+          {!isRaw && hasTarget && ` ${t('log.vs')} ${data.target}`}
           {!formulaText && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {formulaText && (
