@@ -19,6 +19,11 @@ type RollResult struct {
 	SkillKey  string `json:"skillKey,omitempty"`
 	SkillName string `json:"skillName,omitempty"`
 	Modifier  int    `json:"modifier"`
+	// ModifierTarget tells the client where the modifier was applied ("roll" | "threshold" |
+	// "dice_count" | "success_threshold"; empty when no modifier was applied). The log needs it
+	// because only "roll" bakes the modifier into FormulaBreakdown — for every other target the
+	// client has to print it separately or the player never sees it.
+	ModifierTarget string `json:"modifierTarget,omitempty"`
 
 	// Optional weapon-specific
 	WeaponName      string `json:"weaponName,omitempty"`

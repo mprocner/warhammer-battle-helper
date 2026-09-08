@@ -3,8 +3,8 @@ package custom
 import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
-	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -70,22 +70,6 @@ func TestDiceNotationToSides(t *testing.T) {
 	for notation, want := range tests {
 		if got := diceNotationToSides(notation); got != want {
 			t.Errorf("diceNotationToSides(%q) = %d, want %d", notation, got, want)
-		}
-	}
-}
-
-func TestAttrModifier(t *testing.T) {
-	// (attr-10)/2 with Go truncation toward zero (no floor correction here).
-	tests := []struct {
-		attr, want int
-	}{
-		{10, 0}, {12, 1}, {20, 5}, {8, -1},
-		{9, 0},  // -1/2 truncates to 0
-		{7, -1}, // -3/2 truncates to -1 (not -2)
-	}
-	for _, tt := range tests {
-		if got := attrModifier(tt.attr); got != tt.want {
-			t.Errorf("attrModifier(%d) = %d, want %d", tt.attr, got, tt.want)
 		}
 	}
 }
@@ -591,7 +575,7 @@ func TestRollFromFormula_ModifierInBreakdown(t *testing.T) {
 		SuccessType: "above_threshold",
 	}
 	p := newTestPlugin(5) // d6 -> 6
-	res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, 3)
+	res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", cfg, 3)
 	if err != nil {
 		t.Fatalf("rollFromFormula() error: %v", err)
 	}
@@ -601,6 +585,117 @@ func TestRollFromFormula_ModifierInBreakdown(t *testing.T) {
 	if res.FormulaBreakdown != "d6+3 = 6+3 = 9" {
 		t.Errorf("FormulaBreakdown = %q, want %q", res.FormulaBreakdown, "d6+3 = 6+3 = 9")
 	}
+}
+
+// tmplWithModifier builds a template with the modifier enabled and the given targets.
+func tmplWithModifier(trad, pool string) *models.SystemTemplate {
+	return &models.SystemTemplate{
+		Settings: models.TemplateSettings{
+			Modifier: &models.ModifierConfig{Enabled: true, TraditionalTarget: trad, PoolTarget: pool},
+		},
+	}
+}
+
+func TestRollFromFormula_ModifierTargets(t *testing.T) {
+	stats := sampleStats()
+	// Explicit threshold 55, formula d100 — classic roll-under.
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d100")},
+		SuccessType: "below_threshold",
+		Threshold:   "55",
+	}
+
+	t.Run("target roll shifts the result and leaves the threshold alone", func(t *testing.T) {
+		p := newTestPlugin(47) // d100 -> 48
+		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", cfg, -20)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Roll != 28 {
+			t.Errorf("Roll = %d, want 28 (48-20)", res.Roll)
+		}
+		if res.Target != 55 {
+			t.Errorf("Target = %d, want 55 (untouched)", res.Target)
+		}
+		if res.ModifierTarget != ModTargetRoll {
+			t.Errorf("ModifierTarget = %q, want %q", res.ModifierTarget, ModTargetRoll)
+		}
+		if res.Outcome != "regular_success" { // 28 <= 55
+			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		}
+		if res.Modifier != -20 {
+			t.Errorf("Modifier = %d, want -20 — the reported value must match what was applied", res.Modifier)
+		}
+	})
+
+	// The point of "threshold": the roll stays raw, the target moves. Without the modifier
+	// 48 <= 55 is a success; with -20 the threshold drops to 35 and the same roll is a failure.
+	t.Run("target threshold shifts the target and leaves the roll raw", func(t *testing.T) {
+		p := newTestPlugin(47) // d100 -> 48
+		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetThreshold, ""), "atk", "str", cfg, -20)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Roll != 48 {
+			t.Errorf("Roll = %d, want 48 (raw)", res.Roll)
+		}
+		if res.Target != 35 {
+			t.Errorf("Target = %d, want 35 (55-20)", res.Target)
+		}
+		// Three-part "notation = values = result" is evalFormula's normal shape for a bare die
+		// (see gsys.RollResult.FormulaBreakdown doc, e.g. "d6+STR+2 = 3+8+2 = 13") — this is
+		// unchanged by the modifier; the point of this assertion is that no "-20"/"+X" fragment
+		// from the modifier appears here, since it went to the threshold instead.
+		if res.FormulaBreakdown != "d100 = 48 = 48" {
+			t.Errorf("FormulaBreakdown = %q, want %q — the modifier does not belong on the roll side", res.FormulaBreakdown, "d100 = 48 = 48")
+		}
+		if res.Outcome != "failure" {
+			t.Errorf("Outcome = %q, want failure", res.Outcome)
+		}
+		if res.Modifier != -20 {
+			t.Errorf("Modifier = %d, want -20 — the raw value always goes to the log", res.Modifier)
+		}
+	})
+
+	t.Run("no config zeroes a modifier the request tried to smuggle in", func(t *testing.T) {
+		p := newTestPlugin(47) // d100 -> 48
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, -20)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Roll != 48 || res.Target != 55 || res.Modifier != 0 {
+			t.Errorf("got roll=%d target=%d modifier=%d, want 48/55/0", res.Roll, res.Target, res.Modifier)
+		}
+		if res.ModifierTarget != ModTargetNone {
+			t.Errorf("ModifierTarget = %q, want empty", res.ModifierTarget)
+		}
+	})
+
+	// A "raw" threshold has no target to shift — a threshold modifier must not conjure a
+	// target out of nothing.
+	t.Run("threshold target does nothing when no threshold could be determined", func(t *testing.T) {
+		rawCfg := &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d100")},
+			SuccessType: "raw",
+		}
+		emptyStats := &Stats{Attributes: map[string]AttrValue{}, Skills: map[string]AttrValue{}}
+		p := newTestPlugin(47)
+		res, err := p.rollFromFormula(emptyStats, tmplWithModifier(ModTargetThreshold, ""), "unknown", "", rawCfg, 20)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		if res.Target != 0 {
+			t.Errorf("Target = %d, want 0 — no threshold stays no threshold", res.Target)
+		}
+		if res.Outcome != "48" {
+			t.Errorf("Outcome = %q, want raw \"48\"", res.Outcome)
+		}
+		// The modifier moved nothing, so it must not be reported as applied — the log branches on
+		// ModifierTarget and would otherwise print a number that had no effect.
+		if res.Modifier != 0 || res.ModifierTarget != ModTargetNone {
+			t.Errorf("got modifier=%d target=%q, want 0 and an empty target", res.Modifier, res.ModifierTarget)
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------
@@ -688,133 +783,104 @@ func TestRollFromFormula_DicePoolFormulaParts(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Legacy formula types
-// ---------------------------------------------------------------------------
+func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
+	stats := sampleStats()
+	// Pula: 3 kości K6, sukces przy 4+.
+	cfg := &models.RollConfig{
+		RollMode:             "dice_pool",
+		Formula:              []models.FormulaBlock{numBlock(3), opBlock("d"), diceBlock("d6")},
+		PoolSuccessThreshold: 4,
+		PoolSuccessCondition: "gte",
+	}
 
-func TestRollAttrPlusSkill(t *testing.T) {
-	t.Run("threshold falls back to skill value", func(t *testing.T) {
-		stats := &Stats{
-			Attributes: map[string]AttrValue{"str": {Current: 5}},
-			Skills:     map[string]AttrValue{"atk": {Base: 10}},
-		}
-		cfg := &models.RollConfig{SuccessType: "above_threshold"}
-		// diceSize = attr 5 + skill 10 = 15; Intn(15)=7 -> roll 8.
-		p := newTestPlugin(7)
-		res, err := p.rollAttrPlusSkill(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+	t.Run("dice_count rolls extra dice", func(t *testing.T) {
+		// 3 + 2 = 5 kości: 4, 6, 2, 5, 1 -> sukcesy 4, 6, 5 = 3.
+		p := newTestPlugin(3, 5, 1, 4, 0)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", cfg, 2)
 		if err != nil {
-			t.Fatalf("error: %v", err)
+			t.Fatalf("rollFromFormula() error: %v", err)
 		}
-		if res.DiceType != 15 || res.Roll != 8 {
-			t.Errorf("got DiceType=%d Roll=%d, want 15/8", res.DiceType, res.Roll)
+		if got := poolRolls(res.PoolFormula); !reflect.DeepEqual(got, []int{4, 6, 2, 5, 1}) {
+			t.Errorf("pool rolls = %v, want [4 6 2 5 1]", got)
 		}
-		if res.Target != 10 { // threshold falls back to skill value
-			t.Errorf("Target = %d, want 10", res.Target)
+		if res.PoolSuccesses != 3 {
+			t.Errorf("PoolSuccesses = %d, want 3", res.PoolSuccesses)
 		}
-		if res.Outcome != "failure" { // roll 8 < threshold 10, above_threshold fails
-			t.Errorf("Outcome = %q, want failure", res.Outcome)
+		if res.Target != 4 {
+			t.Errorf("Target = %d, want 4 (threshold untouched)", res.Target)
+		}
+		if res.ModifierTarget != ModTargetDiceCount {
+			t.Errorf("ModifierTarget = %q, want %q", res.ModifierTarget, ModTargetDiceCount)
 		}
 	})
 
-	t.Run("a skill cancelled to zero still yields a verdict, not a raw roll", func(t *testing.T) {
-		// FEATURE-162 fix wave 3, finding 3: roller.go:493 sets hasThreshold from
-		// skillHasValue, not from `threshold != 0` — a skill present but cancelled out
-		// (base 30, advances -30) must still produce a real verdict against threshold 0,
-		// not fall through to a raw roll.
-		stats := &Stats{
-			Attributes: map[string]AttrValue{"str": {Current: 5}},
-			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
-		}
-		cfg := &models.RollConfig{SuccessType: "above_threshold"}
-		// diceSize = attr 5 + skill 0 = 5; Intn(5)=2 -> roll 3.
-		p := newTestPlugin(2)
-		res, err := p.rollAttrPlusSkill(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+	t.Run("dice_count removes dice and never drops below one", func(t *testing.T) {
+		// 3 - 9 = -6 kości -> clamp do 1: tylko jeden rzut jest w ogóle wykonany.
+		p := newTestPlugin(5)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", cfg, -9)
 		if err != nil {
-			t.Fatalf("error: %v", err)
+			t.Fatalf("rollFromFormula() error: %v", err)
 		}
-		if res.Target != 0 {
-			t.Errorf("Target = %d, want 0", res.Target)
-		}
-		if res.Outcome != "regular_success" { // roll 3 >= threshold 0
-			t.Errorf("Outcome = %q, want regular_success (a real verdict, not a raw roll)", res.Outcome)
-		}
-	})
-}
-
-func TestRollFixedD100(t *testing.T) {
-	t.Run("verdict against a configured attr+skill threshold", func(t *testing.T) {
-		stats := &Stats{
-			Attributes: map[string]AttrValue{"str": {Current: 30}},
-			Skills:     map[string]AttrValue{"atk": {Base: 25}},
-		}
-		cfg := &models.RollConfig{SuccessType: "below_threshold"}
-		// threshold = attr 30 + skill 25 = 55; +modifier 5 -> target 60. Intn(100)=39 -> roll 40.
-		p := newTestPlugin(39)
-		res, _ := p.rollFixedD100(stats, &models.SystemTemplate{}, "atk", "str", cfg, 5)
-		if res.DiceType != 100 || res.Roll != 40 || res.Target != 60 {
-			t.Errorf("got DiceType=%d Roll=%d Target=%d, want 100/40/60", res.DiceType, res.Roll, res.Target)
-		}
-		if res.Outcome != "regular_success" { // 40 <= 60
-			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		if got := poolRolls(res.PoolFormula); !reflect.DeepEqual(got, []int{6}) {
+			t.Errorf("pool rolls = %v, want [6] — pula nigdy nie schodzi poniżej jednej kości", got)
 		}
 	})
 
-	t.Run("an unconfigured roll with a non-zero modifier is raw, not a verdict against the bare modifier", func(t *testing.T) {
-		// FEATURE-162 fix wave 3, finding 4: roller.go:519-524 decides raw-vs-verdict from
-		// hasThreshold, evaluated BEFORE modifier is added. Old behaviour decided from
-		// `threshold + modifier == 0`, so an unconfigured d100 roll with a non-zero
-		// modifier used to produce a verdict against the bare modifier; it must now stay
-		// raw, because a modifier alone is not a threshold.
-		stats := &Stats{} // no attribute, no skill data at all — hasThreshold stays false
-		cfg := &models.RollConfig{SuccessType: "below_threshold"}
-		// Intn(100)=24 -> roll 25. threshold = attr 0 + skill 0 = 0; target = 0 + modifier 5 = 5.
-		p := newTestPlugin(24)
-		res, _ := p.rollFixedD100(stats, &models.SystemTemplate{}, "atk", "str", cfg, 5)
-		if res.Target != 5 {
-			t.Errorf("Target = %d, want 5 (threshold 0 + modifier 5)", res.Target)
+	t.Run("success_threshold shifts the threshold and leaves the dice count alone", func(t *testing.T) {
+		// 3 kości: 4, 6, 2. Próg 4+2 = 6 -> tylko 6 się liczy.
+		p := newTestPlugin(3, 5, 1)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetSuccessThreshold), "atk", "str", cfg, 2)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
 		}
-		wantOutcome := fmt.Sprintf("%d", res.Roll)
-		if res.Outcome != wantOutcome {
-			t.Errorf("Outcome = %q, want %q (raw roll, not a verdict against the modifier)", res.Outcome, wantOutcome)
+		if got := poolRolls(res.PoolFormula); !reflect.DeepEqual(got, []int{4, 6, 2}) {
+			t.Errorf("pool rolls = %v, want [4 6 2] — liczba kości bez zmian", got)
 		}
-	})
-}
-
-func TestRollFixedD20(t *testing.T) {
-	t.Run("threshold falls back to attribute value", func(t *testing.T) {
-		stats := &Stats{
-			Attributes: map[string]AttrValue{"str": {Current: 14}},
-			Skills:     map[string]AttrValue{"atk": {Base: 3}},
+		if res.Target != 6 {
+			t.Errorf("Target = %d, want 6 (4+2)", res.Target)
 		}
-		cfg := &models.RollConfig{SuccessType: "above_threshold"}
-		// bonus = attrModifier(14)=2 + skill 3 + modifier 2 = 7; Intn(20)=9 -> roll 10; final 17.
-		p := newTestPlugin(9)
-		res, _ := p.rollFixedD20(stats, &models.SystemTemplate{}, "atk", "str", cfg, 2)
-		if res.D20Roll != 10 || res.BonusTotal != 7 || res.Roll != 17 {
-			t.Errorf("got D20=%d Bonus=%d Roll=%d, want 10/7/17", res.D20Roll, res.BonusTotal, res.Roll)
-		}
-		if res.Outcome != "regular_success" { // final roll 17 >= threshold 14
-			t.Errorf("Outcome = %q, want regular_success", res.Outcome)
+		if res.PoolSuccesses != 1 {
+			t.Errorf("PoolSuccesses = %d, want 1", res.PoolSuccesses)
 		}
 	})
 
-	t.Run("an attribute cancelled to zero still yields a verdict, not a raw roll", func(t *testing.T) {
-		// FEATURE-162 fix wave 3, finding 3: roller.go:553 sets hasThreshold from attrOK,
-		// not from `threshold != 0` — an attribute present with Current 0 must still
-		// produce a real verdict against threshold 0, not fall through to a raw roll.
-		stats := &Stats{
-			Attributes: map[string]AttrValue{"str": {Current: 0}},
-			Skills:     map[string]AttrValue{"atk": {Base: 3}},
+	t.Run("disabled config leaves the pool exactly as configured", func(t *testing.T) {
+		p := newTestPlugin(3, 5, 1)
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, 2)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
 		}
-		cfg := &models.RollConfig{SuccessType: "above_threshold"}
-		// bonus = attrModifier(0)=-5 + skill 3 + modifier 0 = -2; Intn(20)=9 -> roll 10; final 8.
-		p := newTestPlugin(9)
-		res, _ := p.rollFixedD20(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
-		if res.Target != 0 {
-			t.Errorf("Target = %d, want 0", res.Target)
+		if got := poolRolls(res.PoolFormula); !reflect.DeepEqual(got, []int{4, 6, 2}) {
+			t.Errorf("pool rolls = %v, want [4 6 2]", got)
 		}
-		if res.Outcome != "regular_success" { // final roll 8 >= threshold 0
-			t.Errorf("Outcome = %q, want regular_success (a real verdict, not a raw roll)", res.Outcome)
+		if res.Target != 4 || res.Modifier != 0 {
+			t.Errorf("got target=%d modifier=%d, want 4/0", res.Target, res.Modifier)
+		}
+	})
+
+	// Modyfikator liczby kości wchodzi do pierwszego członu kostkowego — tego, który wyznacza
+	// wyświetlany DiceType. Udokumentowane ograniczenie z D3 spec.
+	t.Run("dice_count touches only the first die term", func(t *testing.T) {
+		multiCfg := &models.RollConfig{
+			RollMode:             "dice_pool",
+			Formula:              []models.FormulaBlock{numBlock(2), opBlock("d"), diceBlock("d6"), opBlock("+"), numBlock(2), opBlock("d"), diceBlock("d10")},
+			PoolSuccessThreshold: 5,
+			PoolSuccessCondition: "gte",
+		}
+		// pierwszy człon: 2+1 = 3 kości K6 (3, 4, 5); drugi: 2 kości K10 (7, 8).
+		p := newTestPlugin(2, 3, 4, 6, 7)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", multiCfg, 1)
+		if err != nil {
+			t.Fatalf("rollFromFormula() error: %v", err)
+		}
+		var counts []int
+		for _, part := range res.PoolFormula {
+			if part.Kind == "dice" {
+				counts = append(counts, len(part.Rolls))
+			}
+		}
+		if !reflect.DeepEqual(counts, []int{3, 2}) {
+			t.Errorf("dice per term = %v, want [3 2]", counts)
 		}
 	})
 }
@@ -824,41 +890,82 @@ func TestRollFixedD20(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestRollWithTemplate(t *testing.T) {
-	cfg := &models.RollConfig{FormulaType: "fixed_d20_plus_mod", LinkedAttr: "agility", SuccessType: "above_threshold"}
 	template := &models.SystemTemplate{
 		Sections: []models.SectionDef{{
+			ID: "sec1",
 			Fields: []models.FieldDef{{
-				Key: "stealth", Type: "number", Label: "Stealth", Rollable: true, RollConfig: cfg,
+				Key:      "atk",
+				Type:     "skill_table",
+				Label:    "Atak",
+				Rollable: true,
+				Skills:   []models.SkillOption{{ID: "sword", Label: "Miecz"}},
+				RollConfig: &models.RollConfig{
+					Formula:     []models.FormulaBlock{diceBlock("d20")},
+					SuccessType: "above_threshold",
+					Threshold:   "10",
+				},
 			}},
 		}},
 	}
-	stats := Stats{
-		Attributes: map[string]AttrValue{"agility": {Current: 14}},
-		Skills:     map[string]AttrValue{"stealth": {Base: 3}},
-	}
-	raw, err := bson.Marshal(stats)
+	raw, err := bson.Marshal(Stats{
+		Attributes: map[string]AttrValue{"agility": {Current: 12}},
+		Skills:     map[string]AttrValue{"atk.sword": {Base: 5}},
+	})
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	t.Run("dispatches to fixed_d20 formula type", func(t *testing.T) {
-		p := newTestPlugin(9) // d20 -> 10
-		res, err := p.RollWithTemplate(raw, template, "stealth", 2)
+	t.Run("dispatches to the formula path", func(t *testing.T) {
+		p := newTestPlugin(14) // d20 -> 15
+		res, err := p.RollWithTemplate(raw, template, "atk.sword", 0)
 		if err != nil {
 			t.Fatalf("RollWithTemplate() error: %v", err)
 		}
-		// bonus = attrModifier(14)=2 + skill 3 + modifier 2 = 7; final = 10 + 7 = 17.
-		if res.Roll != 17 || res.SkillName != "Stealth" {
-			t.Errorf("got Roll=%d SkillName=%q, want 17/Stealth", res.Roll, res.SkillName)
+		if res.Roll != 15 || res.Target != 10 || res.Outcome != "regular_success" {
+			t.Errorf("got roll=%d target=%d outcome=%q, want 15/10/regular_success", res.Roll, res.Target, res.Outcome)
+		}
+		if res.SkillName != "Miecz" {
+			t.Errorf("SkillName = %q, want Miecz", res.SkillName)
 		}
 	})
 
 	t.Run("unknown skill key errors", func(t *testing.T) {
-		p := newTestPlugin(9)
-		if _, err := p.RollWithTemplate(raw, template, "nonexistent", 0); err == nil {
-			t.Error("expected error for unknown skill key, got nil")
+		p := newTestPlugin()
+		if _, err := p.RollWithTemplate(raw, template, "nope", 0); err == nil {
+			t.Error("expected an error for an unknown skill key")
 		}
 	})
+}
+
+// Po usunięciu ścieżek legacy pole bez formuły nie ma czym rzucić — musi to powiedzieć wprost,
+// tak jak RollWeaponWithTemplate robi od zawsze (weapon.go:32).
+func TestRollWithTemplate_NoFormulaErrors(t *testing.T) {
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			ID: "sec1",
+			Fields: []models.FieldDef{{
+				Key:        "atk",
+				Type:       "attr",
+				Rollable:   true,
+				RollConfig: &models.RollConfig{SuccessType: "above_threshold"},
+			}},
+		}},
+	}
+	raw, err := bson.Marshal(Stats{Attributes: map[string]AttrValue{"atk": {Current: 10}}})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	p := newTestPlugin()
+	_, err = p.RollWithTemplate(raw, template, "atk", 0)
+	if err == nil {
+		t.Fatal("expected an error for a field with no formula")
+	}
+	// Assert the TEXT, not just err != nil. evalFormula and evalFormulaDicePool also error on an
+	// empty block list ("formula is empty"), so an err-only assertion would still pass with the
+	// plugin.go guard deleted — it would guard the contract, not the code enforcing it.
+	if !strings.Contains(err.Error(), "has no roll formula") {
+		t.Errorf("error = %q, want it to mention \"has no roll formula\"", err)
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -994,7 +1101,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 
 	t.Run("single dice_attr collects one roll", func(t *testing.T) {
 		p := newTestPlugin(3) // d8 -> 4
-		parts, diceType, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "")
+		parts, diceType, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "", 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1006,7 +1113,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("dice_attr pool collects all rolls", func(t *testing.T) {
 		p := newTestPlugin(3, 5) // 4, 6
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_attr", Key: "str"}}
-		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "", "")
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "", "", 0)
 		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{4, 6}) {
 			t.Errorf("rolls = %v, want [4 6]", got)
 		}
@@ -1015,7 +1122,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("dice_skill_attr pool", func(t *testing.T) {
 		p := newTestPlugin(7, 9) // sides 18 -> 8, 10
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_skill_attr"}}
-		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str")
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str", 0)
 		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{8, 10}) {
 			t.Errorf("rolls = %v, want [8 10]", got)
 		}
@@ -1031,7 +1138,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 			{Type: "attr_linked"},
 			numBlock(2),
 		}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex")
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex", 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1042,7 +1149,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 
 	t.Run("empty formula errors", func(t *testing.T) {
 		p := newTestPlugin()
-		if _, _, err := p.evalFormulaDicePool(nil, stats, "", ""); err == nil {
+		if _, _, err := p.evalFormulaDicePool(nil, stats, "", "", 0); err == nil {
 			t.Error("expected error for empty pool formula, got nil")
 		}
 	})
@@ -1050,7 +1157,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("count form keeps one term with every roll", func(t *testing.T) {
 		p := newTestPlugin(3, 5, 1) // 4, 6, 2
 		blocks := []models.FormulaBlock{numBlock(3), opBlock("d"), diceBlock("d6")}
-		parts, diceType, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		parts, diceType, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1063,7 +1170,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("computed faces keep their source label", func(t *testing.T) {
 		p := newTestPlugin(3) // d8 -> 4
 		blocks := []models.FormulaBlock{{Type: "dice_attr", Key: "str", Label: "STR"}}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1077,7 +1184,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 		// d6 -> 2 decides the count, then two d10 -> 7, 3.
 		p := newTestPlugin(1, 6, 2)
 		blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("d"), diceBlock("d10")}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "")
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1096,7 +1203,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestResolveRollConfig_SkillTree(t *testing.T) {
-	cfg := &models.RollConfig{FormulaType: "fixed_d100", SuccessType: "below_threshold"}
+	cfg := &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"}
 	template := &models.SystemTemplate{
 		Sections: []models.SectionDef{{
 			Fields: []models.FieldDef{{
@@ -1121,7 +1228,7 @@ func TestResolveRollConfig_SkillTree(t *testing.T) {
 }
 
 func TestResolveRollConfig_SkillTableAssignsAttr(t *testing.T) {
-	cfg := &models.RollConfig{FormulaType: "fixed_d20_plus_mod", LinkedAttr: "dex"}
+	cfg := &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d20")}, LinkedAttr: "dex"}
 	template := &models.SystemTemplate{
 		Sections: []models.SectionDef{{
 			Fields: []models.FieldDef{{
@@ -1197,8 +1304,12 @@ func TestRollWithTemplate_FormulaPath(t *testing.T) {
 }
 
 func TestRollWithTemplate_AttrFieldUsesKeyAsLinkedAttr(t *testing.T) {
-	// For an "attr" field the linked attribute is the skillKey itself.
-	cfg := &models.RollConfig{FormulaType: "fixed_d20_plus_mod", SuccessType: "above_threshold"}
+	// For an "attr" field the linked attribute is the skillKey itself — the attr_linked block
+	// must therefore resolve to the field's own value.
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d20"), opBlock("+"), {Type: "attr_linked"}},
+		SuccessType: "above_threshold",
+	}
 	template := &models.SystemTemplate{
 		Sections: []models.SectionDef{{
 			Fields: []models.FieldDef{{
@@ -1214,25 +1325,13 @@ func TestRollWithTemplate_AttrFieldUsesKeyAsLinkedAttr(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RollWithTemplate() error: %v", err)
 	}
-	// bonus = attrModifier(14)=2 + skill(str as skill key, absent ->0) + 0 = 2; final = 12.
-	if res.Roll != 12 {
-		t.Errorf("Roll = %d, want 12 (d20 10 + attrMod 2)", res.Roll)
+	if res.Roll != 24 { // d20 10 + attr_linked (str = 14)
+		t.Errorf("Roll = %d, want 24", res.Roll)
 	}
-}
-
-func TestRollWithTemplate_UnknownFormulaType(t *testing.T) {
-	cfg := &models.RollConfig{FormulaType: "made_up_type"}
-	template := &models.SystemTemplate{
-		Sections: []models.SectionDef{{
-			Fields: []models.FieldDef{{
-				Key: "x", Type: "number", Rollable: true, RollConfig: cfg,
-			}},
-		}},
-	}
-	raw, _ := bson.Marshal(Stats{})
-	p := newTestPlugin()
-	if _, err := p.RollWithTemplate(raw, template, "x", 0); err == nil {
-		t.Error("expected error for unknown formulaType, got nil")
+	// Threshold falls back to the attribute (the skill key "str" has no skill entry), so a
+	// roll of 24 against 14 is a success.
+	if res.Target != 14 || res.Outcome != "regular_success" {
+		t.Errorf("got target=%d outcome=%q, want 14/regular_success", res.Target, res.Outcome)
 	}
 }
 

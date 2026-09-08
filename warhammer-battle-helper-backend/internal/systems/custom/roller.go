@@ -13,25 +13,34 @@ import (
 // rollFromFormula evaluates a visual formula ([]FormulaBlock) against the
 // character's stats and returns a RollResult.
 func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+	modTarget, modValue := resolveModifier(template.Settings.Modifier, cfg.RollMode, modifier)
+
 	if cfg.RollMode == "dice_pool" {
-		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, cfg, modifier)
+		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, cfg, modTarget, modValue)
 	}
 
-	fmt.Println("[ROLL] Rolling from formula ")
 	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
-	fmt.Printf("[ROLL] result=%v\n", result)
-	finalRoll := result + modifier
 
-	if modifier != 0 {
+	// The modifier lands on exactly one side of the comparison: the roll or the target.
+	rollMod, thresholdMod := 0, 0
+	if modTarget == ModTargetThreshold {
+		thresholdMod = modValue
+	} else {
+		rollMod = modValue
+	}
+
+	finalRoll := result + rollMod
+
+	if rollMod != 0 {
 		sign := "+"
-		if modifier < 0 {
+		if rollMod < 0 {
 			sign = ""
 		}
-		labelStr += fmt.Sprintf("%s%d", sign, modifier)
-		valueStr += fmt.Sprintf("%s%d", sign, modifier)
+		labelStr += fmt.Sprintf("%s%d", sign, rollMod)
+		valueStr += fmt.Sprintf("%s%d", sign, rollMod)
 	}
 
 	var breakdown string
@@ -42,11 +51,9 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 	}
 
 	attrValue, attrOK := attrLookup(stats, linkedAttr)
-	fmt.Printf("[ROLL] Attribute value: %v, linked: %v", attrValue, linkedAttr)
 	sv := skillValue(stats, skillKey)
 	threshold := evalThreshold(cfg.Threshold)
 	hasThreshold := threshold != 0
-	fmt.Printf("[ROLL] Threshold eval: %v, skill: %v, attribute: %v", threshold, sv, attrValue)
 	if threshold == 0 {
 		if skillHasValue(stats, skillKey) {
 			threshold = sv
@@ -56,9 +63,22 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 			hasThreshold = attrOK
 		}
 	}
-	fmt.Println("[ROLL] Final threshold:", threshold)
+	// Only a threshold that actually exists can be shifted. Adding the modifier to a
+	// "no data" threshold would invent a target out of nothing (see evalOutcome).
+	if hasThreshold {
+		threshold += thresholdMod
+	}
 	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
 	skillLabel := resolveSkillLabel(template, stats, skillKey)
+
+	// A threshold-target modifier on a field with no resolvable threshold changes nothing, so it
+	// must not be REPORTED as applied either: the log branches on ModifierTarget to decide whether
+	// the modifier is already inside the breakdown, and a phantom target makes it print a number
+	// that moved neither the roll nor the goal.
+	appliedTarget, appliedValue := modTarget, modValue
+	if modTarget == ModTargetThreshold && !hasThreshold {
+		appliedTarget, appliedValue = ModTargetNone, 0
+	}
 
 	return &gsys.RollResult{
 		DiceType:         diceType,
@@ -68,7 +88,8 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		Outcome:          outcome,
 		SkillKey:         skillKey,
 		SkillName:        skillLabel,
-		Modifier:         modifier,
+		Modifier:         appliedValue,
+		ModifierTarget:   appliedTarget,
 		FormulaBreakdown: breakdown,
 	}, nil
 }
@@ -279,13 +300,23 @@ func evalDicePoolInts(count int, rollFn func() int) []int {
 }
 
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
-func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr)
+// modTarget/modValue come pre-resolved from rollFromFormula, so this function never re-decides
+// what the modifier means.
+func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modTarget string, modValue int) (*gsys.RollResult, error) {
+	extraDice, thresholdMod := 0, 0
+	switch modTarget {
+	case ModTargetDiceCount:
+		extraDice = modValue
+	case ModTargetSuccessThreshold:
+		thresholdMod = modValue
+	}
+
+	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr, extraDice)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval (pool): %w", err)
 	}
 
-	threshold := cfg.PoolSuccessThreshold
+	threshold := cfg.PoolSuccessThreshold + thresholdMod
 	condition := cfg.PoolSuccessCondition
 	if condition == "" {
 		condition = "gte"
@@ -321,18 +352,21 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		Outcome:              outcome,
 		SkillKey:             skillKey,
 		SkillName:            skillLabel,
-		Modifier:             modifier,
+		Modifier:             modValue,
+		ModifierTarget:       modTarget,
 		PoolFormula:          parts,
 		PoolSuccesses:        successes,
 		PoolSuccessCondition: condition,
 	}, nil
 }
 
-// evalFormulaDicePool evaluates the formula for dice-pool mode. It returns the
-// formula as a list of parts — text fragments and die terms carrying their own
-// rolls — plus the face count of the first die rolled (display only).
+// evalFormulaDicePool evaluates the formula for dice-pool mode. extraDice (the pool-size
+// modifier) is absorbed by the FIRST die term only — the one that defines the displayed
+// diceType — and the resulting count is floored at 1; later terms keep their configured
+// counts. It returns the formula as a list of parts — text fragments and die terms carrying
+// their own rolls — plus the face count of the first die rolled (display only).
 // Arithmetic ops still work as die-count modifiers.
-func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (parts []gsys.PoolFormulaPart, diceType int, err error) {
+func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, extraDice int) (parts []gsys.PoolFormulaPart, diceType int, err error) {
 	if len(blocks) == 0 {
 		return nil, 0, fmt.Errorf("formula is empty")
 	}
@@ -344,6 +378,10 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 
 	var segments []segment
 	pendingOp := "+"
+
+	// extraDice (the pool-size modifier) is absorbed by the first die term — the one that
+	// already defines the displayed diceType. Later terms keep their configured counts.
+	extraApplied := false
 
 	// takeCount consumes the preceding part as the multiplier of a "d" operation.
 	// A text part (constant or attribute label) is absorbed into the die term's
@@ -358,36 +396,43 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 		return label
 	}
 
-	// rollTerm appends one die term: `count` dice when it follows a "d" operator,
-	// a single die otherwise. sidesLabel is empty for a literal die (d6) and holds
-	// the source expression when the face count is computed (d(STR)).
+	// rollTerm appends one die term: `count` dice when it follows a "d" operator, a single die
+	// otherwise, plus the pool-size modifier on the first term. sidesLabel is empty for a
+	// literal die (d6) and holds the source expression when the face count is computed (d(STR)).
 	rollTerm := func(sides int, sidesLabel string) {
 		if diceType == 0 {
 			diceType = sides
 		}
 		roll := func() int { return p.rng.Intn(sides) + 1 }
 
+		count := 1
+		countLabel := ""
+		termOp := pendingOp
 		if pendingOp == "d" && len(segments) > 0 {
-			count := segments[len(segments)-1].val
-			prevOp := segments[len(segments)-1].op
+			count = segments[len(segments)-1].val
+			termOp = segments[len(segments)-1].op
 			segments = segments[:len(segments)-1]
-			countLabel := takeCount()
-			rolls := evalDicePoolInts(count, roll)
-			total := 0
-			for _, r := range rolls {
-				total += r
-			}
-			segments = append(segments, segment{op: prevOp, val: total})
-			parts = append(parts, gsys.PoolFormulaPart{
-				Kind: "dice", Sides: sides, SidesLabel: sidesLabel, CountLabel: countLabel, Rolls: rolls,
-			})
-		} else {
-			rolled := roll()
-			segments = append(segments, segment{op: pendingOp, val: rolled})
-			parts = append(parts, gsys.PoolFormulaPart{
-				Kind: "dice", Sides: sides, SidesLabel: sidesLabel, Rolls: []int{rolled},
-			})
+			countLabel = takeCount()
 		}
+		if !extraApplied {
+			extraApplied = true
+			count += extraDice
+		}
+		// A pool of zero dice can never succeed and reads as a bug rather than as a very hard
+		// roll, so the modifier can shrink a pool but never erase it.
+		if count < 1 {
+			count = 1
+		}
+
+		rolls := evalDicePoolInts(count, roll)
+		total := 0
+		for _, r := range rolls {
+			total += r
+		}
+		segments = append(segments, segment{op: termOp, val: total})
+		parts = append(parts, gsys.PoolFormulaPart{
+			Kind: "dice", Sides: sides, SidesLabel: sidesLabel, CountLabel: countLabel, Rolls: rolls,
+		})
 		pendingOp = ""
 	}
 
@@ -465,111 +510,6 @@ func diceNotationToSides(notation string) int {
 	return 6
 }
 
-// ── Legacy formula types ──────────────────────────────────────────────────────
-
-// rollAttrPlusSkill implements the "attr_plus_skill_die" formula:
-//
-//	diceSize = attrValue + skillValue
-//	roll     = rand(1, diceSize)
-//
-// The larger the attribute + skill, the bigger the die — and therefore
-// the wider the range of outcomes.
-func (p *Plugin) rollAttrPlusSkill(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue, _ := attrLookup(stats, linkedAttr)
-	skillValue := skillValue(stats, skillKey)
-
-	diceSize := attrValue + skillValue
-	if diceSize < 1 {
-		diceSize = 1
-	}
-
-	roll := p.rng.Intn(diceSize) + 1
-	finalRoll := roll + modifier
-
-	threshold := evalThreshold(cfg.Threshold)
-	hasThreshold := threshold != 0
-	if threshold == 0 {
-		threshold = skillValue
-		hasThreshold = skillHasValue(stats, skillKey)
-	}
-	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
-
-	skillLabel := resolveSkillLabel(template, stats, skillKey)
-
-	return &gsys.RollResult{
-		DiceType:  diceSize,
-		RollType:  "skill",
-		Roll:      finalRoll,
-		Target:    threshold,
-		Outcome:   outcome,
-		SkillKey:  skillKey,
-		SkillName: skillLabel,
-		Modifier:  modifier,
-	}, nil
-}
-
-// rollFixedD100 implements a classic d100 roll-under mechanic.
-func (p *Plugin) rollFixedD100(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue, attrOK := attrLookup(stats, linkedAttr)
-	sv := skillValue(stats, skillKey)
-
-	roll := p.rng.Intn(100) + 1
-	threshold := evalThreshold(cfg.Threshold)
-	hasThreshold := threshold != 0
-	if threshold == 0 {
-		threshold = attrValue + sv
-		hasThreshold = attrOK || skillHasValue(stats, skillKey)
-	}
-	target := threshold + modifier
-	outcome := evalOutcome(cfg, roll, target, hasThreshold)
-
-	skillLabel := resolveSkillLabel(template, stats, skillKey)
-
-	return &gsys.RollResult{
-		DiceType:  100,
-		RollType:  "skill",
-		Roll:      roll,
-		Target:    target,
-		Outcome:   outcome,
-		SkillKey:  skillKey,
-		SkillName: skillLabel,
-		Modifier:  modifier,
-	}, nil
-}
-
-// rollFixedD20 implements a d20 + modifier roll.
-func (p *Plugin) rollFixedD20(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	attrValue, attrOK := attrLookup(stats, linkedAttr)
-	sv := skillValue(stats, skillKey)
-
-	roll := p.rng.Intn(20) + 1
-	bonus := attrModifier(attrValue) + sv + modifier
-	finalRoll := roll + bonus
-
-	threshold := evalThreshold(cfg.Threshold)
-	hasThreshold := threshold != 0
-	if threshold == 0 {
-		threshold = attrValue
-		hasThreshold = attrOK
-	}
-	outcome := evalOutcome(cfg, finalRoll, threshold, hasThreshold)
-
-	skillLabel := resolveSkillLabel(template, stats, skillKey)
-
-	return &gsys.RollResult{
-		DiceType:   20,
-		RollType:   "skill",
-		Roll:       finalRoll,
-		Target:     threshold,
-		Outcome:    outcome,
-		SkillKey:   skillKey,
-		SkillName:  skillLabel,
-		Modifier:   modifier,
-		D20Roll:    roll,
-		BonusTotal: bonus,
-	}, nil
-}
-
 // skillValue returns the character's effective value for the given skill key: base +
 // advances. This used to read Current instead, falling back to Base only when Current
 // was 0 — but Current == 0 no longer means "not computed yet": a permanent penalty that
@@ -601,11 +541,6 @@ func skillHasValue(stats *Stats, key string) bool {
 func attrLookup(stats *Stats, key string) (value int, ok bool) {
 	v, ok := stats.Attributes[key]
 	return v.Current, ok
-}
-
-// attrModifier converts a raw attribute value to a D&D-style modifier (attr-10)/2.
-func attrModifier(attr int) int {
-	return (attr - 10) / 2
 }
 
 // evalThreshold parses a numeric threshold override. Returns 0 if empty.

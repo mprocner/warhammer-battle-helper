@@ -134,20 +134,10 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 		linkedAttr = skillKey
 	}
 
-	if len(rollCfg.Formula) > 0 {
-		return p.rollFromFormula(stats, template, skillKey, linkedAttr, rollCfg, modifier)
+	if len(rollCfg.Formula) == 0 {
+		return nil, fmt.Errorf("custom: field %q has no roll formula", skillKey)
 	}
-
-	switch rollCfg.FormulaType {
-	case "attr_plus_skill_die":
-		return p.rollAttrPlusSkill(stats, template, skillKey, linkedAttr, rollCfg, modifier)
-	case "fixed_d100":
-		return p.rollFixedD100(stats, template, skillKey, linkedAttr, rollCfg, modifier)
-	case "fixed_d20_plus_mod":
-		return p.rollFixedD20(stats, template, skillKey, linkedAttr, rollCfg, modifier)
-	default:
-		return nil, fmt.Errorf("custom: unknown formulaType %q", rollCfg.FormulaType)
-	}
+	return p.rollFromFormula(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 }
 
 func decodeStats(raw bson.Raw) (*Stats, error) {

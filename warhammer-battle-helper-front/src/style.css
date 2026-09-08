@@ -1992,9 +1992,6 @@ align-items: center;
 .action-button.small{ padding:.4rem .9rem; font-size:.875rem; border-radius:8px; }
 .action-button.large{ padding:1rem 2rem; font-size:1.125rem; border-radius:16px; }
 
-/* ================== MODIFIER INPUT ================== */
-.modifier-input { width:40px; padding:0; }
-
 /* ================== RESET BUTTON ================== */
 .reset-button {
   margin:20px;
@@ -7493,15 +7490,18 @@ align-items: center;
     background: rgba(0, 0, 0, 0.55);
 }
 
+/* Karta pytania o modyfikator należy do rodziny kart postaci, więc trzyma ich jasną paletę
+   (kremowe tło, ciemny brąz), nie ciemny motyw sesji gry. */
 .custom-roll-overlay__card {
     position: relative;
     z-index: 1;
-    background: #1e1812;
-    border: 2px solid #c9975b;
+    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+    border: 2px solid #7a5c42;
     border-radius: 8px;
     padding: 20px 24px;
-    min-width: 240px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    min-width: 260px;
+    max-width: 340px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -7509,8 +7509,50 @@ align-items: center;
 
 .custom-roll-overlay__title {
     font-size: 0.95rem;
-    color: #e8d5b7;
+    color: #3a2f1f;
     font-family: 'Cinzel', serif;
+}
+
+.custom-roll-overlay__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.custom-roll-overlay__preset {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #3a2f1f;
+    font-size: 0.8rem;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.custom-roll-overlay__preset:hover {
+    border-color: #7a5c42;
+    background: #fffdf8;
+}
+
+.custom-roll-overlay__preset-value {
+    font-weight: 700;
+    color: #7a5c42;
+}
+
+.custom-roll-overlay__preset--plus .custom-roll-overlay__preset-value {
+    color: #4e6b3c;
+}
+
+.custom-roll-overlay__preset--minus .custom-roll-overlay__preset-value {
+    color: #8c3a2b;
+}
+
+.custom-roll-overlay__preset-label {
+    color: rgba(58, 47, 31, 0.75);
 }
 
 .custom-roll-overlay__row {
@@ -7521,15 +7563,15 @@ align-items: center;
 
 .custom-roll-overlay__label {
     font-size: 0.85rem;
-    color: rgba(232, 213, 183, 0.6);
+    color: #7a5c42;
     white-space: nowrap;
 }
 
 .custom-roll-overlay__input {
     width: 70px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(201, 151, 91, 0.4);
-    color: #e8d5b7;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    color: #3a2f1f;
     border-radius: 4px;
     padding: 5px 8px;
     font-size: 1rem;
@@ -7538,7 +7580,7 @@ align-items: center;
 
 .custom-roll-overlay__input:focus {
     outline: none;
-    border-color: #c9975b;
+    border-color: #7a5c42;
 }
 
 .custom-roll-overlay__actions {
@@ -7549,8 +7591,8 @@ align-items: center;
 
 .custom-roll-overlay__btn--cancel {
     background: none;
-    border: 1px solid rgba(201, 151, 91, 0.3);
-    color: rgba(232, 213, 183, 0.6);
+    border: 1px solid #c4a882;
+    color: #7a5c42;
     border-radius: 4px;
     padding: 6px 14px;
     cursor: pointer;
@@ -7559,14 +7601,14 @@ align-items: center;
 }
 
 .custom-roll-overlay__btn--cancel:hover {
-    border-color: rgba(201, 151, 91, 0.6);
-    color: #e8d5b7;
+    border-color: #7a5c42;
+    color: #3a2f1f;
 }
 
 .custom-roll-overlay__btn--roll {
     background: linear-gradient(135deg, #c9975b, #a87540);
     border: none;
-    color: #1a130a;
+    color: #fff9f0;
     border-radius: 4px;
     padding: 6px 16px;
     cursor: pointer;
@@ -7578,7 +7620,7 @@ align-items: center;
 }
 
 .custom-roll-overlay__btn--roll:hover {
-    filter: brightness(1.12);
+    filter: brightness(1.08);
 }
 
 /* --- CharacterSheet full popup --- */
@@ -10970,4 +11012,180 @@ align-items: center;
 .map-char-token--multi-selected {
   outline: 2px solid #c9975b;
   outline-offset: 2px;
+}
+
+/* --- ModifierPresetEditor (kreator, zakładka General) --- */
+
+.mpe__root {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mpe__empty {
+    font-size: 0.8rem;
+    color: rgba(58, 47, 31, 0.55);
+    font-style: italic;
+}
+
+.mpe__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mpe__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mpe__value {
+    width: 68px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    color: #3d2b1a;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+    transition: border-color 0.14s;
+}
+
+.mpe__label {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    color: #3d2b1a;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+    transition: border-color 0.14s;
+}
+
+.mpe__value:focus,
+.mpe__label:focus {
+    border-color: #c9975b;
+}
+
+.mpe__remove {
+    background: none;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    color: #8c3a2b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+}
+
+.mpe__remove:hover {
+    border-color: #8c3a2b;
+}
+
+.mpe__add {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px dashed #c4a882;
+    border-radius: 4px;
+    color: #7a5c42;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+}
+
+.mpe__add:hover {
+    border-style: solid;
+    border-color: #7a5c42;
+}
+
+/* --- ModifierConfigBuilder (kreator, zakładka General) --- */
+
+.mcb__root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcb__enable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #3a2f1f;
+    font-size: 0.85rem;
+}
+
+.mcb__disabled-hint,
+.mcb__hint {
+    font-size: 0.78rem;
+    color: rgba(58, 47, 31, 0.6);
+    line-height: 1.35;
+}
+
+.mcb__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mcb__label {
+    font-size: 0.78rem;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.mcb__select {
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: #3d2b1a;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+    transition: border-color 0.14s;
+}
+
+.mcb__select:focus {
+    border-color: #c9975b;
+}
+
+.mcb__limits {
+    display: flex;
+    gap: 8px;
+}
+
+.mcb__limit {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.mcb__limit input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    color: #3d2b1a;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+    transition: border-color 0.14s;
+}
+
+.mcb__limit input:focus {
+    border-color: #c9975b;
 }

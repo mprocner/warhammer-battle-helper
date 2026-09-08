@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
@@ -6,6 +6,8 @@ import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
+import RollModifierOverlay from './RollModifierOverlay';
+import { useRollPrompt } from './useRollPrompt';
 
 // Typy pól, które mają sens jako pojedynczy kafelek na skróconej karcie. skill_table i skill_tree
 // to kolekcje — trafiają na kartę wyłącznie przez gwiazdki (stats.favoriteSkills).
@@ -23,8 +25,6 @@ function CustomCharacterDetails({
   game = null,
 }) {
   const { t } = useTranslation();
-  const [rollModal,  setRollModal]  = useState(null); // { skillKey, label }
-  const [modifier,   setModifier]   = useState(0);
 
   const template   = game?.customSystemTemplate;
   const stats      = useMemo(() => character?.stats || {}, [character?.stats]);
@@ -32,7 +32,7 @@ function CustomCharacterDetails({
   const progress   = stats.progress   || {};
   const numbers    = stats.numbers    || {};
 
-  const handleRoll = async (skillKey, mod = 0) => {
+  const handleRoll = useCallback(async (skillKey, mod = 0) => {
     if (!gameId || !character) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
@@ -43,11 +43,9 @@ function CustomCharacterDetails({
     } catch {
       addLogMessage?.(t('combat.rollFailed'), 'error');
     }
-    setRollModal(null);
-    setModifier(0);
-  };
+  }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
-  const handleRollWeapon = async (fieldKey, rowId, mod = 0) => {
+  const handleRollWeapon = useCallback(async (fieldKey, rowId, mod = 0) => {
     if (!gameId || !character) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
@@ -58,18 +56,20 @@ function CustomCharacterDetails({
     } catch {
       addLogMessage?.(t('combat.rollFailed'), 'error');
     }
-    setRollModal(null);
-    setModifier(0);
-  };
+  }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
-  // Dispatches the modifier modal's confirm to a skill/attribute or a weapon roll.
-  const confirmRoll = (mod) => {
-    if (rollModal?.weaponFieldKey) {
-      handleRollWeapon(rollModal.weaponFieldKey, rollModal.weaponRowId, mod);
+  // Hook woła to z requestem, który wcześniej dostał od przycisku, i z zatwierdzonym
+  // modyfikatorem; rozdział na rzut umiejętności i broni zostaje tutaj, bo tylko ta warstwa
+  // wie, który endpoint jest który.
+  const dispatchRoll = useCallback((request, mod) => {
+    if (request.weaponFieldKey) {
+      handleRollWeapon(request.weaponFieldKey, request.weaponRowId, mod);
     } else {
-      handleRoll(rollModal.skillKey, mod);
+      handleRoll(request.skillKey, mod);
     }
-  };
+  }, [handleRoll, handleRollWeapon]);
+
+  const { modifierConfig, pending, promptRoll, cancelRoll, confirmRoll } = useRollPrompt(template, dispatchRoll);
 
   const handleProgressDelta = useCallback(async (fieldKey, delta) => {
     const s = character?.stats || {};
@@ -132,8 +132,10 @@ function CustomCharacterDetails({
         {field.rollable && (
           <button
             className="custom-character-details__roll-btn"
-            onClick={() => setRollModal({ skillKey: field.key, label: field.label })}
+            onClick={() => promptRoll({ skillKey: field.key, label: field.label })}
             disabled={!gameId}
+            title={t('combat.roll')}
+            aria-label={t('combat.roll')}
           >
             <CasinoIcon style={{ fontSize: 14 }} />
           </button>
@@ -249,7 +251,7 @@ function CustomCharacterDetails({
             <button
               key={s.skillKey}
               className="custom-character-details__favorite-item"
-              onClick={() => setRollModal({ skillKey: s.skillKey, label: s.label })}
+              onClick={() => promptRoll({ skillKey: s.skillKey, label: s.label })}
               disabled={!gameId}
             >
               <span className="custom-character-details__favorite-label">{s.label}</span>
@@ -270,7 +272,7 @@ function CustomCharacterDetails({
             <button
               key={`${w.fieldKey}.${w.rowId}`}
               className="custom-character-details__favorite-item"
-              onClick={() => setRollModal({ weaponFieldKey: w.fieldKey, weaponRowId: w.rowId, label: w.label })}
+              onClick={() => promptRoll({ weaponFieldKey: w.fieldKey, weaponRowId: w.rowId, label: w.label })}
               disabled={!gameId || w.incomplete}
               title={w.incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
             >
@@ -281,39 +283,14 @@ function CustomCharacterDetails({
         </div>
       )}
 
-      {/* Modifier overlay */}
-      {rollModal && (
-        <div className="custom-roll-overlay">
-          <div className="custom-roll-overlay__backdrop" onClick={() => { setRollModal(null); setModifier(0); }} />
-          <div className="custom-roll-overlay__card">
-            <div className="custom-roll-overlay__title">
-              {t('combat.rollFor')}: <strong>{rollModal.label}</strong>
-            </div>
-            <div className="custom-roll-overlay__row">
-              <label className="custom-roll-overlay__label">{t('combat.modifier')}</label>
-              <input
-                type="number"
-                className="custom-roll-overlay__input"
-                value={modifier}
-                onChange={e => setModifier(Number(e.target.value))}
-                autoFocus
-                onKeyDown={e => {
-                  if (e.key === 'Enter') confirmRoll(modifier);
-                  if (e.key === 'Escape') { setRollModal(null); setModifier(0); }
-                }}
-              />
-            </div>
-            <div className="custom-roll-overlay__actions">
-              <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
-                {t('common.cancel')}
-              </button>
-              <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
-                <CasinoIcon style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }} />
-                {t('combat.roll')}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Pytanie o modyfikator — renderuje się tylko wtedy, gdy szablon go włącza. */}
+      {pending && modifierConfig && (
+        <RollModifierOverlay
+          label={pending.label}
+          config={modifierConfig}
+          onConfirm={confirmRoll}
+          onCancel={cancelRoll}
+        />
       )}
 
     </div>

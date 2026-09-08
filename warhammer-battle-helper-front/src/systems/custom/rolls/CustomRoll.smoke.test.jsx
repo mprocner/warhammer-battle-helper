@@ -37,14 +37,13 @@ describe('CustomRoll', () => {
 
   it('renders the formula line for a pool roll whose formula has only text parts (no dice)', () => {
     // e.g. attribute STR + op "+" + const 2 — a formula the builder permits with no die block.
-    // diceType and modifier are also set here to pin that hasFormula suppresses BOTH the
-    // die label and the modifier in the description line whenever a formula is shown.
+    // diceType is also set here to pin that hasFormula still suppresses the die label in the
+    // description line whenever a formula is shown.
     const data = {
       outcome: 'regular_success',
       roll: 2,
       target: 0,
       diceType: 6,
-      modifier: 2,
       poolFormula: [
         { kind: 'text', text: 'STR' },
         { kind: 'text', text: '+' },
@@ -58,8 +57,31 @@ describe('CustomRoll', () => {
     const formulaLine = container.querySelector('.log-formula-breakdown');
     expect(formulaLine).not.toBeNull();
     expect(formulaLine.textContent).toBe('STR+2');
+  });
 
-    expect(container.querySelector('.log-modifier')).toBeNull();
+  // FEATURE-164: only target "roll" bakes the modifier into the formula breakdown text.
+  // A pool roll's modifier normally targets "dice_count" (see modifierConfig.js's
+  // DEFAULT_MODIFIER_CONFIG.poolTarget), which formulaBreakdown/poolFormula says nothing
+  // about — so unlike the case above (no modifier at all), a pool roll that DOES carry a
+  // modifier must still show it next to the roll, even though a formula line is present.
+  it('shows a pool modifier separately when its target is not "roll"', () => {
+    const data = {
+      outcome: 'regular_success',
+      roll: 2,
+      target: 0,
+      modifier: 2,
+      modifierTarget: 'dice_count',
+      poolFormula: [
+        { kind: 'text', text: 'STR' },
+        { kind: 'text', text: '+' },
+        { kind: 'text', text: '2' },
+      ],
+    };
+    const { container } = render(<CustomRoll data={data} timestamp={null} />);
+
+    const modifierNode = container.querySelector('.log-modifier');
+    expect(modifierNode).not.toBeNull();
+    expect(modifierNode.textContent).toBe(' (+2)');
   });
 
   it('shows the target even when it is negative (a real, cancelled-out skill total)', () => {

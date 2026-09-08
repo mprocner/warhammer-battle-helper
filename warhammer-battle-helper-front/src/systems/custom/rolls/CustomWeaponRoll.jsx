@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
 import { formatPoolFormula } from './poolFormula';
+import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
 
 const OUTCOME_MAP = {
@@ -38,6 +39,9 @@ function CustomWeaponRoll({ data, timestamp }) {
   // is left empty by the backend in pool mode); traditional rolls keep formulaBreakdown.
   const formulaText = formatPoolFormula(data.poolFormula, t) || data.formulaBreakdown;
 
+  // Patrz CustomRoll.jsx — tylko target "roll" siedzi już w breakdownie.
+  const showsModifierSeparately = !formulaText || data.modifierTarget !== MOD_TARGET_ROLL;
+
   // FEATURE-162 finding 1 (fix wave 3): mirrors CustomRoll.jsx's isPoolRoll/hasTarget pair.
   // A pool roll with no configured PoolSuccessThreshold sends target 0 ("any die counts" —
   // roller.go's zero default); no die can ever roll 0, so an unset threshold and an explicit
@@ -70,7 +74,7 @@ function CustomWeaponRoll({ data, timestamp }) {
               e.g. base 30 with -40 advances). Only null/undefined means "no target",
               except an unconfigured pool threshold (see hasTarget above). */}
           {!isRaw && hasTarget && ` ${t('log.vs')} ${data.target}`}
-          {!formulaText && modifierText && <span className="log-modifier">{modifierText}</span>}
+          {showsModifierSeparately && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {formulaText && (
           <div className="log-formula-breakdown">{formulaText}</div>

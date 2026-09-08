@@ -25,7 +25,7 @@ const filledTreeSections = [{
       type: 'skill_tree',
       label: 'Umiejętności',
       rollable: true,
-      rollConfig: { formulaType: 'fixed_d100' },
+      rollConfig: { formula: [{ id: 'b1', type: 'dice', value: 'd100' }], successType: 'below_threshold' },
       tree: {
         key: 'tree_123',
         label: 'Kategoria',

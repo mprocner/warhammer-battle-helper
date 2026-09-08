@@ -23,12 +23,12 @@ const attr = (key, extra = {}) => ({
   ...extra,
 });
 
-function renderCard(sections, stats = {}, props = {}) {
+function renderCard(sections, stats = {}, props = {}, templateExtra = {}) {
   return render(
     <CustomCharacterDetails
       character={{ id: 'c1', name: 'Bohater', stats }}
       onCharacterUpdate={() => {}}
-      game={{ customSystemTemplate: { sections } }}
+      game={{ customSystemTemplate: { sections, ...templateExtra } }}
       {...props}
     />
   );
@@ -80,13 +80,17 @@ describe('CustomCharacterDetails short card', () => {
   });
 
   it('shows the dice button only on rollable fields and opens the modifier modal', () => {
+    // FEATURE-164: the overlay only opens when the template enables a modifier prompt — without
+    // one, promptRoll fires the roll immediately. Configure one here so this test still exercises
+    // the overlay path it is named for.
     const { container } = renderCard(
       [{ id: 's1', fields: [
         attr('plain'),
         attr('rolls', { rollable: true }),
       ] }],
       {},
-      { gameId: 'g1' }
+      { gameId: 'g1' },
+      { settings: { modifier: { enabled: true, traditionalTarget: 'roll' } } }
     );
 
     const tiles = [...container.querySelectorAll('.custom-character-details__attr')];

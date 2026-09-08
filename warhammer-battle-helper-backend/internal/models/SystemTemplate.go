@@ -34,6 +34,39 @@ type TemplateSettings struct {
 	// TokenDisplay configures what extra info renders around a character token on
 	// the map (FEATURE-102): 8 radial slots, an HP bar binding and optional squares.
 	TokenDisplay *TokenDisplayConfig `bson:"tokenDisplay,omitempty" json:"tokenDisplay,omitempty"`
+
+	// Modifier configures the roll-modifier prompt of a custom card (FEATURE-164). nil means
+	// disabled, which is how every pre-existing template starts — no migration needed.
+	Modifier *ModifierConfig `bson:"modifier,omitempty" json:"modifier,omitempty"`
+}
+
+// ModifierConfig is the template-wide setup of the roll-modifier prompt shown before a roll on
+// a custom card. It holds two independent targets because RollMode ("traditional" | "dice_pool")
+// is per field while this config is per template: the mechanic picks its own target, so a card
+// mixing both modes never applies a rule that makes no sense for one of them.
+type ModifierConfig struct {
+	Enabled bool `bson:"enabled" json:"enabled"`
+
+	// TraditionalTarget: "roll" (added to the result, default) | "threshold" (added to the
+	// success threshold — the roll-under convention, e.g. WFRP/CoC).
+	TraditionalTarget string `bson:"traditionalTarget,omitempty" json:"traditionalTarget,omitempty"`
+	// PoolTarget: "dice_count" (adds/removes dice, default) | "success_threshold".
+	PoolTarget string `bson:"poolTarget,omitempty" json:"poolTarget,omitempty"`
+
+	// Step is the prompt input's step; 0 reads as 1. Min/Max are plain ints, not pointers: the
+	// "no limits" case is Min and Max BOTH zero, so no field needs to tell "unset" from "0".
+	Step int `bson:"step,omitempty" json:"step,omitempty"`
+	Min  int `bson:"min,omitempty" json:"min,omitempty"`
+	Max  int `bson:"max,omitempty" json:"max,omitempty"`
+
+	Presets []ModifierPreset `bson:"presets,omitempty" json:"presets,omitempty"`
+}
+
+// ModifierPreset is one quick-pick button in the prompt, e.g. {-30, "Very hard"}. Label is
+// GM-authored free text, so it is never run through i18n.
+type ModifierPreset struct {
+	Value int    `bson:"value" json:"value"`
+	Label string `bson:"label,omitempty" json:"label,omitempty"`
 }
 
 // TokenDisplayConfig is the map-token overlay layout authored in the "Token Display"
@@ -273,9 +306,10 @@ type RollConfig struct {
 	PoolSuccessThreshold int    `bson:"poolSuccessThreshold,omitempty" json:"poolSuccessThreshold,omitempty"`
 	PoolSuccessCondition string `bson:"poolSuccessCondition,omitempty" json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
 
-	// Deprecated: superseded by Formula. Kept for backward compat with existing roller logic.
-	FormulaType string `bson:"formulaType,omitempty" json:"formulaType,omitempty"`
-	LinkedAttr  string `bson:"linkedAttr,omitempty" json:"linkedAttr,omitempty"`
+	// LinkedAttr is the fallback attribute for attr_linked / dice_skill_attr blocks, used when
+	// the live source (SkillTreeNode.LinkedAttr, SkillOption.Attr, CustomSkillNodes[].LinkedAttr)
+	// is empty. Looks legacy, is not: resolveRollConfig reads it on every roll.
+	LinkedAttr string `bson:"linkedAttr,omitempty" json:"linkedAttr,omitempty"`
 }
 
 // CreateTemplateRequest is the request body for POST /templates.

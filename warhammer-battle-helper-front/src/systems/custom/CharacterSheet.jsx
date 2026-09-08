@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import CasinoIcon from '@mui/icons-material/Casino';
 import DraggablePopup from '../../components/common/DraggablePopup';
 import { usePopOut, useCharacterSheetHeaderButtons } from '../shared/useCharacterSheetActions';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import CustomSheetBody from './CustomSheetBody';
+import RollModifierOverlay from './RollModifierOverlay';
+import { useRollPrompt } from './useRollPrompt';
 
 function CustomCharacterSheet({
   character,
@@ -37,8 +38,6 @@ function CustomCharacterSheet({
   const [charName,   setCharName]   = useState(character?.name   || '');
   const [isSaving,   setIsSaving]   = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [rollModal,  setRollModal]  = useState(null); // { skillKey, label }
-  const [modifier,   setModifier]   = useState(0);
 
   const autoSaveTimer  = useRef(null);
   const charNameRef    = useRef(charName);
@@ -278,7 +277,7 @@ function CustomCharacterSheet({
     });
   };
 
-  const handleRoll = async (skillKey, mod = 0) => {
+  const handleRoll = useCallback(async (skillKey, mod = 0) => {
     if (!gameId) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
@@ -289,11 +288,9 @@ function CustomCharacterSheet({
     } catch {
       addLogMessage?.(t('combat.rollFailed'), 'error');
     }
-    setRollModal(null);
-    setModifier(0);
-  };
+  }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
-  const handleRollWeapon = async (fieldKey, rowId, mod = 0) => {
+  const handleRollWeapon = useCallback(async (fieldKey, rowId, mod = 0) => {
     if (!gameId) return;
     try {
       await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
@@ -304,18 +301,20 @@ function CustomCharacterSheet({
     } catch {
       addLogMessage?.(t('combat.rollFailed'), 'error');
     }
-    setRollModal(null);
-    setModifier(0);
-  };
+  }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
-  // Dispatches the modifier modal's confirm to a skill or weapon roll.
-  const confirmRoll = (mod) => {
-    if (rollModal?.weaponFieldKey) {
-      handleRollWeapon(rollModal.weaponFieldKey, rollModal.weaponRowId, mod);
+  // Hook woła to z requestem, który wcześniej dostał od przycisku, i z zatwierdzonym
+  // modyfikatorem; rozdział na rzut umiejętności i broni zostaje tutaj, bo tylko ta warstwa
+  // wie, który endpoint jest który.
+  const dispatchRoll = useCallback((request, mod) => {
+    if (request.weaponFieldKey) {
+      handleRollWeapon(request.weaponFieldKey, request.weaponRowId, mod);
     } else {
-      handleRoll(rollModal.skillKey, mod);
+      handleRoll(request.skillKey, mod);
     }
-  };
+  }, [handleRoll, handleRollWeapon]);
+
+  const { modifierConfig, pending, promptRoll, cancelRoll, confirmRoll } = useRollPrompt(template, dispatchRoll);
 
   const handlePopOut = usePopOut(character?.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({
@@ -344,7 +343,7 @@ function CustomCharacterSheet({
       weaponDamage:   (fieldKey, rowId, blockId, val) => updateWeaponDamage(fieldKey, rowId, blockId, val),
       weaponFavorite: (weaponId)                     => toggleWeaponFavorite(weaponId),
     }}
-    onRoll={setRollModal}
+    onRoll={promptRoll}
     favoriteWeapons={edited.favoriteWeapons}
     customSkillNodes={edited.customSkillNodes}
     onAddCustomSkill={addCustomSkillNode}
@@ -356,36 +355,14 @@ function CustomCharacterSheet({
 
   const sheetContent = (
     <div className="custom-sheet">
-      {/* Roll modifier modal */}
-      {rollModal && (
-        <div className="custom-roll-overlay">
-          <div className="custom-roll-overlay__backdrop" onClick={() => { setRollModal(null); setModifier(0); }} />
-          <div className="custom-roll-overlay__card">
-            <div className="custom-roll-overlay__title">
-              {t('combat.rollFor')}: <strong>{rollModal.label}</strong>
-            </div>
-            <div className="custom-roll-overlay__row">
-              <label className="custom-roll-overlay__label">{t('combat.modifier')}</label>
-              <input
-                type="number"
-                className="custom-roll-overlay__input"
-                value={modifier}
-                onChange={e => setModifier(Number(e.target.value))}
-                autoFocus
-                onKeyDown={e => { if (e.key === 'Enter') confirmRoll(modifier); if (e.key === 'Escape') { setRollModal(null); setModifier(0); } }}
-              />
-            </div>
-            <div className="custom-roll-overlay__actions">
-              <button className="custom-roll-overlay__btn--cancel" onClick={() => { setRollModal(null); setModifier(0); }}>
-                {t('common.cancel')}
-              </button>
-              <button className="custom-roll-overlay__btn--roll" onClick={() => confirmRoll(modifier)}>
-                <CasinoIcon style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }} />
-                {t('combat.roll')}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Pytanie o modyfikator — renderuje się tylko wtedy, gdy szablon go włącza. */}
+      {pending && modifierConfig && (
+        <RollModifierOverlay
+          label={pending.label}
+          config={modifierConfig}
+          onConfirm={confirmRoll}
+          onCancel={cancelRoll}
+        />
       )}
 
       {!template ? (

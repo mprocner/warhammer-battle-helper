@@ -4,6 +4,7 @@ import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
 import { usePortalTooltip } from '../../../components/common/PortalTooltip';
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
+import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
 
 const OUTCOME_MAP = {
@@ -46,6 +47,11 @@ function CustomRoll({ data, timestamp }) {
   const formulaText = poolFormulaText || data.formulaBreakdown;
   const hasFormula = Boolean(formulaText);
 
+  // Tylko target "roll" wkleja modyfikator do breakdownu (roller.go: rollFromFormula). Przy
+  // każdym innym trzeba go wypisać osobno, inaczej gracz nie widzi go nigdzie — a przy braku
+  // modyfikatora modifierText jest i tak puste.
+  const showsModifierSeparately = !hasFormula || data.modifierTarget !== MOD_TARGET_ROLL;
+
   // FEATURE-162 finding 7: a pool roll with no configured PoolSuccessThreshold sends
   // target 0 ("any die counts" — roller.go's zero default). No die can ever roll 0, so an
   // unset threshold and an explicit "gte 0" read identically and the number carries no
@@ -84,7 +90,7 @@ function CustomRoll({ data, timestamp }) {
               e.g. base 30 with -40 advances). Only null/undefined means "no target",
               except an unconfigured pool threshold (see hasTarget above). */}
           {!isRaw && hasTarget && ` ${t('log.vs')} ${data.target}`}
-          {!hasFormula && modifierText && <span className="log-modifier">{modifierText}</span>}
+          {showsModifierSeparately && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {poolDice.length > 0 && (
           <div className="custom-pool-dice">

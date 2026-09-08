@@ -47,6 +47,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CustomSheetBody, { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
+import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
 import { duplicateFieldInSections } from '../../utils/templateFields';
 
@@ -1574,6 +1575,18 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 <DiceConfigBuilder
                   dice={settings.diceButtons || []}
                   onChange={d => updateSettings({ diceButtons: d })}
+                />
+              </div>
+            </div>
+            <div className="creator__settings-card">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.modifierTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.modifierHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <ModifierConfigBuilder
+                  value={settings.modifier}
+                  onChange={modifier => updateSettings({ modifier })}
                 />
               </div>
             </div>

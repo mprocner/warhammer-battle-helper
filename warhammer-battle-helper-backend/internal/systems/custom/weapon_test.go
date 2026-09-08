@@ -181,6 +181,35 @@ func TestRollWeaponWithTemplate_AlwaysOnPresetRollsFromTemplate(t *testing.T) {
 	}
 }
 
+// TestRollWeaponWithTemplate_ModifierTargetsAttackOnly: a weapon attack goes through the same
+// evaluator as a skill roll, so it inherits the modifier target from the template with no
+// branch of its own. Damage is computed by evalFormula, which the modifier never reaches —
+// hitting may get easier, but never harder-hitting.
+func TestRollWeaponWithTemplate_ModifierTargetsAttackOnly(t *testing.T) {
+	template, raw := weaponTemplate()
+	template.Sections[0].Fields[0].RollConfig.SuccessType = "above_threshold"
+	template.Sections[0].Fields[0].RollConfig.Threshold = "10"
+	template.Settings.Modifier = &models.ModifierConfig{Enabled: true, TraditionalTarget: ModTargetRoll}
+
+	// rng order: attack d20 first, then the two damage dice.
+	// attack Intn=9 -> roll 10, +modifier 5 => 15; damage 2d6: Intn 3->4, Intn 5->6 => 10; + STR 8 => 18.
+	p := newTestPlugin(9, 3, 5)
+
+	res, err := p.RollWeaponWithTemplate(raw, template, "weapons", "w1", 5)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate() error: %v", err)
+	}
+	if res.Roll != 15 {
+		t.Errorf("Roll = %d, want 15 (d20 10 + modifier 5)", res.Roll)
+	}
+	if res.ModifierTarget != ModTargetRoll {
+		t.Errorf("ModifierTarget = %q, want %q", res.ModifierTarget, ModTargetRoll)
+	}
+	if res.DamageRoll != 18 {
+		t.Errorf("DamageRoll = %d, want 18 — the modifier does not touch damage", res.DamageRoll)
+	}
+}
+
 func TestRollWeaponWithTemplate_Errors(t *testing.T) {
 	template, raw := weaponTemplate()
 	p := newTestPlugin()
