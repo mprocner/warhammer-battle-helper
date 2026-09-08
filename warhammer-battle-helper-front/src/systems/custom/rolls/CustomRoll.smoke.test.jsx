@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import '../../../i18n';
 import CustomRoll from './CustomRoll';
 
@@ -134,5 +134,25 @@ describe('CustomRoll', () => {
 
     const description = container.querySelector('.log-list-item__description');
     expect(description.textContent).not.toContain('vs 0');
+  });
+
+  // BUG-192: nazwa atrybutu z customowej karty jest wpisywana przez gracza, więc bywa długa.
+  // jsdom nie liczy layoutu — podstawiamy szerokości, żeby przetestować warunek obcięcia.
+  it('shows the full attribute name in a tooltip when the label is clipped', () => {
+    const LONG_SKILL = 'Odporność na działanie magii chaosu';
+    const data = { outcome: 'regular_success', roll: 45, target: 55, skillName: LONG_SKILL };
+    const { container } = render(<CustomRoll data={data} timestamp={null} />);
+
+    const label = container.querySelector('.log-list-item__description .log-list-item__character-name');
+    expect(label).not.toBeNull();
+    expect(label.textContent).toBe(LONG_SKILL);
+
+    Object.defineProperty(label, 'scrollWidth', { value: 300, configurable: true });
+    Object.defineProperty(label, 'clientWidth', { value: 100, configurable: true });
+    fireEvent.mouseEnter(label);
+
+    const tooltip = document.body.querySelector('.portal-tooltip');
+    expect(tooltip).not.toBeNull();
+    expect(tooltip.textContent).toContain(LONG_SKILL);
   });
 });

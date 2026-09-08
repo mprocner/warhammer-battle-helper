@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import { getSystem } from '../systems/registry';
+import TruncatedLabel from './log/TruncatedLabel';
 import './ToastStack.css';
 import './LogWindow.css';
 
@@ -31,7 +32,7 @@ function DiceRollFallback({ data }) {
       </div>
       <div className="log-list-item__content">
         <div className="log-list-item__header">
-          <span className="log-list-item__character-name">{actorName}</span>
+          <TruncatedLabel text={actorName} />
         </div>
         <div className="log-list-item__description">
           {diceType ? `d${diceType}` : t('log.dice', { defaultValue: 'Dice' })}

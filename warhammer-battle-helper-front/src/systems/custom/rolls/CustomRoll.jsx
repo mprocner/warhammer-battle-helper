@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
 import { usePortalTooltip } from '../../../components/common/PortalTooltip';
+import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
@@ -73,15 +74,13 @@ function CustomRoll({ data, timestamp }) {
       />
       <div className="log-list-item__content">
         <div className="log-list-item__header">
-          <span className="log-list-item__character-name">
-            {data.characterName || t('log.character')}
-          </span>
+          <TruncatedLabel text={data.characterName || t('log.character')} />
           {timestamp && (
             <span className="log-list-item__timestamp">{timestamp}</span>
           )}
         </div>
         <div className="log-list-item__description">
-          {skillLabel && <strong className="log-list-item__character-name">{skillLabel}</strong>}
+          {skillLabel && <TruncatedLabel as="strong" text={skillLabel} />}
           {skillLabel && ' '}
           {!hasFormula && diceLabel && <span>{diceLabel}</span>}
           {!hasFormula && diceLabel && ' → '}

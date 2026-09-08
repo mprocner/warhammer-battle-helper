@@ -2,12 +2,14 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
+import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import '../../../components/LogWindow.css';
 
 function SanityRoll({ data, timestamp }) {
   const { t } = useTranslation();
   const isSuccess = data.outcome === 'regular_success';
   const resultColor = getResultColor(false, !isSuccess, isSuccess);
+  const characterLabel = data.characterName || t('log.character');
 
   return (
     <>
@@ -20,21 +22,19 @@ function SanityRoll({ data, timestamp }) {
       />
       <div className="log-list-item__content">
         <div className="log-list-item__header">
-          <span className="log-list-item__character-name">
-            {data.characterName || t('log.character')}
+          <TruncatedLabel text={characterLabel}>
+            {characterLabel}
             {data.username && (
               <span style={{ fontWeight: 400 }}> ({data.username})</span>
             )}
-          </span>
+          </TruncatedLabel>
           {timestamp && (
             <span className="log-list-item__timestamp">{timestamp}</span>
           )}
         </div>
 
         <div className="log-list-item__description">
-          <strong className="log-list-item__character-name">
-            😱 {t('coc.sanityRoll')}
-          </strong>
+          <TruncatedLabel as="strong" text={`😱 ${t('coc.sanityRoll')}`} />
           {': '}
           <strong className="log-roll-value" style={{ color: resultColor }}>
             {data.roll}

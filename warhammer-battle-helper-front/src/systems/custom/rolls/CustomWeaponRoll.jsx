@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
+import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { formatPoolFormula } from './poolFormula';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
@@ -62,13 +63,11 @@ function CustomWeaponRoll({ data, timestamp }) {
       />
       <div className="log-list-item__content">
         <div className="log-list-item__header">
-          <span className="log-list-item__character-name">
-            {data.characterName || t('log.character')}
-          </span>
+          <TruncatedLabel text={data.characterName || t('log.character')} />
           {timestamp && <span className="log-list-item__timestamp">{timestamp}</span>}
         </div>
         <div className="log-list-item__description">
-          <strong className="log-list-item__character-name">⚔ {weaponLabel}</strong>{' '}
+          <TruncatedLabel as="strong" text={`⚔ ${weaponLabel}`} />{' '}
           <strong className="log-roll-value" style={{ color: resultColor }}>{data.roll}</strong>
           {/* FEATURE-162: `> 0` hid a negative target (a real, cancelled-out skill total,
               e.g. base 30 with -40 advances). Only null/undefined means "no target",

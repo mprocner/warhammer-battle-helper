@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
+import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import '../../../components/LogWindow.css';
 
 // D&D 5e attack roll log component.
@@ -56,6 +57,8 @@ function DnD5eWeaponRoll({ data, timestamp }) {
       ? t('dnd.withDisadvantage')
       : null;
 
+  const characterLabel = data.characterName || t('log.character');
+
   return (
     <>
       <WaxSealToken
@@ -67,15 +70,15 @@ function DnD5eWeaponRoll({ data, timestamp }) {
       />
       <div className="log-list-item__content">
         <div className="log-list-item__header">
-          <span className="log-list-item__character-name">
-            {data.characterName || t('log.character')}
+          <TruncatedLabel text={characterLabel}>
+            {characterLabel}
             {data.username && <span style={{ fontWeight: 400 }}> ({data.username})</span>}
-          </span>
+          </TruncatedLabel>
           {timestamp && <span className="log-list-item__timestamp">{timestamp}</span>}
         </div>
 
         <div className="log-list-item__description">
-          <strong className="log-list-item__character-name">⚔ {data.weaponName}</strong>
+          <TruncatedLabel as="strong" text={`⚔ ${data.weaponName || t('log.weapon')}`} />
         </div>
 
         <div className="dnd-log-roll-breakdown" style={{ color: resultColor }}>

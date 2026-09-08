@@ -151,11 +151,21 @@
   margin-bottom: 4px;
 }
 
+/* BUG-192: overflow i text-overflow są bezskuteczne na elemencie inline (CSS Overflow §2),
+   a w .log-list-item__description ta klasa siedziała właśnie na inline <strong> — zostawał
+   sam nowrap, czyli zakaz zawijania bez obiecanego skrócenia. inline-block daje im kontekst
+   blokowy. W __header (flex-item) jest to no-op: flex i tak blokifikuje dzieci.
+   vertical-align: bottom to korekta, nie kosmetyka — inline-block z overflow != visible ma
+   baseline na dolnej krawędzi marginesu (CSS2.1 §10.8.1), więc bez tego etykieta siedziałaby
+   wyżej niż sąsiedni tekst w linii opisu. */
 .log-list-item__character-name {
   font-family: var(--log-font-display);
   font-weight: 600;
   color: var(--log-brown-dark);
   font-size: 13px;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: bottom;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

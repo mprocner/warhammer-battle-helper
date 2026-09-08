@@ -73,4 +73,24 @@ describe('CustomWeaponRoll', () => {
     const description = container.querySelector('.log-list-item__description');
     expect(description.textContent).not.toContain('vs 0');
   });
+
+  // BUG-192 finding 4: this component already builds the label the safe way
+  // (`data.weaponName || t('log.weapon')`) — these assertions lock that in so a future
+  // migration can't silently regress it into the coc7e/dnd5e template-literal bug.
+  it('shows the weapon name in the description label', () => {
+    const data = { outcome: 'regular_success', roll: 2, target: 4, weaponName: 'Halabarda' };
+    const { container } = render(<CustomWeaponRoll data={data} timestamp={null} />);
+
+    const label = container.querySelector('.log-list-item__description .log-list-item__character-name');
+    expect(label.textContent).toBe('⚔ Halabarda');
+  });
+
+  it('falls back to the generic weapon label when weaponName is missing', () => {
+    const data = { outcome: 'regular_success', roll: 2, target: 4 };
+    const { container } = render(<CustomWeaponRoll data={data} timestamp={null} />);
+
+    const label = container.querySelector('.log-list-item__description .log-list-item__character-name');
+    expect(label.textContent).not.toContain('undefined');
+    expect(label.textContent).toBe('⚔ Weapon');
+  });
 });

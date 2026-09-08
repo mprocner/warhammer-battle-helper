@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import WaxSealToken from '../../../components/log/WaxSealToken';
+import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { getResultColor, isCriticalSuccess, isCriticalFailure, getTranslatedSkillName } from '../../../components/log/rollUtils';
 import '../../../components/LogWindow.css';
 
@@ -34,15 +35,13 @@ const SkillRoll = ({ data, timestamp }) => {
             />
             <div className="log-list-item__content">
                 <div className="log-list-item__header">
-                    <span className="log-list-item__character-name">
-                        {characterName || t('log.character')}
-                    </span>
+                    <TruncatedLabel text={characterName || t('log.character')} />
                     {timestamp && (
                         <span className="log-list-item__timestamp">{timestamp}</span>
                     )}
                 </div>
                 <div className="log-list-item__description">
-                    <strong className="log-list-item__character-name">{skillName}</strong>
+                    <TruncatedLabel as="strong" text={skillName} />
                     {' '}{t('log.test')}: {t('log.rolled')}{' '}
                     <strong className="log-roll-value" style={{ color: resultColor }}>{rollValue}</strong>
                     {' '}{t('log.vs')}{' '}
