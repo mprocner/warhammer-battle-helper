@@ -140,6 +140,91 @@ See [DEPLOY.md](DEPLOY.md) for full production setup instructions including ngin
 
 ---
 
+## Monitoring (production) — CPU and memory charts
+
+The production stack runs a [Netdata](https://www.netdata.cloud/) agent (`netdata` service in
+`docker-compose.prod.yml`). It charts CPU, memory, disk and per-process usage for the host and for
+every container at 1-second resolution, and stores the history locally in the `netdata-lib` volume.
+Open source (GPLv3), no account and no cloud connection required.
+
+Main use case: measure what a single live game session costs, then estimate how many concurrent
+sessions the VPS can host.
+
+### 1. Close the port first (one-off, on the VPS)
+
+The service uses `network_mode: host`, which is needed for network interface metrics but also makes
+port 19999 listen on **every** interface, including the public IP — unlike dozzle and mongo-express,
+which bind to `127.0.0.1`. The dashboard is unauthenticated and exposes process names, users, OS
+version and container topology. Block the port before the container is ever started:
+
+```bash
+sudo ufw deny 19999
+sudo ufw status | grep 19999
+```
+
+### 2. Deploy
+
+```bash
+# on the VPS
+./scripts/deploy.sh
+```
+
+`deploy.sh` does `git reset --hard origin/main`, so the change must be merged into `main` first.
+The Netdata image is pulled, not built (~200 MB on the first deploy).
+
+### 3. View the charts through an SSH tunnel
+
+From your own machine:
+
+```bash
+ssh -L 19999:127.0.0.1:19999 <user>@rollhammer.online
+```
+
+Then open <http://localhost:19999>. Nothing is added to the nginx config — Netdata's dashboard does
+not proxy cleanly under a subpath, and the tunnel keeps the port closed to the internet.
+
+Useful sections of the dashboard:
+
+- **Docker containers** / **cgroups** — CPU and memory per container (`backend`, `mongo`, `frontend`)
+- **System overview** — host CPU, RAM, load average
+- **Applications** — per-process breakdown (needs `pid: host`, already set)
+
+Container CPU is shown relative to **all** cores: 180% on a 4-core VPS is 45% of the machine.
+Memory includes page cache — the honest number is the working set, and MongoDB will look large
+because WiredTiger claims up to 50% of host RAM as cache by default.
+
+### 4. How to measure one session
+
+1. Leave the stack idle for ~10 minutes — that is the baseline
+2. Start a game session and add players one at a time
+3. Each join shows up as a step on the chart; the step height is the cost of one session
+4. `max_sessions ≈ (total_RAM × 0.75 − baseline) / per_session` — repeat for CPU and file descriptors
+
+### Retention and configuration
+
+History is stored in three tiers: 1-second, 1-minute and 1-hour samples, each kept for a different
+length of time. Old sessions survive at lower resolution, so **write the measured per-session cost
+down** instead of expecting to zoom back into 1-second data weeks later.
+
+```bash
+# check actual retention
+curl -s localhost:19999/api/v1/info | python3 -m json.tool | grep -i -A3 retention
+
+# edit config (retention sizes, disable cloud, notifications)
+docker exec -it <netdata-container> bash /etc/netdata/edit-config netdata.conf
+```
+
+Alerts (including RAM and disk thresholds) run inside the agent — Netdata Cloud is not needed for
+them. Notification targets live in `health_alarm_notify.conf`.
+
+Note: `docker compose down -v` deletes `netdata-lib` along with `mongo-data`. Without `-v` both survive.
+
+The service is deliberately **not** in the local `docker-compose.yml`: on macOS `/proc` and `/sys`
+come from the Docker Desktop VM, so the charts would describe that VM rather than the host. Use
+`docker stats` locally.
+
+---
+
 ## Architecture (production)
 
 ```

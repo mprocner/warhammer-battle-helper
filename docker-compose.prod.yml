@@ -89,8 +89,37 @@ services:
     depends_on:
       - mongo
 
+  # Netdata — CPU/RAM per container, 1s resolution, local storage
+  # network_mode: host makes port 19999 listen on ALL interfaces (public IP included),
+  # unlike dozzle/mongo-express above. Block it: sudo ufw deny 19999
+  # Access via SSH tunnel: ssh -L 19999:127.0.0.1:19999 user@rollhammer.online
+  netdata:
+    image: netdata/netdata
+    hostname: rollhammer-vps
+    pid: host
+    network_mode: host
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdata-config:/etc/netdata
+      - netdata-lib:/var/lib/netdata
+      - netdata-cache:/var/cache/netdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    restart: unless-stopped
+
 volumes:
   mongo-data:
   backend-avatars:
   backend-user-files:
   backend-music-files:
+  netdata-config:
+  netdata-lib:
+  netdata-cache:
