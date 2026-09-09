@@ -86,21 +86,45 @@ samouczki, ale wymaga endpointu i migracji — przenosimy to na później.
 
 ```
 src/components/tutorial/
-  GameTour.jsx        — osadza <Joyride> w trybie sterowanym, brama localStorage
-  TourTooltip.jsx     — własny dymek: paleta projektu + ikony MUI
-  useGameTour.js      — buduje i filtruje kroki, trzyma stepIndex
+  GameTour.jsx        — osadza <Joyride> w trybie sterowanym, tłumaczy jego callbacki na hook
+  TourTooltip.jsx     — własny dymek: paleta kart postaci + ikony MUI
+  TabsLegend.jsx      — treść kroku o zakładkach
+  useGameTour.js      — stan samouczka, bez importu biblioteki (przez to testowalny)
   tourSteps.js        — deklaratywna lista kroków
   GameTour.css
+src/components/panels/
+  tabDefinitions.jsx  — wspólna lista zakładek prawego panelu
 ```
 
 ### Kotwice
 
-Na elementach `data-tour="<id>"`. **Nie selektory klas** — `.panel-header` istnieje w obu
-panelach (`DndContext.jsx:996` i `RightPanel.jsx:233`), więc selektor klasowy trafiłby w zły.
+Kotwicami są **istniejące, unikalne klasy CSS** — markupu nie ruszamy:
 
-Identyfikatory: `character-card`, `character-list`, `scene-selector`, `window-bar`,
-`scene-viewport`, `layer-selector`, `drawing-toolbar`, `online-users`, `tabs-nav`,
-`dice-controls`.
+| krok | selektor | plik:linia |
+|---|---|---|
+| `characterCard` | `.sidebar-top-section` | `components/common/ResizableSplitPane.jsx:48` |
+| `characterList` | `.sidebar-bottom-section` | `components/common/ResizableSplitPane.jsx:55` |
+| `sceneSelector` | `.scene-selector` | `components/scene/SceneSelector.jsx:113` |
+| `windowBar` | `.window-bar` | `components/WindowBar.jsx:81` |
+| `sceneControls` | `.scene-viewport` | `components/scene/SceneViewport.jsx:720` |
+| `layerSelector` | `.layer-selector` | `components/scene/LayerSelector.jsx:24` |
+| `drawingToolbar` | `.drawing-toolbar` | `components/scene/DrawingToolbar.jsx:80` |
+| `onlineUsers` | `.right-panel__online-users` | `components/online-users/OnlineUsersBar.jsx:29` |
+| `tabsNav` | `.right-panel__tabs-nav` | `components/panels/RightPanel.jsx:239` |
+| `diceControls` | `.dice-controls` | `components/log/DiceRollControls.jsx:42` |
+
+Wersji z `data-tour="<id>"` nie potrzeba: każdy z tych selektorów jest już unikalny.
+`.panel-header` byłby wyjątkiem (istnieje w obu panelach, `DndContext.jsx:996` i
+`RightPanel.jsx:233`) — i właśnie dlatego kotwicą karty postaci jest sekcja split pane, a nie
+nagłówek. Cena: przemianowanie którejś klasy cicho wypisze krok z samouczka. Zabezpiecza przed
+tym filtr obecności kotwicy — krok bez elementu wypada, ekran się nie psuje.
+
+### Wspólna definicja zakładek
+
+Legenda w kroku `tabsNav` musi wyliczać dokładnie te zakładki, które user ma na ekranie. Dziś
+lista jest zaszyta w `RightPanel.jsx:119-146` jako ciąg `push`-y. Wyciągamy ją do
+`components/panels/tabDefinitions.jsx` (`TAB_DEFS` + `tabsForRole(isGM)`); `RightPanel` i
+`TabsLegend` czytają z tego samego źródła, więc nie mogą się rozjechać.
 
 ### Kroki
 
@@ -149,8 +173,12 @@ myszy na scenie: warunek stawiamy na faktycznym stanie, nie na timerze.
 `GameTour` renderowany w `GameSession.jsx` obok `ToastStack`. Ten poziom, bo tylko stąd widać
 wszystkie trzy przełączniki paneli oraz `setActiveTab`.
 
-`RightPanel` dostaje nowy prop `onStartTutorial`. `.panel-header` (`RightPanel.jsx:233`) dostaje
-`justify-content: space-between`, a obok tytułu ląduje przycisk z `HelpOutlineIcon`.
+`RightPanel` dostaje nowy prop `onStartTutorial`, a obok tytułu w `.panel-header`
+(`RightPanel.jsx:233`) ląduje przycisk z `HelpOutlineIcon`. Layoutu nie trzeba zmieniać —
+`.panel-header` ma już `display: flex; justify-content: space-between` (`style.css:188-195`).
+
+Przycisk steruje komponentem przez licznik `startSignal`: każde kliknięcie go zwiększa, `GameTour`
+reaguje na zmianę wartości. Prostsze niż `ref` i imperatywne API.
 
 Nagłówek znika razem z panelem (`rightPanelHidden`), ale `PanelToggle` jest widoczny zawsze, więc
 panel da się wysunąć — drugiego przycisku nie robimy.
@@ -191,7 +219,7 @@ przebudowuje teksty bez restartu samouczka.
 
 **Brak sceny.** `.scene-tools` renderuje się tylko przy `currentScene` (`DndContext.jsx:1068`) —
 a świeżo założona gra sceny nie ma, więc trafi na to dokładnie ten nowy MG, dla którego robimy
-samouczek. Przed startem filtrujemy kroki przez `document.querySelector('[data-tour=...]')`;
+samouczek. Przed startem filtrujemy kroki przez `document.querySelector(step.target)`;
 te bez kotwicy wypadają. Joyride dostaje już przyciętą listę, więc licznik postępu się zgadza.
 
 **Schowane panele.** Panel schowany to klasa `--hidden` (transform) — element zostaje w DOM,
@@ -209,12 +237,15 @@ zamiast zostawić overlay na pustym miejscu.
 `getBoundingClientRect` w jsdom zwraca zera, więc pozycjonowania spotlightu nie da się sprawdzić
 testem i nie próbujemy. Pokrywamy części czyste:
 
-- `tourSteps` — filtr po roli: MG 10 pozycji, gracz 8, brak `scene-selector` i `layer-selector`
-  u gracza
-- wybór klucza tekstu sceny dla `modern` vs `classic`
-- brama `localStorage`: pierwszy raz startuje, po zapisie nie, ręczny start ignoruje flagę
-  (`renderHook` — hook bez zależności od DOM)
-- smoke render `TourTooltip` z `import '../../i18n';`
+- `tabDefinitions` — kolejność zakładek MG (9) i gracza (4)
+- `tourSteps` — filtr po roli: MG 10 pozycji, gracz 8, brak `sceneSelector` i `layerSelector`
+  u gracza; warstwa przed narzędziami; wybór klucza tekstu dla `modern` vs `classic` i dla roli
+- kompletność tłumaczeń: każdy klucz `tutorial.*` użyty przez kroki i legendę rozwiązuje się
+  w `en` **i** `pl` (`i18n.getFixedT(lng)` zwracające sam klucz = brak tłumaczenia)
+- `useGameTour`: brama `localStorage` (pierwszy raz startuje, po zapisie nie, ręczny start
+  ignoruje flagę, role rozdzielone), odsianie kroków bez kotwicy, wstrzymanie kroku do momentu
+  odsłonięcia panelu (`renderHook` + `rerender` z nowymi `panels`)
+- render `TourTooltip` i `TabsLegend` z `import '../../i18n';`
 
 Uruchomienie: `CI=true npm test -- --watchAll=false` z `warhammer-battle-helper-front/`.
 Baseline `App.test.js` (axios ESM) dalej czerwony — to nie regresja.
