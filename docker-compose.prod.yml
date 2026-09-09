@@ -92,10 +92,11 @@ services:
   # Netdata — CPU/RAM per container, 1s resolution, local storage
   # network_mode: host makes port 19999 listen on ALL interfaces (public IP included),
   # unlike dozzle/mongo-express above. Block it: sudo ufw deny 19999
-  # Access via SSH tunnel: ssh -L 19999:127.0.0.1:19999 user@rollhammer.online
+  # Access via SSH tunnel: ssh -L 19999:127.0.0.1:19999 ubuntu@playrpg.net
+  # See the Monitoring section in README.md
   netdata:
     image: netdata/netdata
-    hostname: rollhammer-vps
+    hostname: playrpg-vps
     pid: host
     network_mode: host
     cap_add:

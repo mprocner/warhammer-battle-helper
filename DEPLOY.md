@@ -262,8 +262,23 @@ sudo nginx -t    # shows exact error with line number
 | Backend       | 8080           | 8080               | Go API + WebSocket       |
 | MongoDB       | 27017          | —                  | Internal only            |
 | Mongo Express | 8081           | 127.0.0.1:8081     | DB UI (internal only)    |
+| Dozzle        | 8080           | 127.0.0.1:9999     | Container logs           |
+| Netdata       | 19999          | **all interfaces** | CPU/RAM charts           |
 
-Admin and Mongo Express ports are bound to `127.0.0.1` — not accessible from outside, only through nginx (with IP whitelist) or SSH tunnel.
+Admin, Mongo Express and Dozzle ports are bound to `127.0.0.1` — not accessible from outside, only through nginx (with IP whitelist) or SSH tunnel.
+
+Netdata is the exception: it runs with `network_mode: host`, so port 19999 listens on the public IP
+as well and its dashboard has no authentication. It must be closed on the firewall, once, before the
+container is ever started:
+
+```bash
+sudo ufw deny 19999
+sudo ufw status | grep 19999
+```
+
+Then reach it through a tunnel: `ssh -L 19999:127.0.0.1:19999 ubuntu@playrpg.net` and open
+<http://localhost:19999>. Full instructions and how to read the charts: see the Monitoring section
+in [README.md](README.md#monitoring-production--cpu-and-memory-charts).
 
 ---
 

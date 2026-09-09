@@ -177,8 +177,12 @@ The Netdata image is pulled, not built (~200 MB on the first deploy).
 From your own machine:
 
 ```bash
-ssh -L 19999:127.0.0.1:19999 <user>@rollhammer.online
+ssh -L 19999:127.0.0.1:19999 ubuntu@playrpg.net
 ```
+
+`127.0.0.1` inside the tunnel is resolved **on the server** — it means "port 19999 on the remote
+loopback". That is why the tunnel works despite `ufw deny 19999`: the traffic arrives on loopback,
+which the firewall does not filter.
 
 Then open <http://localhost:19999>. Nothing is added to the nginx config — Netdata's dashboard does
 not proxy cleanly under a subpath, and the tunnel keeps the port closed to the internet.
@@ -211,7 +215,10 @@ down** instead of expecting to zoom back into 1-second data weeks later.
 curl -s localhost:19999/api/v1/info | python3 -m json.tool | grep -i -A3 retention
 
 # edit config (retention sizes, disable cloud, notifications)
-docker exec -it <netdata-container> bash /etc/netdata/edit-config netdata.conf
+docker exec -it warhammer-battle-helper-netdata-1 bash /etc/netdata/edit-config netdata.conf
+
+# apply changes
+docker compose -f docker-compose.prod.yml --env-file .env.prod restart netdata
 ```
 
 Alerts (including RAM and disk thresholds) run inside the agent — Netdata Cloud is not needed for
@@ -246,4 +253,11 @@ Frontend Admin  Backend      Mongo Express
                  :27017
                 MongoDB
                 (internal)
+```
+
+Outside the nginx path, reachable only over an SSH tunnel:
+
+```
+:9999   dozzle   — container logs (also proxied at /logs, IP whitelisted)
+:19999  netdata  — CPU/RAM charts (host network, firewalled, tunnel only)
 ```
