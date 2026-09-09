@@ -133,16 +133,16 @@ tam, gdzie stoi przycisk wznawiający samouczek.
 
 | # | kotwica | treść | role |
 |---|---|---|---|
-| 1 | `character-card` | skrócona karta wybranej postaci, klik otwiera pełną | MG + gracz |
-| 2 | `character-list` | lista BG/NPC, przeciągnięcie na scenę | MG + gracz |
-| 3 | `scene-selector` | sceny: wybór, tworzenie, przypisanie graczom | MG |
-| 4 | `window-bar` | otwarte okna, powrót do zminimalizowanych | MG + gracz |
-| 5 | `scene-viewport` | sterowanie sceną — tekst zależny od `controlScheme` | MG + gracz |
-| 6 | `layer-selector` | warstwa, na której działasz | MG |
-| 7 | `drawing-toolbar` | narzędzia (MG: przesuwanie, wybór, miarka, mgła, rysowanie; gracz: przesuwanie, miarka, rysowanie) | MG + gracz |
-| 8 | `online-users` | kto jest online | MG + gracz |
-| 9 | `tabs-nav` | legenda zakładek (MG 9, gracz 4) | MG + gracz |
-| 10 | `dice-controls` | kości, widoczność rzutu, filtr „tylko moje" | MG + gracz |
+| 1 | `characterCard` | skrócona karta wybranej postaci, klik otwiera pełną | MG + gracz |
+| 2 | `characterList` | lista BG/NPC, przeciągnięcie na scenę | MG + gracz |
+| 3 | `sceneSelector` | sceny: wybór, tworzenie, przypisanie graczom | MG |
+| 4 | `windowBar` | otwarte okna, powrót do zminimalizowanych | MG + gracz |
+| 5 | `sceneControls` | sterowanie sceną — tekst zależny od `controlScheme` | MG + gracz |
+| 6 | `layerSelector` | warstwa, na której działasz | MG |
+| 7 | `drawingToolbar` | narzędzia (MG: przesuwanie, wybór, miarka, mgła, rysowanie; gracz: przesuwanie, miarka, rysowanie) | MG + gracz |
+| 8 | `onlineUsers` | kto jest online | MG + gracz |
+| 9 | `tabsNav` | legenda zakładek (MG 9, gracz 4) | MG + gracz |
+| 10 | `diceControls` | kości, widoczność rzutu, filtr „tylko moje" | MG + gracz |
 
 MG dostaje 10 kroków, gracz 8.
 
