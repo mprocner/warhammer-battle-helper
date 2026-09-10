@@ -674,6 +674,74 @@
     "updateError": "Nie udało się zaktualizować notatki",
     "deleteError": "Nie udało się usunąć notatki"
   },
+  "tutorial": {
+    "button": "Pokaż samouczek",
+    "next": "Dalej",
+    "back": "Wstecz",
+    "skip": "Pomiń",
+    "done": "Rozumiem",
+    "progress": "{{current}} / {{total}}",
+    "tabsIntro": "Prawy panel mieści wszystko, co nie jest mapą. Wybierz zakładkę:",
+    "tabs": {
+      "chat": "rzuty, wyniki i wiadomości od całego stołu",
+      "scenes": "ustawienia bieżącej sceny: siatka, rozmiar, tło",
+      "handouts": "obrazki i dokumenty, które przekazujesz graczom",
+      "files": "Twoje pliki — mapy, tokeny, portrety",
+      "music": "muzyka w tle, odtwarzana wszystkim naraz",
+      "notes": "Twoje prywatne notatki, nikt inny ich nie widzi",
+      "players": "kto dołączył, czyją gra postacią, jakie ma uprawnienia",
+      "minigames": "minigry w kości, które możesz uruchomić stołowi",
+      "general": "ustawienia gry, język, schemat sterowania, wyjście z gry"
+    },
+    "steps": {
+      "characterCard": {
+        "title": "Wybrana postać",
+        "body": "Skrócona karta klikniętej postaci: najważniejsze cechy i szybkie rzuty. Kliknij nazwę, żeby otworzyć pełną kartę w osobnym oknie — zminimalizowane okno ląduje na belce u góry ekranu, więc nic nie ginie za mapą."
+      },
+      "characterList": {
+        "title": "Lista postaci",
+        "body": "Wszystkie postacie graczy i NPC w tej grze. Przeciągnij postać na mapę, żeby postawić jej token, albo kliknij ją, żeby wczytać ją do karty powyżej."
+      },
+      "sceneSelector": {
+        "title": "Sceny",
+        "body": "Twoje mapy. Przełączasz się między nimi, dodajesz nowe i decydujesz, którą scenę widzi każdy z graczy — scenę możesz podejrzeć, zanim komukolwiek ją pokażesz."
+      },
+      "windowBar": {
+        "title": "Otwarte okna",
+        "body": "Karty postaci i handouty otwierają się jako osobne okna. Zminimalizowane lądują tutaj, więc nic nie ginie za mapą."
+      },
+      "sceneControls": {
+        "title": "Mapa",
+        "body": {
+          "modern": "Przeciąganie lewym przyciskiem przesuwa mapę, kółko przybliża. Lewy klik zaznacza token, przeciągnięcie go przesuwa. Sterowanie zmienisz w zakładce Ogólne.",
+          "classic": "Przeciąganie prawym przyciskiem przesuwa mapę, kółko przybliża. Lewy klik zaznacza token, przeciągnięcie go przesuwa. Sterowanie zmienisz w zakładce Ogólne."
+        }
+      },
+      "layerSelector": {
+        "title": "Aktywna warstwa",
+        "body": "Mapa składa się z warstw: tło, tokeny, nakładki. Najpierw wybierz warstwę — rysowanie, przesuwanie i kasowanie działa tylko na tej uzbrojonej tutaj."
+      },
+      "drawingToolbar": {
+        "title": "Narzędzia sceny",
+        "body": {
+          "gm": "Przesuwanie, zaznaczanie, miarka, mgła wojny i rysowanie. Mgła to obszar, którego gracze jeszcze nie widzą — odsłaniasz go w miarę eksploracji.",
+          "player": "Przesuwanie mapy, miarka do celu i rysowanie po mapie, żeby reszta stołu zobaczyła, o co Ci chodzi."
+        }
+      },
+      "onlineUsers": {
+        "title": "Kto jest przy stole",
+        "body": "Wszyscy uczestnicy gry. Podświetlony awatar znaczy, że ktoś jest teraz połączony. Kliknij swój, żeby zmienić kolor i rozmiar awatara."
+      },
+      "tabsNav": {
+        "title": "Zakładki prawego panelu",
+        "body": "Wszystko, co nie jest mapą, siedzi tutaj — wybierz zakładkę, żeby przełączyć panel."
+      },
+      "diceControls": {
+        "title": "Kości i widoczność rzutów",
+        "body": "Rzucasz kośćmi bez otwierania karty. Oko decyduje, kto zobaczy wynik — wszyscy, sam MG albo tylko Ty — a filtr obok ukrywa w logu cudze rzuty."
+      }
+    }
+  },
   "rightPanel": {
     "title": "Ustawienia",
     "tabs": {

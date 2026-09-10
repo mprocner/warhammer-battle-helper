@@ -1,0 +1,109 @@
+.tour-tooltip {
+  max-width: 420px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+  border: 2px solid #7a5c42;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #3a2f1f;
+}
+
+.tour-tooltip__title {
+  margin: 0 0 8px;
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: #7a5c42;
+}
+
+.tour-tooltip__body {
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.tour-tooltip__body p {
+  margin: 0;
+}
+
+.tour-tooltip__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #c4a882;
+}
+
+.tour-tooltip__progress {
+  font-size: 0.8rem;
+  color: #7a5c42;
+}
+
+.tour-tooltip__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tour-tooltip__btn {
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #3a2f1f;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tour-tooltip__btn:hover {
+  border-color: #7a5c42;
+}
+
+.tour-tooltip__btn--primary {
+  color: #fff9f0;
+  background: #c9975b;
+  border-color: #7a5c42;
+}
+
+.tour-tooltip__btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #7a5c42;
+}
+
+.tour-tabs-legend__intro {
+  margin: 0 0 10px;
+}
+
+.tour-tabs-legend__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.tour-tabs-legend__item {
+  display: grid;
+  grid-template-columns: 20px auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.tour-tabs-legend__icon {
+  color: #c9975b;
+  align-self: center;
+}
+
+.tour-tabs-legend__name {
+  font-weight: 700;
+  color: #7a5c42;
+}
+
+.tour-tabs-legend__desc {
+  color: #3a2f1f;
+}

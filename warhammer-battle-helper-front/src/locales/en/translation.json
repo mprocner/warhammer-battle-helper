@@ -674,6 +674,74 @@
     "updateError": "Failed to update note",
     "deleteError": "Failed to delete note"
   },
+  "tutorial": {
+    "button": "Show the tutorial",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "done": "Got it",
+    "progress": "{{current}} / {{total}}",
+    "tabsIntro": "The right panel holds everything that is not the map. Pick a tab:",
+    "tabs": {
+      "chat": "dice rolls, results and messages from the whole table",
+      "scenes": "settings of the current scene: grid, size, background",
+      "handouts": "images and documents you hand to the players",
+      "files": "your uploads — maps, tokens, portraits",
+      "music": "background tracks played to everyone at once",
+      "notes": "your private notes, nobody else sees them",
+      "players": "who joined, which character they own, their permissions",
+      "minigames": "dice minigames you can start for the table",
+      "general": "game settings, language, control scheme, leaving the game"
+    },
+    "steps": {
+      "characterCard": {
+        "title": "Selected character",
+        "body": "A short sheet of the character you clicked: key stats and quick rolls. Click the name to open the full sheet in its own window \u2014 minimising it parks it in the bar at the top of the screen, so nothing gets lost behind the map."
+      },
+      "characterList": {
+        "title": "Character list",
+        "body": "Every player character and NPC in this game. Drag one onto the map to place its token, or click it to load it into the card above."
+      },
+      "sceneSelector": {
+        "title": "Scenes",
+        "body": "Your maps. Switch between them, add a new one, and decide which scene each player is looking at — you can preview a scene before you show it to anyone."
+      },
+      "windowBar": {
+        "title": "Open windows",
+        "body": "Character sheets and handouts open as separate windows. Minimising one parks it here, so nothing gets lost behind the map."
+      },
+      "sceneControls": {
+        "title": "The map",
+        "body": {
+          "modern": "Drag with the left mouse button to pan the map, scroll to zoom. Left-click a token to select it, drag it to move it. You can change this in the General tab.",
+          "classic": "Drag with the right mouse button to pan the map, scroll to zoom. Left-click a token to select it, drag it to move it. You can change this in the General tab."
+        }
+      },
+      "layerSelector": {
+        "title": "Active layer",
+        "body": "The map is stacked from layers: background, tokens, overlays. Pick the layer first — what you draw, move or delete applies only to the layer armed here."
+      },
+      "drawingToolbar": {
+        "title": "Scene tools",
+        "body": {
+          "gm": "Pan, select, measure distance, paint fog of war and draw. Fog is what your players cannot see yet — you uncover it as they explore.",
+          "player": "Pan the map, measure distance to a target and draw on the map so the rest of the table sees what you mean."
+        }
+      },
+      "onlineUsers": {
+        "title": "Who is here",
+        "body": "Everyone in the game. A lit avatar means the person is connected right now. Click your own to change your colour and avatar size."
+      },
+      "tabsNav": {
+        "title": "Right panel tabs",
+        "body": "Everything that is not the map lives here — pick a tab to switch the panel."
+      },
+      "diceControls": {
+        "title": "Dice and roll visibility",
+        "body": "Roll dice without opening any sheet. The eye picks who sees the result — everyone, the GM only, or you alone — and the filter next to it hides other people's rolls from the log."
+      }
+    }
+  },
   "rightPanel": {
     "title": "Settings",
     "tabs": {

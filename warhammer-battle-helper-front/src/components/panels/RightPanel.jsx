@@ -1,18 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
-import LibraryMusicOutlinedIcon from '@mui/icons-material/LibraryMusicOutlined';
-import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
-import CasinoOutlinedIcon from '@mui/icons-material/CasinoOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import ChatInput from '../log/ChatInput';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
+import { tabsForRole } from './tabDefinitions';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
 import FilesTab from '../tabs/FilesTab';
@@ -54,6 +47,7 @@ const RightPanel = ({
   onReopenMinigameBoard,
   activeTab: externalActiveTab,
   onTabChange,
+  onStartTutorial,
 }) => {
   const { t } = useTranslation();
   const [internalActiveTab, setInternalActiveTab] = useState('chat');
@@ -116,34 +110,15 @@ const RightPanel = ({
     }
   }, [gameId, token, addLogMessage, rollVisibility]);
 
-  // Build tabs array - Files and Scenes tabs only visible to GM
-  const tabs = useMemo(() => {
-    const baseTabs = [
-      { id: 'chat', icon: <ChatBubbleOutlineIcon />, label: t('rightPanel.tabs.chat') },
-    ];
-
-    if (isGM) {
-      baseTabs.push({ id: 'scenes', icon: <MapOutlinedIcon />, label: t('rightPanel.tabs.scenes') });
-    }
-
-    baseTabs.push({ id: 'handouts', icon: <ArticleOutlinedIcon />, label: t('rightPanel.tabs.handouts') });
-
-    if (isGM) {
-      baseTabs.push({ id: 'files', icon: <FolderOutlinedIcon />, label: t('rightPanel.tabs.files') });
-      baseTabs.push({ id: 'music', icon: <LibraryMusicOutlinedIcon />, label: t('rightPanel.tabs.music') });
-    }
-
-    baseTabs.push({ id: 'notes', icon: <StickyNote2OutlinedIcon />, label: t('rightPanel.tabs.notes') });
-
-    if (isGM) {
-      baseTabs.push({ id: 'players', icon: <PeopleOutlinedIcon />, label: t('rightPanel.tabs.players') });
-      baseTabs.push({ id: 'minigames', icon: <CasinoOutlinedIcon />, label: t('rightPanel.tabs.minigames') });
-    }
-
-    baseTabs.push({ id: 'general', icon: <SettingsOutlinedIcon />, label: t('rightPanel.tabs.general') });
-
-    return baseTabs;
-  }, [isGM, t]);
+  // Zakładki i ich kolejność żyją w tabDefinitions — dzieli je z legendą samouczka.
+  const tabs = useMemo(
+    () => tabsForRole(isGM).map(({ id, Icon }) => ({
+      id,
+      icon: <Icon />,
+      label: t(`rightPanel.tabs.${id}`),
+    })),
+    [isGM, t]
+  );
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -232,6 +207,15 @@ const RightPanel = ({
       {/* Panel Header */}
       <header className="panel-header">
         <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
+        <button
+          type="button"
+          className="panel-header__help"
+          onClick={onStartTutorial}
+          title={t('tutorial.button')}
+          aria-label={t('tutorial.button')}
+        >
+          <HelpOutlineIcon fontSize="small" />
+        </button>
       </header>
 
       {/* Tabs Wrapper */}

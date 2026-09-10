@@ -23,6 +23,7 @@ import YahtzeeBoardModal from './minigame/YahtzeeBoardModal';
 import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
 import ToastStack from './ToastStack';
+import GameTour from './tutorial/GameTour';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
@@ -58,6 +59,12 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const [fogGmOpacity, setFogGmOpacity] = useFogGmOpacity();
   const [minigameState, setMinigameState] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
+  // Licznik startu samouczka: każde podbicie uruchamia tour od nowa (przycisk "?").
+  const [tutorialSignal, setTutorialSignal] = useState(0);
+  // Gotowość ekranu gry dla auto-startu samouczka: DndContext renderuje placeholder
+  // ładowania dopóki jego fetch postaci się nie skończy — do tego czasu w DOM nie ma
+  // sidebara, sceny ani paska online-users, tylko to, co RightPanel montuje sam.
+  const [gameScreenReady, setGameScreenReady] = useState(false);
 
   const { toasts, pushToast, dismissToast, pauseAll, resumeAll } = useToastQueue();
   const isGMRef = useRef(false);
@@ -878,6 +885,23 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   isGMRef.current = isGM;
   userIdRef.current = userId;
 
+  // Nowy obiekt przy każdej zmianie widoczności paneli — hook samouczka czeka
+  // dokładnie na tę zmianę, zanim wpuści krok, którego kotwica siedzi w panelu.
+  const tourPanels = useMemo(
+    () => ({ leftHidden: leftPanelHidden, rightHidden: rightPanelHidden, topCollapsed: topBarsCollapsed }),
+    [leftPanelHidden, rightPanelHidden, topBarsCollapsed]
+  );
+
+  const revealForTour = useCallback((step) => {
+    if (step.reveal === 'left') setLeftPanelHidden(false);
+    if (step.reveal === 'right') setRightPanelHidden(false);
+    if (step.reveal === 'top') setTopBarsCollapsed(false);
+  }, []);
+
+  // Stabilna referencja: DndContext trzyma ten callback w tablicy zależności swojego
+  // efektu, więc inline arrow odpalałby go przy każdym renderze tego komponentu.
+  const handleCharactersLoaded = useCallback(() => setGameScreenReady(true), []);
+
   const displayScene = useMemo(() => {
     const scenes = gameState?.scenes || [];
     if (scenes.length === 0) return null;
@@ -1082,6 +1106,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
             onlineUserIds={onlineUserIds}
             onParticipantUpdated={fetchGameState}
             controlScheme={controlScheme}
+            onCharactersLoaded={handleCharactersLoaded}
           />
         </Box>
 
@@ -1113,6 +1138,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           onReopenMinigameBoard={() => setMinigameState(prev => prev)}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          onStartTutorial={() => setTutorialSignal(n => n + 1)}
         />
       </Box>
 
@@ -1134,6 +1160,15 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           onClose={() => setMinigameState(null)}
         />
       )}
+
+      <GameTour
+        role={gameState ? (isGM ? 'gm' : 'player') : null}
+        controlScheme={controlScheme}
+        panels={tourPanels}
+        onReveal={revealForTour}
+        startSignal={tutorialSignal}
+        screenReady={gameScreenReady}
+      />
 
       <ToastStack
         toasts={toasts}

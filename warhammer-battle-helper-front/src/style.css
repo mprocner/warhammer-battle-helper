@@ -192,6 +192,7 @@ header nav a:hover::after {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
 .panel-header__title {

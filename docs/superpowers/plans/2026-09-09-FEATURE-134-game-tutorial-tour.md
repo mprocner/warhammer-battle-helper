@@ -1349,10 +1349,10 @@ Nazwę usługi sprawdź w `docker-compose.yml`, jeśli nie brzmi `frontend`.
 
 Przejdź to ręcznie i zanotuj wynik każdego punktu:
 
-1. Konto MG, wejście do gry **ze sceną**: samouczek startuje sam, 10 kroków, licznik pokazuje `1 / 10`.
+1. Konto MG, wejście do gry **ze sceną**: samouczek startuje sam. Liczba kroków zależy od tego, co jest na ekranie — `.window-bar` nie istnieje, dopóki nie ma otwartego okna karty postaci (`WindowBar.jsx:73` zwraca `null` przy pustej liście), więc w świeżej grze krok `windowBar` wypada i MG dostaje **9 kroków**. Otwórz najpierw jakąś kartę postaci i wyczyść flagę, żeby zobaczyć pełne 10.
 2. Schowaj lewy i prawy panel oraz zwiń górne belki **przed** startem (wyczyść flagę: `localStorage.removeItem('tutorialSeen:gm')`, odśwież): kroki 1-2 same wysuwają lewy panel, krok 4 rozwija belki, kroki 9-10 wysuwają prawy panel. Spotlight zawsze trafia w widoczny element.
-3. Gra **bez sceny**: samouczek ma 7 kroków (odpadają `sceneControls`, `layerSelector`, `drawingToolbar`), licznik kończy na `7 / 7`, nic nie wisi na pustym miejscu.
-4. Konto gracza w tej samej grze: 8 kroków, brak kroku o scenach i o warstwie, krok o narzędziach mówi o przesuwaniu, miarce i rysowaniu.
+3. Gra **bez sceny**: odpadają `layerSelector` i `drawingToolbar` (`.scene-tools` się nie renderuje), więc MG ma 8 kroków z otwartym oknem karty postaci albo 7 bez niego. Licznik kończy się na tej samej liczbie, na której się zaczął, i nic nie wisi na pustym miejscu. Krok `sceneControls` **zostaje**: `SceneViewport` bez sceny i tak renderuje `<div className="scene-viewport">` (`SceneViewport.jsx:611`), więc kotwica istnieje — spotlight obejmuje pusty obszar mapy, co jest zamierzone.
+4. Konto gracza w tej samej grze: brak kroku o scenach i o warstwie, krok o narzędziach mówi o przesuwaniu, miarce i rysowaniu. Kroków 8 przy otwartym oknie karty postaci, 7 bez niego (patrz punkt 1).
 5. Przełącz `controlScheme` na `classic` w zakładce Ustawienia Ogólne, uruchom samouczek przyciskiem `?`: krok o mapie mówi o prawym przycisku.
 6. „Pomiń" w połowie, odświeżenie strony: samouczek **nie** startuje ponownie.
 7. Przycisk `?` przy nagłówku „Ustawienia": uruchamia samouczek mimo ustawionej flagi.

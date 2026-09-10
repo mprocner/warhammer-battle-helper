@@ -36,7 +36,7 @@ const generateFightZones = (width, height) => {
 };
 
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = null, onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern' }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = null, onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern', onCharactersLoaded }) {
   const { t } = useTranslation();
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -602,6 +602,16 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       if (!silent) setIsLoading(false);
     }
   }, [gameId, token]);
+
+  // Sygnał gotowości dla samouczka (GameTour): dopóki isLoading trzyma true,
+  // ten komponent renderuje wyłącznie placeholder "Ładowanie postaci..." (patrz
+  // niżej) — całe drzewo z kotwicami samouczka (sidebar, scena, online-users)
+  // jeszcze nie istnieje w DOM. Efekt, nie warunek w renderze, żeby nie wołać
+  // rodzica podczas renderowania. Bezpieczne wołać wielokrotnie — rodzic i tak
+  // tylko ustawia ten sam boolean.
+  useEffect(() => {
+    if (!isLoading) onCharactersLoaded?.();
+  }, [isLoading, onCharactersLoaded]);
 
   // Handle adding a new character - creates minimal character and opens sheet for editing.
   // Stats are deliberately omitted: the backend fills them from the game system's own
