@@ -51,6 +51,12 @@
   letter-spacing: 0.5px;
 }
 
+.scenes-tab__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .scenes-tab__btn {
   padding: 8px 16px;
   background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);

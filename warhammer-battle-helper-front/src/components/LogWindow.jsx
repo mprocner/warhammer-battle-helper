@@ -1,7 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
+import { useTranslation } from 'react-i18next';
 import LockIcon from '@mui/icons-material/Lock';
 import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
+import TourButton from './tutorial/TourButton';
 import './LogWindow.css';
 
 // Jak długo świeży wpis nosi podświetlenie "nowe" (ms).
@@ -16,6 +18,7 @@ const LogWindow = ({
     currentUserId = null,
     onlyMine = false
 }) => {
+    const { t } = useTranslation();
     const system = getSystem(gameSystem);
     const logEndRef = useRef(null);
 
@@ -118,10 +121,14 @@ const LogWindow = ({
 
     return (
         <div className="log-window">
+            <div className="log-window__header">
+                <h3 className="log-window__title">{t('rightPanel.tabs.chat')}</h3>
+                <TourButton tourId="chat" />
+            </div>
             <div className="log-window__messages">
                 {trimmedMessages.length === 0 ? (
                     <div className="log-window__empty">
-                        <span className="log-window__empty-text">The chronicle awaits...</span>
+                        <span className="log-window__empty-text">{t('log.emptyChronicle')}</span>
                     </div>
                 ) : (
                     <ul className="log-window__list">

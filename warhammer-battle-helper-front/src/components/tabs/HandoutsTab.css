@@ -132,6 +132,12 @@
   opacity: 0.7;
 }
 
+.handouts-tab__header-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Header actions (folder + add buttons) */
 .handouts-tab__header-actions {
   display: flex;

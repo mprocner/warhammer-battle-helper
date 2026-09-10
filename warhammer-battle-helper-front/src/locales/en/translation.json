@@ -543,7 +543,8 @@
     "successfullyDefends": "Successfully defends",
     "sl": "SL",
     "sb": "SB",
-    "weapon": "Weapon"
+    "weapon": "Weapon",
+    "emptyChronicle": "The chronicle awaits..."
   },
   "attributeShort": {
     "WS": "WS",
@@ -682,25 +683,26 @@
     "done": "Got it",
     "progress": "{{current}} / {{total}}",
     "tabsIntro": "The right panel holds everything that is not the map. Pick a tab:",
+    "tabsOutro": "Most tabs have their own short tutorial too — look for the question mark next to their heading.",
     "tabs": {
       "chat": "dice rolls, results and messages from the whole table",
-      "scenes": "settings of the current scene: grid, size, background",
-      "handouts": "images and documents you hand to the players",
+      "scenes": "your maps: switch between them, add new ones, decide who sees which",
+      "handouts": "images and documents the GM shares with the table",
       "files": "your uploads — maps, tokens, portraits",
       "music": "background tracks played to everyone at once",
-      "notes": "your private notes, nobody else sees them",
-      "players": "who joined, which character they own, their permissions",
+      "notes": "your notes — private by default, but you can share one with the table",
+      "players": "who joined, who is online, and removing someone from the game",
       "minigames": "dice minigames you can start for the table",
-      "general": "game settings, language, control scheme, leaving the game"
+      "general": "game settings, language, control scheme, returning to the game list, or logging out"
     },
-    "steps": {
+    "gameScreen": {
       "characterCard": {
         "title": "Selected character",
-        "body": "A short sheet of the character you clicked: key stats and quick rolls. Click the name to open the full sheet in its own window \u2014 minimising it parks it in the bar at the top of the screen, so nothing gets lost behind the map."
+        "body": "A short sheet of the character you clicked: key stats and quick rolls. Click the scroll icon next to the name to open the full sheet in its own window \u2014 minimising it parks it in the bar at the top of the screen, so nothing gets lost behind the map."
       },
       "characterList": {
         "title": "Character list",
-        "body": "Every player character and NPC in this game. Drag one onto the map to place its token, or click it to load it into the card above."
+        "body": "Every player character and NPC in this game. Click the arrow button to add one to the first free slot on the map, or click the tile itself to load it into the card above."
       },
       "sceneSelector": {
         "title": "Scenes",
@@ -708,7 +710,7 @@
       },
       "windowBar": {
         "title": "Open windows",
-        "body": "Character sheets and handouts open as separate windows. Minimising one parks it here, so nothing gets lost behind the map."
+        "body": "Character sheets, handouts, and notes open as separate windows. Minimising one parks it here, so nothing gets lost behind the map."
       },
       "sceneControls": {
         "title": "The map",
@@ -719,7 +721,7 @@
       },
       "layerSelector": {
         "title": "Active layer",
-        "body": "The map is stacked from layers: background, tokens, overlays. Pick the layer first — what you draw, move or delete applies only to the layer armed here."
+        "body": "The map is stacked from layers: tokens, the GM layer, and the background. Pick the layer first — moving or deleting an image or token only affects the layer armed here; drawing is not limited to it."
       },
       "drawingToolbar": {
         "title": "Scene tools",
@@ -730,7 +732,7 @@
       },
       "onlineUsers": {
         "title": "Who is here",
-        "body": "Everyone in the game. A lit avatar means the person is connected right now. Click your own to change your colour and avatar size."
+        "body": "Everyone in the game. A lit avatar means the person is connected right now. Click your own to change your avatar, signature, and avatar size."
       },
       "tabsNav": {
         "title": "Right panel tabs",
@@ -739,6 +741,141 @@
       "diceControls": {
         "title": "Dice and roll visibility",
         "body": "Roll dice without opening any sheet. The eye picks who sees the result — everyone, the GM only, or you alone — and the filter next to it hides other people's rolls from the log."
+      }
+    },
+    "chat": {
+      "log": {
+        "title": "The chronicle",
+        "body": {
+          "0": "Every roll and message from the table lands here, newest at the bottom. It also looks empty when a filter is hiding everything, not just when nothing has happened yet.",
+          "1": "Every roll and message from the table, newest at the bottom. Hidden rolls show only to the people allowed to see them."
+        }
+      },
+      "dice": {
+        "title": "Rolling dice",
+        "body": {
+          "gm": "The dice icon here rolls a custom combination without opening any sheet. The dropdown at the end of that row decides who sees the result — everyone, you and whoever rolled, you alone, or one participant of your choosing.",
+          "player": "The dice icon here rolls a custom combination without opening your sheet. The dropdown at the end of that row decides who sees the result — everyone, just you and the GM, the GM alone, or one other participant of your choosing."
+        }
+      },
+      "myRolls": {
+        "title": "Only my rolls",
+        "body": "Hides everyone else's entries from the log, so you can find your own result in a busy fight."
+      }
+    },
+    "notes": {
+      "list": {
+        "title": "Notes",
+        "body": {
+          "0": "Your own notes appear here, along with any public notes other players have shared. Yours are private by default, but you can mark one public to share it with the table.",
+          "1": "Your notes, plus any public ones from others. Drag to reorder, click one to edit it — yours stay private by default until you mark them public from inside the editor."
+        }
+      },
+      "add": {
+        "title": "New note",
+        "body": "Adds an empty note at the top of the list. Useful mid-session for a name you want to remember."
+      },
+      "filter": {
+        "title": "Search",
+        "body": "Filters the list as you type. While a filter is active, dragging to reorder is switched off."
+      }
+    },
+    "files": {
+      "list": {
+        "title": "Your files",
+        "body": {
+          "0": "Maps, tokens and portraits you upload will appear here. Drag a file onto the scene to place it.",
+          "1": "Maps, tokens and portraits. Drag one onto the scene to place it, or hover over it to reveal buttons for cropping, renaming, and deleting it. A fourth button, for adding it to the scene, appears once a scene is open."
+        }
+      },
+      "createFolder": {
+        "title": "Organising files",
+        "body": "Create folders to keep a long campaign tidy. Drag files between them."
+      },
+      "breadcrumb": {
+        "title": "Where you are",
+        "body": "The path of the folder you opened. Click an earlier part of it to jump back up — the last part is just your current folder, so clicking it does nothing."
+      }
+    },
+    "scenes": {
+      "list": {
+        "title": "Your scenes",
+        "body": {
+          "0": "The maps of this campaign will appear here. Create one to give the table something to stand on.",
+          "1": "The maps of this campaign. Click one to work on it — your players keep seeing whichever scene you assigned them."
+        }
+      },
+      "create": {
+        "title": "New scene",
+        "body": "Opens a form for the scene's name and grid size. You add a background image and assign players afterward, from the scene canvas and the settings panel below."
+      },
+      "settings": {
+        "title": "Scene settings",
+        "body": "The scene's name, its grid width and height, whether the grid is shown, fog of war, linked music, and which players can see it."
+      }
+    },
+    "handouts": {
+      "list": {
+        "title": "Handouts",
+        "body": {
+          "0": {
+            "gm": "Letters, portraits and maps you hand to the players will appear here. Nothing is shared until you say so.",
+            "player": "Anything the GM hands to the table appears here — letters, portraits, maps. Empty for now."
+          },
+          "1": {
+            "gm": "Letters, portraits and maps for the players. Each one is shared only with the people you pick.",
+            "player": "What the GM has shared with you. Click one to open it in its own window."
+          }
+        }
+      },
+      "create": {
+        "title": "New handout or folder",
+        "body": "The \"+ Add Handout\" button uploads a file — an image, PDF or text file — as a handout and lets you choose who can see it. The \"+ New Folder\" button creates a folder to organise your handouts."
+      }
+    },
+    "music": {
+      "library": {
+        "title": "Your tracks",
+        "body": "Everything you uploaded. Press play on a track to send it to the whole table at once."
+      },
+      "nowPlaying": {
+        "title": "Playback",
+        "body": "What is playing now, with skip, pause and stop. Everyone hears the same thing at the same moment."
+      },
+      "playlists": {
+        "title": "Playlists",
+        "body": "Group tracks into a set — tavern, battle, travel — and start the whole set with one click."
+      },
+      "volume": {
+        "title": "Two volumes",
+        "body": "This slider controls the table's overall volume — moving it changes what every player hears. Each player also has their own slider, but that one only adjusts the sound on their end."
+      }
+    },
+    "players": {
+      "invite": {
+        "title": "Inviting players",
+        "body": "Type in their account email to add them straight to the game — nothing is sent, and they join immediately with no confirmation needed on their end."
+      },
+      "list": {
+        "title": "Who is in the game",
+        "body": {
+          "0": "Everyone who joined will appear here, with their email address.",
+          "1": "Every player in the game, not the GM, with their email address. A green dot on their avatar means they are connected right now."
+        }
+      },
+      "kick": {
+        "title": "Removing a player",
+        "body": "Takes the person out of this game. Their character stays, so you can share it with somebody else."
+      }
+    },
+    "minigames": {
+      "list": {
+        "title": "Dice minigames",
+        "body": "Small games for the table — handy while the party argues about which door to open."
+      },
+      "start": {
+        "title": "Starting a game",
+        "body": "Pick a game and choose which online players join — offline ones can't be picked. The board pops up for the whole table right away — the people you picked take turns, everyone else just watches. Only one minigame runs at a time."
       }
     }
   },

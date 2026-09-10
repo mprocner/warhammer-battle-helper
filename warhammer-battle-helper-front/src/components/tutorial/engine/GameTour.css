@@ -107,3 +107,9 @@
 .tour-tabs-legend__desc {
   color: #3a2f1f;
 }
+
+.tour-tabs-legend__outro {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: #7a5c42;
+}

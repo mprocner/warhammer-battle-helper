@@ -386,21 +386,19 @@
 }
 
 .log-window__header {
-  padding: 16px;
-  border-bottom: 3px solid var(--log-brown-light);
-  background: linear-gradient(135deg, var(--log-brown-light) 0%, #a67c52 100%);
-  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--log-brown-dark);
 }
 
 .log-window__title {
-  font-family: var(--log-font-display);
-  font-weight: 700;
-  color: var(--log-bg-parchment);
-  text-align: center;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--log-font-display);
+  font-size: 0.95rem;
+  color: var(--log-brown-dark);
 }
 
 .log-window__messages {

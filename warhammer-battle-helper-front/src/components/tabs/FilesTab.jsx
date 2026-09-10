@@ -19,6 +19,7 @@ import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
 import { resolveFileUrl } from '../../utils/fileUrl';
 import { processImage, PRESETS } from '../../utils/imageProcessing';
+import TourButton from '../tutorial/TourButton';
 import './FilesTab.css';
 
 const getImageDimensions = (url) => new Promise((resolve) => {
@@ -573,6 +574,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
             >
               + {t('files.createFolder')}
             </button>
+            <TourButton tourId="files" />
           </div>
         </div>
 

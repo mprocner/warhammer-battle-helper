@@ -19,11 +19,12 @@ import { getMinigameState } from '../api/minigame';
 import SceneSelector from './scene/SceneSelector';
 import WindowBar from './WindowBar';
 import { WindowManagerProvider } from '../contexts/WindowManagerContext';
+import { TutorialProvider } from './tutorial/TutorialContext';
 import YahtzeeBoardModal from './minigame/YahtzeeBoardModal';
 import DicePokerBoardModal from './minigame/DicePokerBoardModal';
 import { WS_EVENTS } from '../websocket/events';
 import ToastStack from './ToastStack';
-import GameTour from './tutorial/GameTour';
+import GameTour from './tutorial/engine/GameTour';
 import { useToastQueue } from '../hooks/useToastQueue';
 import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
@@ -1020,6 +1021,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
   return (
     <WindowManagerProvider>
+    <TutorialProvider>
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {wsError && (
         <Alert severity="warning" sx={{ m: 2 }}>
@@ -1190,6 +1192,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         onCancel={() => setShowBackConfirm(false)}
       />
     </Box>
+    </TutorialProvider>
     </WindowManagerProvider>
   );
 };

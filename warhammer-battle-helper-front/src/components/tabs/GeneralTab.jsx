@@ -169,6 +169,9 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
 
   return (
     <div className="general-tab">
+      <div className="general-tab__header">
+        <h3 className="general-tab__title">{t('rightPanel.tabs.general')}</h3>
+      </div>
       {/* Game Info Section */}
       <section className="general-tab__section">
         <h4 className="general-tab__section-title">{t('settings.gameInfo')}</h4>

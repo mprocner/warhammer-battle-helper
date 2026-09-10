@@ -543,7 +543,8 @@
     "successfullyDefends": "Pomyślnie broni",
     "sl": "PS",
     "sb": "Bonus Siły",
-    "weapon": "Broń"
+    "weapon": "Broń",
+    "emptyChronicle": "Kronika czeka na pierwszy wpis..."
   },
   "attributeShort": {
     "WS": "WW",
@@ -682,25 +683,26 @@
     "done": "Rozumiem",
     "progress": "{{current}} / {{total}}",
     "tabsIntro": "Prawy panel mieści wszystko, co nie jest mapą. Wybierz zakładkę:",
+    "tabsOutro": "Większość zakładek ma też własny krótki samouczek — szukaj znaku zapytania przy ich nagłówku.",
     "tabs": {
       "chat": "rzuty, wyniki i wiadomości od całego stołu",
-      "scenes": "ustawienia bieżącej sceny: siatka, rozmiar, tło",
-      "handouts": "obrazki i dokumenty, które przekazujesz graczom",
+      "scenes": "Twoje mapy: przełączasz się między nimi, dodajesz nowe, decydujesz kto co widzi",
+      "handouts": "obrazki i dokumenty, które MG przekazuje stołowi",
       "files": "Twoje pliki — mapy, tokeny, portrety",
       "music": "muzyka w tle, odtwarzana wszystkim naraz",
-      "notes": "Twoje prywatne notatki, nikt inny ich nie widzi",
-      "players": "kto dołączył, czyją gra postacią, jakie ma uprawnienia",
+      "notes": "Twoje notatki — domyślnie prywatne, ale możesz się którąś podzielić ze stołem",
+      "players": "kto dołączył, kto jest online, usuwanie kogoś z gry",
       "minigames": "minigry w kości, które możesz uruchomić stołowi",
-      "general": "ustawienia gry, język, schemat sterowania, wyjście z gry"
+      "general": "ustawienia gry, język, schemat sterowania, powrót do listy gier albo wylogowanie"
     },
-    "steps": {
+    "gameScreen": {
       "characterCard": {
         "title": "Wybrana postać",
-        "body": "Skrócona karta klikniętej postaci: najważniejsze cechy i szybkie rzuty. Kliknij nazwę, żeby otworzyć pełną kartę w osobnym oknie — zminimalizowane okno ląduje na belce u góry ekranu, więc nic nie ginie za mapą."
+        "body": "Skrócona karta klikniętej postaci: najważniejsze cechy i szybkie rzuty. Kliknij ikonę zwoju obok imienia, żeby otworzyć pełną kartę w osobnym oknie — zminimalizowane okno ląduje na belce u góry ekranu, więc nic nie ginie za mapą."
       },
       "characterList": {
         "title": "Lista postaci",
-        "body": "Wszystkie postacie graczy i NPC w tej grze. Przeciągnij postać na mapę, żeby postawić jej token, albo kliknij ją, żeby wczytać ją do karty powyżej."
+        "body": "Wszystkie postacie graczy i NPC w tej grze. Kliknij strzałkę, żeby dodać token na pierwsze wolne miejsce na mapie, albo kliknij samą postać, żeby wczytać ją do karty powyżej."
       },
       "sceneSelector": {
         "title": "Sceny",
@@ -708,7 +710,7 @@
       },
       "windowBar": {
         "title": "Otwarte okna",
-        "body": "Karty postaci i handouty otwierają się jako osobne okna. Zminimalizowane lądują tutaj, więc nic nie ginie za mapą."
+        "body": "Karty postaci, handouty i notatki otwierają się jako osobne okna. Zminimalizowane lądują tutaj, więc nic nie ginie za mapą."
       },
       "sceneControls": {
         "title": "Mapa",
@@ -719,7 +721,7 @@
       },
       "layerSelector": {
         "title": "Aktywna warstwa",
-        "body": "Mapa składa się z warstw: tło, tokeny, nakładki. Najpierw wybierz warstwę — rysowanie, przesuwanie i kasowanie działa tylko na tej uzbrojonej tutaj."
+        "body": "Mapa składa się z warstw: tokeny, warstwa MG i tło. Najpierw wybierz warstwę — przesuwanie i kasowanie obrazków lub tokenów działa tylko na tej uzbrojonej tutaj; rysowanie nie jest do niej ograniczone."
       },
       "drawingToolbar": {
         "title": "Narzędzia sceny",
@@ -730,7 +732,7 @@
       },
       "onlineUsers": {
         "title": "Kto jest przy stole",
-        "body": "Wszyscy uczestnicy gry. Podświetlony awatar znaczy, że ktoś jest teraz połączony. Kliknij swój, żeby zmienić kolor i rozmiar awatara."
+        "body": "Wszyscy uczestnicy gry. Podświetlony awatar znaczy, że ktoś jest teraz połączony. Kliknij swój, żeby zmienić avatar, podpis i jego rozmiar."
       },
       "tabsNav": {
         "title": "Zakładki prawego panelu",
@@ -739,6 +741,141 @@
       "diceControls": {
         "title": "Kości i widoczność rzutów",
         "body": "Rzucasz kośćmi bez otwierania karty. Oko decyduje, kto zobaczy wynik — wszyscy, sam MG albo tylko Ty — a filtr obok ukrywa w logu cudze rzuty."
+      }
+    },
+    "chat": {
+      "log": {
+        "title": "Kronika",
+        "body": {
+          "0": "Każdy rzut i każda wiadomość od stołu trafiają tutaj, najnowsze na dole. Wygląda pusto też wtedy, gdy filtr coś ukrywa, nie tylko wtedy, gdy naprawdę jeszcze nic się nie wydarzyło.",
+          "1": "Każdy rzut i każda wiadomość od stołu, najnowsze na dole. Ukryte rzuty widzą tylko ci, którym je pokazano."
+        }
+      },
+      "dice": {
+        "title": "Rzuty kośćmi",
+        "body": {
+          "gm": "Ikona kostki rzuca własną kombinację kości bez otwierania karty. Rozwijana lista na końcu tego wiersza decyduje, kto zobaczy wynik — wszyscy, Ty i osoba, która rzuciła, tylko Ty, albo wybrany uczestnik.",
+          "player": "Ikona kostki rzuca własną kombinację kości bez otwierania karty. Rozwijana lista na końcu tego wiersza decyduje, kto zobaczy wynik — wszyscy, tylko Ty i MG, sam MG, albo wybrany inny uczestnik."
+        }
+      },
+      "myRolls": {
+        "title": "Tylko moje rzuty",
+        "body": "Ukrywa w logu cudze wpisy, żebyś w gęstej walce znalazł swój wynik."
+      }
+    },
+    "notes": {
+      "list": {
+        "title": "Notatki",
+        "body": {
+          "0": "Tu pojawiają się Twoje notatki, a obok nich publiczne notatki innych graczy. Twoje są domyślnie prywatne, ale każdą możesz oznaczyć jako publiczną, żeby udostępnić ją stołowi.",
+          "1": "Twoje notatki oraz publiczne notatki innych. Przeciągnij, żeby zmienić kolejność, kliknij, żeby edytować — Twoje są domyślnie prywatne, dopóki nie oznaczysz ich jako publiczne w edytorze."
+        }
+      },
+      "add": {
+        "title": "Nowa notatka",
+        "body": "Dodaje pustą notatkę na górze listy. Przydaje się w trakcie sesji na imię, które chcesz zapamiętać."
+      },
+      "filter": {
+        "title": "Szukaj",
+        "body": "Filtruje listę w trakcie pisania. Przy włączonym filtrze przeciąganie do zmiany kolejności jest wyłączone."
+      }
+    },
+    "files": {
+      "list": {
+        "title": "Twoje pliki",
+        "body": {
+          "0": "Tu pojawią się mapy, tokeny i portrety, które wgrasz. Przeciągnięcie pliku na scenę stawia go na mapie.",
+          "1": "Mapy, tokeny i portrety. Przeciągnij plik na scenę, żeby go postawić, albo najedź na niego, żeby pokazały się przyciski do kadrowania, zmiany nazwy i usuwania. Czwarty przycisk, do dodania na scenę, pojawia się, gdy scena jest otwarta."
+        }
+      },
+      "createFolder": {
+        "title": "Porządek w plikach",
+        "body": "Foldery utrzymują długą kampanię w ryzach. Pliki przeciągasz między nimi."
+      },
+      "breadcrumb": {
+        "title": "Gdzie jesteś",
+        "body": "Ścieżka otwartego folderu. Kliknięcie wcześniejszego członu cofa Cię wyżej — ostatni to folder, w którym już jesteś, więc kliknięcie go nic nie zmienia."
+      }
+    },
+    "scenes": {
+      "list": {
+        "title": "Twoje sceny",
+        "body": {
+          "0": "Tu pojawią się mapy tej kampanii. Utwórz pierwszą, żeby stół miał na czym stanąć.",
+          "1": "Mapy tej kampanii. Kliknij scenę, żeby nad nią pracować — gracze nadal widzą tę, którą im przypisałeś."
+        }
+      },
+      "create": {
+        "title": "Nowa scena",
+        "body": "Otwiera formularz z nazwą i rozmiarem siatki sceny. Tło i dostęp graczy ustawiasz później — na scenie i w panelu ustawień poniżej."
+      },
+      "settings": {
+        "title": "Ustawienia sceny",
+        "body": "Nazwa sceny, szerokość i wysokość siatki, widoczność siatki, mgła wojny, podpięta muzyka oraz gracze, którzy ją widzą."
+      }
+    },
+    "handouts": {
+      "list": {
+        "title": "Handouty",
+        "body": {
+          "0": {
+            "gm": "Tu pojawią się listy, portrety i mapy, które przekazujesz graczom. Nic nie jest udostępnione, dopóki nie zdecydujesz.",
+            "player": "Tu pojawia się wszystko, co MG przekaże stołowi — listy, portrety, mapy. Na razie pusto."
+          },
+          "1": {
+            "gm": "Listy, portrety i mapy dla graczy. Każdy handout trafia tylko do osób, które wskażesz.",
+            "player": "To, co udostępnił Ci MG. Kliknij, żeby otworzyć w osobnym oknie."
+          }
+        }
+      },
+      "create": {
+        "title": "Nowy handout lub folder",
+        "body": "Przycisk „+ Dodaj Handout\" wgrywa plik — obraz, PDF albo plik tekstowy — jako handout i pozwala wybrać, kto go zobaczy. Przycisk „+ Nowy Folder\" tworzy folder, żeby uporządkować handouty."
+      }
+    },
+    "music": {
+      "library": {
+        "title": "Twoje utwory",
+        "body": "Wszystko, co wgrałeś. Naciśnij play przy utworze, żeby puścić go całemu stołowi naraz."
+      },
+      "nowPlaying": {
+        "title": "Odtwarzanie",
+        "body": "Co gra w tej chwili, z przewijaniem, pauzą i zatrzymaniem. Wszyscy słyszą to samo w tym samym momencie."
+      },
+      "playlists": {
+        "title": "Playlisty",
+        "body": "Grupuj utwory w zestawy — karczma, walka, podróż — i uruchamiaj cały zestaw jednym kliknięciem."
+      },
+      "volume": {
+        "title": "Dwie głośności",
+        "body": "Ten suwak ustawia głośność dla całego stołu — jego przesunięcie zmienia to, co słyszy każdy gracz. Każdy gracz ma też swój własny suwak, ale on reguluje dźwięk tylko u niego."
+      }
+    },
+    "players": {
+      "invite": {
+        "title": "Zapraszanie graczy",
+        "body": "Wpisz adres email osoby, żeby dodać ją od razu do gry — nic nie jest wysyłane, dołącza natychmiast, bez potwierdzania z jej strony."
+      },
+      "list": {
+        "title": "Kto jest w grze",
+        "body": {
+          "0": "Tu pojawią się wszyscy, którzy dołączą, razem z adresem email.",
+          "1": "Wszyscy gracze w tej grze, poza MG, razem z adresem email. Zielona kropka na awatarze znaczy, że ktoś jest teraz połączony."
+        }
+      },
+      "kick": {
+        "title": "Usuwanie gracza",
+        "body": "Wyrzuca osobę z tej gry. Postać zostaje, więc możesz udostępnić ją komuś innemu."
+      }
+    },
+    "minigames": {
+      "list": {
+        "title": "Minigry w kości",
+        "body": "Małe gry dla stołu — przydają się, gdy drużyna kłóci się, które drzwi otworzyć."
+      },
+      "start": {
+        "title": "Uruchomienie gry",
+        "body": "Wybierz grę i zaznacz, którzy gracze online dołączają — offline nie da się wybrać. Plansza od razu wyskakuje całemu stołowi — zaznaczeni grają na zmianę, reszta tylko patrzy. Druga minigra jest zablokowana, dopóki ta się nie skończy."
       }
     }
   },

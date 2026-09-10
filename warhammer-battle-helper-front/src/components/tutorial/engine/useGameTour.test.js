@@ -2,16 +2,36 @@ import React from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useGameTour, seenKey } from './useGameTour';
 
+// Krok z listą kotwic nie istnieje jeszcze w żadnym zarejestrowanym turze
+// (patrz tours/gameScreen.js), więc żeby dowieść, że hook przekazuje trafiony
+// indeks (a nie sztywne 0), wstrzykujemy własny tur przez ten sam mechanizm
+// rejestru co prawdziwe tury — patrz komentarz przy jest.mock('../tours').
+const ARRAY_TARGET_TOUR_ID = 'arrayTargetTest';
+const ARRAY_TARGET_TOUR = {
+  id: ARRAY_TARGET_TOUR_ID,
+  steps: [
+    { id: 'arrayStep', target: ['.missing', '.present'], roles: ['gm', 'player'] },
+  ],
+};
+
+jest.mock('../tours', () => {
+  const actual = jest.requireActual('../tours');
+  return {
+    ...actual,
+    getTour: (id) => (id === ARRAY_TARGET_TOUR_ID ? ARRAY_TARGET_TOUR : actual.getTour(id)),
+  };
+});
+
 const OPEN = { leftHidden: false, rightHidden: false, topCollapsed: false };
 const COLLAPSED = { leftHidden: true, rightHidden: true, topCollapsed: true };
 
 // Domyślnie udajemy, że każda kotwica istnieje; pojedyncze testy zawężają listę.
 const allTargets = () => jest.fn(() => ({}));
 
-const setup = ({ role = 'gm', panels = OPEN, queryTarget = allTargets(), screenReady = true } = {}, options = {}) => {
+const setup = ({ tourId = 'gameScreen', role = 'gm', panels = OPEN, queryTarget = allTargets(), screenReady = true } = {}, options = {}) => {
   const onReveal = jest.fn();
   const view = renderHook(
-    (props) => useGameTour({ role, onReveal, queryTarget, ...props }),
+    (props) => useGameTour({ tourId, role, onReveal, queryTarget, ...props }),
     { initialProps: { panels, screenReady }, ...options }
   );
   return { view, onReveal, queryTarget };
@@ -38,6 +58,14 @@ describe('useGameTour', () => {
     localStorage.setItem(seenKey('player'), '1');
     const { view } = setup({ role: 'gm' });
     expect(view.result.current.running).toBe(true);
+  });
+
+  it('filters GM-only steps out for a player even when every anchor is present', () => {
+    const { view } = setup({ role: 'player' });
+    const ids = view.result.current.steps.map(s => s.id);
+    expect(view.result.current.steps).toHaveLength(8);
+    expect(ids).not.toContain('sceneSelector');
+    expect(ids).not.toContain('layerSelector');
   });
 
   it('starts from the button even when the flag is set', () => {
@@ -189,6 +217,16 @@ describe('useGameTour', () => {
     const { view } = setup();
     expect(() => act(() => view.result.current.finish())).not.toThrow();
     expect(view.result.current.running).toBe(false);
+  });
+
+  it('forwards the index of the selector that actually matched, not a hardcoded first', () => {
+    const queryTarget = jest.fn(sel => (sel === '.present' ? {} : null));
+    const { view } = setup({ tourId: ARRAY_TARGET_TOUR_ID, queryTarget });
+    expect(view.result.current.steps).toHaveLength(1);
+    expect(view.result.current.steps[0]).toEqual(expect.objectContaining({
+      resolvedTarget: '.present',
+      targetIndex: 1,
+    }));
   });
 
   describe('under React.StrictMode', () => {

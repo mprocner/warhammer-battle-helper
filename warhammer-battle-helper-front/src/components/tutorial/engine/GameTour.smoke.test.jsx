@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import GameTour from './GameTour';
-import i18n from '../../i18n';
+import i18n from '../../../i18n';
 
 // Sprawdzamy tylko, że integracja z react-joyride staje na nogi w jsdom:
 // komponent montuje bibliotekę, pierwszy krok trafia do własnego dymka.
@@ -77,6 +77,36 @@ test('renders nothing when no anchor is on the page', async () => {
   // react-joyride teleportuje swój element do document.body (portal), więc
   // `container` z RTL jest pusty niezależnie od tego, czy tour wystartował —
   // sprawdzamy realny efekt uboczny, nie pusty kontener.
+  expect(document.querySelector('.tour-tooltip')).toBeNull();
+});
+
+// "Done" na ostatnim kroku to inna gałąź niż Skip: react-joyride sam nadaje
+// jej status FINISHED (patrz komentarz przy STATUS.FINISHED w GameTour.jsx),
+// zamiast STATUS.SKIPPED. Obie muszą jednak kończyć tour tak samo.
+test('Done on the last step finishes the tour and persists the seen flag', async () => {
+  await act(async () => {
+    render(
+      <GameTour
+        role="player"
+        controlScheme="modern"
+        panels={PANELS}
+        onReveal={() => {}}
+        startSignal={0}
+      />
+    );
+  });
+  await screen.findByText('1 / 2');
+
+  await act(async () => {
+    fireEvent.click(screen.getByText('Next'));
+  });
+  await screen.findByText('2 / 2');
+
+  await act(async () => {
+    fireEvent.click(screen.getByText('Got it'));
+  });
+
+  expect(localStorage.getItem('tutorialSeen:player')).not.toBeNull();
   expect(document.querySelector('.tour-tooltip')).toBeNull();
 });
 

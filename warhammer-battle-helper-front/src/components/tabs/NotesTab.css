@@ -39,6 +39,12 @@
   letter-spacing: 0.5px;
 }
 
+.notes-tab__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .notes-tab__add-btn {
   display: flex;
   align-items: center;

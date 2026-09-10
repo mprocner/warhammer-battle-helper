@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { tabsForRole } from '../panels/tabDefinitions';
+import { tabsForRole } from '../../panels/tabDefinitions';
 
 // Ikony i kolejność biorą się z tej samej definicji co realne zakładki panelu,
 // więc legenda nie może pokazać zakładki, której user nie ma.
@@ -19,6 +19,7 @@ const TabsLegend = ({ isGM }) => {
           </li>
         ))}
       </ul>
+      <p className="tour-tabs-legend__outro">{t('tutorial.tabsOutro')}</p>
     </div>
   );
 };

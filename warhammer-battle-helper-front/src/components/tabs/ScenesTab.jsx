@@ -7,6 +7,7 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import ModalHeader from '../common/ModalHeader';
 import CloseIcon from '@mui/icons-material/Close';
+import TourButton from '../tutorial/TourButton';
 import './ScenesTab.css';
 
 const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange }) => {
@@ -289,12 +290,15 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
       {/* Header */}
       <div className="scenes-tab__header">
         <h3 className="scenes-tab__title">{t('scenes.title')}</h3>
-        <button
-          className="scenes-tab__btn"
-          onClick={() => setIsCreateOpen(true)}
-        >
-          + {t('scenes.createScene')}
-        </button>
+        <div className="scenes-tab__actions">
+          <button
+            className="scenes-tab__btn"
+            onClick={() => setIsCreateOpen(true)}
+          >
+            + {t('scenes.createScene')}
+          </button>
+          <TourButton tourId="scenes" />
+        </div>
       </div>
 
       {error && (

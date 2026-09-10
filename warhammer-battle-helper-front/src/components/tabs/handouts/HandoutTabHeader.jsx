@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import TourButton from '../../tutorial/TourButton';
 
 function HandoutTabHeader({ isGM, onOpenCreate, onFolderCreated }) {
   const { t } = useTranslation();
@@ -19,19 +20,22 @@ function HandoutTabHeader({ isGM, onOpenCreate, onFolderCreated }) {
     <>
       <div className="handouts-tab__header">
         <h3 className="handouts-tab__title">{t('handouts.title')}</h3>
-        {isGM && (
-          <div className="handouts-tab__header-actions">
-            <button className="handouts-tab__add-btn" onClick={onOpenCreate}>
-              + {t('handouts.addHandout')}
-            </button>
-            <button
-              className="handouts-tab__add-btn"
-              onClick={() => setIsCreatingFolder((v) => !v)}
-            >
-              + {t('handouts.folders.createFolder')}
-            </button>
-          </div>
-        )}
+        <div className="handouts-tab__header-group">
+          {isGM && (
+            <div className="handouts-tab__header-actions">
+              <button className="handouts-tab__add-btn" onClick={onOpenCreate}>
+                + {t('handouts.addHandout')}
+              </button>
+              <button
+                className="handouts-tab__add-btn"
+                onClick={() => setIsCreatingFolder((v) => !v)}
+              >
+                + {t('handouts.folders.createFolder')}
+              </button>
+            </div>
+          )}
+          <TourButton tourId="handouts" />
+        </div>
       </div>
 
       {isGM && isCreatingFolder && (

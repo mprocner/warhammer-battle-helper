@@ -1,0 +1,18 @@
+.tour-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 2px;
+  color: #7a5c42;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tour-button:hover {
+  color: #3a2f1f;
+  border-color: #c4a882;
+  background: rgba(201, 151, 91, 0.15);
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '../../i18n';
+import '../../../i18n';
 import TabsLegend from './TabsLegend';
 
 describe('TabsLegend', () => {
@@ -18,5 +18,10 @@ describe('TabsLegend', () => {
     render(<TabsLegend isGM={false} />);
     expect(screen.queryByText(/rightPanel\.tabs\./)).toBeNull();
     expect(screen.queryByText(/tutorial\.tabs\./)).toBeNull();
+  });
+
+  it('tells the reader that each tab has its own tutorial', () => {
+    render(<TabsLegend isGM={true} />);
+    expect(document.body.querySelector('.tour-tabs-legend__outro')).not.toBeNull();
   });
 });

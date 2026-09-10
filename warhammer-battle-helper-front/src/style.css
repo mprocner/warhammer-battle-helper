@@ -6221,6 +6221,16 @@ align-items: center;
     overflow-y: auto;
 }
 
+.minigame-list__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 8px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #c9975b;
+}
+
 .minigame-list__title {
     font-family: 'Cinzel', serif;
     font-size: 14px;
@@ -6228,9 +6238,7 @@ align-items: center;
     color: #6b4423;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin: 0 0 8px 0;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #c9975b;
+    margin: 0;
 }
 
 .minigame-list__item {

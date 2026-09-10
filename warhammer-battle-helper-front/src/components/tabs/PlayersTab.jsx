@@ -5,6 +5,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
 import ConfirmModal from '../common/ConfirmModal';
+import TourButton from '../tutorial/TourButton';
 import './PlayersTab.css';
 
 const PlayersTab = ({ gameId, token, gameState, onlineUserIds, onParticipantUpdated }) => {
@@ -79,6 +80,7 @@ const PlayersTab = ({ gameId, token, gameState, onlineUserIds, onParticipantUpda
     <div className="players-tab">
       <div className="players-tab__header">
         <h3 className="players-tab__title">{t('players.title')}</h3>
+        <TourButton tourId="players" />
       </div>
 
       <section className="players-tab__section">

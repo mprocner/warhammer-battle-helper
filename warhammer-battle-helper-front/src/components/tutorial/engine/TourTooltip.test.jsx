@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '../../i18n';
+import '../../../i18n';
 import TourTooltip from './TourTooltip';
 
 const props = (overrides = {}) => ({

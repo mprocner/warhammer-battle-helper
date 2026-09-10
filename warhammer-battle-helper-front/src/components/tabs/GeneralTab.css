@@ -742,3 +742,18 @@
   background: #c9975b;
   color: #f5ebe0;
 }
+
+.general-tab__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.general-tab__title {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: #c9975b;
+}

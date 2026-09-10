@@ -40,6 +40,21 @@ Flagę „już widziałem" kasujesz w konsoli przeglądarki:
   i po prawej może odrobinę odstawać od ciemniejszego `#e8dcc4`.
 - Czytelność tekstów: czy 9-pozycyjna legenda zakładek mieści się bez przewijania na Twoim ekranie.
 
+## 4. Samouczki poszczególnych zakładek (Task 8)
+
+- [ ] Przycisk `?` przy nagłówku każdej z ośmiu zakładek; w `general` nagłówek jest, przycisku nie ma.
+- [ ] Wysokość nowego nagłówka w czacie — czy nie zjada zbyt wiele miejsca na log.
+- [ ] Puste i pełne `files`, `notes`, `handouts`, `scenes`: tekst kroku o liście mówi „tu pojawi się…"
+      przy pustej i „to są…" przy pełnej.
+- [ ] Konto gracza w `chat`, `handouts`, `notes` — inne teksty niż u MG, brak kroku o tworzeniu
+      handoutu.
+- [ ] `minigames`: przycisk w widoku listy, brak w konfiguracji rozgrywki.
+- [ ] Uruchomienie samouczka zakładki w trakcie trwającego samouczka ogólnego — ogólny ustępuje,
+      nic się nie zawiesza.
+- [ ] `music` w świeżej grze: krok o odtwarzaniu wypada, dopóki nic nie grało.
+- [ ] Po samouczku zakładki `localStorage` **nie** dostaje nowego klucza — zapisywany jest wyłącznie
+      samouczek ogólny.
+
 ## Znane ograniczenia (świadome, nie błędy)
 
 - Flaga siedzi w `localStorage`, więc ten sam MG na innym komputerze dostanie samouczek jeszcze raz.
@@ -48,3 +63,55 @@ Flagę „już widziałem" kasujesz w konsoli przeglądarki:
 - Jeśli kotwica kroku zniknie **w trakcie jego wyświetlania** (np. skasujesz podświetloną scenę),
   dymek znika i samouczek zostaje bez wyjścia — ratunek to odświeżenie strony. Naprawa wymaga
   `MutationObserver`, uznałem to za nieopłacalne przy takim wyzwalaczu.
+
+
+---
+
+# Samouczki zakładek — druga tura weryfikacji
+
+Doszło osiem samouczków zakładek (przycisk `?` przy nagłówku) plus refaktor silnika. Kod gotowy,
+625 testów zielonych. Poniżej to, czego testy nie rozstrzygają.
+
+Kontener przebuduj tak samo jak poprzednio:
+`docker compose up -d --build --renew-anon-volumes frontend`
+
+## Przyciski i nagłówki
+
+| # | Co sprawdzić | Czego oczekiwać |
+|---|---|---|
+| 1 | Przycisk `?` przy nagłówku ośmiu zakładek | Jest w: czat, sceny, handouty, pliki, muzyka, notatki, gracze, minigry. W **Ogólnych** jest sam nagłówek, bez przycisku — celowo. |
+| 2 | Czy przycisk czegoś nie przesunął | W notatkach i scenach obok `?` stoi „+ Dodaj". Ten przycisk ma zostać przy prawej krawędzi, nie wjechać na środek. |
+| 3 | Handouty na koncie MG i gracza | Przycisk `?` w **tym samym miejscu** u obu. MG widzi obok „+ Dodaj handout" i „+ Nowy folder", gracz tylko `?`. |
+| 4 | Nowy nagłówek czatu | Czy nie zjada za dużo miejsca na log. Ma pasować do pozostałych zakładek. |
+| 5 | Nagłówek w Ogólnych | Ten sam styl co reszta. |
+| 6 | Minigry | `?` w widoku listy gier; po wejściu w konfigurację rozgrywki przycisku **nie ma**. |
+
+## Treść samouczków
+
+| # | Co sprawdzić | Czego oczekiwać |
+|---|---|---|
+| 7 | Pliki, notatki, sceny, handouty — **puste** i **pełne** | Przy pustej zakładce tekst mówi „tu pojawi się…", przy pełnej opisuje, co widać. Włącz oba stany. |
+| 8 | Konto gracza: czat, handouty, notatki | Inne teksty niż u MG. W handoutach **nie ma** kroku o tworzeniu. |
+| 9 | Krok o kościach (czat) | Mówi o rozwijanej liście na końcu wiersza — **nie** o ikonie oka. Sprawdź, czy opis zgadza się z tym, co widzisz. |
+| 10 | Krok o głośności (muzyka) | Mówi, że suwak MG ustawia głośność **całego stołu**, a każdy gracz ma dodatkowo własny. |
+| 11 | Samouczek ogólny, krok o zakładkach | Na końcu zdanie, że większość zakładek ma własny samouczek pod `?`. |
+
+## Zachowanie
+
+| # | Co sprawdzić | Czego oczekiwać |
+|---|---|---|
+| 12 | **Przełącz zakładkę w trakcie samouczka zakładki** | Samouczek się kończy. Potem kliknij `?` przy „Ustawienia" — ma ruszyć **samouczek ogólny**, nie ten porzucony. To była najpoważniejsza naprawiona usterka. |
+| 13 | To samo dla **handoutów, notatek i muzyki** | Osobny punkt, bo te trzy zakładki zostają zamontowane w tle. Podejrzenie: dymek może się przykleić do niewidocznego elementu zamiast zniknąć. Tego nie da się sprawdzić inaczej niż w przeglądarce. |
+| 14 | Escape w trakcie samouczka zakładki | Kończy go. Potem `?` przy „Ustawienia" znów daje samouczek ogólny. |
+| 15 | Ten sam przycisk `?` zakładki dwa razy | Za drugim razem samouczek startuje od nowa, nie ignoruje kliknięcia. |
+| 16 | Samouczek zakładki a `localStorage` | Po jego zakończeniu **nie** przybywa żaden klucz. Zapisywany jest wyłącznie samouczek ogólny. |
+| 17 | Kliknij `?` zakładki **zaraz po wejściu do gry**, zanim wszystko się wczyta | Po zakończeniu tego samouczka nie powinien sam wystartować pełny samouczek ogólny. Wąski przypadek, ale wart sprawdzenia. |
+| 18 | Oba języki | Przełącz na EN i przejdź kilka samouczków. Podpowiedzi na przyciskach też mają być w bieżącym języku. |
+
+## Znane ograniczenia (świadome)
+
+- Samouczki zakładek nie zapisują się nigdzie — zawsze na przycisk. Tylko ogólny pamięta, że go widziałeś.
+- Przy zmienionej nazwie klasy CSS krok po cichu wypada z samouczka. Test to łapie tylko dla części
+  selektorów — patrz uwaga o strażniku w raporcie.
+- „Powrót do trwającej minigry" w zakładce minigier nie działa (`onReopenMinigameBoard` to pusta
+  operacja). To osobny błąd produktu, nie samouczka — teksty samouczka już tego nie obiecują.
