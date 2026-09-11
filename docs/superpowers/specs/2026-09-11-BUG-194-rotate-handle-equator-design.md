@@ -170,6 +170,36 @@ pierścienia slotów, więc nie ma tam czego naprawiać.
   z `cursor: grab` oraz `cursor: grabbing` na `:active` (rotacja to przeciąganie, nie klik),
   `z-index: 30` (zachowany z obecnego uchwytu — nad overlayem stanów, który ma `z-index: 5`).
 
+## Świadoma niespójność: obrazek tła zostaje z uchwytem na górze
+
+Linia podziału **nie** przebiega między obrazkami a tokenami:
+
+| obiekt | uchwyt po zmianie |
+|---|---|
+| token postaci | prawy równik |
+| obrazek na warstwie tokenów (`isToken`) | prawy równik |
+| obrazek tła / GM (`!isToken`) | **bez zmian — góra** |
+
+Każdy token, obrazkowy czy postaciowy, dostaje to samo. Reguła: *obiekt z pierścieniem chowa
+rotację do kolumny akcji, goła ramka trzyma ją na szypułce.*
+
+Dlaczego nie ujednolicamy:
+
+1. **Te uchwyty i tak nigdy nie były spójne.** `SceneViewport.css:431-455` daje obrazkowi tła
+   `opacity: 0` z wyjazdem na hover kontenera, białą półprzezroczystą ramkę i `z-index: 10`;
+   token ma uchwyt widoczny zawsze gdy zaznaczony, brązową ramkę i `z-index: 30`. Różny moment
+   pojawienia się to mocniejszy sygnał niż różna pozycja — i nikt tego nie zgłosił.
+2. **Konteksty się nie stykają.** Uchwyt obrazka tła wymaga `isLayerArmed` (uzbrojona warstwa
+   obrazków); tokeny manipuluje się pod narzędziem pan/select. Nie widać obu naraz.
+3. **Na obrazku tła góra niesie informację.** Uchwyt obraca się razem z obiektem i wskazuje jego
+   „górę" — semantyka PowerPointa/Canvy. Na tokenie tej informacji utrzymać się nie da, bo
+   pierścień jest kontr-obrócony i szypułka orbitując wjeżdża w sloty.
+4. **Prawa strona nie ma tam sensu.** Bez pierścienia `equatorX` trzeba by wymyślić — arbitralne
+   68px za krawędzią, przy dużym obrazku łatwo poza widocznym obszarem.
+
+Skutek uboczny, zgodny z regułą: przeniesienie obrazka z warstwy tła na warstwę tokenów przenosi
+jego uchwyt z góry na prawy równik. To nie usterka — obiekt właśnie zyskał pierścień.
+
 ## i18n
 
 Bez zmian. `scenes.rotateToken` i `scenes.rotateImage` już istnieją w `en` i `pl`.
