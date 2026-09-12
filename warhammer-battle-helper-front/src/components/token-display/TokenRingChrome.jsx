@@ -6,7 +6,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { SkullIcon } from '../icons';
 import { usePortalTooltip } from '../common/PortalTooltip';
 import NumberSlotInput from './NumberSlotInput';
-import { slotOffset, ACTIVE_PUSH } from '../../utils/tokenRingGeometry';
+import { slotOffset, ACTIVE_PUSH, EQUATOR_STACK_STEP } from '../../utils/tokenRingGeometry';
 
 // Shared, purely-presentational chrome for BOTH token overlays (character + image). It renders the
 // identical visual parts — container, kill strike/toggle, ring slots, HP bar visuals — from already
@@ -182,7 +182,7 @@ export default function TokenRingChrome({
       {selected && canManageVisibility && (
         <button type="button"
           className={`${visibilityToggleClassName} ${hiddenFromPlayers ? 'is-hidden' : ''}`}
-          style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${equatorX}px), calc(-50% + 26px))` }}
+          style={{ left: '50%', top: '50%', transform: `translate(calc(-50% + ${equatorX}px), calc(-50% + ${EQUATOR_STACK_STEP}px))` }}
           onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
           onMouseEnter={(e) => showTooltip(t(hiddenFromPlayers ? 'token.showToPlayers' : 'token.hideFromPlayers'), e.currentTarget)}
           onMouseLeave={hideTooltip}>

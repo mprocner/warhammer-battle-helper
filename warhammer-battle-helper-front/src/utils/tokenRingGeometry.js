@@ -21,6 +21,11 @@ export const ACTIVE_HALF_WIDTH = 21;
 // Derived rather than a literal 52 so that raising ACTIVE_PUSH moves the toggles with it.
 export const EQUATOR_GAP = ACTIVE_PUSH + ACTIVE_HALF_WIDTH + 11 + 4;
 
+// Vertical rhythm of the right-equator action column: skull (0), eye (1x), rotate (2x). One
+// source, so the column does not drift apart as icons are added — all three are 22px circles,
+// so the step must stay above 22.
+export const EQUATOR_STACK_STEP = 26;
+
 // HP stacks sit this far beyond the ring. Two values, because a chip can only become active while
 // the token is selected: HP_CLEAR clears an active, pushed-out 28px chip, REST_HP_CLEAR only has
 // to clear a resting 17px one. Using the active value at rest would strand the bars ~18px away

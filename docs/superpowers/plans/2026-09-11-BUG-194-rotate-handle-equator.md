@@ -54,17 +54,17 @@ Dopisz na końcu `warhammer-battle-helper-front/src/utils/tokenRingGeometry.test
 
 ```js
 test('the equator column keeps its buttons apart at every stack position', () => {
-  // Kolumna: czaszka y=0, oko y=1 krok, rotacja y=2 kroki. Wszystkie trzy to koła 22px,
-  // więc dwa sąsiednie środki muszą dzielić więcej niż 22px, inaczej przyciski się dotykają.
+  // The column: skull at y=0, eye one step down, rotate two steps down. All three are 22px
+  // circles, so two neighbouring centres must sit more than 22px apart or the buttons touch.
   const BUTTON = 22;
   expect(EQUATOR_STACK_STEP).toBeGreaterThan(BUTTON);
 });
 
 test('the rotate handle clears the nearest ring slot on the smallest token', () => {
-  // BUG-194: stara pozycja (górna szypułka) siedziała dokładnie na slocie 0. Nowa pozycja to
-  // prawy równik, dwa kroki niżej. Najbliższym slotem pierścienia jest teraz ten na 4:30
-  // (index 3), więc to jego trzeba przepuścić. Pudełka kolidują tylko gdy zachodzą na OBU
-  // osiach, więc jedna czysta oś wystarcza — tu oś X.
+  // BUG-194: the old position (a stem above the token) sat exactly on slot 0. The new one is
+  // the right equator, two steps down, so the nearest ring slot is now the 4:30 one (index 3)
+  // and that is what has to be cleared. Boxes collide only when they overlap on BOTH axes, so
+  // one clean axis is enough — here, X.
   const { radius, equatorX } = tokenRingGeometry(TOKEN, TOKEN, true);
   const nearestSlot = slotOffset(3, radius);
   const handleX = equatorX;
@@ -98,9 +98,9 @@ Expected: FAIL — `expect(received).toBeGreaterThan(expected)` z `received: und
 W `warhammer-battle-helper-front/src/utils/tokenRingGeometry.js`, bezpośrednio pod blokiem `EQUATOR_GAP`:
 
 ```js
-// Pionowy rytm kolumny akcji na prawym równiku: czaszka (0), oko (1x), rotacja (2x). Jedno
-// źródło, żeby kolumna nie rozjechała się przy dokładaniu kolejnej ikony — wszystkie trzy to
-// koła 22px, więc krok musi zostać większy od 22.
+// Vertical rhythm of the right-equator action column: skull (0), eye (1x), rotate (2x). One
+// source, so the column does not drift apart as icons are added — all three are 22px circles,
+// so the step must stay above 22.
 export const EQUATOR_STACK_STEP = 26;
 ```
 
@@ -312,15 +312,15 @@ import { render } from '@testing-library/react';
 import TokenRotateHandle from './TokenRotateHandle';
 import { tokenRingGeometry, EQUATOR_STACK_STEP } from '../../utils/tokenRingGeometry';
 
-// Mock zamiast `import '../../i18n'` — ten komponent używa `t` wyłącznie na atrybucie `title`,
-// więc realne tłumaczenia niczego tu nie weryfikują. To ta sama decyzja co w bliźniaczym
+// A mock instead of `import '../../i18n'`: this component uses `t` only for the `title`
+// attribute, so real translations verify nothing here. Same call as its sibling,
 // TokenRingChrome.test.jsx:6.
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k) => k }) }));
 
-// jsdom nie liczy layoutu, ale transformaty inline zostają zwykłymi stringami w style.transform —
-// czytamy je wprost, bez stubowania czegokolwiek. Pokrywa dokładnie to, co zepsuło BUG-194:
-// pozycję uchwytu względem pierścienia i jego zachowanie na obróconym kontenerze.
-// Helper skopiowany z TokenRingChrome.test.jsx:22-24 — zwraca [x, y] z translate(calc(...)).
+// jsdom computes no layout, but inline transforms stay plain strings on style.transform — we
+// read them directly, stubbing nothing. This covers exactly what BUG-194 broke: the handle's
+// position relative to the ring, and its behaviour on a rotated container.
+// Helper copied from TokenRingChrome.test.jsx:22-24 — returns [x, y] out of translate(calc(...)).
 const readTranslate = (el) => [...el.style.transform.matchAll(/calc\(-50% \+ (-?[\d.eE+-]+)px\)/g)]
   .map((m) => parseFloat(m[1]));
 
@@ -347,7 +347,7 @@ test('the handle sits two stack steps below the kill toggle, at any token size',
   const [, smallY] = readTranslate(small.querySelector('.token-rotate-toggle'));
   const [, largeY] = readTranslate(large.querySelector('.token-rotate-toggle'));
 
-  // halfLong nie wchodzi do offsetu Y — pozycja w kolumnie jest ta sama dla każdego rozmiaru.
+  // halfLong never enters the Y offset — the column position is identical at every token size.
   expect(smallY).toBe(EQUATOR_STACK_STEP * 2);
   expect(largeY).toBe(smallY);
 });

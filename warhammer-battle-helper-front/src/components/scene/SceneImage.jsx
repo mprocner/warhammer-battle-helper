@@ -544,7 +544,15 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           }) && (
             <>
               <TokenResizeHandles onResizeStart={handleResizeStart} />
-              <TokenRotateHandle onRotateStart={handleRotateStart} />
+              {/* Must stay a SIBLING of .scene-image__upright, never a child: the handle's own
+                  inset:0 anchor counter-rotates against THIS container's centre, so nesting it
+                  inside an already-counter-rotated box would cancel the rotation twice. */}
+              <TokenRotateHandle
+                onRotateStart={handleRotateStart}
+                width={image.width}
+                height={image.height}
+                counterRotate={rotation}
+              />
             </>
           )}
         </div>

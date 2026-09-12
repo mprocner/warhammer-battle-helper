@@ -1,6 +1,6 @@
 import {
   tokenRingGeometry, slotOffset,
-  ACTIVE_PUSH, ACTIVE_HALF_HEIGHT, ACTIVE_HALF_WIDTH, HP_CLEAR,
+  ACTIVE_PUSH, ACTIVE_HALF_HEIGHT, ACTIVE_HALF_WIDTH, HP_CLEAR, EQUATOR_STACK_STEP,
 } from './tokenRingGeometry';
 
 // Default 1-cell token. Every clearance below is measured on it, because the ring only
@@ -45,4 +45,25 @@ test('an active equator slot clears the kill and gear toggles', () => {
 test('the HP clearance leaves the pushed-out top slot room', () => {
   // HP stacks sit HP_CLEAR beyond the ring; the pushed chip reaches ACTIVE_PUSH + its half height.
   expect(HP_CLEAR).toBeGreaterThan(ACTIVE_PUSH + ACTIVE_HALF_HEIGHT);
+});
+
+test('the equator column keeps its buttons apart at every stack position', () => {
+  // The column: skull at y=0, eye one step down, rotate two steps down. All three are 22px
+  // circles, so two neighbouring centres must sit more than 22px apart or the buttons touch.
+  const BUTTON = 22;
+  expect(EQUATOR_STACK_STEP).toBeGreaterThan(BUTTON);
+});
+
+test('the rotate handle clears the nearest ring slot on the smallest token', () => {
+  // BUG-194: the old position (a stem above the token) sat exactly on slot 0. The new one is
+  // the right equator, two steps down, so the nearest ring slot is now the 4:30 one (index 3)
+  // and that is what has to be cleared. Boxes collide only when they overlap on BOTH axes, so
+  // one clean axis is enough — here, X.
+  const { radius, equatorX } = tokenRingGeometry(TOKEN, TOKEN, true);
+  const nearestSlot = slotOffset(3, radius);
+  const handleX = equatorX;
+
+  const HANDLE_HALF = 11; // handle is a 22px circle
+  const SLOT_HALF = 11;   // icon slot when selected is 22px
+  expect(handleX - nearestSlot.x).toBeGreaterThan(HANDLE_HALF + SLOT_HALF);
 });

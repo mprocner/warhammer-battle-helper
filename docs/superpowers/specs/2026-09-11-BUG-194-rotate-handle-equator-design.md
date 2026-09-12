@@ -210,8 +210,9 @@ Bez zmian. `scenes.rotateToken` i `scenes.rotateImage` już istnieją w `en` i `
   zależy od rozmiaru tokenu **wyłącznie** przez `equatorX` (offset `y` jest stały dla każdego
   rozmiaru).
 - `components/scene/useTokenRotate.test.jsx` — bez zmian, matematyka kąta nietknięta.
-- Komponenty sceny nie mają testów renderujących (świadomy stan po FEATURE-152) i ten spec ich
-  nie dorabia.
+- `components/scene/TokenRotateHandle.test.jsx` — test renderujący dodany w ramach tego spec'a
+  (pozycja na równiku, skalowanie z rozmiarem tokenu, kontr-rotacja). Nieobjęte pozostają z
+  premedytacją warstwy canvasowe (`FogLayer`, `DrawingLayer`, `SceneViewport`).
 
 ### Weryfikacja ręczna
 

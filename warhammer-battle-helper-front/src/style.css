@@ -10979,27 +10979,29 @@ align-items: center;
 .token-resize-handle--se { bottom: -4px; right: -4px; width: 8px; height: 8px; cursor: nwse-resize; }
 .token-resize-handle--sw { bottom: -4px; left: -4px; width: 8px; height: 8px; cursor: nesw-resize; }
 
-/* Rotate chrome — sits above the token's north edge, clear of the 8 resize handles. Shared by
-   character tokens and token-layer images, matching .token-resize-handle's look. */
-.token-rotate-handle {
+/* Rotate chrome — the right-equator action column, two steps below the kill toggle and the eye.
+   Shared by character tokens and token-layer images. Matches the equator chrome buttons' shape
+   and sizing (.token-gear, .token-visibility-toggle); the old rotate-handle class wore the
+   resize handles' look, which belonged to its old position above the token. The anchor cancels
+   the host container's rotation (see the comment in TokenRotateHandle) and carries the z-index
+   for the pair — it must stay pointer-events:none, or its invisible inset:0 box would cover the
+   token and swallow drags. */
+.token-rotate-anchor {
   position: absolute;
-  top: -26px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
-  background: rgba(201, 151, 91, 0.8);
-  border: 1px solid #7a5c42;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  cursor: grab;
+  inset: 0;
+  pointer-events: none;
   z-index: 30;
-  pointer-events: auto;
 }
-.token-rotate-handle:active { cursor: grabbing; }
+.token-rotate-toggle {
+  position: absolute;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid #c9975b; background: rgba(20, 12, 4, 0.75); color: #f0d8b0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+.token-rotate-toggle:hover { background: #7a5c42; color: #fff; }
+.token-rotate-toggle:active { cursor: grabbing; }
 
 /* Counter-rotation wrapper: cancels the token container's rotation for overlay chrome that must
    stay upright (HP numbers, state slots). Pointer-events pass through — the overlay's own

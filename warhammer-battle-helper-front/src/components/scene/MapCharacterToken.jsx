@@ -323,7 +323,12 @@ function MapCharacterToken({
       {showHandles && (
         <>
           <TokenResizeHandles onResizeStart={handleResizeStart} />
-          <TokenRotateHandle onRotateStart={handleRotateStart} />
+          <TokenRotateHandle
+            onRotateStart={handleRotateStart}
+            width={size.w * CELL_SIZE}
+            height={size.h * CELL_SIZE}
+            counterRotate={0}
+          />
         </>
       )}
     </div>
