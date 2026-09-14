@@ -341,13 +341,9 @@ func (s *GameService) GetGamesForUser(userID primitive.ObjectID) ([]models.Game,
 
 // InvitePlayer invites a user by email to a game (GM only)
 func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive.ObjectID, email string) error {
-	game, err := s.gameRepo.GetByID(gameID.Hex())
+	game, err := s.requireGM(gameID.Hex(), gmUserID, "invite players")
 	if err != nil {
 		return err
-	}
-
-	if game.GameMasterID != gmUserID {
-		return fmt.Errorf("only the game master can invite players")
 	}
 
 	invitedUser, err := s.userRepo.FindByEmail(email)
@@ -390,13 +386,9 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 // DeleteGame deletes a game entirely (GM only). Returns the game's lobby image URL
 // (if any) so the handler can remove the file from storage.
 func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) (string, error) {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "delete the game")
 	if err != nil {
 		return "", err
-	}
-
-	if game.GameMasterID != userID {
-		return "", fmt.Errorf("only the game master can delete the game")
 	}
 
 	if err := s.gameRepo.Delete(gameID); err != nil {
@@ -414,12 +406,9 @@ func (s *GameService) DeleteGame(gameID string, userID primitive.ObjectID) (stri
 // GM only. Returns the previous image URL so the handler can delete the old file
 // from storage. Broadcasts the change so connected clients re-fetch game state.
 func (s *GameService) SetGameImage(gameID string, gmID primitive.ObjectID, imageUrl string) (string, error) {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "change the game image")
 	if err != nil {
-		return "", fmt.Errorf("game not found")
-	}
-	if game.GameMasterID != gmID {
-		return "", fmt.Errorf("not authorized")
+		return "", err
 	}
 	if err := s.gameRepo.SetImageUrl(gameID, imageUrl); err != nil {
 		return "", err
@@ -435,12 +424,8 @@ func (s *GameService) SetGameImage(gameID string, gmID primitive.ObjectID, image
 // UpdateMapSettings changes a game's per-game map rules (snap/free, distance metric). GM-only.
 // Broadcasts so every client refetches and applies the same shared rule.
 func (s *GameService) UpdateMapSettings(gameID string, gmID primitive.ObjectID, req models.UpdateMapSettingsRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return fmt.Errorf("game not found")
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("not authorized")
+	if _, err := s.requireGM(gameID, gmID, "update map settings"); err != nil {
+		return err
 	}
 	if err := s.gameRepo.UpdateMapSettings(gameID, req); err != nil {
 		return err
@@ -514,13 +499,9 @@ func (s *GameService) LeaveGame(gameID string, userID primitive.ObjectID, userna
 
 // KickPlayer removes a participant from the game (GM only)
 func (s *GameService) KickPlayer(gameID string, gmUserID primitive.ObjectID, targetUserID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmUserID, "kick players")
 	if err != nil {
 		return err
-	}
-
-	if game.GameMasterID != gmUserID {
-		return fmt.Errorf("only the game master can kick players")
 	}
 
 	if targetUserID == gmUserID {
@@ -978,14 +959,9 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 
 // CreateHandout creates a new handout in a game (GM only)
 func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, req models.CreateHandoutRequest) (*models.Handout, error) {
-	// Verify user is the GM
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "create handouts")
 	if err != nil {
 		return nil, err
-	}
-
-	if game.GameMasterID != userID {
-		return nil, fmt.Errorf("only the game master can create handouts")
 	}
 
 	// Determine the order (append to end)
@@ -1015,14 +991,8 @@ func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, re
 
 // UpdateHandout updates an existing handout (GM only)
 func (s *GameService) UpdateHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateHandoutRequest) error {
-	// Verify user is the GM
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "update handouts"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can update handouts")
 	}
 
 	if err := s.gameRepo.UpdateHandout(gameID, handoutID, req); err != nil {
@@ -1045,14 +1015,8 @@ func (s *GameService) UpdateHandout(gameID string, handoutID primitive.ObjectID,
 
 // DeleteHandout deletes a handout (GM only)
 func (s *GameService) DeleteHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID) (string, error) {
-	// Verify user is the GM
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "delete handouts"); err != nil {
 		return "", err
-	}
-
-	if game.GameMasterID != userID {
-		return "", fmt.Errorf("only the game master can delete handouts")
 	}
 
 	// Get the handout to return the file URL for cleanup
@@ -1077,14 +1041,8 @@ func (s *GameService) DeleteHandout(gameID string, handoutID primitive.ObjectID,
 
 // ReorderHandouts reorders handouts in a game (GM only)
 func (s *GameService) ReorderHandouts(gameID string, userID primitive.ObjectID, handoutIDs []string) error {
-	// Verify user is the GM
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "reorder handouts"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can reorder handouts")
 	}
 
 	// Convert string IDs to ObjectIDs
@@ -1181,13 +1139,9 @@ func (s *GameService) GetHandoutsData(gameID string, userID primitive.ObjectID) 
 
 // CreateHandoutFolder creates a new handout folder (GM only)
 func (s *GameService) CreateHandoutFolder(gameID string, userID primitive.ObjectID, req models.CreateHandoutFolderRequest) (*models.HandoutFolder, error) {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "create handout folders")
 	if err != nil {
 		return nil, err
-	}
-
-	if game.GameMasterID != userID {
-		return nil, fmt.Errorf("only the game master can create handout folders")
 	}
 
 	folder := models.HandoutFolder{
@@ -1209,13 +1163,8 @@ func (s *GameService) CreateHandoutFolder(gameID string, userID primitive.Object
 
 // RenameHandoutFolder renames a handout folder (GM only)
 func (s *GameService) RenameHandoutFolder(gameID string, folderID primitive.ObjectID, userID primitive.ObjectID, req models.RenameHandoutFolderRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "rename handout folders"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can rename handout folders")
 	}
 
 	if err := s.gameRepo.RenameHandoutFolder(gameID, folderID, req.Name); err != nil {
@@ -1232,13 +1181,8 @@ func (s *GameService) RenameHandoutFolder(gameID string, folderID primitive.Obje
 
 // DeleteHandoutFolder deletes a handout folder and ungroups its handouts (GM only)
 func (s *GameService) DeleteHandoutFolder(gameID string, folderID primitive.ObjectID, userID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "delete handout folders"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can delete handout folders")
 	}
 
 	if err := s.gameRepo.DeleteHandoutFolder(gameID, folderID); err != nil {
@@ -1261,13 +1205,8 @@ func (s *GameService) DeleteHandoutFolder(gameID string, folderID primitive.Obje
 
 // ReorderHandoutFolders reorders handout folders (GM only)
 func (s *GameService) ReorderHandoutFolders(gameID string, userID primitive.ObjectID, folderIDs []string) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "reorder handout folders"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can reorder handout folders")
 	}
 
 	objectIDs := make([]primitive.ObjectID, len(folderIDs))
@@ -1297,13 +1236,8 @@ func (s *GameService) ReorderHandoutFolders(gameID string, userID primitive.Obje
 
 // MoveHandout moves a handout to a folder (GM only)
 func (s *GameService) MoveHandout(gameID string, handoutID primitive.ObjectID, userID primitive.ObjectID, req models.MoveHandoutRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "move handouts"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can move handouts")
 	}
 
 	var folderObjectID *primitive.ObjectID
@@ -1351,13 +1285,8 @@ func (s *GameService) EnsureDefaultScene(game *models.Game) {
 
 // CreateScene creates a new scene in a game (GM only)
 func (s *GameService) CreateScene(gameID string, userID primitive.ObjectID, req models.CreateSceneRequest) (*models.Scene, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "create scenes"); err != nil {
 		return nil, err
-	}
-
-	if game.GameMasterID != userID {
-		return nil, fmt.Errorf("only the game master can create scenes")
 	}
 
 	gridWidth := req.GridWidth
@@ -1394,13 +1323,8 @@ func (s *GameService) CreateScene(gameID string, userID primitive.ObjectID, req 
 
 // UpdateScene updates a scene's properties (GM only)
 func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "update scenes"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can update scenes")
 	}
 
 	if err := s.gameRepo.UpdateScene(gameID, sceneID, req); err != nil {
@@ -1421,13 +1345,8 @@ func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, use
 
 // DeleteScene deletes a scene (GM only)
 func (s *GameService) DeleteScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "delete scenes"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can delete scenes")
 	}
 
 	if err := s.gameRepo.DeleteScene(gameID, sceneID); err != nil {
@@ -1443,13 +1362,9 @@ func (s *GameService) DeleteScene(gameID string, sceneID primitive.ObjectID, use
 
 // AssignPlayerToScene assigns or removes a player from a scene (GM only)
 func (s *GameService) AssignPlayerToScene(gameID string, sceneID primitive.ObjectID, playerID primitive.ObjectID, userID primitive.ObjectID, assign bool) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "assign players to scenes")
 	if err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can assign players to scenes")
 	}
 
 	if assign {
@@ -1481,6 +1396,12 @@ func (s *GameService) AssignPlayerToScene(gameID string, sceneID primitive.Objec
 
 // AddCharacterToScene adds a character to a scene
 func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.ObjectID, characterID string, x, y int, isEnemy bool, placedBy primitive.ObjectID) error {
+	// Placing a token is the sidebar's on/off-grid toggle, which players use on their own
+	// characters — so this is owner-or-GM, not GM-only.
+	if _, err := s.requireGMOrCharacterOwner(gameID, characterID, placedBy, "place a character on a scene"); err != nil {
+		return err
+	}
+
 	character, err := s.charRepo.GetByID(characterID)
 	if err != nil {
 		return fmt.Errorf("character not found: %w", err)
@@ -1513,7 +1434,22 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 }
 
 // UpdateSceneCharacterGeometry updates a scene token's position and/or size (partial).
-func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, req models.UpdateSceneCharacterRequest) error {
+func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneCharacterRequest) error {
+	// Hidden is the GM's eye toggle and its only effect is on OTHER viewers (a card-holder sees
+	// their own token regardless — see keepSceneCharacterForViewer), so it is GM-only while the
+	// geometry fields belong to the owner too.
+	//
+	// A mixed request is refused whole rather than partially applied: answering 200 after silently
+	// dropping Hidden would leave the client rendering a token as revealed that the server never
+	// revealed, and would give an attacker no signal at all.
+	if updateTouchesVisibility(req) {
+		if _, err := s.requireGM(gameID, userID, "change token visibility"); err != nil {
+			return err
+		}
+	} else if _, err := s.requireGMOrCharacterOwner(gameID, characterID.Hex(), userID, "move a scene token"); err != nil {
+		return err
+	}
+
 	if err := s.gameRepo.UpdateSceneCharacterGeometry(gameID, sceneID, characterID, req); err != nil {
 		return err
 	}
@@ -1565,18 +1501,6 @@ func (s *GameService) UpdateSceneCharacterGeometry(gameID string, sceneID primit
 
 // --- Character token gear (per-placement, GM-only) ------------------------------------------
 
-// requireGM loads the game and returns it only if userID is the GM (else an error).
-func (s *GameService) requireGM(gameID string, userID primitive.ObjectID) (*models.Game, error) {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
-		return nil, err
-	}
-	if game.GameMasterID != userID {
-		return nil, fmt.Errorf("only the game master can edit token gear")
-	}
-	return game, nil
-}
-
 // broadcastCharTokenGear re-reads the fresh placement gear and sends it to the GM + card-holders
 // (character's VisibleTo) only — raw gear may carry hidden values, so it must not reach a card-less
 // player. Those players get the masked projection instead, in a second message (FEATURE-183).
@@ -1626,7 +1550,7 @@ func (s *GameService) broadcastCharTokenGear(gameID string, sceneID, placementID
 // client (GM, card-holder, AND card-less player) refetches and re-masks — visibility changes must
 // reach players who don't hold the card. Save is infrequent, so a full refetch is fine here.
 func (s *GameService) SetCharGear(gameID string, sceneID, placementID, userID primitive.ObjectID, gear *models.CharacterTokenGear) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.SetCharGear(gameID, sceneID, placementID, gear); err != nil {
@@ -1640,7 +1564,7 @@ func (s *GameService) SetCharGear(gameID string, sceneID, placementID, userID pr
 }
 
 func (s *GameService) SetCharSlotValue(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, val models.TokenOverlayValue) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.SetCharSlotValue(gameID, sceneID, placementID, slotID, val); err != nil {
@@ -1651,7 +1575,7 @@ func (s *GameService) SetCharSlotValue(gameID string, sceneID, placementID, user
 }
 
 func (s *GameService) SetCharSlotVisibility(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, hidden bool) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.SetCharSlotHidden(gameID, sceneID, placementID, slotID, hidden); err != nil {
@@ -1662,7 +1586,7 @@ func (s *GameService) SetCharSlotVisibility(gameID string, sceneID, placementID,
 }
 
 func (s *GameService) SetCharSlotStructure(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string, slot *models.TokenSlot) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if slot != nil {
@@ -1676,7 +1600,7 @@ func (s *GameService) SetCharSlotStructure(gameID string, sceneID, placementID, 
 }
 
 func (s *GameService) ClearCharSlotOverride(gameID string, sceneID, placementID, userID primitive.ObjectID, slotID string) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.ClearCharSlotOverride(gameID, sceneID, placementID, slotID); err != nil {
@@ -1687,7 +1611,7 @@ func (s *GameService) ClearCharSlotOverride(gameID string, sceneID, placementID,
 }
 
 func (s *GameService) SetCharBarVisibility(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string, hidden bool) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.SetCharBarHidden(gameID, sceneID, placementID, barID, hidden); err != nil {
@@ -1700,7 +1624,7 @@ func (s *GameService) SetCharBarVisibility(gameID string, sceneID, placementID, 
 // SetCharBarValuePatch sets a manual bar's current (delta XOR value) and/or its max, keeping the
 // other. Mirrors statField's delta-vs-value semantics. Current clamps to >= 0.
 func (s *GameService) SetCharBarValuePatch(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string, delta, value, max *float64) error {
-	game, err := s.requireGM(gameID, userID)
+	game, err := s.requireGM(gameID, userID, "edit token gear")
 	if err != nil {
 		return err
 	}
@@ -1739,7 +1663,7 @@ func (s *GameService) SetCharBarValuePatch(gameID string, sceneID, placementID, 
 // AddCharBar mints an id and appends a per-token bar. Loose cap of 4 added bars for now; the exact
 // blueprint+added <= 4 check lands with blueprint wiring in Phase 3.
 func (s *GameService) AddCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, bar models.TokenHPBar) (models.TokenHPBar, error) {
-	game, err := s.requireGM(gameID, userID)
+	game, err := s.requireGM(gameID, userID, "edit token gear")
 	if err != nil {
 		return bar, err
 	}
@@ -1753,7 +1677,7 @@ func (s *GameService) AddCharBar(gameID string, sceneID, placementID, userID pri
 }
 
 func (s *GameService) EditCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, bar models.TokenHPBar) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.EditCharAddedBar(gameID, sceneID, placementID, bar); err != nil {
@@ -1764,7 +1688,7 @@ func (s *GameService) EditCharBar(gameID string, sceneID, placementID, userID pr
 }
 
 func (s *GameService) RemoveCharBar(gameID string, sceneID, placementID, userID primitive.ObjectID, barID string) error {
-	if _, err := s.requireGM(gameID, userID); err != nil {
+	if _, err := s.requireGM(gameID, userID, "edit token gear"); err != nil {
 		return err
 	}
 	if err := s.gameRepo.RemoveCharAddedBar(gameID, sceneID, placementID, barID); err != nil {
@@ -1775,7 +1699,13 @@ func (s *GameService) RemoveCharBar(gameID string, sceneID, placementID, userID 
 }
 
 // RemoveCharacterFromScene removes a character from a scene
-func (s *GameService) RemoveCharacterFromScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID) error {
+func (s *GameService) RemoveCharacterFromScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, userID primitive.ObjectID) error {
+	// The other half of the sidebar's on/off-grid toggle — a player takes their own token off the
+	// map, so this is owner-or-GM like the placing side.
+	if _, err := s.requireGMOrCharacterOwner(gameID, characterID.Hex(), userID, "remove a character from a scene"); err != nil {
+		return err
+	}
+
 	if err := s.gameRepo.RemoveSceneCharacter(gameID, sceneID, characterID); err != nil {
 		return err
 	}
@@ -1790,13 +1720,9 @@ func (s *GameService) RemoveCharacterFromScene(gameID string, sceneID primitive.
 
 // AddImageToScene adds an image to a scene (GM only)
 func (s *GameService) AddImageToScene(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.AddSceneImageRequest) (*models.SceneImage, error) {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "add images to scenes")
 	if err != nil {
 		return nil, err
-	}
-
-	if game.GameMasterID != userID {
-		return nil, fmt.Errorf("only the game master can add images to scenes")
 	}
 
 	image := models.SceneImage{
@@ -1876,12 +1802,9 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 		count = 20 // sanity cap
 	}
 
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "duplicate scene images")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can duplicate scene images")
 	}
 
 	var scene *models.Scene
@@ -1967,13 +1890,9 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 
 // UpdateSceneImage updates an image within a scene (GM only)
 func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateSceneImageRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "update scene images")
 	if err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can update scene images")
 	}
 
 	// If the image is locked, only the locked field itself may be changed (to unlock)
@@ -2154,12 +2073,9 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 // hidden flag) get their own ADD/DELETE, invisible ones are withheld. Characters always go whole-game
 // (unknown ids no-op client-side).
 func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.ObjectID, userID primitive.ObjectID, req models.BatchMoveTokensRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "move scene tokens")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can move scene tokens")
 	}
 
 	// Pre-move state, keyed by id: needed to tell which images cross the visibility boundary.
@@ -2243,13 +2159,8 @@ func (s *GameService) BatchMoveSceneTokens(gameID string, sceneID primitive.Obje
 
 // DeleteSceneImage deletes an image from a scene (GM only)
 func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID, imageID primitive.ObjectID, userID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
-	if err != nil {
+	if _, err := s.requireGM(gameID, userID, "delete scene images"); err != nil {
 		return err
-	}
-
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can delete scene images")
 	}
 
 	if err := s.gameRepo.DeleteSceneImage(gameID, sceneID, imageID); err != nil {
@@ -2268,12 +2179,9 @@ func (s *GameService) DeleteSceneImage(gameID string, sceneID primitive.ObjectID
 // write it re-reads the overlay, clamps the bar into [0, max], and broadcasts the fresh value —
 // full to the GM, masked to players (hidden bars keep their Hidden flag but lose their numbers).
 func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, userID primitive.ObjectID, req models.PatchImageTokenHPRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "edit image tokens")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can edit image tokens")
 	}
 
 	if req.Value != nil {
@@ -2329,12 +2237,9 @@ func (s *GameService) PatchSceneImageTokenHP(gameID string, sceneID, imageID, us
 
 // PatchSceneImageTokenSlot bumps an icon slot's level or sets a number slot's value (GM only).
 func (s *GameService) PatchSceneImageTokenSlot(gameID string, sceneID, imageID, userID primitive.ObjectID, req models.PatchImageTokenSlotRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "edit image tokens")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can edit image tokens")
 	}
 
 	if req.Number != nil {
@@ -2395,12 +2300,9 @@ func (s *GameService) ApplyImageTokenSlot(gameID string, sceneID, userID primiti
 		return fmt.Errorf("slot config is required when locking")
 	}
 
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, userID, "share token slots")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != userID {
-		return fmt.Errorf("only the game master can share token slots")
 	}
 
 	// The scene id still has to name a real scene — the padlock is always clicked from one, and a
@@ -2672,12 +2574,9 @@ type PlayTrackPersistRequest struct {
 
 // PlayTrackPersist validates GM, persists MusicState to DB and broadcasts MUSIC_PLAY.
 func (s *GameService) PlayTrackPersist(gameID string, gmID primitive.ObjectID, req PlayTrackPersistRequest) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "control music")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("only the game master can control music")
 	}
 
 	// Backdate startedAt so that ComputeMusicPosition returns req.Position immediately
@@ -2722,12 +2621,9 @@ func (s *GameService) PlayTrackPersist(gameID string, gmID primitive.ObjectID, r
 
 // PauseTrackPersist persists the paused state (with current position) and broadcasts MUSIC_PAUSE.
 func (s *GameService) PauseTrackPersist(gameID string, gmID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "control music")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("only the game master can control music")
 	}
 	if !game.Music.IsPlaying {
 		return nil
@@ -2756,12 +2652,9 @@ func (s *GameService) PauseTrackPersist(gameID string, gmID primitive.ObjectID) 
 
 // StopTrackPersist clears music state and broadcasts MUSIC_STOP.
 func (s *GameService) StopTrackPersist(gameID string, gmID primitive.ObjectID) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "control music")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("only the game master can control music")
 	}
 
 	stopped := models.MusicState{
@@ -2781,12 +2674,9 @@ func (s *GameService) StopTrackPersist(gameID string, gmID primitive.ObjectID) e
 
 // SetVolumePersist persists the volume change and broadcasts MUSIC_VOLUME.
 func (s *GameService) SetVolumePersist(gameID string, gmID primitive.ObjectID, volume float64) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "control music")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("only the game master can control music")
 	}
 
 	game.Music.Volume = volume
@@ -2802,12 +2692,9 @@ func (s *GameService) SetVolumePersist(gameID string, gmID primitive.ObjectID, v
 
 // SetLoopPersist persists the loop flag change and broadcasts MUSIC_LOOP.
 func (s *GameService) SetLoopPersist(gameID string, gmID primitive.ObjectID, loop bool) error {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "control music")
 	if err != nil {
 		return err
-	}
-	if game.GameMasterID != gmID {
-		return fmt.Errorf("only the game master can control music")
 	}
 
 	game.Music.Loop = loop
@@ -3079,12 +2966,9 @@ func (s *GameService) ComputeMusicPosition(game *models.Game) {
 func (s *GameService) SyncTemplate(gameID string, gmID primitive.ObjectID, templateFetcher interface {
 	Get(id string) (*models.SystemTemplate, error)
 }) (*models.SystemTemplate, error) {
-	game, err := s.gameRepo.GetByID(gameID)
+	game, err := s.requireGM(gameID, gmID, "sync the game's system template")
 	if err != nil {
-		return nil, fmt.Errorf("game not found")
-	}
-	if game.GameMasterID != gmID {
-		return nil, fmt.Errorf("not authorized")
+		return nil, err
 	}
 	// FEATURE-102: hardcoded-system games created from a named token-display variant
 	// also carry a TemplateSourceID and may re-sync. The only requirement is that a

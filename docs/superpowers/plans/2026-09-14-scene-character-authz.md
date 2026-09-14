@@ -4,7 +4,7 @@
 
 **Goal:** Domknąć trzy endpointy postaci sceny, które nie sprawdzają uprawnień, i sprowadzić 33 ręczne kopie sprawdzenia MG w `GameService.go` do jednego helpera.
 
-**Architecture:** Decyzja i pobranie danych są rozdzielone. Czyste predykaty (`isGameMaster`, `ownsCharacter`, `updateTouchesVisibility`) nie dotykają repozytoriów i są testowane jednostkowo; cienkie metody `requireGM` i `requireGMOrCharacterOwner` dokładają do nich pobranie gry i postaci. Ten podział nie jest estetyczny, tylko wymuszony: `GameService.gameRepo` jest **konkretnym typem** `*repository.GameRepository`, nie interfejsem, więc metody go dotykające nie dają się przetestować bez bazy — i dlatego wszystkie dotychczasowe testy w `internal/service/` testują funkcje czyste.
+**Architecture:** Decyzja i pobranie danych są rozdzielone. Czyste predykaty (`isGameMaster`, `updateTouchesVisibility`) nie dotykają repozytoriów i są testowane jednostkowo; cienkie metody `requireGM` i `requireGMOrCharacterOwner` dokładają do nich pobranie gry i postaci. Ten podział nie jest estetyczny, tylko wymuszony: `GameService.gameRepo` jest **konkretnym typem** `*repository.GameRepository`, nie interfejsem, więc metody go dotykające nie dają się przetestować bez bazy — i dlatego wszystkie dotychczasowe testy w `internal/service/` testują funkcje czyste.
 
 **Tech Stack:** Go, Gin, MongoDB (`go.mongodb.org/mongo-driver`), testy `go test` bez frameworka.
 
@@ -30,9 +30,9 @@
 
 **Interfaces:**
 - Consumes: `models.Game`, `models.Character`, `models.UpdateSceneCharacterRequest`.
-- Produces: `isGameMaster(game *models.Game, userID primitive.ObjectID) bool`, `ownsCharacter(ch *models.Character, userID primitive.ObjectID) bool`, `updateTouchesVisibility(req models.UpdateSceneCharacterRequest) bool`. Wszystkie pakietowo-prywatne, używane przez Task 2.
+- Produces: `isGameMaster(game *models.Game, userID primitive.ObjectID) bool`, `updateTouchesVisibility(req models.UpdateSceneCharacterRequest) bool`. Oba pakietowo-prywatne, używane przez Task 2. Własności ten task NIE definiuje — rozstrzyga ją istniejąca `CanEditCharacter` w `access.go`.
 
-- [ ] **Step 1: Napisz testy**
+- [x] **Step 1: Napisz testy**
 
 Utwórz `internal/service/authz_test.go`:
 
@@ -65,60 +65,6 @@ func TestIsGameMaster(t *testing.T) {
 	}
 }
 
-func TestOwnsCharacter(t *testing.T) {
-	ownerID := primitive.NewObjectID()
-	viewerID := primitive.NewObjectID()
-	strangerID := primitive.NewObjectID()
-
-	cases := []struct {
-		name string
-		ch   *models.Character
-		user primitive.ObjectID
-		want bool
-	}{
-		{
-			name: "the creator owns it",
-			ch:   &models.Character{CreatedBy: ownerID},
-			user: ownerID,
-			want: true,
-		},
-		{
-			// Card access is ownership for this purpose: the frontend's isOwnCharacter accepts it,
-			// so a narrower server rule would 403 a legitimate click.
-			name: "a card-holder owns it",
-			ch:   &models.Character{CreatedBy: ownerID, VisibleTo: []primitive.ObjectID{viewerID}},
-			user: viewerID,
-			want: true,
-		},
-		{
-			name: "a stranger does not",
-			ch:   &models.Character{CreatedBy: ownerID, VisibleTo: []primitive.ObjectID{viewerID}},
-			user: strangerID,
-			want: false,
-		},
-		{
-			name: "an empty VisibleTo does not authorise",
-			ch:   &models.Character{CreatedBy: ownerID},
-			user: strangerID,
-			want: false,
-		},
-		{
-			name: "a nil character never authorises",
-			ch:   nil,
-			user: ownerID,
-			want: false,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := ownsCharacter(tc.ch, tc.user); got != tc.want {
-				t.Errorf("ownsCharacter = %v, want %v", got, tc.want)
-			}
-		})
-	}
-}
-
 func TestUpdateTouchesVisibility(t *testing.T) {
 	hidden := true
 	x := 3.0
@@ -141,12 +87,12 @@ func TestUpdateTouchesVisibility(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Uruchom testy i potwierdź, że padają**
+- [x] **Step 2: Uruchom testy i potwierdź, że padają**
 
-Run: `cd warhammer-battle-helper-backend && go test ./internal/service/ -run 'TestIsGameMaster|TestOwnsCharacter|TestUpdateTouchesVisibility' -v`
-Expected: FAIL kompilacji — `undefined: isGameMaster`, `undefined: ownsCharacter`, `undefined: updateTouchesVisibility`.
+Run: `cd warhammer-battle-helper-backend && go test ./internal/service/ -run 'TestIsGameMaster|TestUpdateTouchesVisibility' -v`
+Expected: FAIL kompilacji — `undefined: isGameMaster`, `undefined: updateTouchesVisibility`.
 
-- [ ] **Step 3: Napisz predykaty**
+- [x] **Step 3: Napisz predykaty**
 
 Utwórz `internal/service/authz.go`:
 
@@ -161,6 +107,9 @@ import (
 
 // Authorization rules for game-scoped operations, split in two on purpose.
 //
+// Character ownership is NOT decided here: CanEditCharacter in access.go owns that rule, and it
+// deliberately ignores CreatedBy because CreatedBy survives a player leaving the game.
+//
 // The predicates below are pure: they take data and answer a question, so they are unit-testable.
 // The requireX methods further down add the fetching. GameService holds concrete repository types
 // rather than interfaces, so anything that touches a repo cannot be tested without a database —
@@ -170,24 +119,6 @@ import (
 // nobody: the caller returns the fetch error, and this must not panic on the way there.
 func isGameMaster(game *models.Game, userID primitive.ObjectID) bool {
 	return game != nil && game.GameMasterID == userID
-}
-
-// ownsCharacter reports whether userID may act on this character: they created it, or they hold
-// its card (VisibleTo). Deliberately wider than the VisibleTo-only rule the read pipeline uses for
-// hasCard — it has to cover the frontend's isOwnCharacter, or legitimate UI actions would 403.
-func ownsCharacter(ch *models.Character, userID primitive.ObjectID) bool {
-	if ch == nil {
-		return false
-	}
-	if ch.CreatedBy == userID {
-		return true
-	}
-	for _, id := range ch.VisibleTo {
-		if id == userID {
-			return true
-		}
-	}
-	return false
 }
 
 // updateTouchesVisibility reports whether a scene-token update asks to change the GM's eye toggle.
@@ -200,17 +131,17 @@ func updateTouchesVisibility(req models.UpdateSceneCharacterRequest) bool {
 
 Uwaga: **nie** dodawaj tu importu `fmt` — żadna z tych trzech funkcji go nie używa, a nieużywany import to w Go błąd kompilacji. Dojdzie w Tasku 2 razem z pierwszą funkcją, która formatuje komunikat.
 
-- [ ] **Step 4: Uruchom testy i potwierdź, że przechodzą**
+- [x] **Step 4: Uruchom testy i potwierdź, że przechodzą**
 
-Run: `cd warhammer-battle-helper-backend && go test ./internal/service/ -run 'TestIsGameMaster|TestOwnsCharacter|TestUpdateTouchesVisibility' -v`
-Expected: PASS, 3 funkcje testowe (`TestOwnsCharacter` z 5 podprzypadkami).
+Run: `cd warhammer-battle-helper-backend && go test ./internal/service/ -run 'TestIsGameMaster|TestUpdateTouchesVisibility' -v`
+Expected: PASS, 2 funkcje testowe.
 
-- [ ] **Step 5: Sprawdź, że reszta pakietu się buduje**
+- [x] **Step 5: Sprawdź, że reszta pakietu się buduje**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go test ./...`
 Expected: build bez błędów, wszystkie testy przechodzą.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-backend/internal/service/authz.go \
@@ -226,14 +157,14 @@ git commit -m "feat: add pure authorization predicates for game-scoped operation
 - Modify: `warhammer-battle-helper-backend/internal/service/authz.go`
 
 **Interfaces:**
-- Consumes: `isGameMaster`, `ownsCharacter` z Taska 1; `s.gameRepo.GetByID(id string) (*models.Game, error)`; `s.charRepo.GetByID(id string) (*models.Character, error)`.
+- Consumes: `isGameMaster` z Taska 1; istniejące `CanEditCharacter(ch *models.Character, userID primitive.ObjectID, isGM bool) bool` z `access.go`; `s.gameRepo.GetByID(id string) (*models.Game, error)`; `s.charRepo.GetByID(id string) (*models.Character, error)`.
 - Produces:
   - `func (s *GameService) requireGM(gameID string, userID primitive.ObjectID, action string) (*models.Game, error)`
   - `func (s *GameService) requireGMOrCharacterOwner(gameID string, characterID string, userID primitive.ObjectID, action string) (*models.Game, error)`
 
   Oba zwracają `(nil, err)` przy odmowie. `characterID` jest **stringiem**, bo `charRepo.GetByID` przyjmuje string — wywołujący mający `primitive.ObjectID` podaje `.Hex()`.
 
-- [ ] **Step 1: Dopisz helpery**
+- [x] **Step 1: Dopisz helpery**
 
 Dodaj `"fmt"` do bloku importów `internal/service/authz.go`, a na końcu pliku te dwie metody:
 
@@ -269,21 +200,28 @@ func (s *GameService) requireGMOrCharacterOwner(gameID string, characterID strin
 	if err != nil {
 		return nil, err
 	}
-	if !ownsCharacter(ch, userID) {
+	// Ownership is CanEditCharacter's rule (access.go), not a new one: card access counts,
+	// CreatedBy deliberately does not. isGM is false here because the GM already returned above.
+	if !CanEditCharacter(ch, userID, false) {
 		return nil, fmt.Errorf("only the game master or the character's owner can %s", action)
 	}
 	return game, nil
 }
 ```
 
+**Nie pisz nowego predykatu własności.** `CanEditCharacter` (`internal/service/access.go:29`) już
+istnieje, ma własne testy w `access_test.go` i jawnie odrzuca `CreatedBy`, bo ten przeżywa
+opuszczenie gry. Wcześniejsza wersja tego planu dodawała konkurencyjne `ownsCharacter` — zostało
+usunięte po review.
+
 Te dwie metody dotykają repozytoriów, więc **nie mają testów jednostkowych** — nie da się ich napisać bez bazy (patrz nagłówek planu). Cała ich logika decyzyjna siedzi w predykatach z Taska 1, które testy mają.
 
-- [ ] **Step 2: Zbuduj i uruchom testy**
+- [x] **Step 2: Zbuduj i uruchom testy**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go test ./...`
 Expected: build czysty, testy przechodzą. Nieużywane funkcje pakietowe **nie** są w Go błędem — brak wywołań na tym etapie jest w porządku.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add warhammer-battle-helper-backend/internal/service/authz.go
@@ -307,7 +245,7 @@ To jest właściwa poprawka bezpieczeństwa. Trzy funkcje serwisu dostają spraw
   - `RemoveCharacterFromScene(gameID string, sceneID primitive.ObjectID, characterID primitive.ObjectID, userID primitive.ObjectID) error`
   - `AddCharacterToScene` — sygnatura **bez zmian**, już przyjmuje `placedBy`.
 
-- [ ] **Step 1: Znajdź wszystkich wywołujących**
+- [x] **Step 1: Znajdź wszystkich wywołujących**
 
 Run:
 ```bash
@@ -316,7 +254,7 @@ grep -rn "UpdateSceneCharacterGeometry\|RemoveCharacterFromScene\|AddCharacterTo
 ```
 Zapisz wynik w raporcie. Zmiana sygnatur musi objąć **każde** trafienie; jeśli wywołujący jest inny niż handlery wymienione wyżej, zatrzymaj się i zgłoś to zamiast zgadywać.
 
-- [ ] **Step 2: Dodaj sprawdzenie w `AddCharacterToScene`**
+- [x] **Step 2: Dodaj sprawdzenie w `AddCharacterToScene`**
 
 Sygnatura zostaje. Na samym początku ciała, przed `s.charRepo.GetByID(characterID)`:
 
@@ -328,7 +266,7 @@ Sygnatura zostaje. Na samym początku ciała, przed `s.charRepo.GetByID(characte
 	}
 ```
 
-- [ ] **Step 3: Dodaj sprawdzenie per-pole w `UpdateSceneCharacterGeometry`**
+- [x] **Step 3: Dodaj sprawdzenie per-pole w `UpdateSceneCharacterGeometry`**
 
 Zmień sygnaturę na:
 
@@ -355,7 +293,7 @@ i wstaw jako pierwsze instrukcje ciała:
 	}
 ```
 
-- [ ] **Step 4: Dodaj sprawdzenie w `RemoveCharacterFromScene`**
+- [x] **Step 4: Dodaj sprawdzenie w `RemoveCharacterFromScene`**
 
 Zmień sygnaturę na:
 
@@ -373,7 +311,7 @@ i wstaw jako pierwsze instrukcje ciała:
 	}
 ```
 
-- [ ] **Step 5: Przepnij dwa handlery**
+- [x] **Step 5: Przepnij dwa handlery**
 
 W `internal/http/SceneHandler.go`, w `UpdateSceneCharacter`, po zbindowaniu `req` a przed wywołaniem serwisu:
 
@@ -401,12 +339,12 @@ W `RemoveSceneCharacter`, po sparsowaniu `characterID` a przed wywołaniem serwi
 
 Wzorzec skopiuj z `AddSceneCharacter` (~`:189`), który już to robi — ten sam kod błędu, ten sam komunikat.
 
-- [ ] **Step 6: Zbuduj i uruchom testy**
+- [x] **Step 6: Zbuduj i uruchom testy**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go test ./...`
 Expected: build czysty, wszystkie testy przechodzą. Jeśli build zgłasza „not enough arguments", został wywołujący nieuwzględniony w Kroku 1 — popraw go, nie obchodź.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add warhammer-battle-helper-backend/internal/service/GameService.go \
@@ -475,25 +413,35 @@ Miejsca w tym tasku (numery linii sprzed migracji, przesuną się w trakcie — 
 | 1306 | `move handouts` |
 | 2680, 2730, 2764, 2789, 2810 | `control music` |
 
-- [ ] **Step 1: Zamień wszystkie 17 miejsc z tabeli**
+- [x] **Step 1: Zamień wszystkie 17 miejsc z tabeli**
 
 Rób je po kolei, sprawdzając przy każdym, czy zmienna `game` jest dalej w funkcji używana — to decyduje, którą z dwóch form wybrać. Niewykorzystana zmienna `game` jest w Go **błędem kompilacji**, więc pomyłka wyjdzie natychmiast.
 
-- [ ] **Step 2: Zbuduj i uruchom testy**
+- [x] **Step 2: Zbuduj i uruchom testy**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go test ./...`
 Expected: build czysty, testy przechodzą.
 
-- [ ] **Step 3: Potwierdź, że żaden komunikat się nie zmienił**
+- [x] **Step 3: Potwierdź, że żaden komunikat się nie zmienił**
 
 Run:
 ```bash
 cd warhammer-battle-helper-backend
-git diff -U0 internal/service/GameService.go | grep -E '^[+-].*only the game master' | sort | uniq -c
+git diff -U0 HEAD~1 internal/service/GameService.go | grep -oE '^-.*only the game master can [a-z ]+' \
+  | sed 's/.*only the game master can //' | sort > /tmp/old.txt
+git diff -U0 HEAD~1 internal/service/GameService.go | grep -E '^\+.*requireGM\(' \
+  | sed -E 's/.*"([^"]+)".*/\1/' | sort > /tmp/new.txt
+diff /tmp/old.txt /tmp/new.txt && echo "messages preserved"
 ```
-Expected: każdy tekst występuje **parzyście** — raz jako `-` w starej formie, raz jako `+` w nowej. Tekst widoczny tylko po jednej stronie znaczy, że literówka weszła do komunikatu.
+Expected: `diff` **pusty**. Po lewej akcje wycięte ze starych komunikatów, po prawej stringi
+przekazane do `requireGM`. Każda różnica to zmieniony komunikat.
 
-- [ ] **Step 4: Commit**
+**Nie oczekuj, że pełne zdanie pojawi się po stronie `+`.** Po migracji wywołanie niesie sam string
+akcji; zdanie `only the game master can %s` składa się raz, w `authz.go`, którego ten diff nie
+dotyka. Pierwsza wersja tego planu kazała liczyć wystąpienia parzyście — było to niewykonalne
+i dało fałszywy alarm w Tasku 4.
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add warhammer-battle-helper-backend/internal/service/GameService.go
@@ -536,7 +484,10 @@ Forma zamiany jest identyczna jak w Tasku 4 — powtórzona tu, bo taski czyta s
 	}
 ```
 
-Miejsca (numery sprzed migracji — szukaj po tekście komunikatu):
+Miejsca (numery sprzed migracji — szukaj po tekście komunikatu).
+**Token gear już NIE jest na tej liście**: ten obszar miał własny helper na długo przed tą zmianą
+(`requireGMForTokenGear`, 11 wywołań), zwinięty w `requireGM` przy Tasku 2. Jeśli natrafisz na
+`edit token gear`, jest już zmigrowane — zostaw.
 
 | linia | akcja |
 |---|---|
@@ -544,7 +495,6 @@ Miejsca (numery sprzed migracji — szukaj po tekście komunikatu):
 | 1403 | `update scenes` |
 | 1430 | `delete scenes` |
 | 1452 | `assign players to scenes` |
-| 1575 | `edit token gear` |
 | 1799 | `add images to scenes` |
 | 1884 | `duplicate scene images` |
 | 1976 | `update scene images` |
@@ -553,9 +503,9 @@ Miejsca (numery sprzed migracji — szukaj po tekście komunikatu):
 | 2276, 2337 | `edit image tokens` |
 | 2403 | `share token slots` |
 
-- [ ] **Step 1: Zamień wszystkie 13 miejsc z tabeli**
+- [x] **Step 1: Zamień wszystkie 12 miejsc z tabeli**
 
-- [ ] **Step 2: Zamień trzy miejsca zwracające `"not authorized"`**
+- [x] **Step 2: Zamień trzy miejsca zwracające `"not authorized"`**
 
 To jedyne miejsca, w których **komunikat się zmienia**. Dziś:
 
@@ -569,7 +519,7 @@ Trzy wystąpienia, przy `SetImageUrl` (~`:421`), `UpdateMapSettings` (~`:442`) i
 
 Zmiana tekstu jest tu bezpieczna i celowa: sprawdziłem, że front nigdzie nie porównuje treści tych błędów (`grep -rn "not authorized" warhammer-battle-helper-front/src/` nie daje trafień). Ujednolicenie komunikatu jest wartością samą w sobie.
 
-- [ ] **Step 3: NIE dotykaj `GameService.go:469`**
+- [x] **Step 3: NIE dotykaj `GameService.go:469`**
 
 ```go
 	// The GM is not necessarily stored as a participant on older games.
@@ -581,12 +531,31 @@ To **nie jest sprawdzenie uprawnień** — to logika opuszczania gry: „jeśli 
 
 Potwierdź w raporcie, że to miejsce widziałeś i świadomie pominąłeś.
 
-- [ ] **Step 4: Zbuduj i uruchom testy**
+- [x] **Step 4: Zbuduj i uruchom testy**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go test ./...`
 Expected: build czysty, testy przechodzą.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Bramka na komunikaty**
+
+Run:
+```bash
+cd warhammer-battle-helper-backend
+git diff -U0 internal/service/GameService.go | grep -oE '^-.*only the game master can [a-z ]+' \
+  | sed 's/.*only the game master can //' | sort > /tmp/old.txt
+git diff -U0 internal/service/GameService.go | grep -E '^\+.*requireGM\(' \
+  | sed -E 's/.*"([^"]+)".*/\1/' | sort > /tmp/new.txt
+diff /tmp/old.txt /tmp/new.txt
+```
+Expected: po prawej **dokładnie trzy pozycje więcej** niż po lewej — `change the game image`,
+`update map settings`, `read the token blueprint`. To te trzy miejsca, które dziś zwracają
+`"not authorized"`, więc nie mają czego wnieść po stronie `-`. Każda inna różnica to zmieniony
+komunikat; napraw przed commitem.
+
+Nie oczekuj pełnych zdań po stronie `+` — wywołanie niesie sam string akcji, a zdanie
+`only the game master can %s` składa się w `authz.go`, którego ten diff nie dotyka.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-backend/internal/service/GameService.go
@@ -600,7 +569,7 @@ git commit -m "refactor: route scene, image and token-gear GM checks through req
 **Files:**
 - Modify: żaden, chyba że bramka coś wykaże.
 
-- [ ] **Step 1: Sprawdź, że w `GameService.go` nie został żaden ręczny warunek**
+- [x] **Step 1: Sprawdź, że w `GameService.go` nie został żaden ręczny warunek**
 
 Run:
 ```bash
@@ -609,7 +578,7 @@ grep -n "GameMasterID != " internal/service/GameService.go
 ```
 Expected: **dokładnie jedno** trafienie — linia z `RemoveParticipant` (logika opuszczania gry, Task 5 Krok 3). Każde inne trafienie to miejsce pominięte w migracji.
 
-- [ ] **Step 2: Sprawdź, że nie został żaden ręcznie sklejony komunikat**
+- [x] **Step 2: Sprawdź, że nie został żaden ręcznie sklejony komunikat**
 
 Run:
 ```bash
@@ -618,7 +587,7 @@ grep -n 'fmt.Errorf("only the game master' internal/service/GameService.go
 ```
 Expected: **zero** trafień. Jedyny egzemplarz tego komunikatu ma żyć w `requireGM` w `authz.go`. Jeśli coś zostało w `GameService.go`, wróć do Tasku 4 albo 5.
 
-- [ ] **Step 3: Sprawdź, że trzy endpointy postaci naprawdę mają sprawdzenie**
+- [x] **Step 3: Sprawdź, że trzy endpointy postaci naprawdę mają sprawdzenie**
 
 Run:
 ```bash
@@ -627,7 +596,7 @@ grep -n "requireGMOrCharacterOwner\|requireGM(" internal/service/GameService.go 
 ```
 Expected: wśród trafień są trzy wywołania `requireGMOrCharacterOwner` (place / move / remove) oraz `requireGM` z akcją `change token visibility`.
 
-- [ ] **Step 4: Pełny build, vet i testy**
+- [x] **Step 4: Pełny build, vet i testy**
 
 Run: `cd warhammer-battle-helper-backend && go build ./... && go vet ./... && go test ./...`
 Expected: wszystko czyste. `go vet` łapie m.in. źle sparowane argumenty `fmt.Errorf`, co przy tej migracji jest realnym ryzykiem.
@@ -651,7 +620,7 @@ Ten punkt należy do właściciela repo, nie do wykonawcy planu. Na lokalnym sta
 7. Gracz próbuje usunąć cudzą postać ze sceny (request ręcznie) — **400**.
 8. MG robi wszystko powyższe — działa bez zmian.
 
-- [ ] **Step 6: Commit (tylko jeśli bramki wymusiły poprawki)**
+- [x] **Step 6: Commit (tylko jeśli bramki wymusiły poprawki)**
 
 ```bash
 git add -A warhammer-battle-helper-backend/
@@ -673,6 +642,8 @@ git commit -m "fix: close the gaps the authz gates found"
 **Pułapki:**
 
 - **Niewykorzystana zmienna `game` to błąd kompilacji w Go**, nie ostrzeżenie. Dlatego wybór między `game, err := s.requireGM(...)` a `if _, err := s.requireGM(...)` wyjdzie natychmiast przy buildzie — nie zgaduj, po prostu zbuduj.
+- **Nie dodawaj własnego predykatu własności postaci.** `CanEditCharacter` w `access.go` jest
+  jedynym miejscem tej reguły i celowo ignoruje `CreatedBy`.
 - **`charRepo.GetByID` przyjmuje `string`.** Funkcje trzymające `primitive.ObjectID` muszą podać `.Hex()`.
 - **`requireGMOrCharacterOwner` pobiera postać dopiero, gdy wołający nie jest MG.** Nie przestawiaj tego — ścieżka MG nie może się wywalić dlatego, że rekord postaci zniknął.
 - **Numery linii w tabelach Tasków 4 i 5 są sprzed migracji** i przesuwają się z każdą zamianą. Szukaj po treści komunikatu, nie po numerze.

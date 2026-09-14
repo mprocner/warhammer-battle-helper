@@ -224,7 +224,13 @@ func (h *SceneHandler) UpdateSceneCharacter(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.UpdateSceneCharacterGeometry(gameID, sceneID, characterID, req); err != nil {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.UpdateSceneCharacterGeometry(gameID, sceneID, characterID, userID, req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -250,7 +256,13 @@ func (h *SceneHandler) RemoveSceneCharacter(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.RemoveCharacterFromScene(gameID, sceneID, characterID); err != nil {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.GameService.RemoveCharacterFromScene(gameID, sceneID, characterID, userID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

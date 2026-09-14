@@ -115,11 +115,27 @@ Ani `add`, ani `remove` nie mogą być GM-only: `handleGridToggle`
 (`front/src/components/DndContext.jsx:881`) to przełącznik „na siatce / poza siatką" w panelu
 bocznym, którego gracz używa na własnych postaciach. GM-only zabiłoby istniejącą funkcję gracza.
 
-**Własność** = `CreatedBy == userID || VisibleTo zawiera userID`.
+**Własność rozstrzyga istniejąca `CanEditCharacter`** (`internal/service/access.go:29`), nie nowa
+reguła. Projekt ma ją od dawna, z jawnym uzasadnieniem:
 
-Szersza niż samo `VisibleTo`, którego serwer używa do budowy `hasCard` (`GameService.go:2617-2628`)
-— celowo. Musi pokryć frontowe `isOwnCharacter` (`DndContext.jsx`), które sprawdza oba warunki;
-gdyby serwer był węższy, legalne kliknięcia w UI zaczęłyby wracać z 403.
+```go
+// CreatedBy deliberately does NOT grant edit rights on its own: it survives a player
+// leaving the game, so honouring it would keep a departed player's write access alive.
+```
+
+Czyli własność = **`VisibleTo` zawiera `userID`** (dla nie-MG). Pierwsza wersja tego specu
+proponowała szerszą regułę `CreatedBy || VisibleTo`, dopasowaną do frontowego `isOwnCharacter` —
+i była sprzeczna z tym udokumentowanym precedensem. Odrzucona po review.
+
+Obie reguły rozjeżdżają się **wyłącznie** wtedy, gdy MG odbierze graczowi kartę przez
+`UpdateCharacterVisibility`: przy tworzeniu postaci `CreatedBy` i `VisibleTo` wskazują tę samą
+osobę. A to jest dokładnie przypadek, w którym odmowa jest poprawna — więc argument „serwer musi
+pokryć front, bo inaczej legalne kliknięcia dostaną 403" nie broni się: jedyne odrzucone kliknięcie
+to przeciąganie tokena postaci, do której MG świadomie odebrał dostęp.
+
+Skutek uboczny do osobnego zgłoszenia: front (`isOwnCharacter`) nadal honoruje `CreatedBy`, więc
+takiemu graczowi pokaże token jako przeciągalny, a serwer odmówi. Niespójność kosmetyczna, po
+stronie UI, poza zakresem tej zmiany.
 
 **`Hidden` egzekwujemy per pole.** `req.Hidden != nil` znaczy „przyszła prośba o zmianę
 widoczności" i tylko ta gałąź wymaga MG; pozostałe pola przechodzą regułą właściciela. Typ `*bool`
@@ -139,9 +155,8 @@ flagi dotyczy innych widzów, a to decyzja MG.
 // unchanged from the 34 hand-written copies this replaces.
 func (s *GameService) requireGM(gameID string, userID primitive.ObjectID, action string) (*models.Game, error)
 
-// requireGMOrCharacterOwner allows the GM, or a player who holds the character — created it, or is
-// listed in its VisibleTo. Mirrors the frontend's isOwnCharacter so a legitimate UI action never
-// 403s; a narrower rule here would break the sidebar's on/off-grid toggle for players.
+// requireGMOrCharacterOwner allows the GM, or a player the existing CanEditCharacter rule accepts
+// (access.go) — card access, deliberately not CreatedBy. Ownership is decided there, not here.
 func (s *GameService) requireGMOrCharacterOwner(gameID string, characterID primitive.ObjectID, userID primitive.ObjectID, action string) (*models.Game, error)
 ```
 
@@ -167,6 +182,61 @@ zostają nietknięte: każdy sięga po grę przez **własne** repozytorium (`fog
 funkcja pakietowa wymagałaby przepięcia ich wszystkich na `gameRepo`. To refaktor bez związku
 z tą dziurą.
 
+## Świadomie przyjęte po finalnym review
+
+### Obejście bramki `Hidden` przez usuń + postaw ponownie — zostawiamy
+
+Gracz trzymający kartę może zdjąć swoje ukryte umieszczenie (`DELETE`) i postawić postać z powrotem
+(`POST`). `AddCharacterToScene` tworzy nowe umieszczenie bez pola `Hidden`, więc startuje ono jako
+widoczne dla wszystkich. Oba wywołania robi zwykły przełącznik „na siatce / poza siatką" w panelu
+bocznym, więc nie trzeba nawet ręcznego requestu.
+
+**Decyzja autora: zostawiamy, bez komplikowania kodu.** Uzasadnienie, potwierdzone na kodzie:
+
+- Zasięg jest wąski. Obejście działa wyłącznie na umieszczeniach postaci, do których gracz **trzyma
+  kartę** — MG musiałby ukryć graczowi jego własną postać.
+- Główny przypadek użycia ukrywania w ogóle tędy nie idzie. MG ukrywa przed graczami **tokeny-obrazki**,
+  a wszystkie endpointy obrazów są GM-only (`add images to scenes`, `update scene images`,
+  `delete scene images`, `duplicate scene images`). Ta ścieżka jest nietknięta.
+- Model zagrożeń tej aplikacji to współpraca MG z graczami przy jednym stole, nie przeciwnik.
+
+Gdyby kiedyś miało to znaczenie, najtańsza poprawka to odmowa usunięcia umieszczenia z
+`Hidden == true` przez nie-MG: `requireGMOrCharacterOwner` i tak zwraca grę, więc umieszczenie jest
+pod ręką.
+
+### Utrata `TokenGear` przy ponownym postawieniu — osobne zgłoszenie
+
+To samo złożenie `DELETE` + `POST` kasuje `TokenGear` umieszczenia (`Game.go:152`) — per-token
+nakładkę MG z paskami HP i slotami. **Nie jest to problem bezpieczeństwa i nie jest rzadki:** MG
+konfiguruje graczowi paski, gracz zdejmuje token z siatki i stawia z powrotem, konfiguracja znika
+bez żadnego sygnału. Żaden przeciwnik nie jest potrzebny.
+
+Błąd jest **wcześniejszy niż ta zmiana** — nic w niej go nie dotknęło, finalne review zobaczyło go
+przy okazji. Osobny ticket.
+
+### Drobne, przyjęte bez poprawek
+
+- `AddCharacterToScene` czyta postać dwa razy na ścieżce gracza (raz w helperze, raz w ciele).
+  Jeden dodatkowy odczyt przy rzadkiej akcji użytkownika; przepchnięcie postaci z helpera zmusiłoby
+  ścieżkę MG, która świadomie nie czyta, żeby się tym przejmowała.
+- Na ścieżce gracza brak postaci wypływa surowym błędem repozytorium zamiast opakowanego
+  `"character not found: %w"`. Oba to 400 z czytelnym komunikatem.
+- `getUserIDFromContext` robi niesprawdzone asercje typu i spanikuje, a nie zwróci 400, gdyby trasa
+  kiedykolwiek zawisła poza middleware JWT. **Wcześniejsze niż ta zmiana**; `gin.Default()` ma
+  `Recovery`, więc najgorszy przypadek to 500. Osobny ticket.
+- Ścieżka właściciela nie sprawdza przypisania do sceny: gracz może postawić lub ruszyć własny token
+  na dowolnej scenie w grze, także takiej, której nie widzi. Zgodne z regułą ze specu, odnotowane.
+
+### Kandydaci na osobne zgłoszenia
+
+- `requireGMOrCharacterOwner` nie sprawdza, czy postać należy do **tej** gry (`Character.GameID`
+  nigdy nie jest porównywane z `gameID`). Uczestnik gry B trzymający kartę w grze A może postawić tę
+  postać na scenie B. Wcześniejsze i ściśle węższe niż stan sprzed zmiany — wcześniej nie było
+  żadnego sprawdzenia — ale `authz.go` to naturalne miejsce na jednolinijkową odmowę.
+- Martwy, nieautoryzowany kod: `AddCharacterToGrid` / `MoveCharacter` / `RemoveCharacter`
+  (`GameService.go:531-620`) mutują tablicę `Game.Characters` bez żadnego sprawdzenia i **nie mają
+  wywołujących ani trasy**. Ten sam kształt dziury, którą ta zmiana właśnie zamknęła.
+
 ## Poza zakresem
 
 - **Ujednolicenie `isGM` między serwisami.** `FogService`, `DrawingService` i `YahtzeeService`
@@ -189,7 +259,7 @@ z tą dziurą.
 
 - `requireGM` — MG przechodzi; gracz dostaje błąd z właściwym tekstem; nieistniejąca gra zwraca
   błąd repozytorium, nie błąd uprawnień
-- `requireGMOrCharacterOwner` — MG, twórca (`CreatedBy`), posiadacz karty (`VisibleTo`), obcy gracz
+- `CanEditCharacter` ma już własne testy w `access_test.go` — nie dublujemy ich
 - reguła per pole — gracz-właściciel zmienia `positionX` → OK; ten sam gracz wysyła `hidden`
   → odmowa; MG wysyła `hidden` → OK; żądanie mieszane (geometria **i** `hidden`) od gracza
   → odmowa w całości, bez częściowego zapisu
