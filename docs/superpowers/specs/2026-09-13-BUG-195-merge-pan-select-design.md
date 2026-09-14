@@ -158,6 +158,7 @@ które narzędzie robi, i zgadza się z językiem komentarzy w kodzie (`useFogTo
 | `activeTokenId`, `selectedImageId` | `DndContext.jsx:96-98` i konsumenci | jeden stan |
 | `scenes.panLayer`, `scenes.drawingTool_pan` | `locales/en/`, `locales/pl/` | martwe klucze |
 | importy `PanToolIcon`, `HighlightAltIcon` | `sceneModes.js`, `DrawingToolbar.jsx` | ikony zwolnione |
+| pierścień na **zablokowanym** obrazie-tokenie | `SceneImage.jsx` — gałąź zaznaczania | świadoma decyzja, patrz niżej |
 
 `.scene-viewport--grabbing` (`SceneViewport.css:60-63`) **zostaje** — używa go prawy drag przez
 `setIsPanning`.
@@ -182,6 +183,45 @@ użytkownika — nie ma znanego gracza na trackpadzie, a dopisanie to jeden list
 wyjątkiem na pola tekstowe co `isModeCycleClick` (`sceneModes.js:42`).
 
 To decyzja, nie przeoczenie. Nie traktować jako regresu.
+
+## Decyzje podjęte w trakcie implementacji
+
+Obie wyszły z review i obie rozstrzygnął autor projektu. Zapisane tutaj, żeby nikt nie
+„naprawił" ich później jako usterek.
+
+### Ping MG w trybie Select — przywrócony
+
+Bramka `isGM` na marquee miała skutek uboczny, którego spec nie przewidział: gałąź zaznaczania
+kończyła się `return`, przez co presja MG nie docierała do ustawienia pointer-pinga na dole
+`handleContentMouseDown`. Gracz przelatywał obok tej gałęzi i pingował normalnie — MG tracił ping
+w swoim jedynym domyślnym trybie. Wcześniej nikt tego nie widział, bo Select był `gmOnly`,
+a gracze pingowali z trybu PAN.
+
+Naprawione: gałąź nie kończy się już `return`, presja spada do ustawienia pinga. Marquee i ping
+nie mogą się pogryźć — marquee materializuje się dopiero po **ruchu** wskaźnika, a ping wymaga
+~500 ms **bezruchu** i kasuje się po przekroczeniu 5 px. Presja na tokenie nadal wychodzi wcześniej
+i nigdy nie pinguje.
+
+### Brak kursora sygnalizującego pan — świadomie zostawiony
+
+Po skasowaniu `.scene-viewport--grab` pusta siatka nie ma żadnego kursora mówiącego, że mapę da się
+przeciągnąć; `grabbing` pojawia się dopiero po przekroczeniu progu 8 px prawym przyciskiem.
+Wcześniej w trybie PAN była łapka.
+
+Nie naprawiamy tego w BUG-195. **Ta klasa była przyczyną objawu 3** — `cursor: grab !important`
+na każdym potomku `__sizer` zjadał kursory uchwytów resize. Dorobienie afordancji dla prawego
+przycisku bez odtworzenia tamtego buga to osobny problem projektowy, a nie ma testu, który by tego
+pilnował. Osobny ticket.
+
+### Zablokowany token-obraz traci też pierścień
+
+W PAN kliknięcie **zablokowanego** obrazu na warstwie tokenów rozsuwało jego pierścień stanów/HP —
+stary handler nie sprawdzał `locked` w ogóle. Scalone narzędzie dziedziczy bramkę z Selecta
+(`image.locked` blokuje zaznaczenie), więc edycja HP takiego tokena wymaga wcześniejszego
+odblokowania.
+
+Decyzja autora: **zostaje tak**. Blokada ma znaczyć „nietykalny", a nie „nieprzesuwalny, ale
+edytowalny" — spójność wygrywa z zachowaniem jednej funkcji z PAN.
 
 ## Poza zakresem
 

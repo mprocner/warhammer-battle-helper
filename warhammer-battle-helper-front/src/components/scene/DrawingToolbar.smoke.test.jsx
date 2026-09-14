@@ -5,7 +5,7 @@ import DrawingToolbar from './DrawingToolbar';
 import { modesForRole } from './sceneModes';
 
 const baseProps = {
-  editingLayer: null,
+  editingLayer: 'select',
   onEditingLayerChange: () => {},
   activeTool: 'select',
   onActiveToolChange: () => {},
@@ -55,13 +55,12 @@ describe('DrawingToolbar mode tabs', () => {
     const { container } = render(<DrawingToolbar {...baseProps} isGM={false} />);
     const labels = [...container.querySelectorAll('.drawing-toolbar__tab .drawing-toolbar__tooltip')]
       .map(el => el.textContent);
-    expect(labels).not.toContain('Select tokens');
     expect(labels).not.toContain('Fog of War');
   });
 
   it('marks only the active mode tab with aria-pressed', () => {
     const modes = modesForRole(true);
-    const activeMode = modes[1]; // any non-pan mode, so both true and false cases show up
+    const activeMode = modes[1]; // any non-default mode, so both true and false cases show up
     const { container } = render(
       <DrawingToolbar {...baseProps} editingLayer={activeMode.value} />
     );
@@ -71,7 +70,7 @@ describe('DrawingToolbar mode tabs', () => {
     });
   });
 
-  it('clicking the active tab returns to pan', () => {
+  it('clicking the active tab returns to the default tool', () => {
     const calls = [];
     render(
       <DrawingToolbar
@@ -81,7 +80,7 @@ describe('DrawingToolbar mode tabs', () => {
       />
     );
     fireEvent.click(screen.getByText('Fog of War').closest('button'));
-    expect(calls).toEqual([null]);
+    expect(calls).toEqual(['select']);
   });
 
   it('clicking an inactive tab selects it', () => {
@@ -89,12 +88,28 @@ describe('DrawingToolbar mode tabs', () => {
     render(
       <DrawingToolbar
         {...baseProps}
-        editingLayer={null}
+        editingLayer="select"
         onEditingLayerChange={v => calls.push(v)}
       />
     );
     fireEvent.click(screen.getByText('Fog of War').closest('button'));
     expect(calls).toEqual(['fog']);
+  });
+});
+
+describe('DrawingToolbar tools', () => {
+  it('no longer offers a pan tool inside drawing mode', () => {
+    const { container } = render(<DrawingToolbar {...baseProps} editingLayer="drawing" />);
+    const labels = [...container.querySelectorAll('.drawing-toolbar__tool .drawing-toolbar__tooltip')]
+      .map(el => el.textContent);
+    expect(labels).not.toContain('Pan & move tokens');
+  });
+
+  it('no longer offers a pan tool inside fog mode', () => {
+    const { container } = render(<DrawingToolbar {...baseProps} editingLayer="fog" />);
+    const labels = [...container.querySelectorAll('.drawing-toolbar__tool .drawing-toolbar__tooltip')]
+      .map(el => el.textContent);
+    expect(labels).not.toContain('Pan & move tokens');
   });
 });
 

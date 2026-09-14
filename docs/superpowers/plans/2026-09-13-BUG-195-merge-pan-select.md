@@ -33,7 +33,7 @@
 - Consumes: nic (pierwszy task).
 - Produces: `SCENE_MODES` bez wpisu `null`, z pierwszym wpisem `{ value: 'select', Icon: NearMeIcon, labelKey: 'scenes.selectLayer' }` (bez `gmOnly`). `modesForRole(true)` → `['select','measure','fog','drawing']`, `modesForRole(false)` → `['select','measure','drawing']`. `modeLabelKey(x)` dla nieznanej wartości zwraca `'scenes.selectLayer'`. `useFogTools()` startuje z `editingLayer === 'select'`.
 
-- [ ] **Step 1: Przepisz testy trybów na nową listę**
+- [x] **Step 1: Przepisz testy trybów na nową listę**
 
 Zastąp w `sceneModes.test.js` bloki `modesForRole`, `nextMode` i `modeLabelKey` (reszta pliku — `cycleNext`, `isModeCycleClick` — zostaje **bez zmian**):
 
@@ -90,12 +90,12 @@ describe('modeLabelKey', () => {
 });
 ```
 
-- [ ] **Step 2: Uruchom testy i potwierdź, że padają**
+- [x] **Step 2: Uruchom testy i potwierdź, że padają**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=sceneModes`
 Expected: FAIL — `expect(received).toEqual(expected)`, otrzymane `[null, 'select', 'measure', 'fog', 'drawing']`.
 
-- [ ] **Step 3: Zmień listę trybów**
+- [x] **Step 3: Zmień listę trybów**
 
 W `sceneModes.js` podmień importy ikon i listę:
 
@@ -130,7 +130,7 @@ export const modeLabelKey = (value) =>
   SCENE_MODES.find(m => m.value === value)?.labelKey || 'scenes.selectLayer';
 ```
 
-- [ ] **Step 4: Ustaw domyślny tryb w stanie**
+- [x] **Step 4: Ustaw domyślny tryb w stanie**
 
 W `hooks/useFogTools.js` zmień dwie linie (`:9` i `:11`):
 
@@ -144,12 +144,12 @@ W `hooks/useFogTools.js` zmień dwie linie (`:9` i `:11`):
   const [imageEditLayer, setImageEditLayer] = useState('tokens');
 ```
 
-- [ ] **Step 5: Uruchom testy i potwierdź, że przechodzą**
+- [x] **Step 5: Uruchom testy i potwierdź, że przechodzą**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=sceneModes`
 Expected: PASS, wszystkie bloki.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/components/scene/sceneModes.js \
@@ -170,7 +170,7 @@ git commit -m "refactor: BUG-195 drop the null scene mode, Select becomes the de
 - Consumes: nic.
 - Produces: `nextSelection(prev, token, additive)` — `prev: Array<{kind:'char'|'image', id:string}>`, `token: {kind, id}`, `additive: boolean`, zwraca nową tablicę. Konsument: `toggleTokenSelected` w `DndContext.jsx` (Task 4).
 
-- [ ] **Step 1: Napisz test**
+- [x] **Step 1: Napisz test**
 
 Utwórz `warhammer-battle-helper-front/src/utils/tokenSelection.test.js`:
 
@@ -232,12 +232,12 @@ describe('nextSelection — purity', () => {
 });
 ```
 
-- [ ] **Step 2: Uruchom test i potwierdź, że pada**
+- [x] **Step 2: Uruchom test i potwierdź, że pada**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=tokenSelection`
 Expected: FAIL — `Cannot find module './tokenSelection'`.
 
-- [ ] **Step 3: Napisz implementację**
+- [x] **Step 3: Napisz implementację**
 
 Utwórz `warhammer-battle-helper-front/src/utils/tokenSelection.js`:
 
@@ -266,12 +266,12 @@ export function nextSelection(prev, token, additive) {
 }
 ```
 
-- [ ] **Step 4: Uruchom test i potwierdź, że przechodzi**
+- [x] **Step 4: Uruchom test i potwierdź, że przechodzi**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=tokenSelection`
 Expected: PASS, 10 testów.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/utils/tokenSelection.js \
@@ -291,7 +291,7 @@ git commit -m "feat: BUG-195 add the single click-to-select rule as a pure funct
 - Consumes: `SCENE_MODES` z Taska 1 (wartości `editingLayer`).
 - Produces: `canManipulateToken({ allowed, locked, editingLayer, imageEditLayer, selected })` → `boolean`. **Zmiana sygnatury:** parametry `activeTool`, `activeSelected`, `groupSelected` i `multiSelectActive` **znikają**; zastępuje je jeden `selected`, który znaczy „to jest jedyny zaznaczony token". Konsumenci (`MapCharacterToken.jsx:165`, `SceneImage.jsx:535`) aktualizowani w Tasku 5.
 
-- [ ] **Step 1: Przepisz test na nową sygnaturę**
+- [x] **Step 1: Przepisz test na nową sygnaturę**
 
 Zastąp **całą** zawartość `utils/tokenManipulation.test.js`:
 
@@ -348,12 +348,12 @@ describe('canManipulateToken', () => {
 });
 ```
 
-- [ ] **Step 2: Uruchom test i potwierdź, że pada**
+- [x] **Step 2: Uruchom test i potwierdź, że pada**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=tokenManipulation`
 Expected: FAIL — pierwszy przypadek zwraca `false`, bo stara implementacja czyta `groupSelected`, a nie `selected`.
 
-- [ ] **Step 3: Przepisz predykat**
+- [x] **Step 3: Przepisz predykat**
 
 Zastąp **całą** zawartość `utils/tokenManipulation.js`:
 
@@ -381,12 +381,12 @@ export function canManipulateToken({
 }
 ```
 
-- [ ] **Step 4: Uruchom test i potwierdź, że przechodzi**
+- [x] **Step 4: Uruchom test i potwierdź, że przechodzi**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=tokenManipulation`
 Expected: PASS, 9 testów.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/utils/tokenManipulation.js \
@@ -408,7 +408,7 @@ Task bez testów jednostkowych — `DndContext.jsx` nie ma pokrycia i ten plan t
 - Consumes: `nextSelection` z Taska 2.
 - Produces: `SceneViewport` **przestaje** dostawać propy `activeTokenId`, `onSelectCharacter`, `selectedImageId`, `onSelectImage`. `onToggleTokenSelected(kind, id, additive)` zostaje jedyną drogą zaznaczania i niesie bramkę własności. `onBackgroundClick` czyści całe zaznaczenie.
 
-- [ ] **Step 1: Usuń oba stare stany i ich efekty**
+- [x] **Step 1: Usuń oba stare stany i ich efekty**
 
 W `DndContext.jsx` usuń deklaracje `activeTokenId` i `selectedImageId` (`:94-99`), zostawiając wyłącznie:
 
@@ -424,7 +424,7 @@ Usuń w całości trzy efekty, które obsługiwały tamte stany:
 - `:114-119` — `if (!(editingLayer === null || activeTool === 'pan')) setSelectedImageId(null)`
 - `:295-299` — czyszczenie `activeTokenId`, gdy postać zniknęła ze sceny (pokrywa go ten sam efekt `:131-142`)
 
-- [ ] **Step 2: Usuń osobny handler Delete dla obrazu i dodaj bramkę roli do grupowego**
+- [x] **Step 2: Usuń osobny handler Delete dla obrazu i dodaj bramkę roli do grupowego**
 
 Usuń w całości efekt `:152-168` (Delete dla `selectedImageId`).
 
@@ -440,7 +440,7 @@ W efekcie grupowym (`:170-191`) zmień pierwszą linię warunku:
 
 Dopisz `isGM` do tablicy zależności tego efektu.
 
-- [ ] **Step 3: Zastąp oba handlery zaznaczania jednym, z bramką własności**
+- [x] **Step 3: Zastąp oba handlery zaznaczania jednym, z bramką własności**
 
 Usuń `handleSelectToken` (`:340-349`) i `handleSelectImage` (`:352-356`). Przenieś ich bramkę własności do `toggleTokenSelected` (`:373-383`), podmieniając całe ciało:
 
@@ -461,7 +461,7 @@ Dodaj import na górze pliku, obok pozostałych importów z `utils/`:
 import { nextSelection } from '../utils/tokenSelection';
 ```
 
-- [ ] **Step 4: Przepnij czyszczenie zaznaczenia i propy**
+- [x] **Step 4: Przepnij czyszczenie zaznaczenia i propy**
 
 Zamień `clearActiveToken` (`:385-388`) na:
 
@@ -475,24 +475,26 @@ Zamień `clearActiveToken` (`:385-388`) na:
 
 W wywołaniu `<SceneViewport …>` (`:1117`) usuń cztery propy: `activeTokenId={activeTokenId}`, `onSelectCharacter={handleSelectToken}`, `selectedImageId={selectedImageId}`, `onSelectImage={handleSelectImage}`. Podmień `onBackgroundClick={clearActiveToken}` na `onBackgroundClick={clearSelection}`.
 
-- [ ] **Step 5: Przybij warstwę `tokens` dla gracza**
+- [x] **Step 5: Przybij warstwę `tokens` dla gracza**
 
 W `GameSession.jsx:1084` (przekazanie do `DragAndDropContext`):
 
 ```jsx
-            {/* Players have no layer bar, and Select needs the tokens layer armed to touch a
-                character token at all — so their armed layer is fixed. */}
+            // Players have no layer bar, and Select needs the tokens layer armed to touch a
+            // character token at all — so their armed layer is fixed.
             imageEditLayer={isGM ? imageEditLayer : 'tokens'}
 ```
 
+Użyj dokładnie tej formy komentarza. `{/* … */}` **między propami jest błędem składni** (`Unexpected token, expected "..."`); `//` w tym miejscu parsuje się poprawnie.
+
 Uwaga: `GameSession.jsx:1127` przekazuje `imageEditLayer` do panelu MG — **zostaw bez zmian**.
 
-- [ ] **Step 6: Uruchom pełny suite**
+- [x] **Step 6: Uruchom pełny suite**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false`
 Expected: jedyny fail to `App.test.js` (axios ESM). Jeśli padnie cokolwiek innego — to regres tego taska.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/components/DndContext.jsx \
@@ -514,13 +516,13 @@ git commit -m "refactor: BUG-195 collapse the two token selection states into on
 - Consumes: `canManipulateToken` z Taska 3 (nowa sygnatura), `isTokenSelected(kind, id)` i `multiSelectActive` (już przekazywane do obu warstw).
 - Produces: `SceneImage` i `MapCharacterToken` **tracą** prop `selected` i `onSelectImage` / `onSelect` — wyliczają „jedyny zaznaczony" lokalnie z `multiSelected && !multiSelectActive`.
 
-- [ ] **Step 1: Przestań przekazywać stare propy z warstw**
+- [x] **Step 1: Przestań przekazywać stare propy z warstw**
 
 W `MapTokensLayer.jsx` usuń z sygnatury `selectedImageId`, `onSelectImage`, `activeTokenId`, `onSelectCharacter`, a z renderowania `SceneImage` linie `selected={selectedImageId === item.data.id}` i `onSelectImage={onSelectImage}`, z `MapCharacterToken` linie `selected={activeTokenId === item.data.character.id}` i `onSelect={onSelectCharacter}`.
 
 W `SceneLayer.jsx` usuń z sygnatury `selectedImageId`, `onSelectImage`, a z renderowania `SceneImage` linie `selected={selectedImageId === image.id}` i `onSelectImage={onSelectImage}`.
 
-- [ ] **Step 2: Wylicz „jedyny zaznaczony" w `SceneImage`**
+- [x] **Step 2: Wylicz „jedyny zaznaczony" w `SceneImage`**
 
 W `SceneImage.jsx` usuń `selected = false` i `onSelectImage` z listy propów (`:18`) i dodaj tuż pod destrukturyzacją:
 
@@ -536,7 +538,7 @@ Uprość `canDragImage` (`:26`) — gałąź `tokens` w trybie PAN znika, bo war
   const canDragImage = isGM && !image.locked && isLayerArmed;
 ```
 
-- [ ] **Step 3: Uprość kliknięcie i kursor w `SceneImage`**
+- [x] **Step 3: Uprość kliknięcie i kursor w `SceneImage`**
 
 Zastąp `handleClick` (`:318-339`) wersją bez gałęzi PAN:
 
@@ -580,7 +582,7 @@ Zaktualizuj wywołanie predykatu (`:535-543`):
 
 Usuń `activeTool` z listy propów `SceneImage` i z wszystkich tablic zależności w tym pliku — po tej zmianie nic go już nie czyta.
 
-- [ ] **Step 4: To samo w `MapCharacterToken`**
+- [x] **Step 4: To samo w `MapCharacterToken`**
 
 Usuń `selected = false` i `onSelect` z propów (`:16`), dodaj pod destrukturyzacją:
 
@@ -644,12 +646,12 @@ Uprość `dragEnabledNow` (`:257`):
 
 Usuń `activeTool` z propów i zależności w tym pliku.
 
-- [ ] **Step 5: Uruchom pełny suite**
+- [x] **Step 5: Uruchom pełny suite**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false`
 Expected: jedyny fail to `App.test.js`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/components/scene/MapTokensLayer.jsx \
@@ -673,7 +675,7 @@ git commit -m "refactor: BUG-195 derive token chrome from the single selection s
 - Consumes: `modesForRole` z Taska 1.
 - Produces: `TOOLS` w `DrawingToolbar` bez wpisu `'pan'`; `activeTool` nigdy nie przyjmuje `'pan'`. Ikona narzędzia `'select'` to `AdsClickIcon`.
 
-- [ ] **Step 1: Popraw smoke test paska**
+- [x] **Step 1: Popraw smoke test paska**
 
 W `DrawingToolbar.smoke.test.jsx` zmień `editingLayer: null` na `editingLayer: 'select'` w `baseProps` (`:8`), popraw komentarz przy `activeMode` (`:64`) z „non-pan mode" na „non-default mode" i podmień dwa testy zakładek:
 
@@ -727,12 +729,12 @@ describe('DrawingToolbar tools', () => {
 });
 ```
 
-- [ ] **Step 2: Uruchom testy i potwierdź, że padają**
+- [x] **Step 2: Uruchom testy i potwierdź, że padają**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=DrawingToolbar`
 Expected: FAIL — `expect(calls).toEqual(['select'])` dostaje `[null]`, a oba nowe testy znajdują `'Pan & move tokens'`.
 
-- [ ] **Step 3: Wytnij narzędzie i przenieś ikonę**
+- [x] **Step 3: Wytnij narzędzie i przenieś ikonę**
 
 W `DrawingToolbar.jsx` usuń import `PanToolIcon` (`:5`), zamień import `NearMeIcon` (`:13`) na:
 
@@ -748,7 +750,7 @@ Usuń pierwszy wpis z `TOOLS` wraz z jego komentarzem (`:29-32`) i zmień ikonę
 
 `NearMeIcon` przechodzi na pasek trybów (Task 1), więc pasek narzędzi nie może go już używać — dwie identyczne strzałki obok siebie kłamałyby o tym, że robią to samo.
 
-- [ ] **Step 4: Usuń wyjątki na `pan` w warstwach**
+- [x] **Step 4: Usuń wyjątki na `pan` w warstwach**
 
 W `DrawingLayer.jsx:345`:
 
@@ -772,12 +774,12 @@ W `FogLayer.jsx:68-71` — po usunięciu narzędzia warstwa mgły jest aktywna z
 
 Zastąp wszystkie wystąpienia `isEditingFog` w tym pliku przez `inFogMode` i usuń samą definicję. Sprawdź, że nic nie zostało: `grep -n "isEditingFog\|fogTool" src/components/scene/FogLayer.jsx` — jeśli `fogTool` nie ma już żadnego czytelnika, usuń go też z propów komponentu i z przekazania w `SceneViewport.jsx:885`.
 
-- [ ] **Step 5: Uruchom testy i potwierdź, że przechodzą**
+- [x] **Step 5: Uruchom testy i potwierdź, że przechodzą**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern="DrawingToolbar|DrawingLayer|FogLayer"`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/components/scene/DrawingToolbar.jsx \
@@ -800,7 +802,7 @@ git commit -m "refactor: BUG-195 remove the pan tool from the drawing and fog to
 - Consumes: `isModeCycleClick`, `nextMode` z Taska 1; `isGM` (już prop).
 - Produces: brak lewego pana; marquee wyłącznie dla MG.
 
-- [ ] **Step 1: Wytnij lewy pan z `handleViewportMouseDown`**
+- [x] **Step 1: Wytnij lewy pan z `handleViewportMouseDown`**
 
 W `SceneViewport.jsx` zostaw w `handleViewportMouseDown` **wyłącznie** blok cyklu trybów (`:314-323`) i skasuj wszystko poniżej `return;` aż do `setIsPanning(true);` (`:331-345`), razem z komentarzem o schemacie `modern`. Handler kończy się na zamknięciu bloku `isModeCycleClick`.
 
@@ -808,7 +810,7 @@ Skasuj też efekt obsługujący ten drag (`panStartRef` w `handleMove`/`handleUp
 
 Sprawdź, że nic nie zostało: `grep -n "panStartRef" src/components/scene/SceneViewport.jsx` ma nie zwrócić nic.
 
-- [ ] **Step 2: Usuń klasę `--grab`**
+- [x] **Step 2: Usuń klasę `--grab`**
 
 W `SceneViewport.jsx:720` uprość `className`:
 
@@ -820,7 +822,7 @@ W `SceneViewport.css` skasuj regułę `.scene-viewport--grab` (`:52-57`) wraz z 
 
 To była przyczyna objawu 3: `cursor: grab !important` na każdym potomku `__sizer` poza `.token-overlay` zjadał `cursor: ns-resize` uchwytów.
 
-- [ ] **Step 3: Ogranicz marquee do MG**
+- [x] **Step 3: Ogranicz marquee do MG**
 
 W `handleContentMouseDown` (`:453`):
 
@@ -832,16 +834,16 @@ W `handleContentMouseDown` (`:453`):
 
 Dopisz `isGM` do tablicy zależności tego `useCallback`.
 
-- [ ] **Step 4: Posprzątaj martwe odwołania do `activeTool`**
+- [x] **Step 4: Posprzątaj martwe odwołania do `activeTool`**
 
 `activeToolRef` (`:288-289`) istniał dla wyciętego warunku pana. Jeśli po Kroku 1 nikt go nie czyta (`grep -n "activeToolRef" src/components/scene/SceneViewport.jsx`), usuń ref i jego efekt. Prop `activeTool` zostaje — czytają go `DrawingLayer` i `FogLayer`.
 
-- [ ] **Step 5: Uruchom pełny suite**
+- [x] **Step 5: Uruchom pełny suite**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false`
 Expected: jedyny fail to `App.test.js`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/components/scene/SceneViewport.jsx \
@@ -861,7 +863,7 @@ git commit -m "fix: BUG-195 drop left-drag panning and the grab cursor that ate 
 - Consumes: wszystko z Tasków 1-7.
 - Produces: brak martwych kluczy; `scenes.selectLayer` opisuje oba działania narzędzia.
 
-- [ ] **Step 1: Zaktualizuj tłumaczenia**
+- [x] **Step 1: Zaktualizuj tłumaczenia**
 
 `src/locales/en/translation.json` — usuń linie `"panLayer"` (`:1038`) i `"drawingTool_pan"` (`:1068`), zmień `"selectLayer"` (`:1064`):
 
@@ -875,12 +877,12 @@ git commit -m "fix: BUG-195 drop left-drag panning and the grab cursor that ate 
     "selectLayer": "Zaznacz / Przesuń",
 ```
 
-- [ ] **Step 2: Sprawdź, że nic nie odwołuje się do usuniętych kluczy**
+- [x] **Step 2: Sprawdź, że nic nie odwołuje się do usuniętych kluczy**
 
 Run: `cd warhammer-battle-helper-front && grep -rn "panLayer\|drawingTool_pan" src/`
 Expected: brak wyników.
 
-- [ ] **Step 3: Sprawdź, że `null` zniknął jako tryb i `pan` jako narzędzie**
+- [x] **Step 3: Sprawdź, że `null` zniknął jako tryb i `pan` jako narzędzie**
 
 Run:
 ```bash
@@ -890,7 +892,7 @@ grep -rn "activeTool === 'pan'\|activeTool !== 'pan'\|fogTool !== 'pan'" src/
 ```
 Expected: brak wyników w obu. Każde trafienie to niedokończony task.
 
-- [ ] **Step 4: Uruchom pełny suite**
+- [x] **Step 4: Uruchom pełny suite**
 
 Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false`
 Expected: jedyny fail to `App.test.js` (axios ESM). Zapisz liczbę przechodzących testów — to dowód na zakończenie.
@@ -908,7 +910,7 @@ Uruchom aplikację zgodnie ze zwyczajem repo (docker compose) i przejdź listę.
 7. **Gracz** — widzi 3 zakładki, nie widzi paska warstw. Klika własny token: pierścień + uchwyty. Klika cudzy: nic. Lewy drag na pustym polu: nic (brak marquee).
 8. **Środkowy klik** — cykluje tryby i wraca do strzałki po pełnym obiegu.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add warhammer-battle-helper-front/src/locales/en/translation.json \

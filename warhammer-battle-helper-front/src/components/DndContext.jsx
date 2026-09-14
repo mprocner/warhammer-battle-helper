@@ -17,6 +17,7 @@ import CharacterSheetHost from './CharacterSheetHost';
 import { normalizeCharacter } from '../systems/registry';
 import { resolveDisplayName } from '../utils/participants';
 import { buildPlacedCharacters } from '../utils/placedCharacters';
+import { nextSelection } from '../utils/tokenSelection';
 import { useWindowManager } from '../contexts/WindowManagerContext';
 import useDragRuler from '../hooks/useDragRuler';
 
@@ -36,7 +37,7 @@ const generateFightZones = (width, height) => {
 };
 
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = null, onEditingLayerChange, imageEditLayer = 'background', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern', onCharactersLoaded }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'select', onEditingLayerChange, imageEditLayer = 'tokens', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor = '#ff0000', onDrawingColorChange, drawingFontSize = 16, onDrawingFontSizeChange, onDrawingPathComplete, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern', onCharactersLoaded }) {
   const { t } = useTranslation();
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -91,32 +92,10 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   // Selected character for details panel
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
-  // Active token on the grid (sun/ring expansion) — independent of the card. Id only,
-  // because FightArea resolves the live character from fightZones (like resolveCharacter).
-  const [activeTokenId, setActiveTokenId] = useState(null);
-  // Selected image-token (tokens-layer scene image with an expanded ring). Mutually exclusive
-  // with activeTokenId — only one ring is open at a time, character or image.
-  const [selectedImageId, setSelectedImageId] = useState(null);
-
-  // Multi-select (Select mode): list of {kind:'image'|'char', id}. Local GM-only UI state.
+  // The one selection state for map tokens: list of {kind:'image'|'char', id}. A one-element
+  // selection is what used to be the "active token" — its ring expands and it shows manipulation
+  // chrome. Local UI state, never persisted.
   const [selectedTokens, setSelectedTokens] = useState([]);
-
-  // Clear selection when the selected image is removed by any user (WS delete).
-  // Mirrors the drawing-path cleanup below.
-  useEffect(() => {
-    if (!selectedImageId) return;
-    const images = currentScene?.images || [];
-    if (!images.find(i => i.id === selectedImageId)) {
-      setSelectedImageId(null);
-    }
-  }, [currentScene?.images, selectedImageId]);
-
-  // Drop the selection when leaving the context where images are selectable (same gate as
-  // SceneImage.handleClick: default or pan). Without this a stale selection stays deletable from
-  // Fog/Measure/Images/Drawing modes. Mirrors the selectedDrawingPathId clear on tool change.
-  useEffect(() => {
-    if (!(editingLayer === null || activeTool === 'pan')) setSelectedImageId(null);
-  }, [editingLayer, activeTool]);
 
   // Leaving Select mode drops the multi-selection.
   useEffect(() => {
@@ -149,28 +128,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     return () => window.removeEventListener('keydown', onKey);
   }, [editingLayer]);
 
-  // Delete / Backspace removes the selected image (GM). Locked images are skipped.
-  // Ignored while typing in a field. Mirrors DrawingLayer's keyboard delete.
+  // Delete / Backspace removes all selected tokens (images deleted, characters removed from grid).
+  // Skips locked images. Ignored while typing.
+  // GM only: Select is no longer a GM-only mode, so the mode check alone no longer gates this.
   useEffect(() => {
-    if (!selectedImageId) return;
-    const handleKeyDown = (e) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      const el = e.target;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
-      const img = (currentScene?.images || []).find(i => i.id === selectedImageId);
-      if (!img || img.locked) return;
-      deleteSceneImage(gameId, currentSceneId, selectedImageId)
-        .then(() => setSelectedImageId(null))
-        .catch(err => console.error('Failed to delete scene image:', err));
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedImageId, currentScene?.images, gameId, currentSceneId]);
-
-  // Delete / Backspace in Select mode removes all selected tokens (images deleted, characters
-  // removed from grid). Skips locked images. Ignored while typing.
-  useEffect(() => {
-    if (editingLayer !== 'select' || !selectedTokens.length) return;
+    if (!isGM || editingLayer !== 'select' || !selectedTokens.length) return;
     const handleKeyDown = (e) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
       const el = e.target;
@@ -188,7 +150,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingLayer, selectedTokens, currentScene?.images, gameId, currentSceneId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isGM, editingLayer, selectedTokens, currentScene?.images, gameId, currentSceneId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group actions — loop existing per-token endpoints (infrequent one-shot clicks).
   const groupImages = useCallback(
@@ -286,18 +248,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     fightZonesRef.current = fightZones;
   }, [fightZones]);
 
-  // Clear the active token when its character leaves the scene for any reason
-  // (grid-toggle off, drag back to the pool, delete, scene switch, WS refetch).
-  // Mirrors the selectedDrawingPathId cleanup pattern below.
-  // Asks the scene's placements, not fightZones: the token layer renders from the placements now,
-  // and a token missing from the whole-cell grid (two free-mode tokens rounding into one cell)
-  // would otherwise be deselected the instant it was selected.
-  useEffect(() => {
-    if (!activeTokenId || !currentScene) return;
-    const onScene = (currentScene.characters || []).some(c => c.characterId === activeTokenId);
-    if (!onScene) setActiveTokenId(null);
-  }, [currentScene, activeTokenId]);
-
   // Regenerate zones when scene changes (dimensions or scene id)
   const prevSceneRef = useRef(null);
   useEffect(() => {
@@ -336,25 +286,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     setSelectedCharacter(prev => (prev?.id === character.id ? null : freshChar));
   };
 
-  // Select/toggle the active token on the grid (sun/ring). Independent of the card selection.
-  const handleSelectToken = (character) => {
-    // Same ownership guard as handleSelectCharacter — FightArea already screens this, but keep
-    // it here too (defense in depth, matches the existing double-guard pattern).
-    if (gameId && token && !isGM && !isOwnCharacter(character.id)) {
-      return;
-    }
-    // Clicking the already-active token toggles it off (same UX as the card toggle).
-    setActiveTokenId(prev => (prev === character.id ? null : character.id));
-    setSelectedImageId(null); // one ring open at a time
-  };
-
-  // Select an image-token (tokens-layer scene image). Toggles off when re-clicked, and clears any
-  // active character token so only one ring is open at once.
-  const handleSelectImage = useCallback((imageId) => {
-    setSelectedImageId(prev => (prev === imageId ? null : imageId));
-    setActiveTokenId(null);
-  }, []);
-
   const isTokenSelected = useCallback(
     (kind, id) => selectedTokens.some(t => t.kind === kind && t.id === id),
     [selectedTokens]
@@ -369,22 +300,19 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     });
   }, []);
 
-  // Click / Shift-click on a token. additive toggles membership; plain click replaces with just it.
+  // Click / Shift-click on a token — the only way a token enters or leaves the selection.
+  // nextSelection owns the rule; this only adds the ownership gate. MapCharacterToken's own
+  // canDrag/onToggleSelect gate screens this too — defense in depth, matching the existing
+  // double-guard pattern.
   const toggleTokenSelected = useCallback((kind, id, additive) => {
-    setSelectedTokens(prev => {
-      const key = `${kind}:${id}`;
-      const has = prev.some(t => `${t.kind}:${t.id}` === key);
-      if (additive) return has ? prev.filter(t => `${t.kind}:${t.id}` !== key) : [...prev, { kind, id }];
-      return [{ kind, id }];
-    });
-  }, []);
+    if (kind === 'char' && gameId && token && !isGM && !isOwnCharacter(id)) return;
+    setSelectedTokens(prev => nextSelection(prev, { kind, id }, additive));
+  }, [gameId, token, isGM, isOwnCharacter]);
 
-  // Clear any expanded ring — fired when clicking anywhere on the map outside a token
-  // (background image, empty grid). Own-token clicks stopPropagation in FightArea, so
-  // activating a token doesn't immediately clear it.
-  const clearActiveToken = useCallback(() => {
-    setActiveTokenId(null);
-    setSelectedImageId(null);
+  // Clear the selection — fired when clicking anywhere on the map outside a token (background
+  // image, empty grid).
+  const clearSelection = useCallback(() => {
+    setSelectedTokens([]);
   }, []);
 
   // Multiplayer: Add character to grid (scene-aware)
@@ -1114,7 +1042,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} onEditingLayerChange={onEditingLayerChange} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} fogGmOpacity={fogGmOpacity} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearActiveToken} selectedImageId={selectedImageId} onSelectImage={handleSelectImage} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} activeTokenId={activeTokenId} onSelectCharacter={handleSelectToken} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} onCommitRotate={handleRotateCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} onEditingLayerChange={onEditingLayerChange} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} brushSize={brushSize} fogGmOpacity={fogGmOpacity} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} drawingFontSize={drawingFontSize} onDrawingPathComplete={onDrawingPathComplete} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearSelection} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} onCommitRotate={handleRotateCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
         </div>
       </div>
 

@@ -1081,7 +1081,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
             participants={gameState?.participants || []}
             editingLayer={editingLayer}
             onEditingLayerChange={setEditingLayer}
-            imageEditLayer={imageEditLayer}
+            // Players have no layer bar, and Select needs the tokens layer armed to touch a
+            // character token at all — so their armed layer is fixed.
+            imageEditLayer={isGM ? imageEditLayer : 'tokens'}
             onImageEditLayerChange={setImageEditLayer}
             fogCoverMode={fogCoverMode}
             onFogCoverModeChange={setFogCoverMode}

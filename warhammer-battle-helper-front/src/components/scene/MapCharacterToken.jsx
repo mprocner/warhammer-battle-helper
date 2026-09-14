@@ -4,7 +4,7 @@ import TokenOverlay from '../token-display/TokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
 import TokenRotateHandle from './TokenRotateHandle';
 import { useTokenRotate } from './useTokenRotate';
-import { canManipulateToken } from '../../utils/tokenManipulation';
+import { canManipulateToken, isLoneSelection } from '../../utils/tokenManipulation';
 import { useZoom } from './ZoomContext';
 import { CELL_SIZE } from '../../constants/scene';
 
@@ -13,15 +13,17 @@ import { CELL_SIZE } from '../../constants/scene';
 // matching the existing grid data flow; resize grows in whole cells.
 function MapCharacterToken({
   character, col, row, w, h, rotation = 0,
-  isGM = false, isMultiplayer = false, canDrag = true, selected = false,
+  isGM = false, isMultiplayer = false, canDrag = true,
   tokenPlacementMode = 'snap', tokenDisplay = null, gameId = null, token = null,
   sceneId = null, hidden = false, placementId = null, tokenGear = null, tokenView = null,
-  gameSystem = null, editingLayer = null, imageEditLayer = 'background', activeTool = null,
-  onSelect, onCommitMove, onCommitResize, onCommitRotate,
+  gameSystem = null, editingLayer = 'select', imageEditLayer = 'tokens',
+  onCommitMove, onCommitResize, onCommitRotate,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
+  // See SceneImage: the lone selected token is the one with an expanded ring and chrome.
+  const selected = isLoneSelection(multiSelected, multiSelectActive);
   const [pos, setPos] = useState({ col, row });
   const [size, setSize] = useState({ w, h });
   const [isDragging, setIsDragging] = useState(false);
@@ -82,27 +84,28 @@ function MapCharacterToken({
     // Presses on the states/HP overlay must not start a drag. (Resize/rotate handles already stop
     // propagation on their own mousedown, so a press on them never reaches here.)
     if (e.target.closest('.token-overlay')) return;
-    // Measure mode: the ruler owns the press (it magnetizes to this token's center in the
-    // viewport's capture handler). The token must stay put — never drag/select while measuring.
-    if (editingLayer === 'measure') return;
-    if (editingLayer === 'select') {
-      // Record the press point so the native click that follows can tell a drag (single OR group)
-      // from a real click — a drag must not toggle this selection.
-      groupPressRef.current = { x: e.clientX, y: e.clientY };
-      if (e.button !== 0) return; // right/middle → context menu, never a drag
-      // Characters are draggable only when the tokens layer is armed (their own layer). On another
-      // armed layer they're backdrop, so the press falls through to the viewport marquee.
-      if (imageEditLayer !== 'tokens') return;
-      // Part of the multi-selection → group drag (moves the whole selection together).
-      if (multiSelected && onGroupDragStart) {
-        e.preventDefault();
-        e.stopPropagation();
-        onGroupDragStart(e);
-        return;
-      }
-      // Otherwise fall through to the normal single-character drag below (like an armed image), so
-      // a lone token can be repositioned without leaving Select mode.
+    // Only the Select tool manipulates tokens. measure lays out a ruler, fog and drawing own the
+    // pointer through their own canvases.
+    if (editingLayer !== 'select') return;
+    // Record the press point so the native click that follows can tell a drag (single OR group)
+    // from a real click — a drag must not toggle this selection.
+    groupPressRef.current = { x: e.clientX, y: e.clientY };
+    // Characters are draggable only when the tokens layer is armed (their own layer). On another
+    // armed layer they're backdrop, so the press falls through to the viewport marquee.
+    if (imageEditLayer !== 'tokens') return;
+    // Part of a real multi-selection (2+) → group drag, moving the whole selection together.
+    // Excluded on two counts: a LONE selected token must take the single-character drag below, and
+    // this path is GM-only because it commits through the batchMoveTokens endpoint, which the
+    // server rejects for non-GMs outright — a player reaching it would get a 403 AFTER the local
+    // position had already been optimistically updated.
+    if (isGM && multiSelectActive && multiSelected && onGroupDragStart) {
+      e.preventDefault();
+      e.stopPropagation();
+      onGroupDragStart(e);
+      return;
     }
+    // Otherwise fall through to the normal single-character drag below (like an armed image), so
+    // a lone token can be repositioned without leaving Select mode.
     // Selection is allowed for everyone able to select; dragging is ownership-gated.
     e.stopPropagation();
     if (!canDrag) return;
@@ -122,7 +125,7 @@ function MapCharacterToken({
       ? { col: Math.round(pos.col) + size.w / 2, row: Math.round(pos.row) + size.h / 2 }
       : { col: pos.col + size.w / 2, row: pos.row + size.h / 2 },
       [{ kind: 'char', id: character.id }]);
-  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, imageEditLayer, onTokenDragMeasureStart, multiSelected, onGroupDragStart, character.id]);
+  }, [canDrag, pos, size, zoom, gridWidth, gridHeight, snap, editingLayer, imageEditLayer, onTokenDragMeasureStart, isGM, multiSelected, multiSelectActive, onGroupDragStart, character.id]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -158,19 +161,16 @@ function MapCharacterToken({
   }, [isDragging, pos, size, gridWidth, gridHeight, character.id, onCommitMove, onTokenDragMeasureMove, onTokenDragMeasureEnd, snap]);
 
   // --- Resize (GM/owner only) ---
-  // Handles only in the token-manipulation context (default/pan), matching how SceneImage shows
-  // handles only when its layer is armed — so they don't clutter fog/drawing/measure modes.
-  // One shared predicate decides both handle kinds, so the pan and select tools can never drift
-  // apart again (see utils/tokenManipulation.js).
+  // Handles only when the Select tool is armed on the tokens layer for the lone selected token —
+  // matching how SceneImage shows handles only when its layer is armed — so they don't clutter
+  // fog/drawing/measure modes. One shared predicate decides both handle kinds (see
+  // utils/tokenManipulation.js).
   const showHandles = canManipulateToken({
     allowed: isGM || canDrag,
     locked: false, // character placements have no lock concept
     editingLayer,
-    activeTool,
     imageEditLayer,
-    activeSelected: selected,
-    groupSelected: multiSelected,
-    multiSelectActive,
+    selected,
   });
   const handleResizeStart = useCallback((e, handle) => {
     if (e.button !== 0) return;
@@ -220,27 +220,23 @@ function MapCharacterToken({
 
   const handleClick = (e) => {
     if (movedRef.current) return; // drag, not a click
-    // The rotate handle stops propagation on mousedown, so neither branch below ever set up its own
-    // "this was a drag" state — the native click that follows a rotation must not fall through to
-    // select/deselect logic.
+    // The rotate handle stops propagation on mousedown, so the native click that follows a
+    // rotation must not fall through to select/deselect logic.
     if (consumeJustFinished()) return;
-    if (editingLayer === 'select') {
-      if (!isGM || !onToggleSelect) return;
-      // Characters are only selectable when the tokens layer is armed (matching the marquee scope);
-      // otherwise they're backdrop and the press falls through to the marquee.
-      if (imageEditLayer !== 'tokens') return;
-      e.stopPropagation();
-      // A group drag ends with a native click too; if the pointer moved, this was a drag — skip the
-      // toggle (else a multi-token drag would collapse the selection down to just this token).
-      const press = groupPressRef.current;
-      groupPressRef.current = null;
-      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 3) return;
-      onToggleSelect('char', character.id, e.shiftKey);
-      return;
-    }
-    if (editingLayer === 'measure') return; // measuring — a press must not open the character
+    if (editingLayer !== 'select') return;
+    // Ownership, not role: a player selects their own token, the GM selects any. DndContext
+    // re-checks this (defense in depth, matching the existing double-guard pattern).
+    if (!canDrag || !onToggleSelect) return;
+    // Characters are only selectable when the tokens layer is armed (matching the marquee scope);
+    // otherwise they're backdrop and the press falls through to the marquee.
+    if (imageEditLayer !== 'tokens') return;
     e.stopPropagation();
-    onSelect?.(character);
+    // A group drag ends with a native click too; if the pointer moved, this was a drag — skip the
+    // toggle (else a multi-token drag would collapse the selection down to just this token).
+    const press = groupPressRef.current;
+    groupPressRef.current = null;
+    if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 3) return;
+    onToggleSelect('char', character.id, e.shiftKey);
   };
 
   const displayName = character.basicInfo?.name || character.name;
@@ -251,10 +247,10 @@ function MapCharacterToken({
   // Group drag: while this token is part of an in-progress group drag, offset its render by the
   // controller's single shared delta (in cells) — pos.col/row stay untouched, the controller
   // commits the real move on mouseup (see useGroupDrag).
-  // Grab cursor only when the token is actually draggable in the current context: never while
-  // measuring, and in Select mode only when its own (tokens) layer is armed — on another layer a
+  // Grab cursor only when the token is actually draggable in the current context: only the Select
+  // tool manipulates tokens, and only when its own (tokens) layer is armed — on another layer a
   // character is backdrop for the marquee, so a move cursor would be misleading.
-  const dragEnabledNow = canDrag && editingLayer !== 'measure' && (editingLayer !== 'select' || imageEditLayer === 'tokens');
+  const dragEnabledNow = canDrag && editingLayer === 'select' && imageEditLayer === 'tokens';
   const groupDCol = (multiSelected && groupDragDelta) ? groupDragDelta.dCol : 0;
   const groupDRow = (multiSelected && groupDragDelta) ? groupDragDelta.dRow : 0;
   const px = { left: (pos.col + groupDCol) * CELL_SIZE, top: (pos.row + groupDRow) * CELL_SIZE, width: size.w * CELL_SIZE, height: size.h * CELL_SIZE };

@@ -7,13 +7,12 @@ import MapCharacterToken from './MapCharacterToken';
 // Replaces the old tokens SceneLayer + the separate character grid layer.
 const MapTokensLayer = ({
   characters = [], images = [],
-  isGM, gameId, sceneId, gameSystem, editingLayer, imageEditLayer, activeTool,
+  isGM, gameId, sceneId, gameSystem, editingLayer, imageEditLayer,
   tokenPlacementMode = 'snap',
-  selectedImageId, onSelectImage,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   // character-specific
   isMultiplayer = false, tokenDisplay, token,
-  activeTokenId, onSelectCharacter, onCommitMove, onCommitResize, onCommitRotate,
+  onCommitMove, onCommitResize, onCommitRotate,
   isTokenSelected, onToggleTokenSelected, multiSelectActive,
   groupDragDelta, onGroupDragStart,
 }) => {
@@ -34,10 +33,7 @@ const MapTokensLayer = ({
           editingLayer={editingLayer}
           imageEditLayer={imageEditLayer}
           gameSystem={gameSystem}
-          selected={selectedImageId === item.data.id}
-          onSelectImage={onSelectImage}
           tokenPlacementMode={tokenPlacementMode}
-          activeTool={activeTool}
           onTokenDragMeasureStart={onTokenDragMeasureStart}
           onTokenDragMeasureMove={onTokenDragMeasureMove}
           onTokenDragMeasureEnd={onTokenDragMeasureEnd}
@@ -58,7 +54,6 @@ const MapTokensLayer = ({
           isGM={isGM}
           isMultiplayer={isMultiplayer}
           canDrag={item.data.canDrag}
-          selected={activeTokenId === item.data.character.id}
           tokenPlacementMode={tokenPlacementMode}
           sceneId={sceneId}
           hidden={item.data.hidden}
@@ -68,11 +63,9 @@ const MapTokensLayer = ({
           gameSystem={gameSystem}
           editingLayer={editingLayer}
           imageEditLayer={imageEditLayer}
-          activeTool={activeTool}
           tokenDisplay={tokenDisplay}
           gameId={gameId}
           token={token}
-          onSelect={onSelectCharacter}
           onCommitMove={onCommitMove}
           onCommitResize={onCommitResize}
           rotation={item.data.rotation}

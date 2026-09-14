@@ -342,7 +342,7 @@ const DrawingLayer = ({
   );
 
   const handleContextMenu = useCallback((e) => {
-    if (!isDrawingMode || activeTool === 'pan') return;
+    if (!isDrawingMode) return;
     e.preventDefault();
 
     // Right-click mid-stroke abandons the shape. Zeroing currentPathRef matters as much
@@ -465,7 +465,7 @@ const DrawingLayer = ({
     }
   }, [handleMouseUp]);
 
-  const isInteractive = isDrawingMode && activeTool !== 'pan';
+  const isInteractive = isDrawingMode;
   const cursor = !isInteractive
     ? 'default'
     : activeTool === 'text'

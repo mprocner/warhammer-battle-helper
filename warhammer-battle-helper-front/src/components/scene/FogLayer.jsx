@@ -66,9 +66,8 @@ const FogLayer = ({
 
   const fogEnabled = scene?.fogEnabled || false;
   // The GM always sees fog that the scene has enabled; fog mode only adds visibility for
-  // fog that is disabled. The `pan` tool suspends painting, not visibility.
+  // fog that is disabled.
   const inFogMode = isGM && editingLayer === 'fog';
-  const isEditingFog = inFogMode && fogTool !== 'pan';
 
   // Render the full fog canvas (saved paths + optional in-progress path)
   const render = useCallback((extraPath = null) => {
@@ -141,7 +140,7 @@ const FogLayer = ({
     ctx.globalCompositeOperation = 'source-over';
 
     // --- 3. Draw brush cursor circle (freehand only, when GM is editing) ---
-    if (isEditingFog && fogTool === 'freehand' && cursorPosRef.current) {
+    if (inFogMode && fogTool === 'freehand' && cursorPosRef.current) {
       const [cx, cy] = cursorPosRef.current;
       const radius = brushSize / 2;
       // Dark outer ring
@@ -159,7 +158,7 @@ const FogLayer = ({
     }
 
     // --- Overlay wielokąta: linie pomocnicze i snap indicator ---
-    if (isEditingFog && fogTool === 'polygon' && polygonActiveRef.current) {
+    if (inFogMode && fogTool === 'polygon' && polygonActiveRef.current) {
       const pts = polygonPointsRef.current;
       const cursor = polygonCursorRef.current;
       if (pts.length >= 1 && cursor) {
@@ -210,7 +209,7 @@ const FogLayer = ({
         });
       }
     }
-  }, [isEditingFog, scene, fogTool, brushSize]);
+  }, [inFogMode, scene, fogTool, brushSize]);
 
   // Re-render whenever saved paths or editing mode change
   useEffect(() => {
@@ -238,7 +237,7 @@ const FogLayer = ({
 
   // Escape key — cancel active polygon
   useEffect(() => {
-    if (!isEditingFog || fogTool !== 'polygon') return;
+    if (!inFogMode || fogTool !== 'polygon') return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && polygonActiveRef.current) {
         finishPolygon(false);
@@ -246,7 +245,7 @@ const FogLayer = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditingFog, fogTool, finishPolygon]);
+  }, [inFogMode, fogTool, finishPolygon]);
 
   // Reset lokalny, nie finishPolygon: ten efekt ma odpalać się wyłącznie przy zmianie
   // narzędzia, a finishPolygon zależy od brushSize i fogCoverMode — wciągnięcie go do
@@ -272,7 +271,7 @@ const FogLayer = ({
 
   // Mouse event handlers — only active when GM is editing fog layer
   const handleMouseDown = useCallback((e) => {
-    if (!isEditingFog) return;
+    if (!inFogMode) return;
     // Rysuje wyłącznie goły lewy przycisk. Ctrl+lewy jest odrzucany, bo na macOS to
     // systemowa emulacja prawego przycisku: przeglądarka wysyła wtedy OBA zdarzenia —
     // `contextmenu` i to `mousedown` z button 0 — w kolejności, której spec nie ustala.
@@ -320,10 +319,10 @@ const FogLayer = ({
     } else {
       currentPathRef.current = [[x, y]];
     }
-  }, [isEditingFog, fogTool, fogCoverMode, getSceneCoords, render, finishPolygon]);
+  }, [inFogMode, fogTool, fogCoverMode, getSceneCoords, render, finishPolygon]);
 
   const handleMouseMove = useCallback((e) => {
-    if (!isEditingFog) return;
+    if (!inFogMode) return;
     e.preventDefault();
 
     const [x, y] = getSceneCoords(e);
@@ -355,7 +354,7 @@ const FogLayer = ({
       // Not drawing — redraw to update cursor circle position
       render(null);
     }
-  }, [isEditingFog, fogTool, fogCoverMode, getSceneCoords, render, brushSize]);
+  }, [inFogMode, fogTool, fogCoverMode, getSceneCoords, render, brushSize]);
 
   const handleMouseUp = useCallback((e) => {
     // Lustro guardu z handleMouseDown. Bez `e.button !== 0` zwolnienie prawego przycisku
@@ -363,7 +362,7 @@ const FogLayer = ({
     // przeglądarkach, gdzie `mouseup` wyprzedza `contextmenu` (kolejność jest niezdefiniowana).
     // Bezpieczne dla relaya handleMouseLeave → handleMouseUp: wg specyfikacji `button` ma
     // znaczenie tylko przy wciśnięciu/zwolnieniu, a poza nimi wynosi 0.
-    if (!isDrawingRef.current || !isEditingFog || e.button !== 0) return;
+    if (!isDrawingRef.current || !inFogMode || e.button !== 0) return;
     e.preventDefault();
 
     isDrawingRef.current = false;
@@ -377,7 +376,7 @@ const FogLayer = ({
       else if (fogTool === 'circle') shape = 'circle';
       onPathComplete({ points: pts, brushSize, shape, cover: fogCoverMode });
     }
-  }, [isEditingFog, fogTool, fogCoverMode, onPathComplete, brushSize]);
+  }, [inFogMode, fogTool, fogCoverMode, onPathComplete, brushSize]);
 
   /**
    * Prawy przycisk = „skończ to, co robisz".
@@ -385,8 +384,8 @@ const FogLayer = ({
    * ciągnięty w tej chwili. Ten sam gest co w warstwie rysowania (DrawingLayer).
    */
   const handleContextMenu = useCallback((e) => {
-    // Narzędzie `pan` i tryb bez edycji mgły przepuszczają natywne menu przeglądarki.
-    if (!isEditingFog) return;
+    // Outside fog mode the native browser context menu passes through untouched.
+    if (!inFogMode) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -404,7 +403,7 @@ const FogLayer = ({
       rectStartRef.current = null;
       render(null);
     }
-  }, [isEditingFog, fogTool, finishPolygon, render]);
+  }, [inFogMode, fogTool, finishPolygon, render]);
 
   const handleMouseLeave = useCallback((e) => {
     polygonCursorRef.current = null;
@@ -433,8 +432,8 @@ const FogLayer = ({
         height: '100%',
         zIndex: 30,
         opacity: cssOpacity,
-        pointerEvents: isEditingFog ? 'auto' : 'none',
-        cursor: isEditingFog ? (fogTool === 'freehand' ? 'none' : 'crosshair') : 'default',
+        pointerEvents: inFogMode ? 'auto' : 'none',
+        cursor: inFogMode ? (fogTool === 'freehand' ? 'none' : 'crosshair') : 'default',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

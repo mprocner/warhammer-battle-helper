@@ -1,5 +1,4 @@
-import PanToolIcon from '@mui/icons-material/PanTool';
-import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
+import NearMeIcon from '@mui/icons-material/NearMe';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import CloudIcon from '@mui/icons-material/Cloud';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,12 +7,15 @@ import EditIcon from '@mui/icons-material/Edit';
 // buttons and the middle-click cycle read this list, so adding a mode here is
 // the only change a new mode needs — the button appears and the cycle picks it
 // up with no other edits.
+//
+// There is no "no tool" mode: `editingLayer` is always one of these values. Select is the default
+// and the only manipulation tool — it replaced the old Pan mode, whose job (dragging the map with
+// the left button) moved to the right-button drag in useRightDragPan.
 export const SCENE_MODES = [
-  { value: null,      Icon: PanToolIcon,      labelKey: 'scenes.panLayer'                   },
-  { value: 'select',  Icon: HighlightAltIcon, labelKey: 'scenes.selectLayer',  gmOnly: true },
-  { value: 'measure', Icon: StraightenIcon,   labelKey: 'scenes.measureLayer'               },
-  { value: 'fog',     Icon: CloudIcon,        labelKey: 'scenes.fogLayer',     gmOnly: true },
-  { value: 'drawing', Icon: EditIcon,         labelKey: 'scenes.drawingLayer'               },
+  { value: 'select',  Icon: NearMeIcon,      labelKey: 'scenes.selectLayer'               },
+  { value: 'measure', Icon: StraightenIcon,  labelKey: 'scenes.measureLayer'              },
+  { value: 'fog',     Icon: CloudIcon,       labelKey: 'scenes.fogLayer',    gmOnly: true },
+  { value: 'drawing', Icon: EditIcon,        labelKey: 'scenes.drawingLayer'              },
 ];
 
 export const modesForRole = (isGM) => SCENE_MODES.filter(m => isGM || !m.gmOnly);
@@ -30,7 +32,7 @@ export const cycleNext = (list, current) => {
 export const nextMode = (current, isGM) => cycleNext(modesForRole(isGM), current);
 
 export const modeLabelKey = (value) =>
-  SCENE_MODES.find(m => m.value === value)?.labelKey || 'scenes.panLayer';
+  SCENE_MODES.find(m => m.value === value)?.labelKey || 'scenes.selectLayer';
 
 // Guard for the middle-click shortcut. `buttons` is a bitmask of every button
 // currently held: left 1, right 2, middle 4, back 8, forward 16. Masking with 3

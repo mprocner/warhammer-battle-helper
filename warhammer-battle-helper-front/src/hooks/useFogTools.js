@@ -6,9 +6,13 @@ import { useState } from 'react';
  * editing via the Select/Move tool. Persists across mode/scene switches.
  */
 export function useFogTools() {
-  const [editingLayer, setEditingLayer] = useState(null);
+  // editingLayer is never null — Select is the default tool (see sceneModes.js).
+  const [editingLayer, setEditingLayer] = useState('select');
   const [fogCoverMode, setFogCoverMode] = useState(false);
-  const [imageEditLayer, setImageEditLayer] = useState('background');
+  // Tokens is the armed layer at start: Select needs it armed to manipulate character tokens at
+  // all, so any other default would leave the GM unable to move a token until they touched the
+  // layer bar.
+  const [imageEditLayer, setImageEditLayer] = useState('tokens');
 
   return {
     editingLayer,

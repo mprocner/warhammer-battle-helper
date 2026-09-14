@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import PanToolIcon from '@mui/icons-material/PanTool';
 import BrushIcon from '@mui/icons-material/Brush';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import CropSquareIcon from '@mui/icons-material/CropSquare';
@@ -10,7 +9,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PolylineIcon from '@mui/icons-material/Polyline';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
-import NearMeIcon from '@mui/icons-material/NearMe';
+import AdsClickIcon from '@mui/icons-material/AdsClick';
 import BlurCircularIcon from '@mui/icons-material/BlurCircular';
 import UndoIcon from '@mui/icons-material/Undo';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -27,9 +26,6 @@ const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#
 // fogCompat: true → narzędzie widoczne w trybie mgły; false → ukryte w fog mode
 // fogOnly: true → narzędzie widoczne TYLKO w trybie mgły (ukryte w trybie rysowania)
 const TOOLS = [
-  // Pan/move: the fog & drawing layers become click-through, so tokens can be moved (and the map
-  // panned) without leaving fog/drawing mode. Handy for revealing a dungeon while moving NPCs.
-  { value: 'pan',      Icon: PanToolIcon,             labelKey: 'scenes.drawingTool_pan',      fogCompat: true  },
   { value: 'freehand', Icon: BrushIcon,               labelKey: 'scenes.drawingTool_freehand', fogCompat: true  },
   { value: 'line',     Icon: HorizontalRuleIcon,       labelKey: 'scenes.drawingTool_line',     fogCompat: true  },
   { value: 'rect',     Icon: CropSquareIcon,           labelKey: 'scenes.drawingTool_rect',     fogCompat: true  },
@@ -37,7 +33,7 @@ const TOOLS = [
   { value: 'polygon',  Icon: PolylineIcon,             labelKey: 'scenes.drawingTool_polygon',  fogCompat: true,  fogOnly: true },
   { value: 'arrow',    Icon: ArrowForwardIcon,         labelKey: 'scenes.drawingTool_arrow',    fogCompat: false },
   { value: 'text',     Icon: TextFieldsIcon,           labelKey: 'scenes.drawingTool_text',     fogCompat: false },
-  { value: 'select',   Icon: NearMeIcon,               labelKey: 'scenes.drawingTool_select',   fogCompat: false },
+  { value: 'select',   Icon: AdsClickIcon,             labelKey: 'scenes.drawingTool_select',   fogCompat: false },
 ];
 
 const DrawingToolbar = ({
@@ -83,9 +79,9 @@ const DrawingToolbar = ({
       <div className="drawing-toolbar__tabs">
         {modesForRole(isGM).map(({ value, Icon, labelKey }) => (
           <button
-            key={value ?? 'pan'}
+            key={value}
             className={`drawing-toolbar__tab ${editingLayer === value ? 'drawing-toolbar__tab--active' : ''}`}
-            onClick={() => onEditingLayerChange(editingLayer === value ? null : value)}
+            onClick={() => onEditingLayerChange(editingLayer === value ? 'select' : value)}
             aria-pressed={editingLayer === value}
           >
             <Icon style={{ fontSize: 22 }} />

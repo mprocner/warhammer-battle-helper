@@ -11,19 +11,21 @@ import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
 import TokenRotateHandle from './TokenRotateHandle';
 import { useTokenRotate } from './useTokenRotate';
-import { canManipulateToken } from '../../utils/tokenManipulation';
+import { canManipulateToken, isLoneSelection } from '../../utils/tokenManipulation';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, selected = false, onSelectImage, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, activeTool = null, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart }) => {
   const { t } = useTranslation();
+  // The one-element selection is what used to be "the active image": its ring expands and it
+  // shows manipulation chrome. Derived, never a separate prop — that split is what BUG-195 fixed.
+  const selected = isLoneSelection(multiSelected, multiSelectActive);
   // Select/Move mode: only the armed image layer is manipulable — its images drag, resize and
   // rotate (bg/GM show handles); images on other layers are dimmed + inert and act as a marquee
-  // backdrop. Token-layer images are also draggable in Pan mode (editingLayer null / pan tool),
-  // like character tokens — the interactive pieces you move around the map.
+  // backdrop.
   const isLayerArmed = editingLayer === 'select' && image.layer === imageEditLayer;
   const isLayerInert = editingLayer === 'select' && image.layer !== imageEditLayer;
-  const canDragImage = isGM && !image.locked && (isLayerArmed || (image.layer === 'tokens' && (editingLayer === null || activeTool === 'pan')));
+  const canDragImage = isGM && !image.locked && isLayerArmed;
   const { zoom, gridWidth, gridHeight } = useZoom();
   const [pos, setPos] = useState({ x: image.x, y: image.y });
   const [size, setSize] = useState({ width: image.width, height: image.height });
@@ -115,7 +117,11 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
       // Locked → not draggable; the viewport starts a marquee over it. Right/middle press → let the
       // context menu handle it (a stray drag would re-render on every move and swallow menu clicks).
       if (image.locked || e.button !== 0) return;
-      // Part of the multi-selection → group drag (moves the whole selection together).
+      // Part of the multi-selection → group drag (moves the whole selection together). Unlike
+      // MapCharacterToken, this doesn't require multiSelectActive: images are GM-only to drag
+      // (canDragImage below), and the group-drag commit (batchMoveTokens) is also GM-only, so a
+      // lone selected image taking this path never hits the ownership mismatch BUG-195 found for
+      // player-owned character tokens.
       if (multiSelected && onGroupDragStart) {
         e.preventDefault();
         e.stopPropagation();
@@ -306,37 +312,27 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
   const isToken = image.layer === 'tokens';
 
   // --- Click-to-select (GM only) ---
-  // GM click selects any image so it can be deleted via keyboard. For a tokens-layer image
-  // selecting also expands its ring (a GM editing affordance); players can't select, so their
-  // visible slots/HP stay in the rest ("sun") position on the token.
-  // Gated to non-drawing context (default or pan) — same condition as token drag/ring — so tool
-  // clicks aren't hijacked. A real drag ends with a native click too, so ignore the click right
-  // after a drag (movedRef / isDragging).
+  // In Select mode, a GM click selects an unlocked image on the armed layer so it can be deleted
+  // via keyboard. For a tokens-layer image selecting also expands its ring (a GM editing
+  // affordance); players can't select, so their visible slots/HP stay in the rest ("sun")
+  // position on the token.
   const handleClick = useCallback((e) => {
-    // The rotate handle stops propagation on mousedown, so neither branch below ever set up its own
-    // "this was a drag" state (movedRef/groupPressRef) — the native click that follows a rotation
-    // must not fall through to select/deselect logic.
+    // The rotate handle stops propagation on mousedown, so the native click that follows a
+    // rotation must not fall through to select/deselect logic.
     if (consumeJustFinished()) return;
-    if (editingLayer === 'select') {
-      if (!isGM || !onToggleSelect || image.locked) return;
-      // Only the armed layer is selectable — a backdrop image on another layer (e.g. the background
-      // map while editing tokens) is not a candidate, so let the press pass through to the marquee.
-      if (image.layer !== imageEditLayer) return;
-      e.stopPropagation();
-      // A group drag ends with a native click too; if the pointer moved, this was a drag — skip the
-      // toggle (else a multi-token drag would collapse the selection down to just this token).
-      const press = groupPressRef.current;
-      groupPressRef.current = null;
-      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 3) return;
-      onToggleSelect('image', image.id, e.shiftKey);
-      return;
-    }
-    if (!isGM || !onSelectImage) return;
-    if (!(editingLayer === null || activeTool === 'pan')) return;
-    if (movedRef.current || isDragging) return;
+    if (editingLayer !== 'select') return;
+    if (!isGM || !onToggleSelect || image.locked) return;
+    // Only the armed layer is selectable — a backdrop image on another layer (e.g. the background
+    // map while editing tokens) is not a candidate, so let the press pass through to the marquee.
+    if (image.layer !== imageEditLayer) return;
     e.stopPropagation();
-    onSelectImage(image.id);
-  }, [isGM, onSelectImage, editingLayer, activeTool, isDragging, image.id, onToggleSelect, image.locked, image.layer, imageEditLayer, consumeJustFinished]);
+    // A group drag ends with a native click too; if the pointer moved, this was a drag — skip the
+    // toggle (else a multi-token drag would collapse the selection down to just this token).
+    const press = groupPressRef.current;
+    groupPressRef.current = null;
+    if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) > 3) return;
+    onToggleSelect('image', image.id, e.shiftKey);
+  }, [isGM, editingLayer, onToggleSelect, image.locked, image.layer, image.id, imageEditLayer, consumeJustFinished]);
 
   const handleZIndexChange = async (newZIndex) => {
     try {
@@ -443,7 +439,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
         <div
           ref={containerRef}
           data-scene-layer={image.layer}
-          className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${selected ? 'scene-image--selected' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}`}
+          className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}`}
           style={{
             position: 'absolute',
             left: pos.x + groupDx,
@@ -452,7 +448,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
             height: size.height,
             zIndex: image.zIndex || 0,
             pointerEvents: 'auto',
-            cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : (isGM && (editingLayer === null || activeTool === 'pan') ? 'pointer' : 'default'),
+            cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : 'default',
             transform: `rotate(${rotation}deg)`,
           }}
           onMouseDown={handleMouseDown}
@@ -531,16 +527,13 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           )}
 
           {/* Token images: the SAME shared chrome as character tokens — resize handles plus a rotate
-              handle, shown for a lone token under either the pan or the select tool. */}
+              handle, shown for a lone selected token. */}
           {isToken && canManipulateToken({
             allowed: isGM,
             locked: image.locked,
             editingLayer,
-            activeTool,
             imageEditLayer,
-            activeSelected: selected,
-            groupSelected: multiSelected,
-            multiSelectActive,
+            selected,
           }) && (
             <>
               <TokenResizeHandles onResizeStart={handleResizeStart} />

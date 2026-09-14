@@ -10,16 +10,21 @@ import {
 describe('modesForRole', () => {
   it('gives the GM every mode in toolbar order', () => {
     expect(modesForRole(true).map(m => m.value))
-      .toEqual([null, 'select', 'measure', 'fog', 'drawing']);
+      .toEqual(['select', 'measure', 'fog', 'drawing']);
   });
 
-  it('hides GM-only modes from players', () => {
+  it('gives the player everything except the GM-only modes', () => {
+    // Select is no longer gmOnly — it is the only manipulation tool, so the player needs it.
     expect(modesForRole(false).map(m => m.value))
-      .toEqual([null, 'measure', 'drawing']);
+      .toEqual(['select', 'measure', 'drawing']);
   });
 
   it('derives the GM list from SCENE_MODES rather than a hardcoded copy', () => {
     expect(modesForRole(true)).toHaveLength(SCENE_MODES.length);
+  });
+
+  it('has no null mode — there is always a tool selected', () => {
+    expect(SCENE_MODES.map(m => m.value)).not.toContain(null);
   });
 });
 
@@ -43,28 +48,31 @@ describe('cycleNext', () => {
 
 describe('nextMode', () => {
   it('walks the full GM cycle and wraps', () => {
-    expect(nextMode(null, true)).toBe('select');
     expect(nextMode('select', true)).toBe('measure');
     expect(nextMode('measure', true)).toBe('fog');
     expect(nextMode('fog', true)).toBe('drawing');
-    expect(nextMode('drawing', true)).toBe(null);
+    expect(nextMode('drawing', true)).toBe('select');
   });
 
   it('walks the full player cycle and wraps', () => {
-    expect(nextMode(null, false)).toBe('measure');
+    expect(nextMode('select', false)).toBe('measure');
     expect(nextMode('measure', false)).toBe('drawing');
-    expect(nextMode('drawing', false)).toBe(null);
+    expect(nextMode('drawing', false)).toBe('select');
   });
 
   it('resets a player stranded in a GM-only mode', () => {
-    expect(nextMode('fog', false)).toBe(null);
+    expect(nextMode('fog', false)).toBe('select');
   });
 });
 
 describe('modeLabelKey', () => {
   it('maps a mode value to its i18n key', () => {
-    expect(modeLabelKey(null)).toBe('scenes.panLayer');
+    expect(modeLabelKey('select')).toBe('scenes.selectLayer');
     expect(modeLabelKey('fog')).toBe('scenes.fogLayer');
+  });
+
+  it('falls back to the default mode for an unknown value', () => {
+    expect(modeLabelKey('nope')).toBe('scenes.selectLayer');
   });
 });
 

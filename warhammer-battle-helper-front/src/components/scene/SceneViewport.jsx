@@ -37,26 +37,28 @@ const PING_HOLD_MS = 500;
 const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
-  scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'background', gridWidth, gridHeight, children,
+  scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'tokens', gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing,
   brushSize = 10, fogGmOpacity = 0.5, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
-  selectedImageId = null, onSelectImage, gameSystem = 'warhammer4e',
+  gameSystem = 'warhammer4e',
   tokenPlacementMode = 'snap',
   userId = null, userName = '', measurementMetric = 'euclidean', mapRulers = [],
   cellDistance = 1, distanceUnit = '',
   dragRuler = null, onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
   aoeEnabled = true,
   placedCharacters = [], isMultiplayer = false, tokenDisplay = null, token = null,
-  activeTokenId = null, onSelectCharacter, onCommitMove, onCommitResize, onCommitRotate,
+  onCommitMove, onCommitResize, onCommitRotate,
   selectedTokens = [], onMarqueeSelect, onCommitGroupMove, isTokenSelected, onToggleTokenSelected,
   onGroupDelete, onGroupSetLock, onGroupSetLayer, onGroupResetRotation,
 }) => {
   const { t } = useTranslation();
   const [zoom, setZoom] = useState(1);
-  // Group context menu (Select mode, right-click on the multi-selection). GM-only, gated below.
+  // Group context menu (Select mode, right-click on the multi-selection). GM-only — gated by
+  // `isGM` in the content div's onContextMenu below (the backend has no authorization on the
+  // actions it triggers, so this frontend check is the only defense).
   const [multiMenu, setMultiMenu] = useState(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -71,7 +73,6 @@ const SceneViewport = ({
   // isCovering = false → overlay opacity:0, with CSS transition (fade out)
   const [isCovering, setIsCovering] = useState(false);
 
-  const panStartRef = useRef(null);
   const viewportRef = useRef(null);
 
   const zoomRef = useRef(zoom);
@@ -282,11 +283,11 @@ const SceneViewport = ({
     return () => clearTimeout(timer);
   }, [isCovering]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pan on drag
+  // Refs mirroring props read from inside stable callbacks (handleViewportMouseDown's mode-cycle
+  // branch, handleFit) so those callbacks can stay referentially stable while still seeing current
+  // values.
   const editingLayerRef = useRef(editingLayer);
   useEffect(() => { editingLayerRef.current = editingLayer; }, [editingLayer]);
-  const activeToolRef = useRef(activeTool);
-  useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
   const isGMRef = useRef(isGM);
   useEffect(() => { isGMRef.current = isGM; }, [isGM]);
   const onEditingLayerChangeRef = useRef(onEditingLayerChange);
@@ -311,8 +312,7 @@ const SceneViewport = ({
   });
 
   const handleViewportMouseDown = useCallback((e) => {
-    // Middle click cycles scene modes. Must run before the control-scheme check
-    // below — the shortcut works in both 'modern' and 'classic'.
+    // Middle click cycles scene modes. Works in both 'modern' and 'classic'.
     if (isModeCycleClick(e, document.activeElement)) {
       e.preventDefault(); // kills the native autoscroll on Chrome/Firefox (Windows/Linux)
       const target = nextMode(editingLayerRef.current, isGMRef.current);
@@ -325,47 +325,6 @@ const SceneViewport = ({
       });
       return;
     }
-
-    // Left button — modern-scheme pan on the grid layer only (existing behaviour).
-    // Right-button pan lives in useRightDragPan (pointer events — Chrome on macOS never fires
-    // mouseup for the secondary button), so this handler only ever deals with the left button.
-    if (schemeRef.current !== 'modern') return;
-    // Pan when in the default layer, or when the pan tool is active inside fog/drawing mode.
-    if (e.button !== 0 || (editingLayerRef.current !== null && activeToolRef.current !== 'pan')) return;
-    if (e.target.closest('.character-wrapper')) return;
-    // Pressing a token (character or token-layer image) drags it, never the map.
-    if (e.target.closest('.scene-image--token')) return;
-    if (e.target.closest('.map-char-token')) return;
-    if (!e.target.closest('.scene-viewport__sizer')) return;
-    panStartRef.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      startX: panOffsetRef.current.x,
-      startY: panOffsetRef.current.y,
-    };
-    setIsPanning(true);
-  }, []);
-
-  useEffect(() => {
-    const handleMove = (e) => {
-      if (!panStartRef.current) return;
-      const dx = e.clientX - panStartRef.current.mouseX;
-      const dy = e.clientY - panStartRef.current.mouseY;
-      const newOffset = { x: panStartRef.current.startX + dx, y: panStartRef.current.startY + dy };
-      setPanOffset(newOffset);
-      panOffsetRef.current = newOffset;
-    };
-    const handleUp = () => {
-      if (!panStartRef.current) return;
-      panStartRef.current = null;
-      setIsPanning(false);
-    };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-    };
   }, []);
 
   // Pointer ping — hold detection
@@ -452,9 +411,11 @@ const SceneViewport = ({
 
   const handleContentMouseDown = useCallback((e) => {
     clickDownPosRef.current = { x: e.clientX, y: e.clientY };
-    // Select mode: left-drag on empty content draws a marquee. Pressing a token instead starts
-    // its own select/drag-move path (MapCharacterToken / SceneImage), so skip those targets.
-    if (editingLayer === 'select') {
+    // Select mode: left-drag on empty content draws a marquee. GM only — a marquee sweeps up
+    // whatever tokens it overlaps regardless of ownership. A player can still shift-click tokens
+    // into a selection, but group DRAGGING is GM-only because it commits through the GM-only
+    // batchMoveTokens endpoint (see MapCharacterToken's isGM gate).
+    if (editingLayer === 'select' && isGM) {
       if (e.button !== 0) return;
       // A press on an armed-layer, UNLOCKED token is a drag (single or group) — that token's own
       // handler owns it, so don't start a marquee there. Everything else starts a marquee: empty
@@ -475,7 +436,11 @@ const SceneViewport = ({
       marqueeStartRef.current = { col, row, additive: e.shiftKey };
       marqueeRectRef.current = null; // set only once the drag moves, so a no-move click reads null
       setMarquee({ x: col * CELL_SIZE, y: row * CELL_SIZE, width: 0, height: 0 });
-      return;
+      // Fall through to the ping setup below instead of returning: a marquee only materialises once
+      // the pointer MOVES (see the mousemove handler above), while the ping needs ~500ms of
+      // near-stillness (PING_MOVE_THRESHOLD, cleared on movement in handleContentMouseMove). In
+      // practice they don't fight over the same press — a ping needs stillness, a marquee needs
+      // movement — even though a slow press-then-drag can technically arm both timers.
     }
     // Measure mode: left-drag lays out a ruler. Pressing a token is fine — snapPoint magnetizes
     // the origin to its center, so you measure FROM a token without moving it (tokens ignore the
@@ -499,7 +464,7 @@ const SceneViewport = ({
       sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, displayedScene, zoom, editingLayer, imageEditLayer, rulerStart, clientToCell]);
+  }, [sendMessage, displayedScene, zoom, editingLayer, imageEditLayer, isGM, rulerStart, clientToCell]);
 
   // Tracks the marquee drag: updates the rect on mousemove, computes the intersection on mouseup.
   useEffect(() => {
@@ -555,8 +520,9 @@ const SceneViewport = ({
   useEffect(() => clearPingTimer, [clearPingTimer]);
 
   // Click on the map background (image, empty grid) outside any token → clear the active token.
-  // A token's own click stops propagation in FightArea, so it never reaches here. Skip drags
-  // (pan) by comparing against the mousedown position, same threshold as the pointer ping.
+  // A token's own click stops propagation in its own handler (MapCharacterToken / SceneImage), so
+  // it never reaches here. Skip drags (pan) by comparing against the mousedown position, same
+  // threshold as the pointer ping.
   const handleBackgroundClick = useCallback((e) => {
     if (!onBackgroundClick) return;
     const down = clickDownPosRef.current;
@@ -717,7 +683,7 @@ const SceneViewport = ({
           onMouseDownCapture={handleViewportMouseDown}
           onPointerDownCapture={rightDragPan.onPointerDownCapture}
           onContextMenuCapture={rightDragPan.onContextMenuCapture}
-          className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : (controlScheme === 'modern' && editingLayer === null) ? ' scene-viewport--grab' : ''}`}
+          className={`scene-viewport${controlScheme === 'classic' ? ' scene-viewport--classic' : ''}${isPanning ? ' scene-viewport--grabbing' : ''}`}
         >
           <div
             className="scene-viewport__sizer"
@@ -761,7 +727,11 @@ const SceneViewport = ({
                 onContextMenu={(e) => {
                   // Only a real multi-selection (2+) opens the group menu; a lone token's right-click
                   // falls through to its own single-image menu (SceneImage.handleContextMenu).
-                  if (editingLayer === 'select' && selectedTokens.length > 1) {
+                  // GM-only: the group menu's actions (e.g. remove from scene) have no backend
+                  // authorization check (RemoveCharacterFromScene takes no userID), so this frontend
+                  // gate is the only thing stopping a player from shift-clicking their own tokens and
+                  // reaching it. Select is no longer GM-only, so the mode check alone doesn't suffice.
+                  if (isGM && editingLayer === 'select' && selectedTokens.length > 1) {
                     e.preventDefault();
                     setMultiMenu({ x: e.clientX, y: e.clientY });
                   }
@@ -775,8 +745,6 @@ const SceneViewport = ({
                   sceneId={displayedScene?.id}
                   editingLayer={editingLayer}
                   imageEditLayer={imageEditLayer}
-                  selectedImageId={selectedImageId}
-                  onSelectImage={onSelectImage}
                   isTokenSelected={isTokenSelected}
                   onToggleTokenSelected={onToggleTokenSelected}
                   multiSelectActive={selectedTokens.length > 1}
@@ -807,18 +775,13 @@ const SceneViewport = ({
                   gameSystem={gameSystem}
                   editingLayer={editingLayer}
                   imageEditLayer={imageEditLayer}
-                  activeTool={activeTool}
                   tokenPlacementMode={tokenPlacementMode}
-                  selectedImageId={selectedImageId}
-                  onSelectImage={onSelectImage}
                   onTokenDragMeasureStart={onTokenDragMeasureStart}
                   onTokenDragMeasureMove={onTokenDragMeasureMove}
                   onTokenDragMeasureEnd={onTokenDragMeasureEnd}
                   isMultiplayer={isMultiplayer}
                   tokenDisplay={tokenDisplay}
                   token={token}
-                  activeTokenId={activeTokenId}
-                  onSelectCharacter={onSelectCharacter}
                   onCommitMove={onCommitMove}
                   onCommitResize={onCommitResize}
                   onCommitRotate={onCommitRotate}
@@ -838,8 +801,6 @@ const SceneViewport = ({
                     sceneId={displayedScene?.id}
                     editingLayer={editingLayer}
                     imageEditLayer={imageEditLayer}
-                    selectedImageId={selectedImageId}
-                    onSelectImage={onSelectImage}
                     isTokenSelected={isTokenSelected}
                     onToggleTokenSelected={onToggleTokenSelected}
                     multiSelectActive={selectedTokens.length > 1}
