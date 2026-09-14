@@ -136,7 +136,7 @@ flagi dotyczy innych widzów, a to decyzja MG.
 // most callers need it right after the check; discard it with `_` when you don't.
 //
 // `action` completes the sentence "only the game master can %s", so the client-facing message is
-// unchanged from the 39 hand-written copies this replaces.
+// unchanged from the 34 hand-written copies this replaces.
 func (s *GameService) requireGM(gameID string, userID primitive.ObjectID, action string) (*models.Game, error)
 
 // requireGMOrCharacterOwner allows the GM, or a player who holds the character — created it, or is
