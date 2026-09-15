@@ -24,6 +24,10 @@
   Poza zakresem.
 - Commity: konwencja repo, typ `fix:` albo `refactor:`, prefiks `BUG-202`, stopka
   `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
+- **Komentarze w kodzie ZAWSZE po angielsku** (CLAUDE.md, „Kluczowe konwencje"). Dotyczy też
+  plików testowych. Nazwy `it()` / `describe()` to nie komentarze — zostają tak, jak podane
+  w planie. Istniejących polskich komentarzy w `FogLayer.jsx` nie tłumaczymy hurtem; przepisujemy
+  tylko te linie, które i tak dotykamy.
 
 ## File Structure
 
@@ -149,10 +153,10 @@ import { render, fireEvent } from '@testing-library/react';
 import FogLayer from './FogLayer';
 
 /**
- * jsdom nie implementuje canvasu 2D — `getContext('2d')` zwraca null. Podstawiamy obiekt,
- * który udaje kontekst i przy każdej operacji malującej zapisuje migawkę stanu. Dzięki temu
- * da się sprawdzić NIE tylko co zostało narysowane, ale w jakim trybie kompozycji i jakim
- * kolorem — a to jest dokładnie treść BUG-202.
+ * jsdom has no 2D canvas — `getContext('2d')` returns null. We substitute an object that
+ * pretends to be a context and snapshots its state on every painting call. That lets a test
+ * check NOT just what was drawn, but in which composite mode and in which colour — which is
+ * exactly what BUG-202 is about.
  */
 const recordingContext = () => {
   const calls = [];
@@ -203,8 +207,8 @@ let recording;
 beforeEach(() => {
   recording = recordingContext();
   jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(recording.ctx);
-  // getBoundingClientRect zwraca w jsdom same zera — bez stuba getSceneCoords dzieli
-  // przez zero i wszystkie współrzędne wychodzą Infinity.
+  // getBoundingClientRect returns all zeros in jsdom — without a stub getSceneCoords divides
+  // by zero and every coordinate comes out Infinity.
   jest.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue({
     left: 0, top: 0, width: CANVAS_W, height: CANVAS_H,
     right: CANVAS_W, bottom: CANVAS_H, x: 0, y: 0, toJSON: () => {},
@@ -215,8 +219,16 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const fadeIndex = (calls) =>
-  calls.findIndex((c) => c.op === 'fillRect' && c.composite === 'destination-out');
+// The LAST fade, not the first. `calls` accumulates across every render() the component
+// runs — the mount effect, then each mouse move — so the first match is always the mount's
+// fade, and "everything after it" would then include a later render's own fade. Taking the
+// last one scopes the assertion to the most recent complete repaint.
+const fadeIndex = (calls) => {
+  for (let i = calls.length - 1; i >= 0; i--) {
+    if (calls[i].op === 'fillRect' && calls[i].composite === 'destination-out') return i;
+  }
+  return -1;
+};
 
 describe('BUG-202 — GM opacity is baked into the pixels, not applied to the whole canvas', () => {
   it('does not set CSS opacity on the canvas any more', () => {
@@ -265,8 +277,8 @@ przebiegu `destination-out` + `fillRect` dostają `fade` równe `undefined` / `f
 W `FogLayer.jsx`, zaraz pod linią 69 (`const inFogMode = ...`), dodaj:
 
 ```js
-  // Krycie podglądu GM jest teraz częścią ZAWARTOŚCI płótna, nie stylem — musi więc trafić
-  // do tablicy zależności `render`, inaczej ruch suwaka nie wywoła przerysowania.
+  // The GM's preview opacity is now part of the canvas CONTENT, not its style, so it has to
+  // join `render`'s dependency array — otherwise moving the slider repaints nothing.
   const shadeAlpha = fogShadeAlpha({ isGM, fogGmOpacity });
 ```
 
@@ -367,8 +379,8 @@ jednego predykatu.
 Dopisz na końcu `FogLayer.test.js`:
 
 ```js
-// Pierścień pędzla to jedyna informacja o brushSize, jaką dostaje użytkownik. Musi się
-// pojawić dokładnie przy tych narzędziach, których zasięg brushSize wyznacza.
+// The brush ring is the only signal of brushSize the user gets. It must appear for exactly
+// those tools whose reach brushSize decides.
 describe('usesBrushCursor', () => {
   it('pędzel i linia pokazują pierścień — obie rysują pociągnięciem o szerokości brushSize', () => {
     expect(usesBrushCursor('freehand')).toBe(true);
@@ -438,10 +450,10 @@ W `FogLayer.jsx`, pod eksportem `fogShadeAlpha` (po linii 42):
 
 ```js
 /**
- * Narzędzia, których zasięg wyznacza brushSize — tylko one pokazują pierścień pędzla
- * zamiast krzyżyka. Prostokąt i koło wypełniają obszar, więc brushSize ich nie dotyczy.
- * Ten sam warunek bramkuje trzy rzeczy naraz (rysowanie pierścienia, przerysowanie na
- * mousemove i ukrycie natywnego kursora), dlatego mieszka w jednym miejscu.
+ * Tools whose reach is set by brushSize — only those show the brush ring instead of a
+ * crosshair. Rectangle and circle fill an area, so brushSize does not apply to them.
+ * The same condition gates three things at once (drawing the ring, repainting on mouse
+ * move, hiding the native cursor), which is why it lives in one place.
  */
 export const usesBrushCursor = (fogTool) => fogTool === 'freehand' || fogTool === 'line';
 ```
@@ -523,9 +535,9 @@ do czystej funkcji, którą da się sprawdzić liczbami.
 Dopisz na końcu `FogLayer.test.js`:
 
 ```js
-// Obrys grubej linii to kapsuła: dwie półokrągłe czapki spięte bokami. Każda czapka obraca
-// się o kąt linii, a jej łuk biegnie od +90° do -90° względem tego kąta — dzięki temu
-// kolejny arc() startuje po właściwej stronie i bok powstaje sam.
+// The outline of a thick line is a capsule: two semicircular caps joined by sides. Each cap
+// is rotated by the line's angle and its arc runs from +90° to -90° relative to that angle —
+// which is what makes the next arc() start on the correct side, so the side comes for free.
 describe('capsuleArcs', () => {
   const HALF_PI = Math.PI / 2;
 
@@ -551,8 +563,8 @@ describe('capsuleArcs', () => {
   });
 
   it('zerowa długość degeneruje się do okręgu, bez osobnej gałęzi w kodzie', () => {
-    // atan2(0, 0) === 0, więc obie czapki lądują w tym samym punkcie i składają się
-    // w pełny okrąg. Zdarza się przy kliknięciu bez przeciągnięcia.
+    // atan2(0, 0) === 0, so both caps land on the same point and compose into a full
+    // circle. Happens on a click with no drag.
     const [start, end] = capsuleArcs([5, 5], [5, 5], 6);
     expect(start.x).toBe(5);
     expect(end.x).toBe(5);
@@ -581,11 +593,11 @@ W `FogLayer.jsx`, pod eksportem `usesBrushCursor`:
 
 ```js
 /**
- * Obrys grubej linii z okrągłymi końcami to kapsuła. Canvas nie ma operacji „obrysuj obrys",
- * więc kształt składamy z dwóch łuków: `arc()` dorysowuje `lineTo` z bieżącego punktu do
- * początku kolejnego łuku, więc boki kapsuły powstają same, a `closePath()` domyka ostatni.
- * Przy zerowej długości `atan2(0, 0)` daje 0 i obie czapki składają się w okrąg — bez
- * osobnego przypadku.
+ * The outline of a thick round-capped line is a capsule. Canvas has no "stroke the outline
+ * of a stroke", so we build the shape from two arcs: `arc()` draws a `lineTo` from the
+ * current point to the start of the next arc, so the capsule's sides come for free and
+ * `closePath()` shuts the last one. At zero length `atan2(0, 0)` is 0 and both caps collapse
+ * into a circle — no special case needed.
  */
 export const capsuleArcs = ([x1, y1], [x2, y2], radius) => {
   const angle = Math.atan2(y2 - y1, x2 - x1);
@@ -645,7 +657,7 @@ Dopisz na końcu `FogLayer.render.test.jsx`:
 ```jsx
 const OVERLAY = 'rgba(255, 220, 100, 0.9)';
 
-/** Przeciągnięcie: wciśnięcie w (x1,y1), ruch do (x2,y2). Bez mouseUp — interesuje nas podgląd. */
+/** A drag: press at (x1,y1), move to (x2,y2). No mouseUp — the preview is what we are after. */
 const drag = (canvas, [x1, y1], [x2, y2]) => {
   fireEvent.mouseDown(canvas, { button: 0, clientX: x1, clientY: y1 });
   fireEvent.mouseMove(canvas, { clientX: x2, clientY: y2 });
@@ -711,14 +723,14 @@ oczekiwane, pilnują, żeby implementacja nie poszła za szeroko.
 W `FogLayer.jsx`, pod `const MIN_POLYGON_POINTS = 3;` (linia 24):
 
 ```js
-/** Żółty roboczy overlayu GM — wspólny dla wielokąta i obrysów podglądu kształtów. */
+/** The GM overlay's working amber — shared by the polygon guides and the shape previews. */
 const OVERLAY_COLOR = 'rgba(255, 220, 100, 0.9)';
 const OVERLAY_WIDTH = 2;
 
 /**
- * Narzędzia rysowane przeciągnięciem od punktu do punktu, którym dokładamy obrys podglądu.
- * Klucz to fogTool, nie path.shape: linia zapisuje się jako `freehand`, więc po `shape`
- * nie da się jej odróżnić od pędzla.
+ * Tools dragged from point to point, which get a preview outline. Keyed on fogTool, not
+ * path.shape: the line tool is stored as `freehand`, so `shape` cannot tell it apart from
+ * the brush.
  */
 const OUTLINED_TOOLS = new Set(['rect', 'circle', 'line']);
 ```
@@ -729,9 +741,9 @@ W `FogLayer.jsx`, pod `capsuleArcs`:
 
 ```js
 /**
- * Obrys tego, co zapisze się po puszczeniu przycisku. Przy niskim kryciu mgły sam podgląd
- * reveal jest prawie niewidoczny — odsłaniasz coś, co i tak ledwo widać — więc to często
- * jedyna informacja o zasięgu pociągnięcia.
+ * The outline of what will be saved once the button is released. At a low fog opacity the
+ * reveal preview itself is nearly invisible — you are erasing something already faint — so
+ * this is often the only signal of how far the stroke reaches.
  */
 const strokeShapeOutline = (ctx, fogTool, points, brushSize) => {
   const [[x1, y1], [x2, y2]] = points;

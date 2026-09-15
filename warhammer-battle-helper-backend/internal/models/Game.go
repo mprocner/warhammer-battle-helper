@@ -376,7 +376,7 @@ type ImageTokenSlot struct {
 type FogPath struct {
 	Points    [][2]float64 `bson:"points" json:"points"`
 	BrushSize float64      `bson:"brushSize" json:"brushSize"`
-	Shape     string       `bson:"shape" json:"shape"` // "" or "freehand" = stroke, "rect" = filled rectangle
+	Shape     string       `bson:"shape" json:"shape"` // "" or "freehand" = stroke, "rect" = filled rectangle, "line" = thick straight stroke, no round caps
 	Cover     bool         `bson:"cover" json:"cover"` // true = cover (add fog), false = reveal (remove fog)
 }
 

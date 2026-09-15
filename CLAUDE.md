@@ -79,6 +79,9 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
 | Border popupu | `#7a5c42` |
 
 ### Kluczowe konwencje
+- **Komentarze w kodzie ZAWSZE po angielsku** — backend i frontend, bez wyjątków. Dotyczy nowych
+  i modyfikowanych komentarzy; istniejących polskich nie tłumaczymy hurtem, tylko przy okazji
+  pracy nad danym fragmentem. Rozmowa i dokumentacja (`docs/`) zostają po polsku.
 - `Character.Stats` = `bson.Raw` — surowe dane systemu, nie ma pól Warhammer-specyficznych w modelu
 - `ComputeDerived` wywoływane na: GET list, Create, Update, Clone
 - Roll endpoint: `POST /games/:id/rollSkill` z `skillKey` (np. `attr_WS`, `MELEE_BASIC`)

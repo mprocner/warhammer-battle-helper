@@ -4,11 +4,12 @@ import React, { useRef, useEffect, useCallback } from 'react';
  * FogLayer — a canvas element that renders fog of war on top of the scene.
  *
  * Rendering strategy:
- *  1. Fill canvas with the fog colour (dark, semi-transparent).
- *  2. For every saved reveal path use `destination-out` composite operation
- *     to "erase" the fog and show the content underneath.
- *  3. While the GM is actively drawing (currentPath), re-render with the
- *     in-progress stroke on top so feedback is instant.
+ *  `render()` fills the canvas with opaque fog, then carves out every saved (and
+ *  in-progress) reveal/cover path via `destination-out`/`source-over`. A single
+ *  `destination-out` fade pass afterwards bakes the GM's preview opacity into those
+ *  pixels — see `render()`'s own numbered sections for the exact order. GM affordances
+ *  (brush ring, shape outlines, polygon guides) are drawn AFTER the fade, at full alpha,
+ *  so dimming the fog for preview never dims the cursor along with it.
  *
  * Coordinate space:
  *  All points are stored/communicated in *scene space* (same as image/character
@@ -25,6 +26,17 @@ const MIN_POLYGON_POINTS = 3;
 
 export const canClosePolygon = (points) => points.length >= MIN_POLYGON_POINTS;
 
+/** The GM overlay's working amber — shared by the polygon guides and the shape previews. */
+const OVERLAY_COLOR = 'rgba(255, 220, 100, 0.9)';
+const OVERLAY_WIDTH = 2;
+
+/**
+ * Tools dragged from point to point, which get a preview outline. Keyed on the currently
+ * selected fogTool, since that is what decides whether a preview should render at all —
+ * there is no in-progress path to key on before the drag has produced one.
+ */
+const OUTLINED_TOOLS = new Set(['rect', 'circle', 'line']);
+
 /**
  * Who sees the fog layer. The single place this decision is made — SceneViewport mounts
  * FogLayer unconditionally, exactly like the neighbouring DrawingLayer.
@@ -39,7 +51,131 @@ export const fogVisibleFor = ({ isGM, fogEnabled, inFogMode }) =>
  * information: a player must always get full, opaque fog — the GM's own preview
  * preference (`fogGmOpacity`) never applies to them.
  */
-export const fogCssOpacity = ({ isGM, fogGmOpacity }) => (isGM ? fogGmOpacity : 1.0);
+export const fogShadeAlpha = ({ isGM, fogGmOpacity }) => (isGM ? fogGmOpacity : 1.0);
+
+/**
+ * Tools whose reach is set by brushSize — only those show the brush ring instead of a
+ * crosshair. Rectangle and circle fill an area, so brushSize does not apply to them.
+ * The same condition gates three things at once (drawing the ring, repainting on mouse
+ * move, hiding the native cursor), which is why it lives in one place.
+ */
+export const usesBrushCursor = (fogTool) => fogTool === 'freehand' || fogTool === 'line';
+
+/**
+ * The four corners of the rectangle a thick straight stroke covers: the segment offset by
+ * half the width along its own normal, in both directions. A butt-capped stroke of that
+ * width paints exactly this shape, so the outline and the fill cannot disagree.
+ * At zero length `atan2(0, 0)` is 0 and the rectangle collapses to a zero-area sliver — the
+ * stroke itself is invisible at zero length too, so the two stay consistent.
+ */
+export const lineRectCorners = ([x1, y1], [x2, y2], halfWidth) => {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const nx = -Math.sin(angle) * halfWidth;
+  const ny = Math.cos(angle) * halfWidth;
+  return [
+    [x1 + nx, y1 + ny],
+    [x2 + nx, y2 + ny],
+    [x2 - nx, y2 - ny],
+    [x1 - nx, y1 - ny],
+  ];
+};
+
+/**
+ * Traces the axis-aligned rectangle spanning two opposite corners onto the current path.
+ * Geometry only — no beginPath/fill/stroke/style, so both the fill pass and the outline
+ * preview can share the exact same formula instead of risking two that quietly drift apart.
+ */
+const traceRectPath = (ctx, [x1, y1], [x2, y2]) => {
+  ctx.rect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+};
+
+/**
+ * Traces the circle centred on the first point, radius = distance to the second, onto the
+ * current path. Same sharing rationale as `traceRectPath`.
+ */
+const traceCirclePath = (ctx, [cx, cy], [ex, ey]) => {
+  ctx.arc(cx, cy, Math.hypot(ex - cx, ey - cy), 0, Math.PI * 2);
+};
+
+/**
+ * Traces a closed polygon through the given corners onto the current path. Same sharing
+ * rationale as `traceRectPath`: the line's outline and the line tool's square cursor are both
+ * four-corner shapes coming out of `lineRectCorners`, and one tracer keeps the two from
+ * drifting apart.
+ */
+const tracePolygonPath = (ctx, corners) => {
+  ctx.moveTo(corners[0][0], corners[0][1]);
+  for (let i = 1; i < corners.length; i++) {
+    ctx.lineTo(corners[i][0], corners[i][1]);
+  }
+  ctx.closePath();
+};
+
+/**
+ * Builds the in-progress path object for a drag, the way `handleMouseMove` does while the
+ * mouse is moving. Shared with the saved-paths/editing-mode effect below so a WS-driven scene
+ * refetch mid-drag re-renders the SAME in-flight shape instead of silently reinterpreting it
+ * as freehand — that mismatch is what let the outline (section 4) and the fill (section 2)
+ * disagree about what was being dragged.
+ */
+const buildDragPath = (fogTool, points, brushSize, cover) => {
+  if (fogTool === 'rect' || fogTool === 'line' || fogTool === 'circle') {
+    return { points, brushSize, shape: fogTool, cover };
+  }
+  return { points, brushSize, cover };
+};
+
+/**
+ * The outline of what will be saved once the button is released. At a low fog opacity the
+ * reveal preview itself is nearly invisible — you are erasing something already faint — so
+ * this is often the only signal of how far the stroke reaches.
+ */
+const strokeShapeOutline = (ctx, fogTool, points, brushSize) => {
+  const [p1, p2] = points;
+  ctx.beginPath();
+  if (fogTool === 'rect') {
+    traceRectPath(ctx, p1, p2);
+  } else if (fogTool === 'circle') {
+    traceCirclePath(ctx, p1, p2);
+  } else if (fogTool === 'line') {
+    tracePolygonPath(ctx, lineRectCorners(p1, p2, brushSize / 2));
+  }
+  ctx.stroke();
+};
+
+/**
+ * Draws the two-ring brush cursor marker centred on (cx, cy): a dark outer ring then a white
+ * inner ring, both at their literal colour/width regardless of shape. The freehand brush
+ * traces a circle; the line tool traces a square, built from the SAME `lineRectCorners`
+ * geometry as the rectangle it is about to stroke — a short segment of length `brushSize`
+ * through the centre, offset by half that width — so the marker and the eventual stroke can
+ * never quietly disagree about shape.
+ * `angle` only matters for the line tool: callers pass 0 before a drag has a direction, and
+ * the drag's own angle while dragging, so the square lines up with the end of the rectangle.
+ */
+const drawCursorMarker = (ctx, fogTool, cx, cy, brushSize, angle) => {
+  const radius = brushSize / 2;
+  const tracePath = fogTool === 'line'
+    ? () => {
+      const dx = Math.cos(angle) * radius;
+      const dy = Math.sin(angle) * radius;
+      tracePolygonPath(ctx, lineRectCorners([cx - dx, cy - dy], [cx + dx, cy + dy], radius));
+    }
+    : () => ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+
+  // Dark outer ring
+  ctx.beginPath();
+  tracePath();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  // White inner ring
+  ctx.beginPath();
+  tracePath();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+};
 
 const FogLayer = ({
   scene,
@@ -69,6 +205,10 @@ const FogLayer = ({
   // fog that is disabled.
   const inFogMode = isGM && editingLayer === 'fog';
 
+  // The GM's preview opacity is now part of the canvas CONTENT, not its style, so it has to
+  // join `render`'s dependency array — otherwise moving the slider repaints nothing.
+  const shadeAlpha = fogShadeAlpha({ isGM, fogGmOpacity });
+
   // Render the full fog canvas (saved paths + optional in-progress path)
   const render = useCallback((extraPath = null) => {
     const canvas = canvasRef.current;
@@ -79,7 +219,7 @@ const FogLayer = ({
 
     const savedPaths = scene?.revealPaths || [];
 
-    // --- 1. Fill with solid fog (opacity applied via canvas CSS) ---
+    // --- 1. Fill with solid fog ---
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = 'rgba(20, 20, 20, 1.0)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -102,18 +242,21 @@ const FogLayer = ({
       }
 
       if (path.shape === 'rect') {
-        const x = Math.min(path.points[0][0], path.points[1][0]);
-        const y = Math.min(path.points[0][1], path.points[1][1]);
-        const w = Math.abs(path.points[1][0] - path.points[0][0]);
-        const h = Math.abs(path.points[1][1] - path.points[0][1]);
-        ctx.fillRect(x, y, w, h);
-      } else if (path.shape === 'circle') {
-        const [cx, cy] = path.points[0];
-        const [ex, ey] = path.points[1];
-        const radius = Math.hypot(ex - cx, ey - cy);
         ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        traceRectPath(ctx, path.points[0], path.points[1]);
         ctx.fill();
+      } else if (path.shape === 'circle') {
+        ctx.beginPath();
+        traceCirclePath(ctx, path.points[0], path.points[1]);
+        ctx.fill();
+      } else if (path.shape === 'line') {
+        // Butt caps make a thick straight stroke exactly the rectangle the outline previews.
+        ctx.lineWidth = path.brushSize || 30;
+        ctx.lineCap = 'butt';
+        ctx.beginPath();
+        ctx.moveTo(path.points[0][0], path.points[0][1]);
+        ctx.lineTo(path.points[1][0], path.points[1][1]);
+        ctx.stroke();
       } else if (path.shape === 'polygon') {
         if (canClosePolygon(path.points)) {
           ctx.beginPath();
@@ -137,27 +280,41 @@ const FogLayer = ({
       }
     });
 
-    ctx.globalCompositeOperation = 'source-over';
-
-    // --- 3. Draw brush cursor circle (freehand only, when GM is editing) ---
-    if (inFogMode && fogTool === 'freehand' && cursorPosRef.current) {
-      const [cx, cy] = cursorPosRef.current;
-      const radius = brushSize / 2;
-      // Dark outer ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      // White inner ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+    // --- 3. Bake the GM's preview opacity into the pixels ---
+    // One destination-out pass multiplies the alpha of everything drawn so far by
+    // shadeAlpha — exactly what CSS opacity did, only earlier in the pipeline. Revealed
+    // holes stay holes (0 × anything = 0). It runs AFTER every path, not as alpha in the
+    // fog fillStyle: cover mode repaints fog with source-over, and per-fill alpha would
+    // stack there (0.5 over 0.5 = 0.75), making covered ground darker than base fog.
+    if (shadeAlpha < 1) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = `rgba(0, 0, 0, ${1 - shadeAlpha})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // --- Overlay wielokąta: linie pomocnicze i snap indicator ---
+    // Everything below is a GM affordance, drawn at full alpha on top of the faded fog.
+    ctx.globalCompositeOperation = 'source-over';
+
+    // --- 4. Preview outline of the shape being dragged ---
+    if (inFogMode && OUTLINED_TOOLS.has(fogTool) && extraPath?.points?.length >= 2) {
+      ctx.strokeStyle = OVERLAY_COLOR;
+      ctx.lineWidth = OVERLAY_WIDTH;
+      ctx.setLineDash([]);
+      strokeShapeOutline(ctx, fogTool, extraPath.points, brushSize);
+    }
+
+    // --- 5. Draw brush cursor (for tools whose reach is brushSize, when GM is editing) ---
+    if (inFogMode && usesBrushCursor(fogTool) && cursorPosRef.current) {
+      const [cx, cy] = cursorPosRef.current;
+      // No direction before the drag starts; while dragging, the square lines up with the
+      // rectangle's own angle so it coincides with the end of the shape being dragged.
+      const angle = fogTool === 'line' && isDrawingRef.current && rectStartRef.current
+        ? Math.atan2(cy - rectStartRef.current[1], cx - rectStartRef.current[0])
+        : 0;
+      drawCursorMarker(ctx, fogTool, cx, cy, brushSize, angle);
+    }
+
+    // --- 6. Polygon overlay: guide lines and snap indicator ---
     if (inFogMode && fogTool === 'polygon' && polygonActiveRef.current) {
       const pts = polygonPointsRef.current;
       const cursor = polygonCursorRef.current;
@@ -171,12 +328,17 @@ const FogLayer = ({
 
         ctx.lineCap = 'round';
 
-        // Ciągła linia: ostatni punkt → kursor (podgląd następnego odcinka)
-        ctx.strokeStyle = 'rgba(255, 220, 100, 0.9)';
-        ctx.lineWidth = 2;
+        // Solid chain: every edge already placed, then on to the cursor. One path rather than
+        // a separate preview segment — with a single vertex the loop adds no edge and this
+        // collapses to exactly the cursor segment on its own.
+        ctx.strokeStyle = OVERLAY_COLOR;
+        ctx.lineWidth = OVERLAY_WIDTH;
         ctx.setLineDash([]);
         ctx.beginPath();
-        ctx.moveTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i][0], pts[i][1]);
+        }
         ctx.lineTo(cx, cy);
         ctx.stroke();
 
@@ -202,19 +364,21 @@ const FogLayer = ({
 
         // Kropki na każdym umieszczonym wierzchołku
         pts.forEach(([px, py]) => {
-          ctx.fillStyle = 'rgba(255, 220, 100, 0.9)';
+          ctx.fillStyle = OVERLAY_COLOR;
           ctx.beginPath();
           ctx.arc(px, py, 3 * scaleX, 0, Math.PI * 2);
           ctx.fill();
         });
       }
     }
-  }, [inFogMode, scene, fogTool, brushSize]);
+  }, [inFogMode, scene, fogTool, brushSize, shadeAlpha]);
 
   // Re-render whenever saved paths or editing mode change
   useEffect(() => {
-    render(currentPathRef.current ? { points: currentPathRef.current, brushSize } : null);
-  }, [render, brushSize]);
+    render(currentPathRef.current
+      ? buildDragPath(fogTool, currentPathRef.current, brushSize, fogCoverMode)
+      : null);
+  }, [render, brushSize, fogTool, fogCoverMode]);
 
   /**
    * Kończy aktywny wielokąt — zapisem albo porzuceniem.
@@ -344,13 +508,11 @@ const FogLayer = ({
     if (isDrawingRef.current) {
       if (fogTool === 'rect' || fogTool === 'line' || fogTool === 'circle') {
         currentPathRef.current = [rectStartRef.current, [x, y]];
-        const shape = fogTool === 'rect' ? 'rect' : fogTool === 'circle' ? 'circle' : 'freehand';
-        render({ points: currentPathRef.current, brushSize, shape, cover: fogCoverMode });
       } else {
         currentPathRef.current.push([x, y]);
-        render({ points: currentPathRef.current, brushSize, cover: fogCoverMode });
       }
-    } else if (fogTool === 'freehand') {
+      render(buildDragPath(fogTool, currentPathRef.current, brushSize, fogCoverMode));
+    } else if (usesBrushCursor(fogTool)) {
       // Not drawing — redraw to update cursor circle position
       render(null);
     }
@@ -374,6 +536,7 @@ const FogLayer = ({
       let shape = 'freehand';
       if (fogTool === 'rect') shape = 'rect';
       else if (fogTool === 'circle') shape = 'circle';
+      else if (fogTool === 'line') shape = 'line';
       onPathComplete({ points: pts, brushSize, shape, cover: fogCoverMode });
     }
   }, [inFogMode, fogTool, fogCoverMode, onPathComplete, brushSize]);
@@ -417,8 +580,6 @@ const FogLayer = ({
 
   if (!fogVisibleFor({ isGM, fogEnabled, inFogMode })) return null;
 
-  const cssOpacity = fogCssOpacity({ isGM, fogGmOpacity });
-
   return (
     <canvas
       ref={canvasRef}
@@ -431,9 +592,8 @@ const FogLayer = ({
         width: '100%',
         height: '100%',
         zIndex: 30,
-        opacity: cssOpacity,
         pointerEvents: inFogMode ? 'auto' : 'none',
-        cursor: inFogMode ? (fogTool === 'freehand' ? 'none' : 'crosshair') : 'default',
+        cursor: inFogMode ? (usesBrushCursor(fogTool) ? 'none' : 'crosshair') : 'default',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
