@@ -715,8 +715,8 @@
       "sceneControls": {
         "title": "Mapa",
         "body": {
-          "modern": "Przeciąganie lewym przyciskiem przesuwa mapę, kółko przybliża. Lewy klik zaznacza token, przeciągnięcie go przesuwa. Sterowanie zmienisz w zakładce Ogólne.",
-          "classic": "Przeciąganie prawym przyciskiem przesuwa mapę, kółko przybliża. Lewy klik zaznacza token, przeciągnięcie go przesuwa. Sterowanie zmienisz w zakładce Ogólne."
+          "modern": "Kółko przybliża, przeciąganie prawym przyciskiem przesuwa mapę. Lewy klik zaznacza token, przeciągnięcie go przesuwa — przeciągnięcie po pustej mapie zaznacza kilka naraz. Sterowanie zmienisz w zakładce Ogólne.",
+          "classic": "Kółko przesuwa mapę, Ctrl+kółko przybliża — przeciąganie prawym przyciskiem też przesuwa. Lewy klik zaznacza token, przeciągnięcie go przesuwa — przeciągnięcie po pustej mapie zaznacza kilka naraz. Sterowanie zmienisz w zakładce Ogólne."
         }
       },
       "layerSelector": {
@@ -726,8 +726,8 @@
       "drawingToolbar": {
         "title": "Narzędzia sceny",
         "body": {
-          "gm": "Przesuwanie, zaznaczanie, miarka, mgła wojny i rysowanie. Mgła to obszar, którego gracze jeszcze nie widzą — odsłaniasz go w miarę eksploracji.",
-          "player": "Przesuwanie mapy, miarka do celu i rysowanie po mapie, żeby reszta stołu zobaczyła, o co Ci chodzi."
+          "gm": "Zaznaczanie i przesuwanie, miarka, mgła wojny i rysowanie. Mgła to obszar, którego gracze jeszcze nie widzą — odsłaniasz go w miarę eksploracji.",
+          "player": "Zaznaczanie i przesuwanie tokenów, miarka do celu i rysowanie po mapie, żeby reszta stołu zobaczyła, o co Ci chodzi."
         }
       },
       "onlineUsers": {

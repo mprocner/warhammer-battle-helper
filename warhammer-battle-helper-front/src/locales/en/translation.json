@@ -715,8 +715,8 @@
       "sceneControls": {
         "title": "The map",
         "body": {
-          "modern": "Drag with the left mouse button to pan the map, scroll to zoom. Left-click a token to select it, drag it to move it. You can change this in the General tab.",
-          "classic": "Drag with the right mouse button to pan the map, scroll to zoom. Left-click a token to select it, drag it to move it. You can change this in the General tab."
+          "modern": "Scroll to zoom, drag with the right mouse button to pan the map. Left-click a token to select it, drag it to move it — dragging across empty map selects several at once. You can change this in the General tab.",
+          "classic": "Scroll to pan the map, Ctrl+scroll to zoom — dragging with the right mouse button pans as well. Left-click a token to select it, drag it to move it — dragging across empty map selects several at once. You can change this in the General tab."
         }
       },
       "layerSelector": {
@@ -726,8 +726,8 @@
       "drawingToolbar": {
         "title": "Scene tools",
         "body": {
-          "gm": "Pan, select, measure distance, paint fog of war and draw. Fog is what your players cannot see yet — you uncover it as they explore.",
-          "player": "Pan the map, measure distance to a target and draw on the map so the rest of the table sees what you mean."
+          "gm": "Select and move, measure distance, paint fog of war and draw. Fog is what your players cannot see yet — you uncover it as they explore.",
+          "player": "Select and move your tokens, measure distance to a target and draw on the map so the rest of the table sees what you mean."
         }
       },
       "onlineUsers": {
