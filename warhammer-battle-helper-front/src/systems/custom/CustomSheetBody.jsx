@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
+import { SECTION_TYPE, walkFields } from '../../utils/templateSections';
 
 // genId mints a stable, opaque key for a player-added skill node — never derived from the
 // typed name, so two skills can share a name and renaming never affects the key. Matches the
@@ -35,22 +36,20 @@ export function collectSkillOptions(sections, customSkillNodes) {
   const out = [];
   const seen = new Set();
   const push = (key, label) => { if (key && !seen.has(key)) { seen.add(key); out.push({ key, label: label || key }); } };
-  for (const s of (sections || [])) {
-    for (const f of (s.fields || [])) {
-      if (f.type === 'skill_table') {
-        for (const opt of (f.skills || [])) {
-          if (opt.label) push(`${f.key}.${opt.id}`, opt.label);
-        }
-      } else if (f.type === 'skill_tree' && f.tree) {
-        const walk = (node, prefix) => {
-          const path = prefix ? `${prefix}.${node.key}` : node.key;
-          push(path, node.label);
-          (node.children || []).forEach(ch => walk(ch, path));
-        };
-        (f.tree.children || []).forEach(ch => walk(ch, f.key));
+  walkFields(sections, (f) => {
+    if (f.type === 'skill_table') {
+      for (const opt of (f.skills || [])) {
+        if (opt.label) push(`${f.key}.${opt.id}`, opt.label);
       }
+    } else if (f.type === 'skill_tree' && f.tree) {
+      const walk = (node, prefix) => {
+        const path = prefix ? `${prefix}.${node.key}` : node.key;
+        push(path, node.label);
+        (node.children || []).forEach(ch => walk(ch, path));
+      };
+      (f.tree.children || []).forEach(ch => walk(ch, f.key));
     }
-  }
+  });
   for (const [key, node] of Object.entries(customSkillNodes || {})) push(key, node.label);
   return out;
 }
@@ -179,9 +178,11 @@ function CustomSheetBody({
   const weapons  = values.weapons    || {};
   const readOnly = !onChange;
 
-  const attrByKey = Object.fromEntries(
-    (sections || []).flatMap(s => s.fields || []).filter(f => f.type === 'attr').map(f => [f.key, f])
-  );
+  const attrByKey = useMemo(() => {
+    const out = {};
+    walkFields(sections, (f) => { if (f.type === 'attr') out[f.key] = f; });
+    return out;
+  }, [sections]);
 
   // Jedna instancja na całą kartę: jeden stan i jeden portal niezależnie od liczby pól.
   // Hook per etykieta dałby 40 niezależnych stanów przy karcie z 40 polami.
@@ -932,24 +933,38 @@ function CustomSheetBody({
         );
       }
 
+      case SECTION_TYPE:
+        return field.section ? renderSection(field.section, true) : null;
+
       default:
         return null;
     }
   };
 
+  // renderSection draws one section and recurses through renderField into nested ones.
+  // `nested` is a boolean rather than a depth number on purpose: the styling has exactly two
+  // states (root and nested), and depth is unbounded, so a depth-indexed class would need an
+  // arbitrary cap that the model does not have.
+  const renderSection = (section, nested) => (
+    <div
+      key={section.id}
+      className={`custom-sheet__section${nested ? ' custom-sheet__section--nested' : ''}`}
+    >
+      {section.title && (
+        <div className={`custom-sheet__section-heading${nested ? ' custom-sheet__section-heading--nested' : ''}`}>
+          {section.title}
+        </div>
+      )}
+      <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
+        {(section.fields || []).map(renderField)}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="custom-sheet__sections">
-        {(sections || []).map(section => (
-          <div key={section.id} className="custom-sheet__section">
-            {section.title && (
-              <div className="custom-sheet__section-heading">{section.title}</div>
-            )}
-            <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
-              {(section.fields || []).map(renderField)}
-            </div>
-          </div>
-        ))}
+        {(sections || []).map(section => renderSection(section, false))}
       </div>
       {tooltipNode}
     </>

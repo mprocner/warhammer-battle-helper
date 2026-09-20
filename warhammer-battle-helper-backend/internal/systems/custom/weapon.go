@@ -122,13 +122,32 @@ func applyDamageOverrides(blocks []models.FormulaBlock, overrides map[string]flo
 	return out
 }
 
+// findWeaponFieldInFields recursively searches a field list for a weapons_table field
+// with the given key, descending into nested sections. Unlike flattenFields (which
+// returns copies), this returns a pointer into the template's own backing array so
+// callers can read and mutate the field's GM-authored presets without copies.
+// A section field (type == "section") is a wrapper: we descend into it but do not
+// return it as a match, only leaf fields with type == "weapons_table".
+func findWeaponFieldInFields(fields []models.FieldDef, fieldKey string) *models.FieldDef {
+	for i := range fields {
+		f := &fields[i]
+		if f.Key == fieldKey && f.Type == "weapons_table" {
+			return f
+		}
+		// Descend into nested sections
+		if f.Type == "section" && f.Section != nil {
+			if found := findWeaponFieldInFields(f.Section.Fields, fieldKey); found != nil {
+				return found
+			}
+		}
+	}
+	return nil
+}
+
 func findWeaponField(template *models.SystemTemplate, fieldKey string) (*models.FieldDef, bool) {
 	for si := range template.Sections {
-		for fi := range template.Sections[si].Fields {
-			f := &template.Sections[si].Fields[fi]
-			if f.Key == fieldKey && f.Type == "weapons_table" {
-				return f, true
-			}
+		if f := findWeaponFieldInFields(template.Sections[si].Fields, fieldKey); f != nil {
+			return f, true
 		}
 	}
 	return nil, false

@@ -6,6 +6,7 @@ import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
+import { walkFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
 
@@ -146,11 +147,19 @@ function CustomCharacterDetails({
 
   // O zawartości skróconej karty decyduje wyłącznie flaga showOnShortCard z kreatora (BUG-176).
   // Sekcje bez ani jednego zaznaczonego pola odpadają, żeby nie zostawić pustej grupy z separatorem.
+  //
+  // Grouping is by ROOT section only: the short card is a flat strip of tiles with one block
+  // per root section, so a field flagged inside a subsection joins its root section's block
+  // rather than starting one of its own. Without the subtree walk it would vanish silently,
+  // even though the creator paints the ▤ badge on it and promises the GM it will show.
   const shortCardSections = useMemo(() => (template?.sections || [])
-    .map(s => ({
-      id: s.id,
-      fields: (s.fields || []).filter(f => f.showOnShortCard && SHORT_CARD_TYPES.includes(f.type)),
-    }))
+    .map(s => {
+      const picked = [];
+      walkFields([s], f => {
+        if (f.showOnShortCard && SHORT_CARD_TYPES.includes(f.type)) picked.push(f);
+      });
+      return { id: s.id, fields: picked };
+    })
     .filter(s => s.fields.length > 0), [template]);
 
   const favoriteSkillsData = useMemo(() => {
@@ -158,7 +167,10 @@ function CustomCharacterDetails({
     if (!favKeys.length) return [];
     const allSkills = stats.skills || {};
     const customNodes = stats.customSkillNodes || {};
-    const fields = template?.sections?.flatMap(s => s.fields || []) || [];
+    // Every leaf at every depth: a favourited skill inside a subsection must still resolve to
+    // its label, or it falls through to the orphan branch and is dropped from the list.
+    const fields = [];
+    walkFields(template?.sections, f => fields.push(f));
 
     const findNodeLabel = (nodes, targetPath, currentPrefix) => {
       for (const node of (nodes || [])) {
@@ -201,7 +213,10 @@ function CustomCharacterDetails({
     const favSet = new Set(stats.favoriteWeapons || []);
     if (!favSet.size) return [];
     const playerWeapons = stats.weapons || {};
-    const fields = template?.sections?.flatMap(s => s.fields || []) || [];
+    // Depth-first over every leaf: the backend can roll a weapon from a nested weapons_table,
+    // so a flat pass here would hide rows the player already favourited.
+    const fields = [];
+    walkFields(template?.sections, f => fields.push(f));
     const out = [];
     for (const f of fields) {
       if (f.type !== 'weapons_table') continue;

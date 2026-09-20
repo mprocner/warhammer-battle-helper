@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,13 +24,15 @@ import TableRowsIcon from '@mui/icons-material/TableRows';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import GavelIcon from '@mui/icons-material/Gavel';
 import LabelIcon from '@mui/icons-material/Label';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
 import {
   DndContext as DndKitContext,
-  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  useDroppable,
   PointerSensor,
   useSensor,
   useSensors,
@@ -40,7 +42,6 @@ import {
   useSortable,
   verticalListSortingStrategy,
   rectSortingStrategy,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
@@ -49,7 +50,12 @@ import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
-import { duplicateFieldInSections } from '../../utils/templateFields';
+import {
+  SECTION_TYPE, sectionOf, nodeAt, locate, childrenOf, samePath,
+  updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields,
+  containerPathFor, shiftPathAfterInsert, indexNodes, moveNode, isContainer,
+  dropSentinelId, dropHeaderId, dropIntent,
+} from '../../utils/templateSections';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,17 +86,20 @@ function addChildAtPath(node, path) {
   return { ...node, children: node.children.map((c, i) => i === idx ? addChildAtPath(c, path.slice(1)) : c) };
 }
 
-function removeAtPath(node, path) {
+// Skill-tree node removal. Named apart from the template tree's removeAtPath (imported from
+// utils/templateSections) because they walk different shapes: children[] vs fields[].
+function removeTreeAtPath(node, path) {
   if (path.length === 1) {
     return { ...node, children: node.children.filter((_, i) => i !== path[0]) };
   }
   const idx = path[0];
-  return { ...node, children: node.children.map((c, i) => i === idx ? removeAtPath(c, path.slice(1)) : c) };
+  return { ...node, children: node.children.map((c, i) => i === idx ? removeTreeAtPath(c, path.slice(1)) : c) };
 }
 
 // ── field type config ─────────────────────────────────────────────────────────
 
 const FIELD_TYPES = [
+  { type: 'section',     labelKey: 'creator.fieldType.section',     icon: <ViewQuiltIcon fontSize="small" />,  desc: 'creator.fieldType.sectionDesc' },
   { type: 'attr',        labelKey: 'creator.fieldType.attr',        icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.attrDesc' },
   { type: 'number',      labelKey: 'creator.fieldType.number',      icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.numberDesc' },
   { type: 'progress',    labelKey: 'creator.fieldType.progress',    icon: <TrendingUpIcon fontSize="small" />, desc: 'creator.fieldType.progressDesc' },
@@ -108,6 +117,7 @@ const FIELD_TYPES = [
 const SHORT_CARD_FIELD_TYPES = ['attr', 'number', 'progress'];
 
 const PALETTE_GROUPS = [
+  { labelKey: 'creator.paletteGroupLayout',  types: ['section'] },
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
@@ -125,7 +135,6 @@ function makeDefaultField(type) {
     type,
     label: '',
     abbr: '',
-    showToPlayer: true,
     rollable: false,
   };
   if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
@@ -136,6 +145,9 @@ function makeDefaultField(type) {
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
   if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
   if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
+  // A section field wraps a whole SectionDef. section.id mirrors the field key so DnD,
+  // selection and React keys all address the node by one value.
+  if (type === 'section') return { ...base, section: { id: base.key, title: '', columns: 3, fields: [] } };
   return base;
 }
 
@@ -181,7 +193,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
                 const parent = path.slice(0, -1);
                 const parentNode = parent.length === 0 ? tree : path.slice(0, -1).reduce((n, i) => n.children[i], tree);
                 if (parentNode.children.length <= 1 && path.length === 1) return;
-                onChange(removeAtPath(tree, path));
+                onChange(removeTreeAtPath(tree, path));
               }}
               title={t('creator.treeRemoveNode')}
             >
@@ -817,9 +829,6 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
 
       <Divider sx={{ my: 1.5 }} />
 
-      <FormControlLabel control={<Switch checked={!!field.showToPlayer} onChange={e => up({ showToPlayer: e.target.checked })} size="small" />}
-        label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showToPlayer')}</Typography>} sx={{ mb: 0.5 }} />
-
       {(field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
         <FormControlLabel control={<Switch checked={!!field.rollable} onChange={e => up({ rollable: e.target.checked, rollConfig: e.target.checked ? (field.rollConfig || defaultRollConfig()) : null })} size="small" />}
           label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.rollable')}</Typography>} sx={{ mb: 0.5 }} />
@@ -852,7 +861,7 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
 
 // ── SectionPropertyPanel ─────────────────────────────────────────────────────
 
-function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSections, onMove }) {
+function SectionPropertyPanel({ section, onChange, onDelete, index, siblingCount, onMove }) {
   const { t } = useTranslation();
   return (
     <div className="creator__props-panel">
@@ -898,10 +907,10 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
       <Divider sx={{ my: 1.5 }} />
 
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, -1)} disabled={sectionIdx === 0} title={t('creator.sectionMoveUp')}>
+        <button className="creator__section-action-btn" onClick={() => onMove(-1)} disabled={index === 0} title={t('creator.sectionMoveUp')}>
           <ArrowUpwardIcon style={{ fontSize: 14 }} />
         </button>
-        <button className="creator__section-action-btn" onClick={() => onMove(sectionIdx, +1)} disabled={sectionIdx === totalSections - 1} title={t('creator.sectionMoveDown')}>
+        <button className="creator__section-action-btn" onClick={() => onMove(+1)} disabled={index === siblingCount - 1} title={t('creator.sectionMoveDown')}>
           <ArrowDownwardIcon style={{ fontSize: 14 }} />
         </button>
         <button className="creator__section-action-btn creator__section-action-btn--danger" onClick={onDelete} title={t('creator.sectionDelete')} style={{ marginLeft: 'auto' }}>
@@ -914,7 +923,7 @@ function SectionPropertyPanel({ section, onChange, onDelete, sectionIdx, totalSe
 
 // ── FieldCard (in section canvas) ────────────────────────────────────────────
 
-function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) {
+function FieldCard({ id, field, isSelected, isDuplicateKey, isDropBeside, onClick, onRemove, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) {
   const { t } = useTranslation();
   const ti = typeInfo(field.type);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -924,7 +933,7 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
     <div
       ref={setNodeRef}
       style={dndStyle}
-      className={`creator__canvas-field${isSelected ? ' creator__canvas-field--selected' : ''}${isDuplicateKey ? ' creator__canvas-field--error' : ''}`}
+      className={`creator__canvas-field${isSelected ? ' creator__canvas-field--selected' : ''}${isDuplicateKey ? ' creator__canvas-field--error' : ''}${isDropBeside ? ' creator__canvas-field--drop-beside' : ''}`}
       onClick={e => { e.stopPropagation(); onClick(); }}
     >
       <div className="creator__canvas-field-drag" {...attributes} {...listeners}>
@@ -961,30 +970,44 @@ function FieldCard({ id, field, isSelected, isDuplicateKey, onClick, onRemove, o
 // ── SectionCanvas ─────────────────────────────────────────────────────────────
 
 function SectionCanvas({
-  id, section, sectionIdx, selected, totalSections,
-  onSelectSection, onSelectField,
-  onUpdateSection, onRemoveSection, onMoveSection,
-  onAddField, onRemoveField, onMoveField, onDuplicateField,
-  addingToSection, onToggleAdding,
-  duplicateKeys,
+  section, path, siblingCount, selected,
+  onSelect, onRemove, onMove, onDuplicate,
+  onAddField, addingToPath, onToggleAdding, duplicateKeys, nested, intoTargetId, besideTargetId,
 }) {
   const { t } = useTranslation();
-  const isActiveSection = selected?.sectionIdx === sectionIdx;
-  const cols = section.columns || 3;
-
+  // A nested section is addressed by its wrapper field key, which section.id mirrors — so one
+  // id works for DnD, React keys and the empty-drop sentinel at every depth.
+  const id = section.id;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  // The header is this section's second droppable, and the one that keeps the ordinary
+  // sortable meaning: hovering it asks to reorder the section among its siblings, while
+  // hovering anything else in the section asks to drop the node INSIDE it. A plain droppable,
+  // not a sortable item — it belongs to no SortableContext and takes part in no displacement
+  // maths. The drag listeners live on the handle span below, so this ref shares no element
+  // with them.
+  const { setNodeRef: setHeaderDropRef } = useDroppable({ id: dropHeaderId(id) });
   const dndStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const isActiveSection = samePath(selected, path);
+  // A drop would land INSIDE this section, so it shows itself as the receiving container.
+  const isIntoTarget = intoTargetId === section.id;
+  const isAddingHere = samePath(addingToPath, path);
+  const cols = section.columns || 3;
+  const index = path[path.length - 1];
 
-  const fieldIds = section.fields.length > 0
-    ? section.fields.map(f => f.key)
-    : [`__drop__${section.id}`];
+  // The sentinel is the LAST sortable id of every section: hovering a field card means
+  // "insert where that card sits", so without a trailing append target the slot past the last
+  // child is unreachable. It doubles as the droppable `over` is redirected to whenever the
+  // pointer asks to drop INSIDE this section — see redirectIntoTarget.
+  const childIds = [...section.fields.map(f => f.key), dropSentinelId(section.id)];
 
   return (
-    <div ref={setNodeRef} style={dndStyle} className={`creator__section${isActiveSection ? ' creator__section--active' : ''}`} onClick={() => onSelectSection(sectionIdx)}>
-      <div
-        className="creator__section-header"
-        onClick={() => onSelectSection(sectionIdx)}
-      >
+    <div
+      ref={setNodeRef}
+      style={dndStyle}
+      className={`creator__section${isActiveSection ? ' creator__section--active' : ''}${nested ? ' creator__section--nested' : ''}${isIntoTarget ? ' creator__section--drop-into' : ''}`}
+      onClick={e => { e.stopPropagation(); onSelect(path); }}
+    >
+      <div ref={setHeaderDropRef} className="creator__section-header">
         <span className="creator__section-drag" {...attributes} {...listeners}><DragHandleIcon style={{ fontSize: 16 }} /></span>
         <span className="creator__section-title-label">
           {section.title || <em style={{ opacity: 0.45 }}>{t('creator.sectionNoName')}</em>}
@@ -993,30 +1016,30 @@ function SectionCanvas({
         <div className="creator__section-actions">
           <button
             className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onMoveSection(sectionIdx, -1); }}
-            disabled={sectionIdx === 0}
+            onClick={e => { e.stopPropagation(); onMove(path, -1); }}
+            disabled={index === 0}
             title={t('creator.sectionMoveUpShort')}
           >
             <ArrowUpwardIcon style={{ fontSize: 13 }} />
           </button>
           <button
             className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onMoveSection(sectionIdx, +1); }}
-            disabled={sectionIdx === totalSections - 1}
+            onClick={e => { e.stopPropagation(); onMove(path, +1); }}
+            disabled={index === siblingCount - 1}
             title={t('creator.sectionMoveDownShort')}
           >
             <ArrowDownwardIcon style={{ fontSize: 13 }} />
           </button>
           <button
             className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onSelectSection(sectionIdx); }}
-            title={t('creator.sectionEdit')}
+            onClick={e => { e.stopPropagation(); onDuplicate(path); }}
+            title={t('creator.sectionDuplicate')}
           >
-            <ViewColumnIcon style={{ fontSize: 13 }} />
+            <ContentCopyIcon style={{ fontSize: 13 }} />
           </button>
           <button
             className="creator__section-action-btn creator__section-action-btn--danger"
-            onClick={e => { e.stopPropagation(); onRemoveSection(sectionIdx); }}
+            onClick={e => { e.stopPropagation(); onRemove(path); }}
             title={t('creator.sectionDelete')}
           >
             <DeleteIcon style={{ fontSize: 13 }} />
@@ -1025,31 +1048,54 @@ function SectionCanvas({
       </div>
 
       <div className="creator__section-body">
-        <SortableContext items={fieldIds} strategy={rectSortingStrategy}>
+        <SortableContext items={childIds} strategy={rectSortingStrategy}>
           <div className={`creator__fields-grid creator__fields-grid--${cols}`}>
-            {section.fields.length > 0
-              ? section.fields.map((field, fieldIdx) => (
-                  <FieldCard
-                    key={field.key}
-                    id={field.key}
-                    field={field}
-                    isSelected={selected?.sectionIdx === sectionIdx && selected?.fieldIdx === fieldIdx}
-                    isDuplicateKey={duplicateKeys?.has(field.key)}
-                    onClick={() => onSelectField(sectionIdx, fieldIdx)}
-                    onRemove={() => onRemoveField(sectionIdx, fieldIdx)}
-                    onDuplicate={() => onDuplicateField(sectionIdx, fieldIdx)}
-                    onMoveUp={() => onMoveField(sectionIdx, fieldIdx, -1)}
-                    onMoveDown={() => onMoveField(sectionIdx, fieldIdx, +1)}
-                    isFirst={fieldIdx === 0}
-                    isLast={fieldIdx === section.fields.length - 1}
-                  />
-                ))
-              : <EmptyDropZone sectionId={section.id} />
-            }
-            {addingToSection !== sectionIdx && (
+            {section.fields.map((child, i) => {
+              const childPath = [...path, i];
+              // One ordered list holds both shapes: a section field recurses, a leaf field
+              // renders a card. Either way it occupies exactly one cell of this grid.
+              return child.type === SECTION_TYPE && child.section ? (
+                <SectionCanvas
+                  key={child.key}
+                  section={child.section}
+                  path={childPath}
+                  siblingCount={section.fields.length}
+                  selected={selected}
+                  onSelect={onSelect}
+                  onRemove={onRemove}
+                  onMove={onMove}
+                  onDuplicate={onDuplicate}
+                  onAddField={onAddField}
+                  addingToPath={addingToPath}
+                  onToggleAdding={onToggleAdding}
+                  duplicateKeys={duplicateKeys}
+                  intoTargetId={intoTargetId}
+                  besideTargetId={besideTargetId}
+                  nested
+                />
+              ) : (
+                <FieldCard
+                  key={child.key}
+                  id={child.key}
+                  field={child}
+                  isSelected={samePath(selected, childPath)}
+                  isDuplicateKey={duplicateKeys?.has(child.key)}
+                  isDropBeside={besideTargetId === child.key}
+                  onClick={() => onSelect(childPath)}
+                  onRemove={() => onRemove(childPath)}
+                  onDuplicate={() => onDuplicate(childPath)}
+                  onMoveUp={() => onMove(childPath, -1)}
+                  onMoveDown={() => onMove(childPath, +1)}
+                  isFirst={i === 0}
+                  isLast={i === section.fields.length - 1}
+                />
+              );
+            })}
+            <DropZone sectionId={section.id} empty={section.fields.length === 0} />
+            {!isAddingHere && (
               <button
                 className="creator__add-field-btn"
-                onClick={() => onToggleAdding(sectionIdx)}
+                onClick={e => { e.stopPropagation(); onToggleAdding(path); }}
               >
                 <AddIcon style={{ fontSize: 14 }} /> {t('creator.addField')}
               </button>
@@ -1057,19 +1103,19 @@ function SectionCanvas({
           </div>
         </SortableContext>
 
-        {addingToSection === sectionIdx && (
+        {isAddingHere && (
           <div className="creator__inline-picker">
             {FIELD_TYPES.map(ft => (
               <button
                 key={ft.type}
                 className="creator__inline-type-btn"
-                onClick={() => onAddField(sectionIdx, ft.type)}
+                onClick={e => { e.stopPropagation(); onAddField(path, ft.type); }}
               >
                 <span className="creator__inline-type-icon">{ft.icon}</span>
                 <span>{t(ft.labelKey, { defaultValue: ft.type })}</span>
               </button>
             ))}
-            <button className="creator__inline-cancel" onClick={() => onToggleAdding(null)}>✕</button>
+            <button className="creator__inline-cancel" onClick={e => { e.stopPropagation(); onToggleAdding(null); }}>✕</button>
           </div>
         )}
       </div>
@@ -1077,14 +1123,25 @@ function SectionCanvas({
   );
 }
 
-// ── EmptyDropZone ─────────────────────────────────────────────────────────────
+// ── DropZone ──────────────────────────────────────────────────────────────────
 
-function EmptyDropZone({ sectionId }) {
+// The append target of a section, mounted after its last child at every depth. An empty
+// section shows the full invitation; a populated one only needs a thin strip the pointer can
+// reach past the last card, so it stays quiet until something is dragged over it.
+//
+// Hovering a section's body is signalled by highlighting the whole section, not by a ghost in
+// this strip: a card-sized placeholder here has no reserved space of its own, so it overlapped
+// the "add field" button and read as part of the section rather than as a preview.
+function DropZone({ sectionId, empty }) {
   const { t } = useTranslation();
-  const { setNodeRef, isOver } = useSortable({ id: `__drop__${sectionId}` });
+  const { setNodeRef, isOver } = useSortable({ id: dropSentinelId(sectionId) });
+  const variant = empty ? 'creator__drop-zone--empty' : 'creator__drop-zone--append';
   return (
-    <div ref={setNodeRef} className={`creator__empty-drop-zone${isOver ? ' creator__empty-drop-zone--over' : ''}`}>
-      {t('creator.dropZone')}
+    <div
+      ref={setNodeRef}
+      className={`creator__drop-zone ${variant}${isOver ? ' creator__drop-zone--over' : ''}`}
+    >
+      {empty ? t('creator.dropZone') : null}
     </div>
   );
 }
@@ -1121,15 +1178,43 @@ function TemplatePreview({ sections, name }) {
 
 // ── TemplateBuilder (main) ────────────────────────────────────────────────────
 
+// redirectIntoTarget rewrites the winning collision when the pointer is asking to drop INSIDE
+// a section. Leaving `over` on the section's own id would fight the SortableContext that
+// section lives in: that context also holds the dragged node, so it would slide the section
+// out from under a pointer that is still asking to drop inside it — the jumping the previous
+// revision tried to fix by relocating the node mid-drag.
+//
+// The section's append sentinel says exactly the same thing (dropTargetOf maps both a section
+// id and its sentinel to "append into that section") but lives in the section's OWN context,
+// where the dragged node is not an item. @dnd-kit/sortable displaces only where a context
+// knows BOTH indices — `displaceItem = isSorting && !disableTransforms &&
+// isValidIndex(activeIndex) && isValidIndex(overIndex)`, sortable.cjs.development.js:514 with
+// isValidIndex at :43 — so with `over` on the sentinel neither context moves anything: the
+// dragged node's context does not know the sentinel, the target's context does not know the
+// dragged node. The layout holds still, which is what keeps the decision from chasing itself.
+//
+// Only a section's own id is ever redirected. A hover that resolves to "beside" is left alone
+// on purpose: there the sortable displacement IS the correct preview.
+function redirectIntoTarget(collisions, activeId, sections) {
+  const overId = collisions?.[0]?.id;
+  if (overId == null) return collisions;
+  const id = String(overId);
+  const index = indexNodes(sections);
+  const path = index.get(id);
+  if (!path || !isContainer(nodeAt(sections, path))) return collisions;
+  if (dropIntent(sections, index.get(String(activeId)), id)?.intoId !== id) return collisions;
+  // Only `id` is read downstream: dnd-kit takes getFirstCollision(collisions, 'id') and looks
+  // the container up in its own registry (core.cjs.development.js:2989 and :3257).
+  return [{ ...collisions[0], id: dropSentinelId(id) }, ...collisions.slice(1)];
+}
+
 function findDuplicateKeys(sections) {
   const seen = {};
   const dupes = new Set();
-  for (const section of sections) {
-    for (const field of section.fields) {
-      if (seen[field.key]) dupes.add(field.key);
-      else seen[field.key] = true;
-    }
-  }
+  walkFields(sections, (field) => {
+    if (seen[field.key]) dupes.add(field.key);
+    else seen[field.key] = true;
+  });
   return dupes;
 }
 
@@ -1139,8 +1224,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [name,        setName]        = useState(template?.name     || '');
   const [settings,    setSettings]    = useState(template?.settings || { diceButtons: [] });
   const [isPublic,    setIsPublic]    = useState(template?.isPublic || false);
-  const [selected,    setSelected]    = useState(null); // { sectionIdx, fieldIdx: number|null }
-  const [addingToSection, setAddingToSection] = useState(null); // sectionIdx | null
+  // selected is a PATH: [2] = third root section, [2,0] = its first child (field or
+  // subsection), [2,0,1] = a child of that subsection. null = nothing selected.
+  const [selected,    setSelected]    = useState(null);
+  const [addingToPath, setAddingToPath] = useState(null); // path of the section whose "add field" list is open
   const [isSaving,    setIsSaving]    = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab,   setActiveTab]   = useState('general');
@@ -1165,7 +1252,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setSettings(template?.settings || { diceButtons: [] });
     setIsPublic(template?.isPublic || false);
     setSelected(null);
-    setAddingToSection(null);
+    setAddingToPath(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
@@ -1204,99 +1291,79 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     onClose?.();
   }, [saveTemplate, onClose]);
 
-  // ── Section operations ─────────────────────────────────────────────────────
+  // ── Tree operations ────────────────────────────────────────────────────────
+  //
+  // Every operation below is "resolve a path, hand it to a pure helper, save". The tree
+  // manipulation lives in utils/templateSections.js so it can be tested without a DOM.
+
+  // commit is the single place that pairs a tree write with everything that must stay in
+  // sync with it: the tree and selection stay consistent with each other.
+  const commit = (next, nextSelected) => {
+    setSections(next);
+    if (nextSelected !== undefined) setSelected(nextSelected);
+    triggerSave(next, name);
+  };
 
   const addSection = () => {
     const newSection = makeDefaultSection();
     const next = [...sections, newSection];
-    setSections(next);
-    setSelected({ sectionIdx: next.length - 1, fieldIdx: null });
-    triggerSave(next, name);
+    setAddingToPath(null);
+    commit(next, [next.length - 1]);
   };
 
-  const updateSection = (idx, patch) => {
-    const next = sections.map((s, i) => i === idx ? { ...s, ...patch } : s);
-    setSections(next);
-    triggerSave(next, name);
+  // addNode appends a field or a subsection to the container implied by the current
+  // selection. With an empty template there is no container yet, so the click creates the
+  // first root section instead — which is exactly what a "Section" click wanted anyway.
+  const addNode = (type) => {
+    const parentPath = containerPathFor(sections, selected);
+    if (parentPath === null) return addSection();
+    const node = makeDefaultField(type);
+    const count = (childrenOf(nodeAt(sections, parentPath)) || []).length;
+    const next = insertAtPath(sections, parentPath, count, node);
+    setAddingToPath(null);
+    commit(next, [...parentPath, count]);
   };
 
-  const removeSection = (idx) => {
-    const next = sections.filter((_, i) => i !== idx);
-    setSections(next);
-    setSelected(null);
-    triggerSave(next, name);
+  // addNodeTo is the in-canvas "add field" list: the container is explicit, not inferred.
+  const addNodeTo = (parentPath, type) => {
+    const node = makeDefaultField(type);
+    const count = (childrenOf(nodeAt(sections, parentPath)) || []).length;
+    const next = insertAtPath(sections, parentPath, count, node);
+    setAddingToPath(null);
+    commit(next, [...parentPath, count]);
   };
 
-  const moveSection = (idx, dir) => {
-    const target = idx + dir;
-    if (target < 0 || target >= sections.length) return;
-    const next = [...sections];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    setSections(next);
-    setSelected({ sectionIdx: target, fieldIdx: null });
-    triggerSave(next, name);
+  const updateNode = (path, patch) => commit(updateAtPath(sections, path, patch));
+
+  const removeNode = (path) => {
+    setAddingToPath(null);
+    commit(removeAtPath(sections, path), null);
   };
 
-  // ── Field operations ───────────────────────────────────────────────────────
-
-  const addField = (sectionIdx, type) => {
-    const field = makeDefaultField(type);
-    const next = sections.map((s, i) =>
-      i === sectionIdx ? { ...s, fields: [...s.fields, field] } : s
-    );
-    setSections(next);
-    setSelected({ sectionIdx, fieldIdx: next[sectionIdx].fields.length - 1 });
-    setAddingToSection(null);
-    triggerSave(next, name);
+  const moveWithinParent = (path, dir) => {
+    const found = locate(sections, path);
+    if (!found) return;
+    const target = found.index + dir;
+    if (target < 0 || target >= found.siblings.length) return;
+    const parentPath = path.slice(0, -1);
+    // Remove then insert, so the pure helpers stay the only writers of the tree.
+    const next = insertAtPath(removeAtPath(sections, path), parentPath, target, found.node);
+    setAddingToPath(null);
+    commit(next, [...parentPath, target]);
   };
 
-  const updateField = (sectionIdx, fieldIdx, patch) => {
-    const next = sections.map((s, si) =>
-      si === sectionIdx
-        ? { ...s, fields: s.fields.map((f, fi) => fi === fieldIdx ? { ...f, ...patch } : f) }
-        : s
-    );
-    setSections(next);
-    triggerSave(next, name);
-  };
-
-  const removeField = (sectionIdx, fieldIdx) => {
-    const next = sections.map((s, si) =>
-      si === sectionIdx ? { ...s, fields: s.fields.filter((_, fi) => fi !== fieldIdx) } : s
-    );
-    setSections(next);
-    if (selected?.sectionIdx === sectionIdx && selected?.fieldIdx === fieldIdx) {
-      setSelected({ sectionIdx, fieldIdx: null });
-    }
-    triggerSave(next, name);
-  };
-
-  const moveField = (sectionIdx, fieldIdx, dir) => {
-    const target = fieldIdx + dir;
-    const s = sections[sectionIdx];
-    if (target < 0 || target >= s.fields.length) return;
-    const newFields = [...s.fields];
-    [newFields[fieldIdx], newFields[target]] = [newFields[target], newFields[fieldIdx]];
-    const next = sections.map((sec, si) => si === sectionIdx ? { ...sec, fields: newFields } : sec);
-    setSections(next);
-    setSelected({ sectionIdx, fieldIdx: target });
-    triggerSave(next, name);
-  };
-
-  const duplicateField = (sectionIdx, fieldIdx) => {
-    const source = sections[sectionIdx]?.fields?.[fieldIdx];
-    if (!source) return;
-    const next = duplicateFieldInSections(sections, sectionIdx, fieldIdx, {
-      newKey: genId(source.type),
+  const duplicateNode = (path) => {
+    const next = duplicateNodeAtPath(sections, path, {
+      mint: genId,
       copySuffix: t('creator.copySuffix'),
     });
-    setSections(next);
-    // The insert shifts every field behind the original by one, so the stored fieldIdx
-    // would start pointing at the neighbour. Keep the panel on the same field.
-    if (selected?.sectionIdx === sectionIdx && selected?.fieldIdx > fieldIdx) {
-      setSelected({ sectionIdx, fieldIdx: selected.fieldIdx + 1 });
-    }
-    triggerSave(next, name);
+    // duplicateNodeAtPath always inserts the copy right after the original, at this path —
+    // shiftPathAfterInsert keeps the property panel on whatever was selected regardless of
+    // depth, including when the duplicated node is an ancestor of the current selection.
+    const insertedPath = [...path.slice(0, -1), path[path.length - 1] + 1];
+    const nextSelected = selected ? shiftPathAfterInsert(selected, insertedPath) : selected;
+    setAddingToPath(null);
+    commit(next, nextSelected);
   };
 
   const setNameAndSave = (newName) => {
@@ -1321,129 +1388,77 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const originalSectionsRef = useRef(null);
+  // Which section currently reads as "drop inside me", or null. This is the ONLY state written
+  // while the pointer moves; it is written from onDragOver, which dnd-kit fires only when
+  // over.id CHANGES (core.cjs.development.js:3283 — the effect's dependency list is [overId]),
+  // so never per animation frame. It drives nothing but a CSS class of colours and a shadow:
+  // no size, no border width, no layout. It therefore cannot move a droppable, cannot change a
+  // collision, and cannot feed back into the decision that produced it.
+  const [intoTargetId, setIntoTargetId] = useState(null);
+  // Which field card currently reads as "the dragged node lands beside me, in a different
+  // list" — the cross-section counterpart of intoTargetId. Same write discipline: only from
+  // onDragOver, only on an over.id change, and it drives nothing but a CSS pseudo-element
+  // (colour, position, no size) — see dropIntent's besideId for why it is null within one list.
+  const [besideTargetId, setBesideTargetId] = useState(null);
 
+  // Nested containers overlap their parents geometrically, so closestCenter on a mix of
+  // "child card" and "container" droppables keeps snapping to the parent box's centre and
+  // dropping beside a subsection instead of inside it. pointerWithin answers "what is under
+  // the cursor", which is the question a nested tree actually asks; rectIntersection only
+  // covers the gap when the pointer leaves every droppable (e.g. dragging over the gutter).
+  //
+  // pointerWithin ranks a smaller rect ahead of the container enclosing it, so a section's
+  // header wins over the section, and a field card wins over the section holding it.
   const collisionDetection = useCallback((args) => {
-    const activeId = String(args.active.id);
-    const cur = sectionsRef.current;
-    const isSection = cur.some(s => s.id === activeId);
-    if (isSection) {
-      const filtered = args.droppableContainers.filter(c => cur.some(s => s.id === String(c.id)));
-      return closestCenter({ ...args, droppableContainers: filtered });
-    }
-    // fields: exclude section IDs, include field keys + __drop__ sentinels
-    const sectionIds = new Set(cur.map(s => s.id));
-    const filtered = args.droppableContainers.filter(c => !sectionIds.has(String(c.id)));
-    return closestCenter({ ...args, droppableContainers: filtered });
-  }, []);
+    const hits = pointerWithin(args);
+    const collisions = hits.length > 0 ? hits : rectIntersection(args);
+    return redirectIntoTarget(collisions, args.active.id, sectionsRef.current);
+  }, [sectionsRef]);
 
   const handleDragStart = () => {
     originalSectionsRef.current = sectionsRef.current;
+    setIntoTargetId(null);
+    setBesideTargetId(null);
     clearTimeout(saveTimer.current);
   };
 
   const handleDragCancel = () => {
-    if (originalSectionsRef.current) setSections(originalSectionsRef.current);
+    const original = originalSectionsRef.current;
     originalSectionsRef.current = null;
+    setIntoTargetId(null);
+    setBesideTargetId(null);
+    // handleDragStart cleared the debounced save, so every exit from a drag has to re-arm it
+    // or an edit made just before the drag never reaches the server.
+    if (original) { setSections(original); triggerSave(original, name); }
   };
 
+  // The highlight, and nothing else. The tree is not touched until the drop, so a hover can no
+  // longer change the layout it was read from.
   const handleDragOver = ({ active, over }) => {
-    if (!over) return;
-    const activeId = String(active.id);
-    const overId   = String(over.id);
     const cur = sectionsRef.current;
-
-    if (cur.some(s => s.id === activeId)) return; // section drag, ignore
-
-    const sourceSI = cur.findIndex(s => s.fields.some(f => f.key === activeId));
-    if (sourceSI === -1) return;
-
-    let targetSI, insertIdx;
-    if (overId.startsWith('__drop__')) {
-      const targetSectionId = overId.slice('__drop__'.length);
-      targetSI = cur.findIndex(s => s.id === targetSectionId);
-      insertIdx = 0;
-    } else {
-      targetSI = cur.findIndex(s => s.fields.some(f => f.key === overId));
-      if (targetSI === -1) return;
-      insertIdx = cur[targetSI].fields.findIndex(f => f.key === overId);
-    }
-
-    if (sourceSI === targetSI) return; // same section, SortableContext handles it
-
-    const field = cur[sourceSI].fields.find(f => f.key === activeId);
-    const finalIdx = insertIdx !== -1 ? insertIdx : cur[targetSI].fields.length;
-
-    const next = cur.map((s, i) => {
-      if (i === sourceSI) return { ...s, fields: s.fields.filter(f => f.key !== activeId) };
-      if (i === targetSI) {
-        const nf = [...s.fields];
-        nf.splice(finalIdx, 0, field);
-        return { ...s, fields: nf };
-      }
-      return s;
-    });
-    sectionsRef.current = next; // sync — blokuje kolejne wywołania handleDragOver zanim React przerenderuje
-    setSections(next);
+    const fromPath = over ? indexNodes(cur).get(String(active.id)) : null;
+    const intent = fromPath ? dropIntent(cur, fromPath, String(over.id)) : null;
+    setIntoTargetId(intent?.intoId ?? null);
+    setBesideTargetId(intent?.besideId ?? null);
   };
 
   const handleDragEnd = ({ active, over }) => {
     originalSectionsRef.current = null;
+    setIntoTargetId(null);
+    setBesideTargetId(null);
     const cur = sectionsRef.current;
+    const movedId = String(active.id);
+    const fromPath = over ? indexNodes(cur).get(movedId) : null;
+    const intent = fromPath ? dropIntent(cur, fromPath, String(over.id)) : null;
+    // Every exit re-arms the debounced save handleDragStart cleared, including the ones that
+    // move nothing.
+    if (!intent) { triggerSave(cur, name); return; }
 
-    if (!over || active.id === over.id) {
-      triggerSave(cur, name);
-      return;
-    }
-    const activeId = String(active.id);
-    const overId   = String(over.id);
-
-    // Section reorder
-    if (cur.some(s => s.id === activeId)) {
-      const oldIdx = cur.findIndex(s => s.id === activeId);
-      const newIdx = cur.findIndex(s => s.id === overId);
-      if (oldIdx === newIdx || newIdx === -1) { triggerSave(cur, name); return; }
-      const next = arrayMove(cur, oldIdx, newIdx);
-      setSections(next);
-      if (selected !== null) {
-        const movedId = cur[selected.sectionIdx]?.id;
-        const newSI = next.findIndex(s => s.id === movedId);
-        setSelected(prev => ({ ...prev, sectionIdx: newSI !== -1 ? newSI : 0 }));
-      }
-      triggerSave(next, name);
-      return;
-    }
-
-    // Field: cross-section already handled in onDragOver; handle same-section reorder
-    const sourceSI = cur.findIndex(s => s.fields.some(f => f.key === activeId));
-    const overSI   = cur.findIndex(s => s.fields.some(f => f.key === overId));
-
-    if (sourceSI !== overSI || sourceSI === -1) {
-      // cross-section: update selected to reflect new position
-      if (selected !== null) {
-        const newSI = cur.findIndex(s => s.fields.some(f => f.key === activeId));
-        if (newSI !== -1) {
-          const newFI = cur[newSI].fields.findIndex(f => f.key === activeId);
-          setSelected({ sectionIdx: newSI, fieldIdx: newFI !== -1 ? newFI : null });
-        }
-      }
-      triggerSave(cur, name);
-      return;
-    }
-
-    const s = cur[sourceSI];
-    const oldIdx = s.fields.findIndex(f => f.key === activeId);
-    const newIdx = s.fields.findIndex(f => f.key === overId);
-    if (oldIdx === newIdx || oldIdx === -1 || newIdx === -1) { triggerSave(cur, name); return; }
-
-    const newFields = arrayMove(s.fields, oldIdx, newIdx);
-    const next = cur.map((sec, i) => i === sourceSI ? { ...sec, fields: newFields } : sec);
-    setSections(next);
-    if (selected?.sectionIdx === sourceSI && selected?.fieldIdx !== null) {
-      const movedKey = s.fields[selected.fieldIdx]?.key;
-      const newFI = newFields.findIndex(f => f.key === movedKey);
-      setSelected({ sectionIdx: sourceSI, fieldIdx: newFI !== -1 ? newFI : null });
-    }
-    triggerSave(next, name);
+    const next = moveNode(cur, fromPath, intent.parentPath, intent.idx);
+    // Follow the dragged node with the selection so the property panel does not jump to a
+    // stranger: its path changed, its id did not. This runs even when the move was refused
+    // (next === cur, so the id's path is unchanged too) — the user chose to keep that behaviour.
+    commit(next, indexNodes(next).get(movedId) || null);
   };
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -1464,13 +1479,30 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setPaletteTooltip(null);
   };
 
-  const numberFields = sections.flatMap(s => s.fields).filter(f => f.type === 'attr');
-  const selectedSection = selected !== null ? sections[selected.sectionIdx] : null;
-  const selectedField   = selectedSection && selected.fieldIdx !== null
-    ? selectedSection.fields[selected.fieldIdx]
-    : null;
-
-  const totalFieldCount = sections.reduce((acc, s) => acc + s.fields.length, 0);
+  // Attribute list offered to formula builders (every attr field, at any nesting depth) and
+  // the header chip's counts. walkFields visits leaves only, so sections need their own
+  // recursion: the chip counts every container at every depth, not just the root list, or a
+  // root section holding three subsections would read "1 section" next to "9 fields".
+  const { numberFields, totalFieldCount, sectionCount } = useMemo(() => {
+    const attrs = [];
+    let n = 0;
+    walkFields(sections, (f) => {
+      if (f.type === 'attr') attrs.push(f);
+      n += 1;
+    });
+    const countContainers = (list) => (list || []).reduce((acc, node) => {
+      const kids = childrenOf(node);
+      return kids ? acc + 1 + countContainers(kids) : acc;
+    }, 0);
+    return { numberFields: attrs, totalFieldCount: n, sectionCount: countContainers(sections) };
+  }, [sections]);
+  const selectedNode = selected !== null ? nodeAt(sections, selected) : null;
+  const selectedIsSection = selected !== null
+    && (selected.length === 1 || selectedNode?.type === SECTION_TYPE);
+  const selectedSectionDef = selectedIsSection ? sectionOf(selectedNode) : null;
+  const selectedSiblingCount = selected !== null
+    ? (locate(sections, selected)?.siblings.length ?? 0)
+    : 0;
 
   return (
     <Dialog open fullScreen onClose={handleClose}
@@ -1520,7 +1552,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           </nav>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
-              {sections.length} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
+              {sectionCount} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
             </Typography>
             {isSaving
               ? <HourglassEmptyIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -1614,7 +1646,13 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             <div className="creator__palette-title">{t('creator.components')}</div>
             {selected !== null ? (
               <div className="creator__palette-hint">
-                → {sections[selected.sectionIdx]?.title || t('creator.sectionUnnamed')}
+                → {(() => {
+                  const parentPath = containerPathFor(sections, selected);
+                  if (parentPath === null) return t('creator.sectionUnnamed');
+                  const parent = nodeAt(sections, parentPath);
+                  const def = sectionOf(parent);
+                  return def?.title || t('creator.sectionUnnamed');
+                })()}
               </div>
             ) : sections.length > 0 ? (
               <div className="creator__palette-hint creator__palette-hint--warn">
@@ -1634,19 +1672,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                       className="creator__palette-card"
                       onMouseEnter={e => showPaletteTooltip(t(ft.desc, { defaultValue: ft.type }), e.currentTarget)}
                       onMouseLeave={hidePaletteTooltip}
-                      onClick={() => {
-                        if (selected !== null) {
-                          addField(selected.sectionIdx, ft.type);
-                        } else if (sections.length > 0) {
-                          addField(sections.length - 1, ft.type);
-                        } else {
-                          const newSection = makeDefaultSection();
-                          const next = [newSection];
-                          setSections(next);
-                          setSelected({ sectionIdx: 0, fieldIdx: null });
-                          triggerSave(next, name);
-                        }
-                      }}
+                      onClick={() => addNode(ft.type)}
                     >
                       <span className="creator__palette-icon">{ft.icon}</span>
                       <div className="creator__palette-info">
@@ -1662,7 +1688,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         </aside>
 
         {/* Center: canvas */}
-        <main className="creator__canvas-area" onClick={() => { setSelected(null); setAddingToSection(null); }}>
+        <main className="creator__canvas-area" onClick={() => { setSelected(null); setAddingToPath(null); }}>
           {sections.length === 0 ? (
             <div className="creator__canvas-empty">
               <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: '#7a5c42' }} />
@@ -1677,26 +1703,24 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             <div onClick={e => e.stopPropagation()}>
               <DndKitContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
                 <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  {sections.map((section, sectionIdx) => (
+                  {sections.map((section, i) => (
                     <SectionCanvas
                       key={section.id}
-                      id={section.id}
                       section={section}
-                      sectionIdx={sectionIdx}
+                      path={[i]}
+                      siblingCount={sections.length}
                       selected={selected}
-                      totalSections={sections.length}
-                      onSelectSection={idx => setSelected({ sectionIdx: idx, fieldIdx: null })}
-                      onSelectField={(si, fi) => setSelected({ sectionIdx: si, fieldIdx: fi })}
-                      onUpdateSection={updateSection}
-                      onRemoveSection={removeSection}
-                      onMoveSection={moveSection}
-                      onAddField={addField}
-                      onRemoveField={removeField}
-                      onMoveField={moveField}
-                      onDuplicateField={duplicateField}
-                      addingToSection={addingToSection}
-                      onToggleAdding={idx => setAddingToSection(prev => prev === idx ? null : idx)}
+                      onSelect={setSelected}
+                      onRemove={removeNode}
+                      onMove={moveWithinParent}
+                      onDuplicate={duplicateNode}
+                      onAddField={addNodeTo}
+                      addingToPath={addingToPath}
+                      onToggleAdding={p => setAddingToPath(prev => (samePath(prev, p) ? null : p))}
                       duplicateKeys={duplicateKeys}
+                      intoTargetId={intoTargetId}
+                      besideTargetId={besideTargetId}
+                      nested={false}
                     />
                   ))}
                 </SortableContext>
@@ -1710,21 +1734,21 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
         {/* Right: properties */}
         <aside className="creator__props-aside">
-          {selectedField ? (
+          {selected !== null && !selectedIsSection && selectedNode ? (
             <PropertyPanel
-              field={selectedField}
-              onChange={patch => updateField(selected.sectionIdx, selected.fieldIdx, patch)}
+              field={selectedNode}
+              onChange={patch => updateNode(selected, patch)}
               numberFields={numberFields}
               sections={sections}
             />
-          ) : selectedSection ? (
+          ) : selectedSectionDef ? (
             <SectionPropertyPanel
-              section={selectedSection}
-              onChange={patch => updateSection(selected.sectionIdx, patch)}
-              onDelete={() => removeSection(selected.sectionIdx)}
-              sectionIdx={selected.sectionIdx}
-              totalSections={sections.length}
-              onMove={moveSection}
+              section={selectedSectionDef}
+              onChange={patch => updateNode(selected, patch)}
+              onDelete={() => removeNode(selected)}
+              index={selected[selected.length - 1]}
+              siblingCount={selectedSiblingCount}
+              onMove={dir => moveWithinParent(selected, dir)}
             />
           ) : (
             <div className="creator__props-empty">

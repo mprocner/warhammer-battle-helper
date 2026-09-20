@@ -79,6 +79,43 @@ describe('CustomCharacterDetails short card', () => {
     expect(container.querySelectorAll('.custom-character-details__section').length).toBe(1);
   });
 
+  // FEATURE-211: sections nest, but the short card does not — its blocks are one per ROOT
+  // section. A field flagged inside a subsection therefore joins its root section's block.
+  // A flat pass over section.fields would skip it silently, while the creator still paints
+  // the ▤ badge on it and tells the GM it will show.
+  it('shows a flagged field from a subsection inside its root section block', () => {
+    const { container } = renderCard([
+      { id: 's1', fields: [
+        attr('top'),
+        { key: 'sub', type: 'section', label: '', section: { id: 'sub', title: 'Sub', columns: 1, fields: [
+          attr('nested'),
+          attr('unflagged', { showOnShortCard: false }),
+          { key: 'deeper', type: 'section', label: '', section: { id: 'deeper', title: 'Deeper', columns: 1, fields: [
+            attr('deep'),
+          ] } },
+        ] } },
+      ] },
+    ]);
+
+    const blocks = [...container.querySelectorAll('.custom-character-details__section')];
+    expect(blocks).toHaveLength(1);
+    const abbrs = [...blocks[0].querySelectorAll('.custom-character-details__attr-abbr')];
+    expect(abbrs.map(el => el.textContent)).toEqual(['TOP', 'NESTED', 'DEEP']);
+  });
+
+  it('drops a root section whose only flagged field lives in a subsection that has none', () => {
+    const { container } = renderCard([
+      { id: 's1', fields: [attr('kept')] },
+      { id: 's2', fields: [
+        { key: 'sub', type: 'section', label: '', section: { id: 'sub', title: 'Sub', columns: 1, fields: [
+          attr('skipped', { showOnShortCard: false }),
+        ] } },
+      ] },
+    ]);
+
+    expect(container.querySelectorAll('.custom-character-details__section').length).toBe(1);
+  });
+
   it('shows the dice button only on rollable fields and opens the modifier modal', () => {
     // FEATURE-164: the overlay only opens when the template enables a modifier prompt — without
     // one, promptRoll fires the roll immediately. Configure one here so this test still exercises

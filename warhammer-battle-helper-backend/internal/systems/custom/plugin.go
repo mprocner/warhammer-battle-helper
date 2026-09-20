@@ -81,7 +81,7 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 		s.Numbers = map[string]int{}
 	}
 	for _, section := range tmpl.Sections {
-		for _, field := range section.Fields {
+		for _, field := range flattenFields(section.Fields) {
 			if field.Default == nil {
 				continue
 			}
@@ -140,6 +140,28 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 	return p.rollFromFormula(stats, template, skillKey, linkedAttr, rollCfg, modifier)
 }
 
+// flattenFields returns every leaf field of the given list, descending into nested
+// sections. Section wrappers themselves are dropped: they hold no value, no roll config and
+// no label worth resolving, so every caller wants the leaves only.
+//
+// The returned FieldDefs are COPIES, detached from the template's backing arrays: never take
+// the address of one and never mutate one expecting the template to change. A caller that
+// needs to write through to the stored field uses the pointer-returning variant instead --
+// see findWeaponFieldInFields in weapon.go.
+func flattenFields(fields []models.FieldDef) []models.FieldDef {
+	out := make([]models.FieldDef, 0, len(fields))
+	for _, field := range fields {
+		if field.Type == "section" {
+			if field.Section != nil {
+				out = append(out, flattenFields(field.Section.Fields)...)
+			}
+			continue
+		}
+		out = append(out, field)
+	}
+	return out
+}
+
 func decodeStats(raw bson.Raw) (*Stats, error) {
 	var s Stats
 	if err := bson.Unmarshal(raw, &s); err != nil {
@@ -165,7 +187,7 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 // but use their individual LinkedAttr from stats.CustomSkillNodes if available.
 func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey string) (*models.RollConfig, string, string, error) {
 	for _, section := range template.Sections {
-		for _, field := range section.Fields {
+		for _, field := range flattenFields(section.Fields) {
 			if field.Type == "skill_tree" && field.Tree != nil {
 				// Search template-defined leaves with field.Key as path prefix.
 				for i := range field.Tree.Children {

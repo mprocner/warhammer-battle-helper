@@ -7750,6 +7750,27 @@ align-items: center;
     gap: 8px;
 }
 
+/* ── Nested sections (FEATURE-211) ── */
+
+/* A nested section sits in ONE cell of its parent grid, so min-width:0 is load-bearing:
+   a grid item defaults to min-width:auto and its widest child (a long skill name, a weapons
+   table) would push the cell past the fraction the parent assigned it. The parent's
+   minmax(0, 1fr) protects the grid TRACKS, not the item inside the cell. */
+.custom-sheet__section--nested {
+    min-width: 0;
+    background: rgba(255, 249, 240, 0.5);
+    border: 1px solid #c4a882;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 0;
+}
+
+.custom-sheet__section-heading--nested {
+    font-size: 0.85rem;
+    color: #7a5c42;
+    margin-bottom: 6px;
+}
+
 .custom-sheet__field {
     display: flex;
     flex-direction: column;
@@ -8845,6 +8866,39 @@ align-items: center;
 .creator__fields-grid--5 { grid-template-columns: repeat(5, 1fr); }
 .creator__fields-grid--6 { grid-template-columns: repeat(6, 1fr); }
 
+/* ── Nested sections in the creator canvas (FEATURE-211) ── */
+
+/* Same min-width:0 reason as on the sheet: the creator grid is repeat(N, 1fr), whose items
+   default to min-width:auto and would otherwise widen the cell past its fraction. */
+.creator__section--nested {
+    min-width: 0;
+    margin-bottom: 0;
+    background: rgba(255, 249, 240, 0.5);
+    border-color: #c4a882;
+}
+
+/* Single-class .creator__section--nested overrides the base background and border.
+   When a nested section is also active, the compound selector restores the active background,
+   reusing the same value the un-nested .creator__section--active rule already uses. */
+.creator__section--nested.creator__section--active {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* A drag is hovering this section anywhere but its header, so releasing drops the node INSIDE
+   it — as opposed to the header, which inserts beside it. This is the whole drop preview now:
+   nothing is moved in the tree while the pointer travels, so the highlight is what tells the
+   user where the node would land. Two classes so it beats .creator__section--nested's
+   single-class background, and !important-free: the ring is the signal, the tint only warms
+   the target. Solid accent border plus a ring, because a border-colour change alone is
+   invisible against the nested border that is already #c4a882.
+   Every property here is layout-neutral (colour, background, shadow) — on purpose: a
+   highlight that resized its section would move the very rect the hover was decided from. */
+.creator__section--drop-into.creator__section {
+    border-color: #c9975b;
+    background: rgba(201, 151, 91, 0.14);
+    box-shadow: 0 0 0 2px rgba(201, 151, 91, 0.55), inset 0 0 16px rgba(201, 151, 91, 0.16);
+}
+
 /* ── Field cards (in section canvas) ── */
 
 .creator__canvas-field {
@@ -8858,10 +8912,6 @@ align-items: center;
     min-height: 62px;
     display: flex;
     flex-direction: column;
-}
-
-.creator__canvas-field--wide {
-    grid-column: 1 / -1;
 }
 
 .creator__canvas-field:hover {
@@ -8880,6 +8930,27 @@ align-items: center;
     outline: 2px solid rgba(180, 60, 40, 0.7);
     outline-offset: 1px;
     background: rgba(255, 240, 235, 0.98);
+}
+
+/* Cross-section "insertion line" indicator (FEATURE-211 drop indicator): a drag is hovering
+   this card, and the drop would land in a DIFFERENT list than the dragged node's own — see
+   dropIntent's besideId. Within one list dnd-kit's sortable already displaces the siblings to
+   preview the gap, so this only ever appears for a cross-section hover, and the pseudo-element
+   keeps it out of flow: it neither reserves space (no layout participation at all) nor can it
+   resize .creator__canvas-field, which is already this element's positioned ancestor (see the
+   `position: relative` on .creator__canvas-field above — nothing about that rule changes here).
+   Placed on the leading (left) edge, slightly overhanging the card, mirroring how dnd-kit's own
+   sortable gap reads. */
+.creator__canvas-field--drop-beside::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    left: -5px;
+    width: 3px;
+    border-radius: 2px;
+    background: #c9975b;
+    pointer-events: none;
 }
 
 .creator__canvas-field-dupe-warn {
@@ -9025,12 +9096,11 @@ align-items: center;
     color: #c0392b;
 }
 
-/* ── Empty drop zone ── */
+/* ── Drop zone (append target, one per section at every depth) ── */
 
-.creator__empty-drop-zone {
+.creator__drop-zone {
     grid-column: 1 / -1;
-    min-height: 64px;
-    border: 1.5px dashed rgba(201, 151, 91, 0.3);
+    border: 1.5px dashed transparent;
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -9042,7 +9112,20 @@ align-items: center;
     transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
-.creator__empty-drop-zone--over {
+/* An empty section has nothing else to show, so its zone is the invitation. */
+.creator__drop-zone--empty {
+    min-height: 64px;
+    border-color: rgba(201, 151, 91, 0.3);
+}
+
+/* A populated section only needs a strip the pointer can reach past the last card — tall
+   enough to hit without a steady hand, quiet enough not to read as another field slot. */
+.creator__drop-zone--append {
+    min-height: 22px;
+    border-color: rgba(201, 151, 91, 0.14);
+}
+
+.creator__drop-zone--over {
     border-color: #c9975b;
     background: rgba(201, 151, 91, 0.08);
     color: #7a5c42;

@@ -189,7 +189,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"
+	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
 
@@ -212,7 +212,6 @@ type FieldDef struct {
 	// so omitempty cannot erase a meaningful value the way it could for Default. Nothing in Go
 	// reads it: the sheet renderer is the only consumer.
 	Step               int            `bson:"step,omitempty" json:"step,omitempty"`
-	ShowToPlayer       bool           `bson:"showToPlayer" json:"showToPlayer"`
 	ShowOnShortCard    bool           `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
 	Rollable           bool           `bson:"rollable" json:"rollable"`
 	HasAdvances        bool           `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
@@ -233,6 +232,12 @@ type FieldDef struct {
 	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
 	// player can copy into an editable weapon row of their own.
 	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
+
+	// Section holds the nested section when Type == "section" (FEATURE-211). A section field
+	// carries no per-character value — its Key never appears in Character.Stats, exactly like
+	// "label". The recursion runs SectionDef -> FieldDef -> *SectionDef, so this is a pointer,
+	// not a value: a value would make the struct infinitely sized.
+	Section *SectionDef `bson:"section,omitempty" json:"section,omitempty"`
 }
 
 // PresetWeapon is a GM-authored weapon template attached to a weapons_table field.

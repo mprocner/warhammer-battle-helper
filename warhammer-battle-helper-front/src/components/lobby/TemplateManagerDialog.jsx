@@ -12,10 +12,16 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import { usePortalTooltip } from '../common/PortalTooltip';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
+import { walkFields } from '../../utils/templateSections';
 
-// Fields live inside sections — the template itself carries no flat field list.
-const countFields = (tpl) =>
-  (tpl.sections || []).reduce((total, section) => total + (section.fields?.length || 0), 0);
+// Fields live inside sections — the template itself carries no flat field list. Sections nest,
+// so this has to be the shared depth-first walk: a top-level count would score a subsection as
+// one "field" and ignore everything the GM put inside it.
+const countFields = (tpl) => {
+  let total = 0;
+  walkFields(tpl.sections, () => { total += 1; });
+  return total;
+};
 
 // Manages custom system templates. Rows are deliberately NOT clickable: a template affords
 // three equal actions (edit, clone, delete) and which ones apply depends on ownership, so a

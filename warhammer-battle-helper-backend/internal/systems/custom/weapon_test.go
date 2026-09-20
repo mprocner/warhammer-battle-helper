@@ -221,3 +221,144 @@ func TestRollWeaponWithTemplate_Errors(t *testing.T) {
 		t.Error("expected error for unknown weapon row id")
 	}
 }
+
+// TestFindWeaponField_NestedTwoLevelsDeep verifies that a weapons_table located
+// inside a nested section at depth 2 is found by findWeaponField, and that the
+// returned pointer addresses the template's own field (not a copy).
+func TestFindWeaponField_NestedTwoLevelsDeep(t *testing.T) {
+	count := 1.0
+	nestedWeaponsTable := &models.FieldDef{
+		Key:      "nested_weapons",
+		Type:     "weapons_table",
+		Label:    "Nested Weapons",
+		Rollable: true,
+		RollConfig: &models.RollConfig{
+			Formula:     []models.FormulaBlock{diceBlock("d20")},
+			RollMode:    "traditional",
+			SuccessType: "below_threshold",
+		},
+		Columns: []models.WeaponColumn{
+			{Key: "name", Label: "Name", Type: "text"},
+		},
+		DamageFormula: []models.FormulaBlock{
+			{ID: "c1", Type: "const", Num: &count},
+		},
+	}
+
+	// Build the nesting: root section -> nested section -> nested_weapons_table field
+	innerSection := &models.SectionDef{
+		ID:    "inner",
+		Title: "Inner Section",
+		Fields: []models.FieldDef{
+			{
+				Key:      "other_field",
+				Type:     "text_short",
+				Label:    "Other Field",
+				Rollable: false,
+			},
+			*nestedWeaponsTable,
+		},
+	}
+
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			ID:    "root",
+			Title: "Root Section",
+			Fields: []models.FieldDef{
+				{
+					Key:      "root_weapons",
+					Type:     "weapons_table",
+					Label:    "Root Weapons",
+					Rollable: true,
+				},
+				{
+					Key:     "nested_section",
+					Type:    "section",
+					Label:   "Nested",
+					Section: innerSection,
+				},
+			},
+		}},
+	}
+
+	// Test 1: Find the nested weapons_table
+	field, ok := findWeaponField(template, "nested_weapons")
+	if !ok {
+		t.Fatal("findWeaponField failed to find nested_weapons at depth 2")
+	}
+	if field == nil {
+		t.Fatal("findWeaponField returned nil")
+	}
+	if field.Key != "nested_weapons" {
+		t.Errorf("returned field Key = %q, want nested_weapons", field.Key)
+	}
+
+	// Test 2: Verify the pointer is into the template's own backing array,
+	// not a copy. Mutate through the pointer and verify the template changed.
+	originalLabel := field.Label
+	field.Label = "Mutated Label"
+	// Verify by traversing the template again and checking the field changed
+	foundAgain, _ := findWeaponField(template, "nested_weapons")
+	if foundAgain.Label != "Mutated Label" {
+		t.Errorf("mutation did not persist in template; Label = %q", foundAgain.Label)
+	}
+	// Restore for subsequent tests
+	field.Label = originalLabel
+}
+
+// TestFindWeaponField_NestedWrongType verifies that a field at the same nesting
+// level with a different type is not returned, even if the key happens to match
+// a weapons_table elsewhere.
+func TestFindWeaponField_NestedWrongType(t *testing.T) {
+	innerSection := &models.SectionDef{
+		ID:    "inner",
+		Title: "Inner Section",
+		Fields: []models.FieldDef{
+			{
+				Key:   "wrong_type_field",
+				Type:  "text_short",
+				Label: "Not a Weapons Table",
+			},
+		},
+	}
+
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			ID:    "root",
+			Title: "Root Section",
+			Fields: []models.FieldDef{
+				{
+					Key:     "nested_section",
+					Type:    "section",
+					Label:   "Nested",
+					Section: innerSection,
+				},
+			},
+		}},
+	}
+
+	field, ok := findWeaponField(template, "wrong_type_field")
+	if ok {
+		t.Errorf("findWeaponField found a non-weapons_table field; returned type = %q", field.Type)
+	}
+}
+
+// TestFindWeaponField_FlatStillWorks verifies that the flat case (weapons_table
+// at root level) still works after adding nested support.
+func TestFindWeaponField_FlatStillWorks(t *testing.T) {
+	template, _ := weaponTemplate()
+
+	field, ok := findWeaponField(template, "weapons")
+	if !ok {
+		t.Fatal("findWeaponField failed to find flat root-level weapons_table")
+	}
+	if field == nil {
+		t.Fatal("findWeaponField returned nil")
+	}
+	if field.Key != "weapons" {
+		t.Errorf("returned field Key = %q, want weapons", field.Key)
+	}
+	if field.Type != "weapons_table" {
+		t.Errorf("returned field Type = %q, want weapons_table", field.Type)
+	}
+}

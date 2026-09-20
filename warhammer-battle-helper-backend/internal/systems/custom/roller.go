@@ -577,7 +577,7 @@ func evalOutcome(cfg *models.RollConfig, roll, threshold int, hasThreshold bool)
 // stats, keyed by their opaque full path). Falls back to the raw key if nothing matches.
 func resolveSkillLabel(template *models.SystemTemplate, stats *Stats, skillKey string) string {
 	for _, section := range template.Sections {
-		for _, field := range section.Fields {
+		for _, field := range flattenFields(section.Fields) {
 			if field.Key == skillKey {
 				return field.Label
 			}
