@@ -8902,6 +8902,14 @@ align-items: center;
 
 /* ── Field cards (in section canvas) ── */
 
+/* align-self:start is load-bearing. .creator__fields-grid is a plain grid, so its items
+   default to align-items:stretch and every item takes the height of its row — and the row is
+   as tall as its tallest item, which is a nested section (FEATURE-211). min-height only sets
+   the floor, it does not opt out of the stretch, so a text field sitting next to a nested
+   section was drawn as a tall empty box. The sheet has the same stretch but no visible box,
+   which is why the preview always looked right.
+   Only the leaf card opts out: nested sections keep stretching, so two of them in one row stay
+   the same height. Putting align-items:start on the grid instead would break that. */
 .creator__canvas-field {
     background: rgba(255, 255, 255, 0.55);
     border: 1.5px solid rgba(201, 151, 91, 0.22);
@@ -8911,6 +8919,7 @@ align-items: center;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
     position: relative;
     min-height: 62px;
+    align-self: start;
     display: flex;
     flex-direction: column;
 }
