@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -156,5 +157,49 @@ func TestFieldDef_NilSectionIsOmitted(t *testing.T) {
 	}
 	if _, ok := doc["section"]; ok {
 		t.Error("key \"section\" must be omitted when nil")
+	}
+}
+
+// TestTemplateSettings_SheetWidthRoundTrips guards the struct tags. A key missing from the
+// struct is dropped on read and erased by the next PATCH, silently — and the PATCH path is
+// JSON while storage is bson, so both encodings have to carry it.
+func TestTemplateSettings_SheetWidthRoundTrips(t *testing.T) {
+	in := TemplateSettings{SheetWidth: 1300}
+
+	raw, err := bson.Marshal(in)
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var fromBSON TemplateSettings
+	if err := bson.Unmarshal(raw, &fromBSON); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if fromBSON.SheetWidth != 1300 {
+		t.Fatalf("bson round trip lost the width: got %d", fromBSON.SheetWidth)
+	}
+
+	encoded, err := json.Marshal(in)
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	var fromJSON TemplateSettings
+	if err := json.Unmarshal(encoded, &fromJSON); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if fromJSON.SheetWidth != 1300 {
+		t.Fatalf("json round trip lost the width: got %d", fromJSON.SheetWidth)
+	}
+}
+
+// TestTemplateSettings_SheetWidthOmittedWhenZero documents why the field is a plain int: zero
+// is not a legal width, so omitempty dropping it is exactly the wanted behaviour — unlike
+// FieldDef.Default, whose 0 is a real value and which is therefore a *int.
+func TestTemplateSettings_SheetWidthOmittedWhenZero(t *testing.T) {
+	encoded, err := json.Marshal(TemplateSettings{})
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	if strings.Contains(string(encoded), "sheetWidth") {
+		t.Fatalf("expected sheetWidth to be omitted when zero, got %s", encoded)
 	}
 }

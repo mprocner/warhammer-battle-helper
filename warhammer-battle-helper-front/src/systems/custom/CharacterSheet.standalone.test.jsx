@@ -52,4 +52,32 @@ describe('CustomCharacterSheet w osobnym oknie', () => {
     const labels = [...container.querySelectorAll('.custom-sheet__field-label')];
     expect(labels.map(el => el.textContent)).toContain('Pochodzenie');
   });
+
+  // FEATURE-212 follow-up: the wrapper's max-width must equal the template's configured
+  // width, applied inline — the CSS no longer hardcodes a cap (style.css used to hard-cap
+  // .custom-sheet at 760px regardless of the popup's own width).
+  it('ustawia max-width kontenera .custom-sheet na settings.sheetWidth z szablonu', () => {
+    const wideTemplate = { ...template, settings: { sheetWidth: 1400 } };
+    const { container } = render(
+      <CustomCharacterSheet
+        character={{ id: 'c1', name: 'Bohater', stats: {} }}
+        onClose={() => {}}
+        onCharacterUpdate={() => {}}
+        gameId="g1"
+        token="t"
+        game={{ customSystemTemplate: wideTemplate }}
+        isStandalone
+      />
+    );
+    const sheet = container.querySelector('.custom-sheet');
+    expect(sheet.style.maxWidth).toBe('1400px');
+  });
+
+  it('gdy szablon nie ma pola settings, max-width kontenera .custom-sheet spada do domyślnych 900', () => {
+    // `template` const above has no `settings` key at all — not settings.sheetWidth missing,
+    // the whole object absent, matching a template authored before FEATURE-212 existed.
+    const { container } = renderStandalone();
+    const sheet = container.querySelector('.custom-sheet');
+    expect(sheet.style.maxWidth).toBe('900px');
+  });
 });

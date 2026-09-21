@@ -1437,7 +1437,11 @@
       "publicDesc": "Każdy może użyć tego szablonu do stworzenia gry (dla innych tylko do odczytu).",
       "privateDesc": "Tylko Ty widzisz i możesz użyć tego szablonu.",
       "modifierTitle": "Modyfikator rzutu",
-      "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie"
+      "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie",
+      "sheetWidthTitle": "Okno karty postaci",
+      "sheetWidthHint": "Jak szeroko karta otwiera się graczom",
+      "sheetWidthValue": "{{width}} px",
+      "sheetWidthNote": "Okno nigdy nie otworzy się szersze niż przeglądarka gracza, a gracz może je rozciągnąć."
     },
     "modifier": {
       "enable": "Pytaj o modyfikator przed rzutem",

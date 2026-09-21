@@ -7,6 +7,7 @@ import { getCharacterSaveUrl } from '../shared/characterApi';
 import CustomSheetBody from './CustomSheetBody';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
+import { clampSheetWidth } from '../../utils/sheetWidth';
 
 function CustomCharacterSheet({
   character,
@@ -325,6 +326,10 @@ function CustomCharacterSheet({
   });
 
   // ---------- render ----------
+  // Single source of truth for the sheet's design width: feeds both the popup's opening
+  // width and the content wrapper's max-width below, so they can never disagree.
+  const sheetWidth = clampSheetWidth(template?.settings?.sheetWidth);
+
   const renderBody = () => <CustomSheetBody
     sections={template.sections}
     values={edited}
@@ -354,7 +359,7 @@ function CustomCharacterSheet({
   />;
 
   const sheetContent = (
-    <div className="custom-sheet">
+    <div className="custom-sheet" style={{ maxWidth: sheetWidth }}>
       {/* Pytanie o modyfikator — renderuje się tylko wtedy, gdy szablon go włącza. */}
       {pending && modifierConfig && (
         <RollModifierOverlay
@@ -406,7 +411,7 @@ function CustomCharacterSheet({
       title={template ? `${template.name} — ${charName || character?.name}` : (character?.name || '')}
       onClose={onClose}
       headerButtons={headerButtons}
-      initialWidth={900}
+      initialWidth={sheetWidth}
       windowId={`characterSheet:${character.id}`}
       windowKind="characterSheet"
     >

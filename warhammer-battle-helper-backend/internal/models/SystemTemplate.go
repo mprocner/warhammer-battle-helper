@@ -38,6 +38,13 @@ type TemplateSettings struct {
 	// Modifier configures the roll-modifier prompt of a custom card (FEATURE-164). nil means
 	// disabled, which is how every pre-existing template starts — no migration needed.
 	Modifier *ModifierConfig `bson:"modifier,omitempty" json:"modifier,omitempty"`
+
+	// SheetWidth is the character sheet window's opening width in pixels, authored by the GM in
+	// the creator's General tab (FEATURE-212). 0 or absent means the client's default — a plain
+	// int, not a pointer, because 0 is not a legal width (the slider floor is 600), so omitempty
+	// cannot erase a meaningful value the way it could for FieldDef.Default, whose 0 is real.
+	// Nothing in Go reads it: the client is the only consumer.
+	SheetWidth int `bson:"sheetWidth,omitempty" json:"sheetWidth,omitempty"`
 }
 
 // ModifierConfig is the template-wide setup of the roll-modifier prompt shown before a roll on

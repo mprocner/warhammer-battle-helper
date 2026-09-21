@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, IconButton, Typography, Box,
   TextField, Switch, FormControlLabel, Select, MenuItem, InputLabel,
-  FormControl, Divider, Chip,
+  FormControl, Divider, Chip, Slider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -45,7 +45,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
-import CustomSheetBody, { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
+import { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
+import TemplatePreview from './TemplatePreview';
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
@@ -56,6 +57,7 @@ import {
   containerPathFor, shiftPathAfterInsert, indexNodes, moveNode, isContainer,
   dropSentinelId, dropHeaderId, dropIntent,
 } from '../../utils/templateSections';
+import { SHEET_WIDTH_MIN, SHEET_WIDTH_MAX, SHEET_WIDTH_STEP, clampSheetWidth } from '../../utils/sheetWidth';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -1146,36 +1148,6 @@ function DropZone({ sectionId, empty }) {
   );
 }
 
-// ── TemplatePreview ───────────────────────────────────────────────────────────
-
-function TemplatePreview({ sections, name }) {
-  const { t } = useTranslation();
-  if (sections.length === 0) {
-    return (
-      <div className="creator__preview">
-        <div className="creator__prev-empty">
-          {t('creator.previewNoSections')}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="creator__preview">
-      <div className="creator__prev-sheet">
-        <div className="creator__prev-sheet-top" />
-        <div className="creator__prev-sheet-header">
-          <div className="creator__prev-system-name">{name || t('creator.previewDefaultName')}</div>
-          <div className="creator__prev-system-label">{t('creator.previewSubtitle')}</div>
-        </div>
-        <div className="creator__prev-body">
-          <CustomSheetBody sections={sections} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── TemplateBuilder (main) ────────────────────────────────────────────────────
 
 // redirectIntoTarget rewrites the winning collision when the pointer is asking to drop INSIDE
@@ -1598,6 +1570,32 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               </div>
             </div>
             )}
+            {!isVariant && (
+            <div className="creator__settings-card">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.sheetWidthTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.sheetWidthHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, maxWidth: 420 }}>
+                  <Slider
+                    value={clampSheetWidth(settings.sheetWidth)}
+                    min={SHEET_WIDTH_MIN}
+                    max={SHEET_WIDTH_MAX}
+                    step={SHEET_WIDTH_STEP}
+                    onChange={(_, value) => updateSettings({ sheetWidth: value })}
+                    sx={{ color: '#c9975b' }}
+                  />
+                  <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem', color: '#3a2f1f', whiteSpace: 'nowrap', minWidth: 72, textAlign: 'right' }}>
+                    {t('creator.general.sheetWidthValue', { width: clampSheetWidth(settings.sheetWidth) })}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
+                  {t('creator.general.sheetWidthNote')}
+                </Typography>
+              </div>
+            </div>
+            )}
             <div className="creator__settings-card">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.diceTitle')}</span>
@@ -1638,7 +1636,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               </div>
             </div>
           </div>
-        ) : activeTab === 'preview' ? <TemplatePreview sections={sections} name={name} /> : <>
+        ) : activeTab === 'preview' ? <TemplatePreview sections={sections} name={name} width={clampSheetWidth(settings.sheetWidth)} /> : <>
 
         {/* Left: palette */}
         <aside className="creator__palette">

@@ -1437,7 +1437,11 @@
       "publicDesc": "Everyone can use this template to create a game (read-only for others).",
       "privateDesc": "Only you can see and use this template.",
       "modifierTitle": "Roll modifier",
-      "modifierHint": "Ask for a modifier before each roll on this card"
+      "modifierHint": "Ask for a modifier before each roll on this card",
+      "sheetWidthTitle": "Character sheet window",
+      "sheetWidthHint": "How wide the sheet opens for players",
+      "sheetWidthValue": "{{width}} px",
+      "sheetWidthNote": "The window never opens wider than the player's browser, and players can resize it."
     },
     "modifier": {
       "enable": "Ask for a modifier before rolling",

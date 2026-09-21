@@ -7634,10 +7634,11 @@ align-items: center;
 
 /* --- CharacterSheet full popup --- */
 
+/* FEATURE-212: no max-width here — the cap is the template's configured sheetWidth,
+   applied as an inline style by CharacterSheet.jsx, not a hardcoded number in this file. */
 .custom-sheet {
     padding: 16px;
     min-width: 480px;
-    max-width: 760px;
 }
 
 .custom-sheet__no-template {
