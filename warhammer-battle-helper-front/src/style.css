@@ -2335,10 +2335,17 @@ align-items: center;
     text-transform: uppercase;
 }
 
-.character-sheet-popup input[type="text"],
-.character-sheet-popup input[type="number"],
-.character-sheet-popup select,
-.character-sheet-popup textarea {
+/* These three rules style BARE inputs/selects/textareas for the character sheet's own look.
+   MUI's outlined TextField draws its border on a sibling <fieldset> and expects the <input>
+   itself to stay transparent and border-less — styling the input directly gives it a second
+   border, its own background and extra padding, which is exactly the doubled-frame / low
+   placeholder / struck-through floating label the creator's properties popup showed (FEATURE-214).
+   The creator's popup (.creator__props-popup) uses MUI TextField throughout, so it is excluded
+   here rather than fought with more CSS. */
+.character-sheet-popup:not(.creator__props-popup) input[type="text"],
+.character-sheet-popup:not(.creator__props-popup) input[type="number"],
+.character-sheet-popup:not(.creator__props-popup) select,
+.character-sheet-popup:not(.creator__props-popup) textarea {
     background: #fff9f0;
     border: 1px solid #c4a882;
     border-radius: 3px;
@@ -2349,15 +2356,15 @@ align-items: center;
     transition: border-color 0.3s;
 }
 
-.character-sheet-popup input[readonly],
-.character-sheet-popup textarea[readonly] {
+.character-sheet-popup:not(.creator__props-popup) input[readonly],
+.character-sheet-popup:not(.creator__props-popup) textarea[readonly] {
     cursor: default;
 }
 
-.character-sheet-popup input[type="text"]:focus,
-.character-sheet-popup input[type="number"]:focus,
-.character-sheet-popup select:focus,
-.character-sheet-popup textarea:focus {
+.character-sheet-popup:not(.creator__props-popup) input[type="text"]:focus,
+.character-sheet-popup:not(.creator__props-popup) input[type="number"]:focus,
+.character-sheet-popup:not(.creator__props-popup) select:focus,
+.character-sheet-popup:not(.creator__props-popup) textarea:focus {
     outline: none;
     border-color: #7a5c42;
     box-shadow: 0 0 5px rgba(122, 92, 66, 0.3);
@@ -7772,6 +7779,197 @@ align-items: center;
     margin-bottom: 6px;
 }
 
+/* ── Creator edit chrome ─────────────────────────────────────────────────────
+   Present only when CustomSheetBody gets a renderChrome prop, i.e. inside the
+   creator. The wrapper takes over the grid-cell role from the field it holds, so
+   `min-width: 0` restores what the grid's own minmax(0, 1fr) guarantees — without
+   it the cell's automatic minimum size lets wide content push columns apart. No
+   sheet field uses grid-column spanning, so nothing else moves.
+
+   The wrapper is the grid item in chrome mode, so it receives the row's stretch — but the node
+   inside kept its automatic height and left the taller neighbour's row half empty. Passing the
+   stretch through makes the edit view match both the clean preview and the player's sheet, where
+   the node IS the grid item. Sections stretching to a common height is deliberate (FEATURE-213):
+   a section has a visible frame, and frames that end at different heights read as an accident.
+
+   `> *:first-child` targets the node rather than a dedicated class because the wrapper always
+   renders the node before its chrome (CustomSheetBody's withChrome emits `{element}{chrome}`),
+   so the node is guaranteed to be the first DOM child regardless of what the chrome contains.
+   Every overlay the chrome adds — outline, pill, duplicate badge, inline type picker — is
+   `position: absolute` and out of flow, EXCEPT EditablePlaceholder's `.creator__ph` (shown for a
+   node that draws nothing, e.g. an empty section), which is a normal in-flow box. That placeholder
+   never threatens the selector: it is only ever emitted alongside a real node and always after it
+   in render order, so it can only ever land as a later sibling, never displace the node from
+   `:first-child`. */
+.custom-sheet__editable {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-sheet__editable > *:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* The outline is a separate, non-interactive overlay rather than a border on the wrapper:
+   a border would take up space and shift the very layout the GM is judging.
+   z-index comes from the `depth` prop (FieldChrome/SectionChrome), not from here: every
+   outline shares one stacking context (.custom-sheet__editable creates no context of its
+   own), so depth is what makes the innermost node the one hover and clicks land on. */
+.creator__chrome-outline {
+    position: absolute;
+    inset: -2px;
+    border: 1.5px solid transparent;
+    border-radius: 5px;
+    pointer-events: auto;
+    background: transparent;
+}
+
+.custom-sheet__editable:hover > .creator__chrome-outline {
+    border-color: rgba(201, 151, 91, 0.55);
+}
+
+.creator__chrome-outline--selected,
+.custom-sheet__editable:hover > .creator__chrome-outline--selected {
+    border-color: #7a5c42;
+    border-width: 2px;
+}
+
+/* Chrome that must stay above every outline sits in a band far above any nesting depth, which
+   is unbounded since FEATURE-211. Outlines use z-index: <depth>; nothing else may collide. */
+.creator__chrome {
+    position: absolute;
+    top: -8px;
+    display: flex;
+    gap: 1px;
+    padding: 1px;
+    border-radius: 5px;
+    background: #f4e8d8;
+    border: 1px solid #c4a882;
+    box-shadow: 0 1px 4px rgba(58, 47, 31, 0.25);
+    opacity: 0;
+    transition: opacity 90ms ease;
+    pointer-events: none;
+    left: -4px;
+    z-index: 1000;
+}
+
+
+.custom-sheet__editable:hover > .creator__chrome {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Deepest node wins. Hover propagates through every DOM ancestor, and FEATURE-211 made the
+   nesting depth unbounded — a field five levels deep would light six pills whose corners stack
+   into a staircase at the same spot. `:has()` states the rule declaratively; doing it with
+   mouseenter/mouseleave would mean per-field React state and a re-render for every pixel the
+   mouse travels across a forty-field sheet. */
+.custom-sheet__editable:has(.custom-sheet__editable:hover) > .creator__chrome {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.creator__chrome-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #7a5c42;
+    cursor: pointer;
+}
+
+.creator__chrome-btn:hover { background: rgba(201, 151, 91, 0.3); }
+.creator__chrome-btn--drag { cursor: grab; }
+
+/* Colour-only: the pill's buttons are all the same size, and a delete button that grew would
+   make it easier to hit than the field it sits on top of. */
+.creator__chrome-btn--danger { color: #c0392b; }
+.creator__chrome-btn--danger:hover { background: rgba(192, 57, 43, 0.15); }
+
+.creator__chrome-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+}
+
+.creator__chrome-dupe {
+    position: absolute;
+    bottom: -6px;
+    right: -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #b3261e;
+    color: #fff9f0;
+    z-index: 1001;
+}
+
+/* Edit-only stand-ins for nodes that render to nothing. Dimmed and italic so they can never
+   be mistaken for data. */
+.creator__ph {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    color: rgba(58, 47, 31, 0.4);
+    pointer-events: none;
+}
+
+.creator__ph--inline { font-size: 12px; }
+
+.creator__ph--section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    border: 1.5px dashed rgba(201, 151, 91, 0.6);
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.creator__ph--row {
+    height: 22px;
+    border-radius: 4px;
+    background: rgba(201, 151, 91, 0.18);
+}
+
+/* ── Drag and drop (FEATURE-214 Task 8) ──────────────────────────────────────
+   Nothing displaces while a node is dragged — a CSS grid row is as tall as its tallest cell, so
+   sliding content in would change row heights, shift the pointer's target and flip the very
+   decision that caused the shift. Both previews below are out of flow for exactly that reason:
+   reserving real space would change the rectangles the drop decision (sheetDnd.js) was measured
+   against. */
+
+.creator__drop-ghost {
+    position: fixed;
+    opacity: 0.35;
+    pointer-events: none;
+    border: 1.5px dashed #7a5c42;
+    border-radius: 6px;
+    overflow: hidden;
+    z-index: 2;
+}
+
+/* dnd-kit's DragOverlay already floats above everything and follows the pointer on its own —
+   this only styles what rides inside it. Width is pinned to the dragged node's own measured
+   width (see TemplateBuilder's DragOverlay) so a field does not suddenly claim a whole row's
+   worth of space once it leaves its original grid column. */
+.creator__drag-overlay {
+    opacity: 0.9;
+    cursor: grabbing;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(58, 47, 31, 0.35));
+}
+
 .custom-sheet__field {
     display: flex;
     flex-direction: column;
@@ -7955,6 +8153,14 @@ align-items: center;
 .custom-sheet__roll-btn:disabled:hover {
     background: none;
     color: #cbb89a;
+}
+
+/* The creator's read-only twin of the roll button: same shape and place, obviously inert.
+   pointer-events: none also blocks :hover, so it never picks up the interactive hover style above. */
+.custom-sheet__roll-btn--static {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 .custom-sheet__section-title {
@@ -8615,14 +8821,23 @@ align-items: center;
 /* ── Palette (left panel) ── */
 
 .creator__palette {
-    width: 200px;
+    width: 56px;
     flex-shrink: 0;
     background: rgba(244, 232, 216, 0.7);
     border-right: 1px solid rgba(201, 151, 91, 0.25);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transition: width 120ms ease;
 }
+
+/* A 56px rail leaves no room for the target hint, so the palette's target is shown ON the
+   sheet instead — the selected section carries the outline. */
+.creator__palette:hover { width: 200px; }
+
+.creator__palette:not(:hover) .creator__palette-info,
+.creator__palette:not(:hover) .creator__palette-group-label,
+.creator__palette:not(:hover) .creator__palette-title { display: none; }
 
 .creator__palette-header {
     padding: 14px 14px 10px;
@@ -8725,9 +8940,13 @@ align-items: center;
     margin-top: 1px;
 }
 
-/* ── Canvas area (center) ── */
+/* ── Sheet area (center) — the live character sheet, edit affordances layered on top ── */
 
-.creator__canvas-area {
+.creator__sheet-stack {
+    margin-inline: auto;
+}
+
+.creator__sheet-area {
     flex: 1;
     overflow-y: auto;
     padding: 20px 24px;
@@ -8744,426 +8963,7 @@ align-items: center;
     text-align: center;
 }
 
-/* ── Sections ── */
-
-.creator__section {
-    background: rgba(255, 255, 255, 0.28);
-    border: 1px solid rgba(201, 151, 91, 0.2);
-    border-radius: 8px;
-    margin-bottom: 14px;
-    overflow: hidden;
-    transition: border-color 0.18s, box-shadow 0.18s;
-    cursor: pointer;
-}
-
-.creator__section:hover {
-    border-color: rgba(201, 151, 91, 0.38);
-}
-
-.creator__section--active {
-    outline: 2px solid rgba(122, 92, 66, 0.5);
-    outline-offset: 1px;
-    box-shadow: 0 3px 14px rgba(122, 92, 66, 0.2);
-    background: rgba(255, 255, 255, 0.35);
-}
-
-.creator__section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: rgba(201, 151, 91, 0.07);
-    border-bottom: 1px solid rgba(201, 151, 91, 0.14);
-    cursor: pointer;
-    user-select: none;
-}
-
-.creator__section-drag {
-    color: #7a5c42;
-    display: flex;
-    align-items: center;
-    cursor: grab;
-    flex-shrink: 0;
-}
-
-.creator__section-title-label {
-    flex: 1;
-    font-family: 'Cinzel', serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #7a5c42;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.creator__section-cols-badge {
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 3px;
-    background: rgba(201, 151, 91, 0.1);
-    color: rgba(61, 43, 26, 0.45);
-    letter-spacing: 0.06em;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.creator__section-actions {
-    display: flex;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-.creator__section-action-btn {
-    width: 22px;
-    height: 22px;
-    border-radius: 3px;
-    border: none;
-    background: transparent;
-    color: rgba(61, 43, 26, 0.35);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.12s, color 0.12s;
-    flex-shrink: 0;
-}
-
-.creator__section-action-btn:hover {
-    background: rgba(201, 151, 91, 0.15);
-    color: #7a5c42;
-}
-
-.creator__section-action-btn:disabled {
-    opacity: 0.25;
-    cursor: default;
-    pointer-events: none;
-}
-
-.creator__section-action-btn--danger:hover {
-    background: rgba(192, 57, 43, 0.1);
-    color: #c0392b;
-}
-
-.creator__section-body {
-    padding: 12px 14px;
-}
-
-/* ── Field grids ── */
-
-.creator__fields-grid {
-    display: grid;
-    gap: 7px;
-    margin-bottom: 7px;
-}
-
-.creator__fields-grid--1 { grid-template-columns: 1fr; }
-.creator__fields-grid--2 { grid-template-columns: repeat(2, 1fr); }
-.creator__fields-grid--3 { grid-template-columns: repeat(3, 1fr); }
-.creator__fields-grid--4 { grid-template-columns: repeat(4, 1fr); }
-.creator__fields-grid--5 { grid-template-columns: repeat(5, 1fr); }
-.creator__fields-grid--6 { grid-template-columns: repeat(6, 1fr); }
-
-/* ── Nested sections in the creator canvas (FEATURE-211) ── */
-
-/* Same min-width:0 reason as on the sheet: the creator grid is repeat(N, 1fr), whose items
-   default to min-width:auto and would otherwise widen the cell past its fraction. */
-.creator__section--nested {
-    min-width: 0;
-    margin-bottom: 0;
-    background: rgba(255, 249, 240, 0.5);
-    border-color: #c4a882;
-}
-
-/* Single-class .creator__section--nested overrides the base background and border.
-   When a nested section is also active, the compound selector restores the active background,
-   reusing the same value the un-nested .creator__section--active rule already uses. */
-.creator__section--nested.creator__section--active {
-    background: rgba(255, 255, 255, 0.35);
-}
-
-/* A drag is hovering this section anywhere but its header, so releasing drops the node INSIDE
-   it — as opposed to the header, which inserts beside it. This is the whole drop preview now:
-   nothing is moved in the tree while the pointer travels, so the highlight is what tells the
-   user where the node would land. Two classes so it beats .creator__section--nested's
-   single-class background, and !important-free: the ring is the signal, the tint only warms
-   the target. Solid accent border plus a ring, because a border-colour change alone is
-   invisible against the nested border that is already #c4a882.
-   Every property here is layout-neutral (colour, background, shadow) — on purpose: a
-   highlight that resized its section would move the very rect the hover was decided from. */
-.creator__section--drop-into.creator__section {
-    border-color: #c9975b;
-    background: rgba(201, 151, 91, 0.14);
-    box-shadow: 0 0 0 2px rgba(201, 151, 91, 0.55), inset 0 0 16px rgba(201, 151, 91, 0.16);
-}
-
-/* ── Field cards (in section canvas) ── */
-
-/* align-self:start is load-bearing. .creator__fields-grid is a plain grid, so its items
-   default to align-items:stretch and every item takes the height of its row — and the row is
-   as tall as its tallest item, which is a nested section (FEATURE-211). min-height only sets
-   the floor, it does not opt out of the stretch, so a text field sitting next to a nested
-   section was drawn as a tall empty box. The sheet has the same stretch but no visible box,
-   which is why the preview always looked right.
-   Only the leaf card opts out: nested sections keep stretching, so two of them in one row stay
-   the same height. Putting align-items:start on the grid instead would break that. */
-.creator__canvas-field {
-    background: rgba(255, 255, 255, 0.55);
-    border: 1.5px solid rgba(201, 151, 91, 0.22);
-    border-radius: 6px;
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-    position: relative;
-    min-height: 62px;
-    align-self: start;
-    display: flex;
-    flex-direction: column;
-}
-
-.creator__canvas-field:hover {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(201, 151, 91, 0.45);
-}
-
-.creator__canvas-field--selected {
-    background: rgba(255, 249, 240, 0.98);
-    outline: 2px solid rgba(122, 92, 66, 0.5);
-    outline-offset: 1px;
-    box-shadow: 0 3px 10px rgba(122, 92, 66, 0.2);
-}
-
-.creator__canvas-field--error {
-    outline: 2px solid rgba(180, 60, 40, 0.7);
-    outline-offset: 1px;
-    background: rgba(255, 240, 235, 0.98);
-}
-
-/* Cross-section "insertion line" indicator (FEATURE-211 drop indicator): a drag is hovering
-   this card, and the drop would land in a DIFFERENT list than the dragged node's own — see
-   dropIntent's besideId. Within one list dnd-kit's sortable already displaces the siblings to
-   preview the gap, so this only ever appears for a cross-section hover, and the pseudo-element
-   keeps it out of flow: it neither reserves space (no layout participation at all) nor can it
-   resize .creator__canvas-field, which is already this element's positioned ancestor (see the
-   `position: relative` on .creator__canvas-field above — nothing about that rule changes here).
-   Placed on the leading (left) edge, slightly overhanging the card, mirroring how dnd-kit's own
-   sortable gap reads. */
-.creator__canvas-field--drop-beside::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    bottom: -4px;
-    left: -5px;
-    width: 3px;
-    border-radius: 2px;
-    background: #c9975b;
-    pointer-events: none;
-}
-
-.creator__canvas-field-dupe-warn {
-    position: absolute;
-    bottom: 3px;
-    left: 24px;
-    font-size: 0.65rem;
-    color: #b53a20;
-    font-family: 'Crimson Text', serif;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-}
-
-.creator__canvas-field-drag {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #7a5c42;
-    cursor: grab;
-    opacity: 1;
-}
-
-.creator__canvas-field-drag:active {
-    cursor: grabbing;
-}
-
-.creator__canvas-field-type-tag {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(61, 43, 26, 0.38);
-    font-weight: 600;
-    margin-bottom: 3px;
-    padding-left: 18px;
-}
-
-.creator__canvas-field-abbr {
-    font-family: 'Cinzel', serif;
-    font-size: 17px;
-    font-weight: 700;
-    color: #c9975b;
-    line-height: 1;
-    letter-spacing: 0.03em;
-}
-
-.creator__canvas-field-abbr--empty {
-    font-family: 'Crimson Text', serif;
-    font-size: 15px;
-    font-weight: 600;
-    color: #3d2b1a;
-}
-
-.creator__canvas-field-label {
-    font-size: 13px;
-    color: rgba(61, 43, 26, 0.6);
-    margin-top: 2px;
-}
-
-.creator__canvas-field-range {
-    font-size: 10px;
-    color: rgba(61, 43, 26, 0.38);
-    margin-top: 3px;
-}
-
-.creator__canvas-field-roll-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 16px;
-    height: 16px;
-    background: rgba(201, 151, 91, 0.14);
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    color: #c9975b;
-}
-
-.creator__canvas-field-short-badge {
-    position: absolute;
-    top: 6px;
-    right: 26px;
-    width: 16px;
-    height: 16px;
-    background: rgba(91, 151, 201, 0.14);
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    color: #5b97c9;
-}
-
-.creator__canvas-field-actions {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    display: none;
-    gap: 1px;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 3px;
-    padding: 1px;
-}
-
-.creator__canvas-field:hover .creator__canvas-field-actions {
-    display: flex;
-}
-
-.creator__canvas-field-action-btn {
-    width: 18px;
-    height: 18px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: rgba(61, 43, 26, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 2px;
-    transition: background 0.1s, color 0.1s;
-}
-
-.creator__canvas-field-action-btn:hover {
-    background: rgba(201, 151, 91, 0.15);
-    color: #7a5c42;
-}
-
-.creator__canvas-field-action-btn:disabled {
-    opacity: 0.2;
-    cursor: default;
-    pointer-events: none;
-}
-
-.creator__canvas-field-action-btn--danger:hover {
-    background: rgba(192, 57, 43, 0.1);
-    color: #c0392b;
-}
-
-/* ── Drop zone (append target, one per section at every depth) ── */
-
-.creator__drop-zone {
-    grid-column: 1 / -1;
-    border: 1.5px dashed transparent;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Crimson Text', serif;
-    font-style: italic;
-    font-size: 0.85rem;
-    color: rgba(61, 43, 26, 0.3);
-    transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-
-/* An empty section has nothing else to show, so its zone is the invitation. */
-.creator__drop-zone--empty {
-    min-height: 64px;
-    border-color: rgba(201, 151, 91, 0.3);
-}
-
-/* A populated section only needs a strip the pointer can reach past the last card — tall
-   enough to hit without a steady hand, quiet enough not to read as another field slot. */
-.creator__drop-zone--append {
-    min-height: 22px;
-    border-color: rgba(201, 151, 91, 0.14);
-}
-
-.creator__drop-zone--over {
-    border-color: #c9975b;
-    background: rgba(201, 151, 91, 0.08);
-    color: #7a5c42;
-}
-
 /* ── Add field / section buttons ── */
-
-.creator__add-field-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-height: 56px;
-    background: transparent;
-    border: 1.5px dashed rgba(201, 151, 91, 0.28);
-    border-radius: 6px;
-    color: rgba(61, 43, 26, 0.38);
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'DM Sans', 'Crimson Text', sans-serif;
-}
-
-.creator__add-field-btn:hover {
-    border-color: #c9975b;
-    color: #c9975b;
-    background: rgba(201, 151, 91, 0.05);
-}
 
 .creator__add-section-btn {
     display: flex;
@@ -9191,16 +8991,26 @@ align-items: center;
 
 /* ── Inline type picker ── */
 
+/* Opened from a section's chrome "+" button (buildChrome in TemplateBuilder). Out of flow,
+   anchored below the chrome pill: an in-flow picker would push the very section it is adding
+   to, resizing the layout the GM is looking at mid-click. It is a sibling of SectionChrome, not
+   nested inside it, so it stays visible and interactive after the pointer leaves the chrome's
+   hover-gated pill — it only closes on an explicit pick or the cancel button. */
 .creator__inline-picker {
+    position: absolute;
+    top: 16px;
+    left: -4px;
+    z-index: 1002;
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
+    width: max-content;
+    max-width: 280px;
     padding: 10px 10px 10px 10px;
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(201, 151, 91, 0.22);
+    background: rgba(255, 249, 240, 0.98);
+    border: 1px solid rgba(201, 151, 91, 0.35);
     border-radius: 6px;
-    margin-top: 4px;
-    position: relative;
+    box-shadow: 0 3px 10px rgba(58, 47, 31, 0.2);
 }
 
 .creator__inline-type-btn {
@@ -9254,15 +9064,44 @@ align-items: center;
     color: #7a5c42;
 }
 
-/* ── Properties aside (right panel) ── */
+/* ── Properties popup body (FEATURE-214: draggable popup, replaces the docked aside) ── */
 
-.creator__props-aside {
-    width: 400px;
+.creator__props-popup-body {
+    padding: 12px;
+    color: #3a2f1f;
+}
+
+/* Move up/down/delete row inside SectionPropertyPanel — the only surviving user of this class
+   now that SectionCanvas (which shared the name for its own header actions) is gone. */
+.creator__section-action-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: rgba(61, 43, 26, 0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s;
     flex-shrink: 0;
-    background: rgba(244, 232, 216, 0.7);
-    border-left: 1px solid rgba(201, 151, 91, 0.25);
-    overflow-y: auto;
-    padding: 16px;
+}
+
+.creator__section-action-btn:hover {
+    background: rgba(201, 151, 91, 0.15);
+    color: #7a5c42;
+}
+
+.creator__section-action-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+    pointer-events: none;
+}
+
+.creator__section-action-btn--danger:hover {
+    background: rgba(192, 57, 43, 0.1);
+    color: #c0392b;
 }
 
 /* ── Layout options (column selector) ── */
@@ -9334,6 +9173,81 @@ align-items: center;
     justify-content: center;
     height: 160px;
     padding: 16px;
+}
+
+/* No border-top of its own: the danger action lives in a PropsGroup, and the group separator
+   already draws the hairline above it. Keeping both produced a doubled line. */
+.creator__props-danger {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Properties panel — sticky header naming the node being edited (FEATURE-214 restyle). Sticks to
+   the top of .sheet-content, the popup's own scroll container, so the GM always knows what they
+   are configuring even after scrolling the groups below it out of view. */
+.creator__props-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(122, 92, 66, 0.35);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.creator__props-head-type {
+    font-family: 'Crimson Text', serif;
+    font-size: 12px;
+    color: #7a5c42;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+/* Properties panel — titled groups (FEATURE-214 restyle). A flat stack of twenty controls forces
+   the GM to read every label to find one; four labelled groups let them jump instead. The
+   divider is a hairline rather than a box so the groups still read as one surface. */
+.creator__props-group {
+    margin-bottom: 18px;
+}
+
+.creator__props-group + .creator__props-group {
+    border-top: 1px solid rgba(201, 151, 91, 0.3);
+    padding-top: 14px;
+}
+
+.creator__props-group-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7a5c42;
+    margin-bottom: 10px;
+}
+
+/* A second heading level inside a group — used where a sub-editor (e.g. weapon presets)
+   needs its own label without competing with the group title above it. */
+.creator__props-subhead {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #7a5c42;
+    margin-bottom: 6px;
+}
+
+/* Properties panel — paired numeric fields (min/max, default/step) in a consistent two-column
+   grid instead of ad-hoc flex rows. */
+.creator__props-duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
 /* Label colour swatches */
@@ -9427,25 +9341,10 @@ align-items: center;
     padding-left: 4px;
 }
 
-/* Preset weapons — trigger button in the field panel + editor rows inside the modal. */
-.creator__weapon-presets-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 7px 10px;
-    background: rgba(201, 151, 91, 0.12);
-    border: 1px solid #c9975b;
-    border-radius: 4px;
-    color: #7a5c42;
-    font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background 0.12s;
-}
-
-.creator__weapon-presets-btn:hover {
-    background: rgba(201, 151, 91, 0.22);
+/* Preset weapons — editor rows inlined into the Content group, below the weapon columns
+   editor (FEATURE-214: no longer a separate modal). */
+.creator__weapon-presets-editor {
+    margin-top: 4px;
 }
 
 .creator__weapon-presets {
@@ -9632,14 +9531,6 @@ align-items: center;
     color: #c0392b;
 }
 
-.creator__tree-leaf-props {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 3px 0 5px;
-    flex-wrap: wrap;
-}
-
 .creator__tree-attr-select {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(201, 151, 91, 0.3);
@@ -9651,17 +9542,6 @@ align-items: center;
     min-width: 72px;
     max-width: 110px;
     flex-shrink: 0;
-}
-
-.creator__tree-rollable-label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.78rem;
-    color: rgba(61, 43, 26, 0.7);
-    cursor: pointer;
-    font-family: 'Crimson Text', serif;
-    white-space: nowrap;
 }
 
 .creator__tree-add-root {
@@ -9742,72 +9622,6 @@ align-items: center;
     font-size: 14px;
     opacity: 0.5;
     user-select: none;
-}
-
-/* ── CREATOR PREVIEW ───────────────────────────────────────────── */
-.creator__preview {
-    flex: 1;
-    overflow-y: auto;
-    padding: 32px 24px;
-    display: flex;
-    justify-content: center;
-    background: linear-gradient(160deg, #f0e6d2 0%, #e8dcc4 100%);
-}
-
-.creator__prev-sheet {
-    width: 100%;
-    max-width: 860px;
-    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
-    border: 2px solid #7a5c42;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(107, 68, 35, 0.35), 0 0 0 1px rgba(201, 151, 91, 0.3);
-    overflow: hidden;
-    color: #3a2f1f;
-    font-family: 'Cinzel', serif;
-    align-self: flex-start;
-}
-
-.creator__prev-sheet-top {
-    height: 5px;
-    background: linear-gradient(90deg, #7a1a1a 0%, #c9975b 25%, #9a6800 50%, #c9975b 75%, #7a1a1a 100%);
-}
-
-.creator__prev-sheet-header {
-    padding: 20px 28px 16px;
-    border-bottom: 2px solid rgba(122, 92, 66, 0.3);
-    background: rgba(201, 151, 91, 0.06);
-}
-
-.creator__prev-system-name {
-    font-family: 'Cinzel', serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: #3a2f1f;
-    letter-spacing: 0.08em;
-}
-
-.creator__prev-system-label {
-    font-family: 'Cinzel', serif;
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #9a6800;
-    margin-top: 4px;
-    opacity: 0.8;
-}
-
-.creator__prev-body {
-    padding: 16px 20px 20px;
-}
-
-.creator__prev-empty {
-    align-self: center;
-    text-align: center;
-    padding: 48px 24px;
-    font-family: 'Crimson Text', serif;
-    font-size: 1.1rem;
-    font-style: italic;
-    color: #9a7a5a;
 }
 
 /* ── FormulaBuilder ──────────────────────────────────────────────────────────── */

@@ -1,8 +1,7 @@
 import {
   SECTION_TYPE, childrenOf, nodeAt, updateAtPath, insertAtPath, removeAtPath,
   moveNode, duplicateNodeAtPath, indexNodes, walkFields, isAncestorPath,
-  shiftPathAfterInsert, containerPathFor, dropSentinelId, dropHeaderId,
-  dropTargetOf, dropIntent, canDropInto,
+  shiftPathAfterInsert, containerPathFor, canDropInto,
 } from './templateSections';
 
 // Fixture: two root sections; the second holds a field, a nested section with two fields,
@@ -129,7 +128,10 @@ describe('moveNode', () => {
     expect(order(moveNode(abc(), [0, 1], [0], 1))).toEqual(['A', 'B', 'C']);
   });
 
-  test('appends to the end of its own list on a negative (sentinel) index', () => {
+  // moveNode's own comment says why: this exercises insertAtPath's append behaviour directly,
+  // it is not standing in for a deleted "drop sentinel" — no production caller ever passes a
+  // negative index.
+  test('appends to the end of its own list on a negative index', () => {
     expect(order(moveNode(abc(), [0, 0], [0], -1))).toEqual(['B', 'C', 'A']);
   });
 
@@ -331,76 +333,6 @@ describe('containerPathFor', () => {
   });
 });
 
-// A droppable id comes in three forms, and each one says something different:
-//  - a section's own id, or its append sentinel → "put the node INSIDE that section";
-//  - a section's HEADER id → "put the node beside that section, among its siblings";
-//  - a leaf field's id → "put the node where that field sits".
-describe('dropTargetOf', () => {
-  // Empty root section (no fields) and an empty nested section, to exercise the sentinel.
-  const treeWithEmptySections = () => ([
-    { id: 'sec_empty', title: 'Empty', columns: 1, fields: [] },
-    { id: 'sec_b', title: 'B', columns: 2, fields: [
-      { key: 'sec_c', type: SECTION_TYPE, label: '', section: { id: 'sec_c', title: 'C', columns: 1, fields: [] } },
-    ] },
-  ]);
-
-  // "Into" is APPEND, expressed as a negative index that insertAtPath clamps to the end of
-  // the list. One branch then serves both an empty section (nothing to append after) and a
-  // full one (appending past the last child, which no node id can ever address).
-  test('a root section id resolves to that section as parent, appending', () => {
-    const tree = makeTree();
-    expect(dropTargetOf('sec_b', indexNodes(tree), tree)).toEqual({ parentPath: [1], idx: -1 });
-  });
-
-  test('a nested section wrapper id resolves to the nested section as parent, appending', () => {
-    const tree = makeTree();
-    expect(dropTargetOf('sec_c', indexNodes(tree), tree)).toEqual({ parentPath: [1, 1], idx: -1 });
-  });
-
-  test('a sentinel for a root section resolves to that section as parent, appending', () => {
-    const tree = treeWithEmptySections();
-    expect(dropTargetOf(dropSentinelId('sec_empty'), indexNodes(tree), tree)).toEqual({ parentPath: [0], idx: -1 });
-  });
-
-  test('a sentinel for a nested section resolves to the nested section as parent, appending', () => {
-    const tree = treeWithEmptySections();
-    expect(dropTargetOf(dropSentinelId('sec_c'), indexNodes(tree), tree)).toEqual({ parentPath: [1, 0], idx: -1 });
-  });
-
-  test('a sentinel for a NON-empty section appends after its last child', () => {
-    const tree = makeTree();
-    const target = dropTargetOf(dropSentinelId('sec_b'), indexNodes(tree), tree);
-    expect(target).toEqual({ parentPath: [1], idx: -1 });
-    const next = moveNode(tree, [0, 0], target.parentPath, target.idx);
-    expect(next[1].fields.map(f => f.key)).toEqual(['num_1', 'sec_c', 'attr_1']);
-  });
-
-  // The header is the one part of a section that keeps the ordinary sortable meaning, so a
-  // section can still be reordered among its siblings instead of swallowing the dragged node.
-  test('a root section header id resolves to the root list and that section index', () => {
-    const tree = makeTree();
-    expect(dropTargetOf(dropHeaderId('sec_b'), indexNodes(tree), tree)).toEqual({ parentPath: [], idx: 1 });
-  });
-
-  test('a nested section header id resolves to its parent list and its own index', () => {
-    const tree = makeTree();
-    expect(dropTargetOf(dropHeaderId('sec_c'), indexNodes(tree), tree)).toEqual({ parentPath: [1], idx: 1 });
-  });
-
-  test('a leaf field id resolves to its parent path and its own index', () => {
-    const tree = makeTree();
-    expect(dropTargetOf('num_1', indexNodes(tree), tree)).toEqual({ parentPath: [1], idx: 0 });
-  });
-
-  test('an unknown id returns null in all three forms', () => {
-    const tree = makeTree();
-    const index = indexNodes(tree);
-    expect(dropTargetOf('nope', index, tree)).toBeNull();
-    expect(dropTargetOf(dropSentinelId('nope'), index, tree)).toBeNull();
-    expect(dropTargetOf(dropHeaderId('nope'), index, tree)).toBeNull();
-  });
-});
-
 describe('walkFields as the shared traversal', () => {
   test('finds a skill_table nested two levels down', () => {
     const tree = [{ id: 'sec_a', title: '', columns: 1, fields: [
@@ -503,9 +435,11 @@ describe('canDropInto', () => {
   });
 
   test('refuses a container the node is already inside, at any depth (direct parent only)', () => {
-    // "Into" is a relocation, and relocating a node into its own direct parent would be
-    // a pointless re-append. The parent's append sentinel is the explicit way to ask for
-    // exactly that move. Higher ancestors are accepted to allow moving nodes up the tree.
+    // Dropping into a node's own direct parent is an implicit "put it back where it already
+    // is" with no real target index — canDropInto refuses it outright. An explicit "move to
+    // end of own list" gesture would need insertionAt to supply that index, which is exactly
+    // what ordinary same-section reordering does (resolveDrop bypasses this refusal for that
+    // case; see its own comment). Higher ancestors are accepted, so nodes can move up the tree.
     expect(canDropInto(makeTree(), [1, 0], [1])).toBe(false); // direct parent
   });
 
@@ -513,158 +447,6 @@ describe('canDropInto', () => {
     expect(canDropInto(makeTree(), [0, 0], [9])).toBe(false);
     expect(canDropInto(makeTree(), [9], [0])).toBe(false);
     expect(canDropInto(makeTree(), [0, 0], [])).toBe(false);
-  });
-});
-
-// dropIntent is the single interpretation of a hover, shared by the highlight and the drop so
-// the two can never disagree about where the node would land. Nothing is written to the tree
-// while the pointer moves any more — the intent is resolved once, at the drop.
-describe('dropIntent', () => {
-  // The user's case: one root section A holding a field X and an EMPTY subsection B as
-  // siblings in the same ordered list. Hovering B used to mean "insert beside it", exactly
-  // like hovering a plain field, so X could only enter B through its narrow append strip.
-  const makeSiblingCase = () => ([
-    { id: 'sec_a', title: 'A', columns: 3, fields: [
-      { key: 'fld_x', type: 'attr', label: 'X' },
-      { key: 'sec_b', type: SECTION_TYPE, label: '', section: { id: 'sec_b', title: 'B', columns: 2, fields: [] } },
-    ] },
-  ]);
-
-  // apply is what the drag handler does at drop: resolve the intent, hand it to moveNode.
-  const apply = (tree, fromPath, overId) => {
-    const intent = dropIntent(tree, fromPath, overId);
-    return intent ? moveNode(tree, fromPath, intent.parentPath, intent.idx) : tree;
-  };
-
-  test("hovering a subsection's body drops the field INSIDE it", () => {
-    const next = apply(makeSiblingCase(), [0, 0], 'sec_b');
-    expect(next[0].fields.map(f => f.key)).toEqual(['sec_b']);
-    expect(next[0].fields[0].section.fields.map(f => f.key)).toEqual(['fld_x']);
-  });
-
-  test("hovering a subsection's HEADER places the field beside it, leaving it empty", () => {
-    // The header keeps the ordinary sortable meaning: moveNode takes a POST-REMOVAL index, so
-    // dragging X down onto B's slot lands it after B.
-    const next = apply(makeSiblingCase(), [0, 0], dropHeaderId('sec_b'));
-    expect(next[0].fields.map(f => f.key)).toEqual(['sec_b', 'fld_x']);
-    expect(next[0].fields[0].section.fields).toEqual([]);
-  });
-
-  test('the highlight names the receiving section for into, and nothing for beside', () => {
-    const tree = makeSiblingCase();
-    expect(dropIntent(tree, [0, 0], 'sec_b').intoId).toBe('sec_b');
-    expect(dropIntent(tree, [0, 0], dropHeaderId('sec_b')).intoId).toBeNull();
-  });
-
-  test('a nested subsection three levels down accepts a node the same way', () => {
-    const next = apply(makeTree(), [0, 0], 'sec_d');
-    expect(next[0].fields).toEqual([]);
-    expect(next[1].fields[1].section.fields[1].section.fields.map(f => f.key)).toEqual(['txt_1', 'attr_1']);
-  });
-
-  test("a nested subsection's header reorders it among its own siblings", () => {
-    // A header hover never gets besideId, even cross-list: it addresses a container, not a
-    // field card, and keeps its plain sortable behaviour with no extra indicator.
-    expect(dropIntent(makeTree(), [0, 0], dropHeaderId('sec_c')))
-      .toEqual({ parentPath: [1], idx: 1, intoId: null, besideId: null });
-    const next = apply(makeTree(), [0, 0], dropHeaderId('sec_c'));
-    expect(next[1].fields.map(f => f.key)).toEqual(['num_1', 'attr_1', 'sec_c']);
-  });
-
-  test('a leaf field still means "insert where that card sits"', () => {
-    // [0, 0] (attr_1) lives in sec_a, 'num_1' in sec_b — different lists, so besideId names
-    // the hovered card too (see the dedicated besideId describe block below).
-    expect(dropIntent(makeTree(), [0, 0], 'num_1'))
-      .toEqual({ parentPath: [1], idx: 0, intoId: null, besideId: 'num_1' });
-  });
-
-  // ── besideId: the cross-list "insertion line" indicator ──
-  describe('besideId', () => {
-    test('hovering a field card in a DIFFERENT list than the dragged node names it', () => {
-      // [0, 0] is attr_1 inside sec_a; 'num_1' lives inside sec_b — different lists.
-      expect(dropIntent(makeTree(), [0, 0], 'num_1').besideId).toBe('num_1');
-    });
-
-    test('hovering a field card in the SAME list as the dragged node is null', () => {
-      // dnd-kit's own sortable displacement already previews this case, so a second
-      // indicator would be redundant. Two leaf fields, both direct children of one section.
-      const sameListTree = [
-        { id: 'sec_a', title: 'A', columns: 3, fields: [
-          { key: 'fld_x', type: 'attr', label: 'X' },
-          { key: 'fld_y', type: 'attr', label: 'Y' },
-        ] },
-      ];
-      expect(dropIntent(sameListTree, [0, 0], 'fld_y').besideId).toBeNull();
-    });
-
-    test('a header hover never sets besideId, even across lists', () => {
-      // [0, 0] (attr_1, in sec_a) hovering sec_c's header (nested in sec_b) is cross-list,
-      // but the header form addresses a container, not a field card.
-      expect(dropIntent(makeTree(), [0, 0], dropHeaderId('sec_c')).besideId).toBeNull();
-    });
-  });
-
-  // ── refusals, so the highlight never promises a drop moveNode would refuse ──
-
-  test('into the dragged node itself, or its own subtree, is no drop at all', () => {
-    const tree = makeTree();
-    expect(dropIntent(tree, [1, 1], 'sec_c')).toBeNull();          // itself
-    expect(dropIntent(tree, [1, 1], 'sec_d')).toBeNull();          // its own child
-    expect(dropIntent(tree, [1, 1], dropSentinelId('sec_d'))).toBeNull();
-    expect(dropIntent(tree, [1, 1], dropHeaderId('sec_c'))).toBeNull(); // beside itself
-  });
-
-  test('dropping into a grandparent (or higher ancestor) moves the node up the tree', () => {
-    // Structure: A holds B, B holds X. Dragging X to A's body droppable should move X
-    // out of B and into A.
-    const tree = [
-      { id: 'sec_a', title: 'A', columns: 2, fields: [
-        { key: 'sec_b', type: SECTION_TYPE, label: '', section: { id: 'sec_b', title: 'B', columns: 2, fields: [
-          { key: 'fld_x', type: 'attr', label: 'X' },
-        ] } },
-      ] },
-    ];
-    const intent = dropIntent(tree, [0, 0, 0], 'sec_a');
-    expect(intent).toEqual({ parentPath: [0], idx: -1, intoId: 'sec_a', besideId: null });
-    // Verify the move actually works
-    const next = moveNode(tree, [0, 0, 0], intent.parentPath, intent.idx);
-    expect(next[0].fields.map(f => f.key)).toEqual(['sec_b', 'fld_x']);
-    expect(next[0].fields[0].section.fields).toEqual([]);
-  });
-
-  test('a container the node already sits in falls back to "beside that container"', () => {
-    // canDropInto refuses only the direct parent, so the hover reads as the plain sortable
-    // meaning instead of offering a relocation that would re-append the node in its own list.
-    // [1, 0] is num_1 directly inside sec_b, so sec_b is the direct parent.
-    expect(dropIntent(makeTree(), [1, 0], 'sec_b'))
-      .toEqual({ parentPath: [], idx: 1, intoId: null, besideId: null });
-  });
-
-  test('the append sentinel stays the explicit way to move a node to the end of its own list', () => {
-    // The sentinel is a deliberate gesture, not something the pointer brushes past, so it
-    // keeps working where the implicit body hover falls back.
-    const intent = dropIntent(makeTree(), [1, 0], dropSentinelId('sec_b'));
-    expect(intent).toEqual({ parentPath: [1], idx: -1, intoId: 'sec_b', besideId: null });
-    expect(apply(makeTree(), [1, 0], dropSentinelId('sec_b'))[1].fields.map(f => f.key))
-      .toEqual(['sec_c', 'num_1']);
-  });
-
-  test('an unknown id, or an unusable source path, is no drop', () => {
-    const tree = makeTree();
-    expect(dropIntent(tree, [0, 0], 'nope')).toBeNull();
-    expect(dropIntent(tree, null, 'sec_b')).toBeNull();
-  });
-
-  test('resolving a hover leaves a deep-frozen tree untouched', () => {
-    const tree = makeTree();
-    const freeze = (v) => {
-      if (v && typeof v === 'object' && !Object.isFrozen(v)) { Object.freeze(v); Object.values(v).forEach(freeze); }
-      return v;
-    };
-    freeze(tree);
-    expect(() => dropIntent(tree, [0, 0], 'sec_c')).not.toThrow();
-    expect(() => apply(tree, [0, 0], dropHeaderId('sec_c'))).not.toThrow();
-    expect(tree[1].fields.map(f => f.key)).toEqual(['num_1', 'sec_c']);
   });
 });
 

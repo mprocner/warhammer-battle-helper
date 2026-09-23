@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, useDraggable,
+} from '@dnd-kit/core';
+import {
   Dialog, DialogTitle, DialogContent, IconButton, Typography, Box,
   TextField, Switch, FormControlLabel, Select, MenuItem, InputLabel,
   FormControl, Divider, Chip, Slider,
@@ -13,7 +16,6 @@ import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
 import NumbersIcon from '@mui/icons-material/Numbers';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ShortTextIcon from '@mui/icons-material/ShortText';
@@ -25,28 +27,17 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import GavelIcon from '@mui/icons-material/Gavel';
 import LabelIcon from '@mui/icons-material/Label';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
-import {
-  DndContext as DndKitContext,
-  pointerWithin,
-  rectIntersection,
-  useDroppable,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
-import TemplatePreview from './TemplatePreview';
+import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import PropertyPopup from './PropertyPopup';
+import FieldChrome from './FieldChrome';
+import SectionChrome from './SectionChrome';
+import EditablePlaceholder from './EditablePlaceholder';
 import FormulaBuilder from './FormulaBuilder';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
@@ -54,9 +45,10 @@ import TokenDisplayBuilder from './TokenDisplayBuilder';
 import {
   SECTION_TYPE, sectionOf, nodeAt, locate, childrenOf, samePath,
   updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields,
-  containerPathFor, shiftPathAfterInsert, indexNodes, moveNode, isContainer,
-  dropSentinelId, dropHeaderId, dropIntent,
+  containerPathFor, shiftPathAfterInsert, shiftPathAfterRemoval,
+  moveNode, canDropInto, nodeId, isAncestorPath, indexNodes, isContainer,
 } from '../../utils/templateSections';
+import { measureNodes, insertionAt, toMoveArgs, ghostRectFor } from '../../utils/sheetDnd';
 import { SHEET_WIDTH_MIN, SHEET_WIDTH_MAX, SHEET_WIDTH_STEP, clampSheetWidth } from '../../utils/sheetWidth';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -155,10 +147,6 @@ function makeDefaultField(type) {
 
 function makeDefaultSection() {
   return { id: genId('section'), title: '', columns: 3, fields: [] };
-}
-
-function typeInfo(type) {
-  return FIELD_TYPES.find(ft => ft.type === type);
 }
 
 // ── SkillTreeEditor ──────────────────────────────────────────────────────────
@@ -463,14 +451,15 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
   );
 }
 
-// ── WeaponPresetsModal ───────────────────────────────────────────────────────
+// ── WeaponPresetsEditor ──────────────────────────────────────────────────────
 
 // GM editor for a weapons_table field's preset weapons. Each preset is a "row template":
 // the GM fills the same column cells and damage blocks a player would, plus an "always on
 // the sheet" switch. AlwaysOn presets are shown read-only on every sheet (a GM edit
 // propagates); the rest form a catalog the player can copy into their own editable rows.
-// Lives in its own dialog so it never crowds the field property panel on the right.
-function WeaponPresetsModal({ open, onClose, field, sections, onChange }) {
+// Inlined into the Content group of the field property panel, right below the weapon
+// columns editor — a preset is filled in per column, so the two are read together.
+function WeaponPresetsEditor({ field, sections, onChange }) {
   const { t } = useTranslation();
   const presets   = field.presetWeapons || [];
   const cols      = field.columns || [];
@@ -491,90 +480,115 @@ function WeaponPresetsModal({ open, onClose, field, sections, onChange }) {
   ]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth
-      PaperProps={{ sx: { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)' } }}>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Cinzel, serif', color: '#7a5c42', fontSize: '1rem' }}>
+    <div className="creator__weapon-presets-editor">
+      <div className="creator__props-subhead">
         <GavelIcon fontSize="small" />
         {t('creator.weaponPresetsTitle')}
-        <IconButton onClick={onClose} size="small" sx={{ ml: 'auto' }}><CloseIcon /></IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
-          {t('creator.weaponPresetsHint')}
-        </Typography>
+      </div>
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
+        {t('creator.weaponPresetsHint')}
+      </Typography>
 
-        {cols.length === 0 ? (
-          <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', py: 2 }}>
-            {t('creator.weaponPresetsNoColumns')}
-          </Typography>
-        ) : (
-          <div className="creator__weapon-presets">
-            {presets.map((preset, i) => (
-              <div key={preset.id} className="creator__weapon-preset">
-                <div className="creator__weapon-preset-fields">
-                  {cols.map(c => {
-                    const val = (preset.cells && preset.cells[c.key]) || '';
-                    if (c.type === 'select') {
-                      const opts = c.optionsFromSkills
-                        ? skillOptions
-                        : (c.options || []).map(o => ({ key: o, label: o }));
-                      return (
-                        <label key={c.key} className="creator__weapon-preset-field">
-                          <span className="creator__weapon-preset-field-label">{c.label}</span>
-                          <select className="custom-sheet__weapon-cell-select" value={val}
-                            onChange={e => updateCell(i, c.key, e.target.value)}>
-                            <option value="">—</option>
-                            {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-                          </select>
-                        </label>
-                      );
-                    }
+      {cols.length === 0 ? (
+        <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', py: 2 }}>
+          {t('creator.weaponPresetsNoColumns')}
+        </Typography>
+      ) : (
+        <div className="creator__weapon-presets">
+          {presets.map((preset, i) => (
+            <div key={preset.id} className="creator__weapon-preset">
+              <div className="creator__weapon-preset-fields">
+                {cols.map(c => {
+                  const val = (preset.cells && preset.cells[c.key]) || '';
+                  if (c.type === 'select') {
+                    const opts = c.optionsFromSkills
+                      ? skillOptions
+                      : (c.options || []).map(o => ({ key: o, label: o }));
                     return (
                       <label key={c.key} className="creator__weapon-preset-field">
                         <span className="creator__weapon-preset-field-label">{c.label}</span>
-                        <input type={c.type === 'number' ? 'number' : 'text'} className="custom-sheet__weapon-cell-input"
-                          value={val} onChange={e => updateCell(i, c.key, e.target.value)} />
+                        <select className="custom-sheet__weapon-cell-select" value={val}
+                          onChange={e => updateCell(i, c.key, e.target.value)}>
+                          <option value="">—</option>
+                          {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                        </select>
                       </label>
                     );
-                  })}
-                </div>
-
-                {hasDamage && (
-                  <div className="creator__weapon-preset-damage">
-                    <span className="creator__weapon-preset-field-label">{t('customSheet.damage')}</span>
-                    <div className="custom-sheet__weapon-damage">
-                      {renderDamageFormula(dmgBlocks, preset, field.key,
-                        { weaponDamage: (_fk, _rowId, blockId, val) => updateDamage(i, blockId, val) }, false, t)}
-                    </div>
-                  </div>
-                )}
-
-                <div className="creator__weapon-preset-actions">
-                  <FormControlLabel
-                    control={<Switch size="small" checked={!!preset.alwaysOn} onChange={e => update(i, { alwaysOn: e.target.checked })} />}
-                    label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponPresetAlwaysOn')}</Typography>}
-                  />
-                  <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}>
-                    <DeleteIcon style={{ fontSize: 14 }} />
-                  </button>
-                </div>
+                  }
+                  return (
+                    <label key={c.key} className="creator__weapon-preset-field">
+                      <span className="creator__weapon-preset-field-label">{c.label}</span>
+                      <input type={c.type === 'number' ? 'number' : 'text'} className="custom-sheet__weapon-cell-input"
+                        value={val} onChange={e => updateCell(i, c.key, e.target.value)} />
+                    </label>
+                  );
+                })}
               </div>
-            ))}
-            <button className="creator__tree-add-root" onClick={add}>
-              <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponPresetAdd')}
-            </button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+              {hasDamage && (
+                <div className="creator__weapon-preset-damage">
+                  <span className="creator__weapon-preset-field-label">{t('customSheet.damage')}</span>
+                  <div className="custom-sheet__weapon-damage">
+                    {renderDamageFormula(dmgBlocks, preset, field.key,
+                      { weaponDamage: (_fk, _rowId, blockId, val) => updateDamage(i, blockId, val) }, false, t)}
+                  </div>
+                </div>
+              )}
+
+              <div className="creator__weapon-preset-actions">
+                <FormControlLabel
+                  control={<Switch size="small" checked={!!preset.alwaysOn} onChange={e => update(i, { alwaysOn: e.target.checked })} />}
+                  label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponPresetAlwaysOn')}</Typography>}
+                />
+                <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}>
+                  <DeleteIcon style={{ fontSize: 14 }} />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button className="creator__tree-add-root" onClick={add}>
+            <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponPresetAdd')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A titled group in the properties panel. Inspector panels live or die on grouping: a flat stack
+// of twenty controls forces the GM to read every label to find one, while four labelled groups
+// let them jump. The divider is a hairline rather than a box so the groups read as one surface.
+function PropsGroup({ title, children }) {
+  return (
+    <div className="creator__props-group">
+      <div className="creator__props-group-title">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+// The panel's sticky header: the caption naming what is being edited, plus the field/section
+// TYPE so the GM always knows which kind of node they are configuring, even after scrolling
+// the controls below it out of view.
+function PropsHead({ caption, typeInfo, t }) {
+  return (
+    <div className="creator__props-head">
+      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.75rem' }}>
+        {caption}
+      </Typography>
+      {typeInfo && (
+        <Typography variant="caption" className="creator__props-head-type">
+          {t(typeInfo.labelKey, { defaultValue: typeInfo.type })}
+        </Typography>
+      )}
+    </div>
   );
 }
 
 // ── PropertyPanel (field) ────────────────────────────────────────────────────
 
-function PropertyPanel({ field, onChange, numberFields, sections }) {
+function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
   const { t } = useTranslation();
-  const [presetsOpen, setPresetsOpen] = useState(false);
   if (!field) {
     return (
       <div className="creator__props-empty">
@@ -586,277 +600,310 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
   }
 
   const up = (patch) => onChange({ ...field, ...patch });
+  const typeInfo = FIELD_TYPES.find(ft => ft.type === field.type);
+
+  // Switch rows in this panel put the label on the left and the control on the right — MUI's
+  // default FormControlLabel puts the switch first, which wastes width the panel needs.
+  const switchRowSx = { ml: 0, mr: 0, width: 1, justifyContent: 'space-between' };
 
   return (
     <div className="creator__props-panel">
-      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.75rem' }}>
-        {t('creator.fieldProperties')}
-      </Typography>
+      <PropsHead caption={t('creator.fieldProperties')} typeInfo={typeInfo} t={t} />
 
-      {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
-          so renaming a field never orphans player data stored under it. Not shown to the GM. */}
-      {/* A label field renames this input: in Polish creator.fieldLabel reads "Etykieta", the same
-          word as the field type itself, so a label's panel would show "Etykieta" inside "Etykieta". */}
-      <TextField size="small" fullWidth
-        label={field.type === 'label' ? t('creator.labelInternalName') : t('creator.fieldLabel')}
-        helperText={field.type === 'label' ? t('creator.labelInternalNameHint') : undefined}
-        value={field.label}
-        onChange={e => up({ label: e.target.value })}
-        sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
-
-      {field.type === 'label' && (
-        <>
-          <TextField size="small" fullWidth multiline rows={3}
-            label={t('creator.labelText')}
-            helperText={t('creator.labelTextHint')}
-            value={field.text || ''}
-            onChange={e => up({ text: e.target.value })}
-            sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
-
-          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('creator.labelColor')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
-            {LABEL_COLORS.map(hex => (
-              <button
-                key={hex}
-                type="button"
-                aria-label={hex}
-                className={`creator__label-swatch${(field.textColor || LABEL_COLORS[0]) === hex ? ' creator__label-swatch--active' : ''}`}
-                style={{ background: hex }}
-                onClick={() => up({ textColor: hex })}
-              />
-            ))}
-          </Box>
-
-          <FormControl size="small" fullWidth sx={{ mb: 1.5 }}>
-            <InputLabel>{t('creator.labelSize')}</InputLabel>
-            <Select
-              label={t('creator.labelSize')}
-              value={field.textSize || 'normal'}
-              onChange={e => up({ textSize: e.target.value })}
-            >
-              <MenuItem value="small">{t('creator.labelSizeSmall')}</MenuItem>
-              <MenuItem value="normal">{t('creator.labelSizeNormal')}</MenuItem>
-              <MenuItem value="large">{t('creator.labelSizeLarge')}</MenuItem>
-              <MenuItem value="heading">{t('creator.labelSizeHeading')}</MenuItem>
-            </Select>
-          </FormControl>
-        </>
-      )}
-
-      {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
-        <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
-          onChange={e => up({ abbr: e.target.value })}
-          helperText={t('creator.fieldAbbrHint')}
+      <PropsGroup title={t('creator.propsGroupBasics')}>
+        {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
+            so renaming a field never orphans player data stored under it. Not shown to the GM. */}
+        {/* A label field renames this input: in Polish creator.fieldLabel reads "Etykieta", the same
+            word as the field type itself, so a label's panel would show "Etykieta" inside "Etykieta". */}
+        <TextField size="small" fullWidth
+          label={field.type === 'label' ? t('creator.labelInternalName') : t('creator.fieldLabel')}
+          helperText={field.type === 'label' ? t('creator.labelInternalNameHint') : undefined}
+          value={field.label}
+          onChange={e => up({ label: e.target.value })}
           sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
-      )}
 
-      {/* Skróconą kartę renderują tylko te trzy typy (BUG-176) — skill_table i skill_tree trafiają
-          tam wyłącznie przez gwiazdki gracza, więc flaga byłaby na nich martwa. */}
-      {SHORT_CARD_FIELD_TYPES.includes(field.type) && (
-        <FormControlLabel
-          control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
-          sx={{ mb: 1.5, display: 'block' }}
-        />
-      )}
+        {field.type === 'label' && (
+          <>
+            <TextField size="small" fullWidth multiline rows={3}
+              label={t('creator.labelText')}
+              helperText={t('creator.labelTextHint')}
+              value={field.text || ''}
+              onChange={e => up({ text: e.target.value })}
+              sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
 
-      {/* type="number" only rejects non-numeric input, not decimals — a value like "2.5" would
-          reach the backend as *int and 400 the whole template PATCH. saveTemplate swallows that
-          error silently, so every later edit to the template would appear to vanish with no
-          visible cause. Truncate to an integer here so that can never happen. */}
-      {(field.type === 'attr' || field.type === 'number') && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
-          <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
-          <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
-          <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} sx={{ flex: 1 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
-        </Box>
-      )}
+            <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('creator.labelColor')}
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+              {LABEL_COLORS.map(hex => (
+                <button
+                  key={hex}
+                  type="button"
+                  aria-label={hex}
+                  className={`creator__label-swatch${(field.textColor || LABEL_COLORS[0]) === hex ? ' creator__label-swatch--active' : ''}`}
+                  style={{ background: hex }}
+                  onClick={() => up({ textColor: hex })}
+                />
+              ))}
+            </Box>
 
-      {/* Skok steruje wyłącznie strzałkami inputu na karcie. Przeglądarka nie dodaje skoku do
-          bieżącej wartości — snapuje ją do siatki stepBase + n * step, gdzie stepBase to atrybut
-          min (a bez niego 0). Trunc tak samo obowiązkowy jak wyżej: ułamek 400-uje cały PATCH
-          szablonu, a saveTemplate połyka ten błąd po cichu. Floor na 0 (nie na 1!) w onChange —
-          autosave odpala się 1200 ms po zmianie (triggerSave), więc bez tego floora ujemny
-          skok wpisany i pozostawiony bez blura trafiłby do Mongo na stałe: `Step int` nie ma
-          ochrony przed ujemnymi wartościami, tylko `0` jest wycinane przez `omitempty`. Floor
-          na 1 tutaj zepsułby pisanie — wpisanie "0" z zamiarem "05" skoczyłoby od razu na 1,
-          a kolejny znak dałby "15". `0` jest bezpieczne jako stan przejściowy: karta czyta
-          brakujący/zerowy skok jako 1 przez `field.step || 1`. Podniesienie <1 → 1 zostaje na
-          onBlur, tak jak wcześniej — floor w onChange jest dodatkową siatką bezpieczeństwa na
-          wypadek, gdyby autosave zdążył wystrzelić pierwszy. */}
-      {(field.type === 'attr' || field.type === 'number') && (
-        <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
-          <TextField
-            size="small"
-            label={t('creator.fieldStep')}
-            helperText={t('creator.fieldStepHint')}
-            type="number"
-            value={field.step ?? ''}
-            onChange={e => up({ step: e.target.value === '' ? null : Math.max(0, Math.trunc(Number(e.target.value))) })}
-            onBlur={() => {
-              // Pole sprzed feature'a (undefined) nigdy się nie zapisuje — focus + blur bez edycji
-              // nie może odpalić `up()`, bo to zastępuje cały obiekt pola i planuje PATCH całego
-              // szablonu (BUG scenariusz z finalnego review). Pole zawierające wartość spoza zakresu
-              // (np. z autosave'a) samowylecza się do 1 na blurze.
-              if (field.step === undefined) return;
-              const clamped = field.step == null || field.step < 1 ? 1 : field.step;
-              if (clamped !== field.step) up({ step: clamped });
-            }}
-            sx={{ flex: '0 0 140px' }}
-            InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1, min: 1 } }}
-          />
-        </Box>
-      )}
+            <FormControl size="small" fullWidth sx={{ mb: 1.5 }}>
+              <InputLabel>{t('creator.labelSize')}</InputLabel>
+              <Select
+                label={t('creator.labelSize')}
+                value={field.textSize || 'normal'}
+                onChange={e => up({ textSize: e.target.value })}
+              >
+                <MenuItem value="small">{t('creator.labelSizeSmall')}</MenuItem>
+                <MenuItem value="normal">{t('creator.labelSizeNormal')}</MenuItem>
+                <MenuItem value="large">{t('creator.labelSizeLarge')}</MenuItem>
+                <MenuItem value="heading">{t('creator.labelSizeHeading')}</MenuItem>
+              </Select>
+            </FormControl>
+          </>
+        )}
 
-      {field.type === 'attr' && (
-        <>
+        {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
+          <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
+            onChange={e => up({ abbr: e.target.value })}
+            helperText={t('creator.fieldAbbrHint')}
+            sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+        )}
+
+        {/* Skróconą kartę renderują tylko te trzy typy (BUG-176) — skill_table i skill_tree trafiają
+            tam wyłącznie przez gwiazdki gracza, więc flaga byłaby na nich martwa. */}
+        {SHORT_CARD_FIELD_TYPES.includes(field.type) && (
           <FormControlLabel
-            control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
-            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
-            sx={{ mb: 0.5 }}
+            labelPlacement="start"
+            control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}
+            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
+            sx={switchRowSx}
           />
-          {field.hasAdvances && (
-            <TextField
-              size="small"
-              fullWidth
-              label={t('creator.fieldAdvancesLabel')}
-              value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
-              onChange={e => up({ advancesLabel: e.target.value })}
-              sx={{ mb: 1.5 }}
-              InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+        )}
+      </PropsGroup>
+
+      {['attr', 'number', 'skill_table'].includes(field.type) && (
+        <PropsGroup title={t('creator.propsGroupValues')}>
+          {/* type="number" only rejects non-numeric input, not decimals — a value like "2.5" would
+              reach the backend as *int and 400 the whole template PATCH. saveTemplate swallows that
+              error silently, so every later edit to the template would appear to vanish with no
+              visible cause. Truncate to an integer here so that can never happen. */}
+          {(field.type === 'attr' || field.type === 'number') && (
+            <div className="creator__props-duo" style={{ marginBottom: 10 }}>
+              <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+              <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+            </div>
+          )}
+
+          {/* Skok steruje wyłącznie strzałkami inputu na karcie. Przeglądarka nie dodaje skoku do
+              bieżącej wartości — snapuje ją do siatki stepBase + n * step, gdzie stepBase to atrybut
+              min (a bez niego 0). Trunc tak samo obowiązkowy jak wyżej: ułamek 400-uje cały PATCH
+              szablonu, a saveTemplate połyka ten błąd po cichu. Floor na 0 (nie na 1!) w onChange —
+              autosave odpala się 1200 ms po zmianie (triggerSave), więc bez tego floora ujemny
+              skok wpisany i pozostawiony bez blura trafiłby do Mongo na stałe: `Step int` nie ma
+              ochrony przed ujemnymi wartościami, tylko `0` jest wycinane przez `omitempty`. Floor
+              na 1 tutaj zepsułby pisanie — wpisanie "0" z zamiarem "05" skoczyłoby od razu na 1,
+              a kolejny znak dałby "15". `0` jest bezpieczne jako stan przejściowy: karta czyta
+              brakujący/zerowy skok jako 1 przez `field.step || 1`. Podniesienie <1 → 1 zostaje na
+              onBlur, tak jak wcześniej — floor w onChange jest dodatkową siatką bezpieczeństwa na
+              wypadek, gdyby autosave zdążył wystrzelić pierwszy. */}
+          {(field.type === 'attr' || field.type === 'number') && (
+            <div className="creator__props-duo" style={{ marginBottom: 10 }}>
+              <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+              <TextField
+                size="small"
+                label={t('creator.fieldStep')}
+                helperText={t('creator.fieldStepHint')}
+                type="number"
+                value={field.step ?? ''}
+                onChange={e => up({ step: e.target.value === '' ? null : Math.max(0, Math.trunc(Number(e.target.value))) })}
+                onBlur={() => {
+                  // Pole sprzed feature'a (undefined) nigdy się nie zapisuje — focus + blur bez edycji
+                  // nie może odpalić `up()`, bo to zastępuje cały obiekt pola i planuje PATCH całego
+                  // szablonu (BUG scenariusz z finalnego review). Pole zawierające wartość spoza zakresu
+                  // (np. z autosave'a) samowylecza się do 1 na blurze.
+                  if (field.step === undefined) return;
+                  const clamped = field.step == null || field.step < 1 ? 1 : field.step;
+                  if (clamped !== field.step) up({ step: clamped });
+                }}
+                InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1, min: 1 } }}
+              />
+            </div>
+          )}
+
+          {field.type === 'attr' && (
+            <>
+              <FormControlLabel
+                labelPlacement="start"
+                control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
+                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
+                sx={switchRowSx}
+              />
+              {field.hasAdvances && (
+                <TextField
+                  size="small"
+                  fullWidth
+                  label={t('creator.fieldAdvancesLabel')}
+                  value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
+                  onChange={e => up({ advancesLabel: e.target.value })}
+                  sx={{ mt: 1 }}
+                  InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+                />
+              )}
+            </>
+          )}
+
+          {field.type === 'skill_table' && (
+            <>
+              <FormControlLabel
+                labelPlacement="start"
+                control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
+                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
+                sx={switchRowSx}
+              />
+              {field.hasAdvances && (
+                <TextField
+                  size="small"
+                  fullWidth
+                  label={t('creator.fieldAdvancesLabel')}
+                  value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
+                  onChange={e => up({ advancesLabel: e.target.value })}
+                  sx={{ mt: 1 }}
+                  InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+                />
+              )}
+            </>
+          )}
+        </PropsGroup>
+      )}
+
+      {['select', 'skill_table', 'weapons_table', 'skill_tree'].includes(field.type) && (
+        <PropsGroup title={t('creator.propsGroupContent')}>
+          {field.type === 'select' && (
+            <OptionsEditor
+              label={t('creator.selectOptions')}
+              options={field.options || []}
+              onChange={opts => up({ options: opts })}
             />
           )}
-        </>
-      )}
 
-      {(field.type === 'skill_table' || field.type === 'skill_tree') && (
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={!!field.assignAttrToSkill}
-              onChange={e => up({ assignAttrToSkill: e.target.checked })}
-            />
-          }
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
-          sx={{ mb: 1, display: 'block' }}
-        />
-      )}
-
-      {field.type === 'skill_table' && (
-        <>
-          <FormControlLabel
-            control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
-            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
-            sx={{ mb: 0.5, display: 'block' }}
-          />
-          {field.hasAdvances && (
-            <TextField
-              size="small"
-              fullWidth
-              label={t('creator.fieldAdvancesLabel')}
-              value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
-              onChange={e => up({ advancesLabel: e.target.value })}
-              sx={{ mb: 1.5 }}
-              InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+          {(field.type === 'skill_table' || field.type === 'skill_tree') && (
+            <FormControlLabel
+              labelPlacement="start"
+              control={
+                <Switch
+                  size="small"
+                  checked={!!field.assignAttrToSkill}
+                  onChange={e => up({ assignAttrToSkill: e.target.checked })}
+                />
+              }
+              label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
+              sx={{ ...switchRowSx, mb: 1 }}
             />
           )}
-        </>
+
+          {field.type === 'skill_table' && (
+            <SkillOptionsEditor
+              label={t('creator.skillTableSkills')}
+              skills={field.skills || []}
+              onChange={skills => up({ skills })}
+              assignAttrToSkill={!!field.assignAttrToSkill}
+              numberFields={numberFields}
+            />
+          )}
+
+          {field.type === 'weapons_table' && (
+            <>
+              <WeaponColumnsEditor columns={field.columns || []} onChange={cols => up({ columns: cols })} />
+
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('creator.damageFormula')}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
+                {t('creator.damageFormulaHint')}
+              </Typography>
+              <FormulaBuilder
+                formula={field.damageFormula || []}
+                onChange={f => up({ damageFormula: f })}
+                numberFields={numberFields}
+                fieldType={field.type}
+                damageMode
+              />
+
+              <Divider sx={{ my: 1.5 }} />
+              <WeaponPresetsEditor
+                field={field}
+                sections={sections}
+                onChange={presetWeapons => up({ presetWeapons })}
+              />
+            </>
+          )}
+
+          {field.type === 'skill_tree' && (
+            <FormControlLabel
+              labelPlacement="start"
+              control={<Switch checked={!!field.playerCanAddSkills} onChange={e => up({ playerCanAddSkills: e.target.checked })} size="small" />}
+              label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.playerCanAddSkills')}</Typography>}
+              sx={switchRowSx}
+            />
+          )}
+
+          {field.type === 'skill_tree' && field.tree && (
+            <>
+              <Divider sx={{ my: 1.5 }} />
+              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('creator.treeStructure')}
+              </Typography>
+              <SkillTreeEditor tree={field.tree} onChange={tree => up({ tree })} numberFields={numberFields} assignAttrToSkill={!!field.assignAttrToSkill} />
+            </>
+          )}
+        </PropsGroup>
       )}
 
-      {field.type === 'select' && (
-        <OptionsEditor
-          label={t('creator.selectOptions')}
-          options={field.options || []}
-          onChange={opts => up({ options: opts })}
-        />
+      {['attr', 'skill_table', 'skill_tree', 'weapons_table'].includes(field.type) && (
+        <PropsGroup title={t('creator.propsGroupRoll')}>
+          {(field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
+            <>
+              <FormControlLabel
+                labelPlacement="start"
+                control={<Switch checked={!!field.rollable} onChange={e => up({ rollable: e.target.checked, rollConfig: e.target.checked ? (field.rollConfig || defaultRollConfig()) : null })} size="small" />}
+                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.rollable')}</Typography>}
+                sx={switchRowSx}
+              />
+              {field.rollable && field.rollConfig && (
+                <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} fieldType={field.type} />
+              )}
+            </>
+          )}
+
+          {field.type === 'weapons_table' && (
+            <>
+              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('creator.weaponAttackRoll')}
+              </Typography>
+              <RollConfigEditor
+                config={field.rollConfig || defaultRollConfig()}
+                onChange={cfg => up({ rollConfig: cfg })}
+                numberFields={numberFields}
+                fieldType={field.type}
+              />
+            </>
+          )}
+        </PropsGroup>
       )}
 
-      {field.type === 'skill_table' && (
-        <SkillOptionsEditor
-          label={t('creator.skillTableSkills')}
-          skills={field.skills || []}
-          onChange={skills => up({ skills })}
-          assignAttrToSkill={!!field.assignAttrToSkill}
-          numberFields={numberFields}
-        />
-      )}
-
-      {field.type === 'weapons_table' && (
-        <>
-          <WeaponColumnsEditor columns={field.columns || []} onChange={cols => up({ columns: cols })} />
-
-          <Divider sx={{ my: 1.5 }} />
-          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('creator.weaponAttackRoll')}
-          </Typography>
-          <RollConfigEditor
-            config={field.rollConfig || defaultRollConfig()}
-            onChange={cfg => up({ rollConfig: cfg })}
-            numberFields={numberFields}
-            fieldType={field.type}
-          />
-
-          <Divider sx={{ my: 1.5 }} />
-          <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('creator.damageFormula')}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
-            {t('creator.damageFormulaHint')}
-          </Typography>
-          <FormulaBuilder
-            formula={field.damageFormula || []}
-            onChange={f => up({ damageFormula: f })}
-            numberFields={numberFields}
-            fieldType={field.type}
-            damageMode
-          />
-
-          <Divider sx={{ my: 1.5 }} />
-          <button className="creator__weapon-presets-btn" onClick={() => setPresetsOpen(true)}>
-            <GavelIcon style={{ fontSize: 15 }} />
-            {t('creator.weaponPresetsButton', { count: (field.presetWeapons || []).length })}
+      <PropsGroup title={t('creator.propsGroupDanger')}>
+        <div className="creator__props-danger">
+          <button
+            className="creator__section-action-btn creator__section-action-btn--danger"
+            onClick={onDelete}
+            title={t('creator.fieldDelete')}
+          >
+            <DeleteIcon style={{ fontSize: 14 }} /> {t('creator.fieldDelete')}
           </button>
-          <WeaponPresetsModal
-            open={presetsOpen}
-            onClose={() => setPresetsOpen(false)}
-            field={field}
-            sections={sections}
-            onChange={presetWeapons => up({ presetWeapons })}
-          />
-        </>
-      )}
-
-      <Divider sx={{ my: 1.5 }} />
-
-      {(field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
-        <FormControlLabel control={<Switch checked={!!field.rollable} onChange={e => up({ rollable: e.target.checked, rollConfig: e.target.checked ? (field.rollConfig || defaultRollConfig()) : null })} size="small" />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.rollable')}</Typography>} sx={{ mb: 0.5 }} />
-      )}
-
-      {field.rollable && field.rollConfig && (field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
-        <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} fieldType={field.type} />
-      )}
-
-      {field.type === 'skill_tree' && (
-        <FormControlLabel
-          control={<Switch checked={!!field.playerCanAddSkills} onChange={e => up({ playerCanAddSkills: e.target.checked })} size="small" />}
-          label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.playerCanAddSkills')}</Typography>}
-          sx={{ mb: 0.5 }}
-        />
-      )}
-
-      {field.type === 'skill_tree' && field.tree && (
-        <>
-          <Divider sx={{ my: 1.5 }} />
-          <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('creator.treeStructure')}
-          </Typography>
-          <SkillTreeEditor tree={field.tree} onChange={tree => up({ tree })} numberFields={numberFields} assignAttrToSkill={!!field.assignAttrToSkill} />
-        </>
-      )}
+        </div>
+      </PropsGroup>
     </div>
   );
 }
@@ -865,11 +912,10 @@ function PropertyPanel({ field, onChange, numberFields, sections }) {
 
 function SectionPropertyPanel({ section, onChange, onDelete, index, siblingCount, onMove }) {
   const { t } = useTranslation();
+  const typeInfo = FIELD_TYPES.find(ft => ft.type === 'section');
   return (
     <div className="creator__props-panel">
-      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.85rem' }}>
-        {t('creator.sectionProperties')}
-      </Typography>
+      <PropsHead caption={t('creator.sectionProperties')} typeInfo={typeInfo} t={t} />
 
       <TextField
         size="small"
@@ -906,279 +952,24 @@ function SectionPropertyPanel({ section, onChange, onDelete, index, siblingCount
         </div>
       </div>
 
-      <Divider sx={{ my: 1.5 }} />
-
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <button className="creator__section-action-btn" onClick={() => onMove(-1)} disabled={index === 0} title={t('creator.sectionMoveUp')}>
-          <ArrowUpwardIcon style={{ fontSize: 14 }} />
-        </button>
-        <button className="creator__section-action-btn" onClick={() => onMove(+1)} disabled={index === siblingCount - 1} title={t('creator.sectionMoveDown')}>
-          <ArrowDownwardIcon style={{ fontSize: 14 }} />
-        </button>
-        <button className="creator__section-action-btn creator__section-action-btn--danger" onClick={onDelete} title={t('creator.sectionDelete')} style={{ marginLeft: 'auto' }}>
-          <DeleteIcon style={{ fontSize: 14 }} />
-        </button>
-      </Box>
-    </div>
-  );
-}
-
-// ── FieldCard (in section canvas) ────────────────────────────────────────────
-
-function FieldCard({ id, field, isSelected, isDuplicateKey, isDropBeside, onClick, onRemove, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const { t } = useTranslation();
-  const ti = typeInfo(field.type);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  const dndStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={dndStyle}
-      className={`creator__canvas-field${isSelected ? ' creator__canvas-field--selected' : ''}${isDuplicateKey ? ' creator__canvas-field--error' : ''}${isDropBeside ? ' creator__canvas-field--drop-beside' : ''}`}
-      onClick={e => { e.stopPropagation(); onClick(); }}
-    >
-      <div className="creator__canvas-field-drag" {...attributes} {...listeners}>
-        <DragHandleIcon style={{ fontSize: 16 }} />
-      </div>
-      <div className="creator__canvas-field-type-tag">{t(ti?.labelKey, { defaultValue: field.type })}</div>
-      {field.abbr
-        ? <div className="creator__canvas-field-abbr">{field.abbr}</div>
-        : <div className="creator__canvas-field-abbr creator__canvas-field-abbr--empty">
-            {field.label || (field.type === 'label' && field.text) || <em>—</em>}
-          </div>
-      }
-      {field.abbr && <div className="creator__canvas-field-label">{field.label}</div>}
-      {(field.type === 'attr' || field.type === 'number') && (field.min != null || field.max != null || field.step > 1) && (
-        <div className="creator__canvas-field-range">
-          {(field.min != null || field.max != null) && `${field.min ?? '?'} – ${field.max ?? '?'}`}
-          {(field.min != null || field.max != null) && field.step > 1 && ' · '}
-          {field.step > 1 && t('creator.canvasStepChip', { step: field.step })}
-        </div>
-      )}
-      {field.rollable && <div className="creator__canvas-field-roll-badge">⚄</div>}
-      {field.showOnShortCard && SHORT_CARD_FIELD_TYPES.includes(field.type) && <div className="creator__canvas-field-short-badge" title={t('creator.showOnShortCard')}>▤</div>}
-      {isDuplicateKey && <div className="creator__canvas-field-dupe-warn" title={t('creator.duplicateKeyWarn')}>⚠ dup</div>}
-      <div className="creator__canvas-field-actions">
-        <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst}><ArrowUpwardIcon style={{ fontSize: 11 }} /></button>
-        <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onMoveDown(); }} disabled={isLast}><ArrowDownwardIcon style={{ fontSize: 11 }} /></button>
-        <button className="creator__canvas-field-action-btn" onClick={e => { e.stopPropagation(); onDuplicate(); }} aria-label={t('creator.fieldDuplicate')}><ContentCopyIcon style={{ fontSize: 11 }} /></button>
-        <button className="creator__canvas-field-action-btn creator__canvas-field-action-btn--danger" onClick={e => { e.stopPropagation(); onRemove(); }}><DeleteIcon style={{ fontSize: 11 }} /></button>
-      </div>
-    </div>
-  );
-}
-
-// ── SectionCanvas ─────────────────────────────────────────────────────────────
-
-function SectionCanvas({
-  section, path, siblingCount, selected,
-  onSelect, onRemove, onMove, onDuplicate,
-  onAddField, addingToPath, onToggleAdding, duplicateKeys, nested, intoTargetId, besideTargetId,
-}) {
-  const { t } = useTranslation();
-  // A nested section is addressed by its wrapper field key, which section.id mirrors — so one
-  // id works for DnD, React keys and the empty-drop sentinel at every depth.
-  const id = section.id;
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  // The header is this section's second droppable, and the one that keeps the ordinary
-  // sortable meaning: hovering it asks to reorder the section among its siblings, while
-  // hovering anything else in the section asks to drop the node INSIDE it. A plain droppable,
-  // not a sortable item — it belongs to no SortableContext and takes part in no displacement
-  // maths. The drag listeners live on the handle span below, so this ref shares no element
-  // with them.
-  const { setNodeRef: setHeaderDropRef } = useDroppable({ id: dropHeaderId(id) });
-  const dndStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
-  const isActiveSection = samePath(selected, path);
-  // A drop would land INSIDE this section, so it shows itself as the receiving container.
-  const isIntoTarget = intoTargetId === section.id;
-  const isAddingHere = samePath(addingToPath, path);
-  const cols = section.columns || 3;
-  const index = path[path.length - 1];
-
-  // The sentinel is the LAST sortable id of every section: hovering a field card means
-  // "insert where that card sits", so without a trailing append target the slot past the last
-  // child is unreachable. It doubles as the droppable `over` is redirected to whenever the
-  // pointer asks to drop INSIDE this section — see redirectIntoTarget.
-  const childIds = [...section.fields.map(f => f.key), dropSentinelId(section.id)];
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={dndStyle}
-      className={`creator__section${isActiveSection ? ' creator__section--active' : ''}${nested ? ' creator__section--nested' : ''}${isIntoTarget ? ' creator__section--drop-into' : ''}`}
-      onClick={e => { e.stopPropagation(); onSelect(path); }}
-    >
-      <div ref={setHeaderDropRef} className="creator__section-header">
-        <span className="creator__section-drag" {...attributes} {...listeners}><DragHandleIcon style={{ fontSize: 16 }} /></span>
-        <span className="creator__section-title-label">
-          {section.title || <em style={{ opacity: 0.45 }}>{t('creator.sectionNoName')}</em>}
-        </span>
-        <span className="creator__section-cols-badge">{cols} {t('creator.colSuffix')}</span>
-        <div className="creator__section-actions">
-          <button
-            className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onMove(path, -1); }}
-            disabled={index === 0}
-            title={t('creator.sectionMoveUpShort')}
-          >
-            <ArrowUpwardIcon style={{ fontSize: 13 }} />
+      <div className="creator__props-danger">
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <button className="creator__section-action-btn" onClick={() => onMove(-1)} disabled={index === 0} title={t('creator.sectionMoveUp')}>
+            <ArrowUpwardIcon style={{ fontSize: 14 }} />
           </button>
-          <button
-            className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onMove(path, +1); }}
-            disabled={index === siblingCount - 1}
-            title={t('creator.sectionMoveDownShort')}
-          >
-            <ArrowDownwardIcon style={{ fontSize: 13 }} />
+          <button className="creator__section-action-btn" onClick={() => onMove(+1)} disabled={index === siblingCount - 1} title={t('creator.sectionMoveDown')}>
+            <ArrowDownwardIcon style={{ fontSize: 14 }} />
           </button>
-          <button
-            className="creator__section-action-btn"
-            onClick={e => { e.stopPropagation(); onDuplicate(path); }}
-            title={t('creator.sectionDuplicate')}
-          >
-            <ContentCopyIcon style={{ fontSize: 13 }} />
+          <button className="creator__section-action-btn creator__section-action-btn--danger" onClick={onDelete} title={t('creator.sectionDelete')} style={{ marginLeft: 'auto' }}>
+            <DeleteIcon style={{ fontSize: 14 }} />
           </button>
-          <button
-            className="creator__section-action-btn creator__section-action-btn--danger"
-            onClick={e => { e.stopPropagation(); onRemove(path); }}
-            title={t('creator.sectionDelete')}
-          >
-            <DeleteIcon style={{ fontSize: 13 }} />
-          </button>
-        </div>
+        </Box>
       </div>
-
-      <div className="creator__section-body">
-        <SortableContext items={childIds} strategy={rectSortingStrategy}>
-          <div className={`creator__fields-grid creator__fields-grid--${cols}`}>
-            {section.fields.map((child, i) => {
-              const childPath = [...path, i];
-              // One ordered list holds both shapes: a section field recurses, a leaf field
-              // renders a card. Either way it occupies exactly one cell of this grid.
-              return child.type === SECTION_TYPE && child.section ? (
-                <SectionCanvas
-                  key={child.key}
-                  section={child.section}
-                  path={childPath}
-                  siblingCount={section.fields.length}
-                  selected={selected}
-                  onSelect={onSelect}
-                  onRemove={onRemove}
-                  onMove={onMove}
-                  onDuplicate={onDuplicate}
-                  onAddField={onAddField}
-                  addingToPath={addingToPath}
-                  onToggleAdding={onToggleAdding}
-                  duplicateKeys={duplicateKeys}
-                  intoTargetId={intoTargetId}
-                  besideTargetId={besideTargetId}
-                  nested
-                />
-              ) : (
-                <FieldCard
-                  key={child.key}
-                  id={child.key}
-                  field={child}
-                  isSelected={samePath(selected, childPath)}
-                  isDuplicateKey={duplicateKeys?.has(child.key)}
-                  isDropBeside={besideTargetId === child.key}
-                  onClick={() => onSelect(childPath)}
-                  onRemove={() => onRemove(childPath)}
-                  onDuplicate={() => onDuplicate(childPath)}
-                  onMoveUp={() => onMove(childPath, -1)}
-                  onMoveDown={() => onMove(childPath, +1)}
-                  isFirst={i === 0}
-                  isLast={i === section.fields.length - 1}
-                />
-              );
-            })}
-            <DropZone sectionId={section.id} empty={section.fields.length === 0} />
-            {!isAddingHere && (
-              <button
-                className="creator__add-field-btn"
-                onClick={e => { e.stopPropagation(); onToggleAdding(path); }}
-              >
-                <AddIcon style={{ fontSize: 14 }} /> {t('creator.addField')}
-              </button>
-            )}
-          </div>
-        </SortableContext>
-
-        {isAddingHere && (
-          <div className="creator__inline-picker">
-            {FIELD_TYPES.map(ft => (
-              <button
-                key={ft.type}
-                className="creator__inline-type-btn"
-                onClick={e => { e.stopPropagation(); onAddField(path, ft.type); }}
-              >
-                <span className="creator__inline-type-icon">{ft.icon}</span>
-                <span>{t(ft.labelKey, { defaultValue: ft.type })}</span>
-              </button>
-            ))}
-            <button className="creator__inline-cancel" onClick={e => { e.stopPropagation(); onToggleAdding(null); }}>✕</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── DropZone ──────────────────────────────────────────────────────────────────
-
-// The append target of a section, mounted after its last child at every depth. An empty
-// section shows the full invitation; a populated one only needs a thin strip the pointer can
-// reach past the last card, so it stays quiet until something is dragged over it.
-//
-// Hovering a section's body is signalled by highlighting the whole section, not by a ghost in
-// this strip: a card-sized placeholder here has no reserved space of its own, so it overlapped
-// the "add field" button and read as part of the section rather than as a preview.
-function DropZone({ sectionId, empty }) {
-  const { t } = useTranslation();
-  const { setNodeRef, isOver } = useSortable({ id: dropSentinelId(sectionId) });
-  const variant = empty ? 'creator__drop-zone--empty' : 'creator__drop-zone--append';
-  return (
-    <div
-      ref={setNodeRef}
-      className={`creator__drop-zone ${variant}${isOver ? ' creator__drop-zone--over' : ''}`}
-    >
-      {empty ? t('creator.dropZone') : null}
     </div>
   );
 }
 
 // ── TemplateBuilder (main) ────────────────────────────────────────────────────
-
-// redirectIntoTarget rewrites the winning collision when the pointer is asking to drop INSIDE
-// a section. Leaving `over` on the section's own id would fight the SortableContext that
-// section lives in: that context also holds the dragged node, so it would slide the section
-// out from under a pointer that is still asking to drop inside it — the jumping the previous
-// revision tried to fix by relocating the node mid-drag.
-//
-// The section's append sentinel says exactly the same thing (dropTargetOf maps both a section
-// id and its sentinel to "append into that section") but lives in the section's OWN context,
-// where the dragged node is not an item. @dnd-kit/sortable displaces only where a context
-// knows BOTH indices — `displaceItem = isSorting && !disableTransforms &&
-// isValidIndex(activeIndex) && isValidIndex(overIndex)`, sortable.cjs.development.js:514 with
-// isValidIndex at :43 — so with `over` on the sentinel neither context moves anything: the
-// dragged node's context does not know the sentinel, the target's context does not know the
-// dragged node. The layout holds still, which is what keeps the decision from chasing itself.
-//
-// Only a section's own id is ever redirected. A hover that resolves to "beside" is left alone
-// on purpose: there the sortable displacement IS the correct preview.
-function redirectIntoTarget(collisions, activeId, sections) {
-  const overId = collisions?.[0]?.id;
-  if (overId == null) return collisions;
-  const id = String(overId);
-  const index = indexNodes(sections);
-  const path = index.get(id);
-  if (!path || !isContainer(nodeAt(sections, path))) return collisions;
-  if (dropIntent(sections, index.get(String(activeId)), id)?.intoId !== id) return collisions;
-  // Only `id` is read downstream: dnd-kit takes getFirstCollision(collisions, 'id') and looks
-  // the container up in its own registry (core.cjs.development.js:2989 and :3257).
-  return [{ ...collisions[0], id: dropSentinelId(id) }, ...collisions.slice(1)];
-}
 
 function findDuplicateKeys(sections) {
   const seen = {};
@@ -1190,6 +981,145 @@ function findDuplicateKeys(sections) {
   return dupes;
 }
 
+// ── Drag-and-drop wiring ─────────────────────────────────────────────────────
+//
+// resolveContainerEl finds the DOM element a container node should be measured against.
+//
+// Per measureNodes' own contract, that must be the interior grid (`.custom-sheet__fields--N-col`),
+// never the section box: the box adds the heading and its own padding, which would make
+// ghostRectFor/isRowLayout think there is more row space than the grid actually has.
+//
+// An EMPTY section's grid has no children and therefore no height at all — nothing for a pointer
+// to land on. EditablePlaceholder already draws a dashed stand-in for exactly that case (the only
+// visible surface an empty section offers), so that is what gets measured instead.
+function resolveContainerEl(handleEl, isEmpty) {
+  const wrapper = handleEl.closest('.custom-sheet__editable');
+  if (!wrapper) return null;
+  return isEmpty
+    ? wrapper.querySelector(':scope > .creator__ph--section')
+    : wrapper.querySelector(':scope > .custom-sheet__section > .custom-sheet__fields');
+}
+
+// DraggableFieldChrome / DraggableSectionChrome wrap FieldChrome/SectionChrome with the actual
+// dnd-kit wiring. They exist as separate components — rather than calling useDraggable directly
+// inside buildChrome — because buildChrome runs as a plain function call from CustomSheetBody's
+// OWN render (it is handed over as the renderChrome callback, not invoked from TemplateBuilder's
+// render), so a hook called inside its body would register against CustomSheetBody's fiber, and
+// the hook count there would vary with the number of nodes on the sheet — an immediate "Rendered
+// more hooks than during the previous render". FieldChrome/SectionChrome are real components
+// (buildChrome returns JSX naming them, not a raw call), so mounting one wrapper component per
+// node keeps every hook call inside a stable component instance.
+//
+// The measurement ref is layered onto dnd-kit's own setNodeRef instead of a second ref prop,
+// because FieldChrome/SectionChrome only forward one ref (onto the drag handle) — composing here
+// keeps both files untouched.
+function DraggableFieldChrome({ path, registerNode, ...rest }) {
+  const { setNodeRef, attributes, listeners } = useDraggable({ id: path.join('.') });
+  const combinedRef = useCallback((el) => {
+    setNodeRef(el);
+    // A leaf field's measurable element is the grid cell it occupies — its own
+    // `.custom-sheet__editable` wrapper — found by walking up from the drag handle.
+    registerNode(path, false, el ? el.closest('.custom-sheet__editable') : null);
+  }, [setNodeRef, registerNode, path]);
+  return <FieldChrome {...rest} depth={path.length} dragRef={combinedRef} dragProps={{ ...attributes, ...listeners }} />;
+}
+
+function DraggableSectionChrome({ path, registerNode, isEmpty, ...rest }) {
+  const { setNodeRef, attributes, listeners } = useDraggable({ id: path.join('.') });
+  const combinedRef = useCallback((el) => {
+    setNodeRef(el);
+    registerNode(path, true, el ? resolveContainerEl(el, isEmpty) : null);
+  }, [setNodeRef, registerNode, path, isEmpty]);
+  return <SectionChrome {...rest} depth={path.length} dragRef={combinedRef} dragProps={{ ...attributes, ...listeners }} />;
+}
+
+// buildDragEntries constructs the entries list that measureNodes reads at drag start. The root
+// list is prepended here rather than registered like every other node because it has no chrome of
+// its own to register it — it is a container of nodes, not a node. Without it insertionAt can
+// never answer "between two root sections", so dragging a section to the top level, or
+// reordering root sections at all, would be impossible. Pure and exported so that omission is a
+// test failure rather than a silent loss.
+export function buildDragEntries(rootEl, nodeEntries) {
+  return [
+    ...(rootEl ? [{ path: [], container: true, el: rootEl }] : []),
+    ...nodeEntries,
+  ];
+}
+
+// resolveDrop is the drag-end decision: given the tree, where the node started and the target
+// insertionAt computed, either moveNode's arguments or a refusal. Pulled out of the handler
+// (rather than inlined) because jsdom cannot drive a real pointer drag to exercise
+// handleDragStart/handleDragMove — no window.PointerEvent, no layout, no elementFromPoint — but
+// this decision is plain data in, data out, and can be tested directly.
+//
+// canDropInto refuses a node's own DIRECT parent as a drop target. That rule serves the older
+// hover-based design, where landing on a container's whole (unaddressed) body was ambiguous — the
+// explicit "beside a specific sibling" gesture lived elsewhere entirely. insertionAt always hands
+// back an explicit index, so reordering within the section a node already lives in carries no such
+// ambiguity; only the self/descendant cycle still matters, and moveNode enforces that on its own
+// regardless of what canDropInto says. Bypassing canDropInto's extra refusal for that one case is
+// what keeps ordinary same-section reordering — the single most common drag — from being silently
+// rejected. The bypass can never let a real cycle through: a node's direct parent is, by
+// construction, never the node itself nor one of its descendants.
+export function resolveDrop(sections, fromPath, target) {
+  if (!target || !Array.isArray(fromPath)) return null;
+  const toRoot = target.parentPath.length === 0;
+  // moveNode silently leaves the tree unchanged when a LEAF field is sent to root (the root
+  // list holds SectionDefs, not fields) — refuse it here instead. The ghost is gated on this
+  // same result (see ghostRectForDrop below), so a refusal here also means no ghost was ever
+  // drawn promising a landing spot that cannot exist.
+  if (toRoot && !isContainer(nodeAt(sections, fromPath))) return null;
+  const directParent = fromPath.slice(0, -1);
+  // The root list has no node of its own for canDropInto to check (nodeAt(sections, []) is
+  // null, and canDropInto refuses an empty refPath outright), so it is allowed directly here
+  // rather than routed through canDropInto. That is still safe: moveNode enforces the
+  // self/descendant cycle guard on its own, and the root list can never be a descendant of the
+  // dragged node (isAncestorPath requires the ancestor to be the SHORTER path).
+  const allowed = toRoot
+    || samePath(target.parentPath, directParent)
+    || canDropInto(sections, fromPath, target.parentPath);
+  if (!allowed) return null;
+  return toMoveArgs(fromPath, target);
+}
+
+// ghostRectForDrop is the ghost's gate: it draws nothing for a target resolveDrop would refuse
+// (a leaf dropped at root, a node dropped into itself or a descendant), so the preview can never
+// promise a landing spot that then does nothing on release. `decision` is resolveDrop's own
+// result, computed once — in handleDragMove, where the target itself is set — and handed in
+// here rather than recomputed, so this is purely "should THIS decision draw a ghost", not a
+// second copy of resolveDrop's rules. Exported so the refusal can be tested without a DOM:
+// jsdom cannot drive a real drag, but this is plain data in, data out.
+export function ghostRectForDrop(decision, target, draggedRect, nodes) {
+  if (!decision) return null;
+  return ghostRectFor(target, draggedRect, nodes);
+}
+
+// editingPathAfterMove recomputes the open properties popup's path after a successful move, so it
+// follows the node it was showing — exactly as moveWithinParent and duplicateNode already do for
+// their own edits. Handles both the dragged node itself and any of its descendants (moving a
+// section keeps whatever is being edited inside it in place, relative to the section).
+export function editingPathAfterMove(editingPath, fromPath, newPath) {
+  if (!newPath) return editingPath;
+  if (samePath(editingPath, fromPath)) return newPath;
+  if (editingPath && isAncestorPath(fromPath, editingPath)) {
+    return [...newPath, ...editingPath.slice(fromPath.length)];
+  }
+  return editingPath;
+}
+
+// editingPathAfterRemove recomputes the open properties popup's path after a node is deleted.
+// Three outcomes, and shiftPathAfterRemoval only answers the third: the edited node may BE the one
+// removed, it may sit inside the removed subtree — in both cases there is nothing left to edit and
+// the popup must close — or it may merely sit after it in the same list, where its index moves
+// down by one. Leaving it untouched is what makes a stale path point at whichever node slid into
+// the gap, which is how the popup silently starts editing the wrong field.
+export function editingPathAfterRemove(editingPath, removedPath) {
+  if (!editingPath) return null;
+  if (samePath(editingPath, removedPath)) return null;
+  if (isAncestorPath(removedPath, editingPath)) return null;
+  return shiftPathAfterRemoval(editingPath, removedPath);
+}
+
 function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const { t } = useTranslation();
   const [sections,    setSections]    = useState(template?.sections || []);
@@ -1199,11 +1129,19 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // selected is a PATH: [2] = third root section, [2,0] = its first child (field or
   // subsection), [2,0,1] = a child of that subsection. null = nothing selected.
   const [selected,    setSelected]    = useState(null);
+  // Selection and properties are deliberately separate. A click selects (it makes the node the
+  // palette's target and outlines it); only the chrome's edit button opens properties. Were
+  // selection to open the popup, the dominant flow — select a section, then click the palette a
+  // few times to add fields — would keep the popup hanging over the very sheet being built.
+  const [editingPath, setEditingPath] = useState(null);
   const [addingToPath, setAddingToPath] = useState(null); // path of the section whose "add field" list is open
   const [isSaving,    setIsSaving]    = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab,   setActiveTab]   = useState('general');
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
+  // Toggles renderChrome off so the sheet tab shows exactly what a player would see — the
+  // top-bar eye icon, not a third tab (there is nothing else to show alongside it).
+  const [cleanPreview, setCleanPreview] = useState(false);
   // Named variants of hardcoded systems (baseSystem set) carry the sheet from the Go
   // plugin, not GM-authored Sections — so only the General tab (token display / dice /
   // visibility) is editable; hide the Fields and Preview tabs entirely.
@@ -1218,13 +1156,102 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const nameRef = useRef(name);
   nameRef.current = name;
 
+  // ── Drag-and-drop state ─────────────────────────────────────────────────────
+  //
+  // path -> element, filled by the chrome layer as each node mounts (DraggableFieldChrome /
+  // DraggableSectionChrome). This is the only DOM the drag system touches, and it is read
+  // exactly once per drag, in handleDragStart — the sheet's layout never changes mid-drag, so
+  // reading it again would only cost work and reopen the geometry/decision feedback loop the
+  // out-of-flow ghost exists to avoid.
+  const nodeEls = useRef(new Map());
+  const registerNode = useCallback((path, container, el) => {
+    const key = path.join('.');
+    if (el) nodeEls.current.set(key, { path, container, el });
+    else nodeEls.current.delete(key);
+  }, []);
+
+  // scrollRef is the sheet's own scroll container (creator__sheet-area). Rects are captured in
+  // viewport coordinates at drag start; scrolling during the drag moves every one of them by the
+  // same amount, and with a single droppable dnd-kit no longer corrects for that on its own.
+  const scrollRef = useRef(null);
+
+  // sheetWrapperRef is the `.custom-sheet` wrapper TemplateBuilder itself mounts around
+  // CustomSheetBody. The root list's actual element (`.custom-sheet__sections`) is queried from
+  // it at drag start rather than threaded through as its own ref, because CustomSheetBody owns
+  // that markup — its shape is guarded by a characterization snapshot the creator must not touch.
+  const sheetWrapperRef = useRef(null);
+
+  // { fromPath, rects, draggedRect, target, decision, scrolled, scrollTop0 } while a drag is in
+  // progress, else null. `decision` is resolveDrop's result for the current target (null when
+  // refused); `scrolled` is the scroll delta since drag start, used to keep the fixed-position
+  // ghost aligned with the rects it was measured against (see the ghost render below).
+  const [dragState, setDragState] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
+
+  const handleDragStart = ({ active }) => {
+    const fromPath = String(active.id).split('.').map(Number);
+    // The root list has no chrome of its own, so nothing registers it the way each node
+    // registers itself. Queried at drag start rather than held in a ref because
+    // CustomSheetBody owns this element; the creator only owns the wrapper around it.
+    const rootEl = sheetWrapperRef.current?.querySelector('.custom-sheet__sections') || null;
+    const entries = buildDragEntries(rootEl, [...nodeEls.current.values()]);
+    const rects = measureNodes(entries);
+    const dragged = rects.find(n => n.path.join('.') === String(active.id));
+    setDragState({
+      fromPath,
+      rects,
+      draggedRect: dragged?.rect ?? null,
+      target: null,
+      scrollTop0: scrollRef.current?.scrollTop ?? 0,
+    });
+  };
+
+  const handleDragMove = ({ activatorEvent, delta }) => {
+    setDragState(prev => {
+      if (!prev) return prev;
+      const scrolled = (scrollRef.current?.scrollTop ?? 0) - prev.scrollTop0;
+      const pointer = {
+        x: activatorEvent.clientX + delta.x,
+        y: activatorEvent.clientY + delta.y + scrolled,
+      };
+      const target = insertionAt(pointer, prev.rects);
+      // Computed once, here, where the target itself is set — both the ghost render and
+      // handleDragEnd below read this same decision rather than recomputing resolveDrop.
+      const decision = resolveDrop(sections, prev.fromPath, target);
+      return { ...prev, target, decision, scrolled };
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDragState(prev => {
+      if (prev && prev.decision) {
+        const decision = prev.decision;
+        const draggedId = nodeId(nodeAt(sections, prev.fromPath));
+        const next = moveNode(sections, prev.fromPath, decision.toParentPath, decision.toIndex);
+        const newPath = indexNodes(next).get(draggedId) ?? null;
+        const nextEditingPath = editingPathAfterMove(editingPath, prev.fromPath, newPath);
+        if (nextEditingPath !== editingPath) setEditingPath(nextEditingPath);
+        setAddingToPath(null);
+        commit(next, newPath);
+      }
+      return null;
+    });
+  };
+
+  const handleDragCancel = () => setDragState(null);
+
   useEffect(() => {
     setSections(template?.sections || []);
     setName(template?.name || '');
     setSettings(template?.settings || { diceButtons: [] });
     setIsPublic(template?.isPublic || false);
     setSelected(null);
+    setEditingPath(null);
     setAddingToPath(null);
+    setDragState(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
@@ -1269,7 +1296,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // manipulation lives in utils/templateSections.js so it can be tested without a DOM.
 
   // commit is the single place that pairs a tree write with everything that must stay in
-  // sync with it: the tree and selection stay consistent with each other.
+  // sync with it: the tree and its selection. It never touches editingPath — see the
+  // editingPath declaration above for why selecting and editing stay decoupled.
   const commit = (next, nextSelected) => {
     setSections(next);
     if (nextSelected !== undefined) setSelected(nextSelected);
@@ -1309,6 +1337,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   const removeNode = (path) => {
     setAddingToPath(null);
+    // A removal shifts every later sibling's path, so the open properties popup must be
+    // recomputed the same way a move or a duplicate already is — otherwise it silently starts
+    // editing whichever node slid into the freed index.
+    setEditingPath(prev => editingPathAfterRemove(prev, path));
     commit(removeAtPath(sections, path), null);
   };
 
@@ -1318,10 +1350,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     const target = found.index + dir;
     if (target < 0 || target >= found.siblings.length) return;
     const parentPath = path.slice(0, -1);
+    const newPath = [...parentPath, target];
     // Remove then insert, so the pure helpers stay the only writers of the tree.
     const next = insertAtPath(removeAtPath(sections, path), parentPath, target, found.node);
     setAddingToPath(null);
-    commit(next, [...parentPath, target]);
+    // A move only ever displaces the node at `path` itself. If that is the node whose
+    // properties are open, follow it — otherwise the popup would keep showing editingPath's
+    // OLD slot, which after the move holds a different node (its displaced neighbour).
+    if (samePath(editingPath, path)) setEditingPath(newPath);
+    commit(next, newPath);
   };
 
   const duplicateNode = (path) => {
@@ -1334,6 +1371,11 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     // depth, including when the duplicated node is an ancestor of the current selection.
     const insertedPath = [...path.slice(0, -1), path[path.length - 1] + 1];
     const nextSelected = selected ? shiftPathAfterInsert(selected, insertedPath) : selected;
+    // An insert shifts every path after it (unlike a move, which only relocates the single
+    // node at `path`), so the open properties popup needs the same treatment `selected` gets
+    // above. This keeps editingPath pointing at the ORIGINAL node the GM was editing — never
+    // at the copy — even when the duplicated node sits before it in the same list.
+    if (editingPath) setEditingPath(shiftPathAfterInsert(editingPath, insertedPath));
     setAddingToPath(null);
     commit(next, nextSelected);
   };
@@ -1354,83 +1396,6 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setIsPublic(value);
     isPublicRef.current = value; // sync so the debounced save reads the fresh value
     triggerSave(sections, name);
-  };
-
-  // ── DnD ───────────────────────────────────────────────────────────────────
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const originalSectionsRef = useRef(null);
-  // Which section currently reads as "drop inside me", or null. This is the ONLY state written
-  // while the pointer moves; it is written from onDragOver, which dnd-kit fires only when
-  // over.id CHANGES (core.cjs.development.js:3283 — the effect's dependency list is [overId]),
-  // so never per animation frame. It drives nothing but a CSS class of colours and a shadow:
-  // no size, no border width, no layout. It therefore cannot move a droppable, cannot change a
-  // collision, and cannot feed back into the decision that produced it.
-  const [intoTargetId, setIntoTargetId] = useState(null);
-  // Which field card currently reads as "the dragged node lands beside me, in a different
-  // list" — the cross-section counterpart of intoTargetId. Same write discipline: only from
-  // onDragOver, only on an over.id change, and it drives nothing but a CSS pseudo-element
-  // (colour, position, no size) — see dropIntent's besideId for why it is null within one list.
-  const [besideTargetId, setBesideTargetId] = useState(null);
-
-  // Nested containers overlap their parents geometrically, so closestCenter on a mix of
-  // "child card" and "container" droppables keeps snapping to the parent box's centre and
-  // dropping beside a subsection instead of inside it. pointerWithin answers "what is under
-  // the cursor", which is the question a nested tree actually asks; rectIntersection only
-  // covers the gap when the pointer leaves every droppable (e.g. dragging over the gutter).
-  //
-  // pointerWithin ranks a smaller rect ahead of the container enclosing it, so a section's
-  // header wins over the section, and a field card wins over the section holding it.
-  const collisionDetection = useCallback((args) => {
-    const hits = pointerWithin(args);
-    const collisions = hits.length > 0 ? hits : rectIntersection(args);
-    return redirectIntoTarget(collisions, args.active.id, sectionsRef.current);
-  }, [sectionsRef]);
-
-  const handleDragStart = () => {
-    originalSectionsRef.current = sectionsRef.current;
-    setIntoTargetId(null);
-    setBesideTargetId(null);
-    clearTimeout(saveTimer.current);
-  };
-
-  const handleDragCancel = () => {
-    const original = originalSectionsRef.current;
-    originalSectionsRef.current = null;
-    setIntoTargetId(null);
-    setBesideTargetId(null);
-    // handleDragStart cleared the debounced save, so every exit from a drag has to re-arm it
-    // or an edit made just before the drag never reaches the server.
-    if (original) { setSections(original); triggerSave(original, name); }
-  };
-
-  // The highlight, and nothing else. The tree is not touched until the drop, so a hover can no
-  // longer change the layout it was read from.
-  const handleDragOver = ({ active, over }) => {
-    const cur = sectionsRef.current;
-    const fromPath = over ? indexNodes(cur).get(String(active.id)) : null;
-    const intent = fromPath ? dropIntent(cur, fromPath, String(over.id)) : null;
-    setIntoTargetId(intent?.intoId ?? null);
-    setBesideTargetId(intent?.besideId ?? null);
-  };
-
-  const handleDragEnd = ({ active, over }) => {
-    originalSectionsRef.current = null;
-    setIntoTargetId(null);
-    setBesideTargetId(null);
-    const cur = sectionsRef.current;
-    const movedId = String(active.id);
-    const fromPath = over ? indexNodes(cur).get(movedId) : null;
-    const intent = fromPath ? dropIntent(cur, fromPath, String(over.id)) : null;
-    // Every exit re-arms the debounced save handleDragStart cleared, including the ones that
-    // move nothing.
-    if (!intent) { triggerSave(cur, name); return; }
-
-    const next = moveNode(cur, fromPath, intent.parentPath, intent.idx);
-    // Follow the dragged node with the selection so the property panel does not jump to a
-    // stranger: its path changed, its id did not. This runs even when the move was refused
-    // (next === cur, so the id's path is unchanged too) — the user chose to keep that behaviour.
-    commit(next, indexNodes(next).get(movedId) || null);
   };
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -1468,13 +1433,115 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     }, 0);
     return { numberFields: attrs, totalFieldCount: n, sectionCount: countContainers(sections) };
   }, [sections]);
-  const selectedNode = selected !== null ? nodeAt(sections, selected) : null;
-  const selectedIsSection = selected !== null
-    && (selected.length === 1 || selectedNode?.type === SECTION_TYPE);
-  const selectedSectionDef = selectedIsSection ? sectionOf(selectedNode) : null;
-  const selectedSiblingCount = selected !== null
-    ? (locate(sections, selected)?.siblings.length ?? 0)
+  const editingNode = editingPath !== null ? nodeAt(sections, editingPath) : null;
+  const editingIsSection = editingPath !== null
+    && (editingPath.length === 1 || editingNode?.type === SECTION_TYPE);
+  const editingSectionDef = editingIsSection ? sectionOf(editingNode) : null;
+  const editingSiblingCount = editingPath !== null
+    ? (locate(sections, editingPath)?.siblings.length ?? 0)
     : 0;
+
+  // The creator's half of the renderChrome contract: given a node and its path, return the
+  // affordances CustomSheetBody will position inside that node's wrapper. Up/down come from
+  // the same moveWithinParent the old canvas used — they stay, as a keyboard-free fallback,
+  // alongside the drag handle DraggableFieldChrome/DraggableSectionChrome now wire up.
+  const buildChrome = useCallback((node, path) => {
+    const isSection = path.length === 1 || node.type === SECTION_TYPE;
+    const found = locate(sections, path);
+    const index = found ? found.index : 0;
+    const siblingCount = found ? found.siblings.length : 1;
+    const common = {
+      selected: samePath(selected, path),
+      onSelect: () => setSelected(path),
+      onEdit: () => setEditingPath(path),
+      onDuplicate: () => duplicateNode(path),
+      onRemove: () => removeNode(path),
+      onMoveUp: () => moveWithinParent(path, -1),
+      onMoveDown: () => moveWithinParent(path, +1),
+      isFirst: index === 0,
+      isLast: index === siblingCount - 1,
+    };
+    if (isSection) {
+      const sectionDef = sectionOf(node);
+      const isEmpty = (sectionDef?.fields || []).length === 0;
+      return (
+        <>
+          <EditablePlaceholder node={node} />
+          <DraggableSectionChrome
+            path={path}
+            registerNode={registerNode}
+            isEmpty={isEmpty}
+            section={sectionDef}
+            onAddField={() => setAddingToPath(prev => (samePath(prev, path) ? null : path))}
+            {...common}
+          />
+          {samePath(addingToPath, path) && (
+            <div className="creator__inline-picker" onClick={e => e.stopPropagation()}>
+              {FIELD_TYPES.map(ft => (
+                <button
+                  key={ft.type}
+                  className="creator__inline-type-btn"
+                  onClick={() => addNodeTo(path, ft.type)}
+                >
+                  <span className="creator__inline-type-icon">{ft.icon}</span>
+                  <span>{t(ft.labelKey, { defaultValue: ft.type })}</span>
+                </button>
+              ))}
+              <button className="creator__inline-cancel" onClick={() => setAddingToPath(null)}>✕</button>
+            </div>
+          )}
+        </>
+      );
+    }
+    return (
+      <>
+        <EditablePlaceholder node={node} />
+        <DraggableFieldChrome
+          path={path}
+          registerNode={registerNode}
+          field={node}
+          duplicateKey={duplicateKeys?.has(node.key)}
+          {...common}
+        />
+      </>
+    );
+    // editingPath is a dep, not an oversight to suppress: buildChrome closes over
+    // moveWithinParent/duplicateNode, and those in turn close over editingPath to decide
+    // whether the open properties popup should follow a move or a duplicate. Without
+    // editingPath here, useCallback keeps returning the memoized function from BEFORE the
+    // properties popup was opened, so those callbacks keep reading editingPath as it was at
+    // that point (usually null) — the popup then silently stops following the node it is
+    // editing on the very next reorder or duplicate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, selected, addingToPath, duplicateKeys, t, editingPath, registerNode]);
+
+  // The dragged node's own content, rendered a second time (through CustomSheetBody, no
+  // renderChrome) for both the DragOverlay and the out-of-flow ghost — plain data derived from
+  // fromPath, so it is only recomputed when the drag target itself changes, not on every
+  // pointer move. A dragged root section (or a nested one) is previewed as its own section;
+  // a leaf field is wrapped in a throwaway single-field section so CustomSheetBody has
+  // something to render it inside.
+  const draggedGhostSections = useMemo(() => {
+    if (!dragState) return null;
+    const node = nodeAt(sections, dragState.fromPath);
+    if (!node) return null;
+    const isDraggedSection = dragState.fromPath.length === 1 || node.type === SECTION_TYPE;
+    return isDraggedSection
+      ? [sectionOf(node)]
+      : [{ id: '__drag_ghost__', columns: 1, fields: [node] }];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, dragState?.fromPath]);
+
+  const ghostRectRaw = dragState
+    ? ghostRectForDrop(dragState.decision, dragState.target, dragState.draggedRect, dragState.rects)
+    : null;
+  // ghostRectFor answers in the coordinate frame the rects were measured in — the viewport at
+  // drag start. The ghost is position: fixed, i.e. in the CURRENT viewport, so it needs the
+  // scroll delta taken back off. handleDragMove moves the pointer the other way, into the
+  // measured frame; the two corrections have opposite signs on purpose.
+  const ghostRect = ghostRectRaw
+    ? { ...ghostRectRaw, top: ghostRectRaw.top - (dragState.scrolled || 0) }
+    : null;
 
   return (
     <Dialog open fullScreen onClose={handleClose}
@@ -1509,15 +1576,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                   onClick={() => setActiveTab('fields')}
                 >
                   <span className="creator__tab-num">2</span>
-                  {t('creator.tabFields')}
-                </button>
-                <span className="creator__tab-arrow">›</span>
-                <button
-                  className={`creator__tab${activeTab === 'preview' ? ' creator__tab--active' : ''}`}
-                  onClick={() => setActiveTab('preview')}
-                >
-                  <span className="creator__tab-num">3</span>
-                  {t('creator.tabPreview')}
+                  {t('creator.tabSheet')}
                 </button>
               </>
             )}
@@ -1526,6 +1585,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
               {sectionCount} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
             </Typography>
+            {!isVariant && activeTab === 'fields' && (
+              <IconButton
+                onClick={() => setCleanPreview(v => !v)}
+                size="small"
+                aria-label={t('creator.previewToggle')}
+              >
+                {cleanPreview ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              </IconButton>
+            )}
             {isSaving
               ? <HourglassEmptyIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               : saveSuccess
@@ -1636,7 +1704,13 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               </div>
             </div>
           </div>
-        ) : activeTab === 'preview' ? <TemplatePreview sections={sections} name={name} width={clampSheetWidth(settings.sheetWidth)} /> : <>
+        ) : <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
 
         {/* Left: palette */}
         <aside className="creator__palette">
@@ -1685,8 +1759,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           </div>
         </aside>
 
-        {/* Center: canvas */}
-        <main className="creator__canvas-area" onClick={() => { setSelected(null); setAddingToPath(null); }}>
+        {/* Center: the sheet itself, edit affordances layered on top via renderChrome */}
+        <main
+          className="creator__sheet-area"
+          ref={scrollRef}
+          onClick={() => { setSelected(null); setAddingToPath(null); }}
+        >
           {sections.length === 0 ? (
             <div className="creator__canvas-empty">
               <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: '#7a5c42' }} />
@@ -1698,66 +1776,76 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               </button>
             </div>
           ) : (
-            <div onClick={e => e.stopPropagation()}>
-              <DndKitContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-                <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                  {sections.map((section, i) => (
-                    <SectionCanvas
-                      key={section.id}
-                      section={section}
-                      path={[i]}
-                      siblingCount={sections.length}
-                      selected={selected}
-                      onSelect={setSelected}
-                      onRemove={removeNode}
-                      onMove={moveWithinParent}
-                      onDuplicate={duplicateNode}
-                      onAddField={addNodeTo}
-                      addingToPath={addingToPath}
-                      onToggleAdding={p => setAddingToPath(prev => (samePath(prev, p) ? null : p))}
-                      duplicateKeys={duplicateKeys}
-                      intoTargetId={intoTargetId}
-                      besideTargetId={besideTargetId}
-                      nested={false}
-                    />
-                  ))}
-                </SortableContext>
-              </DndKitContext>
-              <button className="creator__add-section-btn" onClick={addSection}>
-                <AddIcon style={{ fontSize: 16 }} /> {t('creator.addSection')}
-              </button>
+            <div
+              className="creator__sheet-stack"
+              style={{ maxWidth: clampSheetWidth(settings.sheetWidth) }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* The stack is capped at the sheet's own width and centred, so the sheet sits in
+                  the middle of the editing area and the "add section" button — which is
+                  width: 100% — lines up with it instead of spanning the whole viewport. */}
+              {/* The real session wrapper, not a preview-only one. The old preview tab had its
+                  own chrome and therefore no width cap, which is precisely what hid
+                  FEATURE-212's content-width bug; mounting anything else here would reopen
+                  that gap. */}
+              <div className="custom-sheet" ref={sheetWrapperRef} style={{ maxWidth: clampSheetWidth(settings.sheetWidth) }}>
+                <CustomSheetBody
+                  sections={sections}
+                  renderChrome={cleanPreview ? null : buildChrome}
+                  showRollMarkers
+                />
+              </div>
+              {/* Out of flow on purpose: previewing the drop by reserving real space would change
+                  the very rectangles the drop decision was measured against (see resolveDrop /
+                  sheetDnd.js). Rendered through CustomSheetBody, with no renderChrome, so it shows
+                  exactly what the dragged node would look like once it lands. */}
+              {ghostRect && draggedGhostSections && (
+                <div className="creator__drop-ghost" style={ghostRect}>
+                  <CustomSheetBody sections={draggedGhostSections} />
+                </div>
+              )}
+              {!cleanPreview && (
+                <button className="creator__add-section-btn" onClick={addSection}>
+                  <AddIcon style={{ fontSize: 16 }} /> {t('creator.addSection')}
+                </button>
+              )}
             </div>
           )}
         </main>
 
-        {/* Right: properties */}
-        <aside className="creator__props-aside">
-          {selected !== null && !selectedIsSection && selectedNode ? (
+        <PropertyPopup
+          open={editingPath !== null}
+          title={editingIsSection ? t('creator.sectionProperties') : t('creator.fieldProperties')}
+          onClose={() => setEditingPath(null)}
+        >
+          {editingNode && !editingIsSection ? (
             <PropertyPanel
-              field={selectedNode}
-              onChange={patch => updateNode(selected, patch)}
+              field={editingNode}
+              onChange={patch => updateNode(editingPath, patch)}
+              onDelete={() => removeNode(editingPath)}
               numberFields={numberFields}
               sections={sections}
             />
-          ) : selectedSectionDef ? (
+          ) : editingSectionDef ? (
             <SectionPropertyPanel
-              section={selectedSectionDef}
-              onChange={patch => updateNode(selected, patch)}
-              onDelete={() => removeNode(selected)}
-              index={selected[selected.length - 1]}
-              siblingCount={selectedSiblingCount}
-              onMove={dir => moveWithinParent(selected, dir)}
+              section={editingSectionDef}
+              onChange={patch => updateNode(editingPath, patch)}
+              onDelete={() => removeNode(editingPath)}
+              index={editingPath[editingPath.length - 1]}
+              siblingCount={editingSiblingCount}
+              onMove={dir => moveWithinParent(editingPath, dir)}
             />
-          ) : (
-            <div className="creator__props-empty">
-              <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic', textAlign: 'center' }}>
-                {t('creator.propsClickHint')}
-              </Typography>
+          ) : null}
+        </PropertyPopup>
+
+        <DragOverlay dropAnimation={null}>
+          {dragState && draggedGhostSections && (
+            <div className="creator__drag-overlay" style={{ width: dragState.draggedRect?.width }}>
+              <CustomSheetBody sections={draggedGhostSections} />
             </div>
           )}
-        </aside>
-
-        </>}
+        </DragOverlay>
+        </DndContext>}
       </DialogContent>
 
       {paletteTooltip && createPortal(

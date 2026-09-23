@@ -4,7 +4,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
-import { SECTION_TYPE, walkFields } from '../../utils/templateSections';
+import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
 
 // genId mints a stable, opaque key for a player-added skill node — never derived from the
 // typed name, so two skills can share a name and renaming never affects the key. Matches the
@@ -168,6 +168,8 @@ function CustomSheetBody({
   favoriteSkills = [],
   favoriteWeapons = [],
   onToggleFavorite = null,
+  renderChrome = null,
+  showRollMarkers = false,
 }) {
   const { t } = useTranslation();
   const attrs    = values.attributes || {};
@@ -177,6 +179,62 @@ function CustomSheetBody({
   const numbers  = values.numbers    || {};
   const weapons  = values.weapons    || {};
   const readOnly = !onChange;
+
+  // A rollable field must look rollable both while the template is being edited AND in the clean
+  // preview, since a player sees the die too — it is content, not editing furniture. Gated on the
+  // explicit `showRollMarkers` prop rather than on `renderChrome`'s presence: the creator's two
+  // renders (edit view and clean preview) both pass it, one with chrome and one without. Callers
+  // gate this on their own field.rollable flag; rollAffordance itself decides interactive vs.
+  // static vs. none.
+  const rollAffordance = (onClick, { disabled = false, title = undefined, children = null } = {}) => {
+    if (onRoll) {
+      return (
+        <button className="custom-sheet__roll-btn" onClick={onClick} disabled={disabled} title={title}>
+          <CasinoIcon style={{ fontSize: 14 }} />
+          {children}
+        </button>
+      );
+    }
+    if (showRollMarkers) {
+      return (
+        <span className="custom-sheet__roll-btn custom-sheet__roll-btn--static" aria-hidden="true">
+          <CasinoIcon style={{ fontSize: 14 }} />
+          {children}
+        </span>
+      );
+    }
+    return null;
+  };
+
+  // The creator's edit view is this very component plus a decoration layer. `renderChrome` is
+  // the only seam it needs: given a node and its path, the creator returns the affordances
+  // (drag handle, edit button, duplicate-key badge) and this component positions them by
+  // wrapping the node. With no prop the markup is exactly what the session has always
+  // rendered — that byte-for-byte guarantee is what keeps a creator-only feature from
+  // reaching every player's sheet. CustomSheetBody.domShape.test.jsx polices it.
+  // `buildElement` is a thunk rather than a pre-built element: renderSection/renderField are
+  // plain synchronous calls (not deferred React elements), so a node's own renderChrome must
+  // fire before its subtree is built — otherwise a descendant's chrome would always run first
+  // and callers (e.g. a creator's drag-and-drop index) would see children before their parent.
+  const withChrome = (node, path, buildElement) => {
+    if (!renderChrome) return buildElement();
+    // Chrome is computed before the subtree so a node's own affordances are registered ahead of
+    // its descendants': renderSection/renderField are plain synchronous calls, not deferred
+    // React elements, so a pre-built child would always run its chrome first.
+    const chrome = renderChrome(node, path);
+    const element = buildElement();
+    // A node that renders to nothing gets no wrapper and no chrome. The already-computed chrome
+    // is dropped, which costs one wasted call on a node that cannot appear on screen anyway —
+    // the alternative, building the element first to test it, would reintroduce the very
+    // bottom-up ordering this helper exists to avoid.
+    if (!element) return element;
+    return (
+      <div className="custom-sheet__editable" key={nodeId(node)}>
+        {element}
+        {chrome}
+      </div>
+    );
+  };
 
   const attrByKey = useMemo(() => {
     const out = {};
@@ -336,11 +394,7 @@ function CustomSheetBody({
                     <StarIcon style={{ fontSize: 12 }} />
                   </button>
                 )}
-                {fieldRollable && onRoll && (
-                  <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey: key, label: node.label })}>
-                    <CasinoIcon style={{ fontSize: 14 }} />
-                  </button>
-                )}
+                {fieldRollable && rollAffordance(() => onRoll({ skillKey: key, label: node.label }))}
                 {allowPlayerAdd && onAddCustomSkill && addingUnderPath !== key && (
                   <button
                     className="custom-sheet__skill-tree-add-inline"
@@ -415,11 +469,7 @@ function CustomSheetBody({
               <StarIcon style={{ fontSize: 12 }} />
             </button>
           )}
-          {fieldRollable && onRoll && (
-            <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey: path, label: node.label })}>
-              <CasinoIcon style={{ fontSize: 14 }} />
-            </button>
-          )}
+          {fieldRollable && rollAffordance(() => onRoll({ skillKey: path, label: node.label }))}
           {allowPlayerAdd && onAddCustomSkill && addingUnderPath !== path && (
             <button
               className="custom-sheet__skill-tree-add-inline"
@@ -456,17 +506,10 @@ function CustomSheetBody({
     </label>
   );
 
-  const renderField = (field) => {
+  const renderField = (field, path) => {
     switch (field.type) {
       case 'attr': {
-        const rollBtn = field.rollable && onRoll && (
-          <button
-            className="custom-sheet__roll-btn"
-            onClick={() => onRoll({ skillKey: field.key, label: field.label })}
-          >
-            <CasinoIcon style={{ fontSize: 14 }} />
-          </button>
-        );
+        const rollBtn = field.rollable && rollAffordance(() => onRoll({ skillKey: field.key, label: field.label }));
 
         if (field.hasAdvances) {
           const base = attrs[field.key]?.base     ?? 0;
@@ -709,11 +752,7 @@ function CustomSheetBody({
                         <StarIcon style={{ fontSize: 12 }} />
                       </button>
                     )}
-                    {field.rollable && onRoll && (
-                      <button className="custom-sheet__roll-btn" onClick={() => onRoll({ skillKey, label: skillName })}>
-                        <CasinoIcon style={{ fontSize: 14 }} />
-                      </button>
-                    )}
+                    {field.rollable && rollAffordance(() => onRoll({ skillKey, label: skillName }))}
                   </div>
                 );
               })}
@@ -782,15 +821,9 @@ function CustomSheetBody({
                       </div>
                     )}
                     <div className="custom-sheet__weapon-actions">
-                      {field.rollable && onRoll && (
-                        <button
-                          className="custom-sheet__roll-btn"
-                          onClick={() => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: preset.id, label: weaponRowLabel(field, preset, t) })}
-                          disabled={incomplete}
-                          title={incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
-                        >
-                          <CasinoIcon style={{ fontSize: 14 }} />
-                        </button>
+                      {field.rollable && rollAffordance(
+                        () => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: preset.id, label: weaponRowLabel(field, preset, t) }),
+                        { disabled: incomplete, title: incomplete ? t('customSheet.weaponDamageIncomplete') : undefined }
                       )}
                       <span className="custom-sheet__weapon-lock" title={t('customSheet.weaponPresetLocked')}>🔒</span>
                     </div>
@@ -848,17 +881,11 @@ function CustomSheetBody({
                   )}
 
                   <div className="custom-sheet__weapon-actions">
-                    {field.rollable && onRoll && (() => {
+                    {field.rollable && (() => {
                       const incomplete = hasDamage && weaponDamageIncomplete(dmgBlocks, row);
-                      return (
-                        <button
-                          className="custom-sheet__roll-btn"
-                          onClick={() => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) })}
-                          disabled={incomplete}
-                          title={incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
-                        >
-                          <CasinoIcon style={{ fontSize: 14 }} />
-                        </button>
+                      return rollAffordance(
+                        () => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) }),
+                        { disabled: incomplete, title: incomplete ? t('customSheet.weaponDamageIncomplete') : undefined }
                       );
                     })()}
                     {onChange && (
@@ -934,7 +961,7 @@ function CustomSheetBody({
       }
 
       case SECTION_TYPE:
-        return field.section ? renderSection(field.section, true) : null;
+        return field.section ? renderSection(field.section, true, path) : null;
 
       default:
         return null;
@@ -945,7 +972,11 @@ function CustomSheetBody({
   // `nested` is a boolean rather than a depth number on purpose: the styling has exactly two
   // states (root and nested), and depth is unbounded, so a depth-indexed class would need an
   // arbitrary cap that the model does not have.
-  const renderSection = (section, nested) => (
+  //
+  // `path` is this section's own address in the same number[] form utils/templateSections.js
+  // uses. It is threaded rather than recomputed so the creator's chrome, the tree operations
+  // and the drag-and-drop index all speak one vocabulary.
+  const renderSection = (section, nested, path) => (
     <div
       key={section.id}
       className={`custom-sheet__section${nested ? ' custom-sheet__section--nested' : ''}`}
@@ -956,7 +987,9 @@ function CustomSheetBody({
         </div>
       )}
       <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
-        {(section.fields || []).map(renderField)}
+        {(section.fields || []).map((child, i) =>
+          withChrome(child, [...path, i], () => renderField(child, [...path, i]))
+        )}
       </div>
     </div>
   );
@@ -964,7 +997,9 @@ function CustomSheetBody({
   return (
     <>
       <div className="custom-sheet__sections">
-        {(sections || []).map(section => renderSection(section, false))}
+        {(sections || []).map((section, i) =>
+          withChrome(section, [i], () => renderSection(section, false, [i]))
+        )}
       </div>
       {tooltipNode}
     </>

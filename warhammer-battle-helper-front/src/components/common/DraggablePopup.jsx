@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ModalHeader from './ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../contexts/WindowManagerContext';
 
-function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400, windowId = null, windowKind = 'characterSheet' }) {
+function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400, initialPosition = 'cascade', windowId = null, windowKind = 'characterSheet', className = '' }) {
     const { t } = useTranslation();
     const isManaged = !!windowId;
 
@@ -23,14 +23,25 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
         ? () => toggleHidden(windowId)
         : () => setLocalMinimized(v => !v);
 
-    const [position, setPosition] = useState(() => ({
-        x: Math.min(cascade * 30, window.innerWidth - 600),
-        y: Math.min(cascade * 30, window.innerHeight - 400)
-    }));
+    // size is computed first so a centred initial position can be derived from it.
     const [size, setSize] = useState(() => ({
         width: Math.min(initialWidth, window.innerWidth),
         height: Math.min(800, window.innerHeight)
     }));
+    const [position, setPosition] = useState(() => {
+        if (initialPosition === 'center') {
+            // A third of the way down, not half: a panel centred by height reads as low because
+            // the eye weights the title bar.
+            return {
+                x: Math.max(0, (window.innerWidth - size.width) / 2),
+                y: Math.max(0, (window.innerHeight - size.height) / 3)
+            };
+        }
+        return {
+            x: Math.min(cascade * 30, window.innerWidth - 600),
+            y: Math.min(cascade * 30, window.innerHeight - 400)
+        };
+    });
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState(null);
@@ -149,7 +160,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
     const content = (
         <div
             ref={popupRef}
-            className="character-sheet-popup"
+            className={`character-sheet-popup${className ? ` ${className}` : ''}`}
             style={{
                 left: `${position.x}px`,
                 top: `${position.y}px`,
