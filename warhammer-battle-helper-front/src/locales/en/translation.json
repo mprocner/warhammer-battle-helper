@@ -1349,6 +1349,7 @@
     "addWeaponFromList": "Add from list",
     "removeWeapon": "Remove weapon",
     "weaponDamageIncomplete": "Fill in all damage values before rolling",
+    "weaponSkillMissing": "Pick a skill before rolling",
     "weaponPresetLocked": "GM weapon — always on the sheet, read-only"
   },
   "creator": {
@@ -1415,6 +1416,8 @@
     "weaponColTypeNumber": "Number",
     "weaponColTypeSelect": "Dropdown",
     "weaponColFromSkills": "Options from skills",
+    "weaponSkillColumnBadge": "attack skill",
+    "weaponSkillColumnMoved": "Skill column moved from \"{{column}}\"",
     "weaponAddColumn": "Add column",
     "weaponPresetsTitle": "Preset weapons",
     "weaponPresetsHint": "Define weapons the GM provides. \"Always on the sheet\" weapons appear read-only on every character; the rest form a list players can add from.",
@@ -1422,6 +1425,9 @@
     "weaponPresetAlwaysOn": "Always on the sheet",
     "weaponPresetAdd": "Add preset weapon",
     "weaponAttackRoll": "Attack roll",
+    "weaponThresholdFromSkill": "Threshold = the value of the skill picked in the \"{{column}}\" column",
+    "weaponThresholdNoSkillColumn": "No skill column — the attack roll has no threshold at all and prints a bare number, and a \"skill\" block in the formula adds 0",
+    "weaponNoSkillColumnRaw": "No skill column — a \"skill\" block in the formula adds 0",
     "damageFormula": "Damage formula",
     "damageFormulaHint": "Numbers (dice count, faces, constants) become inputs the player fills per weapon; attributes are read from the character.",
     "components": "Components",

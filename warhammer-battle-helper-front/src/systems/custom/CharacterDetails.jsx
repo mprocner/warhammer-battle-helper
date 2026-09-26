@@ -5,7 +5,7 @@ import StarIcon from '@mui/icons-material/Star';
 import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
-import { weaponRowLabel, weaponDamageIncomplete } from './CustomSheetBody';
+import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './CustomSheetBody';
 import { walkFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
@@ -220,14 +220,13 @@ function CustomCharacterDetails({
     const out = [];
     for (const f of fields) {
       if (f.type !== 'weapons_table') continue;
-      const dmgBlocks = f.damageFormula || [];
       const collect = (row) => {
         if (!favSet.has(row.id)) return;
         out.push({
           fieldKey: f.key,
           rowId: row.id,
           label: weaponRowLabel(f, row, t),
-          incomplete: dmgBlocks.length > 0 && weaponDamageIncomplete(dmgBlocks, row),
+          issue: weaponRowIssue(f, row),
         });
       };
       (playerWeapons[f.key] || []).forEach(collect);
@@ -288,8 +287,8 @@ function CustomCharacterDetails({
               key={`${w.fieldKey}.${w.rowId}`}
               className="custom-character-details__favorite-item"
               onClick={() => promptRoll({ weaponFieldKey: w.fieldKey, weaponRowId: w.rowId, label: w.label })}
-              disabled={!gameId || w.incomplete}
-              title={w.incomplete ? t('customSheet.weaponDamageIncomplete') : undefined}
+              disabled={!gameId || !!w.issue}
+              title={weaponIssueTitle(w.issue, t)}
             >
               <span className="custom-character-details__favorite-label">{w.label}</span>
               <CasinoIcon style={{ fontSize: 14 }} />

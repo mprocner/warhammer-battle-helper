@@ -67,12 +67,14 @@ export function isPlayerDie(b) {
   return b.type === 'dice' && diceFaces(b) === null;
 }
 
-// weaponDamageIncomplete reports whether any player-filled block is still empty, so the sheet
-// can block the roll. GM-fixed blocks (consts, fixed dice) and backend-resolved tokens
-// (attr/skill) are always complete — a fully-fixed formula needs no input at all. Player dice
-// must be positive; a player flat number (const_input) may be any number, including 0 or
-// negative (a penalty), so we only require that it is filled.
-export function weaponDamageIncomplete(blocks, row) {
+// weaponDamageIncomplete reports whether any player-filled damage block is still empty.
+// Internal to weaponRowIssue since FEATURE-208: a row has one completeness verdict, and
+// callers need to know *which* part is missing, not just that something is.
+// GM-fixed blocks (consts, fixed dice) and backend-resolved tokens (attr/skill) are always
+// complete — a fully-fixed formula needs no input at all. Player dice must be positive; a
+// player flat number (const_input) may be any number, including 0 or negative (a penalty),
+// so we only require that it is filled.
+function weaponDamageIncomplete(blocks, row) {
   const dmg = row.damage || {};
   for (const b of (blocks || [])) {
     if (b.type === 'const_input') {
@@ -84,6 +86,37 @@ export function weaponDamageIncomplete(blocks, row) {
     }
   }
   return false;
+}
+
+// weaponSkillColumn returns the column that supplies skills for this weapons_table, or null.
+// A column qualifies only when it is BOTH a select AND flagged — the same predicate the
+// backend rolls with (weapon.go:73). Testing the flag alone would let a column whose type
+// was switched away from "select" shadow the live one, and the sheet would then disagree
+// with the roll the server actually performs.
+export function weaponSkillColumn(field) {
+  return (field.columns || []).find(c => c.type === 'select' && c.optionsFromSkills) || null;
+}
+
+// weaponRowIssue names the reason a weapon row cannot be rolled, or null when it can.
+// The skill wins over the damage when both are missing: columns render to the left of the
+// damage blocks, so the tooltip points at the leftmost gap and moves right as the player
+// fills them; and the damage formula resolves the same skill key (weapon.go:57), so an
+// empty skill would silently contribute 0 to damage the player believes is complete.
+export function weaponRowIssue(field, row) {
+  const skillCol = weaponSkillColumn(field);
+  if (skillCol && !(row.cells || {})[skillCol.key]) return 'skill';
+  const blocks = field.damageFormula || [];
+  if (blocks.length > 0 && weaponDamageIncomplete(blocks, row)) return 'damage';
+  return null;
+}
+
+// weaponIssueTitle maps an issue to its tooltip. Written as literal t() calls rather than a
+// built key ("customSheet.weaponIssue." + issue) so that grepping a key name still finds
+// where it is used.
+export function weaponIssueTitle(issue, t) {
+  if (issue === 'skill')  return t('customSheet.weaponSkillMissing');
+  if (issue === 'damage') return t('customSheet.weaponDamageIncomplete');
+  return undefined;
 }
 
 // renderDamageFormula renders a weapon's damage skeleton inline. Numeric blocks (const
@@ -766,7 +799,7 @@ function CustomSheetBody({
         const rows = weapons[field.key] || [];
         const dmgBlocks = field.damageFormula || [];
         const hasDamage = dmgBlocks.length > 0;
-        const skillOptions = cols.some(c => c.type === 'select' && c.optionsFromSkills)
+        const skillOptions = !!weaponSkillColumn(field)
           ? collectSkillOptions(sections, customSkillNodes)
           : [];
         const presets = field.presetWeapons || [];
@@ -798,7 +831,7 @@ function CustomSheetBody({
               {/* GM "always on" weapons — read-only, rendered straight from the template so a
                   GM edit reaches every player; rolled by preset id, never copied into stats. */}
               {alwaysOnPresets.map(preset => {
-                const incomplete = hasDamage && weaponDamageIncomplete(dmgBlocks, preset);
+                const issue = weaponRowIssue(field, preset);
                 return (
                   <div key={preset.id} className="custom-sheet__weapon-row custom-sheet__weapon-row--preset">
                     {onToggleFavorite && (
@@ -822,8 +855,8 @@ function CustomSheetBody({
                     )}
                     <div className="custom-sheet__weapon-actions">
                       {field.rollable && rollAffordance(
-                        () => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: preset.id, label: weaponRowLabel(field, preset, t) }),
-                        { disabled: incomplete, title: incomplete ? t('customSheet.weaponDamageIncomplete') : undefined }
+                        () => !issue && onRoll({ weaponFieldKey: field.key, weaponRowId: preset.id, label: weaponRowLabel(field, preset, t) }),
+                        { disabled: !!issue, title: weaponIssueTitle(issue, t) }
                       )}
                       <span className="custom-sheet__weapon-lock" title={t('customSheet.weaponPresetLocked')}>🔒</span>
                     </div>
@@ -882,10 +915,10 @@ function CustomSheetBody({
 
                   <div className="custom-sheet__weapon-actions">
                     {field.rollable && (() => {
-                      const incomplete = hasDamage && weaponDamageIncomplete(dmgBlocks, row);
+                      const issue = weaponRowIssue(field, row);
                       return rollAffordance(
-                        () => !incomplete && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) }),
-                        { disabled: incomplete, title: incomplete ? t('customSheet.weaponDamageIncomplete') : undefined }
+                        () => !issue && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) }),
+                        { disabled: !!issue, title: weaponIssueTitle(issue, t) }
                       );
                     })()}
                     {onChange && (

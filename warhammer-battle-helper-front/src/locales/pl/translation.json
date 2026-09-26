@@ -1349,6 +1349,7 @@
     "addWeaponFromList": "Dodaj z listy",
     "removeWeapon": "Usuń broń",
     "weaponDamageIncomplete": "Uzupełnij wszystkie wartości obrażeń przed rzutem",
+    "weaponSkillMissing": "Wybierz umiejętność przed rzutem",
     "weaponPresetLocked": "Broń MG — zawsze na karcie, tylko do odczytu"
   },
   "creator": {
@@ -1415,6 +1416,8 @@
     "weaponColTypeNumber": "Liczba",
     "weaponColTypeSelect": "Lista",
     "weaponColFromSkills": "Opcje z umiejętności",
+    "weaponSkillColumnBadge": "umiejętność ataku",
+    "weaponSkillColumnMoved": "Kolumna umiejętności przeniesiona z „{{column}}”",
     "weaponAddColumn": "Dodaj kolumnę",
     "weaponPresetsTitle": "Predefiniowane bronie",
     "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Bronie „zawsze na karcie\" pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
@@ -1422,6 +1425,9 @@
     "weaponPresetAlwaysOn": "Zawsze na karcie",
     "weaponPresetAdd": "Dodaj broń",
     "weaponAttackRoll": "Rzut na atak",
+    "weaponThresholdFromSkill": "Próg = wartość umiejętności wybranej w kolumnie „{{column}}”",
+    "weaponThresholdNoSkillColumn": "Brak kolumny z umiejętnościami — rzut na trafienie nie ma żadnego progu i wypisze gołą liczbę, a blok „umiej.” w formule doda 0",
+    "weaponNoSkillColumnRaw": "Brak kolumny z umiejętnościami — blok „umiej.” w formule doda 0",
     "damageFormula": "Formuła obrażeń",
     "damageFormulaHint": "Liczby (liczba kości, ścianki, stałe) stają się polami, które gracz wypełnia dla każdej broni; atrybuty są pobierane z postaci.",
     "components": "Komponenty",

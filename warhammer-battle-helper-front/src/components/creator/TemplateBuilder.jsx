@@ -32,7 +32,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
-import { collectSkillOptions, renderDamageFormula } from '../../systems/custom/CustomSheetBody';
+import { collectSkillOptions, renderDamageFormula, weaponSkillColumn } from '../../systems/custom/CustomSheetBody';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import PropertyPopup from './PropertyPopup';
 import FieldChrome from './FieldChrome';
@@ -310,28 +310,72 @@ function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false
 
 // ── WeaponColumnsEditor ──────────────────────────────────────────────────────
 
+// updateWeaponColumns patches one weapon column while keeping the invariant that at most one
+// column supplies skills. Two columns would not be an error the GM could see — the backend
+// simply rolls with the first one in array order (weapon.go:73) — so the creator settles it
+// at edit time instead. A column leaving the "select" type also drops the flag: keeping it
+// would leave data only the creator honours, while the backend already ignores it.
+export function updateWeaponColumns(cols, index, patch) {
+  const next = cols.map((c, j) => (j === index ? { ...c, ...patch } : c));
+  const edited = next[index];
+  if (edited.type !== 'select' && edited.optionsFromSkills) {
+    next[index] = { ...edited, optionsFromSkills: false };
+    return next;
+  }
+  if (edited.type === 'select' && edited.optionsFromSkills) {
+    for (let j = 0; j < next.length; j += 1) {
+      if (j !== index && next[j].optionsFromSkills) next[j] = { ...next[j], optionsFromSkills: false };
+    }
+  }
+  return next;
+}
+
 // Editor for the GM-defined columns of a weapons_table field. Each column has a
 // stable key, a label, a type (text/number/select), and — for select columns —
 // either a manual options list or "options from the character's skills".
-function WeaponColumnsEditor({ columns, onChange }) {
+export function WeaponColumnsEditor({ columns, onChange }) {
   const { t } = useTranslation();
   const cols = columns || [];
-  const update = (i, patch) => onChange(cols.map((c, j) => (j === i ? { ...c, ...patch } : c)));
-  const remove = (i) => onChange(cols.filter((_, j) => j !== i));
+  const [movedFrom, setMovedFrom] = useState(null);
+  const skillCol = weaponSkillColumn({ columns: cols });
+
+  // commit is the one place that decides whether an edit counts as a hand-over: the column that
+  // used to hold the flag differs from the one that holds it now. update, add, remove and move
+  // all go through it, so no edit made here can leave a stale notice behind. The other way a
+  // notice could go stale — the popup switching to a different field — is not handled here at
+  // all: PropertyPanel is keyed by the edited path, so that switch unmounts this editor and the
+  // notice goes with it.
+  const commit = (next) => {
+    const before = skillCol;
+    const after  = weaponSkillColumn({ columns: next });
+    // Only an actual hand-over is announced. A column that merely loses the role (its type
+    // changed) leaves the table with none, which the roll-config warning already reports.
+    const handover = before && after && before.key !== after.key;
+    setMovedFrom(handover ? before.label : null);
+    onChange(next);
+  };
+
+  const update = (i, patch) => commit(updateWeaponColumns(cols, i, patch));
+  const remove = (i) => commit(cols.filter((_, j) => j !== i));
   const move = (i, dir) => {
     const j = i + dir;
     if (j < 0 || j >= cols.length) return;
     const next = [...cols];
     [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
+    commit(next);
   };
-  const add = () => onChange([...cols, { key: `col_${Date.now()}`, label: '', type: 'text', options: [], optionsFromSkills: false }]);
+  const add = () => commit([...cols, { key: `col_${Date.now()}`, label: '', type: 'text', options: [], optionsFromSkills: false }]);
 
   return (
     <div className="creator__weapon-columns">
       <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {t('creator.weaponColumns')}
       </Typography>
+      {movedFrom && (
+        <div className="creator__weapon-col-moved">
+          {t('creator.weaponSkillColumnMoved', { column: movedFrom })}
+        </div>
+      )}
       {cols.map((col, i) => (
         <div key={col.key} className="creator__weapon-col">
           <div className="creator__weapon-col-head">
@@ -346,6 +390,9 @@ function WeaponColumnsEditor({ columns, onChange }) {
               <option value="number">{t('creator.weaponColTypeNumber')}</option>
               <option value="select">{t('creator.weaponColTypeSelect')}</option>
             </select>
+            {skillCol && skillCol.key === col.key && (
+              <span className="creator__weapon-col-badge">{t('creator.weaponSkillColumnBadge')}</span>
+            )}
             <button className="creator__option-del" onClick={() => move(i, -1)} disabled={i === 0} title={t('creator.sectionMoveUp')}><ArrowUpwardIcon style={{ fontSize: 13 }} /></button>
             <button className="creator__option-del" onClick={() => move(i, +1)} disabled={i === cols.length - 1} title={t('creator.sectionMoveDown')}><ArrowDownwardIcon style={{ fontSize: 13 }} /></button>
             <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}><DeleteIcon style={{ fontSize: 13 }} /></button>
@@ -371,7 +418,30 @@ function WeaponColumnsEditor({ columns, onChange }) {
   );
 }
 
+// MUI renders a Select's menu as a Popover portalled to document.body at the theme's modal
+// level (1300), but the creator's property panel lives in a DraggablePopup whose
+// .character-sheet-popup sits at z-index 9999 (style.css) — so a menu opened inside the panel
+// painted underneath it and looked like a select that would not open. Raising the menus
+// themselves, rather than the theme's modal level, is deliberate: the creator is a fullscreen
+// MUI Dialog, and lifting every modal would put that Dialog above the popup and hide the panel.
+const POPUP_MENU_PROPS = { sx: { zIndex: 10000 } };
+
 // ── RollConfigEditor ─────────────────────────────────────────────────────────
+
+// weaponThresholdHint decides what the creator prints under a weapons_table's success-condition
+// select. successType governs the threshold only: a "raw" roll compares against nothing
+// (roller.go:558), so claiming a threshold there would be a lie. A missing skill column still
+// matters under "raw", because a "skill" block in the formula then resolves skillValue(stats, "")
+// — a silent 0 rather than an error.
+export function weaponThresholdHint(skillColumnLabel, successType) {
+  if (skillColumnLabel) {
+    if (successType === 'raw') return null;
+    return { key: 'creator.weaponThresholdFromSkill', column: skillColumnLabel, warning: false };
+  }
+  return successType === 'raw'
+    ? { key: 'creator.weaponNoSkillColumnRaw', warning: true }
+    : { key: 'creator.weaponThresholdNoSkillColumn', warning: true };
+}
 
 function defaultRollConfig() {
   return {
@@ -384,7 +454,7 @@ function defaultRollConfig() {
   };
 }
 
-function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
+function RollConfigEditor({ config, onChange, numberFields, fieldType, skillColumnLabel = null }) {
   const { t } = useTranslation();
   const up = patch => onChange({ ...config, ...patch });
   const rollMode = config.rollMode || 'traditional';
@@ -418,19 +488,31 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType }) {
       <Divider sx={{ my: 1.5 }} />
 
       {rollMode === 'traditional' ? (
-        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-          <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
-          <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
-            <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
-            <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
-            <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
-          </Select>
-        </FormControl>
+        <>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
+            <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+              <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
+              <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
+              <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
+            </Select>
+          </FormControl>
+
+          {fieldType === 'weapons_table' && (() => {
+            const hint = weaponThresholdHint(skillColumnLabel, config.successType || 'below_threshold');
+            if (!hint) return null;
+            return (
+              <div className={`creator__weapon-threshold-hint${hint.warning ? ' creator__weapon-threshold-hint--warning' : ''}`}>
+                {t(hint.key, { column: hint.column })}
+              </div>
+            );
+          })()}
+        </>
       ) : (
         <>
           <FormControl fullWidth size="small" sx={{ mb: 1 }}>
             <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.dicePoolSuccessCondition')}</InputLabel>
-            <Select value={config.poolSuccessCondition || 'gte'} label={t('creator.dicePoolSuccessCondition')} onChange={e => up({ poolSuccessCondition: e.target.value })} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+            <Select value={config.poolSuccessCondition || 'gte'} label={t('creator.dicePoolSuccessCondition')} onChange={e => up({ poolSuccessCondition: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
               <MenuItem value="gte">{t('creator.dicePoolConditionGte')}</MenuItem>
               <MenuItem value="eq">{t('creator.dicePoolConditionEq')}</MenuItem>
             </Select>
@@ -466,7 +548,7 @@ function WeaponPresetsEditor({ field, sections, onChange }) {
   const dmgBlocks = field.damageFormula || [];
   const hasDamage = dmgBlocks.length > 0;
   // "from skills" columns resolve to the skills defined in the template (no character yet).
-  const skillOptions = cols.some(c => c.type === 'select' && c.optionsFromSkills)
+  const skillOptions = !!weaponSkillColumn(field)
     ? collectSkillOptions(sections, {})
     : [];
 
@@ -653,6 +735,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 label={t('creator.labelSize')}
                 value={field.textSize || 'normal'}
                 onChange={e => up({ textSize: e.target.value })}
+                MenuProps={POPUP_MENU_PROPS}
               >
                 <MenuItem value="small">{t('creator.labelSizeSmall')}</MenuItem>
                 <MenuItem value="normal">{t('creator.labelSizeNormal')}</MenuItem>
@@ -887,6 +970,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 onChange={cfg => up({ rollConfig: cfg })}
                 numberFields={numberFields}
                 fieldType={field.type}
+                skillColumnLabel={weaponSkillColumn(field)?.label || null}
               />
             </>
           )}
@@ -1820,6 +1904,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         >
           {editingNode && !editingIsSection ? (
             <PropertyPanel
+              key={editingPath.join('.')}
               field={editingNode}
               onChange={patch => updateNode(editingPath, patch)}
               onDelete={() => removeNode(editingPath)}
@@ -1828,6 +1913,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             />
           ) : editingSectionDef ? (
             <SectionPropertyPanel
+              key={editingPath.join('.')}
               section={editingSectionDef}
               onChange={patch => updateNode(editingPath, patch)}
               onDelete={() => removeNode(editingPath)}
