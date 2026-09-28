@@ -31,15 +31,15 @@ wygląda na karcie gracza — a każdy system gry chce czegoś innego:
 
 ## Zakres
 
-Pięć przełączników w panelu właściwości pola. Cztery działają w `skill_table` **i** `skill_tree`,
-piąty (2 kolumny) tylko w tabeli — drzewo ma wcięcia zależne od głębokości, więc dzielenie go na
-pół kolumnami rozerwałoby hierarchię.
+Pięć przełączników w panelu właściwości pola, wszystkie działają w `skill_table` **i**
+`skill_tree` — ale layout 2-kolumnowy ma w każdym z nich inną jednostkę podziału, bo drzewa nie
+wolno ciąć po wierszach: wcięcie mówi o hierarchii, więc gałąź musi zostać w jednej kolumnie.
 
 | Przełącznik | skill_table | skill_tree |
 |---|---|---|
 | Gwiazdka ulubionych | tak | tak |
 | Zaznaczanie do rozwoju | tak | tak |
-| Layout 2-kolumnowy | tak | **nie** |
+| Layout 2-kolumnowy | tak (po wierszach) | tak (po gałęziach root) |
 | Sortowanie alfabetyczne | tak | tak (per poziom) |
 | Gracz może dodawać umiejętności | tak (nowe) | już jest |
 
@@ -52,7 +52,7 @@ pół kolumnami rozerwałoby hierarchię.
 | `hideFavorites` | `bool, omitempty` | skill_table, skill_tree | gwiazdka **widoczna** |
 | `showDevelopment` | `bool, omitempty` | skill_table, skill_tree | kolumna ukryta |
 | `sortAlphabetically` | `bool, omitempty` | skill_table, skill_tree | kolejność z szablonu |
-| `twoColumns` | `bool, omitempty` | skill_table | jedna kolumna |
+| `twoColumns` | `bool, omitempty` | skill_table, skill_tree | jedna kolumna |
 
 Punkt „gracz dodaje umiejętności” **nie dostaje nowego pola** — `PlayerCanAddSkills` już istnieje
 (`SystemTemplate.go:231`) i dziś czyta je wyłącznie `skill_tree`. Rozszerzamy warunek w kreatorze
@@ -166,7 +166,7 @@ rząd. Alfabetyczne wplecenie wymaga zbudowania **jednej posortowanej tablicy ro
 poziom, z oznaczeniem, który element jest szablonowy, a który gracza. To jedyna ingerencja
 w rekurencję drzewa.
 
-### Layout 2-kolumnowy
+### Layout 2-kolumnowy — tabela
 
 Podział pół na pół, kolumnowo: `slice(0, ceil(n/2))` do lewego bloku, resztę do prawego. Dwa
 niezależne bloki obok siebie (flex, `gap`, `min-width: 0` na każdym), każdy z własnym nagłówkiem
@@ -177,6 +177,30 @@ Przycisk dodawania umiejętności jest **pod całością**, nie w kolumnie.
 Odrzucone: `column-count: 2` (wiersz jest siatką — przeglądarka złamie go w środku, a wspólny
 nagłówek kolumn nie ma jak się powtórzyć) oraz podział naprzemienny wiersz-po-wierszu (przy
 sortowaniu alfabetycznym czyta się zygzakiem).
+
+### Layout 2-kolumnowy — drzewo
+
+Jednostką podziału jest **gałąź poziomu root**, nie wiersz: wcięcie (`depth * 16`) koduje
+hierarchię, więc rozdzielenie rodzica od dzieci między kolumny zamieniłoby drzewo w dwie listy bez
+znaczenia. Gałąź trafia do kolumny w całości.
+
+Punkt cięcia ważony rozmiarem poddrzewa: liczymy dla każdej gałęzi root liczbę węzłów (szablonowych
+i dodanych przez gracza), a potem wybieramy takie `k`, że `|suma(0..k) − suma(k..n)|` jest
+najmniejsza. Kolejność gałęzi zostaje nietknięta — cięcie jest jedno i przesuwa się tylko punkt.
+Podział po liczbie gałęzi (`ceil(n/2)`, jak w tabeli) daje kolumny o skrajnie różnej wysokości, gdy
+jedna gałąź ma dwadzieścia dzieci, a trzy pozostałe po jednym.
+
+Waga liczy **wszystkie** węzły, niezależnie od `expanded`: gdyby liczyła tylko widoczne, każde
+zwinięcie gałęzi przerzucałoby inne gałęzie między kolumnami pod palcami gracza. Stabilny układ
+wygrywa z idealnym wyrównaniem — cena jest taka, że po zwinięciu grubej gałęzi jedna kolumna jest
+krótsza.
+
+Odrzucone `column-count: 2` z `break-inside: avoid`: dałoby lepszy efekt (przeglądarka rebalansuje
+sama przy zwijaniu), ale jsdom nie liczy layoutu, więc test mógłby sprawdzić tylko obecność klasy,
+nie faktyczny podział. Podział w JS jest deterministyczny i testowalny.
+
+Przycisk „dodaj umiejętność” na poziomie root oraz formularz dodawania idą **pod obie kolumny**,
+tak samo jak w tabeli.
 
 ### Dodawanie wiersza w tabeli — świadomie inaczej niż w drzewie
 
@@ -240,7 +264,8 @@ flagach. Po wyłączeniu gwiazdki w szablonie stare wpisy **zostają** na karcie
 odznaczy — nowych nie da się dodać. Świadomie: czyszczenie `favoriteSkills` przy przestawieniu
 przełącznika w kreatorze oznaczałoby kasowanie danych graczy jako efekt uboczny edycji szablonu.
 
-Layout 2-kolumnowy dla drzewa — hierarchia z wcięciami nie znosi podziału na pół.
+Rebalansowanie kolumn drzewa przy zwijaniu i rozwijaniu gałęzi — podział liczy się raz, z pełnych
+rozmiarów poddrzew.
 
 ## Testy
 
@@ -250,7 +275,7 @@ Znany baseline fail: `App.test.js` (axios ESM) — nie jest regresją.
 | Plik | Co sprawdza |
 |---|---|
 | `CustomSheetBody.skillTable.flags.test.jsx` (nowy) | gwiazdka jest bez flagi i znika przy `hideFavorites`; `showDevelopment` daje checkbox jako pierwszą kontrolkę wiersza i ikonę w nagłówku (także bez `hasAdvances`); `sortAlphabetically` ustala kolejność nazw; `twoColumns` daje dwa bloki z podziałem `ceil(n/2)`; `playerCanAddSkills` daje przycisk, a klik — wiersz w trybie edycji z inputem nazwy |
-| `CustomSheetBody.skillTree.test.jsx` (istnieje) | sortowanie per poziom z wplecionymi umiejętnościami gracza; gating gwiazdki; checkbox rozwoju |
+| `CustomSheetBody.skillTree.test.jsx` (istnieje) | sortowanie per poziom z wplecionymi umiejętnościami gracza; gating gwiazdki; checkbox rozwoju; `twoColumns` dzieli gałęzie root ważone rozmiarem poddrzewa (gruba gałąź sama w kolumnie), żadna gałąź nie jest rozerwana, waga nie zmienia się po zwinięciu gałęzi |
 | `CustomSheetBody.chromeSeam.test.jsx` (istnieje) | `showAffordances` bez handlerów → gwiazdka, checkbox i przycisk dodawania jako `disabled` |
 | `TemplateBuilder.skillFlags.test.jsx` (nowy) | przełączniki panelu zapisują flagi do pola (wzorzec `TemplateBuilder.weaponColumns.test.jsx`) |
 | `plugin_test.go` | rzut na umiejętność dodaną przez gracza w `skill_table` z `assignAttrToSkill` bierze `linkedAttr` z `CustomSkillNodes`, nie z pola |
