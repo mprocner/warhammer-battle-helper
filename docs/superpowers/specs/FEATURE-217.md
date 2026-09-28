@@ -215,6 +215,12 @@ wartościami”), a formularz drzewa nie ma jak wpisać się w siatkę kolumn ta
 Po zatwierdzeniu wiersz gracza wygląda jak szablonowy, ale ma dodatkowo `EditIcon` (powrót do
 edycji nazwy) i `DeleteIcon` — tak samo jak węzły gracza w drzewie i jak w CoC.
 
+W trybie edycji, gdy pole ma `assignAttrToSkill`, wiersz pokazuje **select atrybutu** — tak samo
+jak formularz dodawania w drzewie. Bez tego umiejętność dodana przez gracza nie ma atrybutu, więc
+jej próg rzutu bierze się z poziomu pola i jest po prostu zły w systemie, w którym każda
+umiejętność wisi na innym atrybucie. To jednocześnie jedyny konsument poprawki
+`resolveRollConfig` opisanej wyżej — bez selektu ten fallback byłby martwym kodem.
+
 Klucz generuje istniejące `confirmAdd` (`${parentPath}.${genId('skill')}`) z `parentPath ===
 field.key`. Nowego stanu potrzebny jest tylko `Set` świeżych kluczy (do trzymania ich na dole);
 `editingPath` wystarcza jako pojedyncze pole „edytowany wiersz”, bo naraz edytuje się jeden.
