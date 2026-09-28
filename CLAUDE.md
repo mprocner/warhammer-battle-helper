@@ -62,6 +62,13 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
 - i18n: wszystkie stringi w kodzie używają **angielskich kluczy** (np. `t('creator.addSection')`). Angielskie tłumaczenia to "domyślny" język — `src/locales/en/translation.json`. Polskie odpowiedniki dodawane równolegle w `src/locales/pl/translation.json`. Nigdy nie wpisuj polskich ani angielskich stringów bezpośrednio w JSX — zawsze `t('klucz')`.
 - Ikony: zawsze używaj ikon z `@mui/icons-material` (Material UI Icons), nigdy SVG inline ani innych bibliotek ikon
 - Tooltipy: nigdy MUI `<Tooltip>`. Używaj custom portal tooltip z `createPortal` do `document.body`. Stan: `useState(null)` dla `{top, left, text}`. Globalne klasy CSS: `.portal-tooltip` + `.portal-tooltip__arrow` w `style.css`. Wzorzec: `onMouseEnter={e => showTooltip(text, e.currentTarget)}` + `onMouseLeave={hideTooltip}` z `useRef` dla timeout. Tooltip pozycjonowany na lewo od elementu (`translateX(-100%)`), strzałka po prawej stronie.
+- **Kreator szablonu pokazuje dokładnie to, co gracz zobaczy w grze.** `TemplateBuilder` montuje
+  prawdziwy `CustomSheetBody` w prawdziwym wrapperze `.custom-sheet`, nigdy własny podgląd — osobny
+  podgląd z własnym chrome ukrywał błąd szerokości treści (FEATURE-212). Dotyczy też afordansów bez
+  żywych handlerów (gwiazdka ulubionych, znacznik rzutu, przyciski gracza): renderuj je statycznie
+  jako `disabled` przez prop bramkujący (`showRollMarkers`, po FEATURE-217 `showAffordances`), nie
+  pomijaj. Kontrolka, której kreator nie pokazuje,
+  to kontrolka, o której szerokość wiersza kłamie.
 
 ### Schemat kolorów — karty postaci (jasne tło)
 Popup `.character-sheet-popup` ma jasne kremowe tło: `linear-gradient(135deg, #f4e8d8, #e8dcc4)`.
