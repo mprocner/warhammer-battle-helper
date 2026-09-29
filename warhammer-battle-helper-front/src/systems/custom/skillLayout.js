@@ -133,3 +133,30 @@ export function sortItems(items, fieldSort) {
   if (!fieldSort) return items;
   return [...items].sort((a, b) => (a.label || '').localeCompare(b.label || ''));
 }
+
+// resolveSkillValues answers "what numbers does this row show, and is its base editable". It is the
+// one place that knows a derived row's stored `current` is stale: with baseFromAttr the base comes
+// from the attribute at read time and nothing ever writes it back, so `current` in stats still holds
+// base + advances — 0 + advances — and believing it would show the advances alone as the total.
+//
+// Mirrors skillValue in internal/systems/custom/roller.go: change one and you must change the other,
+// or the roll log and the sheet disagree about the same skill.
+//
+// baseReadOnly travels with the numbers rather than being recomputed by the caller, because it
+// answers the same question as `base` — where the value came from — and a second copy of that
+// condition could drift from this one.
+export function resolveSkillValues(field, row, skills = {}, attributes = {}) {
+  const sv = skills[row.key] || {};
+  const advances = sv.advances ?? 0;
+  // The flag is meaningless without both preconditions, and a hand-edited template can carry it
+  // without them. The creator enforces them; this is the second line of defence.
+  const derived = !!field.baseFromAttr && !!field.assignAttrToSkill && !!field.hasAdvances;
+
+  if (derived) {
+    const base = row.attr ? (attributes[row.attr]?.current ?? 0) : 0;
+    return { base, advances, total: base + advances, baseReadOnly: true };
+  }
+
+  const base = sv.base ?? 0;
+  return { base, advances, total: sv.current ?? base + advances, baseReadOnly: false };
+}

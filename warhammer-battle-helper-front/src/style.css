@@ -8299,6 +8299,21 @@ align-items: center;
     border-color: #c9975b;
 }
 
+/* A derived base is not editable, so it must not look editable: same engraved plate as the total
+   column, which is the sheet's existing vocabulary for "computed, hands off". */
+.custom-sheet__skill-val-input--derived {
+    background: #e8dcc4;
+    border: 1px solid #c9975b;
+    box-shadow: inset 0 1px 2px rgba(122, 92, 66, 0.35);
+    font-weight: 700;
+    cursor: default;
+}
+
+.custom-sheet__skill-val-input--derived:focus {
+    outline: none;
+    border-color: #c9975b;
+}
+
 /* Advances column — muted secondary modifier. */
 .custom-sheet__skill-val-input--adv {
     color: #6b4423;

@@ -60,3 +60,69 @@ describe('CustomCharacterDetails favourite skills', () => {
     expect(container.querySelectorAll('.custom-character-details__favorite-item').length).toBe(0);
   });
 });
+
+// FEATURE-218: for a skill_table field whose base is derived from its linked attribute, the
+// persisted stats.skills[key].current is stale — it holds 0 + advances, because nothing ever
+// writes the attribute into it. The short card must compose base + advances at read time instead
+// of trusting that stale copy, the same way the sheet and the roll log already do.
+const tableTemplate = {
+  sections: [{
+    id: 'sec1',
+    fields: [{
+      key: 'fld_table',
+      type: 'skill_table',
+      label: 'Umiejętności',
+      hasAdvances: true,
+      assignAttrToSkill: true,
+      baseFromAttr: true,
+      skills: [{ id: 'opt_stealth', label: 'Skradanie', attr: 'agi' }],
+    }],
+  }],
+};
+
+describe('CustomCharacterDetails favourite skills — derived base (FEATURE-218)', () => {
+  it('composes a derived skill_table row instead of reading its stale stored current', () => {
+    const { container } = render(
+      <CustomCharacterDetails
+        character={{
+          id: 'c1',
+          name: 'Bohater',
+          stats: {
+            favoriteSkills: ['fld_table.opt_stealth'],
+            attributes: { agi: { base: 35, advances: 5, current: 40 } },
+            // Deliberately stale: current was persisted as 0 (base) + 5 (advances) before this
+            // feature existed to derive the base from the attribute.
+            skills: { 'fld_table.opt_stealth': { base: 0, advances: 5, current: 5 } },
+          },
+        }}
+        onCharacterUpdate={() => {}}
+        game={{ customSystemTemplate: tableTemplate }}
+      />
+    );
+
+    const value = container.querySelector('.custom-character-details__favorite-value');
+    expect(value.textContent).toBe('45');
+  });
+
+  it('composes a derived player-added row under the same field the same way', () => {
+    const { container } = render(
+      <CustomCharacterDetails
+        character={{
+          id: 'c1',
+          name: 'Bohater',
+          stats: {
+            favoriteSkills: ['fld_table.custom1'],
+            attributes: { agi: { base: 35, advances: 5, current: 40 } },
+            customSkillNodes: { 'fld_table.custom1': { label: 'Wspinaczka', linkedAttr: 'agi' } },
+            skills: { 'fld_table.custom1': { base: 0, advances: 5, current: 5 } },
+          },
+        }}
+        onCharacterUpdate={() => {}}
+        game={{ customSystemTemplate: tableTemplate }}
+      />
+    );
+
+    const value = container.querySelector('.custom-character-details__favorite-value');
+    expect(value.textContent).toBe('45');
+  });
+});

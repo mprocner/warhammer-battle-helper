@@ -51,12 +51,12 @@ func TestDefaultStatsAppliesDefaultsInsideNestedSection(t *testing.T) {
 }
 
 func TestResolveRollConfigFindsNestedField(t *testing.T) {
-	cfg, _, fieldType, err := resolveRollConfig(nestedTemplate(), &Stats{}, "attr_deep")
+	target, err := resolveRollConfig(nestedTemplate(), &Stats{}, "attr_deep")
 	if err != nil {
 		t.Fatalf("resolveRollConfig: %v", err)
 	}
-	if cfg == nil || fieldType != "attr" {
-		t.Fatalf("expected an attr roll config, got cfg=%v type=%q", cfg, fieldType)
+	if target.cfg == nil || target.fieldType != "attr" {
+		t.Fatalf("expected an attr roll config, got cfg=%v type=%q", target.cfg, target.fieldType)
 	}
 }
 

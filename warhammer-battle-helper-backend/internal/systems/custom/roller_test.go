@@ -134,12 +134,12 @@ func TestSkillValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stats := &Stats{Skills: map[string]AttrValue{"atk": tt.v}}
-			if got := skillValue(stats, "atk"); got != tt.want {
+			if got := skillValue(stats, "atk", "", false); got != tt.want {
 				t.Errorf("skillValue() = %d, want %d", got, tt.want)
 			}
 		})
 	}
-	if got := skillValue(&Stats{Skills: map[string]AttrValue{}}, "missing"); got != 0 {
+	if got := skillValue(&Stats{Skills: map[string]AttrValue{}}, "missing", "", false); got != 0 {
 		t.Errorf("skillValue(missing) = %d, want 0", got)
 	}
 }
@@ -168,12 +168,12 @@ func TestSkillHasValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stats := &Stats{Skills: map[string]AttrValue{"atk": tt.v}}
-			if got := skillHasValue(stats, "atk"); got != tt.want {
+			if got := skillHasValue(stats, "atk", "", false); got != tt.want {
 				t.Errorf("skillHasValue() = %v, want %v", got, tt.want)
 			}
 		})
 	}
-	if got := skillHasValue(&Stats{Skills: map[string]AttrValue{}}, "missing"); got != false {
+	if got := skillHasValue(&Stats{Skills: map[string]AttrValue{}}, "missing", "", false); got != false {
 		t.Error("skillHasValue(missing) = true, want false")
 	}
 }
@@ -241,7 +241,7 @@ func TestResolveSkillLabel(t *testing.T) {
 
 func TestEvalFormula_SingleDie(t *testing.T) {
 	p := newTestPlugin(3) // d6 -> 4
-	res, diceType, label, val, err := p.evalFormula([]models.FormulaBlock{diceBlock("d6")}, sampleStats(), "", "")
+	res, diceType, label, val, err := p.evalFormula([]models.FormulaBlock{diceBlock("d6")}, sampleStats(), "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -253,7 +253,7 @@ func TestEvalFormula_SingleDie(t *testing.T) {
 func TestEvalFormula_DiePlusConst(t *testing.T) {
 	p := newTestPlugin(3) // d6 -> 4
 	blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("+"), numBlock(2)}
-	res, _, label, val, err := p.evalFormula(blocks, sampleStats(), "", "")
+	res, _, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -266,7 +266,7 @@ func TestEvalFormula_DicePool(t *testing.T) {
 	// "2 d d6": const 2 becomes the count; pool rolls two d6.
 	p := newTestPlugin(3, 5) // 4, 6
 	blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), diceBlock("d6")}
-	res, diceType, label, val, err := p.evalFormula(blocks, sampleStats(), "", "")
+	res, diceType, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestEvalFormula_Operators(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := newTestPlugin() // no dice -> no rng needed
 			blocks := []models.FormulaBlock{numBlock(6), opBlock(tt.op), numBlock(2)}
-			res, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "")
+			res, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", false)
 			if err != nil {
 				t.Fatalf("evalFormula() error: %v", err)
 			}
@@ -304,14 +304,14 @@ func TestEvalFormula_Errors(t *testing.T) {
 	p := newTestPlugin()
 
 	t.Run("empty formula", func(t *testing.T) {
-		if _, _, _, _, err := p.evalFormula(nil, sampleStats(), "", ""); err == nil {
+		if _, _, _, _, err := p.evalFormula(nil, sampleStats(), "", "", false); err == nil {
 			t.Error("expected error for empty formula, got nil")
 		}
 	})
 
 	t.Run("division by zero", func(t *testing.T) {
 		blocks := []models.FormulaBlock{numBlock(6), opBlock("/"), numBlock(0)}
-		if _, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", ""); err == nil {
+		if _, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", false); err == nil {
 			t.Error("expected division-by-zero error, got nil")
 		}
 	})
@@ -323,7 +323,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("attr block reads attribute value", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "attr", Key: "str", Label: "STR"}}
-		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "")
+		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "", false)
 		if res != 8 || label != "STR" {
 			t.Errorf("got res=%d label=%q, want 8/STR", res, label)
 		}
@@ -331,7 +331,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("skill block reads skill value", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "skill"}}
-		res, _, _, _, _ := p.evalFormula(blocks, stats, "atk", "")
+		res, _, _, _, _ := p.evalFormula(blocks, stats, "atk", "", false)
 		if res != 10 {
 			t.Errorf("skill block res = %d, want 10", res)
 		}
@@ -339,7 +339,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("attr_linked reads the linked attribute", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "attr_linked"}}
-		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "dex")
+		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "dex", false)
 		if res != 5 || label != "dex" {
 			t.Errorf("got res=%d label=%q, want 5/dex", res, label)
 		}
@@ -351,7 +351,7 @@ func TestEvalFormula_DiceAttr(t *testing.T) {
 	stats := sampleStats()
 	p := newTestPlugin(6) // Intn(8)=6 -> 7
 	blocks := []models.FormulaBlock{{Type: "dice_attr", Key: "str", Label: "STR"}}
-	res, diceType, _, _, err := p.evalFormula(blocks, stats, "", "")
+	res, diceType, _, _, err := p.evalFormula(blocks, stats, "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -372,7 +372,7 @@ func TestRollFromFormula_ThresholdAndOutcome(t *testing.T) {
 		SuccessType: "above_threshold",
 	}
 	p := newTestPlugin(5) // d6 -> 6
-	res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+	res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 	if err != nil {
 		t.Fatalf("rollFromFormula() error: %v", err)
 	}
@@ -405,7 +405,7 @@ func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
 			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30}},
 		}
 		p := newTestPlugin(5) // d6 -> 6
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -420,7 +420,7 @@ func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
 			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -10}},
 		}
 		p := newTestPlugin(5)
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -435,7 +435,7 @@ func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
 			Skills:     map[string]AttrValue{},
 		}
 		p := newTestPlugin(5)
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -450,7 +450,7 @@ func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
 			Skills:     map[string]AttrValue{"atk": {}},
 		}
 		p := newTestPlugin(5)
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -466,7 +466,7 @@ func TestRollFromFormula_NegativeAdvancesThreshold(t *testing.T) {
 			Skills:     map[string]AttrValue{"atk": {Base: 30, Advances: -30, Current: 99}},
 		}
 		p := newTestPlugin(5)
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -492,7 +492,7 @@ func TestRollFromFormula_CancelledThresholdProducesRealVerdict(t *testing.T) {
 			SuccessType: "below_threshold",
 		}
 		p := newTestPlugin(5) // d6 -> 6
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -514,7 +514,7 @@ func TestRollFromFormula_CancelledThresholdProducesRealVerdict(t *testing.T) {
 			SuccessType: "above_threshold",
 		}
 		p := newTestPlugin(5) // d6 -> 6
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -534,7 +534,7 @@ func TestRollFromFormula_CancelledThresholdProducesRealVerdict(t *testing.T) {
 			SuccessType: "above_threshold",
 		}
 		p := newTestPlugin(5) // d6 -> 6
-		res, err := p.rollFromFormula(stats, template, "atk", "str", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "atk", "str", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -558,7 +558,7 @@ func TestRollFromFormula_CancelledThresholdProducesRealVerdict(t *testing.T) {
 			SuccessType: "above_threshold",
 		}
 		p := newTestPlugin(5) // d6 -> 6
-		res, err := p.rollFromFormula(stats, template, "", "", cfg, 0)
+		res, err := p.rollFromFormula(stats, template, "", "", false, cfg, 0)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -575,7 +575,7 @@ func TestRollFromFormula_ModifierInBreakdown(t *testing.T) {
 		SuccessType: "above_threshold",
 	}
 	p := newTestPlugin(5) // d6 -> 6
-	res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", cfg, 3)
+	res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", false, cfg, 3)
 	if err != nil {
 		t.Fatalf("rollFromFormula() error: %v", err)
 	}
@@ -607,7 +607,7 @@ func TestRollFromFormula_ModifierTargets(t *testing.T) {
 
 	t.Run("target roll shifts the result and leaves the threshold alone", func(t *testing.T) {
 		p := newTestPlugin(47) // d100 -> 48
-		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", cfg, -20)
+		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetRoll, ""), "atk", "str", false, cfg, -20)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -632,7 +632,7 @@ func TestRollFromFormula_ModifierTargets(t *testing.T) {
 	// 48 <= 55 is a success; with -20 the threshold drops to 35 and the same roll is a failure.
 	t.Run("target threshold shifts the target and leaves the roll raw", func(t *testing.T) {
 		p := newTestPlugin(47) // d100 -> 48
-		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetThreshold, ""), "atk", "str", cfg, -20)
+		res, err := p.rollFromFormula(stats, tmplWithModifier(ModTargetThreshold, ""), "atk", "str", false, cfg, -20)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -659,7 +659,7 @@ func TestRollFromFormula_ModifierTargets(t *testing.T) {
 
 	t.Run("no config zeroes a modifier the request tried to smuggle in", func(t *testing.T) {
 		p := newTestPlugin(47) // d100 -> 48
-		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, -20)
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, cfg, -20)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -680,7 +680,7 @@ func TestRollFromFormula_ModifierTargets(t *testing.T) {
 		}
 		emptyStats := &Stats{Attributes: map[string]AttrValue{}, Skills: map[string]AttrValue{}}
 		p := newTestPlugin(47)
-		res, err := p.rollFromFormula(emptyStats, tmplWithModifier(ModTargetThreshold, ""), "unknown", "", rawCfg, 20)
+		res, err := p.rollFromFormula(emptyStats, tmplWithModifier(ModTargetThreshold, ""), "unknown", "", false, rawCfg, 20)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -716,7 +716,7 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 	t.Run("gte counts every die at or above threshold", func(t *testing.T) {
 		// three d6 -> 4, 6, 2; threshold 4 gte -> 4 and 6 succeed = 2.
 		p := newTestPlugin(3, 5, 1)
-		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", baseCfg(4, "gte"), 0)
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, baseCfg(4, "gte"), 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -734,7 +734,7 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 	t.Run("eq counts only exact matches", func(t *testing.T) {
 		// three d6 -> 4, 6, 6; threshold 6 eq -> two exact 6s.
 		p := newTestPlugin(3, 5, 5)
-		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", baseCfg(6, "eq"), 0)
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, baseCfg(6, "eq"), 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -746,7 +746,7 @@ func TestRollFromFormula_DicePool(t *testing.T) {
 	t.Run("zero successes is a failure", func(t *testing.T) {
 		// three d6 -> 1, 2, 3; threshold 5 gte -> none.
 		p := newTestPlugin(0, 1, 2)
-		res, _ := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", baseCfg(5, "gte"), 0)
+		res, _ := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, baseCfg(5, "gte"), 0)
 		if res.PoolSuccesses != 0 || res.Outcome != "failure" {
 			t.Errorf("got successes=%d outcome=%q, want 0/failure", res.PoolSuccesses, res.Outcome)
 		}
@@ -764,7 +764,7 @@ func TestRollFromFormula_DicePoolFormulaParts(t *testing.T) {
 	}
 	// d6 -> 4, d10 -> 7, d10 -> 2
 	p := newTestPlugin(3, 6, 1)
-	res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, 0)
+	res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, cfg, 0)
 	if err != nil {
 		t.Fatalf("rollFromFormula() error: %v", err)
 	}
@@ -796,7 +796,7 @@ func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
 	t.Run("dice_count rolls extra dice", func(t *testing.T) {
 		// 3 + 2 = 5 kości: 4, 6, 2, 5, 1 -> sukcesy 4, 6, 5 = 3.
 		p := newTestPlugin(3, 5, 1, 4, 0)
-		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", cfg, 2)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", false, cfg, 2)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -817,7 +817,7 @@ func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
 	t.Run("dice_count removes dice and never drops below one", func(t *testing.T) {
 		// 3 - 9 = -6 kości -> clamp do 1: tylko jeden rzut jest w ogóle wykonany.
 		p := newTestPlugin(5)
-		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", cfg, -9)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", false, cfg, -9)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -829,7 +829,7 @@ func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
 	t.Run("success_threshold shifts the threshold and leaves the dice count alone", func(t *testing.T) {
 		// 3 kości: 4, 6, 2. Próg 4+2 = 6 -> tylko 6 się liczy.
 		p := newTestPlugin(3, 5, 1)
-		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetSuccessThreshold), "atk", "str", cfg, 2)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetSuccessThreshold), "atk", "str", false, cfg, 2)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -846,7 +846,7 @@ func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
 
 	t.Run("disabled config leaves the pool exactly as configured", func(t *testing.T) {
 		p := newTestPlugin(3, 5, 1)
-		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", cfg, 2)
+		res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "atk", "str", false, cfg, 2)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -869,7 +869,7 @@ func TestRollFromFormula_DicePoolModifierTargets(t *testing.T) {
 		}
 		// pierwszy człon: 2+1 = 3 kości K6 (3, 4, 5); drugi: 2 kości K10 (7, 8).
 		p := newTestPlugin(2, 3, 4, 6, 7)
-		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", multiCfg, 1)
+		res, err := p.rollFromFormula(stats, tmplWithModifier("", ModTargetDiceCount), "atk", "str", false, multiCfg, 1)
 		if err != nil {
 			t.Fatalf("rollFromFormula() error: %v", err)
 		}
@@ -1045,7 +1045,7 @@ func TestEvalFormula_DiceSkillAttr(t *testing.T) {
 		// sides = attr(str 8) + skill(atk 10) = 18; Intn(18)=7 -> 8.
 		p := newTestPlugin(7)
 		blocks := []models.FormulaBlock{{Type: "dice_skill_attr"}}
-		res, diceType, _, _, err := p.evalFormula(blocks, stats, "atk", "str")
+		res, diceType, _, _, err := p.evalFormula(blocks, stats, "atk", "str", false)
 		if err != nil {
 			t.Fatalf("evalFormula() error: %v", err)
 		}
@@ -1058,7 +1058,7 @@ func TestEvalFormula_DiceSkillAttr(t *testing.T) {
 		// count 2, sides 18: two dice 8 and 10 -> total 18.
 		p := newTestPlugin(7, 9)
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_skill_attr"}}
-		res, _, _, val, err := p.evalFormula(blocks, stats, "atk", "str")
+		res, _, _, val, err := p.evalFormula(blocks, stats, "atk", "str", false)
 		if err != nil {
 			t.Fatalf("evalFormula() error: %v", err)
 		}
@@ -1073,7 +1073,7 @@ func TestEvalFormula_DiceAttrPool(t *testing.T) {
 	// count 2, sides=str(8): two d8 -> 4 and 6 = 10.
 	p := newTestPlugin(3, 5)
 	blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_attr", Key: "str", Label: "STR"}}
-	res, diceType, _, val, err := p.evalFormula(blocks, stats, "", "")
+	res, diceType, _, val, err := p.evalFormula(blocks, stats, "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -1086,7 +1086,7 @@ func TestEvalFormula_AttrLinkedEmpty(t *testing.T) {
 	// With no linked attribute, attr_linked contributes 0 and labels as "0".
 	p := newTestPlugin()
 	blocks := []models.FormulaBlock{{Type: "attr_linked"}}
-	res, _, label, _, _ := p.evalFormula(blocks, sampleStats(), "", "")
+	res, _, label, _, _ := p.evalFormula(blocks, sampleStats(), "", "", false)
 	if res != 0 || label != "0" {
 		t.Errorf("got res=%d label=%q, want 0/0", res, label)
 	}
@@ -1101,7 +1101,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 
 	t.Run("single dice_attr collects one roll", func(t *testing.T) {
 		p := newTestPlugin(3) // d8 -> 4
-		parts, diceType, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "", 0)
+		parts, diceType, err := p.evalFormulaDicePool([]models.FormulaBlock{{Type: "dice_attr", Key: "str"}}, stats, "", "", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1113,7 +1113,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("dice_attr pool collects all rolls", func(t *testing.T) {
 		p := newTestPlugin(3, 5) // 4, 6
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_attr", Key: "str"}}
-		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "", "", 0)
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "", "", false, 0)
 		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{4, 6}) {
 			t.Errorf("rolls = %v, want [4 6]", got)
 		}
@@ -1122,7 +1122,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("dice_skill_attr pool", func(t *testing.T) {
 		p := newTestPlugin(7, 9) // sides 18 -> 8, 10
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_skill_attr"}}
-		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str", 0)
+		parts, _, _ := p.evalFormulaDicePool(blocks, stats, "atk", "str", false, 0)
 		if got := poolRolls(parts); !reflect.DeepEqual(got, []int{8, 10}) {
 			t.Errorf("rolls = %v, want [8 10]", got)
 		}
@@ -1138,7 +1138,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 			{Type: "attr_linked"},
 			numBlock(2),
 		}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex", 0)
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1149,7 +1149,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 
 	t.Run("empty formula errors", func(t *testing.T) {
 		p := newTestPlugin()
-		if _, _, err := p.evalFormulaDicePool(nil, stats, "", "", 0); err == nil {
+		if _, _, err := p.evalFormulaDicePool(nil, stats, "", "", false, 0); err == nil {
 			t.Error("expected error for empty pool formula, got nil")
 		}
 	})
@@ -1157,7 +1157,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("count form keeps one term with every roll", func(t *testing.T) {
 		p := newTestPlugin(3, 5, 1) // 4, 6, 2
 		blocks := []models.FormulaBlock{numBlock(3), opBlock("d"), diceBlock("d6")}
-		parts, diceType, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
+		parts, diceType, err := p.evalFormulaDicePool(blocks, stats, "", "", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1170,7 +1170,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	t.Run("computed faces keep their source label", func(t *testing.T) {
 		p := newTestPlugin(3) // d8 -> 4
 		blocks := []models.FormulaBlock{{Type: "dice_attr", Key: "str", Label: "STR"}}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1184,7 +1184,7 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 		// d6 -> 2 decides the count, then two d10 -> 7, 3.
 		p := newTestPlugin(1, 6, 2)
 		blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("d"), diceBlock("d10")}
-		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", 0)
+		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
@@ -1218,12 +1218,12 @@ func TestResolveRollConfig_SkillTree(t *testing.T) {
 		}},
 	}
 
-	gotCfg, linkedAttr, fieldType, err := resolveRollConfig(template, &Stats{}, "weapons.melee")
+	target, err := resolveRollConfig(template, &Stats{}, "weapons.melee")
 	if err != nil {
 		t.Fatalf("resolveRollConfig() error: %v", err)
 	}
-	if gotCfg != cfg || linkedAttr != "str" || fieldType != "skill_tree" {
-		t.Errorf("got cfg=%v attr=%q type=%q, want field cfg/str/skill_tree", gotCfg, linkedAttr, fieldType)
+	if target.cfg != cfg || target.linkedAttr != "str" || target.fieldType != "skill_tree" {
+		t.Errorf("got cfg=%v attr=%q type=%q, want field cfg/str/skill_tree", target.cfg, target.linkedAttr, target.fieldType)
 	}
 }
 
@@ -1242,12 +1242,12 @@ func TestResolveRollConfig_SkillTableAssignsAttr(t *testing.T) {
 	}
 
 	// AssignAttrToSkill maps the matching option's Attr (matched by stable id) over the field default.
-	_, linkedAttr, fieldType, err := resolveRollConfig(template, &Stats{}, "spells.opt_fire")
+	target, err := resolveRollConfig(template, &Stats{}, "spells.opt_fire")
 	if err != nil {
 		t.Fatalf("resolveRollConfig() error: %v", err)
 	}
-	if linkedAttr != "int" || fieldType != "skill_table" {
-		t.Errorf("got attr=%q type=%q, want int/skill_table", linkedAttr, fieldType)
+	if target.linkedAttr != "int" || target.fieldType != "skill_table" {
+		t.Errorf("got attr=%q type=%q, want int/skill_table", target.linkedAttr, target.fieldType)
 	}
 }
 
@@ -1545,12 +1545,12 @@ func TestResolveRollConfig_SkillTablePlayerAddedSkillUsesItsOwnAttr(t *testing.T
 		"skills.skill_9001": {Label: "Dog handling", LinkedAttr: "fel"},
 	}}
 
-	_, linkedAttr, fieldType, err := resolveRollConfig(template, stats, "skills.skill_9001")
+	target, err := resolveRollConfig(template, stats, "skills.skill_9001")
 	if err != nil {
 		t.Fatalf("resolveRollConfig() error: %v", err)
 	}
-	if linkedAttr != "fel" || fieldType != "skill_table" {
-		t.Errorf("got attr=%q type=%q, want fel/skill_table", linkedAttr, fieldType)
+	if target.linkedAttr != "fel" || target.fieldType != "skill_table" {
+		t.Errorf("got attr=%q type=%q, want fel/skill_table", target.linkedAttr, target.fieldType)
 	}
 }
 
@@ -1571,11 +1571,229 @@ func TestResolveRollConfig_SkillTableTemplateRowStillWins(t *testing.T) {
 		"skills.skill_9001": {Label: "Dog handling", LinkedAttr: "fel"},
 	}}
 
-	_, linkedAttr, _, err := resolveRollConfig(template, stats, "skills.opt_stealth")
+	target, err := resolveRollConfig(template, stats, "skills.opt_stealth")
 	if err != nil {
 		t.Fatalf("resolveRollConfig() error: %v", err)
 	}
-	if linkedAttr != "agi" {
-		t.Errorf("got attr=%q, want agi", linkedAttr)
+	if target.linkedAttr != "agi" {
+		t.Errorf("got attr=%q, want agi", target.linkedAttr)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// FEATURE-218 — a skill whose base is its linked attribute
+// ---------------------------------------------------------------------------
+
+// baseFromAttrStats gives the character an attribute worth 40 (base 35 + advances 5, so Current is
+// what distinguishes a correct read) and a skill with 5 advances and NO stored base. The derived
+// total must be 45; anything that reads the stored base reads 0 and lands on 5.
+func baseFromAttrStats() *Stats {
+	return &Stats{
+		Attributes: map[string]AttrValue{"agi": {Base: 35, Advances: 5, Current: 40}},
+		Skills:     map[string]AttrValue{"skills.opt_stealth": {Base: 0, Advances: 5, Current: 5}},
+	}
+}
+
+func TestSkillValue_BaseFromAttr(t *testing.T) {
+	stats := baseFromAttrStats()
+
+	if got := skillValue(stats, "skills.opt_stealth", "agi", true); got != 45 {
+		t.Errorf("skillValue with baseFromAttr = %d, want 45 (attribute 40 + advances 5)", got)
+	}
+	// Flag off: the stored base wins, exactly as before this feature.
+	if got := skillValue(stats, "skills.opt_stealth", "agi", false); got != 5 {
+		t.Errorf("skillValue without baseFromAttr = %d, want 5", got)
+	}
+	// Flag on but no attribute linked: attrLookup reads 0, so only the advances remain.
+	if got := skillValue(stats, "skills.opt_stealth", "", true); got != 5 {
+		t.Errorf("skillValue with baseFromAttr and no attribute = %d, want 5", got)
+	}
+}
+
+func TestSkillHasValue_BaseFromAttr(t *testing.T) {
+	stats := &Stats{
+		Attributes: map[string]AttrValue{"agi": {Current: 0}},
+		Skills:     map[string]AttrValue{"skills.opt_stealth": {}},
+	}
+
+	// A blank skill whose attribute EXISTS has a value: 0 + 0 is a real 0, the same reasoning the
+	// function already applies to a computed zero.
+	if !skillHasValue(stats, "skills.opt_stealth", "agi", true) {
+		t.Error("skillHasValue with baseFromAttr and an existing attribute = false, want true")
+	}
+	// No attribute linked, nothing stored: still nothing to test against.
+	if skillHasValue(stats, "skills.opt_stealth", "", true) {
+		t.Error("skillHasValue with baseFromAttr and no attribute = true, want false")
+	}
+	if skillHasValue(stats, "skills.opt_stealth", "agi", false) {
+		t.Error("skillHasValue without baseFromAttr on a blank skill = true, want false")
+	}
+}
+
+// The threshold fallback is the path a GM hits without writing any formula block at all: no
+// explicit threshold, so the target comes from the skill — which must now be the derived total.
+func TestRollFromFormula_ThresholdUsesDerivedBase(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d100")},
+		SuccessType: "below_threshold",
+	}
+	template := &models.SystemTemplate{}
+
+	res, err := p.rollFromFormula(baseFromAttrStats(), template, "skills.opt_stealth", "agi", true, cfg, 0)
+	if err != nil {
+		t.Fatalf("rollFromFormula: %v", err)
+	}
+	if res.Target != 45 {
+		t.Errorf("threshold = %d, want 45 (attribute 40 + advances 5)", res.Target)
+	}
+	if res.Outcome != "regular_success" {
+		t.Errorf("outcome = %q, want regular_success (42 below 45)", res.Outcome)
+	}
+}
+
+// With the flag on but no attribute linked, the threshold fallback must not settle for the
+// advances-only number skillValue would give the "skill" formula block: skillHasValue reports no
+// data at all (attrLookup finds nothing), so the threshold falls through to the attribute read,
+// which is also absent. The roll is therefore reported as an undecided raw number, not a
+// success/failure against a fabricated target.
+func TestRollFromFormula_ThresholdUndecidedWithoutAttribute(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d100")},
+		SuccessType: "below_threshold",
+	}
+	template := &models.SystemTemplate{}
+
+	// linkedAttr "" is not a key in baseFromAttrStats' Attributes map, so attrLookup misses.
+	res, err := p.rollFromFormula(baseFromAttrStats(), template, "skills.opt_stealth", "", true, cfg, 0)
+	if err != nil {
+		t.Fatalf("rollFromFormula: %v", err)
+	}
+	if res.Target != 0 {
+		t.Errorf("Target = %d, want 0 (no attribute to derive a threshold from)", res.Target)
+	}
+	if res.Outcome != "42" {
+		t.Errorf("Outcome = %q, want \"42\" (raw roll: hasThreshold must be false)", res.Outcome)
+	}
+}
+
+// The "skill" formula block is the other reader: a GM who writes the total into the formula must
+// get the same number the sheet shows.
+func TestEvalFormula_SkillBlockUsesDerivedBase(t *testing.T) {
+	p := newTestPlugin()
+	res, _, _, valueStr, err := p.evalFormula(
+		[]models.FormulaBlock{{Type: "skill"}}, baseFromAttrStats(), "skills.opt_stealth", "agi", true,
+	)
+	if err != nil {
+		t.Fatalf("evalFormula: %v", err)
+	}
+	if res != 45 {
+		t.Errorf("skill block = %d, want 45", res)
+	}
+	if valueStr != "45" {
+		t.Errorf("valueStr = %q, want \"45\"", valueStr)
+	}
+}
+
+// dice_skill_attr sizes a die by attribute + skill. With a derived base the attribute would
+// otherwise be counted once and dropped from the skill half.
+func TestEvalFormula_DiceSkillAttrUsesDerivedBase(t *testing.T) {
+	p := newTestPlugin(0) // d(40+45) -> 1
+	_, diceType, _, _, err := p.evalFormula(
+		[]models.FormulaBlock{{Type: "dice_skill_attr"}}, baseFromAttrStats(), "skills.opt_stealth", "agi", true,
+	)
+	if err != nil {
+		t.Fatalf("evalFormula: %v", err)
+	}
+	if diceType != 85 {
+		t.Errorf("diceType = %d, want 85 (attribute 40 + derived skill 45)", diceType)
+	}
+}
+
+// resolveRollConfig must carry the field's BaseFromAttr to the roller; a skill_table that derives
+// its base is otherwise rolled on advances alone.
+func TestResolveRollConfig_CarriesBaseFromAttr(t *testing.T) {
+	cfg := &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}}
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{{
+				Type: "skill_table", Key: "skills", Rollable: true, RollConfig: cfg,
+				AssignAttrToSkill: true, HasAdvances: true, BaseFromAttr: true,
+				Skills: []models.SkillOption{{ID: "opt_stealth", Label: "Stealth", Attr: "agi"}},
+			}},
+		}},
+	}
+
+	target, err := resolveRollConfig(template, &Stats{}, "skills.opt_stealth")
+	if err != nil {
+		t.Fatalf("resolveRollConfig: %v", err)
+	}
+	if !target.baseFromAttr {
+		t.Error("baseFromAttr = false, want true")
+	}
+	if target.linkedAttr != "agi" || target.fieldType != "skill_table" || target.cfg != cfg {
+		t.Errorf("got attr=%q type=%q cfg=%v, want agi/skill_table/field cfg", target.linkedAttr, target.fieldType, target.cfg)
+	}
+}
+
+// The flag is meaningless without its two preconditions, and a template can carry it without them
+// (hand-edited document, or a creator bug). The roller must not derive a base in that case, or a
+// field with no advances column would silently roll on the attribute instead of the stored value.
+func TestResolveRollConfig_BaseFromAttrNeedsItsPreconditions(t *testing.T) {
+	build := func(assign, advances bool) *models.SystemTemplate {
+		return &models.SystemTemplate{
+			Sections: []models.SectionDef{{
+				Fields: []models.FieldDef{{
+					Type: "skill_table", Key: "skills", Rollable: true,
+					RollConfig:        &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}},
+					AssignAttrToSkill: assign, HasAdvances: advances, BaseFromAttr: true,
+					Skills: []models.SkillOption{{ID: "opt_stealth", Attr: "agi"}},
+				}},
+			}},
+		}
+	}
+
+	for _, tc := range []struct {
+		name             string
+		assign, advances bool
+	}{
+		{"no attribute assignment", false, true},
+		{"no advances column", true, false},
+	} {
+		target, err := resolveRollConfig(build(tc.assign, tc.advances), &Stats{}, "skills.opt_stealth")
+		if err != nil {
+			t.Fatalf("%s: resolveRollConfig: %v", tc.name, err)
+		}
+		if target.baseFromAttr {
+			t.Errorf("%s: baseFromAttr = true, want false", tc.name)
+		}
+	}
+}
+
+// End to end through the public entry point: the same character and template a GM would have.
+func TestRollWithTemplate_DerivedBaseReachesTheThreshold(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{{
+				Type: "skill_table", Key: "skills", Rollable: true,
+				RollConfig:        &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"},
+				AssignAttrToSkill: true, HasAdvances: true, BaseFromAttr: true,
+				Skills: []models.SkillOption{{ID: "opt_stealth", Label: "Stealth", Attr: "agi"}},
+			}},
+		}},
+	}
+	raw, err := bson.Marshal(baseFromAttrStats())
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+
+	res, err := p.RollWithTemplate(raw, template, "skills.opt_stealth", 0)
+	if err != nil {
+		t.Fatalf("RollWithTemplate: %v", err)
+	}
+	if res.Target != 45 {
+		t.Errorf("target = %d, want 45 (attribute 40 + advances 5)", res.Target)
 	}
 }

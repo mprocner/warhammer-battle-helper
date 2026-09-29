@@ -362,3 +362,40 @@ func TestFindWeaponField_FlatStillWorks(t *testing.T) {
 		t.Errorf("returned field Type = %q, want weapons_table", field.Type)
 	}
 }
+
+// A weapon's attack roll goes through the same formula with the skill picked in its skill column.
+// If resolveWeaponSkill drops BaseFromAttr, that attack silently rolls on advances alone.
+func TestRollWeapon_AttackUsesDerivedSkillBase(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{
+				{
+					Type: "skill_table", Key: "skills", Rollable: true,
+					RollConfig:        &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"},
+					AssignAttrToSkill: true, HasAdvances: true, BaseFromAttr: true,
+					Skills: []models.SkillOption{{ID: "opt_stealth", Label: "Stealth", Attr: "agi"}},
+				},
+				{
+					Type: "weapons_table", Key: "weapons", Rollable: true,
+					RollConfig: &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"},
+					Columns:    []models.WeaponColumn{{Key: "skill", Label: "Skill", Type: "select", OptionsFromSkills: true}},
+				},
+			},
+		}},
+	}
+	stats := baseFromAttrStats()
+	stats.Weapons = map[string][]WeaponRow{"weapons": {{ID: "row1", Cells: map[string]string{"skill": "skills.opt_stealth"}}}}
+	raw, err := bson.Marshal(stats)
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+
+	res, err := p.RollWeaponWithTemplate(raw, template, "weapons", "row1", 0)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate: %v", err)
+	}
+	if res.Target != 45 {
+		t.Errorf("attack target = %d, want 45 (attribute 40 + advances 5)", res.Target)
+	}
+}

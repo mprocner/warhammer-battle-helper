@@ -6,6 +6,7 @@ import {
   splitBranchesWeighted,
   siblingItems,
   sortItems,
+  resolveSkillValues,
 } from './skillLayout';
 
 describe('skillGridTemplate', () => {
@@ -215,5 +216,64 @@ describe('sortItems', () => {
 
   it('treats a missing label as empty, so an unnamed node sorts first instead of throwing', () => {
     expect(sortItems([{ label: 'A' }, {}], true).map(i => i.label)).toEqual([undefined, 'A']);
+  });
+});
+
+describe('resolveSkillValues', () => {
+  const derivedField = (over = {}) => ({
+    key: 'fld_skills',
+    type: 'skill_table',
+    hasAdvances: true,
+    assignAttrToSkill: true,
+    baseFromAttr: true,
+    ...over,
+  });
+  const row = (over = {}) => ({ key: 'fld_skills.opt_stealth', label: 'Skradanie', attr: 'attr_ag', ...over });
+  // `current` is deliberately wrong (it is what the database really holds for a derived row:
+  // base + advances = 0 + 5). Nothing may read it.
+  const skills = { 'fld_skills.opt_stealth': { base: 0, advances: 5, current: 5 } };
+  const attributes = { attr_ag: { base: 35, advances: 5, current: 40 } };
+
+  it('takes the base from the attribute and sums the total over it', () => {
+    expect(resolveSkillValues(derivedField(), row(), skills, attributes))
+      .toEqual({ base: 40, advances: 5, total: 45, baseReadOnly: true });
+  });
+
+  it('ignores the stored current, which is stale for a derived row', () => {
+    const { total } = resolveSkillValues(derivedField(), row(), skills, attributes);
+    expect(total).not.toBe(5);
+  });
+
+  it('shows 0 and stays read-only when the row has no attribute', () => {
+    expect(resolveSkillValues(derivedField(), row({ attr: '' }), skills, attributes))
+      .toEqual({ base: 0, advances: 5, total: 5, baseReadOnly: true });
+  });
+
+  it('falls back to the stored base when the field does not derive it', () => {
+    const stored = { 'fld_skills.opt_stealth': { base: 30, advances: 5, current: 35 } };
+    expect(resolveSkillValues(derivedField({ baseFromAttr: false }), row(), stored, attributes))
+      .toEqual({ base: 30, advances: 5, total: 35, baseReadOnly: false });
+  });
+
+  it('refuses to derive without the advances column, however the template is flagged', () => {
+    const stored = { 'fld_skills.opt_stealth': { base: 30, advances: 0, current: 30 } };
+    expect(resolveSkillValues(derivedField({ hasAdvances: false }), row(), stored, attributes))
+      .toEqual({ base: 30, advances: 0, total: 30, baseReadOnly: false });
+  });
+
+  it('refuses to derive without attribute assignment', () => {
+    const stored = { 'fld_skills.opt_stealth': { base: 30, advances: 5, current: 35 } };
+    expect(resolveSkillValues(derivedField({ assignAttrToSkill: false }), row(), stored, attributes))
+      .toEqual({ base: 30, advances: 5, total: 35, baseReadOnly: false });
+  });
+
+  it('trusts a stored current for a non-derived row, as the sheet always has', () => {
+    const stored = { 'fld_skills.opt_stealth': { base: 30, advances: 5, current: 99 } };
+    expect(resolveSkillValues(derivedField({ baseFromAttr: false }), row(), stored, attributes).total).toBe(99);
+  });
+
+  it('treats a skill with no stored entry as all zeros', () => {
+    expect(resolveSkillValues(derivedField({ baseFromAttr: false }), row(), {}, {}))
+      .toEqual({ base: 0, advances: 0, total: 0, baseReadOnly: false });
   });
 });

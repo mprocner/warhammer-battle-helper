@@ -50,6 +50,7 @@ import {
 } from '../../utils/templateSections';
 import { measureNodes, insertionAt, toMoveArgs, ghostRectFor } from '../../utils/sheetDnd';
 import { SHEET_WIDTH_MIN, SHEET_WIDTH_MAX, SHEET_WIDTH_STEP, clampSheetWidth } from '../../utils/sheetWidth';
+import { usePortalTooltip } from '../common/PortalTooltip';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ function makeDefaultField(type) {
   if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
-  if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
   if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
   if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
@@ -453,14 +454,41 @@ export function skillDisplayFlags(fieldType) {
   return [];
 }
 
-// Labels and optional hints per flag. hideFavorites is the only inverted one: the switch reads
-// "show the star", so its checked state is the negation of the stored flag.
-const SKILL_FLAG_LABELS = {
+// Metadata for every flag the field property panel renders as a switch: its label, an optional
+// hint line, whether the switch reads as the negation of the stored flag, and which other flags
+// must be on for it to mean anything. Keeping `requires` here as data is what lets one component
+// derive all three of a dependent flag's behaviours — disabled state, tooltip, cascade clearing —
+// instead of spelling them per flag at the call site.
+//
+// `requires` is a flat list, so it expresses a conjunction only: "all of these must be on". A
+// dependency like "A or B" would have to become a predicate, and a predicate cannot be read back
+// to name what is missing, which is exactly what the tooltip does.
+export const SKILL_FLAG_META = {
   hideFavorites:      { labelKey: 'creator.skillShowFavorites', hintKey: 'creator.skillShowFavoritesHint', inverted: true },
   showDevelopment:    { labelKey: 'creator.skillShowDevelopment', hintKey: 'creator.skillShowDevelopmentHint' },
   sortAlphabetically: { labelKey: 'creator.skillSortAlphabetically' },
   twoColumns:         { labelKey: 'creator.skillTwoColumns' },
+  // Rendered directly in PropertyPanel's "Content" group, not via skillDisplayFlags() — it belongs
+  // next to assignAttrToSkill, not among the display-only flags that group returns.
+  baseFromAttr:       {
+    labelKey: 'creator.skillAttrAsBase',
+    hintKey:  'creator.skillAttrAsBaseHint',
+    requires: ['hasAdvances', 'assignAttrToSkill'],
+  },
 };
+
+// clearDependentFlags switches off any flag whose requirements the patch is about to break, IN THE
+// SAME patch. Two successive writes would leave a render in between showing the flag on without its
+// requirements — and the switch that turns it back on disabled.
+export function clearDependentFlags(field, patch) {
+  const next = { ...field, ...patch };
+  let out = patch;
+  for (const [flag, meta] of Object.entries(SKILL_FLAG_META)) {
+    if (!meta.requires || !next[flag]) continue;
+    if (meta.requires.some(req => !next[req])) out = { ...out, [flag]: false };
+  }
+  return out;
+}
 
 function defaultRollConfig() {
   return {
@@ -688,8 +716,69 @@ function PropsHead({ caption, typeInfo, t }) {
 
 // ── PropertyPanel (field) ────────────────────────────────────────────────────
 
+// Switch rows in the props panel put the label on the left and the control on the right — MUI's
+// default FormControlLabel puts the switch first, which wastes width the panel needs. Shared by
+// PropertyPanel's other switch rows and by FlagSwitch below.
+const switchRowSx = { ml: 0, mr: 0, width: 1, justifyContent: 'space-between' };
+
+// Human-readable names of the flags a dependent switch can require, for the tooltip that says what
+// is missing. Separate from SKILL_FLAG_META because a requirement may be a flag that is not itself
+// rendered by FlagSwitch — hasAdvances lives in the "Values" group with its own label input.
+const SKILL_FLAG_REQUIRE_LABELS = {
+  hasAdvances:       'creator.fieldAdvances',
+  assignAttrToSkill: 'creator.fieldAssignAttr',
+};
+
+// One switch row driven by SKILL_FLAG_META. Handles the inverted flag, the optional hint, and —
+// for a flag with `requires` — the disabled state plus a tooltip naming what is still missing.
+//
+// The tooltip hangs off a wrapper span, not off the Switch: a disabled MUI Switch emits no pointer
+// events, so onMouseEnter on it would never fire and the explanation would be unreachable exactly
+// when it is needed. Shown only while disabled; an enabled switch has its label and hint already.
+function FlagSwitch({ field, flag, meta, onChange, showTooltip, hideTooltip, t }) {
+  const missing = (meta.requires || []).filter(req => !field[req]);
+  const disabled = missing.length > 0;
+  const checked = meta.inverted ? !field[flag] : !!field[flag];
+  const write = (value) => onChange({ [flag]: meta.inverted ? !value : value });
+
+  const row = (
+    <FormControlLabel
+      labelPlacement="start"
+      control={<Switch size="small" checked={checked} disabled={disabled} onChange={e => write(e.target.checked)} />}
+      label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t(meta.labelKey)}</Typography>}
+      sx={switchRowSx}
+    />
+  );
+
+  return (
+    <div>
+      {disabled ? (
+        <span
+          onMouseEnter={e => showTooltip(
+            t('creator.skillFlagRequires', { flags: missing.map(req => t(SKILL_FLAG_REQUIRE_LABELS[req])).join(', ') }),
+            e.currentTarget,
+          )}
+          onMouseLeave={hideTooltip}
+          style={{ display: 'block' }}
+        >
+          {row}
+        </span>
+      ) : row}
+      {meta.hintKey && (
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
+          {t(meta.hintKey)}
+        </Typography>
+      )}
+    </div>
+  );
+}
+
 function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
   const { t } = useTranslation();
+  // One instance per panel, not per switch: the panel shows one field at a time, and a state plus a
+  // portal per row would be four of each for nothing. Called unconditionally, before the early
+  // return below, so hook order stays stable across renders.
+  const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
   if (!field) {
     return (
       <div className="creator__props-empty">
@@ -702,10 +791,6 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
 
   const up = (patch) => onChange({ ...field, ...patch });
   const typeInfo = FIELD_TYPES.find(ft => ft.type === field.type);
-
-  // Switch rows in this panel put the label on the left and the control on the right — MUI's
-  // default FormControlLabel puts the switch first, which wastes width the panel needs.
-  const switchRowSx = { ml: 0, mr: 0, width: 1, justifyContent: 'space-between' };
 
   return (
     <div className="creator__props-panel">
@@ -859,7 +944,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
             <>
               <FormControlLabel
                 labelPlacement="start"
-                control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
+                control={<Switch checked={!!field.hasAdvances} onChange={e => up(clearDependentFlags(field, { hasAdvances: e.target.checked }))} size="small" />}
                 label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
                 sx={switchRowSx}
               />
@@ -896,11 +981,23 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 <Switch
                   size="small"
                   checked={!!field.assignAttrToSkill}
-                  onChange={e => up({ assignAttrToSkill: e.target.checked })}
+                  onChange={e => up(clearDependentFlags(field, { assignAttrToSkill: e.target.checked }))}
                 />
               }
               label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
               sx={{ ...switchRowSx, mb: 1 }}
+            />
+          )}
+
+          {field.type === 'skill_table' && (
+            <FlagSwitch
+              field={field}
+              flag="baseFromAttr"
+              meta={SKILL_FLAG_META.baseFromAttr}
+              onChange={patch => up(clearDependentFlags(field, patch))}
+              showTooltip={showTooltip}
+              hideTooltip={hideTooltip}
+              t={t}
             />
           )}
 
@@ -965,31 +1062,18 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
 
       {skillDisplayFlags(field.type).length > 0 && (
         <PropsGroup title={t('creator.propsGroupDisplay')}>
-          {skillDisplayFlags(field.type).map(flag => {
-            const meta = SKILL_FLAG_LABELS[flag];
-            const checked = meta.inverted ? !field[flag] : !!field[flag];
-            return (
-              <div key={flag}>
-                <FormControlLabel
-                  labelPlacement="start"
-                  control={
-                    <Switch
-                      size="small"
-                      checked={checked}
-                      onChange={e => up({ [flag]: meta.inverted ? !e.target.checked : e.target.checked })}
-                    />
-                  }
-                  label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t(meta.labelKey)}</Typography>}
-                  sx={switchRowSx}
-                />
-                {meta.hintKey && (
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
-                    {t(meta.hintKey)}
-                  </Typography>
-                )}
-              </div>
-            );
-          })}
+          {skillDisplayFlags(field.type).map(flag => (
+            <FlagSwitch
+              key={flag}
+              field={field}
+              flag={flag}
+              meta={SKILL_FLAG_META[flag]}
+              onChange={patch => up(clearDependentFlags(field, patch))}
+              showTooltip={showTooltip}
+              hideTooltip={hideTooltip}
+              t={t}
+            />
+          ))}
         </PropsGroup>
       )}
 
@@ -1037,6 +1121,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
           </button>
         </div>
       </PropsGroup>
+      {tooltipNode}
     </div>
   );
 }

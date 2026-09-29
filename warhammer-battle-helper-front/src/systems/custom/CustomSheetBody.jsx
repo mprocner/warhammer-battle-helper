@@ -10,7 +10,7 @@ import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
 import {
   skillGridTemplate, buildSkillRows, siblingItems, sortItems,
-  splitHalf, splitBranchesWeighted, subtreeSize,
+  splitHalf, splitBranchesWeighted, subtreeSize, resolveSkillValues,
 } from './skillLayout';
 
 // genId mints a stable, opaque key for a player-added skill node — never derived from the
@@ -849,10 +849,7 @@ function CustomSheetBody({
         const renderRow = (row) => {
           const attrInfo = row.attr ? attrByKey[row.attr] : null;
           const displayName = attrInfo ? `${row.label} (${attrInfo.abbr || attrInfo.label})` : row.label;
-          const sv = skills[row.key] || {};
-          const base = sv.base ?? 0;
-          const adv = sv.advances ?? 0;
-          const total = sv.current ?? (base + adv);
+          const { base, advances: adv, total, baseReadOnly } = resolveSkillValues(field, row, skills, attrs);
           // Edit mode is explicit state, never inferred from a blank label — otherwise leaving edit
           // mode without typing a name is impossible, because the condition that opened the row is
           // still true when you try to close it. A row saved with a blank name renders as an
@@ -905,10 +902,10 @@ function CustomSheetBody({
               )}
               <input
                 type="number"
-                className={`custom-sheet__skill-val-input${hasAdv ? ' custom-sheet__skill-val-input--base' : ''}`}
-                value={hasAdv ? (base || '') : base}
-                onChange={onChange ? e => onChange.skill(row.key, e.target.value) : undefined}
-                readOnly={readOnly}
+                className={`custom-sheet__skill-val-input${hasAdv ? ' custom-sheet__skill-val-input--base' : ''}${baseReadOnly ? ' custom-sheet__skill-val-input--derived' : ''}`}
+                value={baseReadOnly ? base : (hasAdv ? (base || '') : base)}
+                onChange={onChange && !baseReadOnly ? e => onChange.skill(row.key, e.target.value) : undefined}
+                readOnly={readOnly || baseReadOnly}
                 min={0}
               />
               {hasAdv && (

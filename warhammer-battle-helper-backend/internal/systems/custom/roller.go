@@ -12,14 +12,14 @@ import (
 
 // rollFromFormula evaluates a visual formula ([]FormulaBlock) against the
 // character's stats and returns a RollResult.
-func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, baseFromAttr bool, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	modTarget, modValue := resolveModifier(template.Settings.Modifier, cfg.RollMode, modifier)
 
 	if cfg.RollMode == "dice_pool" {
-		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, cfg, modTarget, modValue)
+		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, baseFromAttr, cfg, modTarget, modValue)
 	}
 
-	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr)
+	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, baseFromAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
@@ -51,11 +51,11 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 	}
 
 	attrValue, attrOK := attrLookup(stats, linkedAttr)
-	sv := skillValue(stats, skillKey)
+	sv := skillValue(stats, skillKey, linkedAttr, baseFromAttr)
 	threshold := evalThreshold(cfg.Threshold)
 	hasThreshold := threshold != 0
 	if threshold == 0 {
-		if skillHasValue(stats, skillKey) {
+		if skillHasValue(stats, skillKey, linkedAttr, baseFromAttr) {
 			threshold = sv
 			hasThreshold = true
 		} else {
@@ -99,7 +99,7 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 //   - diceType: faces of the first die rolled (for display)
 //   - labelStr: formula notation string, e.g. "d6+STR+2"
 //   - valueStr: resolved values string, e.g. "3+8+2"
-func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string) (result, diceType int, labelStr, valueStr string, err error) {
+func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, baseFromAttr bool) (result, diceType int, labelStr, valueStr string, err error) {
 	if len(blocks) == 0 {
 		return 0, 0, "", "", fmt.Errorf("formula is empty")
 	}
@@ -177,7 +177,7 @@ func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKe
 			pendingOp = ""
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
-			sv := skillValue(stats, skillKey)
+			sv := skillValue(stats, skillKey, linkedAttr, baseFromAttr)
 			sides := av + sv
 			if sides < 1 {
 				sides = 1
@@ -220,7 +220,7 @@ func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKe
 			valueParts = append(valueParts, strconv.Itoa(val))
 			pendingOp = ""
 		case "skill":
-			sv := skillValue(stats, skillKey)
+			sv := skillValue(stats, skillKey, linkedAttr, baseFromAttr)
 			segments = append(segments, segment{op: pendingOp, val: sv})
 			labelParts = append(labelParts, "umiej.")
 			valueParts = append(valueParts, strconv.Itoa(sv))
@@ -302,7 +302,7 @@ func evalDicePoolInts(count int, rollFn func() int) []int {
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
 // modTarget/modValue come pre-resolved from rollFromFormula, so this function never re-decides
 // what the modifier means.
-func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, cfg *models.RollConfig, modTarget string, modValue int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, baseFromAttr bool, cfg *models.RollConfig, modTarget string, modValue int) (*gsys.RollResult, error) {
 	extraDice, thresholdMod := 0, 0
 	switch modTarget {
 	case ModTargetDiceCount:
@@ -311,7 +311,7 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		thresholdMod = modValue
 	}
 
-	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr, extraDice)
+	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr, baseFromAttr, extraDice)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval (pool): %w", err)
 	}
@@ -366,7 +366,7 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 // counts. It returns the formula as a list of parts — text fragments and die terms carrying
 // their own rolls — plus the face count of the first die rolled (display only).
 // Arithmetic ops still work as die-count modifiers.
-func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, extraDice int) (parts []gsys.PoolFormulaPart, diceType int, err error) {
+func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, baseFromAttr bool, extraDice int) (parts []gsys.PoolFormulaPart, diceType int, err error) {
 	if len(blocks) == 0 {
 		return nil, 0, fmt.Errorf("formula is empty")
 	}
@@ -464,7 +464,7 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 			rollTerm(sides, lbl)
 		case "dice_skill_attr":
 			av := stats.Attributes[linkedAttr].Current
-			sv := skillValue(stats, skillKey)
+			sv := skillValue(stats, skillKey, linkedAttr, baseFromAttr)
 			sides := av + sv
 			if sides < 1 {
 				sides = 1
@@ -481,7 +481,7 @@ func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats,
 			}
 			addText(lbl, stats.Attributes[b.Key].Current)
 		case "skill":
-			addText("umiej.", skillValue(stats, skillKey))
+			addText("umiej.", skillValue(stats, skillKey, linkedAttr, baseFromAttr))
 		case "attr_linked":
 			lbl := "0"
 			if linkedAttr != "" {
@@ -510,26 +510,37 @@ func diceNotationToSides(notation string) int {
 	return 6
 }
 
-// skillValue returns the character's effective value for the given skill key: base +
-// advances. This used to read Current instead, falling back to Base only when Current
-// was 0 — but Current == 0 no longer means "not computed yet": a permanent penalty that
-// cancels the base out (30 base, -30 advances) is a real, computed 0. Summing directly
-// avoids trusting a Current that could be stale or ambiguous either way.
-func skillValue(stats *Stats, key string) int {
+// skillValue returns the character's effective value for the given skill key: advances on top of a
+// base that is either the character's own stored number or, when the field derives it
+// (BaseFromAttr), the linked attribute's current value. Nothing persists the derived base —
+// ComputeDerived cannot see the template — so every reader must compose it here.
+//
+// The front end must compose this same number in exactly one place of its own —
+// resolveSkillValues in systems/custom/skillLayout.js. Change one side and you must change the
+// other, or the roll log and the sheet disagree about the same skill.
+func skillValue(stats *Stats, key, linkedAttr string, baseFromAttr bool) int {
 	v := stats.Skills[key]
+	if baseFromAttr {
+		base, _ := attrLookup(stats, linkedAttr)
+		return base + v.Advances
+	}
 	return v.Base + v.Advances
 }
 
-// skillHasValue reports whether the character has any data for this skill. A skill whose
-// base and advances are both zero is indistinguishable from one the character never
-// touched, so it keeps the old fall-back-to-the-attribute behaviour; a skill whose parts
-// are non-zero uses its own total, even when that total is zero or negative (base 30 with
-// advances -30 is a real 0, not a blank). Current is deliberately not consulted: base +
-// advances is the whole truth about a skill's value (see skillValue), so a Current that
-// disagrees can only be stale, and checking it here would report "has value" for the same
-// {Base: 0, Advances: 0} blank shape skillValue reads as 0 — the two functions would agree
-// on nothing.
-func skillHasValue(stats *Stats, key string) bool {
+// skillHasValue reports whether the character has any data for this skill. A skill whose base and
+// advances are both zero is indistinguishable from one the character never touched, so it keeps the
+// old fall-back-to-the-attribute behaviour; a skill whose parts are non-zero uses its own total,
+// even when that total is zero or negative (base 30 with advances -30 is a real 0, not a blank).
+// Current is deliberately not consulted: base + advances is the whole truth about a skill's value
+// (see skillValue), so a Current that disagrees can only be stale.
+//
+// With BaseFromAttr the question becomes whether the attribute exists at all: an attribute present
+// and reading 0 gives a real threshold of 0 + advances, the same way a computed zero does above.
+func skillHasValue(stats *Stats, key, linkedAttr string, baseFromAttr bool) bool {
+	if baseFromAttr {
+		_, ok := attrLookup(stats, linkedAttr)
+		return ok
+	}
 	v := stats.Skills[key]
 	return v.Base != 0 || v.Advances != 0
 }

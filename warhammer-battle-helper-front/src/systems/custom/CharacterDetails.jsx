@@ -9,6 +9,7 @@ import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './CustomSheetB
 import { walkFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
+import { resolveSkillValues } from './skillLayout';
 
 // Typy pól, które mają sens jako pojedynczy kafelek na skróconej karcie. skill_table i skill_tree
 // to kolekcje — trafiają na kartę wyłącznie przez gwiazdki (stats.favoriteSkills).
@@ -184,13 +185,26 @@ function CustomCharacterDetails({
 
     return favKeys.map(key => {
       // 1. Custom node
-      if (customNodes[key]?.label) return { skillKey: key, label: customNodes[key].label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
+      if (customNodes[key]?.label) {
+        // A player-added skill lives BEFORE the field loop below, so it has no owning field in
+        // scope yet — locate it by key prefix. It may belong to a skill_table (which can derive
+        // its base from an attribute) or a skill_tree (which never does); resolveSkillValues
+        // falls back to the non-derived composition when the owner is a tree or not found at
+        // all, so one call covers both without special-casing the tree here.
+        const owner = fields.find(f => key.startsWith(f.key + '.'));
+        const values = resolveSkillValues(owner || {}, { key, attr: customNodes[key].linkedAttr }, allSkills, stats.attributes);
+        return { skillKey: key, label: customNodes[key].label, value: values.total };
+      }
       // 2. Skill table / Skill tree
       for (const f of fields) {
         if (f.type === 'skill_table' && key.startsWith(f.key + '.')) {
           const suffix = key.slice(f.key.length + 1);
           const opt = (f.skills || []).find(o => o.id === suffix);
-          if (opt) return { skillKey: key, label: opt.label, value: allSkills[key]?.current ?? allSkills[key]?.base ?? 0 };
+          // A derived row's persisted stats.skills[key].current is stale: nothing ever writes the
+          // linked attribute into it, so it holds 0 + advances. resolveSkillValues composes the
+          // real total (attribute + advances) at read time, the same way the sheet and the roll
+          // log do — reading `current` here would show the advances alone.
+          if (opt) return { skillKey: key, label: opt.label, value: resolveSkillValues(f, { key, attr: opt.attr }, allSkills, stats.attributes).total };
         }
         if (f.type === 'skill_tree') {
           // Ścieżki węzłów zaczynają się od f.key — korzeń drzewa jest kontenerem i nigdy

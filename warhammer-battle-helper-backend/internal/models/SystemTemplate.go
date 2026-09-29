@@ -207,25 +207,32 @@ type FieldDef struct {
 	TextColor string `bson:"textColor,omitempty" json:"textColor,omitempty"` // hex; empty = default sheet text color
 	TextSize  string `bson:"textSize,omitempty" json:"textSize,omitempty"`   // "small"|"normal"|"large"|"heading"; empty = "normal"
 
-	Min   *int   `bson:"min,omitempty" json:"min,omitempty"`
-	Max   *int   `bson:"max,omitempty" json:"max,omitempty"`
+	Min *int `bson:"min,omitempty" json:"min,omitempty"`
+	Max *int `bson:"max,omitempty" json:"max,omitempty"`
 	// Default is the value written into a freshly created character's stats for this field
 	// ("attr" and "number" only). Nil = no default; the character starts with the key absent,
 	// exactly as before. A pointer, not an int, because 0 is a legal default and `omitempty`
 	// on a plain int would erase it.
-	Default            *int           `bson:"default,omitempty" json:"default,omitempty"`
+	Default *int `bson:"default,omitempty" json:"default,omitempty"`
 	// Step is the arrow-key / spinner increment for "attr" and "number" inputs on the sheet.
 	// 0 or absent means 1 — it is a plain int, not a pointer, because 0 is not a legal step,
 	// so omitempty cannot erase a meaningful value the way it could for Default. Nothing in Go
 	// reads it: the sheet renderer is the only consumer.
-	Step               int            `bson:"step,omitempty" json:"step,omitempty"`
-	ShowOnShortCard    bool           `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
-	Rollable           bool           `bson:"rollable" json:"rollable"`
-	HasAdvances        bool           `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
-	AdvancesLabel      string         `bson:"advancesLabel,omitempty" json:"advancesLabel,omitempty"`
-	Options            []string       `bson:"options,omitempty" json:"options,omitempty"` // for type="select"
-	Skills             []SkillOption  `bson:"skills,omitempty" json:"skills,omitempty"`   // for type="skill_table"
-	AssignAttrToSkill  bool           `bson:"assignAttrToSkill,omitempty" json:"assignAttrToSkill,omitempty"`
+	Step              int           `bson:"step,omitempty" json:"step,omitempty"`
+	ShowOnShortCard   bool          `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
+	Rollable          bool          `bson:"rollable" json:"rollable"`
+	HasAdvances       bool          `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
+	AdvancesLabel     string        `bson:"advancesLabel,omitempty" json:"advancesLabel,omitempty"`
+	Options           []string      `bson:"options,omitempty" json:"options,omitempty"` // for type="select"
+	Skills            []SkillOption `bson:"skills,omitempty" json:"skills,omitempty"`   // for type="skill_table"
+	AssignAttrToSkill bool          `bson:"assignAttrToSkill,omitempty" json:"assignAttrToSkill,omitempty"`
+	// BaseFromAttr replaces a skill's base value with its linked attribute's current value, so the
+	// base is derived at read time and never stored. Meaningless without both AssignAttrToSkill (the
+	// row needs an attribute to read) and HasAdvances (with no advances column the base IS the total,
+	// and a wholly derived total is just the attribute under another name). The creator enforces both
+	// as a precondition; the renderer and the roller re-check them, because a hand-edited template can
+	// carry the flag without them.
+	BaseFromAttr       bool           `bson:"baseFromAttr,omitempty" json:"baseFromAttr,omitempty"`
 	RollConfig         *RollConfig    `bson:"rollConfig,omitempty" json:"rollConfig,omitempty"`
 	Tree               *SkillTreeNode `bson:"tree,omitempty" json:"tree,omitempty"` // only for type="skill_tree"
 	PlayerCanAddSkills bool           `bson:"playerCanAddSkills,omitempty" json:"playerCanAddSkills,omitempty"`

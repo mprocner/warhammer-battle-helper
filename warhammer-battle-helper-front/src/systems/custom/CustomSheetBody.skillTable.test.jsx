@@ -389,3 +389,79 @@ describe('CustomSheetBody skill_table — player-added rows', () => {
     expect(btn.disabled).toBe(true);
   });
 });
+
+describe('CustomSheetBody skill_table — attribute as the base value', () => {
+  const derivedSections = (over = {}) => ([{
+    id: 'sec1',
+    columns: 1,
+    fields: [
+      { key: 'attr_ag', type: 'attr', label: 'Zręczność', abbr: 'Zr' },
+      {
+        key: 'fld_skills',
+        type: 'skill_table',
+        label: 'Umiejętności',
+        hasAdvances: true,
+        assignAttrToSkill: true,
+        baseFromAttr: true,
+        skills: [
+          { id: 'opt_stealth', label: 'Skradanie', attr: 'attr_ag' },
+          { id: 'opt_lore', label: 'Alchemia' },
+        ],
+        ...over,
+      },
+    ],
+  }]);
+
+  // `current` on the skill is deliberately stale, exactly as the database holds it for a derived row.
+  const values = {
+    attributes: { attr_ag: { base: 35, advances: 5, current: 40 } },
+    skills: { 'fld_skills.opt_stealth': { base: 0, advances: 5, current: 5 } },
+  };
+
+  const baseInputs = (container) =>
+    [...container.querySelectorAll('.custom-sheet__skill-val-input--base')];
+
+  it('shows the attribute in the base column and refuses edits there', () => {
+    const { container } = render(
+      <CustomSheetBody sections={derivedSections()} values={values} onChange={{ skill: jest.fn(), skillAdvances: jest.fn() }} />
+    );
+
+    const [stealthBase] = baseInputs(container);
+    expect(stealthBase.value).toBe('40');
+    expect(stealthBase.readOnly).toBe(true);
+    expect(stealthBase).toHaveClass('custom-sheet__skill-val-input--derived');
+  });
+
+  it('totals the attribute plus advances, not the stale stored current', () => {
+    const { container } = render(
+      <CustomSheetBody sections={derivedSections()} values={values} onChange={{ skill: jest.fn(), skillAdvances: jest.fn() }} />
+    );
+
+    const totals = [...container.querySelectorAll('.custom-sheet__skill-val-total')].map(e => e.textContent);
+    expect(totals[0]).toBe('45');
+  });
+
+  it('shows 0 for a row with no attribute, still read-only', () => {
+    const { container } = render(
+      <CustomSheetBody sections={derivedSections()} values={values} onChange={{ skill: jest.fn(), skillAdvances: jest.fn() }} />
+    );
+
+    const loreBase = baseInputs(container)[1];
+    expect(loreBase.value).toBe('0');
+    expect(loreBase.readOnly).toBe(true);
+  });
+
+  it('leaves the base editable when the template flags derivation without an advances column', () => {
+    const { container } = render(
+      <CustomSheetBody
+        sections={derivedSections({ hasAdvances: false })}
+        values={values}
+        onChange={{ skill: jest.fn(), skillAdvances: jest.fn() }}
+      />
+    );
+
+    const input = container.querySelector('.custom-sheet__skill-val-input');
+    expect(input.readOnly).toBe(false);
+    expect(input).not.toHaveClass('custom-sheet__skill-val-input--derived');
+  });
+});

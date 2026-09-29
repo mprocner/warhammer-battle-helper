@@ -33,11 +33,11 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 		return nil, fmt.Errorf("custom: weapons_table %q has no attack roll formula", fieldKey)
 	}
 
-	skillKey, linkedAttr := resolveWeaponSkill(template, stats, field, row)
+	skillKey, linkedAttr, baseFromAttr := resolveWeaponSkill(template, stats, field, row)
 
-	// Attack roll reuses the skill-roll formula evaluator; the "skill" block resolves
-	// to skillValue(stats, skillKey) — i.e. the weapon's chosen skill.
-	atk, err := p.rollFromFormula(stats, template, skillKey, linkedAttr, field.RollConfig, modifier)
+	// Attack roll reuses the skill-roll formula evaluator; the "skill" block resolves to
+	// skillValue(stats, skillKey, linkedAttr, baseFromAttr) — i.e. the weapon's chosen skill.
+	atk, err := p.rollFromFormula(stats, template, skillKey, linkedAttr, baseFromAttr, field.RollConfig, modifier)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 	// Damage only on a successful attack (CoC-style output).
 	if isSuccessOutcome(atk.Outcome) && len(field.DamageFormula) > 0 {
 		blocks := applyDamageOverrides(field.DamageFormula, row.Damage)
-		dmg, _, dLabel, dValue, derr := p.evalFormula(blocks, stats, skillKey, linkedAttr)
+		dmg, _, dLabel, dValue, derr := p.evalFormula(blocks, stats, skillKey, linkedAttr, baseFromAttr)
 		if derr == nil {
 			atk.DamageRoll = dmg
 			if dLabel == dValue {
@@ -64,9 +64,10 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 }
 
 // resolveWeaponSkill returns the skill key chosen in the row's "from skills" select
-// column (empty if none) and the linked attribute of that skill, used for threshold
-// fallback and attr_linked/dice_skill_attr blocks in the attack formula.
-func resolveWeaponSkill(template *models.SystemTemplate, stats *Stats, field *models.FieldDef, row WeaponRow) (string, string) {
+// column (empty if none), the linked attribute of that skill (used for threshold
+// fallback and attr_linked/dice_skill_attr blocks in the attack formula), and whether
+// that skill derives its base from that attribute.
+func resolveWeaponSkill(template *models.SystemTemplate, stats *Stats, field *models.FieldDef, row WeaponRow) (string, string, bool) {
 	var skillKey string
 	for i := range field.Columns {
 		col := field.Columns[i]
@@ -80,12 +81,18 @@ func resolveWeaponSkill(template *models.SystemTemplate, stats *Stats, field *mo
 	if field.RollConfig != nil {
 		linkedAttr = field.RollConfig.LinkedAttr
 	}
+	baseFromAttr := false
 	if skillKey != "" {
-		if _, attr, _, err := resolveRollConfig(template, stats, skillKey); err == nil && attr != "" {
-			linkedAttr = attr
+		// The weapon rolls the chosen skill, so it inherits that skill's attribute AND whether that
+		// skill derives its base from it — otherwise the attack would roll on advances alone.
+		if target, err := resolveRollConfig(template, stats, skillKey); err == nil {
+			if target.linkedAttr != "" {
+				linkedAttr = target.linkedAttr
+			}
+			baseFromAttr = target.baseFromAttr
 		}
 	}
-	return skillKey, linkedAttr
+	return skillKey, linkedAttr, baseFromAttr
 }
 
 // applyDamageOverrides clones the GM-authored damage blocks and substitutes the numbers
