@@ -4210,6 +4210,15 @@ align-items: center;
   color: #c9975b;
 }
 
+/* The creator's read-only twin of the star button: same box, no pointer, no hover. */
+.coc-star-btn--static {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
 /* GameLobby system chip */
 .game-system-chip {
   display: inline-block;
@@ -8006,7 +8015,8 @@ align-items: center;
    Zamiast malować się na sąsiednim polu, nadmiar ma przewijać się wewnątrz własnej
    komórki. */
 .custom-sheet__field--skill-table,
-.custom-sheet__field--weapon-table {
+.custom-sheet__field--weapon-table,
+.custom-sheet__field--skill-tree {
     overflow-x: auto;
 }
 
@@ -8183,13 +8193,57 @@ align-items: center;
     width: 100%;
 }
 
-.custom-sheet__skill-row {
+/* Two columns side by side. The selector doubles each modifier onto its own base class on
+   purpose: the base rules are declared elsewhere in this file, and at equal specificity the
+   later declaration would win and silently restore the single-column direction. min-width: 0
+   on each column is what lets a long skill name stay inside its half instead of widening it. */
+.custom-sheet__skill-table.custom-sheet__skill-table--two-col,
+.custom-sheet__skill-tree.custom-sheet__skill-tree--two-col {
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.custom-sheet__skill-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* One grid per skill row, its columns handed in from JS (skillGridTemplate) so a field's header
+   and its rows can never disagree about where a column starts. The column count varies with the
+   field's flags — development marker, star, die, player actions — which is exactly why the
+   template cannot live here. */
+.custom-sheet__skill-row {
+    display: grid;
     align-items: center;
     gap: 8px;
     padding: 2px 4px;
     border-radius: 3px;
     transition: background 0.12s;
+}
+
+.custom-sheet__skill-table-header {
+    display: grid;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px 2px;
+}
+
+.custom-sheet__skill-dev-check {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: #7a5c42;
+    cursor: pointer;
+}
+
+.custom-sheet__skill-dev-check:disabled {
+    cursor: default;
+    opacity: 0.45;
 }
 
 .custom-sheet__skill-row:hover {
@@ -8202,22 +8256,6 @@ align-items: center;
     color: #3a2f1f;
 }
 
-/* Skill table — advances mode (base / advances / total columns) */
-
-/* Header and data rows share ONE grid template so columns line up regardless of
-   the trailing star/roll buttons (which exist only on data rows). */
-.custom-sheet__skill-table-header,
-.custom-sheet__skill-row--advances {
-    display: grid;
-    grid-template-columns: 1fr 56px 56px 48px 24px 28px;
-    align-items: center;
-    gap: 8px;
-}
-
-.custom-sheet__skill-table-header {
-    padding: 0 4px 2px;
-}
-
 .custom-sheet__skill-col-label {
     font-family: 'Cinzel', serif;
     font-size: 9px;
@@ -8227,16 +8265,28 @@ align-items: center;
     text-align: center;
 }
 
-.custom-sheet__skill-row--advances .custom-sheet__skill-name {
+.custom-sheet__skill-col-label--dev {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #7a5c42;
+}
+
+.custom-sheet__skill-row .custom-sheet__skill-name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.custom-sheet__skill-row--advances .custom-sheet__skill-val-input {
+.custom-sheet__skill-row .custom-sheet__skill-val-input {
     width: 100%;
     box-sizing: border-box;
+}
+
+.custom-sheet__skill-row .coc-star-btn,
+.custom-sheet__skill-row .custom-sheet__roll-btn {
+    justify-self: center;
 }
 
 /* Base column — prominent editable value. */
@@ -8273,9 +8323,75 @@ align-items: center;
     font-weight: 700;
 }
 
-.custom-sheet__skill-row--advances .coc-star-btn,
-.custom-sheet__skill-row--advances .custom-sheet__roll-btn {
-    justify-self: center;
+.custom-sheet__skill-name-edit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.custom-sheet__skill-name-input {
+    flex: 1;
+    min-width: 0;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    padding: 3px 6px;
+    color: #3a2f1f;
+    font-size: 0.88rem;
+}
+
+.custom-sheet__skill-name-input:focus {
+    outline: none;
+    border-color: #7a5c42;
+}
+
+.custom-sheet__skill-row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+}
+
+.custom-sheet__skill-save,
+.custom-sheet__skill-edit,
+.custom-sheet__skill-del {
+    background: none;
+    border: none;
+    padding: 1px;
+    cursor: pointer;
+    color: #7a5c42;
+    display: inline-flex;
+    align-items: center;
+}
+
+.custom-sheet__skill-save:hover,
+.custom-sheet__skill-edit:hover,
+.custom-sheet__skill-del:hover {
+    color: #c9975b;
+}
+
+.custom-sheet__skill-add-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+    background: none;
+    border: 1px dashed #c4a882;
+    border-radius: 4px;
+    padding: 2px 8px;
+    color: #7a5c42;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.custom-sheet__skill-add-btn:hover:not(:disabled) {
+    border-color: #7a5c42;
+    color: #3a2f1f;
+}
+
+.custom-sheet__skill-add-btn:disabled {
+    cursor: default;
+    opacity: 0.55;
 }
 
 /* Weapons table — GM-defined columns, player-added rows. */

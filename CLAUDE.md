@@ -66,7 +66,7 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
   prawdziwy `CustomSheetBody` w prawdziwym wrapperze `.custom-sheet`, nigdy własny podgląd — osobny
   podgląd z własnym chrome ukrywał błąd szerokości treści (FEATURE-212). Dotyczy też afordansów bez
   żywych handlerów (gwiazdka ulubionych, znacznik rzutu, przyciski gracza): renderuj je statycznie
-  jako `disabled` przez prop bramkujący (`showRollMarkers`, po FEATURE-217 `showAffordances`), nie
+  jako `disabled` przez prop bramkujący (`showAffordances`), nie
   pomijaj. Kontrolka, której kreator nie pokazuje,
   to kontrolka, o której szerokość wiersza kłamie.
 

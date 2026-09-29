@@ -230,6 +230,23 @@ type FieldDef struct {
 	Tree               *SkillTreeNode `bson:"tree,omitempty" json:"tree,omitempty"` // only for type="skill_tree"
 	PlayerCanAddSkills bool           `bson:"playerCanAddSkills,omitempty" json:"playerCanAddSkills,omitempty"`
 
+	// FEATURE-217 display flags for skill_table and skill_tree.
+	//
+	// HideFavorites is INVERTED on purpose, unlike every other flag here: absent means the
+	// favourites star IS shown, so templates written before this feature keep it without a data
+	// migration. A positive "showFavorites" cannot work — omitempty drops a false bool, so the
+	// GM's "off" would come back as absent and read as "on". Do not rename it to the positive form.
+	HideFavorites bool `bson:"hideFavorites,omitempty" json:"hideFavorites,omitempty"`
+	// ShowDevelopment adds a per-skill checkbox the player ticks for skills used this session
+	// (the Call of Cthulhu improvement mechanic). Stored per character in Stats.DevelopmentSkills.
+	ShowDevelopment bool `bson:"showDevelopment,omitempty" json:"showDevelopment,omitempty"`
+	// SortAlphabetically orders a table's rows, or a tree's siblings within each level, by label.
+	SortAlphabetically bool `bson:"sortAlphabetically,omitempty" json:"sortAlphabetically,omitempty"`
+	// TwoColumns splits the field into two columns side by side. The unit of the split differs by
+	// type: a table splits by row, a tree by root branch (its indent encodes hierarchy, so a
+	// branch may never be torn between columns).
+	TwoColumns bool `bson:"twoColumns,omitempty" json:"twoColumns,omitempty"`
+
 	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
 	Columns       []WeaponColumn `bson:"columns,omitempty" json:"columns,omitempty"`
 	DamageFormula []FormulaBlock `bson:"damageFormula,omitempty" json:"damageFormula,omitempty"`

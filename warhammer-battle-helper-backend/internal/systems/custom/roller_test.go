@@ -1495,3 +1495,87 @@ func TestSeedDefaults_LabelFieldIsNeverSeeded(t *testing.T) {
 		t.Error("a label field must not land in Texts")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// FEATURE-217 — display flags and the development marker
+// ---------------------------------------------------------------------------
+
+// ComputeDerived round-trips stats through the Stats struct, so a key missing from the struct is
+// silently dropped on the first save. DevelopmentSkills has no Go consumer at all — this test is
+// the only thing standing between it and deletion by an unmarshal.
+func TestComputeDerived_PreservesDevelopmentSkills(t *testing.T) {
+	raw, err := bson.Marshal(bson.M{
+		"attributes":        bson.M{},
+		"skills":            bson.M{},
+		"developmentSkills": []string{"fld_skills.opt_stealth"},
+	})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+
+	out, err := (&Plugin{}).ComputeDerived(raw)
+	if err != nil {
+		t.Fatalf("ComputeDerived: %v", err)
+	}
+
+	var got Stats
+	if err := bson.Unmarshal(out, &got); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if !reflect.DeepEqual(got.DevelopmentSkills, []string{"fld_skills.opt_stealth"}) {
+		t.Errorf("DevelopmentSkills = %v, want [fld_skills.opt_stealth]", got.DevelopmentSkills)
+	}
+}
+
+// A skill the player added to a skill_table lives only in stats.CustomSkillNodes, so it matches no
+// SkillOption id. Without the fallback the roll silently uses the field's default attribute, which
+// is the wrong threshold in any system where each skill hangs off its own attribute.
+func TestResolveRollConfig_SkillTablePlayerAddedSkillUsesItsOwnAttr(t *testing.T) {
+	cfg := &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, LinkedAttr: "dex"}
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{{
+				Type: "skill_table", Key: "skills", Rollable: true, RollConfig: cfg,
+				AssignAttrToSkill: true,
+				Skills:            []models.SkillOption{{ID: "opt_stealth", Label: "Stealth", Attr: "agi"}},
+			}},
+		}},
+	}
+	stats := &Stats{CustomSkillNodes: map[string]CustomSkillNode{
+		"skills.skill_9001": {Label: "Dog handling", LinkedAttr: "fel"},
+	}}
+
+	_, linkedAttr, fieldType, err := resolveRollConfig(template, stats, "skills.skill_9001")
+	if err != nil {
+		t.Fatalf("resolveRollConfig() error: %v", err)
+	}
+	if linkedAttr != "fel" || fieldType != "skill_table" {
+		t.Errorf("got attr=%q type=%q, want fel/skill_table", linkedAttr, fieldType)
+	}
+}
+
+// The GM-defined rows must keep resolving from the template even when the character has custom
+// nodes under the same field — the fallback may not shadow a real SkillOption match.
+func TestResolveRollConfig_SkillTableTemplateRowStillWins(t *testing.T) {
+	cfg := &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, LinkedAttr: "dex"}
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{{
+				Type: "skill_table", Key: "skills", Rollable: true, RollConfig: cfg,
+				AssignAttrToSkill: true,
+				Skills:            []models.SkillOption{{ID: "opt_stealth", Label: "Stealth", Attr: "agi"}},
+			}},
+		}},
+	}
+	stats := &Stats{CustomSkillNodes: map[string]CustomSkillNode{
+		"skills.skill_9001": {Label: "Dog handling", LinkedAttr: "fel"},
+	}}
+
+	_, linkedAttr, _, err := resolveRollConfig(template, stats, "skills.opt_stealth")
+	if err != nil {
+		t.Fatalf("resolveRollConfig() error: %v", err)
+	}
+	if linkedAttr != "agi" {
+		t.Errorf("got attr=%q, want agi", linkedAttr)
+	}
+}

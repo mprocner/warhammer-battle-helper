@@ -29,6 +29,7 @@ function normalizeCharacter(char) {
       numbers:          s.numbers          || {},
       customSkillNodes: s.customSkillNodes || {},
       favoriteSkills:   s.favoriteSkills   || [],
+      developmentSkills: s.developmentSkills || [],
       weapons:          s.weapons          || {},
       favoriteWeapons:  s.favoriteWeapons  || [],
     },

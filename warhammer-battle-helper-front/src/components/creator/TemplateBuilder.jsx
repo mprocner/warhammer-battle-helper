@@ -443,6 +443,25 @@ export function weaponThresholdHint(skillColumnLabel, successType) {
     : { key: 'creator.weaponThresholdNoSkillColumn', warning: true };
 }
 
+// Which FEATURE-217 display flags a field type offers. Both skill types offer all four; the
+// two-column split simply means something different in each (rows vs. root branches), which is the
+// renderer's business, not the panel's.
+export function skillDisplayFlags(fieldType) {
+  if (fieldType === 'skill_table' || fieldType === 'skill_tree') {
+    return ['hideFavorites', 'showDevelopment', 'sortAlphabetically', 'twoColumns'];
+  }
+  return [];
+}
+
+// Labels and optional hints per flag. hideFavorites is the only inverted one: the switch reads
+// "show the star", so its checked state is the negation of the stored flag.
+const SKILL_FLAG_LABELS = {
+  hideFavorites:      { labelKey: 'creator.skillShowFavorites', hintKey: 'creator.skillShowFavoritesHint', inverted: true },
+  showDevelopment:    { labelKey: 'creator.skillShowDevelopment', hintKey: 'creator.skillShowDevelopmentHint' },
+  sortAlphabetically: { labelKey: 'creator.skillSortAlphabetically' },
+  twoColumns:         { labelKey: 'creator.skillTwoColumns' },
+};
+
 function defaultRollConfig() {
   return {
     rollMode: 'traditional',
@@ -923,7 +942,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
             </>
           )}
 
-          {field.type === 'skill_tree' && (
+          {(field.type === 'skill_table' || field.type === 'skill_tree') && (
             <FormControlLabel
               labelPlacement="start"
               control={<Switch checked={!!field.playerCanAddSkills} onChange={e => up({ playerCanAddSkills: e.target.checked })} size="small" />}
@@ -941,6 +960,36 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
               <SkillTreeEditor tree={field.tree} onChange={tree => up({ tree })} numberFields={numberFields} assignAttrToSkill={!!field.assignAttrToSkill} />
             </>
           )}
+        </PropsGroup>
+      )}
+
+      {skillDisplayFlags(field.type).length > 0 && (
+        <PropsGroup title={t('creator.propsGroupDisplay')}>
+          {skillDisplayFlags(field.type).map(flag => {
+            const meta = SKILL_FLAG_LABELS[flag];
+            const checked = meta.inverted ? !field[flag] : !!field[flag];
+            return (
+              <div key={flag}>
+                <FormControlLabel
+                  labelPlacement="start"
+                  control={
+                    <Switch
+                      size="small"
+                      checked={checked}
+                      onChange={e => up({ [flag]: meta.inverted ? !e.target.checked : e.target.checked })}
+                    />
+                  }
+                  label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t(meta.labelKey)}</Typography>}
+                  sx={switchRowSx}
+                />
+                {meta.hintKey && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
+                    {t(meta.hintKey)}
+                  </Typography>
+                )}
+              </div>
+            );
+          })}
         </PropsGroup>
       )}
 
@@ -1876,7 +1925,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 <CustomSheetBody
                   sections={sections}
                   renderChrome={cleanPreview ? null : buildChrome}
-                  showRollMarkers
+                  showAffordances
                 />
               </div>
               {/* Out of flow on purpose: previewing the drop by reserving real space would change

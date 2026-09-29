@@ -33,6 +33,7 @@ function CustomCharacterSheet({
     numbers:          stats.numbers           || {},
     customSkillNodes: stats.customSkillNodes  || {},
     favoriteSkills:   stats.favoriteSkills    || [],
+    developmentSkills: stats.developmentSkills || [],
     weapons:          stats.weapons           || {},
     favoriteWeapons:  stats.favoriteWeapons   || [],
   });
@@ -69,6 +70,7 @@ function CustomCharacterSheet({
       numbers:          s.numbers           || {},
       customSkillNodes: s.customSkillNodes  || {},
       favoriteSkills:   s.favoriteSkills    || [],
+      developmentSkills: s.developmentSkills || [],
       weapons:          s.weapons           || {},
       favoriteWeapons:  s.favoriteWeapons   || [],
     });
@@ -90,6 +92,7 @@ function CustomCharacterSheet({
         numbers:          currentEdited.numbers,
         customSkillNodes: currentEdited.customSkillNodes,
         favoriteSkills:   currentEdited.favoriteSkills,
+        developmentSkills: currentEdited.developmentSkills,
         weapons:          currentEdited.weapons,
         favoriteWeapons:  currentEdited.favoriteWeapons,
       },
@@ -211,6 +214,20 @@ function CustomCharacterSheet({
         ? favs.filter(k => k !== skillKey)
         : [...favs, skillKey];
       const ne = { ...prev, favoriteSkills: next };
+      saveCharacter(ne, charNameRef.current);
+      return ne;
+    });
+  };
+
+  // Marking a skill for improvement is a one-click preference like a favourite, not a typed value,
+  // so it saves straight away instead of going through the autosave debounce.
+  const toggleDevelopmentSkill = (skillKey) => {
+    setEdited(prev => {
+      const marked = prev.developmentSkills || [];
+      const next = marked.includes(skillKey)
+        ? marked.filter(k => k !== skillKey)
+        : [...marked, skillKey];
+      const ne = { ...prev, developmentSkills: next };
       saveCharacter(ne, charNameRef.current);
       return ne;
     });
@@ -356,6 +373,8 @@ function CustomCharacterSheet({
     onRemoveCustomSkill={removeCustomSkillNode}
     favoriteSkills={edited.favoriteSkills}
     onToggleFavorite={toggleFavoriteSkill}
+    developmentSkills={edited.developmentSkills}
+    onToggleDevelopment={toggleDevelopmentSkill}
   />;
 
   const sheetContent = (

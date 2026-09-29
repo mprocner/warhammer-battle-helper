@@ -69,9 +69,9 @@ const rollableSections = [
 ];
 
 describe('CustomSheetBody roll affordance — three callers', () => {
-  test('creator edit view (renderChrome + showRollMarkers, no onRoll): static marker, no interactive button', () => {
+  test('creator edit view (renderChrome + showAffordances, no onRoll): static marker, no interactive button', () => {
     const { container } = render(
-      <CustomSheetBody sections={rollableSections} renderChrome={() => <b />} showRollMarkers />
+      <CustomSheetBody sections={rollableSections} renderChrome={() => <b />} showAffordances />
     );
     expect(container.querySelector('.custom-sheet__roll-btn--static')).not.toBeNull();
     expect(container.querySelector('button.custom-sheet__roll-btn')).toBeNull();
@@ -80,9 +80,9 @@ describe('CustomSheetBody roll affordance — three callers', () => {
   // Regression for the bug this brief fixes: the die was gated on renderChrome, so the clean
   // preview (renderChrome=null) hid it — but a player DOES see a die on a rollable field, so the
   // preview's whole point (show what a player sees, minus editing furniture) was being violated.
-  test('clean preview (showRollMarkers, no renderChrome, no onRoll): still renders the static marker', () => {
+  test('clean preview (showAffordances, no renderChrome, no onRoll): still renders the static marker', () => {
     const { container } = render(
-      <CustomSheetBody sections={rollableSections} renderChrome={null} showRollMarkers />
+      <CustomSheetBody sections={rollableSections} renderChrome={null} showAffordances />
     );
     expect(container.querySelector('.custom-sheet__roll-btn--static')).not.toBeNull();
     expect(container.querySelector('button.custom-sheet__roll-btn')).toBeNull();
@@ -104,5 +104,14 @@ describe('CustomSheetBody roll affordance — three callers', () => {
     );
     expect(container.querySelector('button.custom-sheet__roll-btn')).not.toBeNull();
     expect(container.querySelector('.custom-sheet__roll-btn--static')).toBeNull();
+  });
+
+  test('the creator flag also turns on the favourites star, so the row width does not lie', () => {
+    const { container } = render(
+      <CustomSheetBody sections={rollableSections} renderChrome={() => <b />} showAffordances />
+    );
+    // attr_ws is not a skill row, so the star is asserted where it lives — see
+    // CustomSheetBody.skillTable.test.jsx. Here only the rename matters: the old prop is dead.
+    expect(container.querySelector('.custom-sheet__roll-btn--static')).not.toBeNull();
   });
 });

@@ -221,10 +221,20 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 				linkedAttr := field.RollConfig.LinkedAttr
 				if field.AssignAttrToSkill {
 					suffix := skillKey[len(field.Key)+1:]
+					matched := false
 					for _, opt := range field.Skills {
 						if opt.ID == suffix {
 							linkedAttr = opt.Attr
+							matched = true
 							break
+						}
+					}
+					// A skill the player added to the table exists only in stats.CustomSkillNodes,
+					// so it matches no SkillOption id. Same fallback the skill_tree branch above
+					// uses — without it the roll would silently take the field-level attribute.
+					if !matched && stats != nil && stats.CustomSkillNodes != nil {
+						if node, ok := stats.CustomSkillNodes[skillKey]; ok && node.LinkedAttr != "" {
+							linkedAttr = node.LinkedAttr
 						}
 					}
 				}
