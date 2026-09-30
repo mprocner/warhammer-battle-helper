@@ -1,24 +1,16 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
-import CheckIcon from '@mui/icons-material/Check';
-import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
 import {
-  skillGridTemplate, buildSkillRows, siblingItems, sortItems,
-  splitHalf, splitBranchesWeighted, subtreeSize, resolveSkillValues,
+  siblingItems, sortItems, splitBranchesWeighted, subtreeSize,
 } from './skillLayout';
-
-// genId mints a stable, opaque key for a player-added skill node — never derived from the
-// typed name, so two skills can share a name and renaming never affects the key. Matches the
-// surrogate-key convention used GM-side in TemplateBuilder.
-function genId(prefix) {
-  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-}
+import SkillTable from './fields/SkillTable';
+import { genId } from './fields/keys';
+import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 
 const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
 
@@ -233,7 +225,7 @@ function CustomSheetBody({
     if (onRoll) {
       return (
         <button className="custom-sheet__roll-btn" onClick={onClick} disabled={disabled} title={title}>
-          <CasinoIcon style={{ fontSize: 14 }} />
+          <CasinoIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
           {children}
         </button>
       );
@@ -241,7 +233,7 @@ function CustomSheetBody({
     if (showAffordances) {
       return (
         <span className="custom-sheet__roll-btn custom-sheet__roll-btn--static" aria-hidden="true">
-          <CasinoIcon style={{ fontSize: 14 }} />
+          <CasinoIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
           {children}
         </span>
       );
@@ -254,18 +246,18 @@ function CustomSheetBody({
     if (onToggleFavorite) {
       return (
         <button
-          className={`coc-star-btn${active ? ' coc-star-btn--active' : ''}`}
+          className={`custom-sheet__star-btn${active ? ' custom-sheet__star-btn--active' : ''}`}
           onClick={() => onToggleFavorite(skillKey)}
           title={t('customSheet.favorite')}
         >
-          <StarIcon style={{ fontSize: 12 }} />
+          <StarIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
         </button>
       );
     }
     if (showAffordances) {
       return (
-        <span className="coc-star-btn coc-star-btn--static" aria-hidden="true">
-          <StarIcon style={{ fontSize: 12 }} />
+        <span className="custom-sheet__star-btn custom-sheet__star-btn--static" aria-hidden="true">
+          <StarIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
         </span>
       );
     }
@@ -319,18 +311,6 @@ function CustomSheetBody({
   const [editingPath,     setEditingPath]     = useState(null);
   const [editingLabel,    setEditingLabel]    = useState('');
   const [editingAttr,     setEditingAttr]     = useState('');
-  // Keys of table rows the player has just created and not yet named. Kept here rather than derived
-  // from an empty label, because a player may deliberately blank a name mid-edit and the row must
-  // not jump to the bottom of a sorted list while they type.
-  const [newSkillRows, setNewSkillRows] = useState(() => new Set());
-  // Label a table row had when its rename began, keyed by row key. A rename writes through on every
-  // keystroke, so a sorted list would resort the row letter by letter and crawl it away from the
-  // cursor; ordering by this frozen label holds the row still until the rename is confirmed. A ref,
-  // not state: it is read while rendering the very update that already re-rendered for the click
-  // that set it, and it must never trigger a render of its own. It lives only as long as the
-  // component, so a remount during a rename simply lets the row take its new place — the typed name
-  // itself is safe either way, since it was written through.
-  const renameSortLabels = useRef({});
 
   const confirmAdd = (parentPath) => {
     const trimmed = addingLabel.trim();
@@ -486,7 +466,7 @@ function CustomSheetBody({
               )}
               {onUpdateCustomSkill && (
                 <button className="custom-sheet__skill-tree-edit" onClick={() => startEdit(key, node)} title={t('customSheet.editSkill')}>
-                  <EditIcon style={{ fontSize: 11 }} />
+                  <EditIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
                 </button>
               )}
               {onRemoveCustomSkill && (
@@ -776,204 +756,39 @@ function CustomSheetBody({
         );
 
       case 'skill_table': {
-        const hasAdv   = !!field.hasAdvances;
-        const showDev  = !!field.showDevelopment;
-        // Reserve the roll column only when a die actually renders (onRoll or showAffordances present).
-        // Otherwise, a permanently empty column with its gap becomes a visible gap. Same shape for
-        // the star: reserve its column only when it can actually render something.
-        const showRoll = !!field.rollable && (!!onRoll || showAffordances);
-        const showStar = !field.hideFavorites && (!!onToggleFavorite || showAffordances);
-        const advLabel = field.advancesLabel || t('customSheet.advances');
-        const playerAdd = !!field.playerCanAddSkills && (!!onAddCustomSkill || showAffordances);
-        const gridTemplate = skillGridTemplate({
-          showDevelopment: showDev,
-          hasAdvances: hasAdv,
-          showStar,
-          showRoll,
-          showActions: playerAdd,
-        });
-        const rows = buildSkillRows(field, customSkillNodes, newSkillRows, renameSortLabels.current);
-
-        const addSkillRow = () => {
-          const key = `${field.key}.${genId('skill')}`;
-          setNewSkillRows(prev => new Set(prev).add(key));
-          setEditingPath(key);
-          onAddCustomSkill(key, { label: '' });
-        };
-
-        // A row entered through the pencil keeps its place in a sorted list by being ordered on the
-        // label it had at this moment. A row entered through the add button needs no freeze: it is
-        // still in newSkillRows, which pins it to the bottom until the name is confirmed.
-        const startSkillRename = (key, label) => {
-          renameSortLabels.current = { ...renameSortLabels.current, [key]: label };
-          setEditingPath(key);
-        };
-
-        const finishSkillRow = (key) => {
-          const { [key]: _frozen, ...rest } = renameSortLabels.current;
-          renameSortLabels.current = rest;
-          setNewSkillRows(prev => { const next = new Set(prev); next.delete(key); return next; });
-          setEditingPath(null);
-        };
-
-        const removeSkillRow = (key) => {
-          finishSkillRow(key);
-          onRemoveCustomSkill(key);
-        };
-
-        // The development checkbox carries no visible label of its own, so the column header is
-        // what explains it — which is why the header now renders for it too, not only for the
-        // advances columns. The tree has no header at all; there the tooltip does the whole job.
-        const header = (hasAdv || showDev) && (
-          <div className="custom-sheet__skill-table-header" style={{ gridTemplateColumns: gridTemplate }}>
-            {showDev && (
-              <span
-                className="custom-sheet__skill-col-label custom-sheet__skill-col-label--dev"
-                onMouseEnter={e => showTooltip(t('customSheet.development'), e.currentTarget)}
-                onMouseLeave={hideTooltip}
-              >
-                <TrendingUpIcon style={{ fontSize: 12 }} />
-              </span>
-            )}
-            <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--name" />
-            {hasAdv && (
-              <>
-                <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--base">{t('customSheet.base')}</span>
-                <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--adv">{advLabel}</span>
-                <span className="custom-sheet__skill-col-label custom-sheet__skill-col-label--total">{t('customSheet.total')}</span>
-              </>
-            )}
-          </div>
-        );
-
-        const renderRow = (row) => {
-          const attrInfo = row.attr ? attrByKey[row.attr] : null;
-          const displayName = attrInfo ? `${row.label} (${attrInfo.abbr || attrInfo.label})` : row.label;
-          const { base, advances: adv, total, baseReadOnly } = resolveSkillValues(field, row, skills, attrs);
-          // Edit mode is explicit state, never inferred from a blank label — otherwise leaving edit
-          // mode without typing a name is impossible, because the condition that opened the row is
-          // still true when you try to close it. A row saved with a blank name renders as an
-          // ordinary row and the pencil re-opens it.
-          const editing = row.custom && editingPath === row.key;
-          const attrFields = Object.values(attrByKey);
-          return (
-            <div key={row.key} className="custom-sheet__skill-row" style={{ gridTemplateColumns: gridTemplate }}>
-              {showDev && (
-                <input
-                  type="checkbox"
-                  className="custom-sheet__skill-dev-check"
-                  checked={developmentSkills.includes(row.key)}
-                  disabled={!onToggleDevelopment}
-                  onChange={onToggleDevelopment ? () => onToggleDevelopment(row.key) : undefined}
-                  onMouseEnter={e => showTooltip(t('customSheet.development'), e.currentTarget)}
-                  onMouseLeave={hideTooltip}
-                />
-              )}
-              {editing ? (
-                <span className="custom-sheet__skill-name-edit">
-                  <input
-                    type="text"
-                    className="custom-sheet__skill-name-input"
-                    value={row.label}
-                    autoFocus
-                    placeholder={t('customSheet.skillNamePlaceholder')}
-                    onChange={e => onUpdateCustomSkill(row.key, {
-                      ...customSkillNodes[row.key],
-                      label: e.target.value,
-                    })}
-                    onKeyDown={e => { if (e.key === 'Enter') finishSkillRow(row.key); }}
-                  />
-                  {field.assignAttrToSkill && (
-                    <select
-                      className="custom-sheet__skill-attr-select"
-                      value={row.attr}
-                      onChange={e => onUpdateCustomSkill(row.key, {
-                        ...customSkillNodes[row.key],
-                        linkedAttr: e.target.value || undefined,
-                      })}
-                    >
-                      <option value="">{t('customSheet.attrNone')}</option>
-                      {attrFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
-                    </select>
-                  )}
-                </span>
-              ) : (
-                <span className="custom-sheet__skill-name">{displayName}</span>
-              )}
-              <input
-                type="number"
-                className={`custom-sheet__skill-val-input${hasAdv ? ' custom-sheet__skill-val-input--base' : ''}${baseReadOnly ? ' custom-sheet__skill-val-input--derived' : ''}`}
-                value={baseReadOnly ? base : (hasAdv ? (base || '') : base)}
-                onChange={onChange && !baseReadOnly ? e => onChange.skill(row.key, e.target.value) : undefined}
-                readOnly={readOnly || baseReadOnly}
-                min={0}
-              />
-              {hasAdv && (
-                <>
-                  <input
-                    type="number"
-                    className="custom-sheet__skill-val-input custom-sheet__skill-val-input--adv"
-                    value={adv || ''}
-                    onChange={onChange ? e => onChange.skillAdvances(row.key, e.target.value) : undefined}
-                    readOnly={readOnly}
-                  />
-                  <span className="custom-sheet__skill-val-total">{total}</span>
-                </>
-              )}
-              {showStar && starAffordance(row.key)}
-              {showRoll && rollAffordance(() => onRoll({ skillKey: row.key, label: row.label }))}
-              {playerAdd && (
-                <span className="custom-sheet__skill-row-actions">
-                  {row.custom && onUpdateCustomSkill && (editing ? (
-                    <button className="custom-sheet__skill-save" onClick={() => finishSkillRow(row.key)} title={t('customSheet.saveSkill')}>
-                      <CheckIcon style={{ fontSize: 13 }} />
-                    </button>
-                  ) : (
-                    <button className="custom-sheet__skill-edit" onClick={() => startSkillRename(row.key, row.label)} title={t('customSheet.editSkill')}>
-                      <EditIcon style={{ fontSize: 12 }} />
-                    </button>
-                  ))}
-                  {row.custom && onRemoveCustomSkill && (
-                    <button className="custom-sheet__skill-del" onClick={() => removeSkillRow(row.key)} title={t('customSheet.removeSkill')}>
-                      <DeleteIcon style={{ fontSize: 12 }} />
-                    </button>
-                  )}
-                </span>
-              )}
-            </div>
-          );
-        };
-
-        const columns = field.twoColumns ? splitHalf(rows) : null;
+        // Reserve a track only when something can actually render into it — a permanently empty
+        // column with its gap becomes a visible gap. These three flags are the sheet's affordance
+        // policy, which is why SkillTable takes them as booleans instead of inferring them from
+        // the render props below.
+        const showRoll    = !!field.rollable && (!!onRoll || showAffordances);
+        const showStar    = !field.hideFavorites && (!!onToggleFavorite || showAffordances);
+        const showActions = !!field.playerCanAddSkills && (!!onAddCustomSkill || showAffordances);
 
         return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--skill-table">
-            <div className="custom-sheet__section-title">{field.label}</div>
-            {columns ? (
-              <div className="custom-sheet__skill-table custom-sheet__skill-table--two-col">
-                {columns.map((colRows, i) => (
-                  <div key={i} className="custom-sheet__skill-col">
-                    {header}
-                    {colRows.map(renderRow)}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="custom-sheet__skill-table">
-                {header}
-                {rows.map(renderRow)}
-              </div>
-            )}
-            {playerAdd && (
-              <button
-                className="custom-sheet__skill-add-btn"
-                onClick={onAddCustomSkill ? addSkillRow : undefined}
-                disabled={!onAddCustomSkill}
-              >
-                + {t('customSheet.addSkill')}
-              </button>
-            )}
-          </div>
+          <SkillTable
+            key={field.key}
+            field={field}
+            skills={skills}
+            attrs={attrs}
+            attrByKey={attrByKey}
+            customSkillNodes={customSkillNodes}
+            developmentSkills={developmentSkills}
+            onToggleDevelopment={onToggleDevelopment}
+            onChange={onChange}
+            readOnly={readOnly}
+            onAddCustomSkill={onAddCustomSkill}
+            onRemoveCustomSkill={onRemoveCustomSkill}
+            onUpdateCustomSkill={onUpdateCustomSkill}
+            editingPath={editingPath}
+            setEditingPath={setEditingPath}
+            showTooltip={showTooltip}
+            hideTooltip={hideTooltip}
+            showStar={showStar}
+            showRoll={showRoll}
+            showActions={showActions}
+            renderStar={starAffordance}
+            renderRoll={(row) => rollAffordance(() => onRoll({ skillKey: row.key, label: row.label }))}
+          />
         );
       }
 
@@ -1019,11 +834,11 @@ function CustomSheetBody({
                   <div key={preset.id} className="custom-sheet__weapon-row custom-sheet__weapon-row--preset">
                     {onToggleFavorite && (
                       <button
-                        className={`coc-star-btn${favoriteWeapons.includes(preset.id) ? ' coc-star-btn--active' : ''}`}
+                        className={`custom-sheet__star-btn${favoriteWeapons.includes(preset.id) ? ' custom-sheet__star-btn--active' : ''}`}
                         onClick={() => onChange && onChange.weaponFavorite(preset.id)}
                         disabled={readOnly}
                       >
-                        <StarIcon style={{ fontSize: 12 }} />
+                        <StarIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
                       </button>
                     )}
                     {cols.map(c => (
@@ -1051,11 +866,11 @@ function CustomSheetBody({
                 <div key={row.id} className="custom-sheet__weapon-row">
                   {onToggleFavorite && (
                     <button
-                      className={`coc-star-btn${favoriteWeapons.includes(row.id) ? ' coc-star-btn--active' : ''}`}
+                      className={`custom-sheet__star-btn${favoriteWeapons.includes(row.id) ? ' custom-sheet__star-btn--active' : ''}`}
                       onClick={() => onChange && onChange.weaponFavorite(row.id)}
                       disabled={readOnly}
                     >
-                      <StarIcon style={{ fontSize: 12 }} />
+                      <StarIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
                     </button>
                   )}
 

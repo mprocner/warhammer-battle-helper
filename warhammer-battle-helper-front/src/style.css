@@ -8189,7 +8189,7 @@ align-items: center;
 .custom-sheet__skill-table {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 0;
     width: 100%;
 }
 
@@ -8210,27 +8210,67 @@ align-items: center;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-}
-
-/* One grid per skill row, its columns handed in from JS (skillGridTemplate) so a field's header
-   and its rows can never disagree about where a column starts. The column count varies with the
-   field's flags — development marker, star, die, player actions — which is exactly why the
-   template cannot live here. */
-.custom-sheet__skill-row {
-    display: grid;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 4px;
-    border-radius: 3px;
-    transition: background 0.12s;
+    gap: 0;
 }
 
 .custom-sheet__skill-table-header {
     display: grid;
     align-items: center;
     gap: 8px;
-    padding: 0 4px 2px;
+    padding: 5px 4px;
+    background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+    border-radius: 4px 4px 0 0;
+}
+
+.custom-sheet__skill-col-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #fff9f0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+/* The name column is the only one whose content is left-aligned, header included. */
+.custom-sheet__skill-col-label--name {
+    text-align: left;
+    padding-left: 2px;
+}
+
+.custom-sheet__skill-col-label--dev {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* One grid per skill row, its columns handed in from JS (skillGridTemplate) so a field's header
+   and its rows can never disagree about where a column starts. The column count varies with the
+   field's flags — development marker, star, die, player actions — which is exactly why the
+   template cannot live here.
+   The zebra below counts SIBLING parity, and the header is the first child of the table (or of
+   each column in two-column mode). That is why SkillTableHeader renders unconditionally: a header
+   that came and went with a field flag would flip which rows are tinted. The "+ add skill" button
+   is a sibling of the table container, not of the rows, so it stays out of this count. */
+.custom-sheet__skill-row {
+    display: grid;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 4px;
+    /* Floor for a row whose cells are all short. Currently inert: the value cell's 1.28rem type
+       plus this row's own padding already comes to ~28-29px, taller than the floor. Keep it —
+       it still matters if either number changes — but know it is not what sets today's height. */
+    min-height: 26px;
+    border-bottom: 1px solid rgba(201, 151, 91, 0.5);
+    transition: background 0.12s;
+}
+
+.custom-sheet__skill-row:nth-child(even) {
+    background: rgba(255, 249, 240, 0.55);
+}
+
+/* Equal specificity with the zebra rule above (0,2,0), so it must come after it to win. */
+.custom-sheet__skill-row:hover {
+    background: rgba(201, 151, 91, 0.14);
 }
 
 .custom-sheet__skill-dev-check {
@@ -8246,30 +8286,10 @@ align-items: center;
     opacity: 0.45;
 }
 
-.custom-sheet__skill-row:hover {
-    background: rgba(201, 151, 91, 0.12);
-}
-
 .custom-sheet__skill-name {
     flex: 1;
     font-size: 0.88rem;
     color: #3a2f1f;
-}
-
-.custom-sheet__skill-col-label {
-    font-family: 'Cinzel', serif;
-    font-size: 9px;
-    color: #7a5c42;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    text-align: center;
-}
-
-.custom-sheet__skill-col-label--dev {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #7a5c42;
 }
 
 .custom-sheet__skill-row .custom-sheet__skill-name {
@@ -8277,64 +8297,148 @@ align-items: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-left: 2px;
 }
 
-.custom-sheet__skill-row .custom-sheet__skill-val-input {
-    width: 100%;
-    box-sizing: border-box;
+/* Favourites star, under the custom sheet's own name. The CoC card keeps its own .coc-star-btn
+   block: every sheet is headed for this engine, and that block goes away with the CoC card.
+   The button reset is deliberate and not a copy of the CoC rules — the custom sheet never
+   carried .coc-remove-btn alongside the star, so until now its star rendered as a native
+   browser button (grey face, outset border) at 25% opacity, next to a roll button that resets
+   all of it. */
+.custom-sheet__star-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #8a7a6a;
+    cursor: pointer;
+    /* inline-flex, not the inline default: an inline SVG sits on the text baseline and reserves
+       descender space under it, which made the star ride high against the die beside it. The icon
+       itself is sized from AFFORDANCE_ICON_SIZE, so this rule carries no font-size of its own. */
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.25;
+    transition: opacity 0.15s, color 0.15s;
 }
 
-.custom-sheet__skill-row .coc-star-btn,
+.custom-sheet__star-btn--active {
+    opacity: 1;
+    color: #c9975b;
+}
+
+.custom-sheet__star-btn:hover {
+    opacity: 0.7;
+    color: #c9975b;
+}
+
+/* The creator's read-only twin: same box, no pointer, no hover. */
+.custom-sheet__star-btn--static {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+.custom-sheet__skill-row .custom-sheet__star-btn,
 .custom-sheet__skill-row .custom-sheet__roll-btn {
     justify-self: center;
 }
 
-/* Base column — prominent editable value. */
-.custom-sheet__skill-val-input--base {
-    border: 2px solid #7a5c42;
-    font-weight: 700;
+/* The weapons header reserves a fixed 22px slot for this column (.custom-sheet__weapon-col--star),
+   but the star's own button reset left it an unreserved flex item sized to its intrinsic ~12px.
+   Filling the reserved slot here keeps every column aligned with the label above it.
+   display: inline-flex is needed for justify-content to have any effect on a plain button. */
+.custom-sheet__weapon-row .custom-sheet__star-btn {
+    display: inline-flex;
+    flex: 0 0 22px;
+    justify-content: center;
 }
 
-.custom-sheet__skill-val-input--base:focus {
-    border-color: #c9975b;
+/* The value column of a table row. The emphasis sits on the UNMODIFIED rule because a field
+   without advances has exactly one value column and that value is the important one; --base and
+   --adv, which the row only adds when hasAdvances is on, push those two back.
+   Everything here is anchored to .custom-sheet__skill-row for two reasons: skill_tree renders the
+   same input with the bare class and must keep its own look, and at equal specificity the
+   modifiers below win by standing later in the file. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 4px;
+    font-size: 1.28rem;
+    font-weight: 700;
+    color: #5a3f28;
 }
 
-/* A derived base is not editable, so it must not look editable: same engraved plate as the total
-   column, which is the sheet's existing vocabulary for "computed, hands off". */
-.custom-sheet__skill-val-input--derived {
-    background: #e8dcc4;
-    border: 1px solid #c9975b;
-    box-shadow: inset 0 1px 2px rgba(122, 92, 66, 0.35);
-    font-weight: 700;
+/* Keep the number spinners from eating the visible digits — same fix as .custom-sheet__weapon-dmg-input.
+   Anchored under .custom-sheet__skill-row so the skill tree, which renders the same bare class in a
+   different row element, is untouched. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input::-webkit-outer-spin-button,
+.custom-sheet__skill-row .custom-sheet__skill-val-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.custom-sheet__skill-row .custom-sheet__skill-val-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* The cell has no border to darken on focus and outline: none suppressed the browser's own
+   ring, so this is the one control on the sheet whose default focus affordance was removed
+   without a replacement — the ring below is that replacement. outline-offset: -2px keeps it
+   inside the cell so it cannot disturb the grid. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input:focus {
+    outline: 2px solid #7a5c42;
+    outline-offset: -2px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+/* Base and advances are the inputs you feed the total with — second plane, both of them. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input--base,
+.custom-sheet__skill-row .custom-sheet__skill-val-input--adv {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #6b5a45;
+}
+
+/* A base read from a linked attribute (FEATURE-218) is not editable, so it must not look
+   editable. The engraved plate it used to wear is now the loudest thing in a borderless row —
+   it would outshout the total — so the cell keeps only a fill. --derived always rides with
+   --base, which supplies the type. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input--derived {
+    background: rgba(122, 92, 66, 0.10);
     cursor: default;
 }
 
-.custom-sheet__skill-val-input--derived:focus {
-    outline: none;
-    border-color: #c9975b;
+/* This rule repeats the resting fill deliberately. The generic focus rule two rules above
+   declares a white background at the same specificity; omitting it here would let that
+   tint through and make a read-only cell look editable precisely while the player is
+   standing on it. The ring is the focus signal; the fill carries the read-only signal. */
+.custom-sheet__skill-row .custom-sheet__skill-val-input--derived:focus {
+    outline: 2px solid #7a5c42;
+    outline-offset: -2px;
+    background: rgba(122, 92, 66, 0.10);
 }
 
-/* Advances column — muted secondary modifier. */
-.custom-sheet__skill-val-input--adv {
-    color: #6b4423;
-    font-weight: 400;
-    font-size: 0.85rem;
-}
-
-/* Total — read-only "engraved plate", matches attr-total. */
-.custom-sheet__skill-val-total {
+/* Total — the number the player rolls against, so it carries the row. Anchored under
+   .custom-sheet__skill-row like every other value rule in this block, per the anchoring policy
+   stated above: nothing else emits this class today, but the next thing that does should not
+   have to guess. */
+.custom-sheet__skill-row .custom-sheet__skill-val-total {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     box-sizing: border-box;
-    padding: 4px 6px;
-    background: #e8dcc4;
-    border: 1px solid #c9975b;
-    border-radius: 4px;
-    box-shadow: inset 0 1px 2px rgba(122, 92, 66, 0.35);
-    color: #3a2f1f;
-    font-size: 0.9rem;
+    padding: 0 4px;
+    color: #5a3f28;
+    font-size: 1.28rem;
     font-weight: 700;
 }
 

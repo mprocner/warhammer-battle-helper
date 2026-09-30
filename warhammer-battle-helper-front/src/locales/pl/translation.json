@@ -1340,6 +1340,8 @@
     "custom": "Własny system"
   },
   "customSheet": {
+    "name": "Nazwa",
+    "value": "Wartość",
     "base": "Bazowa",
     "advances": "Rozwinięcia",
     "total": "Suma",

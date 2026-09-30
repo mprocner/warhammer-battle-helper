@@ -84,9 +84,25 @@ describe('CustomSheetBody skill_table — header and grid', () => {
     expect(row.style.gridTemplateColumns).toBe(header.style.gridTemplateColumns);
   });
 
-  it('renders no header when neither advances nor development are on', () => {
+  it('renders the header even for a field with no flags at all', () => {
     const { container } = render(<CustomSheetBody sections={tableSections()} />);
-    expect(container.querySelector('.custom-sheet__skill-table-header')).toBeNull();
+    expect(container.querySelector('.custom-sheet__skill-table-header')).not.toBeNull();
+  });
+
+  it('labels the name column and the single value column when there are no advances', () => {
+    const { container } = render(<CustomSheetBody sections={tableSections()} />);
+    const labels = [...container.querySelectorAll('.custom-sheet__skill-col-label')]
+      .map(el => el.textContent);
+    expect(labels).toEqual(['Name', 'Value']);
+  });
+
+  it('labels base, advances and total instead when the field has advances', () => {
+    const { container } = render(
+      <CustomSheetBody sections={tableSections({ hasAdvances: true })} />
+    );
+    const labels = [...container.querySelectorAll('.custom-sheet__skill-col-label')]
+      .map(el => el.textContent);
+    expect(labels).toEqual(['Name', 'Base', 'Advances', 'Total']);
   });
 });
 
@@ -109,14 +125,14 @@ describe('CustomSheetBody skill_table — favourites star', () => {
     const { container } = render(
       <CustomSheetBody sections={tableSections()} onToggleFavorite={jest.fn()} />
     );
-    expect(container.querySelectorAll('button.coc-star-btn')).toHaveLength(2);
+    expect(container.querySelectorAll('button.custom-sheet__star-btn')).toHaveLength(2);
   });
 
   it('hides the star when the template asks it to', () => {
     const { container } = render(
       <CustomSheetBody sections={tableSections({ hideFavorites: true })} onToggleFavorite={jest.fn()} />
     );
-    expect(container.querySelector('.coc-star-btn')).toBeNull();
+    expect(container.querySelector('.custom-sheet__star-btn')).toBeNull();
   });
 
   it('marks an already-starred skill and toggles by key', () => {
@@ -128,9 +144,9 @@ describe('CustomSheetBody skill_table — favourites star', () => {
         onToggleFavorite={onToggleFavorite}
       />
     );
-    const stars = container.querySelectorAll('button.coc-star-btn');
-    expect(stars[0]).toHaveClass('coc-star-btn--active');
-    expect(stars[1]).not.toHaveClass('coc-star-btn--active');
+    const stars = container.querySelectorAll('button.custom-sheet__star-btn');
+    expect(stars[0]).toHaveClass('custom-sheet__star-btn--active');
+    expect(stars[1]).not.toHaveClass('custom-sheet__star-btn--active');
 
     stars[1].click();
     expect(onToggleFavorite).toHaveBeenCalledWith('fld_skills.opt_lore');
@@ -138,13 +154,13 @@ describe('CustomSheetBody skill_table — favourites star', () => {
 
   it('renders the star statically in the creator, where nothing can be toggled', () => {
     const { container } = render(<CustomSheetBody sections={tableSections()} showAffordances />);
-    expect(container.querySelector('.coc-star-btn--static')).not.toBeNull();
-    expect(container.querySelector('button.coc-star-btn')).toBeNull();
+    expect(container.querySelector('.custom-sheet__star-btn--static')).not.toBeNull();
+    expect(container.querySelector('button.custom-sheet__star-btn')).toBeNull();
   });
 
   it('shows no star at all with neither a handler nor the creator flag', () => {
     const { container } = render(<CustomSheetBody sections={tableSections()} />);
-    expect(container.querySelector('.coc-star-btn')).toBeNull();
+    expect(container.querySelector('.custom-sheet__star-btn')).toBeNull();
   });
 });
 

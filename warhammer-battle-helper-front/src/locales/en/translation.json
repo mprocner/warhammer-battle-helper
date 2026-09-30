@@ -1340,6 +1340,8 @@
     "custom": "Custom System"
   },
   "customSheet": {
+    "name": "Name",
+    "value": "Value",
     "base": "Base",
     "advances": "Advances",
     "total": "Total",
