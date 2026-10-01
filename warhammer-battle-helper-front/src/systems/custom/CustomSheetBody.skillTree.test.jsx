@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
 
@@ -39,7 +39,7 @@ describe('CustomSheetBody skill_tree', () => {
   it('renders no skill row for a tree that has no nodes yet', () => {
     const { container } = render(<CustomSheetBody sections={emptyTreeSections} />);
 
-    expect(container.querySelectorAll('.custom-sheet__skill-tree-node-row').length).toBe(0);
+    expect(container.querySelectorAll('.custom-sheet__skill-tree-row').length).toBe(0);
   });
 
   it('never writes a skill value under the bare tree-root key', () => {
@@ -55,7 +55,7 @@ describe('CustomSheetBody skill_tree', () => {
     const onRoll = jest.fn();
     const { container } = render(<CustomSheetBody sections={filledTreeSections} onRoll={onRoll} />);
 
-    container.querySelector('.custom-sheet__skill-tree-node-row .custom-sheet__roll-btn').click();
+    container.querySelector('.custom-sheet__skill-tree-row .custom-sheet__roll-btn').click();
 
     expect(onRoll).toHaveBeenCalledWith({ skillKey: 'fld_tree.node_a', label: 'Broń biała' });
   });
@@ -215,5 +215,110 @@ describe('CustomSheetBody skill_tree — two columns', () => {
     expect(addBtn).not.toBeNull();
     expect(addBtn.closest('.custom-sheet__skill-col')).toBeNull();
     expect(addBtn.closest('.custom-sheet__skill-tree')).toBeNull();
+  });
+});
+
+describe('CustomSheetBody skill_tree — regressions from the flattening (FEATURE-220)', () => {
+  // Two siblings under the same root, each with a child, so there are two independent
+  // per-node "+" buttons to tell apart.
+  const twoNodeTree = (over = {}) => ([{
+    id: 'sec1',
+    columns: 1,
+    fields: [{
+      key: 'fld_tree',
+      type: 'skill_tree',
+      label: 'Umiejętności',
+      playerCanAddSkills: true,
+      tree: {
+        key: 'tree_123',
+        label: 'Kategoria',
+        children: [
+          { key: 'n_walka', label: 'Walka' },
+          { key: 'n_magia', label: 'Magia' },
+        ],
+      },
+      ...over,
+    }],
+  }]);
+
+  // Regression 1: clicking the per-node "+" used to stay on screen while that node's own
+  // add-child form was open, so a misclick on it would reset the drafts and silently erase
+  // the name the player was typing. Assert on what the player can see (the button), not on
+  // internal addingUnderPath state.
+  it('hides a node\'s own inline "+" while its add form is open, but not the other node\'s', () => {
+    const { container } = render(
+      <CustomSheetBody sections={twoNodeTree()} onAddCustomSkill={() => {}} />
+    );
+
+    const inlineAddButtons = () => [...container.querySelectorAll('.custom-sheet__skill-tree-add-inline')];
+    expect(inlineAddButtons()).toHaveLength(2);
+
+    // Open the add-child form under the first node (Walka). fireEvent, not a raw DOM .click(),
+    // so the resulting setState is flushed inside act() before we re-query the DOM.
+    fireEvent.click(inlineAddButtons()[0]);
+
+    // Walka's own inline "+" is gone while its form is open; Magia's stays.
+    expect(inlineAddButtons()).toHaveLength(1);
+    expect(container.querySelector('.custom-sheet__skill-tree-add-form')).not.toBeNull();
+  });
+
+  describe('attribute suffix follows the field setting, not just the stored attribute', () => {
+    // The attr field has to exist in `sections` too — attrByKey is built by walking sections for
+    // type: 'attr' fields, not passed in separately.
+    const attrTree = (assignAttrToSkill) => ([{
+      id: 'sec1',
+      columns: 1,
+      fields: [
+        { key: 'attr_WS', type: 'attr', label: 'Weapon Skill', abbr: 'WS' },
+        {
+          key: 'fld_tree',
+          type: 'skill_tree',
+          label: 'Umiejętności',
+          assignAttrToSkill,
+          tree: {
+            key: 'tree_123',
+            label: 'Kategoria',
+            children: [{ key: 'n_walka', label: 'Walka', linkedAttr: 'attr_WS' }],
+          },
+        },
+      ],
+    }]);
+
+    // Two renders, one assertion each, rather than one test toggling the prop: each render is a
+    // fresh, independent fixture (a node with a stored attribute), and the only thing that
+    // differs between them is the field flag under test — clearer to read as two small cases
+    // than as one test with two phases of state to keep straight.
+    it('shows no suffix when the field has attribute-assignment OFF, even with an attribute stored', () => {
+      const { container } = render(<CustomSheetBody sections={attrTree(false)} />);
+      const label = container.querySelector('.custom-sheet__skill-tree-node-label');
+      expect(label.textContent).toBe('Walka');
+    });
+
+    it('shows the abbreviation suffix when the field has attribute-assignment ON', () => {
+      const { container } = render(<CustomSheetBody sections={attrTree(true)} />);
+      const label = container.querySelector('.custom-sheet__skill-tree-node-label');
+      expect(label.textContent).toBe('Walka (WS)');
+    });
+  });
+
+  // Regression: the rename input kept only its layout class (flex: 1; min-width: 0) and lost the
+  // class that gives it the sheet's actual skin (cream fill, card border, serif face) — the pencil
+  // opened a native white box while the identical add-form input one row below still looked right.
+  it('gives the rename input both its layout class and its skin class', () => {
+    const { container } = render(
+      <CustomSheetBody
+        sections={twoNodeTree()}
+        customSkillNodes={{ 'fld_tree.n_walka.skill_1': { label: 'Rapier' } }}
+        onAddCustomSkill={() => {}}
+        onUpdateCustomSkill={() => {}}
+      />
+    );
+
+    fireEvent.click(container.querySelector('.custom-sheet__skill-tree-edit'));
+
+    const input = container.querySelector('.custom-sheet__skill-tree-edit-input');
+    expect(input).not.toBeNull();
+    expect(input).toHaveClass('custom-sheet__skill-tree-add-input');
+    expect(input).toHaveClass('custom-sheet__skill-tree-edit-input');
   });
 });

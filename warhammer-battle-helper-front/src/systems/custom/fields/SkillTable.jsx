@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { skillGridTemplate, buildSkillRows, splitHalf } from '../skillLayout';
 import { genId } from '../../../utils/surrogateKeys';
-import SkillTableHeader from './SkillTableHeader';
+import SkillFieldHeader from './SkillFieldHeader';
 import SkillTableRow from './SkillTableRow';
 
 // The skill_table field: a header bar plus one row per skill, optionally split into two columns.
@@ -94,7 +94,7 @@ function SkillTable({
   };
 
   const header = (
-    <SkillTableHeader
+    <SkillFieldHeader
       gridTemplate={gridTemplate}
       showDevelopment={showDev}
       hasAdvances={hasAdv}

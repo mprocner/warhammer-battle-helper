@@ -8010,7 +8010,7 @@ align-items: center;
 }
 
 /* Tabela umiejętności/broni ma stałą minimalną szerokość kolumn (patrz
-   .custom-sheet__skill-table-header / --advances), która w węższej, wielokolumnowej
+   .custom-sheet__skill-field-header / --advances), która w węższej, wielokolumnowej
    sekcji potrafi przekroczyć szerokość toru siatki (`minmax(0, 1fr)`, patrz wyżej).
    Zamiast malować się na sąsiednim polu, nadmiar ma przewijać się wewnątrz własnej
    komórki. */
@@ -8213,7 +8213,7 @@ align-items: center;
     gap: 0;
 }
 
-.custom-sheet__skill-table-header {
+.custom-sheet__skill-field-header {
     display: grid;
     align-items: center;
     gap: 8px;
@@ -8248,7 +8248,7 @@ align-items: center;
    field's flags — development marker, star, die, player actions — which is exactly why the
    template cannot live here.
    The zebra below counts SIBLING parity, and the header is the first child of the table (or of
-   each column in two-column mode). That is why SkillTableHeader renders unconditionally: a header
+   each column in two-column mode). That is why SkillFieldHeader renders unconditionally: a header
    that came and went with a field flag would flip which rows are tinted. The "+ add skill" button
    is a sibling of the table container, not of the rows, so it stays out of this count. */
 .custom-sheet__skill-row {
@@ -8750,26 +8750,71 @@ align-items: center;
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
 }
 
-.custom-sheet__skill-tree-node-row {
-    display: flex;
+/* One grid per tree row, its columns handed in from JS (treeGridTemplate) so a field's header and
+   its rows can never disagree about where a column starts. There is no track for the toggle: it
+   sits inside the name cell, behind the depth guides, because its position depends on the row's
+   depth. */
+.custom-sheet__skill-tree-row {
+    display: grid;
     align-items: center;
-    gap: 5px;
-    padding: 3px 6px;
-    border-radius: 3px;
+    gap: 8px;
+    padding: 2px 4px;
+    min-height: 26px;
+    border-bottom: 1px solid rgba(201, 151, 91, 0.28);
     transition: background 0.12s;
 }
 
-.custom-sheet__skill-tree-node-row:hover {
-    background: rgba(201, 151, 91, 0.10);
+/* Depth bands. Emitted only for a row that has children, so the tint answers "does this expand",
+   which nothing else on the row answers — depth itself is already told by the indent and the
+   guides. Level 3 and deeper reuse level 2's shade; three levels is the real case and a fourth
+   shade would be a distinction nobody reads. */
+.custom-sheet__skill-tree-row--d0 { background: rgba(201, 151, 91, 0.22); }
+.custom-sheet__skill-tree-row--d1 { background: rgba(201, 151, 91, 0.13); }
+.custom-sheet__skill-tree-row--d2 { background: rgba(201, 151, 91, 0.06); }
+
+/* Brown, not the table's gold. The table hovers at rgba(201,151,91,0.14), which here sits exactly
+   between the depth-0 and depth-1 bands — hovering a leaf would read as a change of level. Two
+   different signals must not speak in the same colour. The hover wins on specificity alone: a class
+   plus pseudo-class (0,2,0) beats the bands' single class (0,1,0). */
+.custom-sheet__skill-tree-row:hover {
+    background: rgba(122, 92, 66, 0.18);
 }
 
-.custom-sheet__skill-tree-node-row--custom {
-    border-left: 2px dashed rgba(201, 151, 91, 0.45);
+/* The name cell carries the whole tree structure: one guide per ancestor level, then the toggle,
+   then the label. Everything right of it stays in its grid track at any depth — which is the
+   entire point of the change. */
+.custom-sheet__skill-tree-namecell {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    min-width: 0;
+    /* Every child but the label refuses to shrink (guides, toggle, and during a rename the
+       attribute select), so at depth they can outgrow this 1fr track; clipping the cell can only
+       ever hide something that was already painting outside its track. */
+    overflow: hidden;
 }
 
+.custom-sheet__skill-tree-guide {
+    display: inline-block;
+    width: 16px;
+    align-self: stretch;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(122, 92, 66, 0.28);
+}
+
+/* The toggle is lifted above the creator's selection outline on purpose.
+   In the creator every field wears .creator__chrome-outline — absolutely positioned over the
+   whole field, pointer-events: auto, painted after the field's own content because withChrome
+   emits chrome last. That overlay IS how a click selects a field, so it swallows clicks meant
+   for anything inside one. The expand/collapse toggle is the one control the GM must still be
+   able to work: a tree that cannot be collapsed while it is being built does not show how it
+   will behave in play, which is the whole point of mounting the real sheet body there.
+   999 clears the outlines, whose z-index is their nesting depth, and stays under the chrome
+   pill's own band of 1000. In the game there is no outline and nothing to sit above, so the
+   rule costs nothing there. */
 .custom-sheet__skill-tree-toggle {
     background: none;
     border: none;
@@ -8781,19 +8826,71 @@ align-items: center;
     padding: 0;
     line-height: 1;
     text-align: center;
+    position: relative;
+    z-index: 999;
 }
 
 .custom-sheet__skill-tree-node-label {
-    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 0.88rem;
     color: #3a2f1f;
-    font-weight: 500;
+    padding-left: 2px;
 }
 
 .custom-sheet__skill-tree-node-label--custom {
     font-style: italic;
     color: #5a4a35;
-    font-weight: 400;
+}
+
+/* The band classes are emitted only for a row with children, so they double as the "is a
+   category" selector — a category needs no second signal of its own, and this keeps the rule
+   that decides what a category IS in one place, in the JSX next to hasChildren. */
+.custom-sheet__skill-tree-row--d0 .custom-sheet__skill-tree-node-label,
+.custom-sheet__skill-tree-row--d1 .custom-sheet__skill-tree-node-label,
+.custom-sheet__skill-tree-row--d2 .custom-sheet__skill-tree-node-label {
+    font-weight: 700;
+}
+
+/* Anchored under the tree's row class for the same reason the table anchors its own: both fields
+   render .custom-sheet__skill-val-input, and since FEATURE-219 this anchoring is the only thing
+   keeping their looks apart. */
+.custom-sheet__skill-tree-row .custom-sheet__skill-val-input {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0 4px;
+    font-size: 1.28rem;
+    font-weight: 700;
+    color: #5a3f28;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.custom-sheet__skill-tree-row .custom-sheet__skill-val-input::-webkit-outer-spin-button,
+.custom-sheet__skill-tree-row .custom-sheet__skill-val-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* A borderless cell has no focus affordance of its own, so the ring is the whole signal — the same
+   decision the table's cells carry. */
+.custom-sheet__skill-tree-row .custom-sheet__skill-val-input:focus {
+    outline: 2px solid #7a5c42;
+    outline-offset: -2px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.custom-sheet__skill-tree-row-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
 }
 
 .custom-sheet__skill-tree-add-inline {
@@ -8820,8 +8917,8 @@ align-items: center;
     border: none;
     color: #b57a5a;
     cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
     padding: 0 3px;
     border-radius: 3px;
     transition: color 0.12s, background 0.12s;

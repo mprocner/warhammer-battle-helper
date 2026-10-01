@@ -50,7 +50,10 @@ function SkillTableRow({
 }) {
   const { t } = useTranslation();
 
-  const attrInfo = row.attr ? attrByKey[row.attr] : null;
+  // Suffix is gated on the field's own setting, not just on whether this row happens to have an
+  // attribute stored: a row keeps its linkedAttr even after the GM turns assignAttrToSkill off,
+  // and the suffix must disappear along with the setting (mirrors SkillTreeRow).
+  const attrInfo = field.assignAttrToSkill && row.attr ? attrByKey[row.attr] : null;
   const displayName = attrInfo ? `${row.label} (${attrInfo.abbr || attrInfo.label})` : row.label;
   const { base, advances: adv, total, baseReadOnly } = resolveSkillValues(field, row, skills, attrs);
   const attrFields = Object.values(attrByKey);

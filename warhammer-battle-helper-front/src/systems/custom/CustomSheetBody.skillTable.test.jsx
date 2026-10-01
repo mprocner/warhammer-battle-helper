@@ -78,7 +78,7 @@ describe('CustomSheetBody skill_table — header and grid', () => {
     const { container } = render(
       <CustomSheetBody sections={tableSections({ showDevelopment: true, hasAdvances: true })} />
     );
-    const header = container.querySelector('.custom-sheet__skill-table-header');
+    const header = container.querySelector('.custom-sheet__skill-field-header');
     const row = container.querySelector('.custom-sheet__skill-row');
     expect(header.style.gridTemplateColumns).toBe('20px 1fr 56px 56px 48px');
     expect(row.style.gridTemplateColumns).toBe(header.style.gridTemplateColumns);
@@ -86,7 +86,7 @@ describe('CustomSheetBody skill_table — header and grid', () => {
 
   it('renders the header even for a field with no flags at all', () => {
     const { container } = render(<CustomSheetBody sections={tableSections()} />);
-    expect(container.querySelector('.custom-sheet__skill-table-header')).not.toBeNull();
+    expect(container.querySelector('.custom-sheet__skill-field-header')).not.toBeNull();
   });
 
   it('labels the name column and the single value column when there are no advances', () => {
@@ -200,7 +200,7 @@ describe('CustomSheetBody skill_table — two columns', () => {
     const { container } = render(
       <CustomSheetBody sections={fourRows({ twoColumns: true, hasAdvances: true })} />
     );
-    expect(container.querySelectorAll('.custom-sheet__skill-table-header')).toHaveLength(2);
+    expect(container.querySelectorAll('.custom-sheet__skill-field-header')).toHaveLength(2);
   });
 });
 
@@ -479,5 +479,36 @@ describe('CustomSheetBody skill_table — attribute as the base value', () => {
     const input = container.querySelector('.custom-sheet__skill-val-input');
     expect(input.readOnly).toBe(false);
     expect(input).not.toHaveClass('custom-sheet__skill-val-input--derived');
+  });
+});
+
+describe('CustomSheetBody skill_table — attribute suffix follows the field setting, not just the stored attribute (FEATURE-220)', () => {
+  // Mirrors the skill_tree case: a row keeps its `attr` even after the GM turns
+  // assignAttrToSkill off, and the suffix must disappear along with the setting.
+  const attrSections = (assignAttrToSkill) => ([{
+    id: 'sec1',
+    columns: 1,
+    fields: [
+      { key: 'attr_ag', type: 'attr', label: 'Zręczność', abbr: 'Zr' },
+      {
+        key: 'fld_skills',
+        type: 'skill_table',
+        label: 'Umiejętności',
+        assignAttrToSkill,
+        skills: [{ id: 'opt_stealth', label: 'Skradanie', attr: 'attr_ag' }],
+      },
+    ],
+  }]);
+
+  it('shows no suffix when the field has attribute-assignment OFF, even with an attribute stored', () => {
+    const { container } = render(<CustomSheetBody sections={attrSections(false)} />);
+    const name = container.querySelector('.custom-sheet__skill-name');
+    expect(name.textContent).toBe('Skradanie');
+  });
+
+  it('shows the abbreviation suffix when the field has attribute-assignment ON', () => {
+    const { container } = render(<CustomSheetBody sections={attrSections(true)} />);
+    const name = container.querySelector('.custom-sheet__skill-name');
+    expect(name.textContent).toBe('Skradanie (Zr)');
   });
 });

@@ -22,6 +22,33 @@ export function skillGridTemplate({
   ].filter(Boolean).join(' ');
 }
 
+// treeGridTemplate is skillGridTemplate's counterpart for a skill_tree. It is a separate function
+// rather than a flag on that one: a tree has no advances columns and never will — there is nothing
+// to advance without an advances column — and a shared function would have to express that absence
+// by switching it off instead of simply not having it.
+//
+// There is no track for the expand/collapse toggle. The toggle lives INSIDE the name cell, behind
+// the depth guides, because its position depends on the row's depth and a grid track is by
+// definition the same for every row.
+//
+// The action track is wider than the table's 52px because a tree row fits three buttons there
+// (add-child, rename, delete) rather than two.
+export function treeGridTemplate({
+  showDevelopment = false,
+  showStar = false,
+  showRoll = false,
+  showActions = false,
+} = {}) {
+  return [
+    showDevelopment && '20px',
+    '1fr',
+    '72px',
+    showStar && '24px',
+    showRoll && '28px',
+    showActions && '64px',
+  ].filter(Boolean).join(' ');
+}
+
 // isDirectChild reports whether a player-added skill key sits immediately under parentPath rather
 // than deeper in the tree. Both the flat table and one level of the tree ask the same question, and
 // the answer must not be able to drift between them.
@@ -159,4 +186,61 @@ export function resolveSkillValues(field, row, skills = {}, attributes = {}) {
 
   const base = sv.base ?? 0;
   return { base, advances, total: sv.current ?? base + advances, baseReadOnly: false };
+}
+
+// flattenTree turns the tree into the single list of rows the DOM actually shows, in order, with
+// depth as a number. It exists because the rendering used to BE the recursion: every node wrapped
+// its own descendants in a div, which meant no flat list of siblings existed — so :nth-child had
+// nothing to count, a header bar had nowhere to sit, and the rule for which rows are visible lived
+// in JSX where jsdom (which computes no layout) could never test it.
+//
+// `items` is one already-cut level of siblings, not the whole field: two-column mode splits the
+// ROOT branches by weight and flattens each half separately. Flattening first and cutting the flat
+// list in half would slice a branch down the middle and leave the second column's indents hanging
+// under no parent.
+//
+// Every level is sorted here, including the one handed in — sorting an already-sorted level is a
+// no-op, and doing it in one place stops the caller and this function from disagreeing about it.
+export function flattenTree(rootPath, items, customSkillNodes = {}, {
+  expanded = {},
+  sort = false,
+  addingUnderPath = null,
+} = {}) {
+  const out = [];
+
+  const walk = (parentPath, levelItems, depth) => {
+    for (const item of sortItems(levelItems, sort)) {
+      const isCustom = !item.node;
+      const path = isCustom ? item.customKey : `${parentPath}.${item.node.key}`;
+      const node = isCustom ? (customSkillNodes[path] || {}) : item.node;
+      const childItems = siblingItems(path, isCustom ? [] : (item.node.children || []), customSkillNodes);
+      const hasChildren = childItems.length > 0;
+      // The state holds only the exceptions, so a branch nobody has touched is open.
+      const isOpen = expanded[path] !== false;
+
+      out.push({
+        kind: 'node',
+        key: path,
+        label: node.label || '',
+        attr: node.linkedAttr || '',
+        depth,
+        custom: isCustom,
+        hasChildren,
+        isOpen,
+      });
+
+      // Adding under a collapsed branch reveals it for as long as the form is open — otherwise the
+      // player would be typing into a form they cannot see.
+      const adding = addingUnderPath === path;
+      if ((hasChildren || adding) && (isOpen || adding)) {
+        walk(path, childItems, depth + 1);
+        if (adding) {
+          out.push({ kind: 'addForm', key: `${path}::add`, parentPath: path, depth: depth + 1 });
+        }
+      }
+    }
+  };
+
+  walk(rootPath, items, 0);
+  return out;
 }

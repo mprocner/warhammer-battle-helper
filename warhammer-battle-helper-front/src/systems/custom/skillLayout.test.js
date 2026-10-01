@@ -1,12 +1,7 @@
 import {
-  skillGridTemplate,
-  buildSkillRows,
-  splitHalf,
-  subtreeSize,
-  splitBranchesWeighted,
-  siblingItems,
-  sortItems,
-  resolveSkillValues,
+  skillGridTemplate, buildSkillRows, splitHalf, siblingItems, sortItems,
+  subtreeSize, splitBranchesWeighted, resolveSkillValues,
+  flattenTree, treeGridTemplate,
 } from './skillLayout';
 
 describe('skillGridTemplate', () => {
@@ -275,5 +270,193 @@ describe('resolveSkillValues', () => {
   it('treats a skill with no stored entry as all zeros', () => {
     expect(resolveSkillValues(derivedField({ baseFromAttr: false }), row(), {}, {}))
       .toEqual({ base: 0, advances: 0, total: 0, baseReadOnly: false });
+  });
+});
+
+// Broń biała -> Jednoręczna -> Miecz / Topór, plus płytka gałąź Wiedza -> Imperium. Trzy poziomy,
+// bo trzy to realny przypadek i dopiero na trzecim widać, czy głębokość liczy się poprawnie.
+const treeField = {
+  key: 'fld_tree',
+  tree: {
+    key: 'root',
+    children: [
+      {
+        key: 'melee', label: 'Broń biała', children: [
+          { key: 'one_h', label: 'Jednoręczna', children: [
+            { key: 'sword', label: 'Miecz', children: [] },
+            { key: 'axe',   label: 'Topór',  children: [] },
+          ] },
+        ],
+      },
+      { key: 'lore', label: 'Wiedza', children: [
+        { key: 'empire', label: 'Imperium', children: [] },
+      ] },
+    ],
+  },
+};
+
+const rootItemsOf = (field, custom = {}, sort = false) =>
+  sortItems(siblingItems(field.key, field.tree.children, custom), sort);
+
+const flattenField = (field, custom = {}, opts = {}) =>
+  flattenTree(field.key, rootItemsOf(field, custom, opts.sort), custom, opts);
+
+describe('treeGridTemplate', () => {
+  it('has no advances columns and reserves a wider action track than the table', () => {
+    expect(treeGridTemplate({ showDevelopment: true, showStar: true, showRoll: true, showActions: true }))
+      .toBe('20px 1fr 72px 24px 28px 64px');
+  });
+
+  it('drops every optional track when its flag is off', () => {
+    expect(treeGridTemplate()).toBe('1fr 72px');
+  });
+});
+
+describe('flattenTree', () => {
+  it('walks depth-first and numbers the depth of every row', () => {
+    const rows = flattenField(treeField);
+    expect(rows.map(r => [r.label, r.depth])).toEqual([
+      ['Broń biała', 0],
+      ['Jednoręczna', 1],
+      ['Miecz', 2],
+      ['Topór', 2],
+      ['Wiedza', 0],
+      ['Imperium', 1],
+    ]);
+  });
+
+  it('builds a key by appending the node key to its parent path', () => {
+    const rows = flattenField(treeField);
+    expect(rows.find(r => r.label === 'Miecz').key).toBe('fld_tree.melee.one_h.sword');
+  });
+
+  it('marks which rows can expand, and leaves a leaf alone', () => {
+    const rows = flattenField(treeField);
+    const by = (label) => rows.find(r => r.label === label);
+    expect(by('Broń biała').hasChildren).toBe(true);
+    expect(by('Jednoręczna').hasChildren).toBe(true);
+    expect(by('Miecz').hasChildren).toBe(false);
+  });
+
+  // The state holds only the exceptions: a branch nobody has touched is open.
+  it('treats an untouched branch as open', () => {
+    expect(flattenField(treeField, {}, { expanded: {} }).some(r => r.label === 'Miecz')).toBe(true);
+  });
+
+  it('drops the descendants of a collapsed branch, the whole subtree at once', () => {
+    const rows = flattenField(treeField, {}, { expanded: { 'fld_tree.melee': false } });
+    expect(rows.map(r => r.label)).toEqual(['Broń biała', 'Wiedza', 'Imperium']);
+  });
+
+  it('collapses only below the branch that was closed', () => {
+    const rows = flattenField(treeField, {}, { expanded: { 'fld_tree.melee.one_h': false } });
+    expect(rows.map(r => r.label)).toEqual(['Broń biała', 'Jednoręczna', 'Wiedza', 'Imperium']);
+  });
+
+  it('puts the add form under its parent, one level deeper', () => {
+    const rows = flattenField(treeField, {}, { addingUnderPath: 'fld_tree.lore' });
+    expect(rows.map(r => r.kind === 'addForm' ? ['<form>', r.depth] : [r.label, r.depth])).toEqual([
+      ['Broń biała', 0],
+      ['Jednoręczna', 1],
+      ['Miecz', 2],
+      ['Topór', 2],
+      ['Wiedza', 0],
+      ['Imperium', 1],
+      ['<form>', 1],
+    ]);
+    expect(rows.find(r => r.kind === 'addForm').parentPath).toBe('fld_tree.lore');
+  });
+
+  // Adding under a collapsed branch has to reveal it — otherwise the player types into a form
+  // they cannot see.
+  it('reveals a collapsed branch while something is being added under it', () => {
+    const rows = flattenField(treeField, {}, {
+      expanded: { 'fld_tree.melee': false },
+      addingUnderPath: 'fld_tree.melee',
+    });
+    expect(rows.map(r => r.kind === 'addForm' ? '<form>' : r.label))
+      .toEqual(['Broń biała', 'Jednoręczna', 'Miecz', 'Topór', '<form>', 'Wiedza', 'Imperium']);
+  });
+
+  it('weaves the player\'s own nodes in among the template\'s, per level', () => {
+    const custom = {
+      'fld_tree.melee.one_h.dagger': { label: 'Sztylet' },
+      'fld_tree.aaa': { label: 'Alchemia' },
+    };
+    const rows = flattenTree(
+      treeField.key,
+      sortItems(siblingItems(treeField.key, treeField.tree.children, custom), true),
+      custom,
+      { sort: true },
+    );
+    expect(rows.map(r => r.label)).toEqual([
+      'Alchemia', 'Broń biała', 'Jednoręczna', 'Miecz', 'Sztylet', 'Topór', 'Wiedza', 'Imperium',
+    ]);
+  });
+
+  it('tells a player-added row apart from a template one', () => {
+    const custom = { 'fld_tree.aaa': { label: 'Alchemia' } };
+    const rows = flattenTree(
+      treeField.key,
+      siblingItems(treeField.key, treeField.tree.children, custom),
+      custom,
+      {},
+    );
+    expect(rows.find(r => r.label === 'Alchemia').custom).toBe(true);
+    expect(rows.find(r => r.label === 'Wiedza').custom).toBe(false);
+  });
+
+  it('carries a node\'s linked attribute through, from both kinds of node', () => {
+    const custom = { 'fld_tree.aaa': { label: 'Alchemia', linkedAttr: 'fld_int' } };
+    const field = {
+      key: 'fld_tree',
+      tree: { key: 'root', children: [{ key: 'lore', label: 'Wiedza', linkedAttr: 'fld_wp', children: [] }] },
+    };
+    const rows = flattenTree(field.key, siblingItems(field.key, field.tree.children, custom), custom, {});
+    expect(rows.find(r => r.label === 'Wiedza').attr).toBe('fld_wp');
+    expect(rows.find(r => r.label === 'Alchemia').attr).toBe('fld_int');
+  });
+
+  // Two columns: the caller cuts the ROOT branches and hands one half in. Flattening first and
+  // cutting the flat list in half would slice a branch down the middle and leave the second
+  // column's indents hanging under no parent.
+  it('flattens one column\'s branches without reaching into the other\'s', () => {
+    const [left, right] = splitBranchesWeighted(
+      rootItemsOf(treeField),
+      (item) => subtreeSize(item.node, `${treeField.key}.${item.node.key}`, {}),
+    );
+    expect(flattenTree(treeField.key, left, {}, {}).map(r => r.label))
+      .toEqual(['Broń biała', 'Jednoręczna', 'Miecz', 'Topór']);
+    expect(flattenTree(treeField.key, right, {}, {}).map(r => r.label))
+      .toEqual(['Wiedza', 'Imperium']);
+  });
+
+  it('uses a player-added node\'s stored path verbatim, not rebuilding it from parent', () => {
+    // A custom node deep in the tree is stored under its full path in customSkillNodes.
+    // At the root, stored and rebuilt paths would agree, so test at depth 2.
+    const custom = {
+      'fld_tree.melee.one_h.dagger': { label: 'Sztylet' },
+    };
+    const rows = flattenField(treeField, custom);
+    const daggerRow = rows.find(r => r.label === 'Sztylet');
+    expect(daggerRow.key).toBe('fld_tree.melee.one_h.dagger');
+    expect(daggerRow.custom).toBe(true);
+    expect(daggerRow.depth).toBe(2);
+  });
+
+  it('opens the add form directly under a childless leaf', () => {
+    // 'Miecz' has no children. Opening the form under it exercises the hasChildren || adding
+    // half of the guard — the half that lets a leaf grow its first child. All other add-form
+    // tests open under a node that already has children, so this path never fired.
+    const rows = flattenField(treeField, {}, { addingUnderPath: 'fld_tree.melee.one_h.sword' });
+    const miezIndex = rows.findIndex(r => r.label === 'Miecz');
+    const formRow = rows[miezIndex + 1];
+
+    expect(rows.map(r => r.kind === 'addForm' ? '<form>' : r.label)).toEqual([
+      'Broń biała', 'Jednoręczna', 'Miecz', '<form>', 'Topór', 'Wiedza', 'Imperium',
+    ]);
+    expect(formRow.kind).toBe('addForm');
+    expect(formRow.depth).toBe(3);
+    expect(formRow.parentPath).toBe('fld_tree.melee.one_h.sword');
   });
 });
