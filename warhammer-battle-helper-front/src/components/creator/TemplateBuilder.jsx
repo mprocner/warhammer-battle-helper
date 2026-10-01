@@ -50,16 +50,10 @@ import {
 } from '../../utils/templateSections';
 import { measureNodes, insertionAt, toMoveArgs, ghostRectFor } from '../../utils/sheetDnd';
 import { SHEET_WIDTH_MIN, SHEET_WIDTH_MAX, SHEET_WIDTH_STEP, clampSheetWidth } from '../../utils/sheetWidth';
+import { genId } from '../../utils/surrogateKeys';
 import { usePortalTooltip } from '../common/PortalTooltip';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-
-// genId mints a stable, opaque identifier used as the durable key for fields and skill
-// options. It is generated once and never derived from a label, so renaming never orphans
-// the data stored under "<key>" / "<fieldKey>.<optionId>".
-function genId(prefix) {
-  return `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
-}
 
 function updateTreeAtPath(node, path, updater) {
   if (path.length === 0) return updater(node);

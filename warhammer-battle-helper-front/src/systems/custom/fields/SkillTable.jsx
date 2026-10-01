@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { skillGridTemplate, buildSkillRows, splitHalf } from '../skillLayout';
-import { genId } from './keys';
+import { genId } from '../../../utils/surrogateKeys';
 import SkillTableHeader from './SkillTableHeader';
 import SkillTableRow from './SkillTableRow';
 

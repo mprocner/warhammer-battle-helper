@@ -9,7 +9,7 @@ import {
   siblingItems, sortItems, splitBranchesWeighted, subtreeSize,
 } from './skillLayout';
 import SkillTable from './fields/SkillTable';
-import { genId } from './fields/keys';
+import { genId } from '../../utils/surrogateKeys';
 import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 
 const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
