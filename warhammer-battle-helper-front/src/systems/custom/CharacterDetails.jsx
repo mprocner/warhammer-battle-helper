@@ -5,7 +5,7 @@ import StarIcon from '@mui/icons-material/Star';
 import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
-import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './CustomSheetBody';
+import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './weaponLayout';
 import { walkFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';

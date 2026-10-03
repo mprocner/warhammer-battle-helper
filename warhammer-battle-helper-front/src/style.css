@@ -8009,11 +8009,11 @@ align-items: center;
     justify-content: center;
 }
 
-/* Tabela umiejętności/broni ma stałą minimalną szerokość kolumn (patrz
-   .custom-sheet__skill-field-header / --advances), która w węższej, wielokolumnowej
-   sekcji potrafi przekroczyć szerokość toru siatki (`minmax(0, 1fr)`, patrz wyżej).
-   Zamiast malować się na sąsiednim polu, nadmiar ma przewijać się wewnątrz własnej
-   komórki. */
+/* A skill or weapons list has fixed minimum column widths (see .custom-sheet__field-header and
+   the grid templates in skillLayout.js / weaponLayout.js), and in a narrow multi-column section
+   their sum can exceed the width of the grid track holding the field (`minmax(0, 1fr)`, above).
+   The overflow scrolls inside the field's own cell rather than painting over the field beside
+   it. */
 .custom-sheet__field--skill-table,
 .custom-sheet__field--weapon-table,
 .custom-sheet__field--skill-tree {
@@ -8213,7 +8213,7 @@ align-items: center;
     gap: 0;
 }
 
-.custom-sheet__skill-field-header {
+.custom-sheet__field-header {
     display: grid;
     align-items: center;
     gap: 8px;
@@ -8346,14 +8346,16 @@ align-items: center;
     justify-self: center;
 }
 
-/* The weapons header reserves a fixed 22px slot for this column (.custom-sheet__weapon-col--star),
-   but the star's own button reset left it an unreserved flex item sized to its intrinsic ~12px.
-   Filling the reserved slot here keeps every column aligned with the label above it.
-   display: inline-flex is needed for justify-content to have any effect on a plain button. */
+/* The star's width is reserved by the grid track from weaponGridTemplate's showStar column,
+   aligned with the label above it. justify-content centers the icon inside that width; the base
+   .custom-sheet__star-btn rule already supplies the inline-flex box it acts on, and the row being
+   display: grid now means a flex-basis here would have nothing to size against. */
 .custom-sheet__weapon-row .custom-sheet__star-btn {
-    display: inline-flex;
-    flex: 0 0 22px;
     justify-content: center;
+}
+
+.custom-sheet__weapon-row .custom-sheet__roll-btn {
+    justify-self: center;
 }
 
 /* The value column of a table row. The emphasis sits on the UNMODIFIED rule because a field
@@ -8470,11 +8472,14 @@ align-items: center;
     align-items: center;
     justify-content: flex-end;
     gap: 2px;
+    /* Not reachable today — content fits the track and the track is definite — but
+       .custom-sheet__weapon-actions needed this against its own grid item's min-width: auto
+       floor, and the three action cells are meant to read as one system. */
+    min-width: 0;
 }
 
 .custom-sheet__skill-save,
-.custom-sheet__skill-edit,
-.custom-sheet__skill-del {
+.custom-sheet__skill-edit {
     background: none;
     border: none;
     padding: 1px;
@@ -8485,9 +8490,30 @@ align-items: center;
 }
 
 .custom-sheet__skill-save:hover,
-.custom-sheet__skill-edit:hover,
-.custom-sheet__skill-del:hover {
+.custom-sheet__skill-edit:hover {
     color: #c9975b;
+}
+
+/* One delete mark (✕), one colour, one hover, across skill_table, skill_tree and weapons_table —
+   see the matching .custom-sheet__skill-tree-del and .custom-sheet__weapon-remove. Split out of
+   the rule above (which still holds save/edit) because delete now needs its own colour. Padding
+   and border-radius match .custom-sheet__weapon-remove, the value the three converged on; this
+   button never had a border-radius while it shared a rule with save/edit, which didn't need one —
+   without it the hover wash below would be a square behind a round icon. */
+.custom-sheet__skill-del {
+    background: none;
+    border: none;
+    padding: 2px;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #b57a5a;
+    display: inline-flex;
+    align-items: center;
+}
+
+.custom-sheet__skill-del:hover {
+    color: #8b3a2a;
+    background: rgba(180, 60, 40, 0.1);
 }
 
 .custom-sheet__skill-add-btn {
@@ -8518,75 +8544,85 @@ align-items: center;
 .custom-sheet__weapon-table {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
     width: 100%;
 }
 
-.custom-sheet__weapon-table-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 4px 2px;
-}
-
 .custom-sheet__weapon-col-label {
-    flex: 1;
     font-family: 'Cinzel', serif;
-    font-size: 9px;
-    color: #7a5c42;
+    font-size: 10px;
+    color: #fff9f0;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.custom-sheet__weapon-col--star {
-    flex: 0 0 22px;
-}
-
-.custom-sheet__weapon-col--actions {
-    flex: 0 0 52px;
-}
-
+/* One grid per weapon row, its columns handed in from JS (weaponGridTemplate) so the header and
+   the rows of a field can never disagree about where a column starts — which matters more here
+   than in the skill lists, because the GM defines the columns.
+   The zebra below counts SIBLING parity and the header is the first child of the table, so the
+   header must stay unconditional. The add-weapon footer is a sibling of the table container, not
+   of the rows, and must stay there: inside, it would be counted as a row. */
 .custom-sheet__weapon-row {
-    display: flex;
+    display: grid;
     align-items: center;
     gap: 8px;
-    padding: 3px 4px;
-    border-radius: 3px;
+    padding: 2px 4px;
+    min-height: 26px;
+    border-bottom: 1px solid rgba(201, 151, 91, 0.5);
     transition: background 0.12s;
 }
 
+.custom-sheet__weapon-row:nth-child(even) {
+    background: rgba(255, 249, 240, 0.55);
+}
+
+/* Equal specificity with the zebra rule above (0,2,0), so it must come after it to win. Gold
+   here, unlike the skill tree's brown: that field has depth bands this value would land between,
+   and this one has none. */
 .custom-sheet__weapon-row:hover {
-    background: rgba(201, 151, 91, 0.12);
+    background: rgba(201, 151, 91, 0.14);
 }
 
-.custom-sheet__weapon-cell-input,
-.custom-sheet__weapon-cell-select {
-    flex: 1;
+/* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
+   holds three field skins and the anchor is what keeps them apart. */
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-input,
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-select {
     min-width: 0;
+    width: 100%;
     box-sizing: border-box;
-    padding: 4px 6px;
-    background: #fff9f0;
-    border: 1px solid #c4a882;
-    border-radius: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 2px 4px;
     color: #3a2f1f;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-family: inherit;
 }
 
-.custom-sheet__weapon-cell-input:focus,
-.custom-sheet__weapon-cell-select:focus {
-    outline: none;
-    border-color: #7a5c42;
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-input:focus,
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-select:focus {
+    outline: 2px solid #7a5c42;
+    outline-offset: -2px;
+    background: rgba(255, 255, 255, 0.55);
 }
 
 /* Damage skeleton rendered inline — tokens read-only, numbers editable. */
 .custom-sheet__weapon-damage {
-    flex: 1;
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 3px;
     font-size: 0.85rem;
     color: #3a2f1f;
+    /* A grid item's default min-width: auto floors it at its min-content width regardless of the
+       track's own minmax(0, …) floor. The track's floor only promises the track may shrink; the
+       item in it can still refuse. min-width: 0 together with the track's minmax(0, …) is what
+       makes a cell shrink instead of pushing past its column. */
+    min-width: 0;
 }
 
 .custom-sheet__weapon-dmg-dice {
@@ -8636,6 +8672,48 @@ align-items: center;
     color: #c0392b;
 }
 
+/* A GM preset row is read-only, and .custom-sheet__weapon-row--preset is the only DOM hook that
+   says so — every other cell in the row is muted through it (see
+   .custom-sheet__weapon-row .custom-sheet__weapon-cell-static above), but renderDamageFormula's
+   readOnly flag only sets the input's readonly attribute: the fill, border and --missing state
+   still read as "fill me in." This selector matches an input carrying --missing too (an extra
+   class on the element doesn't stop a selector that doesn't mention it from matching), and at
+   two classes (0,2,0) it outranks --missing's one (0,1,0), so it wins the background and
+   border-color regardless of source order — which it must, because an always-on preset whose GM
+   left a damage block empty would otherwise show the red "incomplete" border on a field the
+   player has no way to complete, next to a roll button disabled for the same reason. Muted the
+   same way the static cells are: no fill, no border, second-plane text. The placeholder still
+   needs its own rule below — --missing's ::placeholder color is a separate declaration this
+   selector doesn't reach.
+   .custom-sheet__weapon-row--reading is the same defect on the second row kind this applies to:
+   a player's own weapon at rest. Its pencil-gated inputs carry the readonly attribute exactly
+   like the preset's, so they need the identical mute — the row still has its OWN damage input
+   element in the DOM (renderDamageFormula renders unconditionally; editing only flips readOnly),
+   it is just the wrong-looking one until this rule fires. Same two-class specificity, so it beats
+   --missing on its own merits without needing to race it in source order. */
+.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input,
+.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input {
+    background: transparent;
+    border-color: transparent;
+    color: #6b5a45;
+}
+
+.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input--missing::placeholder,
+.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input--missing::placeholder {
+    color: #6b5a45;
+}
+
+/* The mute above sets border-color: transparent at the same (0,2,0) specificity as
+   .custom-sheet__weapon-dmg-input:focus's border-color: #c9975b, so whichever comes later in the
+   source wins — the mute does, since it is declared after. Muted or not, these inputs remain real
+   tab stops (readonly, not disabled), so a keyboard user still needs to see where focus landed.
+   This rule adds the pseudo-class to both selectors, which raises it to (0,3,0) — it wins by
+   specificity, not source order, so it cannot be re-broken by reordering the block above. */
+.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input:focus,
+.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input:focus {
+    border-color: #7a5c42;
+}
+
 .custom-sheet__weapon-dmg-op {
     color: #7a5c42;
     font-weight: 700;
@@ -8657,26 +8735,46 @@ align-items: center;
 }
 
 .custom-sheet__weapon-actions {
-    flex: 0 0 52px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 4px;
+    min-width: 0;
 }
 
-.custom-sheet__weapon-remove {
+/* Every control in the actions cell — delete, the padlock, edit, save — is an MUI icon at
+   AFFORDANCE_ICON_SIZE in a box of identical padding, so all four occupy exactly the same width
+   without any of them declaring one. They used to be three different kinds of thing — an icon, a
+   text glyph and an emoji — and the glyph's wider padding made the delete control visibly broader
+   than the padlock beside it. A declared width would have hidden that rather than fixed it: the
+   contents have to match, not just the boxes. One rule for the shared geometry: each control used
+   to re-declare it dozens of lines apart, so changing one could silently break the alignment this
+   comment promises. Only color and :hover are left per control below. */
+.custom-sheet__weapon-remove,
+.custom-sheet__weapon-lock,
+.custom-sheet__weapon-edit,
+.custom-sheet__weapon-save {
     border: none;
     background: transparent;
-    color: #a05a44;
-    cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1;
-    padding: 2px 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
     border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* Colour and hover shared with .custom-sheet__skill-del and .custom-sheet__skill-tree-del — one
+   delete mark, one red, across all three lists. This rule's own padding/border-radius (in the
+   shared geometry block above) is the value the other two were unified onto. */
+.custom-sheet__weapon-remove {
+    color: #b57a5a;
+    cursor: pointer;
 }
 
 .custom-sheet__weapon-remove:hover {
-    background: rgba(160, 90, 68, 0.15);
+    color: #8b3a2a;
+    background: rgba(180, 60, 40, 0.1);
 }
 
 .custom-sheet__weapon-add-btn {
@@ -8697,28 +8795,50 @@ align-items: center;
     border-color: #7a5c42;
 }
 
-/* GM preset (always-on) weapon row — read-only, tinted + lock to mark it as the GM's. */
-.custom-sheet__weapon-row--preset {
-    background: rgba(201, 151, 91, 0.08);
-}
-
+/* Geometry shared with the other actions-cell controls — see the comment on
+   .custom-sheet__weapon-remove. The padlock is inert, so it keeps the default cursor and sits at
+   reduced opacity: it reports a state rather than offering an action. */
 .custom-sheet__weapon-lock {
-    font-size: 11px;
-    text-align: center;
+    color: #7a5c42;
     opacity: 0.7;
     cursor: default;
 }
 
-.custom-sheet__weapon-cell-static {
-    flex: 1;
+/* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
+   holds three field skins and the anchor is what keeps them apart. */
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-static {
     min-width: 0;
-    padding: 4px 6px;
-    color: #3a2f1f;
-    font-size: 0.85rem;
+    padding: 2px 4px;
+    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: #3a2f1f;
 }
+
+.custom-sheet__weapon-row .custom-sheet__weapon-cell-static--name {
+    font-weight: 700;
+}
+
+/* Muted only for the GM's own weapons. The base static cell is now what a player's row renders at
+   rest too, so the colour has to mean "not yours to change" rather than "not an input".
+   --preset is the only hook that tells the two apart; it also mutes the preset's damage inputs. */
+.custom-sheet__weapon-row--preset .custom-sheet__weapon-cell-static {
+    color: #6b5a45;
+}
+
+/* Geometry shared with the other actions-cell controls — see the comment on
+   .custom-sheet__weapon-remove. */
+.custom-sheet__weapon-edit,
+.custom-sheet__weapon-save {
+    cursor: pointer;
+}
+
+.custom-sheet__weapon-edit { color: #7a5c42; }
+.custom-sheet__weapon-save { color: #4a7a4a; }
+
+.custom-sheet__weapon-edit:hover { background: rgba(122, 92, 66, 0.15); }
+.custom-sheet__weapon-save:hover { background: rgba(74, 122, 74, 0.15); }
 
 /* Footer row: manual add button + catalog picker side by side. */
 .custom-sheet__weapon-add-row {
@@ -8726,7 +8846,7 @@ align-items: center;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 2px;
+    margin-top: 6px;
 }
 
 .custom-sheet__weapon-preset-picker {
@@ -8891,6 +9011,10 @@ align-items: center;
     align-items: center;
     justify-content: flex-end;
     gap: 2px;
+    /* Not reachable today — content fits the track and the track is definite — but
+       .custom-sheet__weapon-actions needed this against its own grid item's min-width: auto
+       floor, and the three action cells are meant to read as one system. */
+    min-width: 0;
 }
 
 .custom-sheet__skill-tree-add-inline {
@@ -8912,6 +9036,11 @@ align-items: center;
     background: rgba(201, 151, 91, 0.15);
 }
 
+/* Colour and hover are the source the other two delete buttons (.custom-sheet__skill-del,
+   .custom-sheet__weapon-remove) were unified onto — see their comments. Padding now matches
+   .custom-sheet__weapon-remove's 2px (was 0 3px): the tree's actions cell holds three buttons in a
+   64px track (add-child, rename, delete) and the two unchanged neighbours already fit there today,
+   so trimming delete's own horizontal footprint by 2px only adds slack, never removes it. */
 .custom-sheet__skill-tree-del {
     background: none;
     border: none;
@@ -8919,7 +9048,7 @@ align-items: center;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    padding: 0 3px;
+    padding: 2px;
     border-radius: 3px;
     transition: color 0.12s, background 0.12s;
     flex-shrink: 0;
@@ -9745,6 +9874,29 @@ align-items: center;
     color: #7a5c42;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+/* The preset editor's own cells. These used to borrow .custom-sheet__weapon-cell-input/-select,
+   which worked only because that pair's rule was unanchored; anchoring it under
+   .custom-sheet__weapon-row (this file's three-skins-one-stylesheet discipline) left these two
+   native with no styling at all. Own classes, same seven declarations the borrowed look used to
+   carry — this editor lives in a creator label, not a weapon row, so it gets its own rule rather
+   than widening the sheet's anchor back open. */
+.creator__weapon-preset-input,
+.creator__weapon-preset-select {
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    padding: 4px 6px;
+    color: #3a2f1f;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+}
+
+.creator__weapon-preset-input:focus,
+.creator__weapon-preset-select:focus {
+    outline: none;
+    border-color: #c9975b;
 }
 
 .creator__weapon-preset-damage {

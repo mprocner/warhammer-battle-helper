@@ -1355,6 +1355,8 @@
     "weaponDamageIncomplete": "Uzupełnij wszystkie wartości obrażeń przed rzutem",
     "weaponSkillMissing": "Wybierz umiejętność przed rzutem",
     "weaponPresetLocked": "Broń MG — zawsze na karcie, tylko do odczytu",
+    "editWeapon": "Edytuj broń",
+    "saveWeapon": "Gotowe",
     "addSkill": "Dodaj umiejętność",
     "skillNamePlaceholder": "Nazwa umiejętności…",
     "saveSkill": "Zapisz nazwę",

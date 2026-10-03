@@ -1355,6 +1355,8 @@
     "weaponDamageIncomplete": "Fill in all damage values before rolling",
     "weaponSkillMissing": "Pick a skill before rolling",
     "weaponPresetLocked": "GM weapon — always on the sheet, read-only",
+    "editWeapon": "Edit weapon",
+    "saveWeapon": "Done",
     "addSkill": "Add skill",
     "skillNamePlaceholder": "Skill name…",
     "saveSkill": "Save name",

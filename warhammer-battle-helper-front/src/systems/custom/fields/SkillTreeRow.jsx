@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
 import { AFFORDANCE_ICON_SIZE } from './affordances';
 
 // One row of a skill_tree, at one depth.
@@ -162,7 +162,7 @@ function SkillTreeRow({
                   onClick={() => onRemove(row.key)}
                   title={t('customSheet.removeSkill')}
                 >
-                  <DeleteIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+                  <CloseIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
                 </button>
               )}
             </>

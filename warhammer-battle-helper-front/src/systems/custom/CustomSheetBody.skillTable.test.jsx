@@ -78,7 +78,7 @@ describe('CustomSheetBody skill_table — header and grid', () => {
     const { container } = render(
       <CustomSheetBody sections={tableSections({ showDevelopment: true, hasAdvances: true })} />
     );
-    const header = container.querySelector('.custom-sheet__skill-field-header');
+    const header = container.querySelector('.custom-sheet__field-header');
     const row = container.querySelector('.custom-sheet__skill-row');
     expect(header.style.gridTemplateColumns).toBe('20px 1fr 56px 56px 48px');
     expect(row.style.gridTemplateColumns).toBe(header.style.gridTemplateColumns);
@@ -86,7 +86,7 @@ describe('CustomSheetBody skill_table — header and grid', () => {
 
   it('renders the header even for a field with no flags at all', () => {
     const { container } = render(<CustomSheetBody sections={tableSections()} />);
-    expect(container.querySelector('.custom-sheet__skill-field-header')).not.toBeNull();
+    expect(container.querySelector('.custom-sheet__field-header')).not.toBeNull();
   });
 
   it('labels the name column and the single value column when there are no advances', () => {
@@ -200,7 +200,7 @@ describe('CustomSheetBody skill_table — two columns', () => {
     const { container } = render(
       <CustomSheetBody sections={fourRows({ twoColumns: true, hasAdvances: true })} />
     );
-    expect(container.querySelectorAll('.custom-sheet__skill-field-header')).toHaveLength(2);
+    expect(container.querySelectorAll('.custom-sheet__field-header')).toHaveLength(2);
   });
 });
 

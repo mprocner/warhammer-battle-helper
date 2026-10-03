@@ -534,14 +534,19 @@ func skillValue(stats *Stats, key, linkedAttr string, baseFromAttr bool) int {
 // Current is deliberately not consulted: base + advances is the whole truth about a skill's value
 // (see skillValue), so a Current that disagrees can only be stale.
 //
-// With BaseFromAttr the question becomes whether the attribute exists at all: an attribute present
-// and reading 0 gives a real threshold of 0 + advances, the same way a computed zero does above.
+// With BaseFromAttr the derived base can come from either half of skillValue's sum: an attribute
+// present and reading 0 gives a real threshold of 0 + advances, the same way a computed zero does
+// above, and advances alone are just as real when the skill has NO attribute assigned — skillValue,
+// the "skill" formula block and the sheet all report that number, so the threshold must too.
+// Only a skill with neither (no attribute behind it, no advances on it) is genuinely blank.
 func skillHasValue(stats *Stats, key, linkedAttr string, baseFromAttr bool) bool {
-	if baseFromAttr {
-		_, ok := attrLookup(stats, linkedAttr)
-		return ok
-	}
 	v := stats.Skills[key]
+	if baseFromAttr {
+		if _, ok := attrLookup(stats, linkedAttr); ok {
+			return true
+		}
+		return v.Advances != 0
+	}
 	return v.Base != 0 || v.Advances != 0
 }
 

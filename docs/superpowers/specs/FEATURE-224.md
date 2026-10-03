@@ -231,3 +231,86 @@ jsdom nie wczytuje `style.css` i nie liczy layoutu, więc **żaden test nie spra
 - Przesuwanie szerokości kolumn przez MG (osobny etap, bez przygotowań teraz).
 - Migracja kart CoC i Warhammer na silnik custom.
 - Zmiany w modelu danych, kluczach, rzutach i formule obrażeń.
+
+---
+
+## Uzupełnienie: wiersz gracza domyślnie do odczytu
+
+**Dopisane 2026-10-02** po obejrzeniu skórki w przeglądarce. Brainstorming zaakceptowany przez
+użytkownika, zakres domknięty w tej samej funkcji zamiast nowej.
+
+### Problem
+
+Wszystkie komórki wiersza gracza są inputami przez cały czas. Broń ustawia się raz i potem rusza
+rzadko, więc przez większość życia wiersza te inputy nie służą do niczego poza umożliwianiem
+przypadkowej zmiany. Najgorsze przypadkowe kliknięcie to kasowanie: zmiana litery w nazwie jest
+odkręcalna, usunięcie broni nie.
+
+### Decyzje z brainstormingu
+
+**Ołówek zasłania wszystko, łącznie z kasowaniem** (wariant B z trzech rozważanych). Wiersz
+w spoczynku jest nieklikalny poza rzutem. Odrzucone: zostawienie ✕ na wierzchu (chroni przed
+tanim błędem, wystawia na drogi) oraz wariant trzymający obrażenia edytowalne przez analogię do
+kolumn Baza/Rozwinięcia w tabeli umiejętności — w broni liczba obrażeń jest częścią definicji
+broni, nie bieżącym stanem postaci, który rośnie w trakcie gry.
+
+**Analogia do umiejętności nie przenosi się wprost, i to jest świadome.** Tam ołówek pilnuje
+wyłącznie nazwy i wyboru atrybutu, a kolumny wartości są inputami zawsze. W tabeli broni nie ma
+takiego podziału — wszystkie kolumny pochodzą od MG i wszystkie są jednakowo „ustawiane raz".
+
+**Tryb edycji to bramka widoczności, nie bufor** (wariant A z dwóch rozważanych). Zapis leci jak
+dziś, przez `onChange.weaponCell`, a `✓` tylko zamyka tryb. Zero nowego stanu.
+
+Rozstrzygnięte pomiarem, nie opinią: użytkownik pytał o liczbę requestów przy wielu graczach.
+`mapWeaponRow` (`CharacterSheet.jsx`) robi `setEdited` plus `triggerAutoSave`, a ten kasuje
+poprzedni timer i ustawia nowy na 800 ms. Dwadzieścia naciśnięć klawisza to dwadzieścia
+aktualizacji stanu lokalnego i **jeden** PUT. Bufor nie zmniejszyłby liczby zapisów — zmieniłby
+jeden na jeden — więc kupowałby wyłącznie cofanie, o które nikt nie prosił, za kopię całego
+wiersza (`cells` + `damage`) i dwa wizualnie zderzające się `✕` w jednym torze.
+
+Odnotowane przy okazji, poza zakresem: `toggleWeaponFavorite` zapisuje **natychmiast**, omijając
+debounce, i nie czyści oczekującego timera — ten sam kształt co znana sprawa z
+`toggleDevelopmentSkill` i `toggleFavoriteSkill`. Osobny temat, wspólny dla trzech miejsc.
+
+Odnotowane przy okazji, poza zakresem: `autoSaveTimer` nie ma sprzątania przy odmontowaniu, więc
+zapis po zamknięciu karty dochodzi — ale działa tak przypadkiem, nie z projektu.
+
+### Co się zmienia
+
+**Dwa tryby wiersza gracza.** W spoczynku renderuje te same statyczne komórki co wiersz MG;
+po ołówku dzisiejsze inputy i selecty.
+
+Konsekwencja w CSS: dziś `weapon-cell-static` **jest** przygaszoną komórką MG. Gdy wiersz gracza
+też zacznie renderować statyczne komórki, przygaszenie musi zejść do wariantu MG — `#6b5a45`
+znaczy „to nie twoje", a nie „to nie jest input". Klasa bazowa dostaje `#3a2f1f`, a przygaszenie
+przechodzi pod `.custom-sheet__weapon-row--preset`, która tym samym zarabia na drugie zadanie
+obok wyciszania pól obrażeń presetu.
+
+Wraca też pogrubienie nazwy, zdjęte z inputa 2026-10-02: w spoczynku nazwa jest tekstem, więc
+`--name` na wariancie statycznym obsługuje oba rodzaje wiersza.
+
+**Kostka dostaje własny tor.** Dziś siedzi wewnątrz `weapon-actions`, razem z kasowaniem — jako
+jedyna z trzech list karty. Rozdzielenie nie jest kosmetyczne: bez niego tryb edycji musiałby
+pomieścić kostkę, `✓` i `✕` w 52px. Po rozdzieleniu tor akcji trzyma najwyżej dwa przyciski
+(`✓` i `✕` w edycji, sam ołówek w spoczynku, kłódka w wierszu MG) i nie wymaga poszerzenia.
+`weaponGridTemplate` zyskuje tor `28px`, tak jak mają obie listy umiejętności.
+
+**Stan edycji to `editingPath`** — ta sama zmienna, przez którą edytują tabela i drzewko
+umiejętności, z identyfikatorem wiersza broni. Zysk: na całej karcie edytuje się dokładnie jedna
+rzecz naraz. Kolizji kluczy nie ma — klucze umiejętności mają kropkę i prefiks pola,
+identyfikatory broni pochodzą z `genId`.
+
+**Obrażenia bez nowej ścieżki renderowania.** `renderDamageFormula` ma już parametr `readOnly`;
+wiersz gracza przekaże `true` w spoczynku i swoje dotychczasowe `readOnly` w edycji.
+
+### Testy
+
+Renderujące przez `CustomSheetBody`: wiersz gracza w spoczynku pokazuje tekst, nie inputy; ołówek
+przełącza na inputy; `✓` wraca do odczytu; `✕` kasowania nie istnieje poza trybem edycji; wiersz MG
+nie ma ołówka i nie da się go wprowadzić w edycję; wejście w edycję broni zamyka otwartą edycję
+umiejętności.
+
+### Poza zakresem
+
+Bufor i cofanie. Kasowanie dostępne poza trybem edycji. Natychmiastowy zapis w
+`toggleWeaponFavorite`. Sprzątanie `autoSaveTimer`.

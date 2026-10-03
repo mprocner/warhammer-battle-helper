@@ -399,3 +399,47 @@ func TestRollWeapon_AttackUsesDerivedSkillBase(t *testing.T) {
 		t.Errorf("attack target = %d, want 45 (attribute 40 + advances 5)", res.Target)
 	}
 }
+
+// A skill with no attribute assigned, in a table that derives bases from attributes, still has a
+// real value: its advances. The sheet shows that number and skillValue returns it, so an attack on
+// that skill must be judged against it — not reported as an undecided raw roll.
+func TestRollWeapon_AttackOnSkillWithoutAttribute(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	template := &models.SystemTemplate{
+		Sections: []models.SectionDef{{
+			Fields: []models.FieldDef{
+				{
+					Type: "skill_table", Key: "skills", Rollable: true,
+					RollConfig:        &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"},
+					AssignAttrToSkill: true, HasAdvances: true, BaseFromAttr: true,
+					Skills: []models.SkillOption{{ID: "opt_lore", Label: "Lore", Attr: ""}},
+				},
+				{
+					Type: "weapons_table", Key: "weapons", Rollable: true,
+					RollConfig: &models.RollConfig{Formula: []models.FormulaBlock{diceBlock("d100")}, SuccessType: "below_threshold"},
+					Columns:    []models.WeaponColumn{{Key: "skill", Label: "Skill", Type: "select", OptionsFromSkills: true}},
+				},
+			},
+		}},
+	}
+	stats := &Stats{
+		Attributes: map[string]AttrValue{"agi": {Base: 35, Advances: 5, Current: 40}},
+		Skills:     map[string]AttrValue{"skills.opt_lore": {Advances: 50, Current: 50}},
+		Weapons:    map[string][]WeaponRow{"weapons": {{ID: "row1", Cells: map[string]string{"skill": "skills.opt_lore"}}}},
+	}
+	raw, err := bson.Marshal(stats)
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+
+	res, err := p.RollWeaponWithTemplate(raw, template, "weapons", "row1", 0)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate: %v", err)
+	}
+	if res.Target != 50 {
+		t.Errorf("attack target = %d, want 50 (no attribute, 50 advances)", res.Target)
+	}
+	if res.Outcome != "regular_success" {
+		t.Errorf("outcome = %q, want regular_success (42 under 50), not a raw roll", res.Outcome)
+	}
+}

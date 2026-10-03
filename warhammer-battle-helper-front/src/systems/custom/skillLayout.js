@@ -2,6 +2,8 @@
 // CustomSheetBody because none of it touches the DOM: jsdom computes no layout at all, so the
 // only way these decisions can be tested is to make them in plain data first and render second.
 
+import { walkFields } from '../../utils/templateSections';
+
 // skillGridTemplate builds ONE grid-template-columns string. A field's header row and every one
 // of its data rows must be handed the same string — the moment they are computed separately the
 // header drifts away from the values underneath it.
@@ -54,6 +56,36 @@ export function treeGridTemplate({
 // the answer must not be able to drift between them.
 function isDirectChild(key, prefix) {
   return key.startsWith(prefix) && !key.slice(prefix.length).includes('.');
+}
+
+// collectSkillOptions gathers {key, label} for every skill the character has. Its only caller is
+// the weapons table's "from skills" select (WeaponsTable.jsx), but it lives here rather than in
+// weaponLayout.js because what it does is compose skill keys, not lay out weapons: skill_table
+// rows use `${field.key}.${opt.id}` (stable id, not the label) — the exact same grammar
+// buildSkillRows below uses — and skill_tree nodes use the dot-path `${field.key}.${node.key}…`.
+// Keeping every piece of skill-key composition in one file means a change to how a skill_table row
+// is keyed happens in the obvious place; split across two modules, the weapons select could keep
+// offering keys nothing resolves — a roll that silently misses.
+export function collectSkillOptions(sections, customSkillNodes) {
+  const out = [];
+  const seen = new Set();
+  const push = (key, label) => { if (key && !seen.has(key)) { seen.add(key); out.push({ key, label: label || key }); } };
+  walkFields(sections, (f) => {
+    if (f.type === 'skill_table') {
+      for (const opt of (f.skills || [])) {
+        if (opt.label) push(`${f.key}.${opt.id}`, opt.label);
+      }
+    } else if (f.type === 'skill_tree' && f.tree) {
+      const walk = (node, prefix) => {
+        const path = prefix ? `${prefix}.${node.key}` : node.key;
+        push(path, node.label);
+        (node.children || []).forEach(ch => walk(ch, path));
+      };
+      (f.tree.children || []).forEach(ch => walk(ch, f.key));
+    }
+  });
+  for (const [key, node] of Object.entries(customSkillNodes || {})) push(key, node.label);
+  return out;
 }
 
 // buildSkillRows merges a skill_table's GM-defined rows with the player's own additions into one

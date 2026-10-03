@@ -32,7 +32,8 @@ import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
-import { collectSkillOptions, renderDamageFormula, weaponSkillColumn } from '../../systems/custom/CustomSheetBody';
+import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
+import { collectSkillOptions } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import PropertyPopup from './PropertyPopup';
 import FieldChrome from './FieldChrome';
@@ -630,7 +631,7 @@ function WeaponPresetsEditor({ field, sections, onChange }) {
                     return (
                       <label key={c.key} className="creator__weapon-preset-field">
                         <span className="creator__weapon-preset-field-label">{c.label}</span>
-                        <select className="custom-sheet__weapon-cell-select" value={val}
+                        <select className="creator__weapon-preset-select" value={val}
                           onChange={e => updateCell(i, c.key, e.target.value)}>
                           <option value="">—</option>
                           {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
@@ -641,7 +642,7 @@ function WeaponPresetsEditor({ field, sections, onChange }) {
                   return (
                     <label key={c.key} className="creator__weapon-preset-field">
                       <span className="creator__weapon-preset-field-label">{c.label}</span>
-                      <input type={c.type === 'number' ? 'number' : 'text'} className="custom-sheet__weapon-cell-input"
+                      <input type={c.type === 'number' ? 'number' : 'text'} className="creator__weapon-preset-input"
                         value={val} onChange={e => updateCell(i, c.key, e.target.value)} />
                     </label>
                   );

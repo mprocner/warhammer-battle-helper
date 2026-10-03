@@ -1,4 +1,4 @@
-import { weaponSkillColumn, weaponRowIssue } from './CustomSheetBody';
+import { weaponSkillColumn, weaponRowIssue } from './weaponLayout';
 
 const skillCol  = { key: 'c_skill', label: 'Skill', type: 'select', optionsFromSkills: true };
 const textCol   = { key: 'c_name',  label: 'Name',  type: 'text' };

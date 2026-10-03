@@ -11,6 +11,10 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 // tinted. A TREE has no zebra — its rows are banded by depth — so there the header is only the
 // list's top edge.
 //
+// The CSS class is shared among all three list types (skill table, skill tree, and weapons table),
+// but this component renders the header only for skill lists — the weapons table draws its own
+// header markup from GM-defined labels.
+//
 // `gridTemplate` is handed in rather than computed here: the header and every row of the same
 // field must be given the SAME string, and the moment the two compute it separately they drift.
 // That is also what lets one component serve two fields whose column sets differ.
@@ -25,7 +29,7 @@ function SkillFieldHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="custom-sheet__skill-field-header" style={{ gridTemplateColumns: gridTemplate }}>
+    <div className="custom-sheet__field-header" style={{ gridTemplateColumns: gridTemplate }}>
       {showDevelopment && (
         <span
           className="custom-sheet__skill-col-label custom-sheet__skill-col-label--dev"

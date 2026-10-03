@@ -1017,3 +1017,509 @@ Odstępstwo od spec-a, świadome: spec wymieniał kreator jako importera pomocni
 trzy — dochodzi **skrócona karta postaci** (`CharacterDetails.jsx:8`) i plik testowy. Skrócona
 karta już dwa razy w tym projekcie była czytelnikiem, o którym ktoś zapomniał, więc jest wymieniona
 w Tasku 1 z nazwy.
+
+---
+
+## Uzupełnienie planu: wiersz gracza domyślnie do odczytu
+
+Dopisane 2026-10-02 po weryfikacji w przeglądarce. Spec: sekcja „Uzupełnienie" w `FEATURE-224.md`.
+Zadania 7 i 8 wykonuje się po Tasku 6 (przeglądarka), na tej samej gałęzi.
+
+Rozdzielone na dwa, bo przeniesienie kostki musi wylądować **razem** z szablonem siatki — inaczej
+nagłówek i wiersze policzą inną liczbę torów — a tryby odczytu i edycji to osobna zmiana
+zachowania, którą recenzent powinien móc odrzucić niezależnie.
+
+---
+
+### Task 7: Kostka dostaje własny tor
+
+**Files:**
+- Modify: `warhammer-battle-helper-front/src/systems/custom/weaponLayout.js` (`weaponGridTemplate`)
+- Modify: `warhammer-battle-helper-front/src/systems/custom/weaponLayout.test.js`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/fields/WeaponsTable.jsx`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/fields/WeaponsTableRow.jsx`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/fields/WeaponsPresetRow.jsx`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/CustomSheetBody.jsx` (`case 'weapons_table'`)
+- Modify: `warhammer-battle-helper-front/src/style.css`
+
+**Interfaces:**
+- Produces: `weaponGridTemplate(field, { showStar, showRoll, showActions, hasDamage })` — nowa flaga `showRoll` wstawia tor `28px` **między** obrażenia a akcje.
+
+- [ ] **Step 1: Zaktualizuj testy szablonu (najpierw czerwone)**
+
+W `weaponLayout.test.js` zastąp test rezerwujący kolumny opcjonalne tym, i dopisz drugi:
+
+```js
+  it('reserves the star, the damage column, the die and the actions only when asked', () => {
+    expect(weaponGridTemplate({ columns: cols('text') }, { showStar: true, hasDamage: true, showRoll: true, showActions: true }))
+      .toBe('22px minmax(0, 2fr) minmax(0, 1fr) 28px 52px');
+  });
+
+  // The die sits between the damage column and the actions, matching the order the row renders
+  // them in — a template whose track order disagreed with the markup would put every control in
+  // the wrong cell while still having the right number of tracks.
+  it('puts the die after the damage column and before the actions', () => {
+    expect(weaponGridTemplate({ columns: cols('text') }, { showRoll: true, showActions: true }))
+      .toBe('minmax(0, 2fr) 28px 52px');
+  });
+```
+
+- [ ] **Step 2: Uruchom testy — mają paść**
+
+Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=weaponLayout`
+Expected: FAIL — otrzymane stringi bez toru `28px`.
+
+- [ ] **Step 3: Dopisz flagę w `weaponGridTemplate`**
+
+Sygnatura i tablica torów:
+
+```js
+export function weaponGridTemplate(field, { showStar = false, showRoll = false, showActions = false, hasDamage = false } = {}) {
+```
+
+```js
+  return [
+    showStar && '22px',
+    ...columns.map(trackFor),
+    hasDamage && 'minmax(0, 1fr)',
+    showRoll && '28px',
+    showActions && '52px',
+  ].filter(Boolean).join(' ');
+```
+
+Do komentarza funkcji dopisz zdanie: tor kostki jest osobny, bo tor akcji musi pomieścić dwa
+przyciski gracza w trybie edycji, a kostka wciśnięta między nie zostawiłaby na nie 52px na troje.
+
+- [ ] **Step 4: Przenieś kostkę z `weapon-actions` do własnej komórki**
+
+W `WeaponsTableRow.jsx` wyjmij ją z `<div className="custom-sheet__weapon-actions">`, tak by stała
+bezpośrednim dzieckiem wiersza, przed tym divem:
+
+```jsx
+      {showRoll && renderRoll(row, issue)}
+
+      <div className="custom-sheet__weapon-actions">
+        {onChange && (
+          <button
+            className="custom-sheet__weapon-remove"
+            onClick={() => onChange.weaponRemove(field.key, row.id)}
+            title={t('customSheet.removeWeapon')}
+          >
+            <CloseIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+          </button>
+        )}
+      </div>
+```
+
+`showRoll` dochodzi do propsów komponentu; znika z niego warunek `field.rollable`, bo flagę liczy
+teraz rodzic.
+
+To samo w `WeaponsPresetRow.jsx` — kostka przed `weapon-actions`, w divie zostaje sama kłódka:
+
+```jsx
+      {showRoll && renderRoll(preset, issue)}
+
+      <div className="custom-sheet__weapon-actions">
+        <span className="custom-sheet__weapon-lock" title={t('customSheet.weaponPresetLocked')}>
+          <LockIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+        </span>
+      </div>
+```
+
+- [ ] **Step 5: Policz flagę w rodzicu i przekaż ją**
+
+W `CustomSheetBody.jsx`, w `case 'weapons_table'`, obok istniejącego `showStar`:
+
+```jsx
+        const showRoll = !!field.rollable && (!!onRoll || showAffordances);
+```
+
+i przekaż `showRoll={showRoll}` do `<WeaponsTable>`. To ta sama polityka afordancji co dla
+gwiazdki: tor rezerwuje się wtedy i tylko wtedy, gdy coś może się w nim wyrenderować, a kreator
+liczy się tak samo jak gra.
+
+W `WeaponsTable.jsx` dodaj `showRoll` do propsów, przekaż go do `weaponGridTemplate` i do obu
+komponentów wiersza, a w nagłówku dołóż rozpórkę dokładnie tam, gdzie tor:
+
+```jsx
+          {hasDamage && <span className="custom-sheet__weapon-col-label">{t('customSheet.damage')}</span>}
+          {showRoll && <span className="custom-sheet__weapon-col-label" />}
+          <span className="custom-sheet__weapon-col-label" />
+```
+
+- [ ] **Step 6: Wyśrodkuj kostkę w jej torze**
+
+W `style.css`, obok reguły robiącej to samo dla gwiazdki:
+
+```css
+.custom-sheet__weapon-row .custom-sheet__roll-btn {
+    justify-self: center;
+}
+```
+
+- [ ] **Step 7: Uruchom testy i zaktualizuj snapshoty**
+
+Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern='CustomSheetBody|weaponLayout' -u`
+Expected: PASS. Snapshot zmienia się tak, że kostka wychodzi z `weapon-actions` i staje się
+rodzeństwem tego diva, a `grid-template-columns` zyskuje `28px`. Obejrzyj diff: nic poza tym.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add warhammer-battle-helper-front/src
+git commit -m "refactor: FEATURE-224 give the weapon roll a track of its own
+
+It was the only one of the sheet's three lists keeping the die inside
+the actions cell. That cell is about to hold two player buttons in edit
+mode, and 52px does not fit three controls.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
+```
+
+---
+
+### Task 8: Wiersz gracza czyta się domyślnie, edytuje po ołówku
+
+**Files:**
+- Modify: `warhammer-battle-helper-front/src/systems/custom/fields/WeaponsTableRow.jsx`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/fields/WeaponsTable.jsx`
+- Modify: `warhammer-battle-helper-front/src/systems/custom/CustomSheetBody.jsx` (`case 'weapons_table'`)
+- Modify: `warhammer-battle-helper-front/src/style.css`
+- Modify: `warhammer-battle-helper-front/src/locales/{en,pl}/translation.json`
+- Test: `warhammer-battle-helper-front/src/systems/custom/CustomSheetBody.weaponsTable.test.jsx`
+
+**Interfaces:**
+- Consumes: `showRoll` i tor kostki z Taska 7; `editingPath`/`setEditingPath` z `CustomSheetBody` (ta sama para, którą dostają `SkillTable` i `SkillTree`).
+
+- [ ] **Step 1: Dodaj klucze i18n**
+
+`locales/en/translation.json`, w `customSheet`:
+
+```json
+      "editWeapon": "Edit weapon",
+      "saveWeapon": "Done",
+```
+
+`locales/pl/translation.json`:
+
+```json
+      "editWeapon": "Edytuj broń",
+      "saveWeapon": "Gotowe",
+```
+
+Nowe klucze, nie `editSkill`/`saveSkill`: tamte mówią „Edit name", a ołówek broni otwiera cały wiersz.
+
+- [ ] **Step 2: Napisz testy (najpierw czerwone)**
+
+Dopisz do `CustomSheetBody.weaponsTable.test.jsx`. Plik ma już fixture z presetem `alwaysOn`;
+dołóż obok własny, z wierszem gracza:
+
+```js
+const playerWeaponSections = () => ([{
+  id: 'sec1',
+  columns: 1,
+  fields: [
+    {
+      key: 'wpn_table',
+      type: 'weapons_table',
+      label: 'Bronie',
+      columns: [{ key: 'name', label: 'Nazwa', type: 'text' }],
+    },
+  ],
+}]);
+
+const playerValues = { weapons: { wpn_table: [{ id: 'w1', cells: { name: 'Miecz' }, damage: {} }] } };
+
+const noop = () => {};
+const sheetHandlers = {
+  skill: noop, skillAdvances: noop, text: noop, progress: noop, number: noop,
+  weaponAdd: noop, weaponAddFromPreset: noop, weaponRemove: noop,
+  weaponCell: noop, weaponDamage: noop, weaponFavorite: noop,
+};
+
+describe('CustomSheetBody weapons_table — read first, edit on the pencil', () => {
+  const renderRow = () => render(
+    <CustomSheetBody sections={playerWeaponSections()} values={playerValues} onChange={sheetHandlers} />
+  );
+
+  it('shows the weapon as text, not as inputs, until asked', () => {
+    const { container } = renderRow();
+    expect(container.querySelector('.custom-sheet__weapon-cell-input')).toBeNull();
+    expect(container.querySelector('.custom-sheet__weapon-cell-static').textContent).toBe('Miecz');
+  });
+
+  // The whole point: the destructive control is the one a stray click must not reach.
+  it('keeps the delete button out of reach while the row is at rest', () => {
+    const { container } = renderRow();
+    expect(container.querySelector('.custom-sheet__weapon-remove')).toBeNull();
+  });
+
+  it('turns the cells into inputs when the pencil is clicked', () => {
+    const { container } = renderRow();
+    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
+    expect(container.querySelector('.custom-sheet__weapon-cell-input').value).toBe('Miecz');
+    expect(container.querySelector('.custom-sheet__weapon-remove')).not.toBeNull();
+  });
+
+  it('goes back to text when the edit is closed', () => {
+    const { container } = renderRow();
+    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
+    fireEvent.click(container.querySelector('.custom-sheet__weapon-save'));
+    expect(container.querySelector('.custom-sheet__weapon-cell-input')).toBeNull();
+  });
+
+  // A GM weapon is not the player's to change, so it has no way in at all.
+  it('gives a GM weapon no pencil', () => {
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} onChange={sheetHandlers} />);
+    expect(container.querySelector('.custom-sheet__weapon-edit')).toBeNull();
+  });
+});
+```
+
+Sprawdź nazwę fixture z presetem w tym pliku i użyj jej w ostatnim teście zamiast `weaponsSections`,
+jeśli nazywa się inaczej.
+
+- [ ] **Step 3: Uruchom testy — mają paść**
+
+Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern=weaponsTable`
+Expected: FAIL — pierwszy test znajduje input zamiast `null`, bo wiersz renderuje dziś inputy zawsze.
+
+- [ ] **Step 4: Rozdziel wiersz gracza na dwa tryby**
+
+Całe ciało `WeaponsTableRow.jsx` — zmienia się lista propsów i renderowanie komórek oraz ogona:
+
+```jsx
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
+import EditIcon from '@mui/icons-material/Edit';
+import { AFFORDANCE_ICON_SIZE } from './affordances';
+import { renderDamageFormula, weaponRowIssue } from '../weaponLayout';
+
+// One player-owned weapon row, in one of two modes.
+//
+// At rest it renders the same static cells a GM weapon does. A weapon is set up once and then
+// rarely touched, so inputs that are always live spend most of the row's life offering nothing
+// but a chance to change it by accident — and the cheapest stray click, delete, is the one that
+// cannot be undone. The pencil guards all of it, delete included.
+//
+// Editing is a visibility gate, not a buffer: a keystroke still writes through onChange.weaponCell
+// exactly as before, and the tick only closes the mode. The save itself is already debounced 800ms
+// upstream in CharacterSheet's triggerAutoSave, so buffering here would turn one request into one
+// request and buy nothing but an undo nobody asked for.
+//
+// Separate from WeaponsPresetRow rather than one component with a flag: a GM weapon has no edit
+// mode to be in, no pencil and no delete, and its cells are muted because they are not the
+// player's to change.
+function WeaponsTableRow({
+  field,
+  row,
+  cols,
+  cellLabel,
+  skillOptions,
+  nameKey,
+  gridTemplate,
+  hasDamage,
+  showStar,
+  showRoll,
+  editing,
+  onStartEdit,
+  onFinishEdit,
+  onChange,
+  readOnly,
+  renderStar,
+  renderRoll,
+}) {
+  const { t } = useTranslation();
+  const issue = weaponRowIssue(field, row);
+
+  return (
+    <div className="custom-sheet__weapon-row" style={{ gridTemplateColumns: gridTemplate }}>
+      {showStar && renderStar(row.id)}
+
+      {cols.map(c => {
+        const val = (row.cells && row.cells[c.key]) || '';
+
+        if (!editing) {
+          return (
+            <span
+              key={c.key}
+              className={`custom-sheet__weapon-cell-static${c.key === nameKey ? ' custom-sheet__weapon-cell-static--name' : ''}`}
+            >
+              {cellLabel(c, val) || '—'}
+            </span>
+          );
+        }
+
+        if (c.type === 'select') {
+          const opts = c.optionsFromSkills
+            ? skillOptions
+            : (c.options || []).map(o => ({ key: o, label: o }));
+          return (
+            <select
+              key={c.key}
+              className="custom-sheet__weapon-cell-select"
+              value={val}
+              onChange={onChange ? e => onChange.weaponCell(field.key, row.id, c.key, e.target.value) : undefined}
+              disabled={readOnly}
+            >
+              <option value="">—</option>
+              {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          );
+        }
+        return (
+          <input
+            key={c.key}
+            type={c.type === 'number' ? 'number' : 'text'}
+            className="custom-sheet__weapon-cell-input"
+            value={val}
+            onChange={onChange ? e => onChange.weaponCell(field.key, row.id, c.key, e.target.value) : undefined}
+            readOnly={readOnly}
+          />
+        );
+      })}
+
+      {hasDamage && (
+        <div className="custom-sheet__weapon-damage">
+          {/* readOnly at rest for the same reason the cells are static: the formula's number
+              inputs are part of the weapon's definition, not of play. */}
+          {renderDamageFormula(field.damageFormula || [], row, field.key, onChange, editing ? readOnly : true, t)}
+        </div>
+      )}
+
+      {showRoll && renderRoll(row, issue)}
+
+      <div className="custom-sheet__weapon-actions">
+        {onChange && (editing ? (
+          <>
+            <button
+              className="custom-sheet__weapon-save"
+              onClick={() => onFinishEdit()}
+              title={t('customSheet.saveWeapon')}
+            >
+              <CheckIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+            </button>
+            <button
+              className="custom-sheet__weapon-remove"
+              onClick={() => onChange.weaponRemove(field.key, row.id)}
+              title={t('customSheet.removeWeapon')}
+            >
+              <CloseIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+            </button>
+          </>
+        ) : (
+          <button
+            className="custom-sheet__weapon-edit"
+            onClick={() => onStartEdit(row.id)}
+            title={t('customSheet.editWeapon')}
+          >
+            <EditIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default WeaponsTableRow;
+```
+
+`cellLabel` dochodzi do propsów — wiersz gracza potrzebuje go teraz do tego samego, do czego od
+początku potrzebuje go wiersz MG: rozwiązania wartości `select` na etykietę. Jedna funkcja, dwa
+rodzaje wiersza, zero drugiej definicji.
+
+- [ ] **Step 5: Podaj stan edycji z kontenera**
+
+W `WeaponsTable.jsx` dodaj do propsów `editingPath` i `setEditingPath`, a w miejscu renderowania
+wiersza gracza przekaż:
+
+```jsx
+            cellLabel={cellLabel}
+            showRoll={showRoll}
+            editing={editingPath === row.id}
+            onStartEdit={setEditingPath}
+            onFinishEdit={() => setEditingPath(null)}
+```
+
+W komentarzu komponentu dopisz, dlaczego to ta sama zmienna, którą edytują obie listy
+umiejętności: na całej karcie edytuje się dokładnie jedna rzecz naraz, a kolizji kluczy nie ma,
+bo klucze umiejętności mają kropkę i prefiks pola, a identyfikatory broni pochodzą z `genId`.
+
+- [ ] **Step 6: Przekaż parę z `CustomSheetBody`**
+
+W `case 'weapons_table'` dołóż do `<WeaponsTable>`:
+
+```jsx
+            editingPath={editingPath}
+            setEditingPath={setEditingPath}
+```
+
+- [ ] **Step 7: Rozdziel przygaszenie w CSS**
+
+Dziś `weapon-cell-static` **jest** komórką MG, więc niesie `color: #6b5a45`. Teraz renderuje ją
+też wiersz gracza, a przygaszenie znaczy „to nie twoje", nie „to nie jest input".
+
+W regule `.custom-sheet__weapon-row .custom-sheet__weapon-cell-static` zamień kolor na `#3a2f1f`
+i dopisz **po niej**:
+
+```css
+/* Muted only for the GM's own weapons. The base static cell is now what a player's row renders at
+   rest too, so the colour has to mean "not yours to change" rather than "not an input".
+   --preset is the only hook that tells the two apart; it also mutes the preset's damage inputs. */
+.custom-sheet__weapon-row--preset .custom-sheet__weapon-cell-static {
+    color: #6b5a45;
+}
+```
+
+Dołóż też reguły dla dwóch nowych przycisków, obok istniejącej `.custom-sheet__weapon-remove` —
+to samo pudełko, inny kolor:
+
+```css
+.custom-sheet__weapon-edit,
+.custom-sheet__weapon-save {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.custom-sheet__weapon-edit { color: #7a5c42; }
+.custom-sheet__weapon-save { color: #4a7a4a; }
+
+.custom-sheet__weapon-edit:hover { background: rgba(122, 92, 66, 0.15); }
+.custom-sheet__weapon-save:hover { background: rgba(74, 122, 74, 0.15); }
+```
+
+Usuń regułę `.custom-sheet__weapon-row .custom-sheet__weapon-cell-input--name`, jeśli jeszcze
+istnieje — wariant `--name` inputu zniknął z JSX-a razem z pogrubieniem.
+
+- [ ] **Step 8: Uruchom testy i zaktualizuj snapshoty**
+
+Run: `cd warhammer-battle-helper-front && CI=true npm test -- --watchAll=false --testPathPattern='CustomSheetBody|weaponLayout' -u`
+Expected: PASS, pięć nowych testów zielonych. Snapshot zmienia się tak, że wiersz gracza pokazuje
+`span` zamiast `input` i ołówek zamiast `✕`.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add warhammer-battle-helper-front/src
+git commit -m "feat: FEATURE-224 read a weapon row first, edit it on the pencil
+
+A weapon is set up once and then rarely touched, so always-live inputs
+spend most of a row's life offering nothing but a chance to change it by
+accident — and the cheapest stray click, delete, is the one that cannot
+be undone. The pencil guards all of it.
+
+Editing is a visibility gate, not a buffer: keystrokes still write
+through and the save is already debounced upstream, so a buffer would
+turn one request into one request and buy only an undo nobody asked for.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
+```

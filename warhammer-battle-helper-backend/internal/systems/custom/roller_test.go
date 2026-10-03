@@ -1625,6 +1625,11 @@ func TestSkillHasValue_BaseFromAttr(t *testing.T) {
 	if skillHasValue(stats, "skills.opt_stealth", "", true) {
 		t.Error("skillHasValue with baseFromAttr and no attribute = true, want false")
 	}
+	// No attribute linked but advances earned: those advances ARE the skill's value.
+	withAdvances := &Stats{Skills: map[string]AttrValue{"skills.opt_stealth": {Advances: 50}}}
+	if !skillHasValue(withAdvances, "skills.opt_stealth", "", true) {
+		t.Error("skillHasValue with baseFromAttr, no attribute and 50 advances = false, want true")
+	}
 	if skillHasValue(stats, "skills.opt_stealth", "agi", false) {
 		t.Error("skillHasValue without baseFromAttr on a blank skill = true, want false")
 	}
@@ -1652,12 +1657,11 @@ func TestRollFromFormula_ThresholdUsesDerivedBase(t *testing.T) {
 	}
 }
 
-// With the flag on but no attribute linked, the threshold fallback must not settle for the
-// advances-only number skillValue would give the "skill" formula block: skillHasValue reports no
-// data at all (attrLookup finds nothing), so the threshold falls through to the attribute read,
-// which is also absent. The roll is therefore reported as an undecided raw number, not a
-// success/failure against a fabricated target.
-func TestRollFromFormula_ThresholdUndecidedWithoutAttribute(t *testing.T) {
+// With the flag on but no attribute linked, the derived base is 0 and the advances are the whole
+// value — the number the sheet shows and the one the "skill" formula block uses. The threshold
+// fallback must agree with them: judging such a skill as an undecided raw roll made every reader
+// of the same skill disagree about whether it has a value at all.
+func TestRollFromFormula_ThresholdFromAdvancesWithoutAttribute(t *testing.T) {
 	p := newTestPlugin(41) // d100 -> 42
 	cfg := &models.RollConfig{
 		Formula:     []models.FormulaBlock{diceBlock("d100")},
@@ -1665,13 +1669,39 @@ func TestRollFromFormula_ThresholdUndecidedWithoutAttribute(t *testing.T) {
 	}
 	template := &models.SystemTemplate{}
 
-	// linkedAttr "" is not a key in baseFromAttrStats' Attributes map, so attrLookup misses.
+	// linkedAttr "" is not a key in baseFromAttrStats' Attributes map, so attrLookup misses and
+	// only the skill's 5 advances remain.
 	res, err := p.rollFromFormula(baseFromAttrStats(), template, "skills.opt_stealth", "", true, cfg, 0)
 	if err != nil {
 		t.Fatalf("rollFromFormula: %v", err)
 	}
+	if res.Target != 5 {
+		t.Errorf("Target = %d, want 5 (no attribute, 5 advances)", res.Target)
+	}
+	if res.Outcome != "failure" {
+		t.Errorf("Outcome = %q, want failure (42 is not under 5)", res.Outcome)
+	}
+}
+
+// The genuinely blank case still has nothing to test against: no attribute behind the skill and no
+// advances on it, so the roll stays an undecided raw number rather than a target invented from zero.
+func TestRollFromFormula_ThresholdUndecidedWithoutAttributeOrAdvances(t *testing.T) {
+	p := newTestPlugin(41) // d100 -> 42
+	cfg := &models.RollConfig{
+		Formula:     []models.FormulaBlock{diceBlock("d100")},
+		SuccessType: "below_threshold",
+	}
+	stats := &Stats{
+		Attributes: map[string]AttrValue{"agi": {Current: 40}},
+		Skills:     map[string]AttrValue{"skills.opt_stealth": {}},
+	}
+
+	res, err := p.rollFromFormula(stats, &models.SystemTemplate{}, "skills.opt_stealth", "", true, cfg, 0)
+	if err != nil {
+		t.Fatalf("rollFromFormula: %v", err)
+	}
 	if res.Target != 0 {
-		t.Errorf("Target = %d, want 0 (no attribute to derive a threshold from)", res.Target)
+		t.Errorf("Target = %d, want 0 (nothing to derive a threshold from)", res.Target)
 	}
 	if res.Outcome != "42" {
 		t.Errorf("Outcome = %q, want \"42\" (raw roll: hasThreshold must be false)", res.Outcome)

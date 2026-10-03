@@ -237,12 +237,16 @@ function CustomCharacterSheet({
 
   const genWeaponId = () => `w_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 
+  // Returns the new row's id so the caller (WeaponsTable, via onChange.weaponAdd) can open it
+  // straight into edit mode — an empty row reads as a line of em-dashes otherwise, forcing the
+  // player to hunt for the pencil before they can type anything.
   const addWeaponRow = (fieldKey) => {
     const list = edited.weapons[fieldKey] || [];
     const row = { id: genWeaponId(), cells: {}, damage: {} };
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
     setEdited(ne);
     triggerAutoSave(ne, charNameRef.current);
+    return row.id;
   };
 
   // Copies a GM catalog preset into a new editable player row (snapshot — later GM edits

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CheckIcon from '@mui/icons-material/Check';
-import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import { resolveSkillValues } from '../skillLayout';
 import { AFFORDANCE_ICON_SIZE } from './affordances';
@@ -137,7 +137,7 @@ function SkillTableRow({
           ))}
           {row.custom && onRemoveRow && (
             <button className="custom-sheet__skill-del" onClick={() => onRemoveRow(row.key)} title={t('customSheet.removeSkill')}>
-              <DeleteIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+              <CloseIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
             </button>
           )}
         </span>
