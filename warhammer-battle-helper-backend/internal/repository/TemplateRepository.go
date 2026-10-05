@@ -49,8 +49,8 @@ func (r *TemplateRepository) GetByID(id string) (*models.SystemTemplate, error) 
 	return &t, nil
 }
 
-// ListVisibleToUser returns templates the user may use when creating a game:
-// their own templates plus every public template, newest first. Token-config
+// ListVisibleToUser returns templates the user may use when creating a game: their own, every
+// public one, and every one whose owner shared it with them by email — newest first. Token-config
 // templates (BaseSystem set) are excluded — they carry no Sections and describe
 // only the map-token overlay of a hardcoded system, so they are not selectable
 // as a game system.
@@ -62,6 +62,10 @@ func (r *TemplateRepository) ListVisibleToUser(ownerID primitive.ObjectID) ([]mo
 		"$or": bson.A{
 			bson.M{"ownerId": ownerID},
 			bson.M{"isPublic": true},
+			// Mongo compares an array field against a scalar element-wise, so this reads
+			// "ownerID is one of the shared-with ids", not "the array equals [ownerID]".
+			// This is the query half of service.CanUseTemplate — keep the two in step.
+			bson.M{"sharedWith": ownerID},
 		},
 		"baseSystem": bson.M{"$in": bson.A{"", nil}},
 	}
@@ -125,6 +129,43 @@ func (r *TemplateRepository) Update(id string, name *string, sections []models.S
 	}
 	if res.MatchedCount == 0 {
 		return fmt.Errorf("template not found")
+	}
+	return nil
+}
+
+// AddShare grants targetID read/clone access to a template ownerID owns. The ownership check IS
+// the filter rather than a read before the write: authorisation and update are then one
+// operation, with no window between them. $addToSet makes a repeated share a silent no-op
+// without first reading the document.
+func (r *TemplateRepository) AddShare(id string, ownerID, targetID primitive.ObjectID) error {
+	return r.updateShares(id, ownerID, bson.M{"$addToSet": bson.M{"sharedWith": targetID}})
+}
+
+// RemoveShare revokes targetID's access. Pulling an id that is not there matches the document
+// and changes nothing, so a double revoke is not an error — the caller gets the list as it is.
+func (r *TemplateRepository) RemoveShare(id string, ownerID, targetID primitive.ObjectID) error {
+	return r.updateShares(id, ownerID, bson.M{"$pull": bson.M{"sharedWith": targetID}})
+}
+
+// updateShares applies one share mutation and stamps updatedAt. Version is deliberately NOT
+// incremented: it tracks the sheet the players see, and who may open a template changes nothing
+// about its content.
+func (r *TemplateRepository) updateShares(id string, ownerID primitive.ObjectID, mutation bson.M) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid template id: %w", err)
+	}
+
+	mutation["$set"] = bson.M{"updatedAt": time.Now()}
+	res, err := r.collection.UpdateOne(ctx, bson.M{"_id": objID, "ownerId": ownerID}, mutation)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("template not found or not owned by user")
 	}
 	return nil
 }

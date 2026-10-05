@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"slices"
 
 	"battle-helper/internal/models"
 
@@ -69,4 +70,24 @@ func (s *GameService) requireGMOrCharacterOwner(gameID string, characterID strin
 		return nil, fmt.Errorf("only the game master or the character's owner can %s", action)
 	}
 	return game, nil
+}
+
+// CanUseTemplate reports whether userID may pick a template as a game system and clone it:
+// its owner, anyone while it is public, or a user the owner shared it with by email. A nil
+// template (a failed fetch) authorises nobody — the caller returns the fetch error, and this
+// must not panic on the way there.
+//
+// Exported, unlike its neighbours in this file, because the same decision is also made in
+// package http when a game is created; the alternative was a fourth hand-written copy of the
+// condition. The rule additionally exists as a Mongo query in
+// TemplateRepository.ListVisibleToUser — a predicate cannot filter a find(). Change one of the
+// two, change the other; nothing checks that they agree.
+func CanUseTemplate(t *models.SystemTemplate, userID primitive.ObjectID) bool {
+	if t == nil {
+		return false
+	}
+	if t.OwnerID == userID || t.IsPublic {
+		return true
+	}
+	return slices.Contains(t.SharedWith, userID)
 }

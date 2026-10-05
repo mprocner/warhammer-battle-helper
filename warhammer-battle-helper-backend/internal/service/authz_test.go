@@ -46,3 +46,36 @@ func TestUpdateTouchesVisibility(t *testing.T) {
 		t.Error("Hidden=false must also count as a visibility change")
 	}
 }
+
+func TestCanUseTemplate(t *testing.T) {
+	ownerID := primitive.NewObjectID()
+	friendID := primitive.NewObjectID()
+	strangerID := primitive.NewObjectID()
+
+	private := &models.SystemTemplate{OwnerID: ownerID}
+	if !CanUseTemplate(private, ownerID) {
+		t.Error("the owner must always be able to use their own template")
+	}
+	if CanUseTemplate(private, strangerID) {
+		t.Error("a private template must not be usable by anyone else")
+	}
+
+	public := &models.SystemTemplate{OwnerID: ownerID, IsPublic: true}
+	if !CanUseTemplate(public, strangerID) {
+		t.Error("a public template must be usable by anyone")
+	}
+
+	shared := &models.SystemTemplate{OwnerID: ownerID, SharedWith: []primitive.ObjectID{friendID}}
+	if !CanUseTemplate(shared, friendID) {
+		t.Error("a user on the share list must be able to use the template")
+	}
+	if CanUseTemplate(shared, strangerID) {
+		t.Error("sharing with one user must not grant access to another")
+	}
+
+	// A nil template means the fetch failed; the caller returns that error, but the predicate
+	// must not panic on the way there.
+	if CanUseTemplate(nil, ownerID) {
+		t.Error("a nil template must never authorise anyone")
+	}
+}

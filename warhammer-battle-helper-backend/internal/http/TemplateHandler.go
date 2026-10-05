@@ -91,6 +91,59 @@ func (h *TemplateHandler) CloneTemplate(c *gin.Context) {
 	c.JSON(http.StatusCreated, clone)
 }
 
+// ShareTemplate grants another user, named by email, the right to use and clone the caller's
+// template. It answers with the full recipient list rather than the added entry, so the client
+// never has to merge a partial response into state it is already showing.
+func (h *TemplateHandler) ShareTemplate(c *gin.Context) {
+	var req models.ShareTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userID := mustUserID(c)
+	shares, err := h.TemplateService.AddShare(c.Param("id"), userID, req.Email)
+	if err != nil {
+		writeShareError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, shares)
+}
+
+// UnshareTemplate revokes one user's access and answers with the remaining list.
+func (h *TemplateHandler) UnshareTemplate(c *gin.Context) {
+	targetID, err := primitive.ObjectIDFromHex(c.Param("userId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	userID := mustUserID(c)
+	shares, err := h.TemplateService.RemoveShare(c.Param("id"), userID, targetID)
+	if err != nil {
+		writeShareError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, shares)
+}
+
+// writeShareError maps the service's sentinel messages onto status codes. Sharing is the only
+// place where "this address matches no account" is a normal, user-facing outcome, so the client
+// must be able to tell it apart from a missing template — hence a distinct message rather than a
+// bare 404. A template that exists but belongs to somebody else also answers 404, not 403: the
+// owner id sits inside the update filter, so the two cases are indistinguishable here, and
+// leaking "this template exists" to a non-owner buys nothing.
+func writeShareError(c *gin.Context, err error) {
+	switch err.Error() {
+	case "not authorized":
+		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
+	case "cannot share with yourself":
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot share with yourself"})
+	case "user not found":
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	default:
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	}
+}
+
 // DeleteTemplate deletes a template owned by the authenticated user.
 func (h *TemplateHandler) DeleteTemplate(c *gin.Context) {
 	userID := mustUserID(c)

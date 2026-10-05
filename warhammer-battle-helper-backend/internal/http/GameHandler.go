@@ -77,6 +77,11 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "template not found"})
 			return
 		}
+		// Check that the user is authorized to use this template
+		if !service.CanUseTemplate(t, userID) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
+			return
+		}
 		template = t
 	} else if req.CustomTemplateID != "" {
 		// FEATURE-102: the GM picked a named token-display variant of this hardcoded
@@ -91,7 +96,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "template does not match selected system"})
 			return
 		}
-		if !t.IsPublic && t.OwnerID != userID {
+		if !service.CanUseTemplate(t, userID) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
 			return
 		}

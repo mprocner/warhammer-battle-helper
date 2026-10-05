@@ -7,7 +7,7 @@ import {
 import {
   Dialog, DialogTitle, DialogContent, IconButton, Typography, Box,
   TextField, Switch, FormControlLabel, Select, MenuItem, InputLabel,
-  FormControl, Divider, Chip, Slider,
+  FormControl, Divider, Chip, Slider, Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,6 +31,8 @@ import PublicIcon from '@mui/icons-material/Public';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ShareIcon from '@mui/icons-material/Share';
+import PersonIcon from '@mui/icons-material/Person';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
@@ -1333,12 +1335,39 @@ export function editingPathAfterRemove(editingPath, removedPath) {
   return shiftPathAfterRemoval(editingPath, removedPath);
 }
 
+// shareErrorKey maps a failed /templates/:id/shares response onto an i18n key. A bare HTTP
+// status is not enough: the backend answers 400 both for "that's your own address" and for a
+// malformed one (gin's email validator rejects it before the service ever runs), and it answers
+// 404 both for "no account uses that address" and for "the template vanished or changed owner in
+// another tab" (TemplateHandler.writeShareError's default branch). Only the body's `error` field
+// tells those apart, so it is read first; status is the fallback once the two known sentinels are
+// ruled out — which also covers a body that failed to parse at all.
+export async function shareErrorKey(res) {
+  let message = null;
+  try {
+    const body = await res.json();
+    message = typeof body?.error === 'string' ? body.error : null;
+  } catch { /* no parseable body: fall through to the status-based fallback below */ }
+
+  if (message === 'cannot share with yourself') return 'creator.general.shareErrorSelf';
+  if (message === 'user not found') return 'creator.general.shareErrorNotFound';
+  // The only other way this endpoint answers 400 is gin's email validator rejecting the address
+  // before AddShare runs — its error text is a validator-internal string, not a sentinel we can
+  // match, so status is the only signal left for this case.
+  if (res.status === 400) return 'creator.general.shareErrorInvalid';
+  return 'creator.general.shareErrorFailed';
+}
+
 function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const { t } = useTranslation();
   const [sections,    setSections]    = useState(template?.sections || []);
   const [name,        setName]        = useState(template?.name     || '');
   const [settings,    setSettings]    = useState(template?.settings || { diceButtons: [] });
   const [isPublic,    setIsPublic]    = useState(template?.isPublic || false);
+  const [shares,     setShares]     = useState(template?.sharedWithUsers || []);
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareError, setShareError] = useState(null);
+  const [sharing,    setSharing]    = useState(false);
   // selected is a PATH: [2] = third root section, [2,0] = its first child (field or
   // subsection), [2,0,1] = a child of that subsection. null = nothing selected.
   const [selected,    setSelected]    = useState(null);
@@ -1461,6 +1490,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setName(template?.name || '');
     setSettings(template?.settings || { diceButtons: [] });
     setIsPublic(template?.isPublic || false);
+    setShares(template?.sharedWithUsers || []);
+    setShareEmail('');
+    setShareError(null);
     setSelected(null);
     setEditingPath(null);
     setAddingToPath(null);
@@ -1609,6 +1641,44 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setIsPublic(value);
     isPublicRef.current = value; // sync so the debounced save reads the fresh value
     triggerSave(sections, name);
+  };
+
+  // Sharing is deliberately NOT optimistic, unlike the rest of the creator: the address is
+  // resolved to an account on the server, so the client cannot know the outcome in advance.
+  // Both endpoints answer with the whole recipient list, so state is never assembled here.
+  const handleShare = async () => {
+    const email = shareEmail.trim();
+    if (!email || sharing) return;
+    setSharing(true);
+    setShareError(null);
+    try {
+      const res = await fetch(`${getApiUrl()}/templates/${template.id}/shares`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) { setShareError(t(await shareErrorKey(res))); return; }
+      setShares(await res.json());
+      setShareEmail('');
+    } catch {
+      setShareError(t('creator.general.shareErrorFailed'));
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleUnshare = async (userId) => {
+    setShareError(null);
+    try {
+      const res = await fetch(`${getApiUrl()}/templates/${template.id}/shares/${userId}`, {
+        method: 'DELETE',
+        headers: getApiHeaders({ 'Authorization': `Bearer ${token}` }),
+      });
+      if (!res.ok) { setShareError(t('creator.general.shareErrorFailed')); return; }
+      setShares(await res.json());
+    } catch {
+      setShareError(t('creator.general.shareErrorFailed'));
+    }
   };
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -1848,6 +1918,60 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', mt: 0.5, ml: 0.5 }}>
                   {isPublic ? t('creator.general.publicDesc') : t('creator.general.privateDesc')}
                 </Typography>
+                <div className="creator__share">
+                  <div className="creator__share-title">{t('creator.general.shareTitle')}</div>
+                  <div className="creator__share-hint">{t('creator.general.shareHint')}</div>
+                  {isPublic && (
+                    <div className="creator__share-note">{t('creator.general.sharePublicNote')}</div>
+                  )}
+                  <div className="creator__share-row">
+                    <TextField
+                      size="small"
+                      type="email"
+                      label={t('creator.general.shareEmailLabel')}
+                      value={shareEmail}
+                      error={Boolean(shareError)}
+                      helperText={shareError || ' '}
+                      disabled={sharing}
+                      onChange={e => { setShareEmail(e.target.value); setShareError(null); }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleShare(); }}
+                      sx={{ flex: 1, '& .MuiInputBase-input': { fontFamily: 'Crimson Text, serif' },
+                            '& .MuiInputLabel-root': { fontFamily: 'Crimson Text, serif' } }}
+                    />
+                    <Button
+                      variant="contained"
+                      startIcon={<ShareIcon />}
+                      disabled={sharing || !shareEmail.trim()}
+                      onClick={handleShare}
+                      sx={{ fontFamily: 'Crimson Text, serif', fontWeight: 600, flexShrink: 0, height: 40 }}
+                    >
+                      {t('creator.general.shareButton')}
+                    </Button>
+                  </div>
+                  {shares.length === 0 ? (
+                    <div className="creator__share-empty">{t('creator.general.shareEmpty')}</div>
+                  ) : (
+                    <ul className="creator__share-list">
+                      {shares.map(share => (
+                        <li key={share.userId} className="creator__share-item">
+                          <PersonIcon sx={{ fontSize: 18, color: '#c9975b' }} />
+                          <span className="creator__share-email">{share.email}</span>
+                          <IconButton
+                            size="small"
+                            aria-label={t('creator.general.shareRemove')}
+                            onClick={() => handleUnshare(share.userId)}
+                            sx={{
+                              color: '#b57a5a',
+                              '&:hover': { color: '#8b3a2a', backgroundColor: 'rgba(180, 60, 40, 0.1)' },
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
             )}

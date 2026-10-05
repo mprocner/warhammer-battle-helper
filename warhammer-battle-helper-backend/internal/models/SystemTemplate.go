@@ -168,6 +168,13 @@ func DefaultDiceButtons() []int {
 	return []int{4, 6, 8, 10, 12, 20, 100}
 }
 
+// TemplateShare is one recipient of a template share, as the creator shows it to the owner:
+// the id the server needs to revoke access, plus the address a human recognises.
+type TemplateShare struct {
+	UserID primitive.ObjectID `json:"userId"`
+	Email  string             `json:"email"`
+}
+
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
@@ -178,6 +185,14 @@ type SystemTemplate struct {
 	Settings TemplateSettings   `bson:"settings,omitempty" json:"settings"`
 	// IsPublic exposes the template to everyone creating a game (read-only for non-owners).
 	IsPublic bool `bson:"isPublic" json:"isPublic"`
+	// SharedWith lists the users the owner granted read/clone access to, by user id. The email
+	// typed in the creator is resolved to an account at share time (an unknown address is
+	// rejected), so this never holds an id that points at nobody. Not serialised to JSON: the
+	// client has no use for raw ids, and non-owners must not learn who else has access.
+	SharedWith []primitive.ObjectID `bson:"sharedWith,omitempty" json:"-"`
+	// SharedWithUsers is computed per-request (not persisted), exactly like IsOwner, and filled
+	// ONLY for the owner: the recipients' addresses are nobody else's business.
+	SharedWithUsers []TemplateShare `bson:"-" json:"sharedWithUsers,omitempty"`
 	// OriginTemplateID points to the template this one was cloned from (zero/absent for originals).
 	OriginTemplateID primitive.ObjectID `bson:"originTemplateId,omitempty" json:"originTemplateId,omitempty"`
 	// BaseSystem is "" for a genuine custom template (sheet described by Sections/FieldDef),
@@ -368,4 +383,9 @@ type UpdateTemplateRequest struct {
 // CloneTemplateRequest is the request body for POST /templates/:id/clone.
 type CloneTemplateRequest struct {
 	Name string `json:"name"` // full localized name (with "(copy)" suffix); optional
+}
+
+// ShareTemplateRequest is the request body for POST /templates/:id/shares.
+type ShareTemplateRequest struct {
+	Email string `json:"email" binding:"required,email"`
 }

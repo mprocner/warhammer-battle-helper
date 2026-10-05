@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserRepository struct {
@@ -24,6 +25,22 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := r.Collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// FindByEmailCI looks a user up by email ignoring letter case. Registration stores the address
+// exactly as typed (AuthHandler writes req.Email verbatim) and FindByEmail is an exact match, so
+// a lowercased needle would miss an account registered as "Jan@Example.com". Collation strength 2
+// compares base letters and accents but not case. Sign-up and sign-in keep using FindByEmail:
+// normalising those is a separate change with a much larger blast radius.
+func (r *UserRepository) FindByEmailCI(email string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var user models.User
+	opts := options.FindOne().SetCollation(&options.Collation{Locale: "en", Strength: 2})
+	if err := r.Collection.FindOne(ctx, bson.M{"email": email}, opts).Decode(&user); err != nil {
 		return nil, err
 	}
 	return &user, nil

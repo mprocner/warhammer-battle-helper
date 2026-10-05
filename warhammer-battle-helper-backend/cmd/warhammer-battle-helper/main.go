@@ -102,7 +102,7 @@ func main() {
 	userRepo := repository.NewUserRepository(db.UsersCollection)
 	gameRepo := repository.NewGameRepository(db.GamesCollection)
 	templateRepo := repository.NewTemplateRepository(db.SystemTemplatesCollection)
-	templateService := service.NewTemplateService(templateRepo)
+	templateService := service.NewTemplateService(templateRepo, userRepo)
 	templateHandler := http.TemplateHandler{TemplateService: templateService}
 	statsRepo := repository.NewRollStatsRepository(db.RollStatsCollection)
 	if err := statsRepo.EnsureIndexes(); err != nil {
@@ -198,6 +198,8 @@ func main() {
 	auth.GET("/templates/:id", templateHandler.GetTemplate)
 	auth.PATCH("/templates/:id", templateHandler.UpdateTemplate)
 	auth.POST("/templates/:id/clone", templateHandler.CloneTemplate)
+	auth.POST("/templates/:id/shares", templateHandler.ShareTemplate)
+	auth.DELETE("/templates/:id/shares/:userId", templateHandler.UnshareTemplate)
 	auth.DELETE("/templates/:id", templateHandler.DeleteTemplate)
 
 	// Per-user token-display config for hardcoded systems (singleton per user+system).

@@ -10697,6 +10697,68 @@ align-items: center;
     padding: 14px 16px;
 }
 
+/* ── Share list inside the visibility card ───────────────────────────── */
+
+.creator__share {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(201, 151, 91, 0.4);
+}
+
+.creator__share-title {
+    font-family: 'Crimson Text', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #3a2f1f;
+}
+
+.creator__share-hint,
+.creator__share-empty,
+.creator__share-note {
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    color: #7a5c42;
+}
+
+.creator__share-note {
+    margin-top: 6px;
+    font-style: italic;
+}
+
+.creator__share-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 10px;
+    max-width: 480px;
+}
+
+.creator__share-list {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-width: 480px;
+}
+
+.creator__share-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border: 1px solid #c4a882;
+    border-radius: 6px;
+    background: #fff9f0;
+    margin-bottom: 6px;
+}
+
+.creator__share-email {
+    flex: 1;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.9rem;
+    color: #3a2f1f;
+    overflow-wrap: anywhere;
+}
+
 /* ── Dice config builder (dcb) — mirrors FormulaBuilder (fb) ──────────── */
 
 .dcb__root {
