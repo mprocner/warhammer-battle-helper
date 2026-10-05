@@ -47,8 +47,10 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [selection, setSelection] = useState(DEFAULT_SYSTEM);
-  // What the user typed, kept apart from the input text: after a pick MUI fills the input with
-  // the chosen label, which must neither filter the list nor highlight matches.
+  // The input shows the chosen label only while the list is closed. Opening it empties the
+  // input down to the placeholder, so the field reads as a search box and the whole list shows;
+  // `query` is what the user typed since, and it drives both filtering and highlighting.
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   // "custom" is feature-gated like any other system, so the template groups follow it.
@@ -76,6 +78,7 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
     if (open) {
       setName('');
       setSelection(defaultSelection);
+      setPickerOpen(false);
       setQuery('');
     }
     // Only a fresh open resets the form; a later change of defaultSelection must not wipe the name.
@@ -116,7 +119,13 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
           options={options}
           value={selectedOption}
           onChange={(e, opt) => setSelection(opt.value)}
-          onInputChange={(e, value, reason) => setQuery(reason === 'input' ? value : '')}
+          open={pickerOpen}
+          onOpen={() => setPickerOpen(true)}
+          // The query is cleared on close, not on open: MUI fires onInputChange for the first
+          // typed character BEFORE onOpen, so clearing on open would swallow that character.
+          onClose={() => { setPickerOpen(false); setQuery(''); }}
+          inputValue={pickerOpen ? query : (selectedOption?.label ?? '')}
+          onInputChange={(e, value, reason) => { if (reason === 'input') setQuery(value); }}
           filterOptions={(opts) => filterSystemOptions(opts, query)}
           groupBy={(opt) => opt.group}
           getOptionLabel={(opt) => opt.label}

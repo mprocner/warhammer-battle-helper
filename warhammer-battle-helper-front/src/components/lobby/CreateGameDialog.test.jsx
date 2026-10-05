@@ -86,6 +86,31 @@ describe('CreateGameDialog system search', () => {
     expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'coc7e' });
   });
 
+  it('opens as an empty search box over the full list and shows the choice again on close', () => {
+    renderDialog();
+    const input = screen.getByRole('combobox');
+    expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
+
+    fireEvent.mouseDown(input);
+    expect(input).toHaveValue('');
+    expect(input).toHaveAttribute('placeholder', i18n.t('creator.searchSystem'));
+    const listbox = screen.getByRole('listbox');
+    expect(within(listbox).getByText('Mroczne Ziemie')).toBeInTheDocument();
+    expect(within(listbox).getByText('Warhammer Fantasy Roleplay 4e')).toBeInTheDocument();
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
+  });
+
+  it('keeps the first typed character when typing opens the list', () => {
+    renderDialog();
+    const input = screen.getByRole('combobox');
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: 'm' } });
+    expect(input).toHaveValue('m');
+  });
+
   it('picks the first match on Enter after typing', () => {
     const onCreate = jest.fn();
     renderDialog({ onCreate });
