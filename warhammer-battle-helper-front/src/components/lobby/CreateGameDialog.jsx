@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  FormControl, InputLabel, ListSubheader, MenuItem, Select, TextField, Typography,
+  Autocomplete, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
+  ListSubheader, TextField, Typography,
 } from '@mui/material';
 import TuneIcon from '@mui/icons-material/Tune';
 import { listSystems } from '../../systems/registry';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
+import { CUSTOM_PREFIX, buildSystemOptions, filterSystemOptions, findMatch } from './systemOptions';
 
 const DEFAULT_SYSTEM = 'warhammer4e';
 
-// A Select value is either a bare system key (hardcoded Go plugin) or "custom:<templateId>"
-// for a system authored in the creator. The prefix keeps both kinds in one grouped list
-// while staying unambiguous — a template id can never collide with a system key.
-const CUSTOM_PREFIX = 'custom:';
 const isCustom = (value) => value.startsWith(CUSTOM_PREFIX);
 const templateIdOf = (value) => value.slice(CUSTOM_PREFIX.length);
 
@@ -23,12 +20,36 @@ const subheaderSx = {
   color: 'primary.main', lineHeight: 2.4, background: 'transparent',
 };
 
+const GROUP_LABEL_KEYS = {
+  systems: 'creator.groupSystems',
+  mine: 'creator.groupMyTemplates',
+  shared: 'creator.groupSharedWithMe',
+  public: 'creator.groupPublic',
+};
+
+// Bolds the first matched fragment of the label; a hit only on the owner email leaves it plain.
+function HighlightedLabel({ label, query }) {
+  const match = findMatch(label, query);
+  if (!match) return label;
+  const chars = Array.from(label);
+  return (
+    <>
+      {chars.slice(0, match[0]).join('')}
+      <strong>{chars.slice(match[0], match[1]).join('')}</strong>
+      {chars.slice(match[1]).join('')}
+    </>
+  );
+}
+
 // The only place a game gets created. Picking the system and picking a custom template are
-// the same act, so they share one dropdown instead of a second "choose template" modal.
+// the same act, so they share one searchable picker instead of a second "choose template" modal.
 function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, onCreate, onOpenCreator }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [selection, setSelection] = useState(DEFAULT_SYSTEM);
+  // What the user typed, kept apart from the input text: after a pick MUI fills the input with
+  // the chosen label, which must neither filter the list nor highlight matches.
+  const [query, setQuery] = useState('');
 
   // "custom" is feature-gated like any other system, so the template groups follow it.
   const customAllowed = !allowedSystems || allowedSystems.includes('custom');
@@ -37,14 +58,11 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
     sys.value !== 'custom' && (!allowedSystems || allowedSystems.includes(sys.value))
   ), [allowedSystems]);
 
-  const myTemplates = useMemo(
-    () => (customAllowed ? templates.filter(tpl => tpl.isOwner) : []),
-    [templates, customAllowed]
+  const options = useMemo(
+    () => buildSystemOptions(regularSystems, customAllowed ? templates : []),
+    [regularSystems, templates, customAllowed]
   );
-  const communityTemplates = useMemo(
-    () => (customAllowed ? templates.filter(tpl => !tpl.isOwner) : []),
-    [templates, customAllowed]
-  );
+  const selectedOption = options.find(opt => opt.value === selection) ?? null;
 
   // Every open starts from a clean form — a half-filled name from a cancelled attempt
   // reappearing later reads as a bug.
@@ -52,6 +70,7 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
     if (open) {
       setName('');
       setSelection(DEFAULT_SYSTEM);
+      setQuery('');
     }
   }, [open]);
 
@@ -63,38 +82,12 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
     }
   }, [templates, selection]);
 
-  const labelFor = (value) => {
-    if (isCustom(value)) return templates.find(tpl => tpl.id === templateIdOf(value))?.name || '';
-    return regularSystems.find(sys => sys.value === value)?.label || value;
-  };
-
   const handleSubmit = () => {
     if (!name.trim() || loading) return;
     onCreate(isCustom(selection)
       ? { name: name.trim(), gameSystem: 'custom', customTemplateId: templateIdOf(selection) }
       : { name: name.trim(), gameSystem: selection });
   };
-
-  // Select needs a flat child list — ListSubheader/MenuItem cannot be wrapped in fragments
-  // or it stops matching values.
-  const options = [
-    <ListSubheader key="group-systems" sx={subheaderSx}>{t('creator.groupSystems')}</ListSubheader>,
-    ...regularSystems.map(sys => (
-      <MenuItem key={sys.value} value={sys.value} sx={{ fontFamily: BODY_FONT }}>{sys.label}</MenuItem>
-    )),
-  ];
-  if (myTemplates.length > 0) {
-    options.push(<ListSubheader key="group-mine" sx={subheaderSx}>{t('creator.groupMyTemplates')}</ListSubheader>);
-    myTemplates.forEach(tpl => options.push(
-      <MenuItem key={tpl.id} value={`${CUSTOM_PREFIX}${tpl.id}`} sx={{ fontFamily: BODY_FONT }}>{tpl.name}</MenuItem>
-    ));
-  }
-  if (communityTemplates.length > 0) {
-    options.push(<ListSubheader key="group-community" sx={subheaderSx}>{t('creator.groupCommunity')}</ListSubheader>);
-    communityTemplates.forEach(tpl => options.push(
-      <MenuItem key={tpl.id} value={`${CUSTOM_PREFIX}${tpl.id}`} sx={{ fontFamily: BODY_FONT }}>{tpl.name}</MenuItem>
-    ));
-  }
 
   return (
     <Dialog open={open} onClose={() => !loading && onClose()} maxWidth="sm" fullWidth
@@ -108,18 +101,50 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' } }} />
 
-        <FormControl fullWidth variant="outlined" sx={{ mt: 2 }} disabled={loading}>
-          <InputLabel sx={{ fontFamily: BODY_FONT, fontSize: '1.1rem' }}>{t('game.gameSystem')}</InputLabel>
-          <Select
-            value={selection}
-            onChange={(e) => setSelection(e.target.value)}
-            label={t('game.gameSystem')}
-            renderValue={labelFor}
-            MenuProps={{ PaperProps: { sx: { maxHeight: 380 } } }}
-            sx={{ fontFamily: BODY_FONT, fontSize: '1.1rem' }}>
-            {options}
-          </Select>
-        </FormControl>
+        <Autocomplete
+          disableClearable
+          disabled={loading}
+          options={options}
+          value={selectedOption}
+          onChange={(e, opt) => setSelection(opt.value)}
+          onInputChange={(e, value, reason) => setQuery(reason === 'input' ? value : '')}
+          filterOptions={(opts) => filterSystemOptions(opts, query)}
+          groupBy={(opt) => opt.group}
+          getOptionLabel={(opt) => opt.label}
+          isOptionEqualToValue={(opt, val) => opt.value === val.value}
+          noOptionsText={t('creator.noSystemMatch')}
+          renderGroup={(params) => (
+            <li key={params.key}>
+              <ListSubheader component="div" sx={subheaderSx}>{t(GROUP_LABEL_KEYS[params.group])}</ListSubheader>
+              <ul style={{ padding: 0 }}>{params.children}</ul>
+            </li>
+          )}
+          renderOption={(props, opt) => {
+            const { key, ...optionProps } = props;
+            return (
+              <li key={key} {...optionProps}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', fontFamily: BODY_FONT }}>
+                  <span><HighlightedLabel label={opt.label} query={query} /></span>
+                  {opt.ownerEmail && (
+                    <Typography component="span" variant="caption"
+                      sx={{ fontFamily: BODY_FONT, color: 'text.secondary' }}>
+                      {opt.ownerEmail}
+                    </Typography>
+                  )}
+                </Box>
+              </li>
+            );
+          }}
+          slotProps={{ listbox: { sx: { maxHeight: 380 } } }}
+          sx={{ mt: 2 }}
+          renderInput={(params) => (
+            <TextField {...params} label={t('game.gameSystem')} placeholder={t('creator.searchSystem')}
+              sx={{
+                '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' },
+                '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' },
+              }} />
+          )}
+        />
 
         {/* Creator CTA — a secondary "soft button". It must NOT read as a second primary
             action next to "Create": gold accent (not the leather primary), sentence case,
