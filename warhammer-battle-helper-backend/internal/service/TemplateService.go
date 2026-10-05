@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -158,6 +159,9 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
 	}
+	// IsOwner is computed, not stored; the creator is the owner by definition, and without
+	// it the fresh row would be filed under "public templates" by the client.
+	t.IsOwner = true
 	return t, nil
 }
 
@@ -218,6 +222,9 @@ func (s *TemplateService) ListForUser(ownerID primitive.ObjectID) ([]models.Syst
 	refs := make([]*models.SystemTemplate, len(templates))
 	for i := range templates {
 		templates[i].IsOwner = templates[i].OwnerID == ownerID
+		// Set here, from the document alone, so the lobby's grouping never depends on the
+		// owner lookup below succeeding.
+		templates[i].SharedWithMe = !templates[i].IsOwner && slices.Contains(templates[i].SharedWith, ownerID)
 		refs[i] = &templates[i]
 	}
 	// SharedWithUsers is decoration on the owner's own rows, not the list itself: useTemplates.js
@@ -227,7 +234,43 @@ func (s *TemplateService) ListForUser(ownerID primitive.ObjectID) ([]models.Syst
 	if err := s.attachShares(refs, ownerID); err != nil {
 		log.Printf("warn: failed to resolve template shares for user %s: %v", ownerID.Hex(), err)
 	}
+	// Same trade-off for the owner's email on rows shared with the viewer.
+	if err := s.attachOwners(refs); err != nil {
+		log.Printf("warn: failed to resolve template owners for user %s: %v", ownerID.Hex(), err)
+	}
 	return templates, nil
+}
+
+// attachOwners fills OwnerEmail on the rows shared with the viewer, resolving every owner in
+// ONE FindByIDs across the whole batch. It only reads SharedWithMe, so ListForUser must set
+// that flag first. An owner id that resolves to no account leaves the row without an email.
+func (s *TemplateService) attachOwners(templates []*models.SystemTemplate) error {
+	var ids []primitive.ObjectID
+	seen := make(map[primitive.ObjectID]bool)
+	for _, t := range templates {
+		if t.SharedWithMe && !seen[t.OwnerID] {
+			seen[t.OwnerID] = true
+			ids = append(ids, t.OwnerID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	users, err := s.userRepo.FindByIDs(ids)
+	if err != nil {
+		return err
+	}
+	emails := make(map[primitive.ObjectID]string, len(users))
+	for _, u := range users {
+		emails[u.ID] = u.Email
+	}
+	for _, t := range templates {
+		if t.SharedWithMe {
+			t.OwnerEmail = emails[t.OwnerID]
+		}
+	}
+	return nil
 }
 
 func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req models.UpdateTemplateRequest) (*models.SystemTemplate, error) {

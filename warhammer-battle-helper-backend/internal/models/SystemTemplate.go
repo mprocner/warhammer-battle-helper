@@ -206,6 +206,13 @@ type SystemTemplate struct {
 	// IsOwner is computed per-request (not persisted): true when the requesting
 	// user owns this template. The client uses it to gate edit/delete actions.
 	IsOwner bool `bson:"-" json:"isOwner"`
+	// SharedWithMe is computed per-request (not persisted): true when the requesting user is in
+	// SharedWith and does not own the template. The lobby groups templates on it.
+	SharedWithMe bool `bson:"-" json:"sharedWithMe,omitempty"`
+	// OwnerEmail is computed per-request (not persisted) and filled ONLY when SharedWithMe is
+	// true: sharing is the owner revealing themselves to this user. Public templates never carry
+	// it — every logged-in account would otherwise be able to harvest their authors' addresses.
+	OwnerEmail string `bson:"-" json:"ownerEmail,omitempty"`
 }
 
 // FieldDef describes one field in a custom character sheet.
