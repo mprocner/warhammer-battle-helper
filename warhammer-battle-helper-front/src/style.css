@@ -11152,6 +11152,15 @@ align-items: center;
 }
 .token-overlay--selected .token-slot-zone.is-interactive { pointer-events: auto; }
 .token-slot-zone.is-active { width: 46px; height: 46px; z-index: 12; }
+/* PLAYRPG-227: on a small collapsed token the "sun" slots overlap, hiding values and level badges.
+   The hovered slot comes to the front. Resting chips opt into pointer events so :hover can match
+   (icons already do — and like icons, a press on one no longer starts a token drag). The zone, not
+   the chip, takes the z-index: its transform makes it a stacking context, so a z-index on the chip
+   would never escape it. :hover still matches the zone through the hovered chip even though the
+   zone itself stays pointer-events: none. 10 clears the kill strike (8). */
+.token-overlay:not(.token-overlay--selected) .token-slot--num { pointer-events: auto; }
+.token-overlay:not(.token-overlay--selected) .token-slot--icon:hover,
+.token-overlay:not(.token-overlay--selected) .token-slot-zone:hover { z-index: 10; }
 .token-slot--icon {
   width: 16px; height: 16px; border-radius: 50%;
   background: rgba(14,9,3,0.86); border: 1px solid #c9975b; color: #f0d8b0;
