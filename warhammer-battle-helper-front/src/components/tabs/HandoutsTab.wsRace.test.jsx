@@ -2,6 +2,7 @@ import React from 'react';
 import { render, act } from '@testing-library/react';
 import '../../i18n';
 import HandoutsTab from './HandoutsTab';
+import { WindowManagerProvider } from '../../contexts/WindowManagerContext';
 import { getHandouts, createHandout, uploadHandoutFile } from '../../api/handouts';
 
 jest.mock('../../api/axios', () => ({ getApiUrl: () => 'http://api.test' }));
@@ -43,7 +44,8 @@ const gameStateWith = (handouts) => ({
 
 const renderTab = (gameState) =>
   render(
-    <HandoutsTab gameId="g-1" token={gmToken} gameState={gameState} isConnected />
+    <HandoutsTab gameId="g-1" token={gmToken} gameState={gameState} isConnected />,
+    { wrapper: WindowManagerProvider }
   );
 
 const titles = () =>

@@ -35,10 +35,12 @@ import HandoutCreateModal from './handouts/HandoutCreateModal';
 import HandoutViewerModal from './handouts/HandoutViewerModal';
 import HandoutTabHeader from './handouts/HandoutTabHeader';
 import HandoutUngroupedSection from './handouts/HandoutUngroupedSection';
+import { useWindowManager } from '../../contexts/WindowManagerContext';
 import './HandoutsTab.css';
 
 const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
   const { t } = useTranslation();
+  const { focusWindow } = useWindowManager();
 
   const [handouts, setHandouts] = useState([]);
   const [folders, setFolders] = useState([]);
@@ -63,7 +65,9 @@ const HandoutsTab = ({ gameId, token, gameState, isConnected }) => {
     setOpenHandouts((prev) =>
       prev.find((h) => h.id === handout.id) ? prev : [...prev, handout]
     );
-  }, []);
+    // An already-open viewer may be minimized to the window bar — un-hide it and raise it.
+    focusWindow(`handout:${handout.id}`);
+  }, [focusWindow]);
 
   const handleCloseHandout = useCallback((handoutId) => {
     setOpenHandouts((prev) => prev.filter((h) => h.id !== handoutId));
