@@ -9,9 +9,7 @@ import { listSystems } from '../../systems/registry';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
 import { CUSTOM_PREFIX, buildSystemOptions, filterSystemOptions, findMatch } from './systemOptions';
 
-const DEFAULT_SYSTEM = 'warhammer4e';
-
-const isCustom = (value) => value.startsWith(CUSTOM_PREFIX);
+const isCustom = (value) => Boolean(value) && value.startsWith(CUSTOM_PREFIX);
 const templateIdOf = (value) => value.slice(CUSTOM_PREFIX.length);
 
 const subheaderSx = {
@@ -46,7 +44,9 @@ function HighlightedLabel({ label, query }) {
 function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, onCreate, onOpenCreator }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
-  const [selection, setSelection] = useState(DEFAULT_SYSTEM);
+  // No preselected system: the field opens empty with its placeholder, so it reads as a search
+  // box, and "Create" stays disabled until the user picks something.
+  const [selection, setSelection] = useState(null);
   // The input shows the chosen label only while the list is closed. Opening it empties the
   // input down to the placeholder, so the field reads as a search box and the whole list shows;
   // `query` is what the user typed since, and it drives both filtering and highlighting.
@@ -66,35 +66,27 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
   );
   const selectedOption = options.find(opt => opt.value === selection) ?? null;
 
-  // Prefer the default system, but when the feature gate removes it start from the first
-  // available option so the field is never empty while submit sends a hidden system.
-  const defaultSelection = options.some(opt => opt.value === DEFAULT_SYSTEM)
-    ? DEFAULT_SYSTEM
-    : (options[0]?.value ?? DEFAULT_SYSTEM);
-
   // Every open starts from a clean form — a half-filled name from a cancelled attempt
   // reappearing later reads as a bug.
   useEffect(() => {
     if (open) {
       setName('');
-      setSelection(defaultSelection);
+      setSelection(null);
       setPickerOpen(false);
       setQuery('');
     }
-    // Only a fresh open resets the form; a later change of defaultSelection must not wipe the name.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // A template selected here can be deleted from the manager stacked on top of this dialog;
-  // fall back to the default system rather than submitting a dangling id.
+  // clear the choice rather than submitting a dangling id.
   useEffect(() => {
     if (isCustom(selection) && !templates.some(tpl => `${CUSTOM_PREFIX}${tpl.id}` === selection)) {
-      setSelection(defaultSelection);
+      setSelection(null);
     }
-  }, [templates, selection, defaultSelection]);
+  }, [templates, selection]);
 
   const handleSubmit = () => {
-    if (!name.trim() || loading) return;
+    if (!name.trim() || !selection || loading) return;
     onCreate(isCustom(selection)
       ? { name: name.trim(), gameSystem: 'custom', customTemplateId: templateIdOf(selection) }
       : { name: name.trim(), gameSystem: selection });
@@ -159,6 +151,8 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
           sx={{ mt: 2 }}
           renderInput={(params) => (
             <TextField {...params} label={t('game.gameSystem')} placeholder={t('creator.searchSystem')}
+              // Keep the label raised so the placeholder shows on an empty, unfocused field.
+              InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
               sx={{
                 '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' },
                 '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' },
@@ -197,7 +191,7 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
         <Button onClick={onClose} disabled={loading} sx={{ fontFamily: BODY_FONT }}>
           {t('common.cancel')}
         </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={loading || !name.trim()}
+        <Button onClick={handleSubmit} variant="contained" disabled={loading || !name.trim() || !selection}
           sx={{ fontFamily: BODY_FONT, fontWeight: 600 }}>
           {loading ? t('common.creating') : t('common.create')}
         </Button>

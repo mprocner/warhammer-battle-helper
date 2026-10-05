@@ -77,23 +77,23 @@ describe('CreateGameDialog system search', () => {
     spy.mockRestore();
   });
 
-  it('falls back to the first allowed system when the default is not allowed', () => {
-    const onCreate = jest.fn();
-    renderDialog({ allowedSystems: ['coc7e'], onCreate });
-    expect(screen.getByRole('combobox')).toHaveValue('Call of Cthulhu 7e');
-    fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
-    expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'coc7e' });
-  });
-
-  it('opens as an empty search box over the full list and shows the choice again on close', () => {
+  it('starts with no system picked: empty field with placeholder, create disabled', () => {
     renderDialog();
     const input = screen.getByRole('combobox');
+    expect(input).toHaveValue('');
+    expect(input).toHaveAttribute('placeholder', i18n.t('creator.searchSystem'));
+    fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
+    expect(screen.getByRole('button', { name: i18n.t('common.create') })).toBeDisabled();
+  });
+
+  it('shows the choice while closed and an empty search box over the full list while open', () => {
+    renderDialog();
+    const input = screen.getByRole('combobox');
+    fireEvent.click(within(search('warhammer')).getByRole('option'));
     expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
 
     fireEvent.mouseDown(input);
     expect(input).toHaveValue('');
-    expect(input).toHaveAttribute('placeholder', i18n.t('creator.searchSystem'));
     const listbox = screen.getByRole('listbox');
     expect(within(listbox).getByText('Mroczne Ziemie')).toBeInTheDocument();
     expect(within(listbox).getByText('Warhammer Fantasy Roleplay 4e')).toBeInTheDocument();
