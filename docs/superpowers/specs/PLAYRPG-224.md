@@ -36,7 +36,7 @@ Stan danych, który wpływa na projekt:
    zawsze widoczna w dialogu (za duża zmiana UX na obecną skalę).
 2. **Cztery grupy** zamiast trzech, w tej kolejności:
    1. **Systemy gry** — kolejność z `registry.js` (bez zmian).
-   2. **Moje szablony** — `updatedAt` malejąco (ostatnio edytowany na górze).
+   2. **Moje szablony** — `updatedAt` malejąco (ostatnio edytowany na górze). Zmiana udostępnień też podbija `updatedAt` (`TemplateRepository` ustawia je przy każdym `$addToSet`/`$pull`), więc udostępniony właśnie szablon wskakuje na górę — akceptowalne.
    3. **Udostępnione mi** — alfabetycznie; druga linia: email właściciela.
    4. **Publiczne** — alfabetycznie; **bez autora**.
 3. **Szablon publiczny i jednocześnie udostępniony mi** trafia do „Udostępnione mi” (z emailem) —

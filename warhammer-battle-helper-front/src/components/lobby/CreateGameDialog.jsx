@@ -64,23 +64,31 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
   );
   const selectedOption = options.find(opt => opt.value === selection) ?? null;
 
+  // Prefer the default system, but when the feature gate removes it start from the first
+  // available option so the field is never empty while submit sends a hidden system.
+  const defaultSelection = options.some(opt => opt.value === DEFAULT_SYSTEM)
+    ? DEFAULT_SYSTEM
+    : (options[0]?.value ?? DEFAULT_SYSTEM);
+
   // Every open starts from a clean form — a half-filled name from a cancelled attempt
   // reappearing later reads as a bug.
   useEffect(() => {
     if (open) {
       setName('');
-      setSelection(DEFAULT_SYSTEM);
+      setSelection(defaultSelection);
       setQuery('');
     }
+    // Only a fresh open resets the form; a later change of defaultSelection must not wipe the name.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // A template selected here can be deleted from the manager stacked on top of this dialog;
   // fall back to the default system rather than submitting a dangling id.
   useEffect(() => {
     if (isCustom(selection) && !templates.some(tpl => `${CUSTOM_PREFIX}${tpl.id}` === selection)) {
-      setSelection(DEFAULT_SYSTEM);
+      setSelection(defaultSelection);
     }
-  }, [templates, selection]);
+  }, [templates, selection, defaultSelection]);
 
   const handleSubmit = () => {
     if (!name.trim() || loading) return;
@@ -103,6 +111,7 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
 
         <Autocomplete
           disableClearable
+          autoHighlight
           disabled={loading}
           options={options}
           value={selectedOption}
@@ -111,6 +120,8 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
           filterOptions={(opts) => filterSystemOptions(opts, query)}
           groupBy={(opt) => opt.group}
           getOptionLabel={(opt) => opt.label}
+          // Labels are not unique (two templates may share a name); MUI would key options by label.
+          getOptionKey={(opt) => opt.value}
           isOptionEqualToValue={(opt, val) => opt.value === val.value}
           noOptionsText={t('creator.noSystemMatch')}
           renderGroup={(params) => (

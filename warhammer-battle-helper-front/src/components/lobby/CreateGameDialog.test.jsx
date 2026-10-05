@@ -63,4 +63,36 @@ describe('CreateGameDialog system search', () => {
     fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
     expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'custom', customTemplateId: 'p1' });
   });
+
+  it('renders same-named templates as separate options without duplicate-key warnings', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const twins = [
+      { id: 'p1', name: 'Dwojaki', isOwner: false, isPublic: true },
+      { id: 'p2', name: 'Dwojaki', isOwner: false, isPublic: true },
+    ];
+    renderDialog({ templates: twins });
+    const listbox = search('dwojaki');
+    expect(within(listbox).getAllByRole('option')).toHaveLength(2);
+    expect(spy.mock.calls.some(args => String(args[0]).includes('same key'))).toBe(false);
+    spy.mockRestore();
+  });
+
+  it('falls back to the first allowed system when the default is not allowed', () => {
+    const onCreate = jest.fn();
+    renderDialog({ allowedSystems: ['coc7e'], onCreate });
+    expect(screen.getByRole('combobox')).toHaveValue('Call of Cthulhu 7e');
+    fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
+    expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'coc7e' });
+  });
+
+  it('picks the first match on Enter after typing', () => {
+    const onCreate = jest.fn();
+    renderDialog({ onCreate });
+    fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
+    search('mroczne');
+    fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
+    expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'custom', customTemplateId: 'p1' });
+  });
 });

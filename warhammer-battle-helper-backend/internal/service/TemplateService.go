@@ -159,6 +159,9 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
 	}
+	// IsOwner is computed, not stored; the creator is the owner by definition, and without
+	// it the fresh row would be filed under "public templates" by the client.
+	t.IsOwner = true
 	return t, nil
 }
 
