@@ -7,7 +7,7 @@ import NoteEditorModal from './NoteEditorModal';
 // Ta sama atrapa TipTapa co w NoteEditorModal.autosaveEcho.test.jsx — tu interesuje
 // nas wyłącznie nagłówek, więc realny edytor byłby tylko kosztem.
 let mockEditor;
-jest.mock('@tiptap/starter-kit', () => ({ __esModule: true, default: {} }));
+jest.mock('./noteExtensions', () => ({ NOTE_EXTENSIONS: [] }));
 jest.mock('@tiptap/react', () => ({
   __esModule: true,
   useEditor: () => mockEditor,
@@ -49,6 +49,7 @@ describe('NoteEditorModal — wskaźnik zapisu w nagłówku', () => {
       isFocused: true,
       state: { selection: { from: 3 }, doc: { content: { size: 50 } } },
       isActive: () => false,
+      getAttributes: () => ({}),
       chain: () => ({ focus: () => ({ run: () => {} }) }),
     };
   });

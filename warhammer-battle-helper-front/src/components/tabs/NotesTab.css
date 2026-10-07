@@ -378,17 +378,32 @@
 }
 
 /* Toolbar */
-.note-editor__toolbar {
+.note-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  align-items: center;
+  gap: 4px 0;
   padding: 4px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid #d4a574;
   border-radius: 4px;
 }
 
-.note-editor__toolbar-btn {
+/* Groups wrap as a whole, so a group never splits across two rows. */
+.note-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-right: 1px solid #d4a574;
+}
+
+.note-toolbar__group:last-child {
+  border-right: none;
+}
+
+.note-toolbar__btn {
+  position: relative;
   background: none;
   border: 1px solid transparent;
   border-radius: 3px;
@@ -401,15 +416,197 @@
   transition: all 0.15s ease;
 }
 
-.note-editor__toolbar-btn:hover {
+.note-toolbar__btn:hover {
   background: rgba(201, 151, 91, 0.2);
   border-color: #c9975b;
 }
 
-.note-editor__toolbar-btn--active {
+.note-toolbar__btn--active {
   background: rgba(201, 151, 91, 0.3);
   border-color: #c9975b;
   color: #3a2f1f;
+}
+
+.note-toolbar__indicator {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.note-toolbar__heading,
+.note-toolbar__size-input {
+  height: 26px;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.note-toolbar__heading:focus,
+.note-toolbar__size-input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.note-toolbar__heading {
+  padding: 0 4px;
+}
+
+.note-toolbar__anchor {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.note-toolbar__size-input {
+  width: 38px;
+  padding: 0 4px;
+  text-align: center;
+  border-radius: 3px 0 0 3px;
+}
+
+.note-toolbar__size-toggle {
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-left: none;
+  border-radius: 0 3px 3px 0;
+  color: #6b4423;
+  cursor: pointer;
+}
+
+.note-toolbar__popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(58, 47, 31, 0.25);
+}
+
+.note-toolbar__size-list {
+  padding: 4px;
+  min-width: 56px;
+}
+
+.note-toolbar__size-option {
+  width: 100%;
+  padding: 3px 8px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-toolbar__size-option:hover,
+.note-toolbar__size-option--active {
+  background: rgba(201, 151, 91, 0.25);
+}
+
+.note-toolbar__color-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+}
+
+.note-toolbar__swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  gap: 6px;
+}
+
+.note-toolbar__swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.note-toolbar__swatch:hover,
+.note-toolbar__swatch--active {
+  border-color: #7a5c42;
+  box-shadow: 0 0 0 2px #c9975b;
+}
+
+.note-toolbar__custom-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7a5c42;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note-toolbar__custom-color input[type="color"] {
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+
+.note-toolbar__text-btn {
+  padding: 3px 8px;
+  background: none;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #6b4423;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note-toolbar__text-btn:hover {
+  background: rgba(201, 151, 91, 0.2);
+  border-color: #c9975b;
+}
+
+.note-toolbar__link-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 240px;
+}
+
+.note-toolbar__link-input {
+  padding: 4px 6px;
+  background: #fff;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-size: 12px;
+}
+
+.note-toolbar__link-input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.note-toolbar__link-actions {
+  display: flex;
+  gap: 6px;
 }
 
 /* Editor content (ProseMirror) */
@@ -444,12 +641,25 @@
   color: #6b4423;
 }
 
+/* Headings carry their own size and weight; a font-size span inside still wins. */
+.note-editor__content .tiptap h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
 .note-editor__content .tiptap h2 {
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .note-editor__content .tiptap h3 {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.note-editor__content .tiptap mark {
+  padding: 0 1px;
+  border-radius: 2px;
 }
 
 .note-editor__content .tiptap ul,

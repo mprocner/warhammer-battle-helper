@@ -7,7 +7,7 @@ import NoteEditorModal from './NoteEditorModal';
 // TipTap ciągnie ProseMirror i realny DOM edytora — do tego testu wystarczy atrapa,
 // bo sprawdzamy wyłącznie CZY doszło do podmiany dokumentu, nie JAK wygląda.
 let mockEditor;
-jest.mock('@tiptap/starter-kit', () => ({ __esModule: true, default: {} }));
+jest.mock('./noteExtensions', () => ({ NOTE_EXTENSIONS: [] }));
 jest.mock('@tiptap/react', () => ({
   __esModule: true,
   useEditor: () => mockEditor,
@@ -49,6 +49,7 @@ describe('NoteEditorModal — echo autozapisu', () => {
       isFocused: true,
       state: { selection: { from: 3 }, doc: { content: { size: 50 } } },
       isActive: () => false,
+      getAttributes: () => ({}),
       chain: () => ({ focus: () => ({ run: () => {} }) }),
     };
   });

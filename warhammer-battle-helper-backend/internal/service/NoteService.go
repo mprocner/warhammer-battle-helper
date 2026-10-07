@@ -6,6 +6,7 @@ import (
 	"battle-helper/internal/websocket"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"time"
 
@@ -14,18 +15,46 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var noteHTMLPolicy = bluemonday.NewPolicy()
+// Note bodies are stored as HTML and rendered by every participant's editor, so this policy
+// is the only XSS boundary. Each regex is anchored: an unanchored one would accept any value
+// that merely contains a valid fragment.
+//
+// Keep noteFontSizeRe in sync with FONT_SIZE_MIN / FONT_SIZE_MAX in
+// warhammer-battle-helper-front/src/components/tabs/notes/noteFormatting.js.
+var (
+	noteColorRe     = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	noteFontSizeRe  = regexp.MustCompile(`^([89]|[1-6][0-9]|7[0-2])px$`)
+	noteAlignRe     = regexp.MustCompile(`^(left|center|right)$`)
+	noteMarkColorRe = regexp.MustCompile(`^inherit$`) // Tiptap Highlight emits "color: inherit"
+)
 
-func init() {
-	noteHTMLPolicy.AllowStandardAttributes()
-	noteHTMLPolicy.AllowElements(
+var noteHTMLPolicy = newNoteHTMLPolicy()
+
+func newNoteHTMLPolicy() *bluemonday.Policy {
+	p := bluemonday.NewPolicy()
+	p.AllowStandardAttributes()
+	p.AllowElements(
 		"b", "i", "u", "strong", "em", "s",
 		"p", "br", "hr",
 		"ul", "ol", "li",
 		"h1", "h2", "h3",
 		"blockquote", "pre", "code",
+		"span", "mark", "a",
 	)
-	noteHTMLPolicy.AllowAttrs("href", "target", "rel").OnElements("a")
+
+	p.AllowStyles("color").Matching(noteColorRe).OnElements("span")
+	p.AllowStyles("font-size").Matching(noteFontSizeRe).OnElements("span")
+	p.AllowStyles("background-color").Matching(noteColorRe).OnElements("mark")
+	p.AllowStyles("color").Matching(noteMarkColorRe).OnElements("mark")
+	p.AllowAttrs("data-color").Matching(noteColorRe).OnElements("mark")
+	p.AllowStyles("text-align").Matching(noteAlignRe).OnElements("p", "h1", "h2", "h3")
+
+	p.AllowAttrs("href", "target", "rel").OnElements("a")
+	p.RequireParseableURLs(true)
+	p.AllowURLSchemes("http", "https", "mailto")
+	p.AddTargetBlankToFullyQualifiedLinks(true)
+	p.RequireNoReferrerOnLinks(true)
+	return p
 }
 
 type NoteService struct {

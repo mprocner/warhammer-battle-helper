@@ -2,18 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import { NOTE_EXTENSIONS } from './noteExtensions';
+import NoteToolbar from './NoteToolbar';
 import ModalHeader from '../../common/ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
 import { shouldApplyRemoteNote } from '../../../utils/noteSync';
-import FormatBoldIcon from '@mui/icons-material/FormatBold';
-import FormatItalicIcon from '@mui/icons-material/FormatItalic';
-import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
-import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
-import TitleIcon from '@mui/icons-material/Title';
-import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -59,15 +52,12 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const { hidden, zIndex, focus } = useManagedWindow({ id: windowId, kind: 'note', title: title || t('notes.newNote'), onClose });
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-    ],
+    extensions: NOTE_EXTENSIONS,
     content: '',
-    onUpdate: () => {
-      forceUpdate(n => n + 1);
-      scheduleAutoSave();
-    },
-    onSelectionUpdate: () => forceUpdate(n => n + 1),
+    onUpdate: () => scheduleAutoSave(),
+    // Re-render the toolbar on every transaction: stored marks and node attrs applied on a
+    // collapsed caret fire neither a selection update nor a doc update.
+    onTransaction: () => forceUpdate(n => n + 1),
   });
 
   const editorRef = useRef(editor);
@@ -280,17 +270,6 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
     idle: '',
   }[saveStatus];
 
-  const toolbarButtons = [
-    { icon: <FormatBoldIcon fontSize="small" />, action: () => editor?.chain().focus().toggleBold().run(), active: editor?.isActive('bold') },
-    { icon: <FormatItalicIcon fontSize="small" />, action: () => editor?.chain().focus().toggleItalic().run(), active: editor?.isActive('italic') },
-    { icon: <FormatStrikethroughIcon fontSize="small" />, action: () => editor?.chain().focus().toggleStrike().run(), active: editor?.isActive('strike') },
-    { icon: <TitleIcon fontSize="small" />, action: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(), active: editor?.isActive('heading', { level: 2 }) },
-    { icon: <FormatListBulletedIcon fontSize="small" />, action: () => editor?.chain().focus().toggleBulletList().run(), active: editor?.isActive('bulletList') },
-    { icon: <FormatListNumberedIcon fontSize="small" />, action: () => editor?.chain().focus().toggleOrderedList().run(), active: editor?.isActive('orderedList') },
-    { icon: <FormatQuoteIcon fontSize="small" />, action: () => editor?.chain().focus().toggleBlockquote().run(), active: editor?.isActive('blockquote') },
-    { icon: <HorizontalRuleIcon fontSize="small" />, action: () => editor?.chain().focus().setHorizontalRule().run(), active: false },
-  ];
-
   return createPortal(
     <div
       className={`note-editor ${isMinimized ? 'note-editor--minimized' : ''}`}
@@ -361,19 +340,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
             </label>
           </div>
 
-          {/* WYSIWYG Toolbar */}
-          <div className="note-editor__toolbar">
-            {toolbarButtons.map((btn, i) => (
-              <button
-                key={i}
-                className={`note-editor__toolbar-btn ${btn.active ? 'note-editor__toolbar-btn--active' : ''}`}
-                onClick={btn.action}
-                type="button"
-              >
-                {btn.icon}
-              </button>
-            ))}
-          </div>
+          <NoteToolbar editor={editor} />
 
           {/* Editor content */}
           <div className="note-editor__content">

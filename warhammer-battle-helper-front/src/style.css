@@ -4295,6 +4295,34 @@ align-items: center;
   border-left-color: transparent;
 }
 
+.portal-tooltip--below {
+  transform: translateX(-50%);
+  margin-left: 0;
+  margin-top: 10px;
+  animation: portalTooltipBelowFadeIn 0.15s ease-out;
+}
+
+@keyframes portalTooltipBelowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.portal-tooltip--below .portal-tooltip__arrow {
+  right: auto;
+  bottom: auto;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: #c9975b;
+}
+
 .portal-tooltip--align-left {
   transform: translateX(0) translateY(-100%);
   margin-left: 0;
