@@ -42,7 +42,8 @@ const HandoutCreateModal = ({
     description: '',
     type: 'image',
     visibility: ['gm-only'],
-    fileUrl: ''
+    fileUrl: '',
+    fileName: ''
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -63,7 +64,8 @@ const HandoutCreateModal = ({
           description: editHandout.description || '',
           type: editHandout.type || 'image',
           visibility: editHandout.visibility || ['all'],
-          fileUrl: editHandout.fileUrl || ''
+          fileUrl: editHandout.fileUrl || '',
+          fileName: editHandout.fileName || ''
         });
         setPreviewUrl(editHandout.fileUrl || '');
       } else {
@@ -72,7 +74,8 @@ const HandoutCreateModal = ({
           description: '',
           type: 'image',
           visibility: ['gm-only'],
-          fileUrl: ''
+          fileUrl: '',
+          fileName: ''
         });
         setPreviewUrl('');
       }
@@ -143,13 +146,14 @@ const HandoutCreateModal = ({
     }
   };
 
-  const uploadFile = async (file) => {
+  // The server stores the file under a generated name, so the original one is kept separately.
+  const uploadFile = async (file, fileName) => {
     setUploadError('');
     setIsUploading(true);
 
     try {
       const result = await uploadHandoutFile(gameId, file);
-      setFormData(prev => ({ ...prev, fileUrl: result.url }));
+      setFormData(prev => ({ ...prev, fileUrl: result.url, fileName }));
       setPreviewUrl(result.url);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -176,12 +180,13 @@ const HandoutCreateModal = ({
       return;
     }
 
-    uploadFile(file);
+    uploadFile(file, file.name);
   };
 
   const handleCropConfirmed = (processed) => {
+    const { name } = pickedFile;
     setPickedFile(null);
-    uploadFile(processed);
+    uploadFile(processed, name);
   };
 
   const handleSubmit = (e) => {
@@ -338,7 +343,7 @@ const HandoutCreateModal = ({
 
           {/* File Upload */}
           <div className="handout-modal__field">
-            <label>{t('handouts.file')} *</label>
+            <label htmlFor="handout-file">{t('handouts.file')} *</label>
             <div className="file-upload-area">
               {previewUrl ? (
                 <div className="file-preview">
@@ -348,11 +353,17 @@ const HandoutCreateModal = ({
                     <div className="file-preview__pdf">
                       <HandoutTypeIcon type="document" />
                       <span>{t('handouts.pdfUploaded')}</span>
+                      {formData.fileName && (
+                        <span className="file-preview__name">{formData.fileName}</span>
+                      )}
                     </div>
                   ) : (
                     <div className="file-preview__text">
                       <HandoutTypeIcon type="letter" />
                       <span>{t('handouts.textUploaded')}</span>
+                      {formData.fileName && (
+                        <span className="file-preview__name">{formData.fileName}</span>
+                      )}
                     </div>
                   )}
                   <button
@@ -381,6 +392,7 @@ const HandoutCreateModal = ({
               )}
               <input
                 ref={fileInputRef}
+                id="handout-file"
                 type="file"
                 accept=".jpg,.jpeg,.png,.webp,.pdf,.txt"
                 onChange={handleFileSelect}

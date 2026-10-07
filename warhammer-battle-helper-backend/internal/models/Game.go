@@ -431,6 +431,7 @@ type Handout struct {
 	Type        string              `bson:"type" json:"type"` // image, pdf, text, map, letter
 	Visibility  []string            `bson:"visibility" json:"visibility"`
 	FileURL     string              `bson:"fileUrl" json:"fileUrl"`
+	FileName    string              `bson:"fileName" json:"fileName"` // original name of the uploaded file; storage renames it
 	FolderID    *primitive.ObjectID `bson:"folderId,omitempty" json:"folderId,omitempty"`
 	Order       int                 `bson:"order" json:"order"`
 	CreatedAt   time.Time           `bson:"createdAt" json:"createdAt"`
@@ -444,6 +445,7 @@ type CreateHandoutRequest struct {
 	Type        string   `json:"type" binding:"required"`
 	Visibility  []string `json:"visibility" binding:"required"`
 	FileURL     string   `json:"fileUrl" binding:"required"`
+	FileName    string   `json:"fileName"`
 }
 
 // UpdateHandoutRequest is the request body for updating a handout
@@ -453,6 +455,7 @@ type UpdateHandoutRequest struct {
 	Type        string   `json:"type"`
 	Visibility  []string `json:"visibility"`
 	FileURL     string   `json:"fileUrl"`
+	FileName    string   `json:"fileName"`
 }
 
 // ReorderHandoutsRequest is the request body for reordering handouts

@@ -500,6 +500,8 @@ func (r *GameRepository) UpdateHandout(gameID string, handoutID primitive.Object
 	}
 	if update.FileURL != "" {
 		setFields["handouts.$.fileUrl"] = update.FileURL
+		// The name travels with the file, so a replaced file never keeps the previous name
+		setFields["handouts.$.fileName"] = update.FileName
 	}
 
 	filter := bson.M{

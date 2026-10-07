@@ -973,6 +973,7 @@ func (s *GameService) CreateHandout(gameID string, userID primitive.ObjectID, re
 		Type:        req.Type,
 		Visibility:  req.Visibility,
 		FileURL:     req.FileURL,
+		FileName:    req.FileName,
 		Order:       order,
 	}
 

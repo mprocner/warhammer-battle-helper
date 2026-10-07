@@ -294,6 +294,14 @@
   font-size: 40px;
 }
 
+.file-preview__name {
+  max-width: 100%;
+  color: #3a2f1f;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 .file-preview__change {
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.35);
