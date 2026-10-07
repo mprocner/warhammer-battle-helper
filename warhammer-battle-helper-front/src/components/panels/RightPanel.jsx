@@ -5,6 +5,8 @@ import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import ChatInput from '../log/ChatInput';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
+import useChatCommands from '../../chat/commands/useChatCommands';
+import { postRollExpression } from '../../api/diceRolls';
 import { tabsForRole } from './tabDefinitions';
 import ScenesTab from '../tabs/ScenesTab';
 import HandoutsTab from '../tabs/HandoutsTab';
@@ -70,22 +72,30 @@ const RightPanel = ({
   const isGM = gameState?.gameMasterId === userId;
 
   const sendMessage = useCallback(async (text) => {
+    if (!gameId || !token) {
+      addLogMessage(text, 'info');
+      return { ok: true };
+    }
     try {
-      if (gameId && token) {
-        const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
-          method: 'POST',
-          headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-          body: JSON.stringify({ message: text, visibility: rollVisibility })
-        });
-        if (!response.ok) throw new Error('Failed to send message');
-      } else {
-        addLogMessage(text, 'info');
-      }
+      const response = await fetch(`${getApiUrl()}/games/${gameId}/message`, {
+        method: 'POST',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
+        body: JSON.stringify({ message: text, visibility: rollVisibility })
+      });
+      if (!response.ok) throw new Error('Failed to send message');
+      return { ok: true };
     } catch (error) {
       console.error('Error sending message:', error);
-      addLogMessage('Failed to send message', 'error');
+      return { ok: false, error: { key: 'chat.commands.errors.sendFailed' } };
     }
   }, [gameId, token, addLogMessage, rollVisibility]);
+
+  const rollExpression = useCallback(async (expression, visibility) => {
+    if (!gameId || !token) return { ok: false, error: { key: 'chat.commands.errors.rollFailed' } };
+    return postRollExpression({ gameId, token, expression, visibility });
+  }, [gameId, token]);
+
+  const submitChat = useChatCommands({ sendMessage, rollExpression, rollVisibility, isGM });
 
   const rollDice = useCallback(async (sides, count = 1) => {
     try {
@@ -272,7 +282,7 @@ const RightPanel = ({
           </div>
 
           <DiceRollControls onRoll={rollDice} rollVisibility={rollVisibility} onVisibilityChange={onRollVisibilityChange} onlyMyRolls={onlyMyRolls} onToggleOnlyMyRolls={setOnlyMyRolls} diceList={gameState?.customSystemTemplate?.settings?.diceButtons} participants={gameState?.participants || []} currentUserId={userId} />
-          <ChatInput onSend={sendMessage} />
+          <ChatInput onSubmit={submitChat} />
         </div>
       </div>
     </aside>

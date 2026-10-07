@@ -27,6 +27,8 @@ type GameService struct {
 	statsRepo       *repository.RollStatsRepository
 	sessionRepo     *repository.OnlineSessionRepository
 	templateService *TemplateService
+	publisher       *RollPublisher
+	names           *DisplayNameResolver
 }
 
 func NewGameService(
@@ -46,6 +48,8 @@ func NewGameService(
 		statsRepo:       statsRepo,
 		sessionRepo:     sessionRepo,
 		templateService: templateService,
+		publisher:       NewRollPublisher(hub),
+		names:           NewDisplayNameResolver(userRepo),
 	}
 }
 
@@ -254,25 +258,6 @@ func resolveDisplayName(participant *models.GameParticipant, user *models.User) 
 		return user.Email
 	}
 	return participant.Email
-}
-
-// resolveDisplayNameForUser resolves display name for a user in a game context
-func (s *GameService) resolveDisplayNameForUser(game *models.Game, userID primitive.ObjectID, fallbackEmail string) string {
-	var participant *models.GameParticipant
-	for i := range game.Participants {
-		if game.Participants[i].UserID == userID {
-			participant = &game.Participants[i]
-			break
-		}
-	}
-	if participant == nil {
-		return fallbackEmail
-	}
-	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return resolveDisplayName(participant, nil)
-	}
-	return resolveDisplayName(participant, user)
 }
 
 // GetAllGames retrieves all active games
@@ -644,7 +629,7 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 		return fmt.Errorf("game not found: %w", err)
 	}
 
-	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	displayName := s.names.DisplayName(game, userID, username)
 	if visibility == "" {
 		visibility = "all"
 	}
@@ -667,7 +652,7 @@ func (s *GameService) AddLogMessage(gameID string, message string, messageType s
 	}
 
 	// Broadcast to the appropriate set of clients based on visibility (same routing as rolls)
-	s.broadcastRoll(gameID, websocket.EventLogMessage, map[string]interface{}{
+	s.publisher.Publish(gameID, websocket.EventLogMessage, map[string]interface{}{
 		"message":    message,
 		"type":       messageType,
 		"username":   displayName,
@@ -713,7 +698,7 @@ func rollResultToMap(r *systems.RollResult, visibility, rollerUserID string) map
 // executeRoll handles the shared post-roll logic: resolves display name, enriches the result,
 // serialises it, persists a GameEvent and broadcasts to the right audience.
 func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.RollResult, userID primitive.ObjectID, username string, game *models.Game, character *models.Character, visibility string) (map[string]interface{}, error) {
-	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	displayName := s.names.DisplayName(game, userID, username)
 	if visibility == "" {
 		visibility = "all"
 	}
@@ -766,30 +751,8 @@ func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.
 		}
 	}(userID, gameID, rollResult)
 
-	s.broadcastRoll(gameID, eventType, broadcastData, visibility, userID, game.GameMasterID)
+	s.publisher.Publish(gameID, eventType, broadcastData, visibility, userID, game.GameMasterID)
 	return broadcastData, nil
-}
-
-// broadcastRoll sends a roll event to the appropriate set of clients based on visibility.
-func (s *GameService) broadcastRoll(gameID, eventType string, payload map[string]interface{}, visibility string, rollerID, gmID primitive.ObjectID) {
-	switch visibility {
-	case "gm_only":
-		s.hub.BroadcastToUsers(gameID, eventType, payload, []string{gmID.Hex()})
-	case "gm_and_roller":
-		targets := []string{gmID.Hex()}
-		if rollerID != gmID {
-			targets = append(targets, rollerID.Hex())
-		}
-		s.hub.BroadcastToUsers(gameID, eventType, payload, targets)
-	case "all", "":
-		s.hub.BroadcastToGame(gameID, eventType, payload)
-	default: // targeted to a specific user id — only the roller and that user receive it (GM excluded)
-		targets := []string{rollerID.Hex()}
-		if visibility != rollerID.Hex() {
-			targets = append(targets, visibility)
-		}
-		s.hub.BroadcastToUsers(gameID, eventType, payload, targets)
-	}
 }
 
 // RollDice rolls one or more dice and logs the result (simple die roll, no character lookup)
@@ -806,7 +769,7 @@ func (s *GameService) RollDice(gameID string, sides int, count int, userID primi
 		sum += r
 	}
 
-	displayName := s.resolveDisplayNameForUser(game, userID, username)
+	displayName := s.names.DisplayName(game, userID, username)
 	if visibility == "" {
 		visibility = "all"
 	}
@@ -865,7 +828,7 @@ func (s *GameService) RollDice(gameID string, sides int, count int, userID primi
 		}
 	}(userID, gameID, sides, results)
 
-	s.broadcastRoll(gameID, websocket.EventDiceRolled, eventData, visibility, userID, game.GameMasterID)
+	s.publisher.Publish(gameID, websocket.EventDiceRolled, eventData, visibility, userID, game.GameMasterID)
 	return results, sum, nil
 }
 

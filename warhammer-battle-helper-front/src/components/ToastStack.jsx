@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import { getSystem } from '../systems/registry';
+import { resolveRollComponent } from './log/resolveRollComponent';
 import TruncatedLabel from './log/TruncatedLabel';
 import './ToastStack.css';
 import './LogWindow.css';
@@ -49,7 +50,7 @@ function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem }) {
   const { rollType, outcome, visibility } = data;
 
   const system  = getSystem(gameSystem);
-  const RollComponent = system.getRollComponent(rollType);
+  const RollComponent = resolveRollComponent(system, rollType);
   const isGMOnly    = visibility && visibility !== 'all';
   const borderColor = OUTCOME_BORDER[outcome] || 'var(--log-brown-muted)';
 

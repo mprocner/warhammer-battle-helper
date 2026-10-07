@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import LockIcon from '@mui/icons-material/Lock';
 import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
+import { resolveRollComponent } from './log/resolveRollComponent';
 import TourButton from './tutorial/TourButton';
 import './LogWindow.css';
 
@@ -95,7 +96,7 @@ const LogWindow = ({
             const rollType = msg.data.rollType;
             const isHidden = msg.data.visibility && msg.data.visibility !== 'all';
 
-            const RollComponent = system.getRollComponent(rollType);
+            const RollComponent = resolveRollComponent(system, rollType);
             if (RollComponent) {
                 const itemClass = `log-list-item${isHidden ? ' log-entry--hidden-roll' : ''}${isMine ? ' log-list-item--mine' : ''}${isNew ? ' log-list-item--new' : ''}`;
                 return (

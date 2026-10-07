@@ -524,6 +524,8 @@
     "rolledDice": "Rzucono K{{sides}}: {{result}}",
     "rolledMultiDice": "{{count}}K{{sides}}",
     "sum": "Suma",
+    "successes": "Sukcesy",
+    "target": "Próg",
     "character": "Postać",
     "test": "Test",
     "rolled": "rzucono",
@@ -1180,7 +1182,58 @@
   "chat": {
     "placeholder": "Wyślij wiadomość...",
     "send": "Wyślij",
-    "charCount": "{{current}}/{{max}}"
+    "charCount": "{{current}}/{{max}}",
+    "commands": {
+      "hintsLabel": "Komendy czatu",
+      "secretRollSent": "Tajny rzut wysłany do MG.",
+      "roll": {
+        "usage": "/roll <wyrażenie> · /r",
+        "description": "Rzut kośćmi. Kto go widzi, decyduje lista widoczności."
+      },
+      "gmroll": {
+        "usage": "/gmroll <wyrażenie> · /gmr",
+        "description": "Rzut tajny — wynik widzi tylko MG."
+      },
+      "help": {
+        "usage": "/help",
+        "description": "Pokaż komendy i przykłady.",
+        "title": "Komendy czatu",
+        "examplesTitle": "Przykłady"
+      },
+      "examples": {
+        "single": "jedna k10",
+        "many": "trzy k100, zsumowane",
+        "modifier": "k100 minus 1",
+        "mixed": "różne kości plus premia",
+        "keepHighest": "zostaw 3 najwyższe",
+        "keepLowest": "zostaw najniższą",
+        "pool": "policz kości z wynikiem 7 lub więcej",
+        "check": "sukces, gdy wynik to 45 lub mniej",
+        "secret": "widzi tylko MG"
+      },
+      "errors": {
+        "unknown": "Nieznana komenda: /{{name}}. Wpisz /help, aby zobaczyć listę.",
+        "missingExpression": "Dodaj kości po /{{command}}, np. /{{command}} 2d6",
+        "sendFailed": "Nie wysłano wiadomości. Spróbuj ponownie.",
+        "rollFailed": "Rzut się nie udał. Spróbuj ponownie."
+      },
+      "diceErrors": {
+        "empty": "Wyrażenie jest puste.",
+        "too_long": "Wyrażenie jest za długie (maks. {{max}} znaków).",
+        "unexpected_token": "Nieoczekiwany znak na pozycji {{position}}.",
+        "unexpected_end": "Wyrażenie urywa się za wcześnie.",
+        "no_dice": "Dodaj co najmniej jedną kość, np. d6.",
+        "pool_mixed": "Pula sukcesów (>=) musi być jedynymi kośćmi w rzucie.",
+        "pool_with_check": "Nie można użyć „vs” z pulą sukcesów.",
+        "keep_out_of_range": "Możesz zostawić od 1 do {{max}} kości.",
+        "threshold_out_of_range": "Próg musi wynosić od 1 do {{max}}.",
+        "sides_out_of_range": "Kość musi mieć {{min}}–{{max}} ścian.",
+        "count_out_of_range": "Rzucaj od 1 do {{max}} kości naraz.",
+        "too_many_dice": "Za dużo kości (maks. {{max}}).",
+        "too_many_terms": "Za dużo składników (maks. {{max}}).",
+        "number_out_of_range": "Za duża liczba (maks. {{max}})."
+      }
+    }
   },
   "dice": {
     "label": "K{{sides}}",

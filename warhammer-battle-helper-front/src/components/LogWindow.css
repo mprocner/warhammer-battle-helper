@@ -790,3 +790,74 @@
 .log-icon--info {
   color: var(--log-info);
 }
+/* ================== EXPRESSION ROLL (chat /r) ================== */
+
+.expression-roll__terms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+/* One row per term: head (label over subtotal) | dice. */
+.expression-roll__term {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* The subtotal sits under the label, so it costs no row width — the dice get the rest. */
+.expression-roll__head {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 56px;
+  padding-top: 4px;
+  white-space: nowrap;
+}
+
+.expression-roll__label {
+  font-weight: 600;
+  color: var(--log-brown-medium);
+}
+
+.expression-roll__subtotal {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--log-brown-dark);
+}
+
+/* Only the number grows: the "Sum:" label comes from the shared .log-list-item__result. */
+.expression-roll__total {
+  font-size: 18px;
+}
+
+/* min-width: 0 lets the dice box shrink below the width of all its tokens in one line —
+   without it the flex item keeps its max-content width and "10d100" overflows the panel. */
+.expression-roll__dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.expression-roll__die--dropped {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+.expression-roll__die--success .wax-seal-token {
+  box-shadow: 0 0 0 2px #c9975b;
+}
+
+.expression-roll__check {
+  font-weight: 600;
+}
+
+.expression-roll__check--success {
+  color: var(--log-success);
+}
+
+.expression-roll__check--failure {
+  color: var(--log-red-medium);
+}

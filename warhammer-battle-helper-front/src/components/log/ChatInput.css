@@ -69,3 +69,113 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Anchor for the error line and the command popups. */
+.chat-input {
+  position: relative;
+}
+
+.chat-input__error,
+.chat-input__notice {
+  position: absolute;
+  left: 16px;
+  right: 64px;
+  bottom: 0;
+  font-size: 0.75rem;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-input__error {
+  color: var(--log-red-medium);
+}
+
+.chat-input__notice {
+  color: var(--log-brown-muted);
+}
+
+/* ================== CHAT COMMAND POPUPS (hints + /help) ================== */
+
+.chat-commands-popup {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 100%;
+  margin: 0 0 4px;
+  padding: 6px 0;
+  list-style: none;
+  background: #fff9f0;
+  border: 1px solid var(--log-brown-light);
+  border-radius: 4px;
+  box-shadow: 0 -2px 8px rgba(58, 47, 31, 0.15);
+  color: var(--log-brown-text);
+  font-family: var(--log-font-body);
+  font-size: 0.85rem;
+  z-index: 10;
+}
+
+.chat-commands-popup--help {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.chat-commands-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 4px;
+}
+
+.chat-commands-popup__title {
+  display: block;
+  padding: 4px 12px;
+  font-family: var(--log-font-display);
+  font-weight: 600;
+  color: var(--log-brown-medium);
+}
+
+.chat-commands-popup__header .chat-commands-popup__title {
+  padding: 0;
+}
+
+.chat-commands-popup__close {
+  border: none;
+  background: transparent;
+  color: var(--log-brown-medium);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+}
+
+.chat-commands-popup__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chat-commands-popup__item {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 12px;
+}
+
+.chat-commands-popup--hints .chat-commands-popup__item {
+  cursor: pointer;
+}
+
+.chat-commands-popup--hints .chat-commands-popup__item:hover {
+  background: rgba(201, 151, 91, 0.12);
+}
+
+.chat-commands-popup__usage {
+  font-family: monospace;
+  color: var(--log-brown-dark);
+}
+
+.chat-commands-popup__description {
+  font-size: 0.75rem;
+  color: var(--log-brown-muted);
+}

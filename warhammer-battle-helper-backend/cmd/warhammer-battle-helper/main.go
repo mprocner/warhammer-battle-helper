@@ -11,6 +11,7 @@ import (
 	"battle-helper/internal/repository"
 	"battle-helper/internal/service"
 	"battle-helper/internal/storage"
+	"battle-helper/internal/systems"
 	"battle-helper/internal/websocket"
 	"fmt"
 	nethttp "net/http"
@@ -125,6 +126,15 @@ func main() {
 	// Initialize services
 	gameService := service.NewGameService(gameRepo, userRepo, charRepo, hub, statsRepo, sessionRepo, templateService)
 
+	diceRollService := service.NewDiceRollService(
+		gameRepo,
+		gameRepo,
+		service.NewRollPublisher(hub),
+		service.NewDisplayNameResolver(userRepo),
+		statsRepo,
+		systems.DefaultRoller(),
+	)
+
 	fogRepo := repository.NewFogRepository(db.GamesCollection)
 	fogService := service.NewFogService(fogRepo, hub)
 
@@ -218,6 +228,7 @@ func main() {
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
 	noteHandler := http.NoteHandler{NoteService: noteService}
 	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
+	diceRollHandler := http.DiceRollHandler{DiceRollService: diceRollService}
 
 	game := r.Group("/games/:id", http.JWTAuthMiddleware(), http.GameParticipantMiddleware(gameRepo))
 
@@ -228,6 +239,7 @@ func main() {
 	game.DELETE("/participants/:userId", gameHandler.KickPlayer)
 	game.PATCH("/participant", gameHandler.UpdateParticipant)
 	game.POST("/roll", gameHandler.RollDice)
+	game.POST("/rollExpression", diceRollHandler.RollExpression)
 	game.POST("/rollSkill", gameHandler.RollSkill)
 	game.POST("/rollWeapon", gameHandler.RollWeapon)
 	game.POST("/syncTemplate", gameHandler.SyncTemplate)

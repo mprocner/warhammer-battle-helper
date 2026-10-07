@@ -524,6 +524,8 @@
     "rolledDice": "Rolled K{{sides}}: {{result}}",
     "rolledMultiDice": "{{count}}D{{sides}}",
     "sum": "Sum",
+    "successes": "Successes",
+    "target": "Target",
     "character": "Character",
     "test": "Test",
     "rolled": "rolled",
@@ -1180,7 +1182,58 @@
   "chat": {
     "placeholder": "Send a message...",
     "send": "Send",
-    "charCount": "{{current}}/{{max}}"
+    "charCount": "{{current}}/{{max}}",
+    "commands": {
+      "hintsLabel": "Chat commands",
+      "secretRollSent": "Secret roll sent to the GM.",
+      "roll": {
+        "usage": "/roll <expression> · /r",
+        "description": "Roll dice. Who sees it follows the visibility list."
+      },
+      "gmroll": {
+        "usage": "/gmroll <expression> · /gmr",
+        "description": "Secret roll — only the GM sees the result."
+      },
+      "help": {
+        "usage": "/help",
+        "description": "Show commands and examples.",
+        "title": "Chat commands",
+        "examplesTitle": "Examples"
+      },
+      "examples": {
+        "single": "one d10",
+        "many": "three d100, summed",
+        "modifier": "d100 minus 1",
+        "mixed": "different dice plus a bonus",
+        "keepHighest": "keep the 3 highest",
+        "keepLowest": "keep the lowest",
+        "pool": "count dice showing 7 or more",
+        "check": "success when the result is 45 or less",
+        "secret": "only the GM sees it"
+      },
+      "errors": {
+        "unknown": "Unknown command: /{{name}}. Type /help for the list.",
+        "missingExpression": "Add dice after /{{command}}, e.g. /{{command}} 2d6",
+        "sendFailed": "Message not sent. Try again.",
+        "rollFailed": "Roll failed. Try again."
+      },
+      "diceErrors": {
+        "empty": "The expression is empty.",
+        "too_long": "The expression is too long (max {{max}} characters).",
+        "unexpected_token": "Unexpected character at position {{position}}.",
+        "unexpected_end": "The expression ends too early.",
+        "no_dice": "Add at least one die, e.g. d6.",
+        "pool_mixed": "A success pool (>=) must be the only dice in the roll.",
+        "pool_with_check": "\"vs\" cannot be used with a success pool.",
+        "keep_out_of_range": "You can keep between 1 and {{max}} dice.",
+        "threshold_out_of_range": "The threshold must be between 1 and {{max}}.",
+        "sides_out_of_range": "A die needs {{min}}–{{max}} sides.",
+        "count_out_of_range": "Roll 1–{{max}} dice at a time.",
+        "too_many_dice": "Too many dice (max {{max}}).",
+        "too_many_terms": "Too many parts (max {{max}}).",
+        "number_out_of_range": "Number too large (max {{max}})."
+      }
+    }
   },
   "dice": {
     "label": "D{{sides}}",
