@@ -8,8 +8,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Above MUI dialogs (default 1300) so a confirmation shown from within one stays on top. */
-  z-index: 1400;
+  /* Above everything that can open it: MUI dialogs (1300), managed windows (1500+) and unmanaged
+     DraggablePopups such as the creator's properties popup (9999). A confirmation that a window
+     can cover is a dead end — the GM cannot reach either button. */
+  z-index: 10000;
 }
 
 .confirm-modal {

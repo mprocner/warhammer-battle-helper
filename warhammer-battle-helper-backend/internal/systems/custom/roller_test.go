@@ -3,6 +3,7 @@ package custom
 import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -175,33 +176,6 @@ func TestSkillHasValue(t *testing.T) {
 	}
 	if got := skillHasValue(&Stats{Skills: map[string]AttrValue{}}, "missing", "", false); got != false {
 		t.Error("skillHasValue(missing) = true, want false")
-	}
-}
-
-func TestEvalDicePool(t *testing.T) {
-	t.Run("rolls count dice and sums", func(t *testing.T) {
-		n := 0
-		total, parts := evalDicePool(3, func() int { n++; return n })
-		if total != 6 || !reflect.DeepEqual(parts, []string{"1", "2", "3"}) {
-			t.Errorf("got total=%d parts=%v, want 6/[1 2 3]", total, parts)
-		}
-	})
-	t.Run("count below 1 is clamped to 1", func(t *testing.T) {
-		total, parts := evalDicePool(0, func() int { return 5 })
-		if total != 5 || len(parts) != 1 {
-			t.Errorf("got total=%d parts=%v, want 5/one element", total, parts)
-		}
-	})
-}
-
-func TestEvalDicePoolInts(t *testing.T) {
-	n := 0
-	rolls := evalDicePoolInts(2, func() int { n++; return n * 2 })
-	if !reflect.DeepEqual(rolls, []int{2, 4}) {
-		t.Errorf("evalDicePoolInts = %v, want [2 4]", rolls)
-	}
-	if got := evalDicePoolInts(-1, func() int { return 9 }); len(got) != 1 {
-		t.Errorf("clamped pool len = %d, want 1", len(got))
 	}
 }
 
@@ -961,7 +935,7 @@ func TestRollWithTemplate_NoFormulaErrors(t *testing.T) {
 		t.Fatal("expected an error for a field with no formula")
 	}
 	// Assert the TEXT, not just err != nil. evalFormula and evalFormulaDicePool also error on an
-	// empty block list ("formula is empty"), so an err-only assertion would still pass with the
+	// empty block list (a FormulaError with reason "empty"), so an err-only assertion would still pass with the
 	// plugin.go guard deleted — it would guard the contract, not the code enforcing it.
 	if !strings.Contains(err.Error(), "has no roll formula") {
 		t.Errorf("error = %q, want it to mention \"has no roll formula\"", err)
@@ -1129,13 +1103,15 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	})
 
 	t.Run("non-dice blocks contribute no rolls", func(t *testing.T) {
-		// attr/skill/const/attr_linked/op only affect die-count segments.
+		// attr/skill/const/attr_linked/op are arithmetic only; dice blocks are the sole source of rolls.
 		p := newTestPlugin()
 		blocks := []models.FormulaBlock{
 			{Type: "attr", Key: "str", Label: "STR"},
 			opBlock("+"),
 			{Type: "skill"},
+			opBlock("+"),
 			{Type: "attr_linked"},
+			opBlock("+"),
 			numBlock(2),
 		}
 		parts, _, err := p.evalFormulaDicePool(blocks, stats, "atk", "dex", false, 0)
@@ -1181,19 +1157,50 @@ func TestEvalFormulaDicePool_BlockTypes(t *testing.T) {
 	})
 
 	t.Run("die used as the count stays in the formula", func(t *testing.T) {
-		// d6 -> 2 decides the count, then two d10 -> 7, 3.
+		// (d6) -> 2 decides the count, then two d10 -> 7, 3. The bare chain d6 d d10 is
+		// rejected since PLAYRPG-232; the parentheses say what the GM meant.
 		p := newTestPlugin(1, 6, 2)
-		blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("d"), diceBlock("d10")}
+		blocks := []models.FormulaBlock{
+			{Type: "paren_open"}, diceBlock("d6"), {Type: "paren_close"}, opBlock("d"), diceBlock("d10"),
+		}
 		parts, _, err := p.evalFormulaDicePool(blocks, stats, "", "", false, 0)
 		if err != nil {
 			t.Fatalf("error: %v", err)
 		}
 		want := []gsys.PoolFormulaPart{
+			{Kind: "text", Text: "("},
 			{Kind: "dice", Sides: 6, Rolls: []int{2}},
+			{Kind: "text", Text: ")"},
 			{Kind: "dice", Sides: 10, Rolls: []int{7, 3}},
 		}
 		if !reflect.DeepEqual(parts, want) {
 			t.Errorf("parts = %+v, want %+v", parts, want)
+		}
+	})
+
+	t.Run("an expression count folds into the count label", func(t *testing.T) {
+		p := newTestPlugin(0, 1, 2, 3) // four d10 -> 1, 2, 3, 4
+		statsStr := &Stats{Attributes: map[string]AttrValue{"str": {Current: 40}}}
+		blocks := []models.FormulaBlock{
+			{Type: "paren_open"}, {Type: "attr", Key: "str", Label: "STR"}, opBlock("/"), numBlock(10), {Type: "paren_close"},
+			opBlock("d"), diceBlock("d10"),
+		}
+		parts, _, err := p.evalFormulaDicePool(blocks, statsStr, "", "", false, 0)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		want := []gsys.PoolFormulaPart{{Kind: "dice", Sides: 10, CountLabel: "(STR/10)", Rolls: []int{1, 2, 3, 4}}}
+		if !reflect.DeepEqual(parts, want) {
+			t.Errorf("parts = %+v, want %+v", parts, want)
+		}
+	})
+
+	t.Run("too many dice is an error", func(t *testing.T) {
+		blocks := []models.FormulaBlock{numBlock(101), opBlock("d"), diceBlock("d6")}
+		_, _, err := newTestPlugin().evalFormulaDicePool(blocks, stats, "", "", false, 0)
+		var fe *FormulaError
+		if !errors.As(err, &fe) || fe.Reason != reasonTooManyDice || fe.Index != 2 {
+			t.Errorf("err = %v, want too_many_dice@2", err)
 		}
 	})
 }
@@ -1825,5 +1832,35 @@ func TestRollWithTemplate_DerivedBaseReachesTheThreshold(t *testing.T) {
 	}
 	if res.Target != 45 {
 		t.Errorf("target = %d, want 45 (attribute 40 + advances 5)", res.Target)
+	}
+}
+
+func TestEvalFormula_Precedence(t *testing.T) {
+	// d6 -> 4: 10 + 4*5 = 30. The old left-to-right fold gave (10+4)*5 = 70.
+	p := newTestPlugin(3)
+	blocks := []models.FormulaBlock{numBlock(10), opBlock("+"), diceBlock("d6"), opBlock("*"), numBlock(5)}
+	res, _, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", false)
+	if err != nil {
+		t.Fatalf("evalFormula() error: %v", err)
+	}
+	if res != 30 || label != "10+d6*5" || val != "10+4*5" {
+		t.Errorf("got %d %q %q, want 30 \"10+d6*5\" \"10+4*5\"", res, label, val)
+	}
+}
+
+func TestEvalFormula_NumberBlock(t *testing.T) {
+	stats := sampleStats()
+	stats.Numbers = map[string]int{"load": 7}
+	blocks := []models.FormulaBlock{{Type: "attr", Key: "str", Label: "STR"}, opBlock("+"), {Type: "number", Key: "load", Label: "Load"}}
+	res, _, label, _, err := newTestPlugin().evalFormula(blocks, stats, "", "", false)
+	if err != nil || res != 15 || label != "STR+Load" {
+		t.Errorf("got %d %q err=%v, want 15 \"STR+Load\"", res, label, err)
+	}
+}
+
+func TestEvalFormula_RejectsMalformedFormula(t *testing.T) {
+	blocks := []models.FormulaBlock{numBlock(2), numBlock(3)}
+	if _, _, _, _, err := newTestPlugin().evalFormula(blocks, sampleStats(), "", "", false); err == nil {
+		t.Error("expected trailing_blocks error, got nil — the old loop silently added 2+3")
 	}
 }

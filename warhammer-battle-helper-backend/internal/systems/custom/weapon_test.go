@@ -2,6 +2,7 @@ package custom
 
 import (
 	"battle-helper/internal/models"
+	"errors"
 	"strings"
 	"testing"
 
@@ -219,6 +220,60 @@ func TestRollWeaponWithTemplate_Errors(t *testing.T) {
 	}
 	if _, err := p.RollWeaponWithTemplate(raw, template, "weapons", "nope", 0); err == nil {
 		t.Error("expected error for unknown weapon row id")
+	}
+}
+
+// An unparseable damage formula is a deterministic authoring error: the whole roll fails
+// before any die is rolled (an empty seqRoller panics if the attack were rolled).
+func TestRollWeaponWithTemplate_DamageFormulaParseErrorRollsNothing(t *testing.T) {
+	template, raw := weaponTemplate()
+	template.Sections[0].Fields[0].DamageFormula = []models.FormulaBlock{numBlock(2), numBlock(3)}
+	p := newTestPlugin()
+
+	_, err := p.RollWeaponWithTemplate(raw, template, "weapons", "w1", 0)
+	if err == nil {
+		t.Fatal("expected an error for a damage formula that does not parse")
+	}
+	var fe *FormulaError
+	if !errors.As(err, &fe) {
+		t.Errorf("error = %v, want it to wrap a *FormulaError", err)
+	}
+}
+
+// A damage formula that parses but fails at evaluation time (stats-dependent) on a
+// successful attack is returned, not reported as a hit with zero damage.
+func TestRollWeaponWithTemplate_DamageFormulaEvalErrorIsReturned(t *testing.T) {
+	template, raw := weaponTemplate()
+	// 1 / (STR - 8): STR is 8, so the divisor is 0 at roll time.
+	template.Sections[0].Fields[0].DamageFormula = []models.FormulaBlock{
+		numBlock(1), opBlock("/"), opBlock("("), {Type: "attr", Key: "str", Label: "STR"}, opBlock("-"), numBlock(8), opBlock(")"),
+	}
+	p := newTestPlugin(4) // attack d20 only; the damage formula has no dice
+
+	_, err := p.RollWeaponWithTemplate(raw, template, "weapons", "w1", 0)
+	if err == nil {
+		t.Fatal("expected a division-by-zero error from the damage formula")
+	}
+	var fe *FormulaError
+	if !errors.As(err, &fe) {
+		t.Errorf("error = %v, want it to wrap a *FormulaError", err)
+	}
+}
+
+// Damage follows operator precedence: 2 + d6 * 2 with d6 = 4 is 2 + 8 = 10.
+func TestRollWeaponWithTemplate_DamageFormulaPrecedence(t *testing.T) {
+	template, raw := weaponTemplate()
+	template.Sections[0].Fields[0].DamageFormula = []models.FormulaBlock{
+		numBlock(2), opBlock("+"), diceBlock("d6"), opBlock("*"), numBlock(2),
+	}
+	p := newTestPlugin(4, 3) // attack roll 5 (success), then d6 = 4
+
+	res, err := p.RollWeaponWithTemplate(raw, template, "weapons", "w1", 0)
+	if err != nil {
+		t.Fatalf("RollWeaponWithTemplate() error: %v", err)
+	}
+	if res.DamageRoll != 10 {
+		t.Errorf("DamageRoll = %d, want 10 (2 + 4*2)", res.DamageRoll)
 	}
 }
 

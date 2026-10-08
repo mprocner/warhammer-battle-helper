@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, within, fireEvent, waitFor } from '@testing-library/react';
-import '../../i18n';
+import i18n from '../../i18n';
 
 // src/api/axios.js ciągnie axios (ESM-only), którego CRA-owy jest nie transformuje — bez mocka
 // test wywala się na imporcie, zanim cokolwiek się wyrenderuje (wzorzec:
@@ -23,12 +23,13 @@ const template = (modifier) => ({
   ...(modifier ? { settings: { modifier } } : {}),
 });
 
-function renderSheet(modifier) {
+function renderSheet(modifier, addLogMessage) {
   return render(
     <CustomCharacterSheet
       character={{ id: 'c1', name: 'Bohater', stats: { attributes: { fld_str: { current: 30 } } } }}
       onClose={() => {}}
       onCharacterUpdate={() => {}}
+      addLogMessage={addLogMessage}
       gameId="g1"
       token="t"
       game={{ customSystemTemplate: template(modifier) }}
@@ -68,5 +69,14 @@ describe('CustomCharacterSheet roll modifier prompt', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
     expect(JSON.parse(global.fetch.mock.calls[0][1].body).modifier).toBe(-20);
     expect(document.querySelector('.custom-roll-overlay')).toBeNull();
+  });
+
+  it('reports a rejected roll (HTTP 4xx) to the log instead of failing silently', async () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, status: 400 }));
+    const addLogMessage = jest.fn();
+    const { container } = renderSheet(null, addLogMessage);
+    fireEvent.click(container.querySelector('.custom-sheet__roll-btn'));
+
+    await waitFor(() => expect(addLogMessage).toHaveBeenCalledWith(i18n.t('combat.rollFailed'), 'error'));
   });
 });

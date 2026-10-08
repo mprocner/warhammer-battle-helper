@@ -9,6 +9,7 @@ import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './weaponLayout
 import { walkFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
+import { postRoll } from './postRoll';
 import { resolveSkillValues } from './skillLayout';
 
 // Typy pól, które mają sens jako pojedynczy kafelek na skróconej karcie. skill_table i skill_tree
@@ -36,28 +37,14 @@ function CustomCharacterDetails({
 
   const handleRoll = useCallback(async (skillKey, mod = 0) => {
     if (!gameId || !character) return;
-    try {
-      await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
-        method: 'POST',
-        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: mod, characterId: character.id, visibility: rollVisibility }),
-      });
-    } catch {
-      addLogMessage?.(t('combat.rollFailed'), 'error');
-    }
+    await postRoll(gameId, 'rollSkill', token, { skill: skillKey, modifier: mod, characterId: character.id, visibility: rollVisibility },
+      () => addLogMessage?.(t('combat.rollFailed'), 'error'));
   }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
   const handleRollWeapon = useCallback(async (fieldKey, rowId, mod = 0) => {
     if (!gameId || !character) return;
-    try {
-      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
-        method: 'POST',
-        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility }),
-      });
-    } catch {
-      addLogMessage?.(t('combat.rollFailed'), 'error');
-    }
+    await postRoll(gameId, 'rollWeapon', token, { fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility },
+      () => addLogMessage?.(t('combat.rollFailed'), 'error'));
   }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
   // Hook woła to z requestem, który wcześniej dostał od przycisku, i z zatwierdzonym

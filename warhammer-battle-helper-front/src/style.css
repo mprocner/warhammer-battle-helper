@@ -8107,6 +8107,23 @@ align-items: center;
     border-color: #7a5c42;
 }
 
+/* Same box as a number input, so a computed value lines up with its neighbours; the dashed
+   border and missing focus ring are what say "not editable". */
+.custom-sheet__computed-value {
+    display: block;
+    box-sizing: border-box;
+    min-height: 2em;
+    background: #fff9f0;
+    border: 1px dashed #c4a882;
+    color: #3a2f1f;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.95rem;
+    width: 100%;
+    text-align: center;
+    font-weight: 600;
+}
+
 .custom-sheet__progress-row {
     display: flex;
     align-items: center;
@@ -9664,11 +9681,32 @@ align-items: center;
     padding: 16px;
 }
 
-/* No border-top of its own: the danger action lives in a PropsGroup, and the group separator
-   already draws the hairline above it. Keeping both produced a doubled line. */
+/* Move up/down/delete row at the bottom of SectionPropertyPanel. */
 .creator__props-danger {
     display: flex;
     justify-content: flex-end;
+}
+
+/* The field panel's delete action: a full-size red button, left-aligned at the bottom. */
+.creator__delete-field-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid #c0392b;
+    border-radius: 4px;
+    background: #c0392b;
+    color: #fff9f0;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.creator__delete-field-btn:hover {
+    background: #a93226;
+    border-color: #a93226;
 }
 
 /* Properties panel — sticky header naming the node being edited (FEATURE-214 restyle). Sticks to
@@ -10331,6 +10369,29 @@ align-items: center;
     font-family: 'Cinzel', serif;
     font-size: 0.73rem;
     letter-spacing: 0.04em;
+}
+
+.fb__block--number {
+    background: rgba(201, 151, 91, 0.12);
+    border-color: rgba(201, 151, 91, 0.45);
+    color: #7a5c42;
+}
+
+.fb__block--paren {
+    background: transparent;
+    border-color: #c4a882;
+    color: #3a2f1f;
+    font-weight: 700;
+}
+
+.fb__block.fb__block--error {
+    border-color: #8b2c2c;
+    box-shadow: 0 0 0 1px #8b2c2c;
+}
+
+.fb__attr-chip.fb__attr-chip--number {
+    border-color: rgba(201, 151, 91, 0.6);
+    color: #7a5c42;
 }
 
 .fb__block--const {

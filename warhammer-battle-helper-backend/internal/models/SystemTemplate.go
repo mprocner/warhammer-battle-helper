@@ -218,7 +218,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"number"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"
+	Type  string `bson:"type" json:"type"` // "attr"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
 
@@ -232,7 +232,8 @@ type FieldDef struct {
 	Min *int `bson:"min,omitempty" json:"min,omitempty"`
 	Max *int `bson:"max,omitempty" json:"max,omitempty"`
 	// Default is the value written into a freshly created character's stats for this field
-	// ("attr" and "number" only). Nil = no default; the character starts with the key absent,
+	// ("attr" and "number" only). For "computed" it is never written anywhere: the sheet shows it
+	// when the formula cannot be evaluated. Nil = no default; the character starts with the key absent,
 	// exactly as before. A pointer, not an int, because 0 is a legal default and `omitempty`
 	// on a plain int would erase it.
 	Default *int `bson:"default,omitempty" json:"default,omitempty"`
@@ -285,6 +286,11 @@ type FieldDef struct {
 	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
 	// player can copy into an editable weapon row of their own.
 	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
+
+	// Formula is the expression of a "computed" field. The front end evaluates it at render time
+	// from the character's attributes and numbers and never stores the result — Go only has to
+	// carry it through a template save.
+	Formula []FormulaBlock `bson:"formula,omitempty" json:"formula,omitempty"`
 
 	// Section holds the nested section when Type == "section" (FEATURE-211). A section field
 	// carries no per-character value — its Key never appears in Character.Stats, exactly like

@@ -33,6 +33,15 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 		return nil, fmt.Errorf("custom: weapons_table %q has no attack roll formula", fieldKey)
 	}
 
+	// Parse errors are deterministic, so reject a broken damage formula before the attack is
+	// rolled instead of rolling and then discarding it.
+	damageBlocks := applyDamageOverrides(field.DamageFormula, row.Damage)
+	if len(damageBlocks) > 0 {
+		if _, err := parseFormula(damageBlocks); err != nil {
+			return nil, fmt.Errorf("custom: damage formula: %w", err)
+		}
+	}
+
 	skillKey, linkedAttr, baseFromAttr := resolveWeaponSkill(template, stats, field, row)
 
 	// Attack roll reuses the skill-roll formula evaluator; the "skill" block resolves to
@@ -47,16 +56,17 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 	atk.SkillName = ""
 
 	// Damage only on a successful attack (CoC-style output).
-	if isSuccessOutcome(atk.Outcome) && len(field.DamageFormula) > 0 {
-		blocks := applyDamageOverrides(field.DamageFormula, row.Damage)
-		dmg, _, dLabel, dValue, derr := p.evalFormula(blocks, stats, skillKey, linkedAttr, baseFromAttr)
-		if derr == nil {
-			atk.DamageRoll = dmg
-			if dLabel == dValue {
-				atk.DamageBreakdown = fmt.Sprintf("%s = %d", dLabel, dmg)
-			} else {
-				atk.DamageBreakdown = fmt.Sprintf("%s = %s = %d", dLabel, dValue, dmg)
-			}
+	if isSuccessOutcome(atk.Outcome) && len(damageBlocks) > 0 {
+		dmg, _, dLabel, dValue, derr := p.evalFormula(damageBlocks, stats, skillKey, linkedAttr, baseFromAttr)
+		if derr != nil {
+			// Stats-dependent failures (division by zero, too many dice) surface to the caller.
+			return nil, fmt.Errorf("custom: damage formula eval: %w", derr)
+		}
+		atk.DamageRoll = dmg
+		if dLabel == dValue {
+			atk.DamageBreakdown = fmt.Sprintf("%s = %d", dLabel, dmg)
+		} else {
+			atk.DamageBreakdown = fmt.Sprintf("%s = %s = %d", dLabel, dValue, dmg)
 		}
 	}
 

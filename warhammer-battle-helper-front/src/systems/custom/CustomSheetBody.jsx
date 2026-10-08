@@ -4,6 +4,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
+import { computeFieldValue } from './formula/formula';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
@@ -125,6 +126,18 @@ function CustomSheetBody({
     return out;
   }, [sections]);
 
+  // Keys a computed formula may name. A key missing from here was removed from the template, and
+  // the field falls back to its default; a key present here but unfilled on the character reads as 0.
+  const formulaRefs = useMemo(() => {
+    const attrKeys = [];
+    const numberKeys = [];
+    walkFields(sections, (f) => {
+      if (f.type === 'attr') attrKeys.push(f.key);
+      if (f.type === 'number') numberKeys.push(f.key);
+    });
+    return { attrKeys, numberKeys };
+  }, [sections]);
+
   // Jedna instancja na całą kartę: jeden stan i jeden portal niezależnie od liczby pól.
   // Hook per etykieta dałby 40 niezależnych stanów przy karcie z 40 polami.
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
@@ -232,6 +245,18 @@ function CustomSheetBody({
             />
           </div>
         );
+
+      // Computed at render from the values the sheet is showing — the player's unsaved edits
+      // included — so it follows every keystroke. Nothing is stored: there is no onChange.
+      case 'computed': {
+        const value = computeFieldValue(field, { attributes: attrs, numbers }, formulaRefs);
+        return (
+          <div key={field.key} className="custom-sheet__field custom-sheet__field--computed">
+            {renderFieldLabel(field.label)}
+            <output className="custom-sheet__computed-value">{value ?? ''}</output>
+          </div>
+        );
+      }
 
       case 'progress':
         return (

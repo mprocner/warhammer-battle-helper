@@ -744,7 +744,7 @@
     "gameScreen": {
       "characterCard": {
         "title": "Selected character",
-        "body": "A short sheet of the character you clicked: key stats and quick rolls. Click the scroll icon next to the name to open the full sheet in its own window \u2014 minimising it parks it in the bar at the top of the screen, so nothing gets lost behind the map."
+        "body": "A short sheet of the character you clicked: key stats and quick rolls. Click the scroll icon next to the name to open the full sheet in its own window — minimising it parks it in the bar at the top of the screen, so nothing gets lost behind the map."
       },
       "characterList": {
         "title": "Character list",
@@ -1496,6 +1496,8 @@
     "fieldProperties": "Field properties",
     "propsGroupBasics": "Basics",
     "propsGroupValues": "Values",
+    "propsGroupFormula": "Formula",
+    "computedDefaultHint": "Shown when the formula cannot be computed",
     "propsGroupContent": "Content",
     "propsGroupDisplay": "Display",
     "skillShowFavorites": "Favourites star",
@@ -1508,7 +1510,6 @@
     "skillAttrAsBaseHint": "The base column shows the linked attribute and cannot be edited; the total is the attribute plus advances.",
     "skillFlagRequires": "Needs: {{flags}}",
     "propsGroupRoll": "Roll",
-    "propsGroupDanger": "Danger zone",
     "fieldLabel": "Label",
     "fieldKey": "Key",
     "fieldKeyHint": "Unique identifier (auto-generated from label)",
@@ -1669,6 +1670,8 @@
     "tabSheet": "Sheet",
     "fieldDuplicate": "Duplicate field",
     "fieldDelete": "Delete field",
+    "fieldDeleteConfirm": "Delete field \"{{name}}\"? Values players entered in it will no longer show on their sheets.",
+    "fieldDeleteConfirmUnnamed": "Delete this field? Values players entered in it will no longer show on their sheets.",
     "sectionDuplicate": "Duplicate section",
     "sectionProperties": "Section properties",
     "sectionTitleLabel": "Section title",
@@ -1676,6 +1679,8 @@
     "sectionMoveUp": "Move section up",
     "sectionMoveDown": "Move section down",
     "sectionDelete": "Delete section",
+    "sectionDeleteConfirm": "Delete section \"{{name}}\" with all its fields? Values players entered in them will no longer show on their sheets.",
+    "sectionDeleteConfirmUnnamed": "Delete this section with all its fields? Values players entered in them will no longer show on their sheets.",
     "fieldAdvances": "Advances",
     "fieldAdvancesLabel": "Advance label",
     "fieldAdvancesDefault": "Advance",
@@ -1714,6 +1719,8 @@
       "attrDesc": "Characteristic linked to skills — rollable",
       "number": "Number",
       "numberDesc": "Plain number with no skill links",
+      "computed": "Computed",
+      "computedDesc": "Value computed from a formula; the player cannot edit it",
       "progress": "Progress",
       "progressDesc": "Current / max tracker",
       "textShort": "Short text",
@@ -1734,12 +1741,6 @@
       "skillTreeDesc": "Hierarchical skill tree"
     },
     "formula": {
-      "errorEmpty": "Formula is empty",
-      "errorStartsWithOp": "Formula cannot start with an operator",
-      "errorEndsWithOp": "Formula cannot end with an operator",
-      "errorTwoOps": "Two operators in a row",
-      "errorNoOp": "Missing operator between values",
-      "errorAttrNotFound": "Attribute \"{{label}}\" does not exist in the template",
       "track": "Roll formula",
       "clear": "✕ Clear",
       "empty": "Click blocks below to build your formula…",
@@ -1768,7 +1769,21 @@
       "skillAbbr": "skill",
       "linkedAttrAbbr": "l.attr",
       "attrSkillAbbr": "attr+skill",
-      "opDicePool": "Dice pool (NdX) — roll N times and sum"
+      "opDicePool": "Dice pool (NdX) — roll N times and sum",
+      "trackComputed": "Formula",
+      "subsectionNumbers": "Number fields",
+      "error": {
+        "empty": "Formula is empty",
+        "unknown_block": "Unknown block — remove it",
+        "unexpected_block": "This block cannot stand here",
+        "unexpected_end": "Formula ends too early — add a value",
+        "unclosed_paren": "This parenthesis is never closed",
+        "expected_die": "\"d\" must be followed by a die",
+        "dice_chain": "Dice cannot be chained — put the die count in parentheses: (d6) d d10",
+        "trailing_blocks": "Missing operator before this block",
+        "not_allowed": "This block cannot be used in a computed field",
+        "field_not_found": "Field \"{{label}}\" does not exist in the template"
+      }
     }
   },
   "dnd": {

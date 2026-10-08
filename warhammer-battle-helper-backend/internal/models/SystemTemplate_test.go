@@ -203,3 +203,25 @@ func TestTemplateSettings_SheetWidthOmittedWhenZero(t *testing.T) {
 		t.Fatalf("expected sheetWidth to be omitted when zero, got %s", encoded)
 	}
 }
+
+// A computed field's formula is evaluated only in the browser, but the template PATCH binds
+// JSON into FieldDef: a key the struct does not declare is dropped on save, silently.
+func TestFieldDef_ComputedFormulaRoundTrips(t *testing.T) {
+	in := `{"key":"computed_1","type":"computed","label":"HP","default":5,
+	        "formula":[{"id":"a","type":"attr","key":"tough","label":"T"},{"id":"b","type":"op","value":"*"},{"id":"c","type":"const","num":2}]}`
+	var f FieldDef
+	if err := json.Unmarshal([]byte(in), &f); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	out, err := json.Marshal(f)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var back FieldDef
+	if err := json.Unmarshal(out, &back); err != nil {
+		t.Fatalf("unmarshal back: %v", err)
+	}
+	if len(back.Formula) != 3 || back.Formula[0].Key != "tough" || back.Default == nil || *back.Default != 5 {
+		t.Errorf("round trip lost data: %+v", back)
+	}
+}

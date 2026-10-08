@@ -17,6 +17,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import NumbersIcon from '@mui/icons-material/Numbers';
+import FunctionsIcon from '@mui/icons-material/Functions';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ShortTextIcon from '@mui/icons-material/ShortText';
 import SubjectIcon from '@mui/icons-material/Subject';
@@ -38,6 +39,7 @@ import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/wea
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import PropertyPopup from './PropertyPopup';
+import ConfirmModal from '../common/ConfirmModal';
 import FieldChrome from './FieldChrome';
 import SectionChrome from './SectionChrome';
 import EditablePlaceholder from './EditablePlaceholder';
@@ -94,6 +96,7 @@ const FIELD_TYPES = [
   { type: 'section',     labelKey: 'creator.fieldType.section',     icon: <ViewQuiltIcon fontSize="small" />,  desc: 'creator.fieldType.sectionDesc' },
   { type: 'attr',        labelKey: 'creator.fieldType.attr',        icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.attrDesc' },
   { type: 'number',      labelKey: 'creator.fieldType.number',      icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.numberDesc' },
+  { type: 'computed',    labelKey: 'creator.fieldType.computed',    icon: <FunctionsIcon fontSize="small" />,  desc: 'creator.fieldType.computedDesc' },
   { type: 'progress',    labelKey: 'creator.fieldType.progress',    icon: <TrendingUpIcon fontSize="small" />, desc: 'creator.fieldType.progressDesc' },
   { type: 'text_short',  labelKey: 'creator.fieldType.textShort',   icon: <ShortTextIcon fontSize="small" />,  desc: 'creator.fieldType.textShortDesc' },
   { type: 'text_long',   labelKey: 'creator.fieldType.textLong',    icon: <SubjectIcon fontSize="small" />,    desc: 'creator.fieldType.textLongDesc' },
@@ -110,7 +113,7 @@ const SHORT_CARD_FIELD_TYPES = ['attr', 'number', 'progress'];
 
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupLayout',  types: ['section'] },
-  { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'progress'] },
+  { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'computed', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
   { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'skill_tree'] },
@@ -121,7 +124,7 @@ const PALETTE_GROUPS = [
 // The hex is what gets stored — not an index — so reordering this list never repaints existing templates.
 const LABEL_COLORS = ['#3a2f1f', '#7a5c42', '#c9975b', '#8b2c2c', '#3f6b3f', '#2f4a6b', '#5c3a6b', '#4a4a4a'];
 
-function makeDefaultField(type) {
+export function makeDefaultField(type) {
   const base = {
     key: genId(type),
     type,
@@ -131,6 +134,7 @@ function makeDefaultField(type) {
   };
   if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
+  if (type === 'computed') return { ...base, formula: [], default: null };
   if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: 'Rozwinięcie' };
@@ -498,7 +502,7 @@ function defaultRollConfig() {
   };
 }
 
-function RollConfigEditor({ config, onChange, numberFields, fieldType, skillColumnLabel = null }) {
+function RollConfigEditor({ config, onChange, numberFields, numericFields, fieldType, skillColumnLabel = null }) {
   const { t } = useTranslation();
   const up = patch => onChange({ ...config, ...patch });
   const rollMode = config.rollMode || 'traditional';
@@ -525,8 +529,8 @@ function RollConfigEditor({ config, onChange, numberFields, fieldType, skillColu
         formula={config.formula || []}
         onChange={formula => up({ formula })}
         numberFields={numberFields}
+        numericFields={numericFields}
         fieldType={fieldType}
-        hideOperators={rollMode === 'dice_pool' ? ['/'] : []}
       />
 
       <Divider sx={{ my: 1.5 }} />
@@ -770,7 +774,7 @@ function FlagSwitch({ field, flag, meta, onChange, showTooltip, hideTooltip, t }
   );
 }
 
-function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
+function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields, sections }) {
   const { t } = useTranslation();
   // One instance per panel, not per switch: the panel shows one field at a time, and a state plus a
   // portal per row would be four of each for nothing. Called unconditionally, before the early
@@ -961,6 +965,31 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
         </PropsGroup>
       )}
 
+      {field.type === 'computed' && (
+        <PropsGroup title={t('creator.propsGroupFormula')}>
+          {/* Truncated for the same reason as the attr/number default above: a decimal 400s the PATCH. */}
+          <TextField
+            size="small"
+            fullWidth
+            label={t('creator.fieldDefault')}
+            helperText={t('creator.computedDefaultHint')}
+            type="number"
+            value={field.default ?? ''}
+            onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })}
+            InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }}
+            sx={{ mb: 1.5 }}
+          />
+          <FormulaBuilder
+            formula={field.formula || []}
+            onChange={formula => up({ formula })}
+            numberFields={numberFields}
+            numericFields={numericFields}
+            fieldType={field.type}
+            arithmeticOnly
+          />
+        </PropsGroup>
+      )}
+
       {['select', 'skill_table', 'weapons_table', 'skill_tree'].includes(field.type) && (
         <PropsGroup title={t('creator.propsGroupContent')}>
           {field.type === 'select' && (
@@ -1023,6 +1052,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 formula={field.damageFormula || []}
                 onChange={f => up({ damageFormula: f })}
                 numberFields={numberFields}
+                numericFields={numericFields}
                 fieldType={field.type}
                 damageMode
               />
@@ -1085,7 +1115,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 sx={switchRowSx}
               />
               {field.rollable && field.rollConfig && (
-                <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} fieldType={field.type} />
+                <RollConfigEditor config={field.rollConfig} onChange={cfg => up({ rollConfig: cfg })} numberFields={numberFields} numericFields={numericFields} fieldType={field.type} />
               )}
             </>
           )}
@@ -1099,6 +1129,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
                 config={field.rollConfig || defaultRollConfig()}
                 onChange={cfg => up({ rollConfig: cfg })}
                 numberFields={numberFields}
+                numericFields={numericFields}
                 fieldType={field.type}
                 skillColumnLabel={weaponSkillColumn(field)?.label || null}
               />
@@ -1107,17 +1138,13 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, sections }) {
         </PropsGroup>
       )}
 
-      <PropsGroup title={t('creator.propsGroupDanger')}>
-        <div className="creator__props-danger">
-          <button
-            className="creator__section-action-btn creator__section-action-btn--danger"
-            onClick={onDelete}
-            title={t('creator.fieldDelete')}
-          >
-            <DeleteIcon style={{ fontSize: 14 }} /> {t('creator.fieldDelete')}
-          </button>
-        </div>
-      </PropsGroup>
+      {/* A plain group without a title: the red button says what it does on its own. Wrapping it in
+          creator__props-group keeps the hairline separator above it. */}
+      <div className="creator__props-group">
+        <button className="creator__delete-field-btn" onClick={onDelete}>
+          <DeleteIcon fontSize="small" /> {t('creator.fieldDelete')}
+        </button>
+      </div>
       {tooltipNode}
     </div>
   );
@@ -1358,6 +1385,36 @@ export async function shareErrorKey(res) {
   return 'creator.general.shareErrorFailed';
 }
 
+// Formula sources for the builders (attr fields and number fields, at any nesting depth) and the
+// header chip's counts. walkFields visits leaves only, so sections need their own recursion: the
+// chip counts every container at every depth, not just the root list, or a root section holding
+// three subsections would read "1 section" next to "9 fields".
+// The question ConfirmModal asks before a node is removed. A section is named by its title, a field
+// by its label; an unnamed node gets a sentence without the empty quotes.
+function removeConfirmMessage(node, path, t) {
+  if (!node) return '';
+  const isSection = path.length === 1 || node.type === SECTION_TYPE;
+  const name = isSection ? sectionOf(node)?.title : node.label;
+  const key = isSection ? 'creator.sectionDeleteConfirm' : 'creator.fieldDeleteConfirm';
+  return name ? t(key, { name }) : t(`${key}Unnamed`);
+}
+
+export function collectFormulaFields(sections) {
+  const attrs = [];
+  const numbers = [];
+  let n = 0;
+  walkFields(sections, (f) => {
+    if (f.type === 'attr') attrs.push(f);
+    if (f.type === 'number') numbers.push(f);
+    n += 1;
+  });
+  const countContainers = (list) => (list || []).reduce((acc, node) => {
+    const kids = childrenOf(node);
+    return kids ? acc + 1 + countContainers(kids) : acc;
+  }, 0);
+  return { numberFields: attrs, numericFields: numbers, totalFieldCount: n, sectionCount: countContainers(sections) };
+}
+
 function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const { t } = useTranslation();
   const [sections,    setSections]    = useState(template?.sections || []);
@@ -1376,6 +1433,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // selection to open the popup, the dominant flow — select a section, then click the palette a
   // few times to add fields — would keep the popup hanging over the very sheet being built.
   const [editingPath, setEditingPath] = useState(null);
+  // The node a delete button asked to remove; nothing is removed until the GM confirms it.
+  const [pendingRemovePath, setPendingRemovePath] = useState(null);
   const [addingToPath, setAddingToPath] = useState(null); // path of the section whose "add field" list is open
   const [isSaving,    setIsSaving]    = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1589,6 +1648,14 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     commit(removeAtPath(sections, path), null);
   };
 
+  // Every delete affordance (field and section toolbars, both properties panels) goes through
+  // here, so a node can only disappear via the ConfirmModal below.
+  const requestRemove = (path) => setPendingRemovePath(path);
+  const confirmRemove = () => {
+    removeNode(pendingRemovePath);
+    setPendingRemovePath(null);
+  };
+
   const moveWithinParent = (path, dir) => {
     const found = locate(sections, path);
     if (!found) return;
@@ -1699,23 +1766,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setPaletteTooltip(null);
   };
 
-  // Attribute list offered to formula builders (every attr field, at any nesting depth) and
-  // the header chip's counts. walkFields visits leaves only, so sections need their own
-  // recursion: the chip counts every container at every depth, not just the root list, or a
-  // root section holding three subsections would read "1 section" next to "9 fields".
-  const { numberFields, totalFieldCount, sectionCount } = useMemo(() => {
-    const attrs = [];
-    let n = 0;
-    walkFields(sections, (f) => {
-      if (f.type === 'attr') attrs.push(f);
-      n += 1;
-    });
-    const countContainers = (list) => (list || []).reduce((acc, node) => {
-      const kids = childrenOf(node);
-      return kids ? acc + 1 + countContainers(kids) : acc;
-    }, 0);
-    return { numberFields: attrs, totalFieldCount: n, sectionCount: countContainers(sections) };
-  }, [sections]);
+  const { numberFields, numericFields, totalFieldCount, sectionCount } = useMemo(() => collectFormulaFields(sections), [sections]);
   const editingNode = editingPath !== null ? nodeAt(sections, editingPath) : null;
   const editingIsSection = editingPath !== null
     && (editingPath.length === 1 || editingNode?.type === SECTION_TYPE);
@@ -1738,7 +1789,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       onSelect: () => setSelected(path),
       onEdit: () => setEditingPath(path),
       onDuplicate: () => duplicateNode(path),
-      onRemove: () => removeNode(path),
+      onRemove: () => requestRemove(path),
       onMoveUp: () => moveWithinParent(path, -1),
       onMoveDown: () => moveWithinParent(path, +1),
       isFirst: index === 0,
@@ -2160,8 +2211,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               key={editingPath.join('.')}
               field={editingNode}
               onChange={patch => updateNode(editingPath, patch)}
-              onDelete={() => removeNode(editingPath)}
+              onDelete={() => requestRemove(editingPath)}
               numberFields={numberFields}
+              numericFields={numericFields}
               sections={sections}
             />
           ) : editingSectionDef ? (
@@ -2169,13 +2221,20 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               key={editingPath.join('.')}
               section={editingSectionDef}
               onChange={patch => updateNode(editingPath, patch)}
-              onDelete={() => removeNode(editingPath)}
+              onDelete={() => requestRemove(editingPath)}
               index={editingPath[editingPath.length - 1]}
               siblingCount={editingSiblingCount}
               onMove={dir => moveWithinParent(editingPath, dir)}
             />
           ) : null}
         </PropertyPopup>
+
+        <ConfirmModal
+          isOpen={pendingRemovePath !== null}
+          message={removeConfirmMessage(pendingRemovePath && nodeAt(sections, pendingRemovePath), pendingRemovePath, t)}
+          onConfirm={confirmRemove}
+          onCancel={() => setPendingRemovePath(null)}
+        />
 
         <DragOverlay dropAnimation={null}>
           {dragState && draggedGhostSections && (

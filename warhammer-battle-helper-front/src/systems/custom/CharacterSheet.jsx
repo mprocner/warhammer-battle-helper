@@ -7,6 +7,7 @@ import { getCharacterSaveUrl } from '../shared/characterApi';
 import CustomSheetBody from './CustomSheetBody';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
+import { postRoll } from './postRoll';
 import { clampSheetWidth } from '../../utils/sheetWidth';
 
 function CustomCharacterSheet({
@@ -301,28 +302,14 @@ function CustomCharacterSheet({
 
   const handleRoll = useCallback(async (skillKey, mod = 0) => {
     if (!gameId) return;
-    try {
-      await fetch(`${getApiUrl()}/games/${gameId}/rollSkill`, {
-        method: 'POST',
-        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ skill: skillKey, modifier: mod, characterId: character.id, visibility: rollVisibility }),
-      });
-    } catch {
-      addLogMessage?.(t('combat.rollFailed'), 'error');
-    }
+    await postRoll(gameId, 'rollSkill', token, { skill: skillKey, modifier: mod, characterId: character.id, visibility: rollVisibility },
+      () => addLogMessage?.(t('combat.rollFailed'), 'error'));
   }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
   const handleRollWeapon = useCallback(async (fieldKey, rowId, mod = 0) => {
     if (!gameId) return;
-    try {
-      await fetch(`${getApiUrl()}/games/${gameId}/rollWeapon`, {
-        method: 'POST',
-        headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility }),
-      });
-    } catch {
-      addLogMessage?.(t('combat.rollFailed'), 'error');
-    }
+    await postRoll(gameId, 'rollWeapon', token, { fieldKey, weaponRowId: rowId, modifier: mod, characterId: character.id, visibility: rollVisibility },
+      () => addLogMessage?.(t('combat.rollFailed'), 'error'));
   }, [gameId, character, token, rollVisibility, addLogMessage, t]);
 
   // Hook woła to z requestem, który wcześniej dostał od przycisku, i z zatwierdzonym

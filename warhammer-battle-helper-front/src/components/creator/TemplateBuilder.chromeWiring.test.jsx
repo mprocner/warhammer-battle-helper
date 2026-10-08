@@ -56,6 +56,10 @@ const chromeFor = (root, label) => {
 // inside the popup body, so a plain screen.getByText('Field properties') matches both.
 const popupTitle = () => document.querySelector('.modal-header__title');
 
+// Deleting a node asks for confirmation first (ConfirmModal, portalled to body).
+const confirmDelete = () =>
+  fireEvent.click(within(document.body.querySelector('.confirm-modal')).getByRole('button', { name: 'Delete' }));
+
 // FEATURE-214: a weapons_table field's preset editor used to live behind a button that opened
 // a separate MUI Dialog nested inside the (already floating) properties popup. It is now
 // inlined into the Content group alongside the weapon columns editor.
@@ -149,6 +153,7 @@ describe('TemplateBuilder chrome wiring', () => {
     const { baseElement } = mount();
     openSheetTab();
     fireEvent.click(within(chromeFor(baseElement, 'Beta')).getByLabelText('Delete field'));
+    confirmDelete();
     expect(fieldOrder(baseElement)).toEqual(['Alpha', 'Gamma']);
   });
 
@@ -162,6 +167,7 @@ describe('TemplateBuilder chrome wiring', () => {
     expect(screen.getByDisplayValue('Gamma')).toBeInTheDocument();
 
     fireEvent.click(within(chromeFor(baseElement, 'Alpha')).getByLabelText('Delete field'));
+    confirmDelete();
     expect(screen.getByDisplayValue('Gamma')).toBeInTheDocument();
   });
 
@@ -172,6 +178,7 @@ describe('TemplateBuilder chrome wiring', () => {
     expect(screen.getByDisplayValue('Beta')).toBeInTheDocument();
 
     fireEvent.click(within(chromeFor(baseElement, 'Beta')).getByLabelText('Delete field'));
+    confirmDelete();
     expect(screen.queryByText('Field properties')).toBeNull();
   });
 
