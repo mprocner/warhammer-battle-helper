@@ -38,6 +38,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import { SHORT_CARD_TYPES } from '../../systems/custom/shortCard';
 import PropertyPopup from './PropertyPopup';
 import ConfirmModal from '../common/ConfirmModal';
 import FieldChrome from './FieldChrome';
@@ -108,8 +109,6 @@ const FIELD_TYPES = [
   { type: 'label',         labelKey: 'creator.fieldType.label',         icon: <LabelIcon fontSize="small" />,       desc: 'creator.fieldType.labelDesc' },
 ];
 
-// Skróconą kartę renderują tylko te trzy typy pól (BUG-176).
-const SHORT_CARD_FIELD_TYPES = ['attr', 'number', 'progress'];
 
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupLayout',  types: ['section'] },
@@ -134,7 +133,7 @@ export function makeDefaultField(type) {
   };
   if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
   if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
-  if (type === 'computed') return { ...base, formula: [], default: null };
+  if (type === 'computed') return { ...base, formula: [], default: null, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: 'Rozwinięcie' };
@@ -851,16 +850,14 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
           </>
         )}
 
-        {(field.type === 'attr' || field.type === 'number' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
+        {(field.type === 'attr' || field.type === 'number' || field.type === 'computed' || field.type === 'progress' || field.type === 'skill_table' || field.type === 'skill_tree') && (
           <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
             onChange={e => up({ abbr: e.target.value })}
             helperText={t('creator.fieldAbbrHint')}
             sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
         )}
 
-        {/* Skróconą kartę renderują tylko te trzy typy (BUG-176) — skill_table i skill_tree trafiają
-            tam wyłącznie przez gwiazdki gracza, więc flaga byłaby na nich martwa. */}
-        {SHORT_CARD_FIELD_TYPES.includes(field.type) && (
+        {SHORT_CARD_TYPES.includes(field.type) && (
           <FormControlLabel
             labelPlacement="start"
             control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}

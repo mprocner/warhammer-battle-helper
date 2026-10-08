@@ -1442,6 +1442,8 @@
     "base": "Bazowa",
     "advances": "Rozwinięcia",
     "total": "Suma",
+    "baseShort": "Baz.",
+    "advancesShort": "Rozw.",
     "development": "Zaznacz do rozwoju",
     "favorite": "Dodaj do skróconej karty postaci",
     "damage": "Obrażenia",

@@ -24,7 +24,8 @@ test('shows the formula value from the live character values, read-only', () => 
   );
   expect(valueOf(container).textContent).toBe('60');
   expect(valueOf(container).tagName).toBe('OUTPUT');
-  expect(container.querySelector('.custom-sheet__field--computed input')).toBeNull();
+  expect(container.querySelector('.custom-sheet__tile--computed')).not.toBeNull();
+  expect(container.querySelector('.custom-sheet__tile--computed input')).toBeNull();
 });
 
 test('shows the default when the formula names a removed field', () => {

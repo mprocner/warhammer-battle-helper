@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
+import FunctionsIcon from '@mui/icons-material/Functions';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
-import { computeFieldValue } from './formula/formula';
+import { computeFieldValue, formulaRefsOf } from './formula/formula';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
@@ -126,17 +127,7 @@ function CustomSheetBody({
     return out;
   }, [sections]);
 
-  // Keys a computed formula may name. A key missing from here was removed from the template, and
-  // the field falls back to its default; a key present here but unfilled on the character reads as 0.
-  const formulaRefs = useMemo(() => {
-    const attrKeys = [];
-    const numberKeys = [];
-    walkFields(sections, (f) => {
-      if (f.type === 'attr') attrKeys.push(f.key);
-      if (f.type === 'number') numberKeys.push(f.key);
-    });
-    return { attrKeys, numberKeys };
-  }, [sections]);
+  const formulaRefs = useMemo(() => formulaRefsOf(sections), [sections]);
 
   // Jedna instancja na całą kartę: jeden stan i jeden portal niezależnie od liczby pól.
   // Hook per etykieta dałby 40 niezależnych stanów przy karcie z 40 polami.
@@ -161,10 +152,33 @@ function CustomSheetBody({
     </label>
   );
 
+  // renderTile is the shared skeleton of number, progress, computed and text fields: a head row
+  // (name + icon slot), a value row of fixed minimum height, and an optional strip along the
+  // bottom edge. One anatomy for all four is what lets them sit side by side in a grid row with
+  // names and values on the same lines; the type only decides what fills the value row.
+  const renderTile = (field, typeMod, value, { icon = null, footer = null } = {}) => (
+    <div key={field.key} className={`custom-sheet__tile custom-sheet__tile--${typeMod}`}>
+      <div className="custom-sheet__tile-head">
+        {renderFieldLabel(field.label)}
+        {icon}
+      </div>
+      <div className="custom-sheet__tile-value">{value}</div>
+      {footer}
+    </div>
+  );
+
   const renderField = (field, path) => {
     switch (field.type) {
+      // Medallion: the total the player rolls against sits large in a plate, its editable parts
+      // small beside it. Simple mode is the same medallion with the number itself editable.
       case 'attr': {
         const rollBtn = field.rollable && rollAffordance(() => onRoll({ skillKey: field.key, label: field.label }));
+        const header = (
+          <div className="custom-sheet__attr-header">
+            {renderFieldLabel(field.label)}
+            {rollBtn}
+          </div>
+        );
 
         if (field.hasAdvances) {
           const base = attrs[field.key]?.base     ?? 0;
@@ -172,145 +186,139 @@ function CustomSheetBody({
           const total = attrs[field.key]?.current ?? (base + adv);
           return (
             <div key={field.key} className="custom-sheet__attr">
-              <div className="custom-sheet__attr-header">
-                {renderFieldLabel(field.label)}
-                {rollBtn}
-              </div>
-              <div className="custom-sheet__attr-rows">
-                <div className="custom-sheet__attr-row">
-                  <span className="custom-sheet__attr-row-label">{t('customSheet.base')}</span>
-                  <input
-                    type="number"
-                    className="custom-sheet__attr-input"
-                    value={base || ''}
-                    onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
-                    readOnly={readOnly}
-                    min={field.min ?? undefined}
-                    max={field.max ?? undefined}
-                    step={field.step || 1}
-                  />
+              {header}
+              <div className="custom-sheet__attr-body">
+                <div className="custom-sheet__attr-parts">
+                  <label className="custom-sheet__attr-part">
+                    <input
+                      type="number"
+                      className="custom-sheet__attr-input"
+                      value={base || ''}
+                      onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
+                      readOnly={readOnly}
+                      min={field.min ?? undefined}
+                      max={field.max ?? undefined}
+                      step={field.step || 1}
+                    />
+                    <span className="custom-sheet__attr-caption">{t('customSheet.baseShort')}</span>
+                  </label>
+                  <span className="custom-sheet__attr-op">+</span>
+                  <label className="custom-sheet__attr-part">
+                    <input
+                      type="number"
+                      className="custom-sheet__attr-input custom-sheet__attr-input--adv"
+                      value={adv || ''}
+                      onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
+                      readOnly={readOnly}
+                      step={field.step || 1}
+                    />
+                    <span className="custom-sheet__attr-caption">{field.advancesLabel || t('customSheet.advancesShort')}</span>
+                  </label>
                 </div>
-                <div className="custom-sheet__attr-row">
-                  <span className="custom-sheet__attr-row-label">{field.advancesLabel || t('customSheet.advances')}</span>
-                  <input
-                    type="number"
-                    className="custom-sheet__attr-input custom-sheet__attr-input--adv"
-                    value={adv || ''}
-                    onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
-                    readOnly={readOnly}
-                    step={field.step || 1}
-                  />
-                </div>
-                <div className="custom-sheet__attr-row">
-                  <span className="custom-sheet__attr-row-label">{t('customSheet.total')}</span>
-                  <span className="custom-sheet__attr-total">{total}</span>
-                </div>
+                <output className="custom-sheet__attr-total">{total}</output>
               </div>
             </div>
           );
         }
         return (
-          <div key={field.key} className="custom-sheet__attr custom-sheet__attr--simple">
-            <div className="custom-sheet__attr-header">
-              {renderFieldLabel(field.label)}
-              {rollBtn}
+          <div key={field.key} className="custom-sheet__attr">
+            {header}
+            <div className="custom-sheet__attr-body">
+              <input
+                type="number"
+                className="custom-sheet__attr-input custom-sheet__attr-input--solo"
+                value={attrs[field.key]?.base ?? ''}
+                onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
+                readOnly={readOnly}
+                min={field.min ?? undefined}
+                max={field.max ?? undefined}
+                step={field.step || 1}
+              />
             </div>
-            <input
-              type="number"
-              className="custom-sheet__attr-input"
-              value={attrs[field.key]?.base ?? ''}
-              onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
-              readOnly={readOnly}
-              min={field.min ?? undefined}
-              max={field.max ?? undefined}
-              step={field.step || 1}
-            />
           </div>
         );
       }
 
       case 'number':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--number">
-            {renderFieldLabel(field.label)}
-            <input
-              type="number"
-              className="custom-sheet__number-input"
-              value={numbers[field.key] ?? ''}
-              onChange={onChange ? e => onChange.number(field.key, e.target.value) : undefined}
-              readOnly={readOnly}
-              min={field.min ?? undefined}
-              max={field.max ?? undefined}
-              step={field.step || 1}
-            />
-          </div>
-        );
+        return renderTile(field, 'number', (
+          <input
+            type="number"
+            className="custom-sheet__tile-input"
+            value={numbers[field.key] ?? ''}
+            onChange={onChange ? e => onChange.number(field.key, e.target.value) : undefined}
+            readOnly={readOnly}
+            min={field.min ?? undefined}
+            max={field.max ?? undefined}
+            step={field.step || 1}
+          />
+        ));
 
       // Computed at render from the values the sheet is showing — the player's unsaved edits
       // included — so it follows every keystroke. Nothing is stored: there is no onChange.
       case 'computed': {
         const value = computeFieldValue(field, { attributes: attrs, numbers }, formulaRefs);
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--computed">
-            {renderFieldLabel(field.label)}
-            <output className="custom-sheet__computed-value">{value ?? ''}</output>
-          </div>
-        );
+        return renderTile(field, 'computed', (
+          <output className="custom-sheet__computed-value">{value ?? ''}</output>
+        ), {
+          icon: <FunctionsIcon className="custom-sheet__tile-icon" style={{ fontSize: AFFORDANCE_ICON_SIZE }} aria-hidden="true" />,
+        });
       }
 
-      case 'progress':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--progress">
-            {renderFieldLabel(field.label)}
-            <div className="custom-sheet__progress-row">
-              <input
-                type="number"
-                className="custom-sheet__progress-input"
-                value={progress[field.key]?.current ?? 0}
-                onChange={onChange ? e => onChange.progress(field.key, 'current', e.target.value) : undefined}
-                readOnly={readOnly}
-                min={0}
-              />
-              <span className="custom-sheet__progress-sep">/</span>
-              <input
-                type="number"
-                className="custom-sheet__progress-input"
-                value={progress[field.key]?.max ?? 0}
-                onChange={onChange ? e => onChange.progress(field.key, 'max', e.target.value) : undefined}
-                readOnly={readOnly}
-                min={0}
-              />
-            </div>
-          </div>
-        );
+      case 'progress': {
+        const current = progress[field.key]?.current ?? 0;
+        const max     = progress[field.key]?.max     ?? 0;
+        const ratio = Number(max) > 0 ? Math.min(1, Math.max(0, Number(current) / Number(max))) : 0;
+        return renderTile(field, 'progress', (
+          <>
+            <input
+              type="number"
+              className="custom-sheet__tile-input"
+              value={current}
+              onChange={onChange ? e => onChange.progress(field.key, 'current', e.target.value) : undefined}
+              readOnly={readOnly}
+              min={0}
+            />
+            <span className="custom-sheet__tile-sep">/</span>
+            <input
+              type="number"
+              className="custom-sheet__tile-input custom-sheet__tile-input--max"
+              value={max}
+              onChange={onChange ? e => onChange.progress(field.key, 'max', e.target.value) : undefined}
+              readOnly={readOnly}
+              min={0}
+            />
+          </>
+        ), {
+          footer: (
+            <div
+              className={`custom-sheet__tile-fill${Number(max) > 0 && ratio <= 0.25 ? ' custom-sheet__tile-fill--low' : ''}`}
+              style={{ width: `${ratio * 100}%` }}
+            />
+          ),
+        });
+      }
 
       case 'text_short':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--text">
-            {renderFieldLabel(field.label)}
-            <input
-              type="text"
-              className="custom-sheet__text-input"
-              value={texts[field.key] || ''}
-              onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
-              readOnly={readOnly}
-            />
-          </div>
-        );
+        return renderTile(field, 'text', (
+          <input
+            type="text"
+            className="custom-sheet__text-input"
+            value={texts[field.key] || ''}
+            onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
+            readOnly={readOnly}
+          />
+        ));
 
       case 'text_long':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--text">
-            {renderFieldLabel(field.label)}
-            <textarea
-              className="custom-sheet__textarea"
-              value={texts[field.key] || ''}
-              onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
-              readOnly={readOnly}
-              rows={3}
-            />
-          </div>
-        );
+        return renderTile(field, 'text', (
+          <textarea
+            className="custom-sheet__textarea"
+            value={texts[field.key] || ''}
+            onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
+            readOnly={readOnly}
+            rows={3}
+          />
+        ));
 
       // A label renders template text only — it has no per-character value, hence no <label>
       // element (there is no control to label) and no onChange path. field.text stays plain

@@ -76,7 +76,7 @@ const sessionProps = {
 // prefix pattern would accept `custom-sheet__field-chrome` — and BEM sub-element names of that
 // shape (custom-sheet__field-label, custom-sheet__section-title) are this codebase's own
 // convention, making it the likeliest name for the very wrapper this check must catch.
-const CELL_ROOTS = ['custom-sheet__field', 'custom-sheet__attr', 'custom-sheet__section'];
+const CELL_ROOTS = ['custom-sheet__field', 'custom-sheet__tile', 'custom-sheet__attr', 'custom-sheet__section'];
 
 describe('CustomSheetBody DOM shape', () => {
   test('session render (all callbacks) is unchanged', () => {

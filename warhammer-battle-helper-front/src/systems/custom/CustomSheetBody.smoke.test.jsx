@@ -133,7 +133,7 @@ describe('CustomSheetBody field step', () => {
       { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia', step: 5 },
     ])} />);
 
-    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('5');
+    expect(container.querySelector('.custom-sheet__tile--number .custom-sheet__tile-input').getAttribute('step')).toBe('5');
   });
 
   it('falls back to 1 when the template predates the feature and has no step', () => {
@@ -141,7 +141,7 @@ describe('CustomSheetBody field step', () => {
       { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia' },
     ])} />);
 
-    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('1');
+    expect(container.querySelector('.custom-sheet__tile--number .custom-sheet__tile-input').getAttribute('step')).toBe('1');
   });
 
   // Zero nie przychodzi z Go — omitempty wycina je i z JSON-a, i z BSON-a. Przychodzi ze stanu
@@ -153,7 +153,7 @@ describe('CustomSheetBody field step', () => {
       { key: 'fld_num', type: 'number', label: 'Punkty Przeznaczenia', step: 0 },
     ])} />);
 
-    expect(container.querySelector('.custom-sheet__number-input').getAttribute('step')).toBe('1');
+    expect(container.querySelector('.custom-sheet__tile--number .custom-sheet__tile-input').getAttribute('step')).toBe('1');
   });
 
   // Fallback dla step: 0 na obu inputach atrybutu z awansami — łapie zarówno undefined
@@ -188,7 +188,7 @@ describe('CustomSheetBody field step', () => {
       { key: 'fld_prog', type: 'progress', label: 'Punkty Życia', step: 5 },
     ])} />);
 
-    const inputs = container.querySelectorAll('.custom-sheet__progress-input');
+    const inputs = container.querySelectorAll('.custom-sheet__tile--progress .custom-sheet__tile-input');
     expect(inputs.length).toBe(2);
     inputs.forEach(input => expect(input.hasAttribute('step')).toBe(false));
   });

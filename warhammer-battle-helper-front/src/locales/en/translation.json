@@ -1442,6 +1442,8 @@
     "base": "Base",
     "advances": "Advances",
     "total": "Total",
+    "baseShort": "Base",
+    "advancesShort": "Adv.",
     "development": "Mark for improvement",
     "favorite": "Add to the short character card",
     "damage": "Damage",

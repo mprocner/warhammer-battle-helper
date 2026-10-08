@@ -11,10 +11,9 @@ import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
 import { postRoll } from './postRoll';
 import { resolveSkillValues } from './skillLayout';
+import { computeFieldValue, formulaRefsOf } from './formula/formula';
+import { SHORT_CARD_TYPES } from './shortCard';
 
-// Typy pól, które mają sens jako pojedynczy kafelek na skróconej karcie. skill_table i skill_tree
-// to kolekcje — trafiają na kartę wyłącznie przez gwiazdki (stats.favoriteSkills).
-const SHORT_CARD_TYPES = ['attr', 'number', 'progress'];
 
 function CustomCharacterDetails({
   character,
@@ -34,6 +33,7 @@ function CustomCharacterDetails({
   const attributes = stats.attributes || {};
   const progress   = stats.progress   || {};
   const numbers    = stats.numbers    || {};
+  const formulaRefs = useMemo(() => formulaRefsOf(template?.sections), [template]);
 
   const handleRoll = useCallback(async (skillKey, mod = 0) => {
     if (!gameId || !character) return;
@@ -106,14 +106,23 @@ function CustomCharacterDetails({
     );
   };
 
-  const renderTile = (field) => {
+  // A computed tile is evaluated here from the saved stats, the same way the sheet evaluates it
+  // from its live values; nothing is stored for it. Null (no value and no default) shows as a dash.
+  const tileValue = (field) => {
+    if (field.type === 'number') return numbers[field.key] ?? 0;
+    if (field.type === 'computed') return computeFieldValue(field, { attributes, numbers }, formulaRefs) ?? '—';
     // Backend zawsze wylicza current = base + advances, więc gdy klucz jest obecny w
     // stats.attributes, current jest zawsze ustawione.
-    const value = field.type === 'number'
-      ? (numbers[field.key] ?? 0)
-      : (attributes[field.key]?.current ?? 0);
+    return attributes[field.key]?.current ?? 0;
+  };
+
+  const renderTile = (field) => {
+    const value = tileValue(field);
     return (
-      <div key={field.key} className="custom-character-details__attr">
+      <div
+        key={field.key}
+        className={`custom-character-details__attr${field.type === 'computed' ? ' custom-character-details__attr--computed' : ''}`}
+      >
         <span className="custom-character-details__attr-abbr">
           {field.abbr || field.label}
         </span>

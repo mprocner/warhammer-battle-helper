@@ -4,6 +4,8 @@
 // accept the same block lists and fail with the same reason at the same index — formula_cases.json
 // pins that, so change one parser and the other side's test goes red.
 
+import { walkFields } from '../../../utils/templateSections';
+
 const VALUE_TYPES = new Set(['const', 'attr', 'number', 'skill', 'attr_linked', 'const_input']);
 const DIE_TYPES = new Set(['dice', 'dice_attr', 'dice_skill_attr']);
 const OPS = new Set(['+', '-', '*', '/', 'd']);
@@ -149,6 +151,19 @@ export function validateFormula(blocks, { attrKeys = [], numberKeys = [], arithm
     if (missing) return invalid('field_not_found', i, { label: b.label || b.key });
   }
   return { valid: true, tree: parsed.tree };
+}
+
+// formulaRefsOf lists the keys a computed formula may name. A key missing from it was removed
+// from the template, and the field falls back to its default; a key present but unfilled on the
+// character reads as 0.
+export function formulaRefsOf(sections) {
+  const attrKeys = [];
+  const numberKeys = [];
+  walkFields(sections, (f) => {
+    if (f.type === 'attr') attrKeys.push(f.key);
+    if (f.type === 'number') numberKeys.push(f.key);
+  });
+  return { attrKeys, numberKeys };
 }
 
 // computeFieldValue is what the sheet shows for a "computed" field: the formula's value, or the

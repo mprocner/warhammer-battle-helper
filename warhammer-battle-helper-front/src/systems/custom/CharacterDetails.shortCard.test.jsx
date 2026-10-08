@@ -70,6 +70,28 @@ describe('CustomCharacterDetails short card', () => {
     expect(container.querySelectorAll('.custom-character-details__attr').length).toBe(1);
   });
 
+  it('shows a flagged computed field evaluated from the saved stats, without a roll button', () => {
+    const { container } = renderCard([{ id: 's1', fields: [
+      attr('str'),
+      { key: 'load', type: 'number', label: 'LOAD', showOnShortCard: false },
+      { key: 'bonus', type: 'computed', label: 'BONUS', abbr: 'SB', showOnShortCard: true, rollable: false,
+        formula: [{ type: 'attr', key: 'str' }, { type: 'op', value: '+' }, { type: 'number', key: 'load' }], default: null },
+    ] }], { attributes: { str: { base: 30, current: 30 } }, numbers: { load: 4 } });
+
+    const tile = container.querySelector('.custom-character-details__attr--computed');
+    expect(tile.querySelector('.custom-character-details__attr-abbr').textContent).toBe('SB');
+    expect(tile.querySelector('.custom-character-details__attr-val').textContent).toBe('34');
+    expect(tile.querySelector('.custom-character-details__roll-btn')).toBeNull();
+  });
+
+  it('shows a dash for a computed field with no value and no default', () => {
+    const { container } = renderCard([{ id: 's1', fields: [
+      { key: 'bonus', type: 'computed', label: 'BONUS', showOnShortCard: true, formula: [], default: null },
+    ] }]);
+
+    expect(container.querySelector('.custom-character-details__attr-val').textContent).toBe('—');
+  });
+
   it('skips a section whose fields are all unflagged', () => {
     const { container } = renderCard([
       { id: 's1', fields: [attr('a')] },
