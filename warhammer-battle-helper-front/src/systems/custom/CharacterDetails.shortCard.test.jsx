@@ -39,7 +39,7 @@ describe('CustomCharacterDetails short card', () => {
     const fields = Array.from({ length: 8 }, (_, i) => attr(`a${i}`));
     const { container } = renderCard([{ id: 's1', fields }]);
 
-    expect(container.querySelectorAll('.custom-character-details__attr').length).toBe(8);
+    expect(container.querySelectorAll('.custom-character-details__tile').length).toBe(8);
   });
 
   it('leaves out a rollable field that the GM did not flag for the short card', () => {
@@ -48,7 +48,7 @@ describe('CustomCharacterDetails short card', () => {
       attr('hidden', { showOnShortCard: false, rollable: true }),
     ] }]);
 
-    const abbrs = [...container.querySelectorAll('.custom-character-details__attr-abbr')];
+    const abbrs = [...container.querySelectorAll('.custom-character-details__tile-label')];
     expect(abbrs.map(el => el.textContent)).toEqual(['SHOWN']);
   });
 
@@ -59,7 +59,7 @@ describe('CustomCharacterDetails short card', () => {
     ]);
 
     const sections = [...container.querySelectorAll('.custom-character-details__section')];
-    expect(sections.map(s => s.querySelectorAll('.custom-character-details__attr').length)).toEqual([3, 4]);
+    expect(sections.map(s => s.querySelectorAll('.custom-character-details__tile').length)).toEqual([3, 4]);
   });
 
   it('ignores a legacy skill field left flagged by an older creator', () => {
@@ -67,7 +67,7 @@ describe('CustomCharacterDetails short card', () => {
       attr('kept'),
       { key: 'skills', type: 'skill_table', label: 'SKILLS', showOnShortCard: true, rollable: true, skills: [] },
     ] }]);
-    expect(container.querySelectorAll('.custom-character-details__attr').length).toBe(1);
+    expect(container.querySelectorAll('.custom-character-details__tile').length).toBe(1);
   });
 
   it('shows a flagged computed field evaluated from the saved stats, without a roll button', () => {
@@ -78,9 +78,9 @@ describe('CustomCharacterDetails short card', () => {
         formula: [{ type: 'attr', key: 'str' }, { type: 'op', value: '+' }, { type: 'number', key: 'load' }], default: null },
     ] }], { attributes: { str: { base: 30, current: 30 } }, numbers: { load: 4 } });
 
-    const tile = container.querySelector('.custom-character-details__attr--computed');
-    expect(tile.querySelector('.custom-character-details__attr-abbr').textContent).toBe('SB');
-    expect(tile.querySelector('.custom-character-details__attr-val').textContent).toBe('34');
+    const tile = container.querySelector('.custom-character-details__tile--computed');
+    expect(tile.querySelector('.custom-character-details__tile-label').textContent).toBe('SB');
+    expect(tile.querySelector('.custom-character-details__tile-num').textContent).toBe('34');
     expect(tile.querySelector('.custom-character-details__roll-btn')).toBeNull();
   });
 
@@ -89,7 +89,7 @@ describe('CustomCharacterDetails short card', () => {
       { key: 'bonus', type: 'computed', label: 'BONUS', showOnShortCard: true, formula: [], default: null },
     ] }]);
 
-    expect(container.querySelector('.custom-character-details__attr-val').textContent).toBe('—');
+    expect(container.querySelector('.custom-character-details__tile-num').textContent).toBe('—');
   });
 
   it('skips a section whose fields are all unflagged', () => {
@@ -121,7 +121,7 @@ describe('CustomCharacterDetails short card', () => {
 
     const blocks = [...container.querySelectorAll('.custom-character-details__section')];
     expect(blocks).toHaveLength(1);
-    const abbrs = [...blocks[0].querySelectorAll('.custom-character-details__attr-abbr')];
+    const abbrs = [...blocks[0].querySelectorAll('.custom-character-details__tile-label')];
     expect(abbrs.map(el => el.textContent)).toEqual(['TOP', 'NESTED', 'DEEP']);
   });
 
@@ -152,7 +152,7 @@ describe('CustomCharacterDetails short card', () => {
       { settings: { modifier: { enabled: true, traditionalTarget: 'roll' } } }
     );
 
-    const tiles = [...container.querySelectorAll('.custom-character-details__attr')];
+    const tiles = [...container.querySelectorAll('.custom-character-details__tile')];
     expect(tiles[0].querySelector('.custom-character-details__roll-btn')).toBeNull();
 
     fireEvent.click(tiles[1].querySelector('.custom-character-details__roll-btn'));
@@ -182,8 +182,35 @@ describe('CustomCharacterDetails short card', () => {
       { attributes: { str: { base: 3, advances: 2, current: 5 } }, numbers: { gold: 42 } }
     );
 
-    const vals = [...container.querySelectorAll('.custom-character-details__attr-val')];
+    const vals = [...container.querySelectorAll('.custom-character-details__tile-num')];
     expect(vals.map(el => el.textContent)).toEqual(['5', '42']);
+  });
+
+  it('marks each tile with its field type so the attribute keeps its medallion plate', () => {
+    const { container } = renderCard([{ id: 's1', fields: [
+      attr('str'),
+      { key: 'gold', type: 'number', label: 'GOLD', showOnShortCard: true },
+      { key: 'hp', type: 'progress', label: 'HP', showOnShortCard: true },
+    ] }]);
+
+    const types = [...container.querySelectorAll('.custom-character-details__tile')]
+      .map(el => [...el.classList].find(c => c.startsWith('custom-character-details__tile--')));
+    expect(types).toEqual([
+      'custom-character-details__tile--attr',
+      'custom-character-details__tile--number',
+      'custom-character-details__tile--progress',
+    ]);
+  });
+
+  it('draws the progress strip from the same ratio as the sheet, low at a quarter', () => {
+    const { container } = renderCard(
+      [{ id: 's1', fields: [{ key: 'hp', type: 'progress', label: 'HP', showOnShortCard: true }] }],
+      { progress: { hp: { current: 2, max: 8 } } }
+    );
+
+    const fill = container.querySelector('.custom-character-details__tile-fill');
+    expect(fill.style.width).toBe('25%');
+    expect(fill.classList.contains('custom-character-details__tile-fill--low')).toBe(true);
   });
 
   it('renders a flagged progress field inside its own section and saves the bumped value', async () => {
@@ -200,10 +227,10 @@ describe('CustomCharacterDetails short card', () => {
     );
 
     const section = container.querySelector('.custom-character-details__section');
-    const resource = section.querySelector('.custom-character-details__resource');
+    const resource = section.querySelector('.custom-character-details__tile--progress');
     expect(resource).not.toBeNull();
 
-    const plus = resource.querySelectorAll('.custom-character-details__resource-btn')[1];
+    const plus = resource.querySelectorAll('.custom-character-details__tile-btn')[1];
     fireEvent.click(plus);
 
     expect(onCharacterUpdate).toHaveBeenCalledWith(expect.objectContaining({

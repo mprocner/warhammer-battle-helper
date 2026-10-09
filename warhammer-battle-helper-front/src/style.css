@@ -7360,7 +7360,7 @@ align-items: center;
 
 .custom-character-details__section {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     padding: 8px;
 }
@@ -7370,99 +7370,142 @@ align-items: center;
     border-top: 1px solid rgba(201, 151, 91, 0.4);
 }
 
-.custom-character-details__resource {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    grid-column: 1 / -1;
-}
-
-.custom-character-details__resource-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #c9975b;
-    min-width: 32px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.custom-character-details__resource-track {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.custom-character-details__resource-btn {
-    background: none;
-    border: 1px solid #c4a882;
-    color: #7a5c42;
-    border-radius: 3px;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0;
-    transition: background 0.15s, border-color 0.15s;
-}
-
-.custom-character-details__resource-btn:hover {
-    background: rgba(201, 151, 91, 0.2);
-    border-color: #7a5c42;
-}
-
-.custom-character-details__resource-val {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #3a2f1f;
-    min-width: 40px;
-    text-align: center;
-}
-
-.custom-character-details__resource-max {
-    color: rgba(58, 47, 31, 0.5);
-    font-size: 0.8rem;
-}
-
-.custom-character-details__attr {
+/* Tiles mirror the sheet's (.custom-sheet__tile): name on top, value below, the same frame
+   weights — editable stronger, computed lighter — and the attribute's recessed plate. */
+.custom-character-details__tile {
+    position: relative;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    background: rgba(201, 151, 91, 0.2);
-    border: 1px solid #c9975b;
-    border-radius: 4px;
-    padding: 6px 4px 4px;
     gap: 2px;
-    position: relative;
-    transition: background 0.15s;
+    padding: 4px 6px 6px;
+    border: 1px solid #a67c52;
+    border-radius: 4px;
+    background: rgba(255, 249, 240, 0.85);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    overflow: hidden;
 }
 
-.custom-character-details__attr:hover {
-    background: rgba(201, 151, 91, 0.32);
-}
-
-/* Same lighter frame as the computed tile on the sheet: a value to read, not to edit or roll. */
-.custom-character-details__attr.custom-character-details__attr--computed,
-.custom-character-details__attr.custom-character-details__attr--computed:hover {
-    background: rgba(255, 249, 240, 0.5);
+.custom-character-details__tile.custom-character-details__tile--computed {
     border-color: #d4b896;
+    background: rgba(255, 249, 240, 0.5);
+    box-shadow: none;
 }
 
-.custom-character-details__attr-abbr {
-    font-size: 0.65rem;
+/* The attribute is the field rolls are made against, so it carries the medallion's look: the
+   lighter cream frame and its total in a recessed plate, centred. */
+.custom-character-details__tile.custom-character-details__tile--attr {
+    border-color: #c4a882;
+    background: rgba(255, 249, 240, 0.55);
+    box-shadow: none;
+}
+
+.custom-character-details__tile.custom-character-details__tile--progress {
+    padding-bottom: 7px;
+}
+
+.custom-character-details__tile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    min-width: 0;
+    min-height: 16px;
+}
+
+.custom-character-details__tile-label {
+    min-width: 0;
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
     font-weight: 700;
     color: #6b4423;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.custom-character-details__attr-val {
-    font-size: 1.1rem;
+.custom-character-details__tile-icon {
+    flex-shrink: 0;
+    color: #c9975b;
+}
+
+.custom-character-details__tile-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 24px;
+}
+
+.custom-character-details__tile-num {
+    font-size: 1.05rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: #3a2f1f;
+}
+
+.custom-character-details__tile--computed .custom-character-details__tile-num {
+    color: #5a3e28;
+}
+
+.custom-character-details__tile--attr .custom-character-details__tile-num {
+    min-width: 44px;
+    padding: 0 6px;
+    background: #e8dcc4;
+    border: 1px solid #c9975b;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(122, 92, 66, 0.35);
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.custom-character-details__tile-max {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(58, 47, 31, 0.55);
+}
+
+.custom-character-details__tile-actions {
+    display: flex;
+    gap: 3px;
+}
+
+.custom-character-details__tile-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(201, 151, 91, 0.16);
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    color: #7a5c42;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.custom-character-details__tile-btn:hover {
+    background: rgba(201, 151, 91, 0.34);
+    border-color: #7a5c42;
+}
+
+.custom-character-details__tile-fill {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    background: #c9975b;
+    transition: width 0.2s;
+}
+
+.custom-character-details__tile-fill.custom-character-details__tile-fill--low {
+    background: #a33b2b;
 }
 
 .custom-character-details__roll-btn {
@@ -7481,56 +7524,81 @@ align-items: center;
     color: #7a5c42;
 }
 
+/* Favourites mirror the Call of Cthulhu card (.favorite-skills / .skill-box) value for value,
+   but under this system's own classes: restyling one card must never move the other. */
 .custom-character-details__favorites {
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .custom-character-details__favorites-label {
-    font-size: 10px;
-    color: #7a5c42;
-    font-weight: 700;
-    text-transform: uppercase;
-    margin-bottom: 4px;
     display: flex;
     align-items: center;
+    margin-bottom: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #6b4423;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.custom-character-details__favorites-icon {
+    margin-right: 4px;
+}
+
+.custom-character-details__favorites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .custom-character-details__favorite-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     width: 100%;
-    padding: 4px 8px;
-    margin-bottom: 3px;
-    background: rgba(201, 151, 91, 0.12);
-    border: 1px solid #c4a882;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 6px 10px;
+    background: rgba(212, 175, 55, 0.15);
+    border: 2px solid #d4af37;
+    border-radius: 3px;
     color: #3a2f1f;
-    font-size: 12px;
     text-align: left;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .custom-character-details__favorite-item:hover:not(:disabled) {
-    background: rgba(201, 151, 91, 0.25);
-    border-color: #7a5c42;
+    background: rgba(212, 175, 55, 0.3);
+    border-color: #b8941f;
     transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(107, 68, 35, 0.2);
+}
+
+.custom-character-details__favorite-item:active:not(:disabled) {
+    background: rgba(212, 175, 55, 0.4);
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(107, 68, 35, 0.2);
 }
 
 .custom-character-details__favorite-item:disabled {
+    background: rgba(212, 175, 55, 0.1);
     opacity: 0.5;
-    cursor: default;
+    cursor: not-allowed;
 }
 
 .custom-character-details__favorite-label {
     flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b4423;
 }
 
 .custom-character-details__favorite-value {
-    font-weight: 700;
-    color: #c9975b;
+    flex-shrink: 0;
     margin-left: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #3a2f1f;
 }
 
 /* --- Roll modifier overlay (shared by details + sheet) --- */

@@ -6,6 +6,7 @@ import FunctionsIcon from '@mui/icons-material/Functions';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
 import { computeFieldValue, formulaRefsOf } from './formula/formula';
+import { progressRatio } from './progressRatio';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
@@ -267,7 +268,7 @@ function CustomSheetBody({
       case 'progress': {
         const current = progress[field.key]?.current ?? 0;
         const max     = progress[field.key]?.max     ?? 0;
-        const ratio = Number(max) > 0 ? Math.min(1, Math.max(0, Number(current) / Number(max))) : 0;
+        const { ratio, low } = progressRatio(current, max);
         return renderTile(field, 'progress', (
           <>
             <input
@@ -291,7 +292,7 @@ function CustomSheetBody({
         ), {
           footer: (
             <div
-              className={`custom-sheet__tile-fill${Number(max) > 0 && ratio <= 0.25 ? ' custom-sheet__tile-fill--low' : ''}`}
+              className={`custom-sheet__tile-fill${low ? ' custom-sheet__tile-fill--low' : ''}`}
               style={{ width: `${ratio * 100}%` }}
             />
           ),
