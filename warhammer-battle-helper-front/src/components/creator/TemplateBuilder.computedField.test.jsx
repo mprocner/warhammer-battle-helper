@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { makeDefaultField, collectFormulaFields } from './TemplateBuilder';
 
 // Importing TemplateBuilder pulls in api/axios and, through the system registry, axios itself —
@@ -9,8 +10,8 @@ jest.mock('axios', () => {
 });
 
 test('a new computed field starts with an empty formula and no default', () => {
-  const f = makeDefaultField('computed');
-  expect(f).toMatchObject({ type: 'computed', formula: [], default: null, label: '' });
+  const f = makeDefaultField('computed', i18n.t.bind(i18n));
+  expect(f).toMatchObject({ type: 'computed', formula: [], default: null });
   expect(f.key).toMatch(/^computed_/);
 });
 

@@ -261,7 +261,6 @@
     "completed": "Zakończona"
   },
   "character": {
-    "name": "Imię",
     "details": "Szczegóły Postaci",
     "addCharacter": "Dodaj",
     "editCharacter": "Edytuj Postać",
@@ -1437,6 +1436,11 @@
     "custom": "Własny system"
   },
   "customSheet": {
+    "imageUpload": "Wgraj obrazek",
+    "imageChange": "Zmień obrazek",
+    "imageRemove": "Usuń obrazek",
+    "imageUploadFailed": "Nie udało się wgrać obrazka",
+    "imageUnsupportedType": "Nieobsługiwany typ pliku — użyj JPG, PNG lub WebP",
     "name": "Nazwa",
     "value": "Wartość",
     "base": "Bazowa",
@@ -1688,6 +1692,8 @@
     "fieldAdvances": "Rozwinięcia",
     "fieldAdvancesLabel": "Etykieta rozwinięcia",
     "fieldAdvancesDefault": "Rozwinięcie",
+    "treeDefaultRoot": "Kategoria",
+    "treeDefaultNode": "Węzeł",
     "fieldAssignAttr": "Przypisz atrybut do umiejętności",
     "rollMechanics": "Mechanika rzutu",
     "rollModeTraditional": "Tradycyjny",
@@ -1716,7 +1722,19 @@
     "paletteGroupText": "Tekst",
     "paletteGroupChoice": "Wybór",
     "paletteGroupTables": "Tabele",
+    "paletteGroupCharacter": "Postać",
+    "singletonUsed": "Już jest na karcie — dozwolone tylko jedno",
+    "missingCharName": "Karta nie ma pola Nazwa postaci, więc gra nie może jej jeszcze użyć",
+    "templateMissingCharName": "Szablon nie ma pola Nazwa postaci. Dodaj je w kreatorze szablonu.",
+    "templateDuplicateCharName": "Szablon ma więcej niż jedno pole Nazwa postaci.",
+    "templateDuplicateCharAvatar": "Szablon ma więcej niż jedno pole Avatar.",
     "fieldType": {
+      "charName": "Nazwa postaci",
+      "charNameDesc": "Imię postaci, widoczne na tokenach i listach. Jedno na kartę.",
+      "charAvatar": "Avatar",
+      "charAvatarDesc": "Portret postaci, widoczny na tokenie. Jeden na kartę.",
+      "image": "Obrazek",
+      "imageDesc": "Obrazek wgrywany przez gracza",
       "section": "Sekcja",
       "sectionDesc": "Nazwana grupa z własnymi kolumnami; zajmuje jedną komórkę siatki rodzica",
       "attr": "Atrybut",

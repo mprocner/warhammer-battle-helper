@@ -84,13 +84,15 @@ function FieldChrome({
         >
           <EditIcon style={{ fontSize: 13 }} />
         </button>
-        <button
-          className="creator__chrome-btn"
-          aria-label={t('creator.fieldDuplicate')}
-          onClick={e => { e.stopPropagation(); onDuplicate(); }}
-        >
-          <ContentCopyIcon style={{ fontSize: 13 }} />
-        </button>
+        {onDuplicate && (
+          <button
+            className="creator__chrome-btn"
+            aria-label={t('creator.fieldDuplicate')}
+            onClick={e => { e.stopPropagation(); onDuplicate(); }}
+          >
+            <ContentCopyIcon style={{ fontSize: 13 }} />
+          </button>
+        )}
         <button
           className="creator__chrome-btn creator__chrome-btn--danger"
           aria-label={t('creator.fieldDelete')}

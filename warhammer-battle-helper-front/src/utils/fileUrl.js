@@ -1,4 +1,4 @@
-import { getApiUrl } from '../api/axios';
+import { getApiUrl } from '../api/apiUrl';
 
 const ABSOLUTE_URL_RE = /^https?:\/\//i;
 

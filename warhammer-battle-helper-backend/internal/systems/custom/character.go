@@ -41,6 +41,9 @@ type Stats struct {
 	// starred. Preset weapons live only in the template, so this per-player preference cannot
 	// be stored on the weapon itself — unlike player-added rows, which carry WeaponRow.Favorite.
 	FavoriteWeapons []string `bson:"favoriteWeapons,omitempty" json:"favoriteWeapons,omitempty"`
+	// Images holds the URL of each image field (PLAYRPG-240), keyed by field key. Upload goes
+	// through POST /avatars; only the returned URL is stored here.
+	Images map[string]string `bson:"images,omitempty" json:"images,omitempty"`
 }
 
 // WeaponRow is one player-added weapon in a weapons_table field.

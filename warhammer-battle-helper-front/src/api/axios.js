@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { getApiUrl, getApiHeaders } from './apiUrl';
 
-// Use environment variable or fallback to localhost
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+export { getApiUrl, getApiHeaders };
+
+const API_BASE_URL = getApiUrl();
 
 console.log('API Base URL:', API_BASE_URL);
 
@@ -12,15 +14,6 @@ const axiosInstance = axios.create({
     headers: {
         'ngrok-skip-browser-warning': 'true'  // Skip ngrok warning page
     }
-});
-
-// Export the base URL for use in fetch calls
-export const getApiUrl = () => API_BASE_URL;
-
-// Helper function to get headers with ngrok bypass
-export const getApiHeaders = (additionalHeaders = {}) => ({
-    'ngrok-skip-browser-warning': 'true',
-    ...additionalHeaders
 });
 
 // Add request interceptor to attach token

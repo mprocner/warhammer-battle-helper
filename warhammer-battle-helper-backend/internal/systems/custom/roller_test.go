@@ -1534,6 +1534,32 @@ func TestComputeDerived_PreservesDevelopmentSkills(t *testing.T) {
 	}
 }
 
+// An image field's URL lives only in stats.images. ComputeDerived round-trips stats through
+// Stats, so a key missing from the struct is silently dropped on the first save.
+func TestComputeDerived_PreservesImages(t *testing.T) {
+	raw, err := bson.Marshal(bson.M{
+		"attributes": bson.M{},
+		"skills":     bson.M{},
+		"images":     bson.M{"fld_crest": "/avatars/crest.webp"},
+	})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+
+	out, err := (&Plugin{}).ComputeDerived(raw)
+	if err != nil {
+		t.Fatalf("ComputeDerived: %v", err)
+	}
+
+	var got Stats
+	if err := bson.Unmarshal(out, &got); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if got.Images["fld_crest"] != "/avatars/crest.webp" {
+		t.Errorf("Images = %v, want fld_crest -> /avatars/crest.webp", got.Images)
+	}
+}
+
 // A skill the player added to a skill_table lives only in stats.CustomSkillNodes, so it matches no
 // SkillOption id. Without the fallback the roll silently uses the field's default attribute, which
 // is the wrong threshold in any system where each skill hangs off its own attribute.

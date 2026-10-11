@@ -41,8 +41,8 @@ describe('EditablePlaceholder — nodes that draw nothing', () => {
 });
 
 describe('EditablePlaceholder — nodes that draw fine', () => {
-  // makeDefaultField starts EVERY field type with label: '', so these are the states a GM is in
-  // for most of a build. None of them may get a placeholder.
+  // A GM can clear any field's label (new fields start with their type name), and a cleared field
+  // still renders its input. None of them may get a placeholder.
   test.each([
     ['attr',        { key: 'a1', type: 'attr',        label: '', abbr: '' }],
     ['number',      { key: 'n1', type: 'number',      label: '' }],

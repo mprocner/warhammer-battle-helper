@@ -82,6 +82,12 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
 			return
 		}
+		// A template can be saved as an incomplete draft, but a game needs a name field —
+		// otherwise its players have nowhere to edit their character's name.
+		if err := t.ValidateForGame(); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		template = t
 	} else if req.CustomTemplateID != "" {
 		// FEATURE-102: the GM picked a named token-display variant of this hardcoded
@@ -618,6 +624,9 @@ func (h *GameHandler) SyncTemplate(c *gin.Context) {
 			status = http.StatusForbidden
 		} else if err.Error() == "game not found" || err.Error() == "source template not found" {
 			status = http.StatusNotFound
+		}
+		if models.IsTemplateValidationError(err) {
+			status = http.StatusBadRequest
 		}
 		c.JSON(status, gin.H{"error": err.Error()})
 		return

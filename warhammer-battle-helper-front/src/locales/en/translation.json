@@ -261,7 +261,6 @@
     "completed": "Completed"
   },
   "character": {
-    "name": "Name",
     "details": "Character Details",
     "addCharacter": "Add Character",
     "editCharacter": "Edit Character",
@@ -1437,6 +1436,11 @@
     "custom": "Custom System"
   },
   "customSheet": {
+    "imageUpload": "Upload image",
+    "imageChange": "Change image",
+    "imageRemove": "Remove image",
+    "imageUploadFailed": "Image upload failed",
+    "imageUnsupportedType": "Unsupported file type — use JPG, PNG or WebP",
     "name": "Name",
     "value": "Value",
     "base": "Base",
@@ -1688,6 +1692,8 @@
     "fieldAdvances": "Advances",
     "fieldAdvancesLabel": "Advance label",
     "fieldAdvancesDefault": "Advance",
+    "treeDefaultRoot": "Category",
+    "treeDefaultNode": "Node",
     "fieldAssignAttr": "Assign attribute to skill",
     "rollMechanics": "Roll mechanics",
     "rollModeTraditional": "Traditional",
@@ -1716,7 +1722,19 @@
     "paletteGroupText": "Text",
     "paletteGroupChoice": "Choice",
     "paletteGroupTables": "Tables",
+    "paletteGroupCharacter": "Character",
+    "singletonUsed": "Already on the sheet — only one allowed",
+    "missingCharName": "The sheet has no Character name field, so a game cannot use it yet",
+    "templateMissingCharName": "This template has no Character name field. Add it in the template creator.",
+    "templateDuplicateCharName": "This template has more than one Character name field.",
+    "templateDuplicateCharAvatar": "This template has more than one Avatar field.",
     "fieldType": {
+      "charName": "Character name",
+      "charNameDesc": "The character's name, shown on tokens and lists. One per sheet.",
+      "charAvatar": "Avatar",
+      "charAvatarDesc": "Character portrait, shown on the token. One per sheet.",
+      "image": "Image",
+      "imageDesc": "A picture the player uploads",
       "section": "Section",
       "sectionDesc": "A titled group with its own columns; takes one cell of the parent grid",
       "attr": "Attribute",

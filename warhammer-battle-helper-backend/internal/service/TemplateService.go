@@ -156,6 +156,13 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 		// when BaseSystem is set — the sheet comes from the Go plugin.
 		BaseSystem: req.BaseSystem,
 	}
+	// Token-display variants (BaseSystem != "") carry no sheet, so only genuine custom
+	// templates are checked.
+	if t.BaseSystem == "" {
+		if err := t.ValidateSingletonFields(); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
 	}
@@ -280,6 +287,12 @@ func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req mode
 	}
 	if t.OwnerID != ownerID {
 		return nil, fmt.Errorf("not authorized")
+	}
+	if t.BaseSystem == "" {
+		incoming := &models.SystemTemplate{Sections: req.Sections}
+		if err := incoming.ValidateSingletonFields(); err != nil {
+			return nil, err
+		}
 	}
 	if err := s.repo.Update(id, req.Name, req.Sections, req.Settings, req.IsPublic); err != nil {
 		return nil, err

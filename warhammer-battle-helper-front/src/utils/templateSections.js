@@ -16,6 +16,25 @@
 
 export const SECTION_TYPE = 'section';
 
+// Field types bound to the character document (character.name / character.avatar) instead of
+// stats. A template holds at most one of each (PLAYRPG-240), so the creator gates adding and
+// duplicating them, and the backend rejects a second one.
+export const SINGLETON_FIELD_TYPES = ['char_name', 'char_avatar'];
+
+// usedSingletonTypes returns which singleton types the template already contains, at any depth.
+export function usedSingletonTypes(sections) {
+  const used = new Set();
+  walkFields(sections, (f) => { if (SINGLETON_FIELD_TYPES.includes(f.type)) used.add(f.type); });
+  return used;
+}
+
+// dropSingletons removes singleton fields from a freshly copied section, recursively. It mutates
+// its argument, which is only ever the deep copy duplicateNodeAtPath owns.
+function dropSingletons(section) {
+  section.fields = (section.fields || []).filter(f => !SINGLETON_FIELD_TYPES.includes(f.type));
+  section.fields.forEach(f => { if (isContainer(f)) dropSingletons(sectionOf(f)); });
+}
+
 // sectionOf normalises the two shapes a "section" comes in: a root SectionDef is already
 // one, a section field wraps one. A leaf field is returned as-is and simply has no fields.
 export const sectionOf = (node) =>
@@ -261,11 +280,15 @@ function remintKeys(node, mint) {
 export function duplicateNodeAtPath(sections, path, { mint, copySuffix }) {
   const found = locate(sections, path);
   if (!found) return sections;
+  // A second char_name/char_avatar would break the one-per-template rule, and the backend
+  // would then reject every autosave of the template without the GM noticing.
+  if (SINGLETON_FIELD_TYPES.includes(found.node.type)) return sections;
   const copy = remintKeys(JSON.parse(JSON.stringify(found.node)), mint);
   // Apply suffix to section title (both root and nested shapes) or leaf field label
   if (isContainer(copy)) {
     const section = sectionOf(copy);
     section.title = `${section.title || ''} ${copySuffix}`.trim();
+    dropSingletons(section);
   } else if (copy.label) {
     copy.label = `${copy.label} ${copySuffix}`;
   }

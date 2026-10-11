@@ -7767,38 +7767,6 @@ align-items: center;
     font-style: italic;
 }
 
-.custom-sheet__char-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(201, 151, 91, 0.25);
-}
-
-.custom-sheet__char-name-input {
-    flex: 1;
-    background: #fff9f0;
-    border: 1px solid #c4a882;
-    color: #3a2f1f;
-    border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 1.1rem;
-    font-family: 'Cinzel', serif;
-}
-
-.custom-sheet__char-name-input:focus {
-    outline: none;
-    border-color: #7a5c42;
-}
-
-.custom-sheet__template-name {
-    font-size: 0.75rem;
-    color: #c4a882;
-    white-space: nowrap;
-    font-style: italic;
-}
-
 .custom-sheet__sections {
     display: flex;
     flex-direction: column;
@@ -8322,6 +8290,93 @@ align-items: center;
     min-height: 64px;
     padding: 3px 6px;
     resize: vertical;
+}
+
+/* Image-bearing fields (PLAYRPG-240): char_avatar and image share one picker. The tile's value
+   row is a fixed-height flex line for inputs; an image needs its natural height instead. */
+.custom-sheet__tile--image .custom-sheet__tile-value {
+    display: block;
+}
+
+.custom-sheet__image {
+    position: relative;
+    width: 100%;
+}
+
+.custom-sheet__image-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+}
+
+.custom-sheet__image-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 64px;
+    background: #fff9f0;
+    border: 1px dashed #c4a882;
+    border-radius: 3px;
+    color: #c9975b;
+    cursor: pointer;
+}
+
+.custom-sheet__image-empty:hover:not(:disabled) {
+    border-color: #7a5c42;
+}
+
+.custom-sheet__image-empty:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.custom-sheet__image--avatar {
+    width: 96px;
+    margin: 0 auto;
+}
+
+.custom-sheet__image--avatar .custom-sheet__image-img,
+.custom-sheet__image--avatar .custom-sheet__image-empty {
+    width: 96px;
+    height: 96px;
+    min-height: 0;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.custom-sheet__image--uploading .custom-sheet__image-img {
+    filter: brightness(0.6);
+}
+
+.custom-sheet__image-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+}
+
+.custom-sheet__image-btn {
+    display: flex;
+    padding: 2px;
+    background: rgba(255, 249, 240, 0.9);
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    color: #7a5c42;
+    cursor: pointer;
+}
+
+.custom-sheet__image-btn:hover {
+    border-color: #7a5c42;
+}
+
+.custom-sheet__image-error {
+    margin-top: 4px;
+    font-size: 0.8rem;
+    color: #8b2c2c;
 }
 
 .custom-sheet__select {
@@ -9561,24 +9616,16 @@ align-items: center;
 
 /* ── Palette (left panel) ── */
 
+/* Always expanded: a collapsed icon rail hid the field names and descriptions until hover. */
 .creator__palette {
-    width: 56px;
+    width: 200px;
     flex-shrink: 0;
     background: rgba(244, 232, 216, 0.7);
     border-right: 1px solid rgba(201, 151, 91, 0.25);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: width 120ms ease;
 }
-
-/* A 56px rail leaves no room for the target hint, so the palette's target is shown ON the
-   sheet instead — the selected section carries the outline. */
-.creator__palette:hover { width: 200px; }
-
-.creator__palette:not(:hover) .creator__palette-info,
-.creator__palette:not(:hover) .creator__palette-group-label,
-.creator__palette:not(:hover) .creator__palette-title { display: none; }
 
 .creator__palette-header {
     padding: 14px 14px 10px;
@@ -9650,6 +9697,15 @@ align-items: center;
     transform: translateX(2px);
 }
 
+.creator__palette-card--used,
+.creator__palette-card--used:hover {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    background: rgba(255, 255, 255, 0.5);
+    border-color: rgba(201, 151, 91, 0.25);
+}
+
 .creator__palette-icon {
     color: #c9975b;
     display: flex;
@@ -9693,6 +9749,26 @@ align-items: center;
     padding: 20px 24px;
     background: rgba(232, 220, 196, 0.35);
     position: relative;
+}
+
+/* Template-level problem shown above the sheet (PLAYRPG-240: missing Character name field). */
+.creator__notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 12px;
+    padding: 8px 12px;
+    background: #fff9f0;
+    border: 1px solid #c9975b;
+    border-left-width: 4px;
+    border-radius: 4px;
+    color: #7a5c42;
+    font-size: 0.9rem;
+}
+
+.creator__notice svg {
+    flex-shrink: 0;
+    color: #c9975b;
 }
 
 .creator__canvas-empty {

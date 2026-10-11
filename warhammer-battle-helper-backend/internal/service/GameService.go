@@ -2944,6 +2944,13 @@ func (s *GameService) SyncTemplate(gameID string, gmID primitive.ObjectID, templ
 	if err != nil {
 		return nil, fmt.Errorf("source template not found")
 	}
+	// Hardcoded-system games also sync (a token-display variant, no sections), so the sheet
+	// rule applies to custom games only.
+	if game.GameSystem == "custom" {
+		if err := tmpl.ValidateForGame(); err != nil {
+			return nil, err
+		}
+	}
 	if err := s.gameRepo.SetCustomTemplate(gameID, tmpl); err != nil {
 		return nil, err
 	}

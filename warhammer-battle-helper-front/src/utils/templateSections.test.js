@@ -2,6 +2,7 @@ import {
   SECTION_TYPE, childrenOf, nodeAt, updateAtPath, insertAtPath, removeAtPath,
   moveNode, duplicateNodeAtPath, indexNodes, walkFields, isAncestorPath,
   shiftPathAfterInsert, containerPathFor, canDropInto,
+  SINGLETON_FIELD_TYPES, usedSingletonTypes,
 } from './templateSections';
 
 // Fixture: two root sections; the second holds a field, a nested section with two fields,
@@ -479,5 +480,44 @@ describe('purity', () => {
     expect(tree[1].fields.map(f => f.key)).toEqual(['num_1', 'sec_c']);
     expect(tree[1].fields[1].section.title).toBe('C');
     expect(tree[1].fields[1].section.fields[1].section.fields[0].key).toBe('txt_1');
+  });
+});
+
+describe('singleton field types', () => {
+  const withSingletons = () => ([
+    { id: 'sec_a', title: 'A', columns: 3, fields: [
+      { key: 'nm', type: 'char_name', label: 'Imię' },
+      { key: 'sub', type: SECTION_TYPE, label: '', section: { id: 'sub', title: 'S', columns: 2, fields: [
+        { key: 'av', type: 'char_avatar', label: 'Portret' },
+        { key: 'img', type: 'image', label: 'Herb' },
+      ] } },
+    ] },
+  ]);
+
+  test('lists both character-bound types', () => {
+    expect(SINGLETON_FIELD_TYPES).toEqual(['char_name', 'char_avatar']);
+  });
+
+  test('usedSingletonTypes finds singletons at any depth and ignores image', () => {
+    expect([...usedSingletonTypes(withSingletons())].sort()).toEqual(['char_avatar', 'char_name']);
+    expect(usedSingletonTypes([]).size).toBe(0);
+  });
+
+  test('duplicating a singleton field is a no-op', () => {
+    const tree = withSingletons();
+    expect(duplicateNodeAtPath(tree, [0, 0], { mint, copySuffix: '(kopia)' })).toBe(tree);
+  });
+
+  test('duplicating a section drops singletons from the copy but keeps other fields', () => {
+    const next = duplicateNodeAtPath(withSingletons(), [0, 1], { mint, copySuffix: '(kopia)' });
+    const copy = next[0].fields[2];
+    expect(copy.section.fields.map(f => f.type)).toEqual(['image']);
+    expect(next[0].fields[1].section.fields.map(f => f.type)).toEqual(['char_avatar', 'image']);
+  });
+
+  test('duplicating a root section drops a nested singleton too', () => {
+    const next = duplicateNodeAtPath(withSingletons(), [0], { mint, copySuffix: '(kopia)' });
+    expect([...usedSingletonTypes([next[1]])]).toEqual([]);
+    expect(next[1].fields.map(f => f.type)).toEqual([SECTION_TYPE]);
   });
 });

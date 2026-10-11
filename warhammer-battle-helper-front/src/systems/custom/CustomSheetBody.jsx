@@ -10,12 +10,15 @@ import { progressRatio } from './progressRatio';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
+import SheetImagePicker from './fields/SheetImagePicker';
+import { PRESETS } from '../../utils/imageProcessing';
 import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 
-// onChange = { attr, advances, skill, skillAdvances, text, progress, number, weaponAdd,
-//              weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite }
+// onChange = { attr, advances, skill, skillAdvances, text, progress, number, name, avatar, image,
+//              weaponAdd, weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite }
 //            | null (read-only)
 // onRoll   = (rollModal) => void | null (no rolls)
+// uploadImage = (File) => Promise<url> | null — uploads for char_avatar and image fields
 function CustomSheetBody({
   sections,
   values = {},
@@ -32,6 +35,7 @@ function CustomSheetBody({
   onToggleDevelopment = null,
   renderChrome = null,
   showAffordances = false,
+  uploadImage = null,
 }) {
   const { t } = useTranslation();
   const attrs    = values.attributes || {};
@@ -40,6 +44,7 @@ function CustomSheetBody({
   const progress = values.progress   || {};
   const numbers  = values.numbers    || {};
   const weapons  = values.weapons    || {};
+  const images   = values.images     || {};
   const readOnly = !onChange;
 
   // An affordance the player will see — the die on a rollable field, the favourites star, the
@@ -318,6 +323,41 @@ function CustomSheetBody({
             onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
             readOnly={readOnly}
             rows={3}
+          />
+        ));
+
+      // The character's own name, not a stats value: values.name is character.name, which
+      // tokens, lists and the short card all read. Same tile as a short text field.
+      case 'char_name':
+        return renderTile(field, 'text', (
+          <input
+            type="text"
+            className="custom-sheet__text-input"
+            value={values.name || ''}
+            onChange={onChange ? e => onChange.name(e.target.value) : undefined}
+            readOnly={readOnly}
+          />
+        ));
+
+      case 'char_avatar':
+        return renderTile(field, 'image', (
+          <SheetImagePicker
+            url={values.avatar || ''}
+            preset={PRESETS.avatar}
+            variant="avatar"
+            upload={onChange ? uploadImage : null}
+            onChange={onChange ? onChange.avatar : null}
+          />
+        ));
+
+      case 'image':
+        return renderTile(field, 'image', (
+          <SheetImagePicker
+            url={images[field.key] || ''}
+            preset={PRESETS.sheetImage}
+            variant="free"
+            upload={onChange ? uploadImage : null}
+            onChange={onChange ? url => onChange.image(field.key, url) : null}
           />
         ));
 

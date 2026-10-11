@@ -15,7 +15,8 @@ import { sectionOf, isContainer } from '../../utils/templateSections';
 //
 // "Draws nothing" is the only qualifying reason. A field with no label still renders its input,
 // still has size and still takes the pointer, so it gets no placeholder; an earlier version gave
-// one to every field, because makeDefaultField starts every type with label: ''.
+// one to every field. New fields now start labelled with their type name, but a GM can still
+// clear a label, so the rule stands.
 //
 // A skill tree counts as empty when its template children are empty. Its `tree.label` is never
 // rendered, and the nodes a player adds live in the character's customSkillNodes, which the

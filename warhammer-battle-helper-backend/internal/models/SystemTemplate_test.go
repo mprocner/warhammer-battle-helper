@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -223,5 +224,84 @@ func TestFieldDef_ComputedFormulaRoundTrips(t *testing.T) {
 	}
 	if len(back.Formula) != 3 || back.Formula[0].Key != "tough" || back.Default == nil || *back.Default != 5 {
 		t.Errorf("round trip lost data: %+v", back)
+	}
+}
+
+func templateWith(fields ...FieldDef) *SystemTemplate {
+	return &SystemTemplate{Sections: []SectionDef{{ID: "s", Fields: fields}}}
+}
+
+func nested(fields ...FieldDef) FieldDef {
+	return FieldDef{Key: "sub", Type: "section", Section: &SectionDef{ID: "sub", Fields: fields}}
+}
+
+func TestCountFieldsOfType_CountsNestedSections(t *testing.T) {
+	tmpl := templateWith(
+		FieldDef{Key: "a", Type: FieldTypeCharName},
+		nested(FieldDef{Key: "b", Type: FieldTypeCharName}, nested(FieldDef{Key: "c", Type: FieldTypeImage})),
+	)
+	if got := tmpl.CountFieldsOfType(FieldTypeCharName); got != 2 {
+		t.Errorf("char_name count = %d, want 2", got)
+	}
+	if got := tmpl.CountFieldsOfType(FieldTypeImage); got != 1 {
+		t.Errorf("image count = %d, want 1", got)
+	}
+}
+
+func TestValidateSingletonFields(t *testing.T) {
+	cases := []struct {
+		name string
+		tmpl *SystemTemplate
+		want error
+	}{
+		{"empty draft is fine", templateWith(), nil},
+		{"one of each is fine", templateWith(FieldDef{Type: FieldTypeCharName}, FieldDef{Type: FieldTypeCharAvatar}), nil},
+		{"many images are fine", templateWith(FieldDef{Type: FieldTypeImage}, FieldDef{Type: FieldTypeImage}), nil},
+		{"two names", templateWith(FieldDef{Type: FieldTypeCharName}, nested(FieldDef{Type: FieldTypeCharName})), ErrDuplicateCharName},
+		{"two avatars", templateWith(FieldDef{Type: FieldTypeCharAvatar}, FieldDef{Type: FieldTypeCharAvatar}), ErrDuplicateCharAvatar},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := c.tmpl.ValidateSingletonFields(); !errors.Is(got, c.want) {
+				t.Errorf("ValidateSingletonFields() = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+func TestValidateForGame(t *testing.T) {
+	if err := templateWith().ValidateForGame(); !errors.Is(err, ErrMissingCharName) {
+		t.Errorf("no name: got %v, want ErrMissingCharName", err)
+	}
+	if err := templateWith(FieldDef{Type: FieldTypeCharName}, FieldDef{Type: FieldTypeCharName}).ValidateForGame(); !errors.Is(err, ErrDuplicateCharName) {
+		t.Errorf("two names: got %v, want ErrDuplicateCharName", err)
+	}
+	if err := templateWith(nested(FieldDef{Type: FieldTypeCharName})).ValidateForGame(); err != nil {
+		t.Errorf("nested name: got %v, want nil", err)
+	}
+}
+
+func TestIsTemplateValidationError(t *testing.T) {
+	for _, err := range []error{ErrMissingCharName, ErrDuplicateCharName, ErrDuplicateCharAvatar} {
+		if !IsTemplateValidationError(err) {
+			t.Errorf("%v should be a validation error", err)
+		}
+	}
+	if IsTemplateValidationError(errors.New("template not found")) {
+		t.Error("unrelated error classified as validation error")
+	}
+}
+
+// The frontend maps these exact strings to translation keys (useGames TEMPLATE_ERROR_KEYS), so
+// renaming one silently turns a friendly message into a raw code.
+func TestTemplateValidationErrorCodesArePinned(t *testing.T) {
+	for err, want := range map[error]string{
+		ErrMissingCharName:     "template_missing_char_name",
+		ErrDuplicateCharName:   "template_duplicate_char_name",
+		ErrDuplicateCharAvatar: "template_duplicate_char_avatar",
+	} {
+		if err.Error() != want {
+			t.Errorf("error code = %q, want %q", err.Error(), want)
+		}
 	}
 }

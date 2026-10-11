@@ -1,6 +1,6 @@
 import { resolveFileUrl } from './fileUrl';
 
-jest.mock('../api/axios', () => ({ getApiUrl: () => 'http://api.test' }));
+jest.mock('../api/apiUrl', () => ({ getApiUrl: () => 'http://api.test' }));
 
 describe('resolveFileUrl', () => {
   it('returns an empty string for falsy input', () => {

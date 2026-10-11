@@ -1,6 +1,6 @@
 import { getAvatarUrl } from './Avatar';
 
-jest.mock('../api/axios', () => ({ getApiUrl: () => 'http://api.test' }));
+jest.mock('../api/apiUrl', () => ({ getApiUrl: () => 'http://api.test' }));
 
 describe('getAvatarUrl', () => {
   // The null (not '') contract is load-bearing: callers use `if (url)` to fall

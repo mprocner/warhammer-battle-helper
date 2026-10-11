@@ -34,6 +34,10 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ShareIcon from '@mui/icons-material/Share';
 import PersonIcon from '@mui/icons-material/Person';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import BadgeIcon from '@mui/icons-material/Badge';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ImageIcon from '@mui/icons-material/Image';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
@@ -53,6 +57,7 @@ import {
   updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields,
   containerPathFor, shiftPathAfterInsert, shiftPathAfterRemoval,
   moveNode, canDropInto, nodeId, isAncestorPath, indexNodes, isContainer,
+  SINGLETON_FIELD_TYPES, usedSingletonTypes,
 } from '../../utils/templateSections';
 import { measureNodes, insertionAt, toMoveArgs, ghostRectFor } from '../../utils/sheetDnd';
 import { SHEET_WIDTH_MIN, SHEET_WIDTH_MAX, SHEET_WIDTH_STEP, clampSheetWidth } from '../../utils/sheetWidth';
@@ -72,13 +77,13 @@ function updateTreeAtPath(node, path, updater) {
   };
 }
 
-function addChildAtPath(node, path) {
+function addChildAtPath(node, path, label) {
   if (path.length === 0) {
     const children = node.children || [];
-    return { ...node, children: [...children, { key: genId('node'), label: 'Węzeł', children: [], linkedAttr: '' }] };
+    return { ...node, children: [...children, { key: genId('node'), label, children: [], linkedAttr: '' }] };
   }
   const idx = path[0];
-  return { ...node, children: node.children.map((c, i) => i === idx ? addChildAtPath(c, path.slice(1)) : c) };
+  return { ...node, children: node.children.map((c, i) => i === idx ? addChildAtPath(c, path.slice(1), label) : c) };
 }
 
 // Skill-tree node removal. Named apart from the template tree's removeAtPath (imported from
@@ -95,6 +100,9 @@ function removeTreeAtPath(node, path) {
 
 const FIELD_TYPES = [
   { type: 'section',     labelKey: 'creator.fieldType.section',     icon: <ViewQuiltIcon fontSize="small" />,  desc: 'creator.fieldType.sectionDesc' },
+  { type: 'char_name',   labelKey: 'creator.fieldType.charName',    icon: <BadgeIcon fontSize="small" />,         desc: 'creator.fieldType.charNameDesc' },
+  { type: 'char_avatar', labelKey: 'creator.fieldType.charAvatar',  icon: <AccountCircleIcon fontSize="small" />, desc: 'creator.fieldType.charAvatarDesc' },
+  { type: 'image',       labelKey: 'creator.fieldType.image',       icon: <ImageIcon fontSize="small" />,         desc: 'creator.fieldType.imageDesc' },
   { type: 'attr',        labelKey: 'creator.fieldType.attr',        icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.attrDesc' },
   { type: 'number',      labelKey: 'creator.fieldType.number',      icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.numberDesc' },
   { type: 'computed',    labelKey: 'creator.fieldType.computed',    icon: <FunctionsIcon fontSize="small" />,  desc: 'creator.fieldType.computedDesc' },
@@ -112,6 +120,7 @@ const FIELD_TYPES = [
 
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupLayout',  types: ['section'] },
+  { labelKey: 'creator.paletteGroupCharacter', types: ['char_name', 'char_avatar', 'image'] },
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'computed', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
@@ -123,22 +132,27 @@ const PALETTE_GROUPS = [
 // The hex is what gets stored — not an index — so reordering this list never repaints existing templates.
 const LABEL_COLORS = ['#3a2f1f', '#7a5c42', '#c9975b', '#8b2c2c', '#3f6b3f', '#2f4a6b', '#5c3a6b', '#4a4a4a'];
 
-export function makeDefaultField(type) {
+// Every new field starts labelled with its type's name, translated at the moment the GM adds it
+// and stored in the template like any label they type. An empty label left a bare tile on the
+// sheet and a blank entry in every field picker. A section wrapper stays unlabelled: sections
+// show their title, never a label.
+export function makeDefaultField(type, t) {
+  const typeInfo = FIELD_TYPES.find(ft => ft.type === type);
   const base = {
     key: genId(type),
     type,
-    label: '',
+    label: type === 'section' || !typeInfo ? '' : t(typeInfo.labelKey),
     abbr: '',
     rollable: false,
   };
-  if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: t('creator.fieldAdvancesDefault') };
   if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
   if (type === 'computed') return { ...base, formula: [], default: null, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: true };
   if (type === 'select') return { ...base, options: [] };
-  if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: 'Rozwinięcie' };
+  if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: t('creator.fieldAdvancesDefault') };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
-  if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: 'Kategoria', children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
+  if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: t('creator.treeDefaultRoot'), children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
   if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
   // A section field wraps a whole SectionDef. section.id mirrors the field key so DnD,
   // selection and React keys all address the node by one value.
@@ -174,7 +188,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
               {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
             </select>
           )}
-          <button className="creator__tree-btn creator__tree-btn--add" onClick={() => onChange(addChildAtPath(tree, path))} title={t('creator.treeAddNode')}>
+          <button className="creator__tree-btn creator__tree-btn--add" onClick={() => onChange(addChildAtPath(tree, path, t('creator.treeDefaultNode')))} title={t('creator.treeAddNode')}>
             <AddIcon style={{ fontSize: 14 }} />
           </button>
           {path.length > 0 && (
@@ -200,7 +214,7 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
   return (
     <div className="creator__skill-tree-editor">
       {(tree.children || []).map((child, i) => renderNode(child, [i], 0))}
-      <button className="creator__tree-add-root" onClick={() => onChange(addChildAtPath(tree, []))}>
+      <button className="creator__tree-add-root" onClick={() => onChange(addChildAtPath(tree, [], t('creator.treeDefaultNode')))}>
         <AddIcon style={{ fontSize: 14 }} /> {t('creator.treeAddCategory')}
       </button>
     </div>
@@ -1437,6 +1451,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab,   setActiveTab]   = useState('general');
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
+  // Which one-per-template types are already placed; drives the palette, the inline picker
+  // and the missing-name warning.
+  const usedSingletons = useMemo(() => usedSingletonTypes(sections), [sections]);
   // Toggles renderChrome off so the sheet tab shows exactly what a player would see — the
   // top-bar eye icon, not a third tab (there is nothing else to show alongside it).
   const [cleanPreview, setCleanPreview] = useState(false);
@@ -1616,9 +1633,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // selection. With an empty template there is no container yet, so the click creates the
   // first root section instead — which is exactly what a "Section" click wanted anyway.
   const addNode = (type) => {
+    if (usedSingletons.has(type)) return;
     const parentPath = containerPathFor(sections, selected);
     if (parentPath === null) return addSection();
-    const node = makeDefaultField(type);
+    const node = makeDefaultField(type, t);
     const count = (childrenOf(nodeAt(sections, parentPath)) || []).length;
     const next = insertAtPath(sections, parentPath, count, node);
     setAddingToPath(null);
@@ -1627,7 +1645,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   // addNodeTo is the in-canvas "add field" list: the container is explicit, not inferred.
   const addNodeTo = (parentPath, type) => {
-    const node = makeDefaultField(type);
+    if (usedSingletons.has(type)) return;
+    const node = makeDefaultField(type, t);
     const count = (childrenOf(nodeAt(sections, parentPath)) || []).length;
     const next = insertAtPath(sections, parentPath, count, node);
     setAddingToPath(null);
@@ -1785,7 +1804,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       selected: samePath(selected, path),
       onSelect: () => setSelected(path),
       onEdit: () => setEditingPath(path),
-      onDuplicate: () => duplicateNode(path),
+      onDuplicate: SINGLETON_FIELD_TYPES.includes(node.type) ? null : () => duplicateNode(path),
       onRemove: () => requestRemove(path),
       onMoveUp: () => moveWithinParent(path, -1),
       onMoveDown: () => moveWithinParent(path, +1),
@@ -1808,7 +1827,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           />
           {samePath(addingToPath, path) && (
             <div className="creator__inline-picker" onClick={e => e.stopPropagation()}>
-              {FIELD_TYPES.map(ft => (
+              {FIELD_TYPES.filter(ft => !usedSingletons.has(ft.type)).map(ft => (
                 <button
                   key={ft.type}
                   className="creator__inline-type-btn"
@@ -2123,21 +2142,30 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               return (
                 <div key={group.labelKey} className="creator__palette-group">
                   <div className="creator__palette-group-label">{t(group.labelKey)}</div>
-                  {groupTypes.map(ft => (
-                    <button
-                      key={ft.type}
-                      className="creator__palette-card"
-                      onMouseEnter={e => showPaletteTooltip(t(ft.desc, { defaultValue: ft.type }), e.currentTarget)}
-                      onMouseLeave={hidePaletteTooltip}
-                      onClick={() => addNode(ft.type)}
-                    >
-                      <span className="creator__palette-icon">{ft.icon}</span>
-                      <div className="creator__palette-info">
-                        <div className="creator__palette-name">{t(ft.labelKey, { defaultValue: ft.type })}</div>
-                        <div className="creator__palette-desc">{t(ft.desc, { defaultValue: '' })}</div>
-                      </div>
-                    </button>
-                  ))}
+                  {groupTypes.map(ft => {
+                    const used = usedSingletons.has(ft.type);
+                    return (
+                      <button
+                        key={ft.type}
+                        // aria-disabled, not disabled: a disabled button fires no mouseenter in
+                        // Chrome, and the tooltip is what explains why the card is greyed out.
+                        aria-disabled={used}
+                        className={`creator__palette-card${used ? ' creator__palette-card--used' : ''}`}
+                        onMouseEnter={e => showPaletteTooltip(
+                          used ? t('creator.singletonUsed') : t(ft.desc, { defaultValue: ft.type }),
+                          e.currentTarget,
+                        )}
+                        onMouseLeave={hidePaletteTooltip}
+                        onClick={() => { if (!used) addNode(ft.type); }}
+                      >
+                        <span className="creator__palette-icon">{ft.icon}</span>
+                        <div className="creator__palette-info">
+                          <div className="creator__palette-name">{t(ft.labelKey, { defaultValue: ft.type })}</div>
+                          <div className="creator__palette-desc">{t(ft.desc, { defaultValue: '' })}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -2150,6 +2178,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           ref={scrollRef}
           onClick={() => { setSelected(null); setAddingToPath(null); }}
         >
+          {/* Above the sheet, not in the palette: a side column is where the GM's eye does not go,
+              and a game cannot use the template until this is fixed. Outside the sheet stack, so
+              the sheet itself still renders exactly what the player will see. */}
+          {!usedSingletons.has('char_name') && (
+            <div className="creator__notice" style={{ maxWidth: clampSheetWidth(settings.sheetWidth) }}>
+              <WarningAmberIcon style={{ fontSize: 18 }} />
+              <span>{t('creator.missingCharName')}</span>
+            </div>
+          )}
           {sections.length === 0 ? (
             <div className="creator__canvas-empty">
               <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: '#7a5c42' }} />

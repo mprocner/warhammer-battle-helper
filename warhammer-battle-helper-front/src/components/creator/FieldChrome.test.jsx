@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '../../i18n';
+import i18n from '../../i18n';
 import FieldChrome from './FieldChrome';
 import SectionChrome from './SectionChrome';
 
@@ -183,4 +183,16 @@ describe('SectionChrome', () => {
     expect(onRemove).toHaveBeenCalledTimes(1);
     expect(onSelect).not.toHaveBeenCalled();
   });
+});
+
+test('hides the duplicate button when onDuplicate is null', () => {
+  render(
+    <FieldChrome
+      field={{ key: 'nm', type: 'char_name', label: 'Imię' }}
+      onSelect={() => {}} onEdit={() => {}} onDuplicate={null} onRemove={() => {}}
+      onMoveUp={() => {}} onMoveDown={() => {}}
+    />
+  );
+  expect(screen.queryByRole('button', { name: i18n.t('creator.fieldDuplicate') })).toBeNull();
+  expect(screen.getByRole('button', { name: i18n.t('creator.fieldDelete') })).toBeInTheDocument();
 });

@@ -37,13 +37,16 @@ function CustomCharacterSheet({
     developmentSkills: stats.developmentSkills || [],
     weapons:          stats.weapons           || {},
     favoriteWeapons:  stats.favoriteWeapons   || [],
+    images:           stats.images            || {},
   });
   const [charName,   setCharName]   = useState(character?.name   || '');
+  const [charAvatar, setCharAvatar] = useState(character?.avatar || '');
   const [isSaving,   setIsSaving]   = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const autoSaveTimer  = useRef(null);
   const charNameRef    = useRef(charName);
+  const charAvatarRef  = useRef(charAvatar);
   const prevCharIdRef  = useRef(character?.id);
   // Czy mamy edycje jeszcze niezapisane na serwerze. Ustawiane przy każdej zmianie
   // pola, zdejmowane dopiero po udanym zapisie — po nieudanym zostaje, żeby przychodzące
@@ -74,17 +77,23 @@ function CustomCharacterSheet({
       developmentSkills: s.developmentSkills || [],
       weapons:          s.weapons           || {},
       favoriteWeapons:  s.favoriteWeapons   || [],
+      images:           s.images            || {},
     });
     setCharName(character?.name || '');
     charNameRef.current = character?.name || '';
+    setCharAvatar(character?.avatar || '');
+    charAvatarRef.current = character?.avatar || '';
   }, [character]);
 
-  const saveCharacter = useCallback(async (currentEdited, name) => {
+  // Name and avatar are read from refs rather than passed in: they change through their own
+  // fields, and every save — whichever field triggered it — must carry their latest values.
+  const saveCharacter = useCallback(async (currentEdited) => {
     if (!gameId) return;
     setIsSaving(true);
     const updated = {
       ...character,
-      name,
+      name: charNameRef.current,
+      avatar: charAvatarRef.current,
       stats: {
         attributes:       currentEdited.attributes,
         skills:           currentEdited.skills,
@@ -96,6 +105,7 @@ function CustomCharacterSheet({
         developmentSkills: currentEdited.developmentSkills,
         weapons:          currentEdited.weapons,
         favoriteWeapons:  currentEdited.favoriteWeapons,
+        images:           currentEdited.images,
       },
     };
     try {
@@ -119,10 +129,10 @@ function CustomCharacterSheet({
     }
   }, [character, gameId, token, onCharacterUpdate, addLogMessage, t]);
 
-  const triggerAutoSave = useCallback((e, name) => {
+  const triggerAutoSave = useCallback((e) => {
     dirtyRef.current = true;
     clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(() => saveCharacter(e, name), 800);
+    autoSaveTimer.current = setTimeout(() => saveCharacter(e), 800);
   }, [saveCharacter]);
 
   const updateAttr = (key, value) => {
@@ -131,7 +141,7 @@ function CustomCharacterSheet({
     const updated = { ...prev, base, current: base + prev.advances };
     const ne = { ...edited, attributes: { ...edited.attributes, [key]: updated } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateAdvances = (key, value) => {
@@ -140,7 +150,7 @@ function CustomCharacterSheet({
     const updated = { ...prev, advances, current: prev.base + advances };
     const ne = { ...edited, attributes: { ...edited.attributes, [key]: updated } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateSkill = (key, value) => {
@@ -149,7 +159,7 @@ function CustomCharacterSheet({
     const updated = { ...prev, base, current: base + (prev.advances || 0) };
     const ne = { ...edited, skills: { ...edited.skills, [key]: updated } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateSkillAdvances = (key, value) => {
@@ -158,7 +168,7 @@ function CustomCharacterSheet({
     const updated = { ...prev, advances, current: (prev.base || 0) + advances };
     const ne = { ...edited, skills: { ...edited.skills, [key]: updated } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const addCustomSkillNode = (path, nodeData) => {
@@ -168,13 +178,13 @@ function CustomCharacterSheet({
       skills: { ...edited.skills, [path]: { base: 0, advances: 0, current: 0 } },
     };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateCustomSkillNode = (path, nodeData) => {
     const ne = { ...edited, customSkillNodes: { ...edited.customSkillNodes, [path]: nodeData } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const removeCustomSkillNode = (path) => {
@@ -186,26 +196,73 @@ function CustomCharacterSheet({
     });
     const ne = { ...edited, customSkillNodes: nextNodes, skills: nextSkills };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateNumber = (key, value) => {
     const ne = { ...edited, numbers: { ...edited.numbers, [key]: Number(value) || 0 } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
+
+  const updateName = (value) => {
+    setCharName(value);
+    charNameRef.current = value;
+    triggerAutoSave(edited);
+  };
+
+  // An upload is a finished, one-click action like a favourite, so it saves straight away
+  // instead of waiting out the autosave debounce. Both handlers run after an async upload, from
+  // the render where the crop was confirmed, so `edited` in their closure is stale: they read the
+  // latest state through the functional updater (as toggleFavoriteSkill does). They also cancel
+  // the pending autosave: this save already carries the latest stats, name and avatar, and an
+  // older timer firing afterwards would overwrite it on the server.
+  const updateAvatar = (url) => {
+    setCharAvatar(url);
+    charAvatarRef.current = url;
+    clearTimeout(autoSaveTimer.current);
+    setEdited(prev => {
+      saveCharacter(prev);
+      return prev;
+    });
+  };
+
+  const updateImage = (key, url) => {
+    clearTimeout(autoSaveTimer.current);
+    setEdited(prev => {
+      const images = { ...prev.images };
+      if (url) images[key] = url;
+      else delete images[key];
+      const ne = { ...prev, images };
+      saveCharacter(ne);
+      return ne;
+    });
+  };
+
+  const uploadImage = useCallback(async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file, file.name);
+    const res = await fetch(`${getApiUrl()}/avatars`, {
+      method: 'POST',
+      headers: getApiHeaders({ 'Authorization': `Bearer ${token}` }),
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    const data = await res.json();
+    return data.url;
+  }, [token]);
 
   const updateText = (key, value) => {
     const ne = { ...edited, texts: { ...edited.texts, [key]: value } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateProgress = (key, which, value) => {
     const prev = edited.progress[key] || { current: 0, max: 0 };
     const ne = { ...edited, progress: { ...edited.progress, [key]: { ...prev, [which]: Number(value) || 0 } } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const toggleFavoriteSkill = (skillKey) => {
@@ -215,7 +272,7 @@ function CustomCharacterSheet({
         ? favs.filter(k => k !== skillKey)
         : [...favs, skillKey];
       const ne = { ...prev, favoriteSkills: next };
-      saveCharacter(ne, charNameRef.current);
+      saveCharacter(ne);
       return ne;
     });
   };
@@ -229,7 +286,7 @@ function CustomCharacterSheet({
         ? marked.filter(k => k !== skillKey)
         : [...marked, skillKey];
       const ne = { ...prev, developmentSkills: next };
-      saveCharacter(ne, charNameRef.current);
+      saveCharacter(ne);
       return ne;
     });
   };
@@ -246,7 +303,7 @@ function CustomCharacterSheet({
     const row = { id: genWeaponId(), cells: {}, damage: {} };
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
     return row.id;
   };
 
@@ -261,7 +318,7 @@ function CustomCharacterSheet({
     };
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const removeWeaponRow = (fieldKey, rowId) => {
@@ -270,14 +327,14 @@ function CustomCharacterSheet({
     const favoriteWeapons = (edited.favoriteWeapons || []).filter(id => id !== rowId);
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list }, favoriteWeapons };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const mapWeaponRow = (fieldKey, rowId, updater) => {
     const list = (edited.weapons[fieldKey] || []).map(r => (r.id === rowId ? updater(r) : r));
     const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
     setEdited(ne);
-    triggerAutoSave(ne, charNameRef.current);
+    triggerAutoSave(ne);
   };
 
   const updateWeaponCell = (fieldKey, rowId, colKey, value) =>
@@ -295,7 +352,7 @@ function CustomCharacterSheet({
       const favs = prev.favoriteWeapons || [];
       const next = favs.includes(weaponId) ? favs.filter(k => k !== weaponId) : [...favs, weaponId];
       const ne = { ...prev, favoriteWeapons: next };
-      saveCharacter(ne, charNameRef.current);
+      saveCharacter(ne);
       return ne;
     });
   };
@@ -328,7 +385,7 @@ function CustomCharacterSheet({
   const handlePopOut = usePopOut(character?.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({
     isSaving, saveSuccess, isStandalone,
-    onSave: () => saveCharacter(edited, charNameRef.current),
+    onSave: () => saveCharacter(edited),
     onPopOut: () => { handlePopOut(); onClose?.(); },
     t,
   });
@@ -340,7 +397,7 @@ function CustomCharacterSheet({
 
   const renderBody = () => <CustomSheetBody
     sections={template.sections}
-    values={edited}
+    values={{ ...edited, name: charName, avatar: charAvatar }}
     onChange={{
       attr:          (key, val)        => updateAttr(key, val),
       advances:      (key, val)        => updateAdvances(key, val),
@@ -349,6 +406,9 @@ function CustomCharacterSheet({
       text:     (key, val)        => updateText(key, val),
       progress: (key, which, val) => updateProgress(key, which, val),
       number:   (key, val)        => updateNumber(key, val),
+      name:     (val)             => updateName(val),
+      avatar:   (url)             => updateAvatar(url),
+      image:    (key, url)        => updateImage(key, url),
       weaponAdd:      (fieldKey)                     => addWeaponRow(fieldKey),
       weaponAddFromPreset: (fieldKey, preset)        => addWeaponFromPreset(fieldKey, preset),
       weaponRemove:   (fieldKey, rowId)              => removeWeaponRow(fieldKey, rowId),
@@ -366,6 +426,7 @@ function CustomCharacterSheet({
     onToggleFavorite={toggleFavoriteSkill}
     developmentSkills={edited.developmentSkills}
     onToggleDevelopment={toggleDevelopmentSkill}
+    uploadImage={uploadImage}
   />;
 
   const sheetContent = (
@@ -382,26 +443,7 @@ function CustomCharacterSheet({
 
       {!template ? (
         <div className="custom-sheet__no-template">{t('creator.noTemplate')}</div>
-      ) : (
-        <>
-          {/* Character name */}
-          <div className="custom-sheet__char-header">
-            <input
-              className="custom-sheet__char-name-input"
-              value={charName}
-              onChange={e => {
-                setCharName(e.target.value);
-                charNameRef.current = e.target.value;
-                triggerAutoSave(edited, e.target.value);
-              }}
-              placeholder={t('character.name')}
-            />
-            <span className="custom-sheet__template-name">{template.name}</span>
-          </div>
-
-          {renderBody()}
-        </>
-      )}
+      ) : renderBody()}
     </div>
   );
 

@@ -2,6 +2,13 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 
+// Codes the backend returns when a template cannot back a game (PLAYRPG-240).
+const TEMPLATE_ERROR_KEYS = {
+  template_missing_char_name: 'creator.templateMissingCharName',
+  template_duplicate_char_name: 'creator.templateDuplicateCharName',
+  template_duplicate_char_avatar: 'creator.templateDuplicateCharAvatar',
+};
+
 // useGames owns the lobby's game list and every mutation on it. Mutations update local
 // state instead of refetching — the list changes rarely and only through these actions.
 export function useGames(token) {
@@ -41,7 +48,8 @@ export function useGames(token) {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create game');
+        const key = TEMPLATE_ERROR_KEYS[errorData.error];
+        throw new Error(key ? t(key) : (errorData.error || 'Failed to create game'));
       }
       return await response.json();
     } catch (err) {
@@ -50,7 +58,7 @@ export function useGames(token) {
     } finally {
       setLoading(false);
     }
-  }, [authHeaders]);
+  }, [authHeaders, t]);
 
   // Drops the game from the list on success — used by both delete (GM) and leave (player).
   const removeGame = useCallback(async (gameId, path, method) => {
@@ -83,7 +91,8 @@ export function useGames(token) {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || t('creator.syncFailed'));
+        const key = TEMPLATE_ERROR_KEYS[data.error];
+        setError(key ? t(key) : (data.error || t('creator.syncFailed')));
         return;
       }
       await fetchGames();

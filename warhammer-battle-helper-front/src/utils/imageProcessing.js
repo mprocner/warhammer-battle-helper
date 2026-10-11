@@ -28,6 +28,9 @@ export const MAX_PASSTHROUGH_BYTES = 15 * 1024 * 1024;
 // single-file crop with it), so a `crop` flag here would be dead weight.
 export const PRESETS = {
   avatar:       { maxEdge: 512,  aspect: 1 },
+  // Image field on a custom character sheet (PLAYRPG-240): free proportions, the field is
+  // sheet-column wide, so 1024px covers the widest sheet without shipping a 4K original.
+  sheetImage:   { maxEdge: 1024, aspect: null },
   gameImage:    { maxEdge: 800,  aspect: GAME_IMAGE_ASPECT },
   handout:      { maxEdge: 2048, aspect: null },
   libraryImage: { maxEdge: 4096, aspect: null },

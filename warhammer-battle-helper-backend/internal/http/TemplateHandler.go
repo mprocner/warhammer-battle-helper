@@ -35,6 +35,10 @@ func (h *TemplateHandler) CreateTemplate(c *gin.Context) {
 	userID := mustUserID(c)
 	t, err := h.TemplateService.Create(userID, req)
 	if err != nil {
+		if models.IsTemplateValidationError(err) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -61,6 +65,10 @@ func (h *TemplateHandler) UpdateTemplate(c *gin.Context) {
 	userID := mustUserID(c)
 	updated, err := h.TemplateService.Update(c.Param("id"), userID, req)
 	if err != nil {
+		if models.IsTemplateValidationError(err) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		if err.Error() == "not authorized" {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
 			return

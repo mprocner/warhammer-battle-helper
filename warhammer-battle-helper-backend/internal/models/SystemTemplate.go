@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -218,7 +219,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"
+	Type  string `bson:"type" json:"type"` // "attr"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"|"char_name"|"char_avatar"|"image"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
 
@@ -401,4 +402,79 @@ type CloneTemplateRequest struct {
 // ShareTemplateRequest is the request body for POST /templates/:id/shares.
 type ShareTemplateRequest struct {
 	Email string `json:"email" binding:"required,email"`
+}
+
+// Field types bound to the character document rather than to Stats (PLAYRPG-240). A char_name
+// field edits Character.Name and a char_avatar field edits Character.Avatar, so neither ever
+// has a key in Stats. An image field stores its URL in the custom system's Stats.Images.
+const (
+	FieldTypeCharName   = "char_name"
+	FieldTypeCharAvatar = "char_avatar"
+	FieldTypeImage      = "image"
+)
+
+// Template validation errors. The messages are stable codes, not prose: handlers return them
+// verbatim and the frontend maps each one to a translated message.
+var (
+	ErrMissingCharName     = errors.New("template_missing_char_name")
+	ErrDuplicateCharName   = errors.New("template_duplicate_char_name")
+	ErrDuplicateCharAvatar = errors.New("template_duplicate_char_avatar")
+)
+
+// IsTemplateValidationError reports whether err is one of the template validation errors, so
+// handlers can answer 400 instead of 500.
+func IsTemplateValidationError(err error) bool {
+	return errors.Is(err, ErrMissingCharName) ||
+		errors.Is(err, ErrDuplicateCharName) ||
+		errors.Is(err, ErrDuplicateCharAvatar)
+}
+
+// CountFieldsOfType counts leaf fields of the given type at any depth. Nested sections
+// (Type == "section") are descended into, never counted themselves.
+func (t *SystemTemplate) CountFieldsOfType(typ string) int {
+	n := 0
+	var visit func(fields []FieldDef)
+	visit = func(fields []FieldDef) {
+		for _, f := range fields {
+			if f.Type == "section" {
+				if f.Section != nil {
+					visit(f.Section.Fields)
+				}
+				continue
+			}
+			if f.Type == typ {
+				n++
+			}
+		}
+	}
+	for _, s := range t.Sections {
+		visit(s.Fields)
+	}
+	return n
+}
+
+// ValidateSingletonFields rejects a template with more than one char_name or char_avatar field.
+// A missing char_name is allowed: the creator autosaves drafts, and a draft that has no name
+// field yet is legitimate. ValidateForGame is the stricter check for templates entering a game.
+func (t *SystemTemplate) ValidateSingletonFields() error {
+	if t.CountFieldsOfType(FieldTypeCharName) > 1 {
+		return ErrDuplicateCharName
+	}
+	if t.CountFieldsOfType(FieldTypeCharAvatar) > 1 {
+		return ErrDuplicateCharAvatar
+	}
+	return nil
+}
+
+// ValidateForGame is the check for a custom template that is about to back a game: on top of
+// the singleton rule, it requires exactly one char_name, because without it players have no
+// way to edit their character's name.
+func (t *SystemTemplate) ValidateForGame() error {
+	if err := t.ValidateSingletonFields(); err != nil {
+		return err
+	}
+	if t.CountFieldsOfType(FieldTypeCharName) == 0 {
+		return ErrMissingCharName
+	}
+	return nil
 }
