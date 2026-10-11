@@ -19,6 +19,7 @@ type Database struct {
 	RollStatsCollection       *mongo.Collection
 	OnlineSessionsCollection  *mongo.Collection
 	SystemTemplatesCollection *mongo.Collection
+	SystemAccessCollection    *mongo.Collection
 }
 
 // ConnectDatabase establishes a connection to MongoDB and returns database collections
@@ -62,6 +63,7 @@ func ConnectDatabase() (*Database, error) {
 		RollStatsCollection:       db.Collection("roll_stats"),
 		OnlineSessionsCollection:  db.Collection("online_sessions"),
 		SystemTemplatesCollection: db.Collection("system_templates"),
+		SystemAccessCollection:    db.Collection("system_access"),
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import StorageIcon from "@mui/icons-material/Storage";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import ExtensionIcon from "@mui/icons-material/Extension";
 
 import authProvider from "./authProvider";
 import dataProvider from "./dataProvider";
@@ -13,6 +14,8 @@ import { UserShow } from "./users/UserShow";
 import { UserEdit } from "./users/UserEdit";
 import { GameList } from "./games/GameList";
 import { GameShow } from "./games/GameShow";
+import { SystemList } from "./systems/SystemList";
+import { SystemEdit } from "./systems/SystemEdit";
 import StorageDashboard from "./stats/StorageDashboard";
 import SessionAnalytics from "./stats/SessionAnalytics";
 
@@ -37,6 +40,13 @@ export default function AdminApp() {
         list={GameList}
         show={GameShow}
         options={{ label: "Games" }}
+      />
+      <Resource
+        name="systems"
+        icon={ExtensionIcon}
+        list={SystemList}
+        edit={SystemEdit}
+        options={{ label: "Systems" }}
       />
       <CustomRoutes>
         <Route path="/stats/storage" element={<StorageDashboard dataProvider={dataProvider} />} />

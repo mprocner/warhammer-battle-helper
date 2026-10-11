@@ -16,7 +16,7 @@ import ConfirmDialog from './lobby/ConfirmDialog';
 // The lobby orchestrates three stacked surfaces: the create-game dialog, the template
 // manager on top of it, and the full-screen builder on top of that. Each layer stays
 // mounted underneath, so closing one always reveals the step the user came from.
-const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDismissNotice }) => {
+const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) => {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
 
@@ -128,7 +128,6 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
         open={createOpen}
         loading={loading}
         templates={templates}
-        allowedSystems={allowedSystems}
         onClose={() => setCreateOpen(false)}
         onCreate={handleCreateGame}
         onOpenCreator={openManager}

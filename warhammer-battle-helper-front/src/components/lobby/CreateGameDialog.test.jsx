@@ -1,9 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import i18n from '../../i18n';
+import axiosInstance from '../../api/axios';
 import CreateGameDialog from './CreateGameDialog';
 
-// The system registry pulls in axios (ESM, which CRA's jest cannot parse); the dialog never calls it.
+// The dialog fetches /features through the shared axios instance; axios itself is ESM,
+// which CRA's jest cannot parse, so the whole module is stubbed.
 jest.mock('axios', () => {
   const inst = { get: jest.fn(), post: jest.fn(), put: jest.fn(),
     interceptors: { request: { use: jest.fn() }, response: { use: jest.fn() } } };
@@ -16,10 +18,24 @@ const templates = [
   { id: 'p1', name: 'Mroczne Ziemie', isOwner: false, isPublic: true },
 ];
 
-const renderDialog = (props = {}) => render(
+const ALL_SYSTEMS = ['warhammer4e', 'coc7e', 'coc7e_dark_ages', 'dnd5e', 'custom'];
+
+beforeEach(() => {
+  axiosInstance.get.mockReset();
+  axiosInstance.get.mockResolvedValue({ data: { allowedSystems: ALL_SYSTEMS } });
+});
+
+const dialog = (props) => (
   <CreateGameDialog open loading={false} templates={templates}
     onClose={jest.fn()} onCreate={jest.fn()} onOpenCreator={jest.fn()} {...props} />
 );
+
+// Renders and lets the /features request settle, so the hardcoded systems are in the list.
+const renderDialog = async (props = {}) => {
+  const utils = render(dialog(props));
+  await act(async () => {});
+  return utils;
+};
 
 const search = (text) => {
   const input = screen.getByRole('combobox');
@@ -31,8 +47,8 @@ const search = (text) => {
 };
 
 describe('CreateGameDialog system search', () => {
-  it('narrows the list diacritic-insensitively and hides emptied groups', () => {
-    renderDialog();
+  it('narrows the list diacritic-insensitively and hides emptied groups', async () => {
+    await renderDialog();
     const listbox = search('lowc');
 
     const options = within(listbox).getAllByRole('option');
@@ -43,42 +59,42 @@ describe('CreateGameDialog system search', () => {
     expect(within(listbox).queryByText(i18n.t('creator.groupPublic'))).not.toBeInTheDocument();
   });
 
-  it('never shows an author on public templates', () => {
-    renderDialog();
+  it('never shows an author on public templates', async () => {
+    await renderDialog();
     const listbox = search('mroczne');
     expect(within(listbox).getByRole('option')).toHaveTextContent(/^Mroczne Ziemie$/);
   });
 
-  it('tells the user when nothing matches', () => {
-    renderDialog();
+  it('tells the user when nothing matches', async () => {
+    await renderDialog();
     search('zzzz');
     expect(screen.getByText(i18n.t('creator.noSystemMatch'))).toBeInTheDocument();
   });
 
-  it('creates a game on the picked template', () => {
+  it('creates a game on the picked template', async () => {
     const onCreate = jest.fn();
-    renderDialog({ onCreate });
+    await renderDialog({ onCreate });
     fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
     fireEvent.click(within(search('mroczne')).getByRole('option'));
     fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
     expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'custom', customTemplateId: 'p1' });
   });
 
-  it('renders same-named templates as separate options without duplicate-key warnings', () => {
+  it('renders same-named templates as separate options without duplicate-key warnings', async () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const twins = [
       { id: 'p1', name: 'Dwojaki', isOwner: false, isPublic: true },
       { id: 'p2', name: 'Dwojaki', isOwner: false, isPublic: true },
     ];
-    renderDialog({ templates: twins });
+    await renderDialog({ templates: twins });
     const listbox = search('dwojaki');
     expect(within(listbox).getAllByRole('option')).toHaveLength(2);
     expect(spy.mock.calls.some(args => String(args[0]).includes('same key'))).toBe(false);
     spy.mockRestore();
   });
 
-  it('starts with no system picked: empty field with placeholder, create disabled', () => {
-    renderDialog();
+  it('starts with no system picked: empty field with placeholder, create disabled', async () => {
+    await renderDialog();
     const input = screen.getByRole('combobox');
     expect(input).toHaveValue('');
     expect(input).toHaveAttribute('placeholder', i18n.t('creator.searchSystem'));
@@ -86,8 +102,8 @@ describe('CreateGameDialog system search', () => {
     expect(screen.getByRole('button', { name: i18n.t('common.create') })).toBeDisabled();
   });
 
-  it('shows the choice while closed and an empty search box over the full list while open', () => {
-    renderDialog();
+  it('shows the choice while closed and an empty search box over the full list while open', async () => {
+    await renderDialog();
     const input = screen.getByRole('combobox');
     fireEvent.click(within(search('warhammer')).getByRole('option'));
     expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
@@ -103,21 +119,54 @@ describe('CreateGameDialog system search', () => {
     expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
   });
 
-  it('keeps the first typed character when typing opens the list', () => {
-    renderDialog();
+  it('keeps the first typed character when typing opens the list', async () => {
+    await renderDialog();
     const input = screen.getByRole('combobox');
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'm' } });
     expect(input).toHaveValue('m');
   });
 
-  it('picks the first match on Enter after typing', () => {
+  it('picks the first match on Enter after typing', async () => {
     const onCreate = jest.fn();
-    renderDialog({ onCreate });
+    await renderDialog({ onCreate });
     fireEvent.change(screen.getByLabelText(i18n.t('game.gameName')), { target: { value: 'Sesja' } });
     search('mroczne');
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: i18n.t('common.create') }));
     expect(onCreate).toHaveBeenCalledWith({ name: 'Sesja', gameSystem: 'custom', customTemplateId: 'p1' });
+  });
+});
+
+describe('CreateGameDialog system access', () => {
+  it('lists no hardcoded system until /features answers', () => {
+    axiosInstance.get.mockReturnValue(new Promise(() => {}));
+    render(dialog());
+    expect(search('warhammer')).toBeNull();
+    expect(within(search('mroczne')).getByRole('option')).toHaveTextContent('Mroczne Ziemie');
+  });
+
+  it('lists only the systems the user may create games in', async () => {
+    axiosInstance.get.mockResolvedValue({ data: { allowedSystems: ['warhammer4e', 'custom'] } });
+    await renderDialog();
+    expect(search('warhammer')).not.toBeNull();
+    expect(search('d&d')).toBeNull();
+  });
+
+  it('keeps templates and the creator link when /features fails', async () => {
+    axiosInstance.get.mockRejectedValue(new Error('network'));
+    await renderDialog();
+    expect(search('warhammer')).toBeNull();
+    expect(within(search('mroczne')).getByRole('option')).toHaveTextContent('Mroczne Ziemie');
+    expect(screen.getByText(i18n.t('creator.designYours'))).toBeInTheDocument();
+  });
+
+  it('refetches access on every open', async () => {
+    const { rerender } = await renderDialog();
+    rerender(dialog({ open: false }));
+    rerender(dialog({ open: true }));
+    await act(async () => {});
+    expect(axiosInstance.get).toHaveBeenCalledTimes(2);
+    expect(axiosInstance.get).toHaveBeenCalledWith('/features');
   });
 });

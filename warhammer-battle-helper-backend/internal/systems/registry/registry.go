@@ -53,3 +53,20 @@ func ListSystems() []string {
 	}
 	return out
 }
+
+// CustomSystem is the key of the user-authored system; it is not a fixed plugin and is never
+// subject to admin access configuration.
+const CustomSystem = "custom"
+
+// HardcodedSystems returns the built-in Go-plugin systems — every registered system except
+// custom — in stable order. These are the systems whose availability the admin configures.
+func HardcodedSystems() []string {
+	all := ListSystems()
+	out := make([]string, 0, len(all))
+	for _, k := range all {
+		if k != CustomSystem {
+			out = append(out, k)
+		}
+	}
+	return out
+}

@@ -28,17 +28,30 @@ async function request(method, path, body) {
 const RESOURCE_MAP = {
   users: "/admin/users",
   games: "/admin/games",
+  systems: "/admin/systems",
 };
 
 const dataProvider = {
   getList: async (resource, params) => {
     const path = RESOURCE_MAP[resource];
     const data = await request("GET", path);
-    const total = data.length;
 
-    // Client-side sort + pagination (data is small for admin use)
+    // Client-side filter + sort + pagination (data is small for admin use).
+    // `q` is the free-text search sent by SearchInput and AutocompleteArrayInput; it matches the email.
+    const filter = params.filter || {};
+    const filtered = data.filter((row) =>
+      Object.entries(filter).every(([key, value]) => {
+        if (value === undefined || value === null || value === "") return true;
+        if (key === "q") {
+          return String(row.email ?? "").toLowerCase().includes(String(value).toLowerCase());
+        }
+        return String(row[key]) === String(value);
+      })
+    );
+    const total = filtered.length;
+
     const { field = "id", order = "ASC" } = params.sort || {};
-    const sorted = [...data].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       if (a[field] < b[field]) return order === "ASC" ? -1 : 1;
       if (a[field] > b[field]) return order === "ASC" ? 1 : -1;
       return 0;

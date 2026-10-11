@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import axiosInstance from '../../api/axios';
 import {
   Autocomplete, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
   ListSubheader, TextField, Typography,
@@ -41,7 +42,7 @@ function HighlightedLabel({ label, query }) {
 
 // The only place a game gets created. Picking the system and picking a custom template are
 // the same act, so they share one searchable picker instead of a second "choose template" modal.
-function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, onCreate, onOpenCreator }) {
+function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenCreator }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   // No preselected system: the field opens empty with its placeholder, so it reads as a search
@@ -52,29 +53,37 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
   // `query` is what the user typed since, and it drives both filtering and highlighting.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
+  // Hardcoded systems this user may create games in; null until /features answers. Fetched on
+  // every open so an access change made in the admin panel shows without a page reload.
+  const [allowedSystems, setAllowedSystems] = useState(null);
 
-  // "custom" is feature-gated like any other system, so the template groups follow it.
-  const customAllowed = !allowedSystems || allowedSystems.includes('custom');
-
+  // Until /features answers (or if it fails) no hardcoded system is offered; the backend
+  // enforces access on create anyway. Custom templates are never gated.
   const regularSystems = useMemo(() => listSystems().filter(sys =>
-    sys.value !== 'custom' && (!allowedSystems || allowedSystems.includes(sys.value))
+    sys.value !== 'custom' && (allowedSystems ?? []).includes(sys.value)
   ), [allowedSystems]);
 
   const options = useMemo(
-    () => buildSystemOptions(regularSystems, customAllowed ? templates : []),
-    [regularSystems, templates, customAllowed]
+    () => buildSystemOptions(regularSystems, templates),
+    [regularSystems, templates]
   );
   const selectedOption = options.find(opt => opt.value === selection) ?? null;
 
   // Every open starts from a clean form — a half-filled name from a cancelled attempt
-  // reappearing later reads as a bug.
+  // reappearing later reads as a bug — and with a fresh access list.
   useEffect(() => {
-    if (open) {
-      setName('');
-      setSelection(null);
-      setPickerOpen(false);
-      setQuery('');
-    }
+    if (!open) return undefined;
+    setName('');
+    setSelection(null);
+    setPickerOpen(false);
+    setQuery('');
+    setAllowedSystems(null);
+    // A reply from an earlier open must not overwrite the current one.
+    let cancelled = false;
+    axiosInstance.get('/features')
+      .then(res => { if (!cancelled) setAllowedSystems(res.data.allowedSystems); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [open]);
 
   // A template selected here can be deleted from the manager stacked on top of this dialog;
@@ -165,27 +174,25 @@ function CreateGameDialog({ open, loading, templates, allowedSystems, onClose, o
             flat fill, no shadow, no hover-lift. The theme's MuiButton.root injects a 2px
             border + shadow + hover transform into every button, so those are overridden
             explicitly here. Token display is configured later from inside the game. */}
-        {customAllowed && (
-          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
-            <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary', fontSize: '0.95rem' }}>
-              {t('creator.noSystemPrompt')}
-            </Typography>
-            <Button size="small" variant="outlined" onClick={onOpenCreator}
-              startIcon={<TuneIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                fontFamily: BODY_FONT, textTransform: 'none', fontWeight: 600, fontSize: '0.9rem',
-                letterSpacing: 'normal', color: '#7a5c42', px: 1.75, py: 0.5, minWidth: 0,
-                borderRadius: '6px', border: '1.5px solid rgba(201, 151, 91, 0.55)',
-                backgroundColor: 'rgba(201, 151, 91, 0.12)', boxShadow: 'none',
-                transition: 'background-color 0.15s ease, border-color 0.15s ease',
-                '& .MuiButton-startIcon': { marginRight: 0.75, marginLeft: -0.25 },
-                '&:hover': { backgroundColor: 'rgba(201, 151, 91, 0.22)', borderColor: '#c9975b', boxShadow: 'none', transform: 'none' },
-                '&:active': { transform: 'none', boxShadow: 'none' },
-              }}>
-              {t('creator.designYours')}
-            </Button>
-          </Box>
-        )}
+        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+          <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary', fontSize: '0.95rem' }}>
+            {t('creator.noSystemPrompt')}
+          </Typography>
+          <Button size="small" variant="outlined" onClick={onOpenCreator}
+            startIcon={<TuneIcon sx={{ fontSize: 18 }} />}
+            sx={{
+              fontFamily: BODY_FONT, textTransform: 'none', fontWeight: 600, fontSize: '0.9rem',
+              letterSpacing: 'normal', color: '#7a5c42', px: 1.75, py: 0.5, minWidth: 0,
+              borderRadius: '6px', border: '1.5px solid rgba(201, 151, 91, 0.55)',
+              backgroundColor: 'rgba(201, 151, 91, 0.12)', boxShadow: 'none',
+              transition: 'background-color 0.15s ease, border-color 0.15s ease',
+              '& .MuiButton-startIcon': { marginRight: 0.75, marginLeft: -0.25 },
+              '&:hover': { backgroundColor: 'rgba(201, 151, 91, 0.22)', borderColor: '#c9975b', boxShadow: 'none', transform: 'none' },
+              '&:active': { transform: 'none', boxShadow: 'none' },
+            }}>
+            {t('creator.designYours')}
+          </Button>
+        </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2, pt: 0 }}>
         <Button onClick={onClose} disabled={loading} sx={{ fontFamily: BODY_FONT }}>

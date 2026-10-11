@@ -2,7 +2,9 @@ package http
 
 import (
 	"battle-helper/internal/repository"
+	"battle-helper/internal/service"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,7 +14,8 @@ import (
 )
 
 type AdminHandler struct {
-	AdminRepo *repository.AdminRepository
+	AdminRepo    *repository.AdminRepository
+	SystemAccess *service.SystemAccessService
 }
 
 func (h *AdminHandler) withTimeout() (context.Context, context.CancelFunc) {
@@ -89,6 +92,11 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 	ctx, cancel := h.withTimeout()
 	defer cancel()
 
+	// Remove access first: if the delete then fails, the user merely loses system access and the delete can be retried.
+	if err := h.SystemAccess.RemoveUser(ctx, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
 	if err := h.AdminRepo.DeleteUser(ctx, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
 		return
@@ -169,4 +177,64 @@ func (h *AdminHandler) SessionStats(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, stats)
+}
+
+// GET /admin/systems
+func (h *AdminHandler) ListSystems(c *gin.Context) {
+	ctx, cancel := h.withTimeout()
+	defer cancel()
+
+	rows, err := h.SystemAccess.AdminList(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+	c.Header("X-Total-Count", fmt.Sprint(len(rows)))
+	c.JSON(http.StatusOK, rows)
+}
+
+// GET /admin/systems/:id
+func (h *AdminHandler) GetSystem(c *gin.Context) {
+	ctx, cancel := h.withTimeout()
+	defer cancel()
+
+	row, err := h.SystemAccess.AdminGet(ctx, c.Param("id"))
+	if errors.Is(err, service.ErrUnknownSystem) {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+	c.JSON(http.StatusOK, row)
+}
+
+// PATCH /admin/systems/:id
+func (h *AdminHandler) UpdateSystem(c *gin.Context) {
+	var req struct {
+		AllUsers *bool    `json:"allUsers"`
+		UserIDs  []string `json:"userIds"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.AllUsers == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "allUsers field required"})
+		return
+	}
+	ctx, cancel := h.withTimeout()
+	defer cancel()
+
+	row, err := h.SystemAccess.AdminUpdate(ctx, c.Param("id"), *req.AllUsers, req.UserIDs)
+	if errors.Is(err, service.ErrUnknownSystem) || errors.Is(err, service.ErrInvalidUserID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+	c.JSON(http.StatusOK, row)
 }

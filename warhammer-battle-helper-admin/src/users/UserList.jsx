@@ -25,7 +25,7 @@ function formatBytes(bytes) {
 }
 
 const filters = [
-  <SearchInput key="email" source="email" alwaysOn />,
+  <SearchInput key="q" source="q" alwaysOn />,
   <SelectInput
     key="active"
     source="active"

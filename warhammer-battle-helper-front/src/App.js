@@ -42,7 +42,6 @@ function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentGameId, setCurrentGameId] = useState(null);
-    const [allowedSystems, setAllowedSystems] = useState(null);
     const [lobbyNotice, setLobbyNotice] = useState(null);
 
     // Example: Add a new log message
@@ -68,13 +67,6 @@ function App() {
                     });
                     setUserId(response.data.user_id);
 
-                    try {
-                        const featuresRes = await axiosInstance.get('/features');
-                        setAllowedSystems(featuresRes.data.allowedSystems);
-                    } catch (e) {
-                        // Features endpoint failed — show all systems, backend will enforce
-                    }
-
                     addLogMessage(`User ${response.data.email} automatically logged in`, 'success');
                 } catch (error) {
                     // Token is invalid, remove it
@@ -88,15 +80,9 @@ function App() {
         checkAuthStatus();
     }, []);
 
-    const handleLogin = async (email, token, userId) => {
+    const handleLogin = (email, token, userId) => {
         setUser({ email, token });
         setUserId(userId);
-        try {
-            const featuresRes = await axiosInstance.get('/features');
-            setAllowedSystems(featuresRes.data.allowedSystems);
-        } catch (e) {
-            // Features endpoint failed — show all systems, backend will enforce
-        }
     };
 
     const handleLogout = () => {
@@ -219,7 +205,6 @@ function App() {
                                                 onJoinGame={handleJoinGame}
                                                 token={user.token}
                                                 userEmail={user.email}
-                                                allowedSystems={allowedSystems}
                                                 notice={lobbyNotice}
                                                 onDismissNotice={() => setLobbyNotice(null)}
                                             />

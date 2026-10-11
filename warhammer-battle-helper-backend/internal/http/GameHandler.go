@@ -2,14 +2,12 @@ package http
 
 import (
 	"battle-helper/internal/config/helpers"
-	"battle-helper/internal/features"
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
 	"battle-helper/internal/storage"
 	"battle-helper/internal/systems/registry"
 	"battle-helper/internal/websocket"
 	"errors"
-	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -24,7 +22,7 @@ type GameHandler struct {
 	GameService     *service.GameService
 	TemplateService *service.TemplateService
 	Hub             *websocket.Hub
-	FeatureToggles  features.FeatureToggles
+	SystemAccess    *service.SystemAccessService
 	UserFiles       storage.Storage // stores game lobby images under /user-files
 }
 
@@ -55,14 +53,19 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 	userIDStr := claims["user_id"].(string)
 	username := claims["email"].(string)
 
-	if !h.FeatureToggles.IsSystemAllowed(req.GameSystem, username) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "game system not available for your account"})
-		return
-	}
-
 	userID, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	allowed, err := h.SystemAccess.IsAllowed(c.Request.Context(), req.GameSystem, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !allowed {
+		c.JSON(http.StatusForbidden, gin.H{"error": "game system not available for your account"})
 		return
 	}
 
@@ -748,17 +751,14 @@ func (h *GameHandler) UpdateMapSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Map settings updated"})
 }
 
+// GetFeatures lists the game systems the caller may create games in. The create-game
+// dialog fetches it on every open, so an admin's access change shows without a reload.
 func (h *GameHandler) GetFeatures(c *gin.Context) {
-	email := ""
-	if token, exists := c.Get("jwt"); exists {
-		claims := token.(*jwt.Token).Claims.(jwt.MapClaims)
-		email, _ = claims["email"].(string)
+	allowed, err := h.SystemAccess.AllowedSystems(c.Request.Context(), mustUserID(c))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-	fmt.Printf("[GetFeatures] email=%q, jwt_present=%v, auth_header=%v\n",
-		email, c.GetString("jwt") != "" || email != "", c.GetHeader("Authorization") != "")
-	allSystems := registry.ListSystems()
-	allowed := h.FeatureToggles.AllowedSystemsFor(allSystems, email)
-	fmt.Printf("[GetFeatures] allSystems=%v, allowed=%v\n", allSystems, allowed)
 	c.JSON(http.StatusOK, gin.H{"allowedSystems": allowed})
 }
 

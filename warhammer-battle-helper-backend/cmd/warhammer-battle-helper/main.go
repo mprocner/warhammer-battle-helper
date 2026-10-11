@@ -5,7 +5,6 @@ import (
 	"battle-helper/internal/config"
 	"battle-helper/internal/config/helpers"
 	"battle-helper/internal/email"
-	"battle-helper/internal/features"
 	"battle-helper/internal/http"
 	"battle-helper/internal/http/requests"
 	"battle-helper/internal/repository"
@@ -173,12 +172,11 @@ func main() {
 	handoutHandler := http.HandoutHandler{GameService: gameService, Storage: avatarStorage}
 	r.GET("/handouts/:filename", handoutHandler.GetHandoutFile)
 
-	// --- FEATURE TOGGLES ---
-	ft := features.Load("./feature-toggles.json")
+	systemAccessService := service.NewSystemAccessService(repository.NewSystemAccessRepository(db.SystemAccessCollection))
 
-	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, FeatureToggles: ft, UserFiles: userFilesStorage}
+	gameHandler := http.GameHandler{GameService: gameService, TemplateService: templateService, Hub: hub, SystemAccess: systemAccessService, UserFiles: userFilesStorage}
 	statsHandler := http.StatsHandler{StatsRepo: statsRepo, SessionService: sessionService}
-	r.GET("/features", http.JWTOptionalMiddleware(), gameHandler.GetFeatures)
+	r.GET("/features", http.JWTAuthMiddleware(), gameHandler.GetFeatures)
 	r.GET("/systems/tokenFields", http.JWTOptionalMiddleware(), gameHandler.GetTokenFields)
 
 	// WebSocket. The JWT arrives as a query param, so this route cannot sit behind
@@ -369,7 +367,7 @@ func main() {
 	auth.PUT("/playlists/reorder", musicHandler.ReorderPlaylists)
 	// --- ADMIN (JWT + isAdmin required) ---
 	adminRepo := repository.NewAdminRepository(db.UsersCollection, db.GamesCollection, db.OnlineSessionsCollection)
-	adminHandler := http.AdminHandler{AdminRepo: adminRepo}
+	adminHandler := http.AdminHandler{AdminRepo: adminRepo, SystemAccess: systemAccessService}
 	admin := r.Group("/admin").Use(http.JWTAuthMiddleware(), http.AdminAuthMiddleware())
 	admin.GET("/users", adminHandler.ListUsers)
 	admin.GET("/users/:id", adminHandler.GetUser)
@@ -380,6 +378,9 @@ func main() {
 	admin.DELETE("/games/:id", adminHandler.DeleteGame)
 	admin.GET("/stats/storage", adminHandler.StorageStats)
 	admin.GET("/stats/sessions", adminHandler.SessionStats)
+	admin.GET("/systems", adminHandler.ListSystems)
+	admin.GET("/systems/:id", adminHandler.GetSystem)
+	admin.PATCH("/systems/:id", adminHandler.UpdateSystem)
 	// --- END ADMIN ---
 
 	httpPort := os.Getenv("PORT")
