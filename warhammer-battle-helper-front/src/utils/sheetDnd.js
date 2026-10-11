@@ -24,6 +24,8 @@ export const GAP = 8;
 
 const right   = (rect) => rect.left + rect.width;
 const bottom  = (rect) => rect.top + rect.height;
+const overlaps = (a, b) =>
+  a.left < right(b) && b.left < right(a) && a.top < bottom(b) && b.top < bottom(a);
 const centreX = (rect) => rect.left + rect.width / 2;
 const centreY = (rect) => rect.top + rect.height / 2;
 
@@ -67,6 +69,17 @@ function rowsOf(children) {
   // A row is as tall as its tallest cell — the whole reason this feature cannot displace items
   // during a drag.
   rows.forEach((r) => { r.bottom = Math.max(...r.items.map((it) => bottom(it.child.rect))); });
+  // ...except a cell spanning several grid rows (PLAYRPG-241: an avatar beside two stacked text
+  // fields). It starts in this row but ends at the bottom of a later one, so the max above would
+  // make this row's band cover the rows below it, and a pointer beside a lower field would be
+  // matched against this row's cells. Clip every row at the next row's top minus the gap. For an
+  // ordinary row the grid already keeps its bottom above that line, so only spanning cells are
+  // affected.
+  const byTop = [...rows].sort((a, b) => a.top - b.top);
+  byTop.forEach((r, i) => {
+    const next = byTop[i + 1];
+    if (next) r.bottom = Math.min(r.bottom, next.top - GAP);
+  });
   return rows;
 }
 
@@ -225,12 +238,16 @@ export function ghostRectFor(target, draggedRect, nodes) {
     return { top: displaced.rect.top, left: displaced.rect.left, width: displaced.rect.width, height };
   }
 
-  // Appending: continue the last row if another cell of that width still fits, otherwise
-  // start a new line under it.
+  // Appending: continue the last row if another cell of that width still fits there without
+  // landing on a sibling (a cell spanning two rows reaches into the row below), otherwise start
+  // a new line under everything.
   const last = children[children.length - 1];
   const nextLeft = right(last.rect) + GAP;
-  const fitsInRow = nextLeft + last.rect.width <= right(container.rect);
+  const box = { top: last.rect.top, left: nextLeft, width: last.rect.width, height };
+  const fitsInRow = nextLeft + last.rect.width <= right(container.rect)
+    && !children.some((c) => overlaps(c.rect, box));
+  const lowest = Math.max(...children.map((c) => bottom(c.rect)));
   return fitsInRow
-    ? { top: last.rect.top, left: nextLeft, width: last.rect.width, height }
-    : { top: bottom(last.rect) + GAP, left: children[0].rect.left, width: last.rect.width, height };
+    ? box
+    : { top: lowest + GAP, left: children[0].rect.left, width: last.rect.width, height };
 }

@@ -7,13 +7,17 @@ import CustomSheetBody from './CustomSheetBody';
 // without it the markup must stay byte-for-byte what the session renders today, because this
 // component draws every custom character sheet in every game.
 //
-// Text-and-role queries cannot catch a stray wrapper: the grid children of
-// `.custom-sheet__fields--N-col` ARE the fields, so one extra div silently turns the wrapper
-// into the grid cell and the column maths stops applying to what the player sees. Only the DOM
-// shape itself shows that.
+// Text-and-role queries cannot catch a stray wrapper: the grid child of
+// `.custom-sheet__fields--N-col` is the `.custom-sheet__cell` (PLAYRPG-241), so an extra div
+// around or inside it silently changes what the column maths and the row span apply to. Only
+// the DOM shape itself shows that.
 //
 // These snapshots are taken BEFORE the seam is added. Never refresh them while adding the seam —
 // a snapshot refreshed alongside the change it is meant to police proves nothing.
+//
+// PLAYRPG-241 deliberately changed the shape: every field of a section now sits in one
+// `.custom-sheet__cell` element that carries its row span, and that cell is the grid child.
+// The snapshots were refreshed in that commit and nowhere else.
 const sections = [
   { id: 'sec_root', title: 'Cechy', columns: 3, fields: [
     { key: 'attr_ws', type: 'attr', label: 'Walka wręcz', abbr: 'WW', min: 1, max: 100, rollable: true },
@@ -71,7 +75,7 @@ const sessionProps = {
   onToggleFavorite: () => {},
 };
 
-// Exactly the classes a field renderer can put at the root of a grid cell, as whole class
+// Exactly the classes a field renderer can put at the root inside a grid cell, as whole class
 // tokens. Membership, not a prefix match: `\b` in a regex treats a hyphen as a boundary, so a
 // prefix pattern would accept `custom-sheet__field-chrome` — and BEM sub-element names of that
 // shape (custom-sheet__field-label, custom-sheet__section-title) are this codebase's own
@@ -112,11 +116,14 @@ describe('CustomSheetBody DOM shape', () => {
     expect(rootGrid.children).toHaveLength(sections[0].fields.length);
     expect(gearGrid.children).toHaveLength(sections[1].fields.length);
 
-    // Class membership rather than a `.custom-sheet__field` selector: an `attr` field roots at
-    // `custom-sheet__attr` and carries no `.custom-sheet__field` class at all, so a selector
-    // built on that class is blind to the one type it matters most for.
-    [...rootGrid.children, ...gearGrid.children].forEach((child) => {
-      expect(CELL_ROOTS.some((cls) => child.classList.contains(cls))).toBe(true);
+    // Every grid child is a cell holding exactly one field root. Class membership rather than a
+    // `.custom-sheet__field` selector: an `attr` field roots at `custom-sheet__attr` and carries
+    // no `.custom-sheet__field` class at all, so a selector built on that class is blind to the
+    // one type it matters most for.
+    [...rootGrid.children, ...gearGrid.children].forEach((cell) => {
+      expect(cell.classList.contains('custom-sheet__cell')).toBe(true);
+      expect(cell.children).toHaveLength(1);
+      expect(CELL_ROOTS.some((cls) => cell.children[0].classList.contains(cls))).toBe(true);
     });
   });
 });

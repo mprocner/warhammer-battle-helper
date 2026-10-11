@@ -7838,6 +7838,55 @@ align-items: center;
     gap: 8px;
 }
 
+/* Field heights (PLAYRPG-241). A field occupies one or two rows of a fixed unit — the height of
+   a text tile — so two short fields stack exactly beside one avatar. `minmax(unit, auto)` lets a
+   row grow when a field turns out taller (a table, or an attribute whose parts wrap in a narrow
+   column) instead of clipping it. `align-items: start` stops the old behaviour of stretching every
+   cell to the tallest one in its row: a text tile beside a table stays one unit tall.
+   The 8px in the two-row height is the grid gap above; sheetDnd.js GAP mirrors it. */
+.custom-sheet__fields {
+    --sheet-row-unit: 59px;
+}
+
+.custom-sheet__fields--2-col,
+.custom-sheet__fields--3-col,
+.custom-sheet__fields--4-col,
+.custom-sheet__fields--5-col,
+.custom-sheet__fields--6-col {
+    grid-auto-rows: minmax(var(--sheet-row-unit), auto);
+    align-items: start;
+}
+
+/* The cell is the grid child in the session and the creator alike (in the creator it is also
+   .custom-sheet__editable). Its field fills it, so a min-height on the cell is a min-height on
+   the field. Free-height cells (no modifier) simply take their field's own height. */
+.custom-sheet__cell {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-sheet__cell > *:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.custom-sheet__cell.custom-sheet__cell--rows-1 {
+    min-height: var(--sheet-row-unit);
+}
+
+.custom-sheet__cell.custom-sheet__cell--rows-2 {
+    grid-row: span 2;
+    min-height: calc(2 * var(--sheet-row-unit) + 8px);
+}
+
+/* Only section cells stretch to their row (FEATURE-213): a nested section has a visible frame,
+   and frames that end at different heights read as an accident. One-row fields beside a section
+   keep their unit, because the grid itself uses align-items: start. */
+.custom-sheet__cell.custom-sheet__cell--section {
+    align-self: stretch;
+}
+
 /* ── Nested sections (FEATURE-211) ── */
 
 /* A nested section sits in ONE cell of its parent grid, so min-width:0 is load-bearing:
@@ -7861,16 +7910,16 @@ align-items: center;
 
 /* ── Creator edit chrome ─────────────────────────────────────────────────────
    Present only when CustomSheetBody gets a renderChrome prop, i.e. inside the
-   creator. The wrapper takes over the grid-cell role from the field it holds, so
-   `min-width: 0` restores what the grid's own minmax(0, 1fr) guarantees — without
-   it the cell's automatic minimum size lets wide content push columns apart. No
-   sheet field uses grid-column spanning, so nothing else moves.
-
-   The wrapper is the grid item in chrome mode, so it receives the row's stretch — but the node
-   inside kept its automatic height and left the taller neighbour's row half empty. Passing the
-   stretch through makes the edit view match both the clean preview and the player's sheet, where
-   the node IS the grid item. Sections stretching to a common height is deliberate (FEATURE-213):
-   a section has a visible frame, and frames that end at different heights read as an accident.
+   creator. The cell (.custom-sheet__cell) is the grid item in both modes; in the creator it also
+   carries .custom-sheet__editable, so the two classes sit on the same element and the chrome
+   anchors to it. Fields may span two rows (PLAYRPG-241, see the cell rules above), and grids no
+   longer stretch rows — only section cells do (FEATURE-213: a section has a visible frame, and
+   frames that end at different heights read as an accident). On a field cell the rules below
+   repeat what .custom-sheet__cell already sets, but they are NOT redundant: a root section's
+   wrapper carries .custom-sheet__editable without .custom-sheet__cell, and relies on them alone.
+   `position: relative` anchors the chrome overlays. min-width: 0 matters because a grid item's
+   automatic minimum size would otherwise let wide content push columns apart, defeating the
+   grid's own minmax(0, 1fr).
 
    `> *:first-child` targets the node rather than a dedicated class because the wrapper always
    renders the node before its chrome (CustomSheetBody's withChrome emits `{element}{chrome}`),
@@ -8077,6 +8126,12 @@ align-items: center;
 }
 
 .custom-sheet__field--label {
+    justify-content: center;
+}
+
+/* Select and checkbox are shorter than a value tile; in a one-row cell they sit in its middle so
+   a row of mixed fields reads as one line. */
+.custom-sheet__cell--rows-1 > .custom-sheet__field {
     justify-content: center;
 }
 
@@ -8298,6 +8353,13 @@ align-items: center;
     display: block;
 }
 
+/* A long text field is two rows tall; its textarea takes the whole height instead of leaving an
+   empty band under a 3-line box. */
+.custom-sheet__cell--rows-2 > .custom-sheet__tile--text > .custom-sheet__tile-value {
+    flex: 1 1 auto;
+    align-items: stretch;
+}
+
 .custom-sheet__image {
     position: relative;
     width: 100%;
@@ -8333,15 +8395,18 @@ align-items: center;
     opacity: 0.6;
 }
 
+/* 92px keeps the avatar tile (head + paddings = 33px) inside two row units plus the gap:
+   2 * 59 + 8 = 126 >= 92 + 33. A bigger image would push both of its rows taller than the text
+   fields stacked beside it. */
 .custom-sheet__image--avatar {
-    width: 96px;
+    width: 92px;
     margin: 0 auto;
 }
 
 .custom-sheet__image--avatar .custom-sheet__image-img,
 .custom-sheet__image--avatar .custom-sheet__image-empty {
-    width: 96px;
-    height: 96px;
+    width: 92px;
+    height: 92px;
     min-height: 0;
     border-radius: 50%;
     object-fit: cover;
@@ -9608,6 +9673,24 @@ align-items: center;
     .custom-sheet__attr-part {
         flex: 0 0 46px;
     }
+}
+
+/* An attribute without advances is a one-row field (PLAYRPG-241): the same height as a text
+   tile. The medallion's padding, header and big number are tightened only here; an attribute
+   with advances keeps the full medallion in its two rows. */
+.custom-sheet__cell--rows-1 > .custom-sheet__attr {
+    gap: 2px;
+    padding: 4px 7px 5px;
+}
+
+.custom-sheet__cell--rows-1 > .custom-sheet__attr .custom-sheet__attr-header {
+    padding-bottom: 2px;
+}
+
+.custom-sheet__cell--rows-1 > .custom-sheet__attr .custom-sheet__attr-input.custom-sheet__attr-input--solo {
+    padding: 0 4px;
+    font-size: 1.15rem;
+    line-height: 1.15;
 }
 
 /* ===================== END CUSTOM SYSTEM ===================== */

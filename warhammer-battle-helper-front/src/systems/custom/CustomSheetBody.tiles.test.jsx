@@ -17,7 +17,7 @@ const fillOf = (container) => container.querySelector('.custom-sheet__tile-fill'
 
 test('number, progress, computed and text share the tile skeleton', () => {
   const { container } = render(<CustomSheetBody sections={sections} />);
-  const tiles = container.querySelectorAll('.custom-sheet__fields > .custom-sheet__tile');
+  const tiles = container.querySelectorAll('.custom-sheet__fields > .custom-sheet__cell > .custom-sheet__tile');
   expect(tiles).toHaveLength(4);
   tiles.forEach((tile) => {
     expect(tile.children[0].classList.contains('custom-sheet__tile-head')).toBe(true);

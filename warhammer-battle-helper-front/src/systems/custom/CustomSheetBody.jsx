@@ -11,6 +11,7 @@ import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
 import SheetImagePicker from './fields/SheetImagePicker';
+import { fieldRowSpan } from './fieldRowSpan';
 import { PRESETS } from '../../utils/imageProcessing';
 import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 
@@ -107,8 +108,19 @@ function CustomSheetBody({
   // plain synchronous calls (not deferred React elements), so a node's own renderChrome must
   // fire before its subtree is built — otherwise a descendant's chrome would always run first
   // and callers (e.g. a creator's drag-and-drop index) would see children before their parent.
-  const withChrome = (node, path, buildElement) => {
-    if (!renderChrome) return buildElement();
+  // `cellClass` is set for the children of a section's grid and left null for root sections.
+  // A grid child must be the SAME element in the session and in the creator (PLAYRPG-241):
+  // a field's row span is a `grid-row` on that child, and if the creator wrapped the cell in a
+  // second element the span would land on the wrong box and the creator would lie about the
+  // layout. So the session wraps the field in the cell, and the creator puts its editable
+  // wrapper on that very element instead of adding one more.
+  const withChrome = (node, path, buildElement, cellClass = null) => {
+    if (!renderChrome) {
+      if (!cellClass) return buildElement();
+      const element = buildElement();
+      if (!element) return element;
+      return <div className={cellClass} key={nodeId(node)}>{element}</div>;
+    }
     // Chrome is computed before the subtree so a node's own affordances are registered ahead of
     // its descendants': renderSection/renderField are plain synchronous calls, not deferred
     // React elements, so a pre-built child would always run its chrome first.
@@ -120,11 +132,20 @@ function CustomSheetBody({
     // bottom-up ordering this helper exists to avoid.
     if (!element) return element;
     return (
-      <div className="custom-sheet__editable" key={nodeId(node)}>
+      <div className={cellClass ? `custom-sheet__editable ${cellClass}` : 'custom-sheet__editable'} key={nodeId(node)}>
         {element}
         {chrome}
       </div>
     );
+  };
+
+  // cellClassOf names the grid cell a section child occupies; its modifier carries the row
+  // span (fieldRowSpan), and a field whose height follows its content gets no modifier. A nested
+  // section has no span but is marked, so CSS can stretch it to its row (FEATURE-213).
+  const cellClassOf = (field) => {
+    if (field.type === SECTION_TYPE) return 'custom-sheet__cell custom-sheet__cell--section';
+    const span = fieldRowSpan(field);
+    return span ? `custom-sheet__cell custom-sheet__cell--rows-${span}` : 'custom-sheet__cell';
   };
 
   const attrByKey = useMemo(() => {
@@ -540,7 +561,7 @@ function CustomSheetBody({
       )}
       <div className={`custom-sheet__fields custom-sheet__fields--${section.columns || 1}-col`}>
         {(section.fields || []).map((child, i) =>
-          withChrome(child, [...path, i], () => renderField(child, [...path, i]))
+          withChrome(child, [...path, i], () => renderField(child, [...path, i]), cellClassOf(child))
         )}
       </div>
     </div>

@@ -281,3 +281,42 @@ describe('measureNodes', () => {
     expect(measureNodes([{ path: [0], container: true, el: null }])).toEqual([]);
   });
 });
+
+// PLAYRPG-241: a two-column section whose second field spans two grid rows.
+//   [ text1 ][ avatar ]
+//   [ text2 ][ avatar ]
+// Row unit 59px, gap 8px, so the avatar is 2 * 59 + 8 = 126px tall.
+const spanTree = () => ([
+  { path: [0],    rect: r(0, 0, 300, 200), container: true },
+  { path: [0, 0], rect: r(10, 20, 136, 59), container: false },
+  { path: [0, 1], rect: r(154, 20, 136, 126), container: false },
+  { path: [0, 2], rect: r(10, 87, 136, 59), container: false },
+]);
+
+describe('insertionAt — a cell spanning two rows', () => {
+  test('the gap beside the lower field belongs to the lower row', () => {
+    // x = 149 is in the column gap (146..154), y = 110 is level with text2. Without clipping,
+    // the unclipped row 1 band reaches down to the avatar's bottom and matches the pointer against
+    // row 1's cells (text1 / the avatar) instead of text2.
+    expect(insertionAt({ x: 149, y: 110 }, spanTree())).toEqual({ parentPath: [0], index: 3 });
+  });
+
+  test('between the two stacked fields it inserts before the lower one', () => {
+    // y = 83 is in the row gap under text1 (ends 79) and above text2 (starts 87).
+    expect(insertionAt({ x: 100, y: 83 }, spanTree())).toEqual({ parentPath: [0], index: 2 });
+  });
+
+  test('over the spanning cell itself the side still follows its centre', () => {
+    // Guard: the avatar is hit directly, so the row maths is not consulted at all.
+    expect(insertionAt({ x: 250, y: 120 }, spanTree())).toEqual({ parentPath: [0], index: 2 });
+  });
+});
+
+describe('ghostRectFor — appending beside a cell spanning two rows', () => {
+  test('starts a new line under the spanning cell instead of overlapping it', () => {
+    const dragged = { top: 0, left: 0, width: 136, height: 59 };
+    // Right of text2 would put the ghost on the avatar's lower half, so it goes under everything.
+    expect(ghostRectFor({ parentPath: [0], index: 3 }, dragged, spanTree()))
+      .toEqual({ top: 154, left: 10, width: 136, height: 59 });
+  });
+});
