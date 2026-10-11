@@ -156,7 +156,9 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
               </li>
             );
           }}
-          slotProps={{ listbox: { sx: { maxHeight: 380 } } }}
+          // Capped by the viewport too: the list opens below a field in the middle of the dialog,
+          // so a fixed 380px ran off the bottom of a laptop screen and hid the lower groups.
+          slotProps={{ listbox: { sx: { maxHeight: 'min(380px, 40vh)' } } }}
           sx={{ mt: 2 }}
           renderInput={(params) => (
             <TextField {...params} label={t('game.gameSystem')} placeholder={t('creator.searchSystem')}
