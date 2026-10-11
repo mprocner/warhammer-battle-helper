@@ -303,7 +303,6 @@ function CustomSheetBody({
               value={current}
               onChange={onChange ? e => onChange.progress(field.key, 'current', e.target.value) : undefined}
               readOnly={readOnly}
-              min={0}
             />
             <span className="custom-sheet__tile-sep">/</span>
             <input
@@ -312,7 +311,6 @@ function CustomSheetBody({
               value={max}
               onChange={onChange ? e => onChange.progress(field.key, 'max', e.target.value) : undefined}
               readOnly={readOnly}
-              min={0}
             />
           </>
         ), {

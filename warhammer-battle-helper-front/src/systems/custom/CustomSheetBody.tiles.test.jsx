@@ -52,3 +52,16 @@ test('a progress without a maximum draws an empty strip, not a low one', () => {
   expect(fillOf(container).style.width).toBe('0%');
   expect(fillOf(container).classList.contains('custom-sheet__tile-fill--low')).toBe(false);
 });
+
+// Negative progress is a legitimate value (HP below zero, a debt), so neither input carries a
+// hardcoded lower bound that would stop the spinner at 0.
+test('progress inputs accept negative values', () => {
+  const { container } = render(
+    <CustomSheetBody sections={sections} values={{ progress: { hp: { current: -3, max: 12 } } }} />
+  );
+  const inputs = container.querySelectorAll('.custom-sheet__tile--progress .custom-sheet__tile-input');
+  expect(inputs).toHaveLength(2);
+  inputs.forEach((input) => expect(input).not.toHaveAttribute('min'));
+  expect(inputs[0]).toHaveValue(-3);
+  expect(fillOf(container).style.width).toBe('0%');
+});
