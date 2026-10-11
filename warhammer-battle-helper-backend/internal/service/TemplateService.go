@@ -3,6 +3,8 @@ package service
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -180,6 +182,11 @@ func (s *TemplateService) Get(id string) (*models.SystemTemplate, error) {
 	return t, nil
 }
 
+// GetVersionsByIDs returns the current version of each still-existing template in ids.
+func (s *TemplateService) GetVersionsByIDs(ids []primitive.ObjectID) (map[primitive.ObjectID]int, error) {
+	return s.repo.GetVersionsByIDs(ids)
+}
+
 // FindTokenConfig returns the user's token-display config singleton for a hardcoded
 // system, or nil when not yet configured. Read-only (no creation) — used by the
 // resolve-on-read path when assembling game state.
@@ -294,7 +301,7 @@ func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req mode
 			return nil, err
 		}
 	}
-	if err := s.repo.Update(id, req.Name, req.Sections, req.Settings, req.IsPublic); err != nil {
+	if err := s.repo.Update(id, req.Name, req.Sections, req.Settings, req.IsPublic, templateContentChanged(t, req)); err != nil {
 		return nil, err
 	}
 	updated, err := s.repo.GetByID(id)
@@ -348,4 +355,30 @@ func (s *TemplateService) Clone(sourceID string, ownerID primitive.ObjectID, nam
 
 func (s *TemplateService) Delete(id string, ownerID primitive.ObjectID) error {
 	return s.repo.Delete(id, ownerID)
+}
+
+// templateContentChanged reports whether req alters what players see (name, sections, settings).
+// The creator sends the whole body on every save — visibility toggles and no-op autosaves
+// included — so "field present" says nothing; only a value comparison does. JSON is the
+// comparison form because encoding/json sorts map keys (TemplateSettings carries maps),
+// which bson does not guarantee.
+func templateContentChanged(current *models.SystemTemplate, req models.UpdateTemplateRequest) bool {
+	if req.Name != nil && *req.Name != current.Name {
+		return true
+	}
+	if req.Sections != nil && !sameJSON(req.Sections, current.Sections) {
+		return true
+	}
+	if req.Settings != nil && !sameJSON(*req.Settings, current.Settings) {
+		return true
+	}
+	return false
+}
+
+// sameJSON compares two values by their JSON encoding. A marshal error counts as "different",
+// so a failure can only cause a spurious version bump, never hide a real change.
+func sameJSON(a, b interface{}) bool {
+	ja, errA := json.Marshal(a)
+	jb, errB := json.Marshal(b)
+	return errA == nil && errB == nil && bytes.Equal(ja, jb)
 }

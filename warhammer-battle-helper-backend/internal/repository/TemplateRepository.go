@@ -49,6 +49,36 @@ func (r *TemplateRepository) GetByID(id string) (*models.SystemTemplate, error) 
 	return &t, nil
 }
 
+// GetVersionsByIDs returns the current version of every template in ids that still exists, in one
+// round trip with only _id and version projected. A deleted template is simply absent from the map.
+func (r *TemplateRepository) GetVersionsByIDs(ids []primitive.ObjectID) (map[primitive.ObjectID]int, error) {
+	out := make(map[primitive.ObjectID]int, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := r.collection.Find(ctx, bson.M{"_id": bson.M{"$in": ids}},
+		options.Find().SetProjection(bson.M{"_id": 1, "version": 1}))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	for cursor.Next(ctx) {
+		var row struct {
+			ID      primitive.ObjectID `bson:"_id"`
+			Version int                `bson:"version"`
+		}
+		if err := cursor.Decode(&row); err != nil {
+			return nil, err
+		}
+		out[row.ID] = row.Version
+	}
+	return out, cursor.Err()
+}
+
 // ListVisibleToUser returns templates the user may use when creating a game: their own, every
 // public one, and every one whose owner shared it with them by email — newest first. Token-config
 // templates (BaseSystem set) are excluded — they carry no Sections and describe
@@ -100,7 +130,7 @@ func (r *TemplateRepository) FindByOwnerAndBaseSystem(ownerID primitive.ObjectID
 	return &t, nil
 }
 
-func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings, isPublic *bool) error {
+func (r *TemplateRepository) Update(id string, name *string, sections []models.SectionDef, settings *models.TemplateSettings, isPublic *bool, bumpVersion bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -109,7 +139,14 @@ func (r *TemplateRepository) Update(id string, name *string, sections []models.S
 		return fmt.Errorf("invalid template id: %w", err)
 	}
 
-	update := bson.M{"$set": bson.M{"updatedAt": time.Now()}, "$inc": bson.M{"version": 1}}
+	update := bson.M{"$set": bson.M{"updatedAt": time.Now()}}
+	// Version tracks the sheet the players see — lobby compares it against each game's embedded
+	// copy to offer a sync. The caller (service) decides whether the sheet really changed, because
+	// the creator sends the whole body on every save — visibility toggles and no-op autosaves
+	// included — so field presence here says nothing.
+	if bumpVersion {
+		update["$inc"] = bson.M{"version": 1}
+	}
 	if name != nil {
 		update["$set"].(bson.M)["name"] = *name
 	}

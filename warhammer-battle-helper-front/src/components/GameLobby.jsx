@@ -31,7 +31,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
   const [createOpen, setCreateOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
-  const [gamePrompt, setGamePrompt] = useState(null);          // { type: 'delete'|'leave', game }
+  const [gamePrompt, setGamePrompt] = useState(null);          // { type: 'delete'|'leave'|'sync', game }
   const [templatePrompt, setTemplatePrompt] = useState(null);  // template pending deletion
 
   // The lists change rarely — a single fetch on mount is enough (F5 refreshes them),
@@ -66,8 +66,9 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
     const { type, game } = gamePrompt;
     setGamePrompt(null);
     if (type === 'delete') deleteGame(game.id);
+    else if (type === 'sync') syncTemplate(game.id);
     else leaveGame(game.id);
-  }, [gamePrompt, deleteGame, leaveGame]);
+  }, [gamePrompt, deleteGame, leaveGame, syncTemplate]);
 
   const handleConfirmTemplateDelete = useCallback(() => {
     if (!templatePrompt) return;
@@ -109,7 +110,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
                 loading={loading}
                 syncing={syncingGameId === game.id}
                 onJoin={onJoinGame}
-                onSync={syncTemplate}
+                onSync={(g) => setGamePrompt({ type: 'sync', game: g })}
                 onDelete={(g) => setGamePrompt({ type: 'delete', game: g })}
                 onLeave={(g) => setGamePrompt({ type: 'leave', game: g })}
                 showTooltip={showTooltip}
@@ -146,11 +147,17 @@ const GameLobby = ({ onJoinGame, token, userEmail, allowedSystems, notice, onDis
       <ConfirmDialog
         open={!!gamePrompt}
         danger={gamePrompt?.type === 'delete'}
-        title={gamePrompt?.type === 'delete' ? t('game.deleteGame') : t('game.leaveGame')}
-        message={gamePrompt?.type === 'delete'
-          ? t('game.deleteGameConfirm', { name: gamePrompt?.game?.name })
-          : t('game.leaveGameConfirm', { name: gamePrompt?.game?.name })}
-        confirmLabel={gamePrompt?.type === 'delete' ? t('common.delete') : t('game.leaveGame')}
+        title={{
+          delete: t('game.deleteGame'), leave: t('game.leaveGame'), sync: t('game.syncTemplateTitle'),
+        }[gamePrompt?.type]}
+        message={{
+          delete: t('game.deleteGameConfirm', { name: gamePrompt?.game?.name }),
+          leave: t('game.leaveGameConfirm', { name: gamePrompt?.game?.name }),
+          sync: t('game.syncTemplateConfirm', { name: gamePrompt?.game?.name }),
+        }[gamePrompt?.type]}
+        confirmLabel={{
+          delete: t('common.delete'), leave: t('game.leaveGame'), sync: t('game.syncTemplateAction'),
+        }[gamePrompt?.type]}
         onConfirm={handleConfirmGamePrompt}
         onCancel={() => setGamePrompt(null)}
       />

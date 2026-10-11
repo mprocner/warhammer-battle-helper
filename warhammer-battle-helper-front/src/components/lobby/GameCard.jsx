@@ -72,13 +72,6 @@ function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onS
 
       {/* Action pill on the image corner (icons only) */}
       <Box sx={{ position: 'absolute', top: 14, right: 14, zIndex: 4, display: 'flex', gap: '2px', background: 'rgba(20,12,4,0.45)', borderRadius: 999, px: '4px', py: '2px' }}>
-        {isGM && game.gameSystem === 'custom' && (
-          <IconButton size="small" onClick={() => onSync(game.id)} disabled={syncing}
-            onMouseEnter={e => showTooltip(t('creator.syncTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
-            sx={{ color: '#f4e8d8', p: '3px' }}>
-            <SyncIcon sx={{ fontSize: '1rem', animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
-          </IconButton>
-        )}
         {isGM ? (
           <IconButton size="small" onClick={() => onDelete(game)}
             onMouseEnter={e => showTooltip(t('game.deleteGame'), e.currentTarget)} onMouseLeave={hideTooltip}
@@ -157,6 +150,23 @@ function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onS
           </Typography>
         </Box>
       </Box>
+
+      {/* Template update bar — GM only, and only when the source template moved past the game's copy */}
+      {isGM && game.templateUpdateAvailable && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.75,
+          borderTop: '1px solid #c9975b', background: 'linear-gradient(180deg, #f3dfb6 0%, #ead09c 100%)',
+        }}>
+          <SyncIcon sx={{ fontSize: '1rem', color: '#7a5c42', animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
+          <Typography sx={{ flexGrow: 1, fontFamily: 'Crimson Text, serif', fontSize: '0.9rem', fontWeight: 600, color: '#3a2f1f' }}>
+            {t('game.templateUpdateAvailable')}
+          </Typography>
+          <Button size="small" variant="outlined" onClick={() => onSync(game)} disabled={syncing}
+            sx={{ fontFamily: 'Cinzel, serif', fontSize: '0.7rem', fontWeight: 700, py: 0.25, minWidth: 0, color: '#7a5c42', borderColor: '#7a5c42' }}>
+            {t('game.syncTemplateAction')}
+          </Button>
+        </Box>
+      )}
 
       {/* Enter bar flush with the bottom edge */}
       <Button fullWidth onClick={() => onJoin(game.id)} disabled={loading} disableElevation

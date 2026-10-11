@@ -58,8 +58,11 @@ type Game struct {
 	Music                MusicState         `bson:"music" json:"music"`
 	CustomSystemTemplate *SystemTemplate    `bson:"customSystemTemplate,omitempty" json:"customSystemTemplate,omitempty"`
 	TemplateSourceID     primitive.ObjectID `bson:"templateSourceId,omitempty" json:"templateSourceId,omitempty"`
-	ImageUrl             string             `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
-	MapSettings          MapSettings        `bson:"mapSettings" json:"mapSettings"`               // per-game map rules (snap/free, distance metric)
+	// TemplateUpdateAvailable is computed per-request in the lobby list, for the game's GM only: the
+	// source template has a newer version than the embedded copy. Never persisted, never true for a player.
+	TemplateUpdateAvailable bool        `bson:"-" json:"templateUpdateAvailable,omitempty"`
+	ImageUrl                string      `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
+	MapSettings             MapSettings `bson:"mapSettings" json:"mapSettings"`               // per-game map rules (snap/free, distance metric)
 	// TokenSlotTemplate is the game-wide locked-position rule for token ring slots: index = ring
 	// position (0..7), nil = that position is not locked. Every tokens-layer image in every scene
 	// seeds its slots from it. Entries carry config only — ID/Level/Number are per-token and are

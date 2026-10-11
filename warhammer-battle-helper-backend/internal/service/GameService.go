@@ -299,6 +299,8 @@ func (s *GameService) GetGamesForUser(userID primitive.ObjectID) ([]models.Game,
 		s.enrichParticipants(&games[i])
 	}
 
+	markTemplateUpdates(games, userID, s.templateService.GetVersionsByIDs)
+
 	// Sort by "last opened by this user" (most recent first). The timestamp is
 	// per (user, game), so it lives in the sessions collection — not on the game.
 	// Games this user never opened fall back to CreatedAt, landing below the ones
@@ -2978,4 +2980,38 @@ func templateSourceID(t *models.SystemTemplate) primitive.ObjectID {
 		return primitive.NilObjectID
 	}
 	return t.ID
+}
+
+// markTemplateUpdates sets TemplateUpdateAvailable on the games userID runs whose source template
+// moved past the embedded copy. One lookup for the whole list; a failed lookup leaves every flag
+// false — the badge is a hint, never a reason to fail the lobby.
+func markTemplateUpdates(games []models.Game, userID primitive.ObjectID, lookup func([]primitive.ObjectID) (map[primitive.ObjectID]int, error)) {
+	// Custom games only: a hardcoded-system game may still carry a legacy FEATURE-102
+	// token-display variant, but token display is resolved live, so there is nothing to sync.
+	syncable := func(g *models.Game) bool {
+		return g.GameSystem == "custom" && g.GameMasterID == userID &&
+			!g.TemplateSourceID.IsZero() && g.CustomSystemTemplate != nil
+	}
+	var ids []primitive.ObjectID
+	for i := range games {
+		if syncable(&games[i]) {
+			ids = append(ids, games[i].TemplateSourceID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	versions, err := lookup(ids)
+	if err != nil {
+		return
+	}
+	for i := range games {
+		g := &games[i]
+		if !syncable(g) {
+			continue
+		}
+		if v, ok := versions[g.TemplateSourceID]; ok && v > g.CustomSystemTemplate.Version {
+			g.TemplateUpdateAvailable = true
+		}
+	}
 }

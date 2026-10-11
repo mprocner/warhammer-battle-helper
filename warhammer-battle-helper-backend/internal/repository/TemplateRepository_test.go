@@ -69,3 +69,72 @@ func TestTemplateRepository_RemoveShare(t *testing.T) {
 		}
 	})
 }
+
+func TestTemplateRepository_Update_Version(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	okUpdate := bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}}
+
+	updateDoc := func(mt *mtest.T) bson.Raw {
+		cmd := mt.GetStartedEvent().Command
+		return cmd.Lookup("updates").Array().Index(0).Value().Document().Lookup("u").Document()
+	}
+
+	mt.Run("bumpVersion=false does not bump version", func(mt *mtest.T) {
+		repo := NewTemplateRepository(mt.Coll)
+		mt.AddMockResponses(okUpdate)
+		public := true
+		if err := repo.Update(primitive.NewObjectID().Hex(), nil, nil, nil, &public, false); err != nil {
+			t.Fatalf("Update() returned unexpected error: %v", err)
+		}
+		if _, err := updateDoc(mt).LookupErr("$inc"); err == nil {
+			t.Error("toggling isPublic must not $inc version — it would flag every game as outdated")
+		}
+	})
+
+	mt.Run("bumpVersion=true bumps version", func(mt *mtest.T) {
+		repo := NewTemplateRepository(mt.Coll)
+		mt.AddMockResponses(okUpdate)
+		name := "New name"
+		if err := repo.Update(primitive.NewObjectID().Hex(), &name, nil, nil, nil, true); err != nil {
+			t.Fatalf("Update() returned unexpected error: %v", err)
+		}
+		inc, err := updateDoc(mt).LookupErr("$inc", "version")
+		if err != nil || inc.AsInt64() != 1 {
+			t.Error("bumpVersion=true must $inc version by 1")
+		}
+	})
+}
+
+func TestTemplateRepository_GetVersionsByIDs(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+
+	mt.Run("maps each found id to its version", func(mt *mtest.T) {
+		repo := NewTemplateRepository(mt.Coll)
+		a, b := primitive.NewObjectID(), primitive.NewObjectID()
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, "db.templates", mtest.FirstBatch,
+			bson.D{{Key: "_id", Value: a}, {Key: "version", Value: 4}},
+		))
+
+		got, err := repo.GetVersionsByIDs([]primitive.ObjectID{a, b})
+		if err != nil {
+			t.Fatalf("GetVersionsByIDs() returned unexpected error: %v", err)
+		}
+		if got[a] != 4 {
+			t.Errorf("got[a] = %d, want 4", got[a])
+		}
+		if _, ok := got[b]; ok {
+			t.Error("a deleted template must be absent from the map, not zero")
+		}
+	})
+
+	mt.Run("empty input issues no query", func(mt *mtest.T) {
+		repo := NewTemplateRepository(mt.Coll)
+		got, err := repo.GetVersionsByIDs(nil)
+		if err != nil || len(got) != 0 {
+			t.Fatalf("GetVersionsByIDs(nil) = %v, %v; want empty map, nil", got, err)
+		}
+		if mt.GetStartedEvent() != nil {
+			t.Error("no ids must mean no round trip")
+		}
+	})
+}

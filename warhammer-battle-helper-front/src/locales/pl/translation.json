@@ -203,6 +203,10 @@
     "talentAlreadyAdded": "Ten talent został już dodany"
   },
   "game": {
+    "templateUpdateAvailable": "Nowa wersja szablonu",
+    "syncTemplateAction": "Synchronizuj",
+    "syncTemplateTitle": "Synchronizacja szablonu",
+    "syncTemplateConfirm": "Szablon gry \"{{name}}\" zostanie zaktualizowany. Wartości pól usuniętych w nowej wersji zostaną utracone.",
     "createGame": "Utwórz Grę",
     "enterGame": "Wejdź do Gry",
     "gameLobby": "Poczekalnia Gry",
@@ -1497,7 +1501,6 @@
     "sharedTemplate": "udostępniony przez innego gracza",
     "templateCreated": "Szablon utworzony",
     "noTemplate": "Brak szablonu dla tej gry",
-    "syncTemplate": "Synchronizuj szablon z grą",
     "syncFailed": "Nie udało się zsynchronizować szablonu",
     "fields": "pól",
     "selectFieldHint": "Kliknij pole na canvasie, aby je skonfigurować",

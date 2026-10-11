@@ -203,6 +203,10 @@
     "talentAlreadyAdded": "This talent is already added"
   },
   "game": {
+    "templateUpdateAvailable": "New template version",
+    "syncTemplateAction": "Sync",
+    "syncTemplateTitle": "Sync template",
+    "syncTemplateConfirm": "The template of \"{{name}}\" will be updated. Values of fields removed in the new version will be lost.",
     "createGame": "Create Game",
     "enterGame": "Enter Game",
     "gameLobby": "Game Lobby",
@@ -1497,7 +1501,6 @@
     "sharedTemplate": "shared by another player",
     "templateCreated": "Template created",
     "noTemplate": "No template defined for this game",
-    "syncTemplate": "Sync template to game",
     "syncFailed": "Failed to sync template",
     "fields": "fields",
     "selectFieldHint": "Click a field in the canvas to configure it",
