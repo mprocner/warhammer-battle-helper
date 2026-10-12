@@ -1,6 +1,6 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-container */
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
 
@@ -64,4 +64,67 @@ test('progress inputs accept negative values', () => {
   inputs.forEach((input) => expect(input).not.toHaveAttribute('min'));
   expect(inputs[0]).toHaveValue(-3);
   expect(fillOf(container).style.width).toBe('0%');
+});
+
+const choiceSections = [{
+  id: 's', title: '', columns: 2, fields: [
+    { key: 'wounded', type: 'checkbox', label: 'Wounded' },
+    { key: 'race', type: 'select', label: 'Species', options: ['Human', 'Elf'] },
+  ],
+}];
+
+const editable = () => ({ attr: jest.fn(), text: jest.fn() });
+
+test('checkbox and select share the tile skeleton with their name in the head', () => {
+  const { container } = render(<CustomSheetBody sections={choiceSections} />);
+  const check = container.querySelector('.custom-sheet__tile--checkbox');
+  const select = container.querySelector('.custom-sheet__tile--select');
+  [[check, 'Wounded'], [select, 'Species']].forEach(([tile, name]) => {
+    expect(tile.children[0].classList.contains('custom-sheet__tile-head')).toBe(true);
+    expect(tile.children[0].textContent).toBe(name);
+    expect(tile.children[1].classList.contains('custom-sheet__tile-value')).toBe(true);
+  });
+});
+
+// The icon is drawn over the real input and shown by `input:checked + icon` in CSS, so it must
+// stay the input's immediate next sibling.
+test('the checkbox draws its tick as the input\'s next sibling', () => {
+  const { container } = render(<CustomSheetBody sections={choiceSections} />);
+  const input = container.querySelector('.custom-sheet__check-input');
+  expect(input.type).toBe('checkbox');
+  expect(input.nextElementSibling.classList.contains('custom-sheet__check-icon')).toBe(true);
+});
+
+test('ticking the checkbox stores 1, unticking stores 0', () => {
+  const onChange = editable();
+  const { container, rerender } = render(<CustomSheetBody sections={choiceSections} onChange={onChange} />);
+  fireEvent.click(container.querySelector('.custom-sheet__check-input'));
+  expect(onChange.attr).toHaveBeenLastCalledWith('wounded', 1);
+
+  rerender(
+    <CustomSheetBody sections={choiceSections} onChange={onChange} values={{ attributes: { wounded: { base: 1 } } }} />
+  );
+  expect(container.querySelector('.custom-sheet__check-input')).toBeChecked();
+  fireEvent.click(container.querySelector('.custom-sheet__check-input'));
+  expect(onChange.attr).toHaveBeenLastCalledWith('wounded', 0);
+});
+
+test('choosing an option stores its text', () => {
+  const onChange = editable();
+  const { container } = render(<CustomSheetBody sections={choiceSections} onChange={onChange} />);
+  fireEvent.change(container.querySelector('.custom-sheet__select'), { target: { value: 'Elf' } });
+  expect(onChange.text).toHaveBeenCalledWith('race', 'Elf');
+});
+
+test('a read-only sheet disables both controls', () => {
+  const { container } = render(<CustomSheetBody sections={choiceSections} />);
+  expect(container.querySelector('.custom-sheet__check-input')).toBeDisabled();
+  expect(container.querySelector('.custom-sheet__select')).toBeDisabled();
+});
+
+// The name sits in the tile head, apart from the control, so the control carries it itself.
+test('checkbox and select are named after their field', () => {
+  render(<CustomSheetBody sections={choiceSections} />);
+  expect(screen.getByRole('checkbox', { name: 'Wounded' })).toBeInTheDocument();
+  expect(screen.getByRole('combobox', { name: 'Species' })).toBeInTheDocument();
 });

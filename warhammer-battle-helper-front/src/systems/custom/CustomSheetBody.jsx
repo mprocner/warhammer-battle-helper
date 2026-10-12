@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import FunctionsIcon from '@mui/icons-material/Functions';
+import CheckIcon from '@mui/icons-material/Check';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
 import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
 import { computeFieldValue, formulaRefsOf } from './formula/formula';
@@ -179,10 +181,11 @@ function CustomSheetBody({
     </label>
   );
 
-  // renderTile is the shared skeleton of number, progress, computed and text fields: a head row
-  // (name + icon slot), a value row of fixed minimum height, and an optional strip along the
-  // bottom edge. One anatomy for all four is what lets them sit side by side in a grid row with
-  // names and values on the same lines; the type only decides what fills the value row.
+  // renderTile is the shared skeleton of every value field (number, progress, computed, text,
+  // image, checkbox, select): a head row (name + icon slot), a value row of fixed minimum
+  // height, and an optional strip along the bottom edge. One anatomy for all of them is what
+  // lets them sit side by side in a grid row with names and values on the same lines; the type
+  // only decides what fills the value row.
   const renderTile = (field, typeMod, value, { icon = null, footer = null } = {}) => (
     <div key={field.key} className={`custom-sheet__tile custom-sheet__tile--${typeMod}`}>
       <div className="custom-sheet__tile-head">
@@ -395,27 +398,29 @@ function CustomSheetBody({
           </div>
         );
 
+      // A real checkbox input, restyled with `appearance: none`: focus, the keyboard and
+      // `disabled` stay native. The tick is drawn over it and shown by CSS when it is checked.
       case 'checkbox':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--checkbox">
-            <label className="custom-sheet__checkbox-label">
-              <input
-                type="checkbox"
-                checked={!!(attrs[field.key]?.base)}
-                onChange={onChange ? e => onChange.attr(field.key, e.target.checked ? 1 : 0) : undefined}
-                disabled={readOnly}
-              />
-              <span>{field.label}</span>
-            </label>
-          </div>
-        );
+        return renderTile(field, 'checkbox', (
+          <label className="custom-sheet__check">
+            <input
+              type="checkbox"
+              className="custom-sheet__check-input"
+              aria-label={field.label}
+              checked={!!(attrs[field.key]?.base)}
+              onChange={onChange ? e => onChange.attr(field.key, e.target.checked ? 1 : 0) : undefined}
+              disabled={readOnly}
+            />
+            <CheckIcon className="custom-sheet__check-icon" style={{ fontSize: 14 }} aria-hidden="true" />
+          </label>
+        ));
 
       case 'select':
-        return (
-          <div key={field.key} className="custom-sheet__field custom-sheet__field--select">
-            {renderFieldLabel(field.label)}
+        return renderTile(field, 'select', (
+          <div className="custom-sheet__select-wrap">
             <select
               className="custom-sheet__select"
+              aria-label={field.label}
               value={texts[field.key] || ''}
               onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
               disabled={readOnly}
@@ -425,8 +430,9 @@ function CustomSheetBody({
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
+            <ArrowDropDownIcon className="custom-sheet__select-arrow" style={{ fontSize: 20 }} aria-hidden="true" />
           </div>
-        );
+        ));
 
       case 'skill_table': {
         // Reserve a track only when something can actually render into it — a permanently empty

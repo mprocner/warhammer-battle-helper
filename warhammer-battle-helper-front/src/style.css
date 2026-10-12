@@ -8129,8 +8129,8 @@ align-items: center;
     justify-content: center;
 }
 
-/* Select and checkbox are shorter than a value tile; in a one-row cell they sit in its middle so
-   a row of mixed fields reads as one line. */
+/* A label field is shorter than a value tile; in a one-row cell it sits in its middle so a row
+   of mixed fields reads as one line. */
 .custom-sheet__cell--rows-1 > .custom-sheet__field {
     justify-content: center;
 }
@@ -8444,19 +8444,56 @@ align-items: center;
     color: #8b2c2c;
 }
 
-.custom-sheet__select {
+/* Same box as .custom-sheet__text-input so a select lines up with the text tiles beside it.
+   The native arrow is replaced by an icon so it looks the same on every system. */
+.custom-sheet__select-wrap {
+    position: relative;
     width: 100%;
+    min-width: 0;
+}
+
+.custom-sheet__select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 26px;
+    padding: 2px 22px 2px 6px;
+    appearance: none;
+    -webkit-appearance: none;
     background: #fff9f0;
     border: 1px solid #c4a882;
+    border-radius: 3px;
     color: #3a2f1f;
-    border-radius: 4px;
-    padding: 5px 8px;
-    font-size: 0.9rem;
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+/* A read-only sheet keeps the value readable instead of the browser's greyed-out disabled
+   look, like the read-only text inputs beside it. */
+.custom-sheet__select:disabled {
+    color: #3a2f1f;
+    opacity: 1;
+    cursor: default;
 }
 
 .custom-sheet__select option {
     background: #fff9f0;
     color: #3a2f1f;
+}
+
+.custom-sheet__select-arrow {
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    color: #7a5c42;
+    pointer-events: none;
+}
+
+.custom-sheet__select:disabled + .custom-sheet__select-arrow {
+    opacity: 0.4;
 }
 
 .custom-sheet__text-input:focus,
@@ -8481,13 +8518,60 @@ align-items: center;
     margin: 0;
 }
 
-.custom-sheet__checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+/* A real checkbox input drawn by CSS (`appearance: none`); the tick icon sits over it and is
+   shown only when the input is checked. */
+.custom-sheet__check {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.custom-sheet__check-input {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
     cursor: pointer;
-    color: #3a2f1f;
-    font-size: 0.9rem;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.custom-sheet__check-input:hover:not(:disabled) {
+    border-color: #7a5c42;
+}
+
+.custom-sheet__check-input:checked {
+    background: #c9975b;
+    border-color: #c9975b;
+}
+
+.custom-sheet__check-input:focus-visible {
+    outline: none;
+    border-color: #7a5c42;
+    box-shadow: 0 0 0 2px rgba(122, 92, 66, 0.25);
+}
+
+.custom-sheet__check-input:disabled {
+    cursor: default;
+}
+
+.custom-sheet__check-icon {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    color: #fff9f0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.custom-sheet__check-input:checked + .custom-sheet__check-icon {
+    visibility: visible;
 }
 
 .custom-sheet__roll-btn {
