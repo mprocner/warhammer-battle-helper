@@ -21,6 +21,32 @@ export const SECTION_TYPE = 'section';
 // duplicating them, and the backend rejects a second one.
 export const SINGLETON_FIELD_TYPES = ['char_name', 'char_avatar'];
 
+// An attr_table (PLAYRPG-235) is ONE field on the sheet but a list of attributes everywhere a
+// value is read. Each row's id is its key in stats.attributes — global, like a standalone attr
+// field's key — so a duplicated table must re-mint them (see remintKeys).
+export const ATTR_TABLE_TYPE = 'attr_table';
+
+// expandAttrTable turns each row into the attr field it behaves as: the row supplies identity
+// and limits, the table supplies advances, step and the shared roll config. Mirrors
+// expandAttrTable in the backend's systems/custom/plugin.go — change one, change the other.
+export function expandAttrTable(field) {
+  return (field.attrRows || []).map(row => ({
+    key: row.id,
+    type: 'attr',
+    label: row.label,
+    abbr: row.abbr || '',
+    default: row.default ?? null,
+    min: row.min ?? null,
+    max: row.max ?? null,
+    showOnShortCard: !!row.showOnShortCard,
+    step: field.step,
+    hasAdvances: !!field.hasAdvances,
+    advancesLabel: field.advancesLabel,
+    rollable: !!field.rollable,
+    rollConfig: field.rollConfig ?? null,
+  }));
+}
+
 // usedSingletonTypes returns which singleton types the template already contains, at any depth.
 export function usedSingletonTypes(sections) {
   const used = new Set();
@@ -249,7 +275,8 @@ export function canDropInto(sections, fromPath, refPath) {
 //    do not add a key property.
 // 3. A leaf field (everything else): re-mint its key only; inner ids (skill options,
 //    tree nodes) are addressed as "<fieldKey>.<innerId>", so a new field key makes the
-//    whole address unique.
+//    whole address unique. An attr_table also re-mints its row ids, which are global
+//    attribute keys rather than "<fieldKey>.<innerId>" addresses.
 function remintKeys(node, mint) {
   if (node.type === SECTION_TYPE) {
     // Nested section wrapper: re-mint key and section.id
@@ -273,8 +300,12 @@ function remintKeys(node, mint) {
       fields: (node.fields || []).map((child) => remintKeys(child, mint)),
     };
   }
-  // Leaf field: re-mint key only
-  return { ...node, key: mint(node.type) };
+  // Leaf field: re-mint key only — except an attr_table, whose row ids are global keys.
+  const key = mint(node.type);
+  if (node.type === ATTR_TABLE_TYPE) {
+    return { ...node, key, attrRows: (node.attrRows || []).map(row => ({ ...row, id: mint('attr') })) };
+  }
+  return { ...node, key };
 }
 
 export function duplicateNodeAtPath(sections, path, { mint, copySuffix }) {
@@ -312,8 +343,7 @@ export function indexNodes(sections) {
 }
 
 // walkFields visits every LEAF field depth-first in sheet order, skipping section wrappers.
-// It is the single traversal behind duplicate-key detection, the attribute list, the skill
-// option list and the token-display field picker.
+// It is the single traversal behind duplicate-key detection and the skill option list.
 export function walkFields(sections, fn) {
   const visit = (list) => {
     for (const node of list || []) {
@@ -322,4 +352,15 @@ export function walkFields(sections, fn) {
     }
   };
   for (const section of sections || []) visit(section.fields);
+}
+
+// walkValueFields is walkFields for readers of VALUES: an attr_table is replaced by its rows,
+// each as a virtual attr field. Formula chips, the skill→attribute picker, token bindings and
+// the short card use this; anything that renders or edits the template's own structure keeps
+// walkFields, which sees the table as the single field it is.
+export function walkValueFields(sections, fn) {
+  walkFields(sections, (f) => {
+    if (f.type === ATTR_TABLE_TYPE) expandAttrTable(f).forEach(fn);
+    else fn(f);
+  });
 }

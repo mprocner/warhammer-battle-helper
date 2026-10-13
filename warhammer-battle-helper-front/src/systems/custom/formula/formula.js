@@ -4,7 +4,7 @@
 // accept the same block lists and fail with the same reason at the same index — formula_cases.json
 // pins that, so change one parser and the other side's test goes red.
 
-import { walkFields } from '../../../utils/templateSections';
+import { walkValueFields } from '../../../utils/templateSections';
 
 const VALUE_TYPES = new Set(['const', 'attr', 'number', 'skill', 'attr_linked', 'const_input']);
 const DIE_TYPES = new Set(['dice', 'dice_attr', 'dice_skill_attr']);
@@ -159,7 +159,7 @@ export function validateFormula(blocks, { attrKeys = [], numberKeys = [], arithm
 export function formulaRefsOf(sections) {
   const attrKeys = [];
   const numberKeys = [];
-  walkFields(sections, (f) => {
+  walkValueFields(sections, (f) => {
     if (f.type === 'attr') attrKeys.push(f.key);
     if (f.type === 'number') numberKeys.push(f.key);
   });

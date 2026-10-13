@@ -58,7 +58,7 @@ func TestFormulaCases(t *testing.T) {
 			// "valid" cases contain dice: only the parser is under test, nothing is rolled.
 			if err == nil && !c.Expect.Valid {
 				// newTestPlugin() with no values panics on any roll — an arithmetic case must not roll.
-				env := newTestPlugin().formulaEnv(caseStats(c), "", "", false)
+				env := newTestPlugin().formulaEnv(caseStats(c), "", "", "", false)
 				var out walked
 				out, err = (&tradWalk{env: env}).eval(root)
 				if err == nil && c.Expect.Value != nil && out.val != *c.Expect.Value {
@@ -88,7 +88,7 @@ func evalTrad(t *testing.T, p *Plugin, stats *Stats, blocks []models.FormulaBloc
 	if err != nil {
 		t.Fatalf("parseFormula: %v", err)
 	}
-	env := p.formulaEnv(stats, "", "", false)
+	env := p.formulaEnv(stats, "", "", "", false)
 	w := &tradWalk{env: env}
 	out, err := w.eval(root)
 	if err != nil {
@@ -163,7 +163,7 @@ func TestTradWalk_TooManyDice(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseFormula: %v", err)
 	}
-	_, err = (&tradWalk{env: newTestPlugin().formulaEnv(strStats(0), "", "", false)}).eval(root)
+	_, err = (&tradWalk{env: newTestPlugin().formulaEnv(strStats(0), "", "", "", false)}).eval(root)
 	var fe *FormulaError
 	if !errors.As(err, &fe) || fe.Reason != reasonTooManyDice || fe.Index != 2 {
 		t.Errorf("err = %v, want too_many_dice@2", err)

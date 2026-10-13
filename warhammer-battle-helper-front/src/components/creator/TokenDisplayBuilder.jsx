@@ -10,7 +10,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { getSystem } from '../../systems/registry';
 import TokenSlotConfigModal from './TokenSlotConfigModal';
-import { walkFields } from '../../utils/templateSections';
+import { walkValueFields } from '../../utils/templateSections';
 
 const SLOT_COUNT = 8;
 const genId = () => Math.random().toString(36).slice(2, 10);
@@ -83,7 +83,7 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
     if (baseSystem) return tokenFieldsBySystem?.[baseSystem] || [];
     // Custom system: derive from the template's own sections.
     const out = [];
-    walkFields(sections, (f) => {
+    walkValueFields(sections, (f) => {
       // Custom attributes are stored as { base, advances, current } — bind to .current.
       if (f.type === 'attr') out.push({ key: `attributes.${f.key}.current`, label: f.abbr || f.label, category: 'attribute' });
       else if (f.type === 'number') out.push({ key: `numbers.${f.key}`, label: f.abbr || f.label, category: 'number' });

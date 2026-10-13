@@ -17,13 +17,14 @@ type formulaEnv struct {
 	stats        *Stats
 	skillKey     string
 	linkedAttr   string
+	linkedLabel  string // breakdown label for attr_linked; "" falls back to the key
 	baseFromAttr bool
 	roll         func(sides int) int
 }
 
-func (p *Plugin) formulaEnv(stats *Stats, skillKey, linkedAttr string, baseFromAttr bool) *formulaEnv {
+func (p *Plugin) formulaEnv(stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool) *formulaEnv {
 	return &formulaEnv{
-		stats: stats, skillKey: skillKey, linkedAttr: linkedAttr, baseFromAttr: baseFromAttr,
+		stats: stats, skillKey: skillKey, linkedAttr: linkedAttr, linkedLabel: linkedLabel, baseFromAttr: baseFromAttr,
 		roll: func(sides int) int { return p.rng.Intn(sides) + 1 },
 	}
 }
@@ -51,7 +52,10 @@ func (e *formulaEnv) blockValue(b models.FormulaBlock) (int, string) {
 	case "skill":
 		return skillValue(e.stats, e.skillKey, e.linkedAttr, e.baseFromAttr), "umiej."
 	case "attr_linked":
-		label := e.linkedAttr
+		label := e.linkedLabel
+		if label == "" {
+			label = e.linkedAttr
+		}
 		if label == "" {
 			label = "0"
 		}

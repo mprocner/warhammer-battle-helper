@@ -3,6 +3,7 @@ import {
   moveNode, duplicateNodeAtPath, indexNodes, walkFields, isAncestorPath,
   shiftPathAfterInsert, containerPathFor, canDropInto,
   SINGLETON_FIELD_TYPES, usedSingletonTypes,
+  expandAttrTable, walkValueFields,
 } from './templateSections';
 
 // Fixture: two root sections; the second holds a field, a nested section with two fields,
@@ -519,5 +520,51 @@ describe('singleton field types', () => {
     const next = duplicateNodeAtPath(withSingletons(), [0], { mint, copySuffix: '(kopia)' });
     expect([...usedSingletonTypes([next[1]])]).toEqual([]);
     expect(next[1].fields.map(f => f.type)).toEqual([SECTION_TYPE]);
+  });
+});
+
+describe('attr_table expansion (PLAYRPG-235)', () => {
+  const table = {
+    key: 'fld_t', type: 'attr_table', label: 'Cechy', hasAdvances: true, advancesLabel: 'Rozw.',
+    step: 5, rollable: true, rollConfig: { formula: [] },
+    attrRows: [
+      { id: 'attr_ws', label: 'Walka wręcz', abbr: 'WW', default: 31, min: 0, max: 100, showOnShortCard: true },
+      { id: 'attr_s', label: 'Siła' },
+    ],
+  };
+  const sections = [{ id: 's1', fields: [
+    { key: 'attr_lone', type: 'attr', label: 'Szczęście' },
+    { key: 'sec_n', type: 'section', section: { id: 'sec_n', fields: [table] } },
+    { key: 'num_1', type: 'number', label: 'Waga' },
+  ] }];
+
+  test('expandAttrTable gives one attr per row with table-level settings inherited', () => {
+    const [ws, s] = expandAttrTable(table);
+    expect(ws).toEqual({
+      key: 'attr_ws', type: 'attr', label: 'Walka wręcz', abbr: 'WW', default: 31, min: 0, max: 100,
+      showOnShortCard: true, step: 5, hasAdvances: true, advancesLabel: 'Rozw.', rollable: true,
+      rollConfig: table.rollConfig,
+    });
+    expect(s).toMatchObject({ key: 'attr_s', abbr: '', default: null, min: null, max: null, showOnShortCard: false });
+  });
+
+  test('walkValueFields visits rows in place of the table, in sheet order', () => {
+    const keys = [];
+    walkValueFields(sections, f => keys.push(f.key));
+    expect(keys).toEqual(['attr_lone', 'attr_ws', 'attr_s', 'num_1']);
+  });
+
+  test('walkFields still sees the table as one field', () => {
+    const types = [];
+    walkFields(sections, f => types.push(f.type));
+    expect(types).toEqual(['attr', 'attr_table', 'number']);
+  });
+
+  test('duplicating a table re-mints every row id — rows are global attribute keys', () => {
+    const next = duplicateNodeAtPath([{ id: 's1', fields: [table] }], [0, 0], { mint, copySuffix: '(kopia)' });
+    const copy = next[0].fields[1];
+    expect(copy.attrRows.map(r => r.id)).toEqual(['attr_mint2', 'attr_mint3']);
+    expect(copy.attrRows.map(r => r.label)).toEqual(['Walka wręcz', 'Siła']);
+    expect(next[0].fields[0].attrRows[0].id).toBe('attr_ws');
   });
 });

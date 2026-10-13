@@ -14,12 +14,13 @@ import (
 // character's stats and returns a RollResult.
 func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, baseFromAttr bool, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
 	modTarget, modValue := resolveModifier(template.Settings.Modifier, cfg.RollMode, modifier)
+	linkedLabel := attrLabel(template, linkedAttr)
 
 	if cfg.RollMode == "dice_pool" {
-		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, baseFromAttr, cfg, modTarget, modValue)
+		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, linkedLabel, baseFromAttr, cfg, modTarget, modValue)
 	}
 
-	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, baseFromAttr)
+	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
@@ -100,12 +101,12 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 //   - diceType: faces of the first die rolled (for display)
 //   - labelStr: formula notation string, e.g. "(STR+2)*d6"
 //   - valueStr: resolved values string, e.g. "(8+2)*4"
-func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, baseFromAttr bool) (result, diceType int, labelStr, valueStr string, err error) {
+func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool) (result, diceType int, labelStr, valueStr string, err error) {
 	root, err := parseFormula(blocks)
 	if err != nil {
 		return 0, 0, "", "", err
 	}
-	env := p.formulaEnv(stats, skillKey, linkedAttr, baseFromAttr)
+	env := p.formulaEnv(stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
 	w := &tradWalk{env: env}
 	out, err := w.eval(root)
 	if err != nil {
@@ -117,7 +118,7 @@ func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKe
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
 // modTarget/modValue come pre-resolved from rollFromFormula, so this function never re-decides
 // what the modifier means.
-func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, baseFromAttr bool, cfg *models.RollConfig, modTarget string, modValue int) (*gsys.RollResult, error) {
+func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool, cfg *models.RollConfig, modTarget string, modValue int) (*gsys.RollResult, error) {
 	extraDice, thresholdMod := 0, 0
 	switch modTarget {
 	case ModTargetDiceCount:
@@ -126,7 +127,7 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		thresholdMod = modValue
 	}
 
-	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr, baseFromAttr, extraDice)
+	parts, diceType, err := p.evalFormulaDicePool(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr, extraDice)
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval (pool): %w", err)
 	}
@@ -180,12 +181,12 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 // diceType — and the resulting count is floored at 1; later terms keep their configured
 // counts. It returns the formula as a list of parts — text fragments and die terms carrying
 // their own rolls — plus the face count of the first die rolled (display only).
-func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr string, baseFromAttr bool, extraDice int) (parts []gsys.PoolFormulaPart, diceType int, err error) {
+func (p *Plugin) evalFormulaDicePool(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool, extraDice int) (parts []gsys.PoolFormulaPart, diceType int, err error) {
 	root, err := parseFormula(blocks)
 	if err != nil {
 		return nil, 0, err
 	}
-	w := &poolWalk{env: p.formulaEnv(stats, skillKey, linkedAttr, baseFromAttr), extraDice: extraDice}
+	w := &poolWalk{env: p.formulaEnv(stats, skillKey, linkedAttr, linkedLabel, baseFromAttr), extraDice: extraDice}
 	if _, err := w.eval(root); err != nil {
 		return nil, 0, err
 	}
@@ -249,6 +250,30 @@ func skillHasValue(stats *Stats, key, linkedAttr string, baseFromAttr bool) bool
 func attrLookup(stats *Stats, key string) (value int, ok bool) {
 	v, ok := stats.Attributes[key]
 	return v.Current, ok
+}
+
+// attrLabel names an attribute for the roll breakdown: its abbreviation, else its label, else
+// the raw key (an attribute removed from the template still shows *something*). Keys are opaque
+// ids (genId), so printing the key itself -- what the breakdown did before -- reads as noise.
+func attrLabel(template *models.SystemTemplate, key string) string {
+	if key == "" || template == nil {
+		return key
+	}
+	for _, section := range template.Sections {
+		for _, field := range flattenFields(section.Fields) {
+			if field.Type != "attr" || field.Key != key {
+				continue
+			}
+			if field.Abbr != "" {
+				return field.Abbr
+			}
+			if field.Label != "" {
+				return field.Label
+			}
+			return key
+		}
+	}
+	return key
 }
 
 // evalThreshold parses a numeric threshold override. Returns 0 if empty.

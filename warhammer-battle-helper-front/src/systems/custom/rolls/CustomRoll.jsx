@@ -5,6 +5,7 @@ import { getResultColor } from '../../../components/log/rollUtils';
 import { usePortalTooltip } from '../../../components/common/PortalTooltip';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
+import FormulaBreakdown from './FormulaBreakdown';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
 
@@ -113,7 +114,7 @@ function CustomRoll({ data, timestamp }) {
             </span>
           </div>
         )}
-        {formulaText ? <div className="log-formula-breakdown">{formulaText}</div> : null}
+        {formulaText ? <FormulaBreakdown text={formulaText} /> : null}
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {outcomeLabel}

@@ -38,6 +38,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ImageIcon from '@mui/icons-material/Image';
+import GridOnIcon from '@mui/icons-material/GridOn';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
@@ -49,12 +50,13 @@ import FieldChrome from './FieldChrome';
 import SectionChrome from './SectionChrome';
 import EditablePlaceholder from './EditablePlaceholder';
 import FormulaBuilder from './FormulaBuilder';
+import AttrRowsEditor from './AttrRowsEditor';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
 import {
   SECTION_TYPE, sectionOf, nodeAt, locate, childrenOf, samePath,
-  updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields,
+  updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields, walkValueFields,
   containerPathFor, shiftPathAfterInsert, shiftPathAfterRemoval,
   moveNode, canDropInto, nodeId, isAncestorPath, indexNodes, isContainer,
   SINGLETON_FIELD_TYPES, usedSingletonTypes,
@@ -104,6 +106,7 @@ const FIELD_TYPES = [
   { type: 'char_avatar', labelKey: 'creator.fieldType.charAvatar',  icon: <AccountCircleIcon fontSize="small" />, desc: 'creator.fieldType.charAvatarDesc' },
   { type: 'image',       labelKey: 'creator.fieldType.image',       icon: <ImageIcon fontSize="small" />,         desc: 'creator.fieldType.imageDesc' },
   { type: 'attr',        labelKey: 'creator.fieldType.attr',        icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.attrDesc' },
+  { type: 'attr_table',  labelKey: 'creator.fieldType.attrTable',   icon: <GridOnIcon fontSize="small" />,     desc: 'creator.fieldType.attrTableDesc' },
   { type: 'number',      labelKey: 'creator.fieldType.number',      icon: <NumbersIcon fontSize="small" />,    desc: 'creator.fieldType.numberDesc' },
   { type: 'computed',    labelKey: 'creator.fieldType.computed',    icon: <FunctionsIcon fontSize="small" />,  desc: 'creator.fieldType.computedDesc' },
   { type: 'progress',    labelKey: 'creator.fieldType.progress',    icon: <TrendingUpIcon fontSize="small" />, desc: 'creator.fieldType.progressDesc' },
@@ -121,7 +124,7 @@ const FIELD_TYPES = [
 const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupLayout',  types: ['section'] },
   { labelKey: 'creator.paletteGroupCharacter', types: ['char_name', 'char_avatar', 'image'] },
-  { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'number', 'computed', 'progress'] },
+  { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'attr_table', 'number', 'computed', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
   { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'skill_tree'] },
@@ -146,6 +149,7 @@ export function makeDefaultField(type, t) {
     rollable: false,
   };
   if (type === 'attr') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false, hasAdvances: false, advancesLabel: t('creator.fieldAdvancesDefault') };
+  if (type === 'attr_table') return { ...base, attrRows: [], step: 1, hasAdvances: false, advancesLabel: t('creator.fieldAdvancesDefault') };
   if (type === 'number') return { ...base, min: 0, max: 100, step: 1, showOnShortCard: false };
   if (type === 'computed') return { ...base, formula: [], default: null, showOnShortCard: false };
   if (type === 'progress') return { ...base, showOnShortCard: true };
@@ -787,7 +791,7 @@ function FlagSwitch({ field, flag, meta, onChange, showTooltip, hideTooltip, t }
   );
 }
 
-function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields, sections }) {
+export function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields, sections }) {
   const { t } = useTranslation();
   // One instance per panel, not per switch: the panel shows one field at a time, and a state plus a
   // portal per row would be four of each for nothing. Called unconditionally, before the early
@@ -881,7 +885,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
         )}
       </PropsGroup>
 
-      {['attr', 'number', 'skill_table'].includes(field.type) && (
+      {['attr', 'attr_table', 'number', 'skill_table'].includes(field.type) && (
         <PropsGroup title={t('creator.propsGroupValues')}>
           {/* type="number" only rejects non-numeric input, not decimals — a value like "2.5" would
               reach the backend as *int and 400 the whole template PATCH. saveTemplate swallows that
@@ -906,11 +910,15 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
               brakujący/zerowy skok jako 1 przez `field.step || 1`. Podniesienie <1 → 1 zostaje na
               onBlur, tak jak wcześniej — floor w onChange jest dodatkową siatką bezpieczeństwa na
               wypadek, gdyby autosave zdążył wystrzelić pierwszy. */}
-          {(field.type === 'attr' || field.type === 'number') && (
-            <div className="creator__props-duo" style={{ marginBottom: 10 }}>
-              <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+          {(field.type === 'attr' || field.type === 'number' || field.type === 'attr_table') && (
+            <div className={field.type === 'attr_table' ? undefined : 'creator__props-duo'} style={{ marginBottom: 10 }}>
+              {/* Per-row defaults of an attr_table live in its row editor. */}
+              {field.type !== 'attr_table' && (
+                <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+              )}
               <TextField
                 size="small"
+                fullWidth={field.type === 'attr_table'}
                 label={t('creator.fieldStep')}
                 helperText={t('creator.fieldStepHint')}
                 type="number"
@@ -930,7 +938,7 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
             </div>
           )}
 
-          {field.type === 'attr' && (
+          {(field.type === 'attr' || field.type === 'attr_table') && (
             <>
               <FormControlLabel
                 labelPlacement="start"
@@ -973,6 +981,12 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
               )}
             </>
           )}
+        </PropsGroup>
+      )}
+
+      {field.type === 'attr_table' && (
+        <PropsGroup title={t('creator.attrRows')}>
+          <AttrRowsEditor rows={field.attrRows} onChange={attrRows => up({ attrRows })} />
         </PropsGroup>
       )}
 
@@ -1115,9 +1129,9 @@ function PropertyPanel({ field, onChange, onDelete, numberFields, numericFields,
         </PropsGroup>
       )}
 
-      {['attr', 'skill_table', 'skill_tree', 'weapons_table'].includes(field.type) && (
+      {['attr', 'attr_table', 'skill_table', 'skill_tree', 'weapons_table'].includes(field.type) && (
         <PropsGroup title={t('creator.propsGroupRoll')}>
-          {(field.type === 'attr' || field.type === 'skill_table' || field.type === 'skill_tree') && (
+          {(field.type === 'attr' || field.type === 'attr_table' || field.type === 'skill_table' || field.type === 'skill_tree') && (
             <>
               <FormControlLabel
                 labelPlacement="start"
@@ -1413,12 +1427,14 @@ function removeConfirmMessage(node, path, t) {
 export function collectFormulaFields(sections) {
   const attrs = [];
   const numbers = [];
-  let n = 0;
-  walkFields(sections, (f) => {
+  // Values (attribute chips, number chips) come from walkValueFields, so attr_table rows are
+  // offered like any attribute; the field COUNT stays structural — a table is one field.
+  walkValueFields(sections, (f) => {
     if (f.type === 'attr') attrs.push(f);
     if (f.type === 'number') numbers.push(f);
-    n += 1;
   });
+  let n = 0;
+  walkFields(sections, () => { n += 1; });
   const countContainers = (list) => (list || []).reduce((acc, node) => {
     const kids = childrenOf(node);
     return kids ? acc + 1 + countContainers(kids) : acc;

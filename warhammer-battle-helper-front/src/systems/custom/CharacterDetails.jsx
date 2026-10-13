@@ -10,7 +10,7 @@ import CharacterHeader from '../shared/CharacterHeader';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './weaponLayout';
-import { walkFields } from '../../utils/templateSections';
+import { walkFields, walkValueFields } from '../../utils/templateSections';
 import RollModifierOverlay from './RollModifierOverlay';
 import { useRollPrompt } from './useRollPrompt';
 import { postRoll } from './postRoll';
@@ -173,6 +173,8 @@ function CustomCharacterDetails({
   // O zawartości skróconej karty decyduje wyłącznie flaga showOnShortCard z kreatora (BUG-176).
   // Sekcje bez ani jednego zaznaczonego pola odpadają, żeby nie zostawić pustej grupy z separatorem.
   //
+  // walkValueFields: an attr_table contributes one tile per row the GM flagged.
+  //
   // Grouping is by ROOT section only: the short card is a flat strip of tiles with one block
   // per root section, so a field flagged inside a subsection joins its root section's block
   // rather than starting one of its own. Without the subtree walk it would vanish silently,
@@ -180,7 +182,7 @@ function CustomCharacterDetails({
   const shortCardSections = useMemo(() => (template?.sections || [])
     .map(s => {
       const picked = [];
-      walkFields([s], f => {
+      walkValueFields([s], f => {
         if (f.showOnShortCard && SHORT_CARD_TYPES.includes(f.type)) picked.push(f);
       });
       return { id: s.id, fields: picked };

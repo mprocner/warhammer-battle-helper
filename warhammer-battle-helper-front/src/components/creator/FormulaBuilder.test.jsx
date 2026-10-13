@@ -56,3 +56,37 @@ test('a valid formula shows its notation with parentheses', () => {
   const { container } = setup({ formula });
   expect(container.querySelector('.fb__track-preview em').textContent).toBe('(STR + 2)');
 });
+
+describe.each(['attr', 'attr_table'])('attribute roll formula (%s)', (fieldType) => {
+  test('offers the current-attribute block and adds attr_linked', () => {
+    const { getByText, onChange } = setup({ fieldType });
+    fireEvent.click(getByText(i18n.t('creator.formula.currentAttrBtn')));
+    expect(onChange.mock.calls[0][0][0]).toMatchObject({ type: 'attr_linked' });
+  });
+
+  test('hides the skill-only blocks', () => {
+    const { queryByText } = setup({ fieldType });
+    expect(queryByText(i18n.t('creator.formula.skillValueBtn'))).toBeNull();
+    expect(queryByText(i18n.t('creator.formula.linkedAttrBtn'))).toBeNull();
+    expect(queryByText(i18n.t('creator.formula.diceAttrSkillBtn'))).toBeNull();
+  });
+});
+
+test('a skill field keeps the linked-attribute wording', () => {
+  const { getByText, queryByText } = setup({ fieldType: 'skill_table' });
+  expect(getByText(i18n.t('creator.formula.linkedAttrBtn'))).toBeTruthy();
+  expect(queryByText(i18n.t('creator.formula.currentAttrBtn'))).toBeNull();
+});
+
+test('attr_table preview and chip say "current attribute"; skill_table keeps the linked wording', () => {
+  const formula = [{ type: 'attr_linked', id: 'x' }];
+  const cur = i18n.t('creator.formula.currentAttrAbbr');
+  const lnk = i18n.t('creator.formula.linkedAttrAbbr');
+  const first = setup({ formula, fieldType: 'attr_table' });
+  expect(first.container.querySelector('.fb__track-preview em').textContent).toContain(cur);
+  expect(first.container.querySelector('.fb__block--attr-linked').textContent).toContain(cur);
+  first.unmount();
+  const second = setup({ formula, fieldType: 'skill_table' });
+  expect(second.container.querySelector('.fb__track-preview em').textContent).toContain(lnk);
+  expect(second.container.querySelector('.fb__block--attr-linked').textContent).toContain(lnk);
+});

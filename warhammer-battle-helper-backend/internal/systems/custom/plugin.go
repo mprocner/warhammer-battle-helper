@@ -141,9 +141,10 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 	return p.rollFromFormula(stats, template, skillKey, target.linkedAttr, target.baseFromAttr, target.cfg, modifier)
 }
 
-// flattenFields returns every leaf field of the given list, descending into nested
-// sections. Section wrappers themselves are dropped: they hold no value, no roll config and
-// no label worth resolving, so every caller wants the leaves only.
+// flattenFields returns every leaf VALUE field of the given list, descending into nested
+// sections and expanding each attr_table into one virtual "attr" field per row (see
+// expandAttrTable). Section wrappers and the table itself are dropped: neither holds a value
+// of its own, so every caller -- seeding, roll resolution, label lookup -- wants the leaves.
 //
 // The returned FieldDefs are COPIES, detached from the template's backing arrays: never take
 // the address of one and never mutate one expecting the template to change. A caller that
@@ -152,13 +153,46 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 func flattenFields(fields []models.FieldDef) []models.FieldDef {
 	out := make([]models.FieldDef, 0, len(fields))
 	for _, field := range fields {
-		if field.Type == "section" {
+		switch field.Type {
+		case "section":
 			if field.Section != nil {
 				out = append(out, flattenFields(field.Section.Fields)...)
 			}
 			continue
+		case "attr_table":
+			out = append(out, expandAttrTable(field)...)
+			continue
 		}
 		out = append(out, field)
+	}
+	return out
+}
+
+// expandAttrTable turns each row of an attr_table into the "attr" field it behaves as: the
+// row supplies identity and limits, the table supplies advances, step and the shared roll
+// config. Because the result IS an attr field, the roller resolves a row through the same
+// `field.Key == skillKey` branch as a standalone attribute, and RollWithTemplate then sets
+// linkedAttr to the row's own key -- which is what makes the "attr_linked" block mean
+// "the attribute being rolled". The front end mirrors this in utils/templateSections.js
+// (expandAttrTable); change one and you must change the other.
+func expandAttrTable(field models.FieldDef) []models.FieldDef {
+	out := make([]models.FieldDef, 0, len(field.AttrRows))
+	for _, row := range field.AttrRows {
+		out = append(out, models.FieldDef{
+			Key:             row.ID,
+			Type:            "attr",
+			Label:           row.Label,
+			Abbr:            row.Abbr,
+			Default:         row.Default,
+			Min:             row.Min,
+			Max:             row.Max,
+			ShowOnShortCard: row.ShowOnShortCard,
+			Step:            field.Step,
+			HasAdvances:     field.HasAdvances,
+			AdvancesLabel:   field.AdvancesLabel,
+			Rollable:        field.Rollable,
+			RollConfig:      field.RollConfig,
+		})
 	}
 	return out
 }

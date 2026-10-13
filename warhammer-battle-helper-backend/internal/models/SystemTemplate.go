@@ -17,6 +17,20 @@ type SkillOption struct {
 	Attr  string `bson:"attr,omitempty" json:"attr,omitempty"`
 }
 
+// AttrRow is one attribute of an "attr_table" field (PLAYRPG-235). Its ID is the attribute's
+// key in Stats.Attributes: globally unique (genId), never a slug of the label and never prefixed
+// with the table's key, so the "attr" / "dice_attr" blocks and SkillOption.Attr address a row
+// exactly the way they address a standalone "attr" field.
+type AttrRow struct {
+	ID              string `bson:"id" json:"id"`
+	Label           string `bson:"label" json:"label"`
+	Abbr            string `bson:"abbr,omitempty" json:"abbr,omitempty"`
+	Default         *int   `bson:"default,omitempty" json:"default,omitempty"`
+	Min             *int   `bson:"min,omitempty" json:"min,omitempty"`
+	Max             *int   `bson:"max,omitempty" json:"max,omitempty"`
+	ShowOnShortCard bool   `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
+}
+
 // SectionDef groups related fields under a titled section with a column layout.
 type SectionDef struct {
 	ID      string     `bson:"id" json:"id"`
@@ -219,7 +233,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"|"char_name"|"char_avatar"|"image"
+	Type  string `bson:"type" json:"type"` // "attr"|"attr_table"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"|"char_name"|"char_avatar"|"image"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
 
@@ -242,14 +256,17 @@ type FieldDef struct {
 	// 0 or absent means 1 — it is a plain int, not a pointer, because 0 is not a legal step,
 	// so omitempty cannot erase a meaningful value the way it could for Default. Nothing in Go
 	// reads it: the sheet renderer is the only consumer.
-	Step              int           `bson:"step,omitempty" json:"step,omitempty"`
-	ShowOnShortCard   bool          `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
-	Rollable          bool          `bson:"rollable" json:"rollable"`
-	HasAdvances       bool          `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
-	AdvancesLabel     string        `bson:"advancesLabel,omitempty" json:"advancesLabel,omitempty"`
-	Options           []string      `bson:"options,omitempty" json:"options,omitempty"` // for type="select"
-	Skills            []SkillOption `bson:"skills,omitempty" json:"skills,omitempty"`   // for type="skill_table"
-	AssignAttrToSkill bool          `bson:"assignAttrToSkill,omitempty" json:"assignAttrToSkill,omitempty"`
+	Step            int           `bson:"step,omitempty" json:"step,omitempty"`
+	ShowOnShortCard bool          `bson:"showOnShortCard,omitempty" json:"showOnShortCard,omitempty"`
+	Rollable        bool          `bson:"rollable" json:"rollable"`
+	HasAdvances     bool          `bson:"hasAdvances,omitempty" json:"hasAdvances,omitempty"`
+	AdvancesLabel   string        `bson:"advancesLabel,omitempty" json:"advancesLabel,omitempty"`
+	Options         []string      `bson:"options,omitempty" json:"options,omitempty"` // for type="select"
+	Skills          []SkillOption `bson:"skills,omitempty" json:"skills,omitempty"`   // for type="skill_table"
+	// AttrRows lists the attributes of an "attr_table". Table-level settings (HasAdvances,
+	// AdvancesLabel, Step, Rollable, RollConfig) apply to every row; see expandAttrTable.
+	AttrRows          []AttrRow `bson:"attrRows,omitempty" json:"attrRows,omitempty"`
+	AssignAttrToSkill bool      `bson:"assignAttrToSkill,omitempty" json:"assignAttrToSkill,omitempty"`
 	// BaseFromAttr replaces a skill's base value with its linked attribute's current value, so the
 	// base is derived at read time and never stored. Meaningless without both AssignAttrToSkill (the
 	// row needs an attribute to read) and HasAdvances (with no advances column the base IS the total,

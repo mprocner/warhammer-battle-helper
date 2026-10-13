@@ -35,4 +35,8 @@ describe('fieldRowSpan', () => {
     expect(fieldRowSpan(null)).toBeNull();
     expect(fieldRowSpan(undefined)).toBeNull();
   });
+
+  test('attr_table follows its content height', () => {
+    expect(fieldRowSpan({ type: 'attr_table', hasAdvances: true })).toBeNull();
+  });
 });

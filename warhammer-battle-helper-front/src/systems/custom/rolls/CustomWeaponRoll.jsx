@@ -4,6 +4,7 @@ import WaxSealToken from '../../../components/log/WaxSealToken';
 import { getResultColor } from '../../../components/log/rollUtils';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { formatPoolFormula } from './poolFormula';
+import FormulaBreakdown from './FormulaBreakdown';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import '../../../components/LogWindow.css';
 
@@ -75,9 +76,7 @@ function CustomWeaponRoll({ data, timestamp }) {
           {!isRaw && hasTarget && ` ${t('log.vs')} ${data.target}`}
           {showsModifierSeparately && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
-        {formulaText && (
-          <div className="log-formula-breakdown">{formulaText}</div>
-        )}
+        {formulaText && <FormulaBreakdown text={formulaText} />}
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {outcomeLabel}

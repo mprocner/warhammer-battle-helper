@@ -42,6 +42,20 @@ describe('CustomCharacterDetails short card', () => {
     expect(container.querySelectorAll('.custom-character-details__tile').length).toBe(8);
   });
 
+  it('shows one tile per attr_table row the GM flagged (PLAYRPG-235)', () => {
+    const { container } = renderCard([{ id: 's1', fields: [{
+      key: 'fld_t', type: 'attr_table', label: 'Cechy',
+      attrRows: [
+        { id: 'attr_ws', label: 'WALKA', showOnShortCard: true },
+        { id: 'attr_s', label: 'SILA' },
+      ],
+    }] }], { attributes: { attr_ws: { base: 31, advances: 5, current: 36 } } });
+
+    const labels = [...container.querySelectorAll('.custom-character-details__tile-label')];
+    expect(labels.map(el => el.textContent)).toEqual(['WALKA']);
+    expect(container.querySelector('.custom-character-details__tile-num').textContent).toBe('36');
+  });
+
   it('leaves out a rollable field that the GM did not flag for the short card', () => {
     const { container } = renderCard([{ id: 's1', fields: [
       attr('shown'),

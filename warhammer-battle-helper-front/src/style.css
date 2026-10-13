@@ -8799,6 +8799,122 @@ align-items: center;
     justify-self: center;
 }
 
+/* Attribute table (PLAYRPG-235): attributes as columns, split into bands by AttrTable.jsx.
+   Each band is its own grid whose columns come from JS (label column + one per attribute). */
+.custom-sheet__attr-table-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.custom-sheet__attr-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+/* A band reads as a real table, like the Warhammer characteristics table: no gaps, one shared
+   grid line between cells. Grid has no border-collapse, so the band draws the top and left edge
+   and every cell its own right and bottom edge — each line is drawn exactly once. */
+.custom-sheet__attr-table-band {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid #c9975b;
+    border-left: 1px solid #c9975b;
+}
+
+.custom-sheet__attr-table-band > * {
+    box-sizing: border-box;
+    min-width: 0;
+    border-right: 1px solid #c9975b;
+    border-bottom: 1px solid #c9975b;
+}
+
+/* Header strip: the corner cell and the abbreviations share the skill-table gradient. */
+.custom-sheet__attr-table-corner,
+.custom-sheet__attr-table-head {
+    background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+    padding: 4px 2px;
+}
+
+.custom-sheet__attr-table-head {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #fff9f0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.custom-sheet__attr-table-rowlabel {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    background: rgba(201, 151, 91, 0.25);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The input IS the cell: no frame of its own, the grid lines are the frame. The popup-wide
+   `.character-sheet-popup:not(.creator__props-popup) input[type="number"]` rule (0,3,1) gives every
+   sheet input a full #c4a882 frame, which beside the grid line read as a doubled edge — so this
+   selector is (0,4,1) and restates the cell's own right/bottom line. Focus is drawn inside the
+   cell (negative offset) so it never spills over a neighbour's line. */
+.custom-sheet__attr-table .custom-sheet__attr-table-band > input.custom-sheet__attr-table-input[type="number"] {
+    width: 100%;
+    padding: 4px 2px;
+    background: #fff9f0;
+    border: none;
+    border-right: 1px solid #c9975b;
+    border-bottom: 1px solid #c9975b;
+    border-radius: 0;
+    color: #3a2f1f;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.custom-sheet__attr-table .custom-sheet__attr-table-band > input.custom-sheet__attr-table-input[type="number"]:focus {
+    border-color: #c9975b;
+    box-shadow: none;
+    outline: 2px solid #7a5c42;
+    outline-offset: -2px;
+}
+
+.custom-sheet__attr-table-total {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #3a2f1f;
+}
+
+.custom-sheet__attr-table-roll {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0;
+}
+
+.custom-sheet__attr-table-empty {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #7a5c42;
+}
+
 /* The value column of a table row. The emphasis sits on the UNMODIFIED rule because a field
    without advances has exactly one value column and that value is the important one; --base and
    --adv, which the row only adds when hasAdvances is on, push those two back.
@@ -10320,6 +10436,65 @@ align-items: center;
 
 .creator__options-editor {
     margin-bottom: 12px;
+}
+
+/* attr_table row editor: name and abbr get the room, the four numbers stay narrow. Each row is
+   its own grid (dnd-kit moves a row by transforming one node), so the header row and every data
+   row share this ONE track list — that rule is what keeps the columns aligned. */
+.creator__attr-rows-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.creator__attr-rows-row {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 2fr) minmax(0, 1fr) repeat(3, 52px) 32px 24px;
+    gap: 4px;
+    align-items: center;
+}
+
+/* Lifted above its siblings while dragged, so it never slides under the row it passes. */
+.creator__attr-rows-row--dragging {
+    position: relative;
+    z-index: 1;
+    opacity: 0.85;
+}
+
+.creator__attr-rows-grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #7a5c42;
+    cursor: grab;
+    touch-action: none;
+}
+
+.creator__attr-rows-grip:active {
+    cursor: grabbing;
+}
+
+.creator__attr-rows-head {
+    font-size: 0.7rem;
+    color: #7a5c42;
+    text-transform: uppercase;
+}
+
+.creator__attr-rows-empty {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #7a5c42;
+    margin-bottom: 6px;
+}
+
+.creator__attr-rows-add {
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Weapons table — column editor in the field property panel. */

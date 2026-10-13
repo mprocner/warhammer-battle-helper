@@ -6,9 +6,10 @@ import FunctionsIcon from '@mui/icons-material/Functions';
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { usePortalTooltip } from '../../components/common/PortalTooltip';
-import { SECTION_TYPE, walkFields, nodeId } from '../../utils/templateSections';
+import { SECTION_TYPE, walkValueFields, nodeId } from '../../utils/templateSections';
 import { computeFieldValue, formulaRefsOf } from './formula/formula';
 import { progressRatio } from './progressRatio';
+import AttrTable from './fields/AttrTable';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
@@ -152,7 +153,7 @@ function CustomSheetBody({
 
   const attrByKey = useMemo(() => {
     const out = {};
-    walkFields(sections, (f) => { if (f.type === 'attr') out[f.key] = f; });
+    walkValueFields(sections, (f) => { if (f.type === 'attr') out[f.key] = f; });
     return out;
   }, [sections]);
 
@@ -265,6 +266,27 @@ function CustomSheetBody({
                 step={field.step || 1}
               />
             </div>
+          </div>
+        );
+      }
+
+      case 'attr_table': {
+        // Same affordance policy as the skill fields: reserve the die row when a live handler
+        // exists OR the creator asked for static affordances.
+        const showRoll = !!field.rollable && (!!onRoll || showAffordances);
+        return (
+          <div key={field.key} className="custom-sheet__attr-table-field">
+            {renderFieldLabel(field.label)}
+            <AttrTable
+              field={field}
+              attrs={attrs}
+              onChange={onChange}
+              readOnly={readOnly}
+              showRoll={showRoll}
+              renderRoll={(row) => rollAffordance(() => onRoll({ skillKey: row.id, label: row.label }))}
+              showTooltip={showTooltip}
+              hideTooltip={hideTooltip}
+            />
           </div>
         );
       }

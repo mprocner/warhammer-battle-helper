@@ -13,9 +13,9 @@ function makeId() {
 
 // ── exports ───────────────────────────────────────────────────────────────────
 
-export function formulaToString(blocks, t) {
+export function formulaToString(blocks, t, { attrRoll = false } = {}) {
   const sk  = t ? t('creator.formula.skillAbbr')      : 'skill';
-  const la  = t ? t('creator.formula.linkedAttrAbbr') : 'l.attr';
+  const la  = t ? t(attrRoll ? 'creator.formula.currentAttrAbbr' : 'creator.formula.linkedAttrAbbr') : 'l.attr';
   const ask = t ? t('creator.formula.attrSkillAbbr')  : 'attr+skill';
 
   if (!blocks || blocks.length === 0) return '—';
@@ -69,6 +69,11 @@ function FormulaBuilder({ formula, onChange, numberFields, numericFields = [], f
   const [diceAttrKey,  setDiceAttrKey]  = useState('');
 
   const blocks     = formula || [];
+
+  // An attribute rolls against itself, so for it attr_linked means "the attribute being
+  // rolled" (RollWithTemplate sets linkedAttr to the rolled key). The skill blocks — skill value,
+  // attr+skill die — have no meaning there.
+  const attrRoll = fieldType === 'attr' || fieldType === 'attr_table';
   const validation = validateFormula(blocks, {
     attrKeys: numberFields.map(f => f.key),
     numberKeys: numericFields.map(f => f.key),
@@ -114,7 +119,7 @@ function FormulaBuilder({ formula, onChange, numberFields, numericFields = [], f
     if (b.type === 'op')              return OP_DISPLAY[b.value] || b.value;
     if (b.type === 'attr')            return b.label || b.key;
     if (b.type === 'skill')           return t('creator.formula.skillAbbr');
-    if (b.type === 'attr_linked')     return t('creator.formula.linkedAttrAbbr');
+    if (b.type === 'attr_linked')     return t(attrRoll ? 'creator.formula.currentAttrAbbr' : 'creator.formula.linkedAttrAbbr');
     if (b.type === 'const')           return String(b.num ?? b.value ?? '?');
     if (b.type === 'const_input')     return '▢?';
     if (b.type === 'number')          return b.label || b.key;
@@ -150,7 +155,7 @@ function FormulaBuilder({ formula, onChange, numberFields, numericFields = [], f
           {blocks.length === 0 ? (
             <span className="fb__preview-hint">{t('creator.formula.resultEmpty')}</span>
           ) : validation.valid ? (
-            <><span className="fb__preview-ok">✓</span> {t('creator.formula.result')}<em>{formulaToString(blocks, t)}</em></>
+            <><span className="fb__preview-ok">✓</span> {t('creator.formula.result')}<em>{formulaToString(blocks, t, { attrRoll })}</em></>
           ) : (
             <><span className="fb__preview-err">⚠</span> {t(validation.errorKey, validation.errorParams)}</>
           )}
@@ -186,7 +191,7 @@ function FormulaBuilder({ formula, onChange, numberFields, numericFields = [], f
                   <span className="fb__dice-icon">⚄</span>{t('creator.formula.diceAttrBtn')}
                 </button>
               )}
-              {fieldType !== 'attr' && (
+              {!attrRoll && (
                 <button
                   className="fb__dice-btn fb__dice-btn--skill-attr"
                   onClick={() => add({ type: 'dice_skill_attr' })}
@@ -272,7 +277,22 @@ function FormulaBuilder({ formula, onChange, numberFields, numericFields = [], f
             </>
           )}
 
-          {fieldType !== 'attr' && !arithmeticOnly && (
+          {attrRoll && !arithmeticOnly && (
+            <>
+              <div className="fb__subsection-label">{t('creator.formula.subsectionAttrTokens')}</div>
+              <div className="fb__attr-chips">
+                <button
+                  className="fb__attr-chip fb__attr-chip--attr-linked"
+                  onClick={() => add({ type: 'attr_linked' })}
+                  title={t('creator.formula.currentAttrTitle')}
+                >
+                  {t('creator.formula.currentAttrBtn')}
+                </button>
+              </div>
+            </>
+          )}
+
+          {!attrRoll && !arithmeticOnly && (
             <>
               <div className="fb__subsection-label">{t('creator.formula.subsectionSkillTokens')}</div>
               <div className="fb__attr-chips">
