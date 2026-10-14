@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CoCDiceModOverlay from '../CoCDiceModOverlay';
 import CasinoIcon from '@mui/icons-material/Casino';
+import NumberInput from '../../../components/common/NumberInput';
 
 function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId }) {
   const { t } = useTranslation();
@@ -11,7 +12,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
         <div className="coc-resource-pair coc-resource-pair--featured">
           <label>{t('coc.hp')}</label>
           <div className="coc-resource-pair__inputs">
-            <input type="number" value={edited.hp ?? ''} onChange={e => onFieldChange('hp', parseInt(e.target.value) || 0)} />
+            <NumberInput value={edited.hp ?? ''} onChange={e => onFieldChange('hp', parseInt(e.target.value) || 0)} />
             <span>/</span>
             <span className="coc-resource-pair__derived">{edited.hpMax ?? 0}</span>
           </div>
@@ -19,7 +20,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
         <div className="coc-resource-pair coc-resource-pair--featured">
           <label>{t('coc.mp')}</label>
           <div className="coc-resource-pair__inputs">
-            <input type="number" value={edited.mp ?? ''} onChange={e => onFieldChange('mp', parseInt(e.target.value) || 0)} />
+            <NumberInput value={edited.mp ?? ''} onChange={e => onFieldChange('mp', parseInt(e.target.value) || 0)} />
             <span>/</span>
             <span className="coc-resource-pair__derived">{edited.mpMax ?? 0}</span>
           </div>
@@ -28,7 +29,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
           <div className="coc-resource-pair__body">
             <label>{t('coc.sanity')}</label>
             <div className="coc-resource-pair__inputs">
-              <input type="number" value={edited.sanity ?? ''} onChange={e => onFieldChange('sanity', parseInt(e.target.value) || 0)} />
+              <NumberInput value={edited.sanity ?? ''} onChange={e => onFieldChange('sanity', parseInt(e.target.value) || 0)} />
               <span>/</span>
               <span className="coc-resource-pair__derived">{edited.sanityMax ?? 99}</span>
             </div>
@@ -43,7 +44,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
           <div className="coc-resource-pair__body">
             <label>{t('coc.luck')}</label>
             <div className="coc-resource-pair__inputs">
-              <input type="number" value={edited.luck ?? ''} onChange={e => onFieldChange('luck', parseInt(e.target.value) || 0)} />
+              <NumberInput value={edited.luck ?? ''} onChange={e => onFieldChange('luck', parseInt(e.target.value) || 0)} />
             </div>
           </div>
           {gameId && (

@@ -5,6 +5,7 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import skillsData from '../../../data/skills.json';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
+import NumberInput from '../../../components/common/NumberInput';
 
 function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl, onSkillClick, getCharacteristicValue }) {
     const { t } = useTranslation(['translation', 'skills']);
@@ -149,8 +150,7 @@ function MagicSkillsSection({ character, setCharacter, scheduleAutoSave, onChara
                                 </td>
                                 <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
                                 <td>
-                                    <input
-                                        type="number"
+                                    <NumberInput
                                         value={advances}
                                         onChange={(e) => handleAdvancesChange(skill, e.target.value)}
                                         min="0"

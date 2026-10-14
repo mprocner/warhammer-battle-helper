@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CoCDiceModOverlay from '../CoCDiceModOverlay';
 import { half, fifth } from '../utils';
+import NumberInput from '../../../components/common/NumberInput';
 
 const ATTRIBUTES = [
   { key: 'str', labelKey: 'coc.attr_str' },
@@ -30,8 +31,7 @@ function AttributesSection({ edited, onFieldChange, onRollAttr, gameId }) {
                 title={gameId ? `Roll ${t(labelKey)}` : undefined}
               >
                 <div className="coc-attr-card__name">{t(labelKey)}</div>
-                <input
-                  type="number"
+                <NumberInput
                   className="coc-attr-card__input"
                   value={val || ''}
                   onChange={e => onFieldChange(key, parseInt(e.target.value) || 0)}

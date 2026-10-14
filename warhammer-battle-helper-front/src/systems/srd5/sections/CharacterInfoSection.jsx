@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import AvatarUpload from '../../../components/common/AvatarUpload';
+import NumberInput from '../../../components/common/NumberInput';
 
 function CharacterInfoSection({ charName, charAvatar, info, appearance, onNameChange, onAvatarChange, onInfoChange, onAppearanceChange }) {
   const { t } = useTranslation();
@@ -19,9 +20,9 @@ function CharacterInfoSection({ charName, charAvatar, info, appearance, onNameCh
           <label>{t('srd.subclass')}</label>
           <input value={info.subclass || ''} onChange={e => onInfoChange('subclass', e.target.value)} />
           <label>{t('srd.level')}</label>
-          <input type="number" min={1} max={20} value={info.level || 1} onChange={e => onInfoChange('level', parseInt(e.target.value) || 1)} style={{ width: 52 }} />
+          <NumberInput min={1} max={20} value={info.level || 1} onChange={e => onInfoChange('level', parseInt(e.target.value) || 1)} style={{ width: 52 }} />
           <label>{t('srd.xp')}</label>
-          <input type="number" min={0} value={info.xp || 0} onChange={e => onInfoChange('xp', parseInt(e.target.value) || 0)} style={{ width: 80 }} />
+          <NumberInput min={0} value={info.xp || 0} onChange={e => onInfoChange('xp', parseInt(e.target.value) || 0)} style={{ width: 80 }} />
         </div>
       </div>
 

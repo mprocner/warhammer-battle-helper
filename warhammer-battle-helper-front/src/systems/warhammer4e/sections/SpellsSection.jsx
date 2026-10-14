@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
+import NumberInput from '../../../components/common/NumberInput';
 
 function SpellsSection({ character, setCharacter, scheduleAutoSave }) {
     const { t } = useTranslation();
@@ -53,7 +54,7 @@ function SpellsSection({ character, setCharacter, scheduleAutoSave }) {
                     {character.spells?.map((spell, idx) => (
                         <tr key={idx}>
                             <td><input type="text" value={spell.name || ''} onChange={(e) => handleSpellFieldChange(idx, 'name', e.target.value)} /></td>
-                            <td><input type="number" value={spell.cn || ''} onChange={(e) => handleSpellFieldChange(idx, 'cn', e.target.value)} /></td>
+                            <td><NumberInput value={spell.cn || ''} onChange={(e) => handleSpellFieldChange(idx, 'cn', e.target.value)} /></td>
                             <td><input type="text" value={spell.range || ''} onChange={(e) => handleSpellFieldChange(idx, 'range', e.target.value)} /></td>
                             <td><input type="text" value={spell.target || ''} onChange={(e) => handleSpellFieldChange(idx, 'target', e.target.value)} /></td>
                             <td><input type="text" value={spell.duration || ''} onChange={(e) => handleSpellFieldChange(idx, 'duration', e.target.value)} /></td>

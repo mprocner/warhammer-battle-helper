@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CloseIcon from '@mui/icons-material/Close';
 import talentsData from '../../../data/talents.json';
 import CustomItemModal from '../CustomItemModal';
+import NumberInput from '../../../components/common/NumberInput';
 
 function TalentsSection({ character, setCharacter, scheduleAutoSave }) {
     const { t } = useTranslation(['translation', 'talents']);
@@ -161,8 +162,7 @@ function TalentsSection({ character, setCharacter, scheduleAutoSave }) {
                                         )}
                                     </td>
                                     <td>
-                                        <input
-                                            type="number"
+                                        <NumberInput
                                             value={talent.timesTaken || 1}
                                             onChange={(e) => handleTalentTimesTakenChange(actualIndex, e.target.value)}
                                             min="1"

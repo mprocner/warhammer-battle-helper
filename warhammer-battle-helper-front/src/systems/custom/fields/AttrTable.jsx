@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { attrsPerBand, splitBands, ATTR_TABLE_LABEL_COL_PX } from '../attrTableBands';
+import NumberInput from '../../../components/common/NumberInput';
 
 // The attr_table field (PLAYRPG-235): attributes as columns, Warhammer style, with the rows
 // Base / Advances / Total (or a single Value row without advances) and a die row when rollable.
@@ -35,9 +36,8 @@ function AttrTable({ field, attrs, onChange, readOnly, showRoll, renderRoll, sho
     // shows the stored base as-is so a real 0 stays visible.
     const value = hasAdv ? ((isAdv ? v.advances : v.base) || '') : (v.base ?? '');
     return (
-      <input
+      <NumberInput
         key={`${row.id}-${kind}`}
-        type="number"
         className={`custom-sheet__attr-table-input${isAdv ? ' custom-sheet__attr-table-input--adv' : ''}`}
         value={value}
         onChange={onChange ? e => onChange[isAdv ? 'advances' : 'attr'](row.id, e.target.value) : undefined}

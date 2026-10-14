@@ -4,6 +4,7 @@ import CoCDiceModOverlay from '../CoCDiceModOverlay';
 import CasinoIcon from '@mui/icons-material/Casino';
 import StarIcon from '@mui/icons-material/Star';
 import CloseIcon from '@mui/icons-material/Close';
+import NumberInput from '../../../components/common/NumberInput';
 
 function WeaponsSection({ weapons, customSkills, weaponSkills = [], onWeaponFieldChange, onRemoveWeapon, onAddWeapon, onToggleFavourite, onRollWeapon, gameId }) {
   const { t } = useTranslation();
@@ -37,9 +38,9 @@ function WeaponsSection({ weapons, customSkills, weaponSkills = [], onWeaponFiel
               <td><input value={w.name || ''} onChange={e => onWeaponFieldChange(i, 'name', e.target.value)} /></td>
               <td><input value={w.damage || ''} onChange={e => onWeaponFieldChange(i, 'damage', e.target.value)} /></td>
               <td><input value={w.range || ''} onChange={e => onWeaponFieldChange(i, 'range', e.target.value)} /></td>
-              <td><input type="number" value={w.attacks ?? ''} onChange={e => onWeaponFieldChange(i, 'attacks', parseInt(e.target.value) || 0)} min={0} /></td>
-              <td><input type="number" value={w.ammo ?? ''} onChange={e => onWeaponFieldChange(i, 'ammo', parseInt(e.target.value) || 0)} min={0} /></td>
-              <td><input type="number" value={w.malfunction ?? ''} onChange={e => onWeaponFieldChange(i, 'malfunction', parseInt(e.target.value) || 0)} min={0} /></td>
+              <td><NumberInput value={w.attacks ?? ''} onChange={e => onWeaponFieldChange(i, 'attacks', parseInt(e.target.value) || 0)} min={0} /></td>
+              <td><NumberInput value={w.ammo ?? ''} onChange={e => onWeaponFieldChange(i, 'ammo', parseInt(e.target.value) || 0)} min={0} /></td>
+              <td><NumberInput value={w.malfunction ?? ''} onChange={e => onWeaponFieldChange(i, 'malfunction', parseInt(e.target.value) || 0)} min={0} /></td>
               <td>
                 <select
                   className="coc-weapon-skill-select"

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import NumberInput from '../../components/common/NumberInput';
 
 const LOCATIONS = [
     { key: 'head', className: 'armour-input--head', range: '01-09' },
@@ -23,8 +24,7 @@ const ArmourPointsSection = ({ armourPoints, onFieldChange }) => {
                     <div key={key} className={`armour-input ${className}`}>
                         <label>{t(`characterSheet.${labelKey || key}`)}</label>
                         {range && <span className="hit-range">{range}</span>}
-                        <input
-                            type="number"
+                        <NumberInput
                             min="0"
                             value={armourPoints?.[key] || 0}
                             onChange={(e) => onFieldChange(`armourPoints.${key}`, e.target.value)}

@@ -6,6 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import skillsData from '../../../data/skills.json';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
+import NumberInput from '../../../components/common/NumberInput';
 
 function WeaponSkillsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl, onSkillClick, getCharacteristicValue }) {
     const { t } = useTranslation(['translation', 'skills']);
@@ -118,8 +119,7 @@ function WeaponSkillsSection({ character, setCharacter, scheduleAutoSave, onChar
                 </td>
                 <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
                 <td>
-                    <input
-                        type="number"
+                    <NumberInput
                         value={getGroupedSkillAdvances(skill.key, spec)}
                         onChange={(e) => handleGroupedSkillAdvancesChange(skill.key, spec, e.target.value)}
                         min="0"

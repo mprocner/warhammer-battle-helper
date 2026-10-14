@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import NumberInput from '../../../components/common/NumberInput';
 
 const SPELL_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -32,8 +33,7 @@ function SpellSlotsSection({ spellSlots, spellcastingAbility, onSpellSlotChange,
             <div key={level} className="srd-spell-slot">
               <div className="srd-spell-slot__label">{t('srd.spellLevel', { level })}</div>
               <div className="srd-spell-slot__inputs">
-                <input
-                  type="number"
+                <NumberInput
                   className="srd-spell-slot__input"
                   min={0}
                   max={slot.total || 0}
@@ -42,8 +42,7 @@ function SpellSlotsSection({ spellSlots, spellcastingAbility, onSpellSlotChange,
                   title={t('srd.used')}
                 />
                 <span>/</span>
-                <input
-                  type="number"
+                <NumberInput
                   className="srd-spell-slot__input"
                   min={0}
                   value={slot.total ?? 0}

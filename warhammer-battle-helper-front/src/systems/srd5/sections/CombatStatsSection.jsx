@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import NumberInput from '../../../components/common/NumberInput';
 
 function formatInit(val) {
   const n = val ?? 0;
@@ -45,8 +46,7 @@ function CombatStatsSection({
       <div className="srd-combat-top-strip srd-combat-top-strip--primary">
         <div className="srd-combat-stat-box">
           <div className="srd-combat-stat-box__label">{t('srd.ac')}</div>
-          <input
-            type="number"
+          <NumberInput
             className="srd-combat-stat-box__value"
             min={0}
             value={armorClass ?? 10}
@@ -61,8 +61,7 @@ function CombatStatsSection({
         </div>
         <div className="srd-combat-stat-box">
           <div className="srd-combat-stat-box__label">{t('srd.speed')}</div>
-          <input
-            type="number"
+          <NumberInput
             className="srd-combat-stat-box__value"
             min={0}
             value={speed ?? 30}
@@ -76,8 +75,7 @@ function CombatStatsSection({
         <div className="srd-combat-stat-box srd-combat-stat-box--hp">
           <div className="srd-combat-stat-box__label">{t('srd.hp')}</div>
           <div className="srd-hp-inline-row">
-            <input
-              type="number"
+            <NumberInput
               className="srd-combat-stat-box__value srd-hp-inline-row__cur"
               min={0}
               value={resources?.hp ?? 0}
@@ -85,8 +83,7 @@ function CombatStatsSection({
               title={t('srd.currentHp')}
             />
             <span className="srd-hp-inline-row__sep">/</span>
-            <input
-              type="number"
+            <NumberInput
               className="srd-combat-stat-box__value srd-hp-inline-row__max"
               min={0}
               value={resources?.hpMax ?? 0}
@@ -97,8 +94,7 @@ function CombatStatsSection({
         </div>
         <div className="srd-combat-stat-box">
           <div className="srd-combat-stat-box__label">{t('srd.tempHP')}</div>
-          <input
-            type="number"
+          <NumberInput
             className="srd-combat-stat-box__value"
             min={0}
             value={resources?.tempHp ?? 0}

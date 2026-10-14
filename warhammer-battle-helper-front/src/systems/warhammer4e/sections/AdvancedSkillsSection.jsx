@@ -7,6 +7,7 @@ import skillsData from '../../../data/skills.json';
 import CustomItemModal from '../CustomItemModal';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
+import NumberInput from '../../../components/common/NumberInput';
 
 function AdvancedSkillsSection({ character, setCharacter, scheduleAutoSave, onCharacterUpdate, getCharacterSaveUrl, onSkillClick, getCharacteristicValue }) {
     const { t } = useTranslation(['translation', 'skills']);
@@ -229,8 +230,7 @@ function AdvancedSkillsSection({ character, setCharacter, scheduleAutoSave, onCh
                                     </td>
                                     <td><input type="text" value={t(`characteristicsShort.${skill.characteristic}`)} readOnly /></td>
                                     <td>
-                                        <input
-                                            type="number"
+                                        <NumberInput
                                             value={skill.advances}
                                             onChange={(e) => handleAdvancedSkillAdvancesChange(skill.key, e.target.value)}
                                             min="0"

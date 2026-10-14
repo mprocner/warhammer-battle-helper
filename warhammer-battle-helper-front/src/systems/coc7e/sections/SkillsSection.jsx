@@ -7,6 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import EditIcon from '@mui/icons-material/Edit';
 import { half, fifth, skillVal } from '../utils';
+import NumberInput from '../../../components/common/NumberInput';
 
 function SkillsSection({
   skills = [],
@@ -132,8 +133,7 @@ function SkillsSection({
               </td>
               <td className="coc-derived-cell">
                 {isEditing ? (
-                  <input
-                    type="number"
+                  <NumberInput
                     value={skill.base}
                     onChange={e => onUpdateCustomSkillBase(skill.key, e.target.value)}
                     min={0}
@@ -142,8 +142,7 @@ function SkillsSection({
                 ) : baseDisplay}
               </td>
               <td className="coc-skill-value-cell">
-                <input
-                  type="number"
+                <NumberInput
                   value={val}
                   onChange={e => onSetSkill(skill.key, e.target.value)}
                   min={0}

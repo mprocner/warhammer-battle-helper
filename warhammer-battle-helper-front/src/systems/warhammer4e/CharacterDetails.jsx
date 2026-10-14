@@ -8,6 +8,7 @@ import axiosInstance, { getApiUrl, getApiHeaders } from '../../api/axios';
 import skillsData from '../../data/skills.json';
 import { buildPayload } from './buildPayload';
 import { getCharacterSaveUrl } from '../shared/characterApi';
+import NumberInput from '../../components/common/NumberInput';
 
 function WarhammerCharacterDetails({
     character,
@@ -437,8 +438,7 @@ function WarhammerCharacterDetails({
                 <div className="detail-item">
                     <div className="detail-label">{t('attributes.hp')}</div>
                     <div className="detail-value modifier-value">
-                        <input
-                            type="number"
+                        <NumberInput
                             className="wounds-input"
                             min={0}
                             max={hp.total || 0}

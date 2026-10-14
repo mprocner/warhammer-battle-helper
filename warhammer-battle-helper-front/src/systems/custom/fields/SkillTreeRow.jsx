@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import { AFFORDANCE_ICON_SIZE } from './affordances';
+import NumberInput from '../../../components/common/NumberInput';
 
 // One row of a skill_tree, at one depth.
 //
@@ -115,8 +116,7 @@ function SkillTreeRow({
         )}
       </span>
 
-      <input
-        type="number"
+      <NumberInput
         className="custom-sheet__skill-val-input"
         value={skills[row.key]?.base ?? 0}
         onChange={onChange ? e => onChange.skill(row.key, e.target.value) : undefined}

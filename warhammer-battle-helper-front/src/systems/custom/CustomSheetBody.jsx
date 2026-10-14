@@ -17,6 +17,7 @@ import SheetImagePicker from './fields/SheetImagePicker';
 import { fieldRowSpan } from './fieldRowSpan';
 import { PRESETS } from '../../utils/imageProcessing';
 import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
+import NumberInput from '../../components/common/NumberInput';
 
 // onChange = { attr, advances, skill, skillAdvances, text, progress, number, name, avatar, image,
 //              weaponAdd, weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite }
@@ -221,8 +222,7 @@ function CustomSheetBody({
               <div className="custom-sheet__attr-body">
                 <div className="custom-sheet__attr-parts">
                   <label className="custom-sheet__attr-part">
-                    <input
-                      type="number"
+                    <NumberInput
                       className="custom-sheet__attr-input"
                       value={base || ''}
                       onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
@@ -235,8 +235,7 @@ function CustomSheetBody({
                   </label>
                   <span className="custom-sheet__attr-op">+</span>
                   <label className="custom-sheet__attr-part">
-                    <input
-                      type="number"
+                    <NumberInput
                       className="custom-sheet__attr-input custom-sheet__attr-input--adv"
                       value={adv || ''}
                       onChange={onChange ? e => onChange.advances(field.key, e.target.value) : undefined}
@@ -255,8 +254,7 @@ function CustomSheetBody({
           <div key={field.key} className="custom-sheet__attr">
             {header}
             <div className="custom-sheet__attr-body">
-              <input
-                type="number"
+              <NumberInput
                 className="custom-sheet__attr-input custom-sheet__attr-input--solo"
                 value={attrs[field.key]?.base ?? ''}
                 onChange={onChange ? e => onChange.attr(field.key, e.target.value) : undefined}
@@ -293,8 +291,7 @@ function CustomSheetBody({
 
       case 'number':
         return renderTile(field, 'number', (
-          <input
-            type="number"
+          <NumberInput
             className="custom-sheet__tile-input"
             value={numbers[field.key] ?? ''}
             onChange={onChange ? e => onChange.number(field.key, e.target.value) : undefined}
@@ -322,16 +319,14 @@ function CustomSheetBody({
         const { ratio, low } = progressRatio(current, max);
         return renderTile(field, 'progress', (
           <>
-            <input
-              type="number"
+            <NumberInput
               className="custom-sheet__tile-input"
               value={current}
               onChange={onChange ? e => onChange.progress(field.key, 'current', e.target.value) : undefined}
               readOnly={readOnly}
             />
             <span className="custom-sheet__tile-sep">/</span>
-            <input
-              type="number"
+            <NumberInput
               className="custom-sheet__tile-input custom-sheet__tile-input--max"
               value={max}
               onChange={onChange ? e => onChange.progress(field.key, 'max', e.target.value) : undefined}

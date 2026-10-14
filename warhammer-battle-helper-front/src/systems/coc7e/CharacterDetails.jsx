@@ -9,6 +9,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import CoCDiceModOverlay from './CoCDiceModOverlay';
 import defaultSkillsData from './skills.json';
 import { getCharacterSaveUrl } from '../shared/characterApi';
+import NumberInput from '../../components/common/NumberInput';
 
 const COC_ATTRS = [
   { key: 'str', labelKey: 'coc.attr_str' },
@@ -226,8 +227,7 @@ function CoCCharacterDetails({
           <div className="detail-label">{t('coc.luck')}</div>
           <div className="detail-value modifier-value">
             <div className="coc-detail-left">
-              <input
-                type="number"
+              <NumberInput
                 className="wounds-input"
                 min={0}
                 max={99}
@@ -248,8 +248,7 @@ function CoCCharacterDetails({
           <div className="detail-label">{t('coc.sanity')}</div>
           <div className="detail-value modifier-value">
             <div className="coc-detail-left">
-              <input
-                type="number"
+              <NumberInput
                 className="wounds-input"
                 min={0}
                 max={resources.sanityMax || 99}
@@ -271,8 +270,7 @@ function CoCCharacterDetails({
           <div className="detail-label">{t('coc.hp_short')}</div>
           <div className="detail-value modifier-value">
             <div className="coc-detail-left">
-              <input
-                type="number"
+              <NumberInput
                 className="wounds-input"
                 min={0}
                 max={resources.hpMax || 0}
@@ -287,8 +285,7 @@ function CoCCharacterDetails({
           <div className="detail-label">{t('coc.mp_short')}</div>
           <div className="detail-value modifier-value">
             <div className="coc-detail-left">
-              <input
-                type="number"
+              <NumberInput
                 className="wounds-input"
                 min={0}
                 max={resources.mpMax || 0}

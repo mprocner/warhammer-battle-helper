@@ -12,6 +12,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import Srd5AdvantageOverlay from './Srd5AdvantageOverlay';
 import skillsData from './skills.json';
+import NumberInput from '../../components/common/NumberInput';
 
 const ABILITIES = [
   { key: 'str', labelKey: 'srd.str' },
@@ -171,8 +172,7 @@ function Srd5CharacterDetails({
               <RemoveIcon style={{ fontSize: 16 }} />
             </button>
             <div className="srd-hp-box__value">
-              <input
-                type="number"
+              <NumberInput
                 className="srd-hp-box__input"
                 min={0}
                 max={resources.hpMax || 0}

@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import { resolveSkillValues } from '../skillLayout';
 import { AFFORDANCE_ICON_SIZE } from './affordances';
+import NumberInput from '../../../components/common/NumberInput';
 
 // One row of a skill_table.
 //
@@ -102,8 +103,7 @@ function SkillTableRow({
       ) : (
         <span className="custom-sheet__skill-name">{displayName}</span>
       )}
-      <input
-        type="number"
+      <NumberInput
         className={`custom-sheet__skill-val-input${hasAdvances ? ' custom-sheet__skill-val-input--base' : ''}${baseReadOnly ? ' custom-sheet__skill-val-input--derived' : ''}`}
         value={baseReadOnly ? base : (hasAdvances ? (base || '') : base)}
         onChange={onChange && !baseReadOnly ? e => onChange.skill(row.key, e.target.value) : undefined}
@@ -112,8 +112,7 @@ function SkillTableRow({
       />
       {hasAdvances && (
         <>
-          <input
-            type="number"
+          <NumberInput
             className="custom-sheet__skill-val-input custom-sheet__skill-val-input--adv"
             value={adv || ''}
             onChange={onChange ? e => onChange.skillAdvances(row.key, e.target.value) : undefined}

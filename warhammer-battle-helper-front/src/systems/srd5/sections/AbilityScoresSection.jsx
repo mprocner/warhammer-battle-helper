@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import Srd5AdvantageOverlay from '../Srd5AdvantageOverlay';
+import NumberInput from '../../../components/common/NumberInput';
 
 const ABILITIES = [
   { key: 'str', labelKey: 'srd.str' },
@@ -36,8 +37,7 @@ function AbilityScoresSection({ abilities, onAbilityChange, onRollAbility, gameI
                 <span className="srd-ability-score__mod">{formatMod(mod)}</span>
               </button>
             </Srd5AdvantageOverlay>
-            <input
-              type="number"
+            <NumberInput
               className="srd-ability-score__value"
               min={1}
               max={30}
