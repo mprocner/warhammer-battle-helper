@@ -96,6 +96,8 @@ MONGO_URI=... MONGO_DB=... go run ./cmd/migrate-dnd5e-to-srd5/
 | `games` | `updateMany({gameSystem:"dnd5e"}, {$set:{gameSystem:"srd5"}})` |
 | `characters` | `updateMany({gameSystem:"dnd5e"}, {$set:{gameSystem:"srd5"}})` |
 | `system_templates` | `updateMany({baseSystem:"dnd5e"}, {$set:{baseSystem:"srd5"}})` |
+| `games` (osadzone kopie) | `updateMany({"customSystemTemplate.baseSystem":"dnd5e"}, {$set:{"customSystemTemplate.baseSystem":"srd5"}})` |
+| `system_templates` (singleton tokenów) | po zmianie `baseSystem`: `updateMany({baseSystem:"srd5", name:"dnd5e tokens"}, {$set:{name:"srd5 tokens"}})` — nazwa = `baseSystem + " tokens"` (`TemplateService.GetOrCreateTokenConfig`) |
 | `system_access` | `_id` niezmienne → wstaw kopię `dnd5e` jako `_id:"srd5"` (tylko gdy `srd5` nie istnieje), potem usuń `dnd5e` |
 
 - Decyzja dla `system_access` w czystej funkcji `planAccessMove(dnd, srd *models.SystemAccess)
@@ -103,6 +105,9 @@ MONGO_URI=... MONGO_DB=... go run ./cmd/migrate-dnd5e-to-srd5/
   `srd5` w panelu, jego ustawienie wygrywa; `dnd5e` i tak jest usuwany.
 - Wypisuje liczbę zmian per kolekcja. Idempotentny: drugie uruchomienie = same zera.
 - `rollType` i `roll_stats` nie zawierają klucza systemu — bez zmian.
+
+- Znana luka: jeśli MG otworzył konfigurację tokenów dla `srd5` między deployem a migracją, właściciel
+  może mieć dwa szablony tokenów `srd5` (`FindOne` wybierze jeden) — stąd migracja bezpośrednio po deployu.
 
 **Wdrożenie:** deploy → natychmiast skrypt na prod. Między nimi stare gry D&D chwilowo nie działają
 (nowy kod nie zna `dnd5e`; frontend `getSystem()` cicho spada na Warhammera). To samo lokalnie.
@@ -115,10 +120,12 @@ MONGO_URI=... MONGO_DB=... go run ./cmd/migrate-dnd5e-to-srd5/
 - Oficjalna notka atrybucji SRD 5.2 **po angielsku, dosłownie**, jako stała w JSX z komentarzem
   wyjaśniającym, czemu jest poza i18n (tekstu prawnego się nie tłumaczy). Brzmienie zweryfikować
   ze źródłem WotC przy implementacji. Oczekiwany tekst:
-  > This work includes material from the System Reference Document 5.2 ("SRD 5.2") by Wizards of
-  > the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2 is licensed under the
+  > This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of
+  > the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the
   > Creative Commons Attribution 4.0 International License, available at
   > https://creativecommons.org/licenses/by/4.0/legalcode.
+
+  Stała w kodzie używa oficjalnych zakrzywionych cudzysłowów (“SRD 5.2.1”), a nie prostych `"`.
 - Nagłówek strony i zdanie wyjaśnienia przez i18n (en + pl).
 
 ### Stopka w arkuszu SRD
@@ -142,7 +149,7 @@ Nowe:
 
 Grep końcowy: `dnd5e|D&D|DnD5e|\.dnd-|t\('dnd\.` w `warhammer-battle-helper-front/src`,
 `warhammer-battle-helper-backend`, żywych docs — dozwolone wyłącznie dnd-kit (`.dnd-context`,
-`DndContext`).
+`DndContext`) oraz `cmd/migrate-dnd5e-to-srd5/` (skrypt musi znać stary klucz).
 
 Pełne suity: `go test ./...`, `CI=true npm test -- --watchAll=false` (baseline fail `App.test.js`).
 

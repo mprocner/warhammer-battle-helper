@@ -2,13 +2,13 @@
 
 ## Context
 
-The Warhammer Battle Helper is currently tightly coupled to Warhammer Fantasy 4e rules. The goal is to support **simultaneous** multi-system gameplay (Warhammer, Call of Cthulhu 7e, D&D 5e/Pathfinder) on the same instance. Users should be able to create games under different RPG systems, each with its own character sheets, dice mechanics, and skill structures. Scenes, music, handouts, and file management are system-agnostic and will be reused as-is.
+The Warhammer Battle Helper is currently tightly coupled to Warhammer Fantasy 4e rules. The goal is to support **simultaneous** multi-system gameplay (Warhammer, Call of Cthulhu 7e, SRD 5.2/Pathfinder) on the same instance. Users should be able to create games under different RPG systems, each with its own character sheets, dice mechanics, and skill structures. Scenes, music, handouts, and file management are system-agnostic and will be reused as-is.
 
 ---
 
 ## System Comparison: Why This Is Non-Trivial
 
-| Feature | Warhammer 4e | Call of Cthulhu 7e | D&D 5e |
+| Feature | Warhammer 4e | Call of Cthulhu 7e | SRD 5.2 |
 |---|---|---|---|
 | **Dice** | d100 (roll-under) | d100 (roll-under) | d20 (roll-over) |
 | **Characteristics** | 10 (WS,BS,S,T,I,Ag,Dex,Int,WP,Fel) | 8 (STR,CON,SIZ,DEX,APP,INT,POW,EDU) | 6 (STR,DEX,CON,INT,WIS,CHA) |
@@ -68,7 +68,7 @@ These components are already system-agnostic (~60% of the codebase):
 **Each system definition would include:**
 ```
 SystemDefinition {
-    id: "warhammer4e" | "coc7e" | "dnd5e"
+    id: "warhammer4e" | "coc7e" | "srd5"
     name: "Warhammer Fantasy 4e"
     characteristics: [{ key, shortLabel, fullName }]
     skillStructure: { type, categories, linkedToCharacteristic }
@@ -98,7 +98,7 @@ type CharacteristicRow map[string]int  // {"STR": 50, "DEX": 65, ...}
 
 **Also change:**
 - `Wounds` struct - different systems calculate HP differently
-- `ArmourPoints` struct - CoC/D&D don't use location-based armour
+- `ArmourPoints` struct - CoC/SRD 5.2 don't use location-based armour
 - `Wealth` struct - different currency systems
 - Add `SystemID string` field to `Character` model
 
@@ -123,7 +123,7 @@ RollResult {
     success: boolean
     criticalSuccess: boolean
     criticalFailure: boolean
-    successLevel: number | null      // Warhammer SL, null for D&D
+    successLevel: number | null      // Warhammer SL, null for SRD 5.2
     successTier: string | null       // CoC: "regular"/"hard"/"extreme", null for others
     damage: number | null
     systemSpecific: {}               // any extra system-specific data
@@ -142,8 +142,8 @@ RollResult {
 
 **What's needed:**
 - Per-system skill definition files
-- Skill value calculation varies: Warhammer (char + advances), CoC (flat %), D&D (proficiency + ability mod)
-- Skill categories vary: Warhammer (basic/advanced/magic), CoC (flat list), D&D (ability-grouped)
+- Skill value calculation varies: Warhammer (char + advances), CoC (flat %), SRD 5.2 (proficiency + ability mod)
+- Skill categories vary: Warhammer (basic/advanced/magic), CoC (flat list), SRD 5.2 (ability-grouped)
 
 ### 2.5 Character Sheet UI
 
@@ -154,7 +154,7 @@ RollResult {
 - A wrapper that loads the right one based on game system
 - Shared atomic UI components: editable fields, skill rows, dice buttons, stat displays
 - This avoids over-abstraction while preventing duplication of basic UI elements
-- Each system gets a tailored sheet, but unique mechanics (CoC Sanity, D&D spell slots) are handled naturally
+- Each system gets a tailored sheet, but unique mechanics (CoC Sanity, SRD 5.2 spell slots) are handled naturally
 
 ### 2.6 Log/Roll Display Components
 
@@ -171,7 +171,7 @@ RollResult {
 **What's needed:**
 - Roll display components need to handle different result structures
 - Color logic (gold/green/red/purple) works for all systems - can stay
-- Success level display differs: SL number (Warhammer), tier label (CoC), pass/fail (D&D)
+- Success level display differs: SL number (Warhammer), tier label (CoC), pass/fail (SRD 5.2)
 - Damage display differs per system
 
 ### 2.7 Characteristic Buttons (Quick Panel)
@@ -193,7 +193,7 @@ RollResult {
 - **Success tiers** - Regular (<=skill), Hard (<=skill/2), Extreme (<=skill/5)
 - **Opposed rolls** - compare success tiers, not SL
 
-### 3.2 D&D 5e Specific
+### 3.2 SRD 5.2 Specific
 - **Ability scores + modifiers** - (score - 10) / 2
 - **Proficiency bonus** - level-based, applied to proficient skills/attacks
 - **Advantage/Disadvantage** - roll 2d20, take higher/lower
@@ -242,13 +242,13 @@ Each system needs its own:
 6. Add CoC-specific log display formatting
 7. Add CoC translations
 
-### Phase 4: Third System (D&D 5e)
-1. Create D&D system definition
+### Phase 4: Third System (SRD 5.2)
+1. Create SRD 5.2 system definition
 2. Implement d20 roll resolver (roll-over, advantage/disadvantage)
-3. Build D&D character sheet component
+3. Build SRD 5.2 character sheet component
 4. Add ability modifier calculation, proficiency system
 5. Add spell slot tracking
-6. Add D&D translations
+6. Add SRD 5.2 translations
 
 ---
 
@@ -297,7 +297,7 @@ Each system needs its own:
 
 3. **Backward compatibility** - Existing Warhammer games and characters must continue working. The `FlexInt` type already handles some schema flexibility - similar patterns may help.
 
-4. **D&D is fundamentally different** - d20 roll-over vs d100 roll-under is a bigger gap than Warhammer-to-CoC. The roll result display will need more variation.
+4. **SRD 5.2 is fundamentally different** - d20 roll-over vs d100 roll-under is a bigger gap than Warhammer-to-CoC. The roll result display will need more variation.
 
 5. **Naming** - The app is called "Warhammer Battle Helper". Supporting multiple systems may warrant a name change (e.g., "RPG Battle Helper" or "Tabletop Helper").
 

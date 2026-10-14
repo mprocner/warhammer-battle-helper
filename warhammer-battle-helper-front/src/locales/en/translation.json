@@ -57,8 +57,10 @@
     "logout": "Logout",
     "register": "Register",
     "settings": "Settings",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "licenses": "Licenses"
   },
+  "licenses": { "title": "Licenses", "intro": "Third-party material used in this app and the licences it is used under.", "srdTitle": "System Reference Document", "ccLink": "Creative Commons Attribution 4.0 International License" },
   "auth": {
     "email": "Email Address",
     "password": "Password",
@@ -1433,10 +1435,10 @@
     "skill_status": "Status"
   },
   "gameSystems": {
-    "warhammer4e": "Warhammer Fantasy 4e",
+    "warhammer4e": "Warhammer Fantasy Roleplay 4e",
     "coc7e": "Call of Cthulhu 7e",
     "coc7e_dark_ages": "Call of Cthulhu: Dark Ages",
-    "dnd5e": "D&D 5e",
+    "srd5": "SRD 5.2",
     "custom": "Custom System"
   },
   "customSheet": {
@@ -1830,7 +1832,9 @@
       }
     }
   },
-  "dnd": {
+  "srd": {
+    "attribution": "Includes material from SRD 5.2.1 (CC-BY-4.0)",
+    "attributionLink": "Licenses",
     "characterInfo": "Character Info",
     "name": "Name",
     "class": "Class",

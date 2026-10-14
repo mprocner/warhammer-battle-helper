@@ -4,12 +4,12 @@ import "testing"
 
 func TestTokenFieldsBySystemSmoke(t *testing.T) {
 	m := TokenFieldsBySystem()
-	for _, sys := range []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "dnd5e", "custom"} {
+	for _, sys := range []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "srd5", "custom"} {
 		if _, ok := m[sys]; !ok {
 			t.Fatalf("missing system %q in token fields map", sys)
 		}
 	}
-	if len(m["warhammer4e"]) == 0 || len(m["coc7e"]) == 0 || len(m["dnd5e"]) == 0 {
+	if len(m["warhammer4e"]) == 0 || len(m["coc7e"]) == 0 || len(m["srd5"]) == 0 {
 		t.Fatalf("expected non-empty field lists for hardcoded systems")
 	}
 	if len(m["custom"]) != 0 {

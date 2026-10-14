@@ -449,7 +449,7 @@ function CustomCharacterSheet({
 
   // Osobne okno (/character-sheet) żyje poza WindowManagerProvider, więc DraggablePopup
   // — a przez niego useWindowManager — nie może się tam znaleźć. Tak samo robią
-  // warhammer4e, coc7e i dnd5e.
+  // warhammer4e, coc7e i srd5.
   if (isStandalone) {
     return (
       <div className="sheet-standalone character-sheet-popup">

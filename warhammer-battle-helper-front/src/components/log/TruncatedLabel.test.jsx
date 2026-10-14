@@ -51,7 +51,7 @@ describe('TruncatedLabel', () => {
   });
 
   it('renders children instead of text, but still tooltips the text', () => {
-    // Nagłówki coc7e/dnd5e dopisują "(username)" obok nazwy postaci. Renderujemy więc
+    // Nagłówki coc7e/srd5 dopisują "(username)" obok nazwy postaci. Renderujemy więc
     // gotowy JSX, ale w tooltipie ma zostać sama nazwa — inaczej hover powtarzałby to,
     // co i tak widać w linii.
     const { container } = render(

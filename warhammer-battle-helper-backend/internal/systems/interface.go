@@ -5,7 +5,7 @@ import "go.mongodb.org/mongo-driver/bson"
 // RollResult is the generic result returned by any system's roll function.
 type RollResult struct {
 	// Common fields
-	DiceType      int    `json:"diceType"` // 20 for D&D 5e, 100 for Warhammer/CoC
+	DiceType      int    `json:"diceType"` // 20 for SRD 5.2, 100 for Warhammer/CoC
 	RollType      string `json:"rollType"` // "skill" | "weapon" | "attribute" | "sanity"
 	CharacterID   string `json:"characterId"`
 	CharacterName string `json:"characterName"`
@@ -39,7 +39,7 @@ type RollResult struct {
 	DiceMod  int   `json:"diceMod,omitempty"`  // +1/+2 bonus, -1/-2 penalty
 	AllRolls []int `json:"allRolls,omitempty"` // all candidates; final = Roll
 
-	// D&D 5e specific fields (omitempty — no impact on CoC/Warhammer results)
+	// SRD 5.2 specific fields (omitempty — no impact on CoC/Warhammer results)
 	D20Roll        int  `json:"d20Roll,omitempty"`        // raw d20 before modifiers
 	BonusTotal     int  `json:"bonusTotal,omitempty"`     // total modifier applied
 	IsAdvantage    bool `json:"isAdvantage,omitempty"`    // rolled with advantage
@@ -82,7 +82,7 @@ type TokenFieldDef struct {
 // GameSystem is the interface every game-system plugin must implement.
 type GameSystem interface {
 	// RollSkill performs a skill/characteristic check.
-	// target is the DC for D&D 5e (0 = no DC check); Warhammer/CoC ignore it.
+	// target is the DC for SRD 5.2 (0 = no DC check); Warhammer/CoC ignore it.
 	RollSkill(stats bson.Raw, skillKey string, modifier int, diceMod int, target int) (*RollResult, error)
 
 	// RollWeapon performs a weapon attack roll (hit + damage).

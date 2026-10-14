@@ -732,7 +732,7 @@ func (s *GameService) executeRoll(gameID, eventType string, rollResult *systems.
 		if cid, e := primitive.ObjectIDFromHex(r.CharacterID); e == nil {
 			charPtr = &cid
 		}
-		// When multiple dice were rolled (e.g. D&D advantage/disadvantage),
+		// When multiple dice were rolled (e.g. SRD 5.2 advantage/disadvantage),
 		// record each raw die result as a separate stat entry.
 		rawResults := r.AllRolls
 		if len(rawResults) == 0 {

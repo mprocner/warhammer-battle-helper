@@ -89,11 +89,11 @@ func TestIsAllowedCustomSkipsStore(t *testing.T) {
 func TestIsAllowedReadsDocument(t *testing.T) {
 	me := primitive.NewObjectID()
 	store := &stubAccessStore{docs: map[string]*models.SystemAccess{
-		"dnd5e": {System: "dnd5e", UserIDs: []primitive.ObjectID{me}},
+		"srd5": {System: "srd5", UserIDs: []primitive.ObjectID{me}},
 	}}
 	svc := NewSystemAccessService(store)
-	if ok, _ := svc.IsAllowed(context.Background(), "dnd5e", me); !ok {
-		t.Error("listed user denied dnd5e")
+	if ok, _ := svc.IsAllowed(context.Background(), "srd5", me); !ok {
+		t.Error("listed user denied srd5")
 	}
 	if ok, _ := svc.IsAllowed(context.Background(), "warhammer4e", me); ok {
 		t.Error("unconfigured warhammer4e allowed")
@@ -102,7 +102,7 @@ func TestIsAllowedReadsDocument(t *testing.T) {
 
 func TestIsAllowedPropagatesStoreError(t *testing.T) {
 	store := &stubAccessStore{err: errors.New("db down")}
-	ok, err := NewSystemAccessService(store).IsAllowed(context.Background(), "dnd5e", primitive.NewObjectID())
+	ok, err := NewSystemAccessService(store).IsAllowed(context.Background(), "srd5", primitive.NewObjectID())
 	if err == nil || ok {
 		t.Fatalf("IsAllowed = %v, %v; want false, error", ok, err)
 	}
@@ -111,7 +111,7 @@ func TestIsAllowedPropagatesStoreError(t *testing.T) {
 func TestAllowedSystems(t *testing.T) {
 	me := primitive.NewObjectID()
 	store := &stubAccessStore{docs: map[string]*models.SystemAccess{
-		"dnd5e":       {System: "dnd5e", UserIDs: []primitive.ObjectID{me}},
+		"srd5":        {System: "srd5", UserIDs: []primitive.ObjectID{me}},
 		"warhammer4e": {System: "warhammer4e", AllUsers: true},
 		"coc7e":       {System: "coc7e", UserIDs: []primitive.ObjectID{primitive.NewObjectID()}},
 	}}
@@ -120,7 +120,7 @@ func TestAllowedSystems(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Registry order, custom always last.
-	want := []string{"warhammer4e", "dnd5e", "custom"}
+	want := []string{"warhammer4e", "srd5", "custom"}
 	if !slices.Equal(got, want) {
 		t.Errorf("AllowedSystems = %v, want %v", got, want)
 	}
@@ -139,7 +139,7 @@ func TestAllowedSystemsEmptyStoreLeavesOnlyCustom(t *testing.T) {
 func TestAdminListReturnsEveryHardcodedSystem(t *testing.T) {
 	u := primitive.NewObjectID()
 	store := &stubAccessStore{docs: map[string]*models.SystemAccess{
-		"dnd5e": {System: "dnd5e", UserIDs: []primitive.ObjectID{u}},
+		"srd5": {System: "srd5", UserIDs: []primitive.ObjectID{u}},
 	}}
 	rows, err := NewSystemAccessService(store).AdminList(context.Background())
 	if err != nil {
@@ -153,9 +153,9 @@ func TestAdminListReturnsEveryHardcodedSystem(t *testing.T) {
 			t.Errorf("%s: userIds is nil, must serialize as []", r.ID)
 		}
 		switch r.ID {
-		case "dnd5e":
+		case "srd5":
 			if !r.Configured || !slices.Equal(r.UserIDs, []string{u.Hex()}) {
-				t.Errorf("dnd5e row = %+v", r)
+				t.Errorf("srd5 row = %+v", r)
 			}
 		case "custom":
 			t.Error("custom must not be listed")
@@ -179,11 +179,11 @@ func TestAdminGetRejectsNonHardcoded(t *testing.T) {
 func TestAdminUpdate(t *testing.T) {
 	u := primitive.NewObjectID()
 	store := &stubAccessStore{}
-	row, err := NewSystemAccessService(store).AdminUpdate(context.Background(), "dnd5e", false, []string{u.Hex()})
+	row, err := NewSystemAccessService(store).AdminUpdate(context.Background(), "srd5", false, []string{u.Hex()})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if store.upserted == nil || store.upserted.System != "dnd5e" || !slices.Equal(store.upserted.UserIDs, []primitive.ObjectID{u}) {
+	if store.upserted == nil || store.upserted.System != "srd5" || !slices.Equal(store.upserted.UserIDs, []primitive.ObjectID{u}) {
 		t.Errorf("upserted = %+v", store.upserted)
 	}
 	if !row.Configured || !slices.Equal(row.UserIDs, []string{u.Hex()}) {
@@ -197,7 +197,7 @@ func TestAdminUpdateValidatesBeforeWriting(t *testing.T) {
 	if _, err := svc.AdminUpdate(context.Background(), "custom", true, nil); !errors.Is(err, ErrUnknownSystem) {
 		t.Errorf("custom: err = %v, want ErrUnknownSystem", err)
 	}
-	if _, err := svc.AdminUpdate(context.Background(), "dnd5e", false, []string{"nope"}); !errors.Is(err, ErrInvalidUserID) {
+	if _, err := svc.AdminUpdate(context.Background(), "srd5", false, []string{"nope"}); !errors.Is(err, ErrInvalidUserID) {
 		t.Errorf("bad id: err = %v, want ErrInvalidUserID", err)
 	}
 	if store.calls != 0 {

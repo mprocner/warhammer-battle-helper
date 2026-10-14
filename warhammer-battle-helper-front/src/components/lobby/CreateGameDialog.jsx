@@ -59,9 +59,10 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
 
   // Until /features answers (or if it fails) no hardcoded system is offered; the backend
   // enforces access on create anyway. Custom templates are never gated.
-  const regularSystems = useMemo(() => listSystems().filter(sys =>
-    sys.value !== 'custom' && (allowedSystems ?? []).includes(sys.value)
-  ), [allowedSystems]);
+  const regularSystems = useMemo(() => listSystems()
+    .filter(sys => sys.value !== 'custom' && (allowedSystems ?? []).includes(sys.value))
+    .map(sys => ({ ...sys, label: t(`gameSystems.${sys.value}`) })),
+  [allowedSystems, t]);
 
   const options = useMemo(
     () => buildSystemOptions(regularSystems, templates),

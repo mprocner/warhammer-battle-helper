@@ -18,7 +18,7 @@ const templates = [
   { id: 'p1', name: 'Mroczne Ziemie', isOwner: false, isPublic: true },
 ];
 
-const ALL_SYSTEMS = ['warhammer4e', 'coc7e', 'coc7e_dark_ages', 'dnd5e', 'custom'];
+const ALL_SYSTEMS = ['warhammer4e', 'coc7e', 'coc7e_dark_ages', 'srd5', 'custom'];
 
 beforeEach(() => {
   axiosInstance.get.mockReset();
@@ -106,17 +106,17 @@ describe('CreateGameDialog system search', () => {
     await renderDialog();
     const input = screen.getByRole('combobox');
     fireEvent.click(within(search('warhammer')).getByRole('option'));
-    expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
+    expect(input).toHaveValue(i18n.t('gameSystems.warhammer4e'));
 
     fireEvent.mouseDown(input);
     expect(input).toHaveValue('');
     const listbox = screen.getByRole('listbox');
     expect(within(listbox).getByText('Mroczne Ziemie')).toBeInTheDocument();
-    expect(within(listbox).getByText('Warhammer Fantasy Roleplay 4e')).toBeInTheDocument();
+    expect(within(listbox).getByText(i18n.t('gameSystems.warhammer4e'))).toBeInTheDocument();
 
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(input).toHaveValue('Warhammer Fantasy Roleplay 4e');
+    expect(input).toHaveValue(i18n.t('gameSystems.warhammer4e'));
   });
 
   it('keeps the first typed character when typing opens the list', async () => {

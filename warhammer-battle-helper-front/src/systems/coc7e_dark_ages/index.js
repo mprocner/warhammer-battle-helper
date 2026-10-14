@@ -49,7 +49,6 @@ function normalizeCharacter(char) {
 }
 
 const coc7e_dark_ages = {
-  label: 'Call of Cthulhu: Dark Ages',
   supportedRollTypes: Object.keys(rollComponents),
   CharacterSheet:   createCharacterSheet(skillsData, weaponSkills),
   CharacterDetails: createCharacterDetails(skillsData, weaponSkills),

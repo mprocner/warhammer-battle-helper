@@ -7,7 +7,7 @@ import "testing"
 // a Warhammer-shaped stats blob regardless of system, and the custom plugin (weapons stored as
 // a map, not an array) then failed to decode them on every roll.
 func TestDefaultStatsRoundTripPerSystem(t *testing.T) {
-	for _, name := range []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "dnd5e", "custom"} {
+	for _, name := range []string{"warhammer4e", "coc7e", "coc7e_dark_ages", "srd5", "custom"} {
 		sys, err := Get(name)
 		if err != nil {
 			t.Fatalf("%s: registry.Get failed: %v", name, err)

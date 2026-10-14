@@ -127,6 +127,43 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
 ---
 
+### One-time migration after the PLAYRPG-266 deploy (dnd5e -> srd5)
+
+The D&D 5e system key was renamed to `srd5`. The migration is idempotent (a second run changes
+nothing), but it must run right after the new code is deployed.
+
+Until the migration runs, old SRD games open with the Warhammer sheet (the frontend `getSystem`
+fallback) and saving would overwrite the character's stats; the Mongo backup taken by `deploy.sh`
+is the restore point. Recommended order, which keeps that window to seconds:
+
+1. Merge / push to `main`.
+2. Deploy: `cd /opt/warhammer-battle-helper && bash scripts/deploy.sh`
+3. Immediately run the migration (below).
+
+If `autopull.service` is enabled on the host, stop it before step 1 and start it after step 3,
+otherwise it deploys on its own and the window grows to its polling interval.
+
+The prod mongo service publishes no port and the prod backend image has no Go toolchain, so run
+the migration from a throwaway `golang` container attached to the compose network. The network is
+named `<compose-project>_default`, where the project defaults to the project directory name
+(`warhammer-battle-helper` -> `warhammer-battle-helper_default`); confirm with `docker network ls`.
+The mongo service is `mongo`, internal port 27017; credentials are `MONGO_USER` / `MONGO_PASSWORD`
+from `.env.prod` and the database is `MONGO_DB_NAME` (default `battle_helper`):
+
+```bash
+cd /opt/warhammer-battle-helper
+docker run --rm --network warhammer-battle-helper_default \
+  -v "$PWD/warhammer-battle-helper-backend":/src -w /src \
+  -e MONGO_URI='mongodb://<user>:<password>@mongo:27017/?authSource=admin' \
+  -e MONGO_DB=<db-name> \
+  golang:1.24-alpine go run ./cmd/migrate-dnd5e-to-srd5/
+```
+
+It prints one count per update; a second run prints zeros. Then check in the admin panel (Systems)
+that `srd5` inherited the access settings of the old key.
+
+---
+
 ## Automated deployment
 
 ### deploy.sh

@@ -13,7 +13,7 @@ import { usePortalTooltip } from '../common/PortalTooltip';
 // użycia tylko CustomRoll ma dziś ten hook, więc plumbing propsów przez pozostałe 22
 // pliki byłby czystym kosztem.
 //
-// children służy nagłówkom coc7e/dnd5e, które dopisują "(username)" obok nazwy postaci:
+// children służy nagłówkom coc7e/srd5, które dopisują "(username)" obok nazwy postaci:
 // renderujemy wtedy gotowy JSX, ale tooltip pokazuje samo `text`.
 function TruncatedLabel({ text, children, as = 'span' }) {
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();

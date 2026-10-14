@@ -47,7 +47,7 @@ export function snapToGrid({ col, row, w, h }) {
 
 // distanceBetween measures center-to-center in cell units, then applies the chosen metric.
 // metric: 'euclidean' (straight line, e.g. inches), 'chebyshev' (each cell incl. diagonal = 1),
-// 'alternating' (5-10-5: every second diagonal step costs 2 — D&D 3.5 style).
+// 'alternating' (5-10-5: every second diagonal step costs 2).
 export function distanceBetween(a, b, metric = 'euclidean') {
   const ca = centerOf(a);
   const cb = centerOf(b);

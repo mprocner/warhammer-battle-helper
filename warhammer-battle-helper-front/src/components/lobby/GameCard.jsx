@@ -7,7 +7,6 @@ import SyncIcon from '@mui/icons-material/Sync';
 import ShieldIcon from '@mui/icons-material/Shield';
 import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import CheckIcon from '@mui/icons-material/Check';
-import { getSystem } from '../../systems/registry';
 import { resolveAvatar, resolveDisplayName } from '../../utils/participants';
 import { getAvatarUrl } from '../Avatar';
 
@@ -18,10 +17,10 @@ const avatarSx = {
   '&:first-of-type': { ml: 0 },
 };
 
-// A custom game shows its template's name; hardcoded systems show the plugin label.
-const systemLabel = (game) => game.gameSystem === 'custom' && game.customSystemTemplate
+// A custom game shows its template's name; hardcoded systems show their i18n display name.
+const systemLabel = (game, t) => game.gameSystem === 'custom' && game.customSystemTemplate
   ? game.customSystemTemplate.name
-  : (getSystem(game.gameSystem).label || game.gameSystem);
+  : t(`gameSystems.${game.gameSystem}`, { defaultValue: game.gameSystem });
 
 // One tarot-card tile in the lobby grid: image zone, status seal, plaque, enter bar.
 function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onSync, showTooltip, hideTooltip }) {
@@ -64,7 +63,7 @@ function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onS
           }}>
             <Typography sx={{ fontSize: '2rem', lineHeight: 1 }}>✠</Typography>
             <Typography sx={{ fontFamily: 'Cinzel, serif', fontSize: '0.62rem', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.8, px: 1, textAlign: 'center' }}>
-              {systemLabel(game)}
+              {systemLabel(game, t)}
             </Typography>
           </Box>
         )}
@@ -110,7 +109,7 @@ function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onS
         </Typography>
         <Typography sx={{ color: '#a67c52', fontSize: '0.8rem', letterSpacing: '0.4em', lineHeight: 1 }}>❦ ❦ ❦</Typography>
         <Typography sx={{ fontFamily: 'Cinzel, serif', fontSize: '0.66rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#a67c52' }}>
-          {systemLabel(game)}
+          {systemLabel(game, t)}
         </Typography>
         <Typography noWrap sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.88rem', fontStyle: 'italic', color: 'text.secondary' }}>
           {t('game.gameMaster')}: {game.gameMasterEmail || t('common.unknown')}

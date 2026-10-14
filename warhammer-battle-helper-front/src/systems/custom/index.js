@@ -41,7 +41,6 @@ function buildPayload(char) {
 }
 
 const custom = {
-  label: 'Własny system',
   supportedRollTypes: Object.keys(rollComponents),
   CharacterSheet:   CustomCharacterSheet,
   CharacterDetails: CustomCharacterDetails,

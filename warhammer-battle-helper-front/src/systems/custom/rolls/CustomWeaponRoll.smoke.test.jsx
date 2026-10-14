@@ -76,7 +76,7 @@ describe('CustomWeaponRoll', () => {
 
   // BUG-192 finding 4: this component already builds the label the safe way
   // (`data.weaponName || t('log.weapon')`) — these assertions lock that in so a future
-  // migration can't silently regress it into the coc7e/dnd5e template-literal bug.
+  // migration can't silently regress it into the coc7e/srd5 template-literal bug.
   it('shows the weapon name in the description label', () => {
     const data = { outcome: 'regular_success', roll: 2, target: 4, weaponName: 'Halabarda' };
     const { container } = render(<CustomWeaponRoll data={data} timestamp={null} />);

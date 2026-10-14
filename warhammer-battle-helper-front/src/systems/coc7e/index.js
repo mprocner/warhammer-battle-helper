@@ -66,7 +66,6 @@ function normalizeCharacter(char) {
 }
 
 const coc7e = {
-  label: 'Call of Cthulhu 7e',
   supportedRollTypes: Object.keys(rollComponents),
   CharacterSheet:   createCharacterSheet(skillsData, weaponSkills),
   CharacterDetails: createCharacterDetails(skillsData, weaponSkills),

@@ -49,7 +49,6 @@ function normalizeCharacter(char) {
 }
 
 const warhammer4e = {
-  label: 'Warhammer Fantasy Roleplay 4e',
   supportedRollTypes: Object.keys(rollComponents),
   states,
   CharacterSheet: CharacterSheetPopup,

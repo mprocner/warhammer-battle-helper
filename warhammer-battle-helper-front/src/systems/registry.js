@@ -1,10 +1,13 @@
 import warhammer4e from './warhammer4e';
 import coc7e from './coc7e';
 import coc7e_dark_ages from './coc7e_dark_ages';
-import dnd5e from './dnd5e';
+import srd5 from './srd5';
 import custom from './custom';
 
-const systems = { warhammer4e, coc7e, coc7e_dark_ages, dnd5e, custom };
+// Display names are NOT part of a system module: they live only in i18n as
+// gameSystems.<key> (en + pl), so renaming a system is a translation edit with no data
+// migration. A new system needs that key in both languages (registry.labels.test.js).
+const systems = { warhammer4e, coc7e, coc7e_dark_ages, srd5, custom };
 
 /**
  * Returns the system module for the given game system key.
@@ -24,5 +27,5 @@ export function buildPayload(char) {
 }
 
 export function listSystems() {
-  return Object.entries(systems).map(([value, sys]) => ({ value, label: sys.label }));
+  return Object.keys(systems).map(value => ({ value }));
 }

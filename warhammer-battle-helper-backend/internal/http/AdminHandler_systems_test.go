@@ -30,8 +30,8 @@ func TestUpdateSystemRejectsBadInput(t *testing.T) {
 	}{
 		{"custom is not configurable", "custom", `{"allUsers":true,"userIds":[]}`},
 		{"unknown system", "pf2e", `{"allUsers":true,"userIds":[]}`},
-		{"malformed user id", "dnd5e", `{"allUsers":false,"userIds":["nope"]}`},
-		{"missing allUsers", "dnd5e", `{"userIds":[]}`},
+		{"malformed user id", "srd5", `{"allUsers":false,"userIds":["nope"]}`},
+		{"missing allUsers", "srd5", `{"userIds":[]}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

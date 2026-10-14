@@ -11,6 +11,7 @@ import EmailVerification from './components/EmailVerification';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import Licenses from './components/Licenses';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
@@ -179,6 +180,7 @@ function App() {
                         <Route path="/forgot-password" element={<ForgotPassword />} />
                         <Route path="/reset-password" element={<ResetPassword />} />
                         <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/licenses" element={<Licenses />} />
 
                         {/* Standalone character sheet window */}
                         <Route
