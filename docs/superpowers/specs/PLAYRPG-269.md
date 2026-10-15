@@ -134,9 +134,10 @@ Generyczne helpery na `edited[storeKey][fieldKey]`:
 
 ### `CustomSheetBody.jsx`
 
-Nowy `case 'data_table'` → `<DataTable>`. W kreatorze (`showAffordances`) kontrolki bez handlerów
-renderują się statycznie jako `disabled` (strzałka, ołówek) — reguła z CLAUDE.md: kreator pokazuje
-dokładnie to, co gracz.
+Nowy `case 'data_table'` → `<DataTable>`. W kreatorze (bez `onChange`) nie ma wierszy gracza ani
+stopki — tak jak w broni. Strzałka rozwinięcia działa także w kreatorze: to stan widoku, nie
+potrzebuje żadnego handlera, więc GM może podejrzeć opis wiersza `alwaysOn` dokładnie tak, jak
+zobaczy go gracz.
 
 ## 3. Kreator (`components/creator/`)
 
@@ -162,12 +163,25 @@ Wpięcie w `TemplateBuilder.jsx`:
 
 ## 4. i18n
 
-Nowe klucze (en + pl): `creator.fieldType.dataTable`, `creator.fieldType.dataTableDesc`,
-`creator.tableColTypeLongText`, `creator.tableColumns`, `creator.tablePresetsTitle`,
-`creator.tablePresetsHint`, `creator.tablePresetAdd`, `customSheet.addRow`,
-`customSheet.addRowFromList`, `customSheet.expandRow`, `customSheet.collapseRow`,
-`customSheet.editRow`, `customSheet.saveRow`, `customSheet.removeRow`,
-`customSheet.rowPresetLocked`.
+Nowe klucze (en + pl):
+- `customSheet.row`, `addRow`, `addRowFromList`, `editRow`, `saveRow`, `removeRow`,
+  `rowPresetLocked`, `expandRow`, `collapseRow`
+- `creator.fieldType.dataTable`, `creator.fieldType.dataTableDesc`
+- `creator.dataTablePresetsTitle`, `dataTablePresetsHint`, `dataTablePresetsNoColumns`,
+  `dataTablePresetAdd`
+- `creator.tableColTypeLongText`
+
+Klucze edytora kolumn są wspólne, więc zmieniają nazwę z `weapon*` na `table*` (te same wartości):
+`weaponColumns`→`tableColumns`, `weaponColumnLabel`→`tableColumnLabel`,
+`weaponColType{Text,Number,Select}`→`tableColType{…}`, `weaponAddColumn`→`tableAddColumn`,
+`weaponPresetAlwaysOn`→`tablePresetAlwaysOn`.
+
+Klasy CSS wspólnych części tabeli: `custom-sheet__weapon-*` → `custom-sheet__row-table-*`, a w
+kreatorze `creator__weapon-(col|preset)*` → `creator__table-*`. Zostają tylko nazwy broni:
+`weapon-damage`, `weapon-dmg-*`, `weapon-threshold-hint`, `field--weapon-table`. Testy broni i
+snapshot dostają tę samą zmianę nazw selektorów (mechanicznie, w osobnym commicie przed
+refactorem). Snapshot ma potem pasować do nowych komponentów bez `-u`, co dowodzi, że DOM się nie
+zmienił.
 
 Wspólne komponenty dostają teksty od wrappera przez props — broń dalej mówi „Dodaj broń”, tabela
 danych „Dodaj wiersz”. Klucze broni zostają. Klucze, które po refactorze nie mają czytelnika, są
@@ -177,7 +191,9 @@ usuwane w tej samej zmianie.
 
 **Strażnik regresji refactoru** — bez zmian asercji:
 `CustomSheetBody.weaponsTable.test.jsx`, `weaponLayout.test.js`, `weaponLayout.rowIssue.test.js`,
-`TemplateBuilder.weaponColumns.test.jsx`, `CharacterDetails.favorites.test.jsx`.
+`TemplateBuilder.weaponColumns.test.jsx`, `CharacterDetails.favorites.test.jsx`,
+`CustomSheetBody.domShape.test.jsx` (snapshot). Jedyna dozwolona zmiana to mechaniczna zmiana nazw
+klas w selektorach (sekcja 4).
 `WeaponColumnsEditor.test.jsx` → `TableColumnsEditor.test.jsx`: zmienia się tylko import i nazwa
 komponentu. Konieczność zmiany asercji = zmiana zachowania = regresja do wyjaśnienia.
 
