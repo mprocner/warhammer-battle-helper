@@ -256,14 +256,14 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.PARTICIPANT_UPDATED: {
-        const { userId: updUserId, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature } = message.payload;
+        const { userId: updUserId, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature } = message.payload;
         setGameState(prev => {
           if (!prev) return prev;
           return {
             ...prev,
             participants: (prev.participants || []).map(p =>
               p.userId === updUserId
-                ? { ...p, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature }
+                ? { ...p, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature }
                 : p
             ),
           };

@@ -915,11 +915,27 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 		"avatar":            avatar,
 		"avatarType":        avatarType,
 		"avatarCharacterId": avatarCharacterId,
-		"signature":         signature,
-		"avatarSize":        avatarSize,
-		"showSignature":     showSignature,
+		// Derived field (not stored on the participant): clients render from it, so a patch
+		// without it leaves a character avatar stale until the next full game fetch.
+		"avatarCharacterUrl": s.characterAvatarURL(game.ID, avatarCharacterId),
+		"signature":          signature,
+		"avatarSize":         avatarSize,
+		"showSignature":      showSignature,
 	})
 	return nil
+}
+
+// characterAvatarURL resolves a participant's character avatar the same way enrichParticipants
+// does: only a character of this game counts, anything else resolves to "".
+func (s *GameService) characterAvatarURL(gameID primitive.ObjectID, characterID string) string {
+	if characterID == "" {
+		return ""
+	}
+	char, err := s.charRepo.GetByID(characterID)
+	if err != nil || char == nil || char.GameID != gameID {
+		return ""
+	}
+	return char.Avatar
 }
 
 // CreateHandout creates a new handout in a game (GM only)
