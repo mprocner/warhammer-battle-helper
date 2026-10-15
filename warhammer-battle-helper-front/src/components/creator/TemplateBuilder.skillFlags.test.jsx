@@ -1,4 +1,4 @@
-import { skillDisplayFlags, clearDependentFlags, SKILL_FLAG_META } from './TemplateBuilder';
+import { displayFlags, clearDependentFlags, SKILL_FLAG_META } from './TemplateBuilder';
 
 // Importing TemplateBuilder pulls in api/axios and, through the system registry, axios itself —
 // the ESM import jest cannot parse. Mocking the instance is enough to load the module.
@@ -9,18 +9,24 @@ jest.mock('axios', () => {
 });
 
 test('a table offers all four display flags', () => {
-  expect(skillDisplayFlags('skill_table'))
+  expect(displayFlags('skill_table'))
     .toEqual(['hideFavorites', 'showDevelopment', 'sortAlphabetically', 'twoColumns']);
 });
 
 test('a tree offers them too — its two-column split works by branch', () => {
-  expect(skillDisplayFlags('skill_tree'))
+  expect(displayFlags('skill_tree'))
     .toEqual(['hideFavorites', 'showDevelopment', 'sortAlphabetically', 'twoColumns']);
 });
 
+// Row tables have no favourites to hide and no development mark: sorting (by a picked column) and
+// the two-column split are the display flags that mean anything for them.
+test('row tables offer sorting and the two-column split', () => {
+  expect(displayFlags('weapons_table')).toEqual(['sortAlphabetically', 'twoColumns']);
+  expect(displayFlags('data_table')).toEqual(['sortAlphabetically', 'twoColumns']);
+});
+
 test('any other field type gets no display group at all', () => {
-  expect(skillDisplayFlags('attr')).toEqual([]);
-  expect(skillDisplayFlags('weapons_table')).toEqual([]);
+  expect(displayFlags('attr')).toEqual([]);
 });
 
 describe('clearDependentFlags', () => {
@@ -59,7 +65,7 @@ describe('baseFromAttr metadata', () => {
   });
 
   it('is not one of the display-group flags — it belongs next to attribute assignment', () => {
-    expect(skillDisplayFlags('skill_table')).not.toContain('baseFromAttr');
+    expect(displayFlags('skill_table')).not.toContain('baseFromAttr');
   });
 
   it('carries a label and a hint', () => {

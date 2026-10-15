@@ -305,3 +305,40 @@ func TestTemplateValidationErrorCodesArePinned(t *testing.T) {
 		}
 	}
 }
+
+// A data_table's preset rows and its long_text column live only in FieldDef. SystemTemplate is
+// decoded into this typed struct, so a key missing from it is dropped on read and erased by the
+// next PATCH — silently. This pins the round-trip.
+func TestFieldDef_DataTableRoundTripsThroughBSON(t *testing.T) {
+	in := FieldDef{
+		Key:        "data_table_1",
+		Type:       "data_table",
+		SortColumn: "name",
+		Columns: []WeaponColumn{
+			{Key: "name", Label: "Nazwa", Type: "text"},
+			{Key: "desc", Label: "Opis", Type: "long_text"},
+		},
+		PresetRows: []PresetRow{
+			{ID: "preset_1", Cells: map[string]string{"name": "Lina", "desc": "10 m"}, AlwaysOn: true},
+		},
+	}
+
+	raw, err := bson.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var out FieldDef
+	if err := bson.Unmarshal(raw, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if len(out.PresetRows) != 1 || out.PresetRows[0].Cells["desc"] != "10 m" || !out.PresetRows[0].AlwaysOn {
+		t.Errorf("PresetRows = %+v, want one always-on row with desc \"10 m\"", out.PresetRows)
+	}
+	if out.SortColumn != "name" {
+		t.Errorf("SortColumn = %q, want \"name\"", out.SortColumn)
+	}
+	if len(out.Columns) != 2 || out.Columns[1].Type != "long_text" {
+		t.Errorf("Columns = %+v, want a long_text second column", out.Columns)
+	}
+}

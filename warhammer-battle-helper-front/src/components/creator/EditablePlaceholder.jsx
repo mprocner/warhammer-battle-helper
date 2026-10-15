@@ -43,7 +43,7 @@ function EditablePlaceholder({ node }) {
     return <div className="creator__ph creator__ph--inline">{t('creator.placeholderLabelText')}</div>;
   }
 
-  if (node.type === 'weapons_table' && (node.columns || []).length === 0) {
+  if ((node.type === 'weapons_table' || node.type === 'data_table') && (node.columns || []).length === 0) {
     return <div className="creator__ph creator__ph--row" />;
   }
 

@@ -100,7 +100,7 @@ describe('CustomSheetBody DOM shape', () => {
     // of the sheet — which is how the first version of this file managed to cover none of them.
     expect(container.querySelectorAll('.custom-sheet__roll-btn').length).toBeGreaterThan(0);
     expect(container.querySelectorAll('.custom-sheet__star-btn').length).toBeGreaterThan(0);
-    expect(container.querySelectorAll('.custom-sheet__weapon-add-btn').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.custom-sheet__row-table-add-btn').length).toBeGreaterThan(0);
     expect(container.querySelectorAll('.custom-sheet__skill-tree-add-btn').length).toBeGreaterThan(0);
   });
 

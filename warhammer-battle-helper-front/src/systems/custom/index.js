@@ -32,6 +32,7 @@ function normalizeCharacter(char) {
       developmentSkills: s.developmentSkills || [],
       weapons:          s.weapons          || {},
       favoriteWeapons:  s.favoriteWeapons  || [],
+      tables:           s.tables           || {},
     },
   };
 }

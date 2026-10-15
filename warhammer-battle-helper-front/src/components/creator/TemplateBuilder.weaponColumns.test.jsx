@@ -1,4 +1,5 @@
-import { updateWeaponColumns, weaponThresholdHint } from './TemplateBuilder';
+import { weaponThresholdHint } from './TemplateBuilder';
+import { updateTableColumns as updateWeaponColumns } from './TableColumnsEditor';
 
 // Importing TemplateBuilder pulls in api/axios and, through the system registry, axios itself —
 // the ESM import jest cannot parse. Mocking the instance is enough to load the module.

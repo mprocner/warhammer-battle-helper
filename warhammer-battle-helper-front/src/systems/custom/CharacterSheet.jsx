@@ -37,6 +37,7 @@ function CustomCharacterSheet({
     developmentSkills: stats.developmentSkills || [],
     weapons:          stats.weapons           || {},
     favoriteWeapons:  stats.favoriteWeapons   || [],
+    tables:           stats.tables            || {},
     images:           stats.images            || {},
   });
   const [charName,   setCharName]   = useState(character?.name   || '');
@@ -77,6 +78,7 @@ function CustomCharacterSheet({
       developmentSkills: s.developmentSkills || [],
       weapons:          s.weapons           || {},
       favoriteWeapons:  s.favoriteWeapons   || [],
+      tables:           s.tables            || {},
       images:           s.images            || {},
     });
     setCharName(character?.name || '');
@@ -105,6 +107,7 @@ function CustomCharacterSheet({
         developmentSkills: currentEdited.developmentSkills,
         weapons:          currentEdited.weapons,
         favoriteWeapons:  currentEdited.favoriteWeapons,
+        tables:           currentEdited.tables,
         images:           currentEdited.images,
       },
     };
@@ -291,57 +294,58 @@ function CustomCharacterSheet({
     });
   };
 
-  // ---------- weapons_table handlers ----------
+  // ---------- row tables (weapons_table, data_table) ----------
+  // Both store player rows as edited[storeKey][fieldKey] = [{ id, cells, … }]. The helpers below
+  // own that shape; the per-table handlers only say which store and what a new row looks like.
 
-  const genWeaponId = () => `w_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+  const genRowId = (prefix) => `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
 
-  // Returns the new row's id so the caller (WeaponsTable, via onChange.weaponAdd) can open it
-  // straight into edit mode — an empty row reads as a line of em-dashes otherwise, forcing the
-  // player to hunt for the pencil before they can type anything.
-  const addWeaponRow = (fieldKey) => {
-    const list = edited.weapons[fieldKey] || [];
-    const row = { id: genWeaponId(), cells: {}, damage: {} };
-    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
+  const withRows = (base, storeKey, fieldKey, rows) =>
+    ({ ...base, [storeKey]: { ...base[storeKey], [fieldKey]: rows } });
+
+  const commitEdited = (ne) => {
     setEdited(ne);
     triggerAutoSave(ne);
+  };
+
+  const rowsOf = (storeKey, fieldKey) => edited[storeKey][fieldKey] || [];
+
+  // Returns the new row's id so the table can open it straight into edit mode.
+  const addRow = (storeKey, fieldKey, row) => {
+    commitEdited(withRows(edited, storeKey, fieldKey, [...rowsOf(storeKey, fieldKey), row]));
     return row.id;
   };
 
-  // Copies a GM catalog preset into a new editable player row (snapshot — later GM edits
-  // to the catalog do not touch the copy; the player owns it and may edit/remove it).
-  const addWeaponFromPreset = (fieldKey, preset) => {
-    const list = edited.weapons[fieldKey] || [];
-    const row = {
-      id: genWeaponId(),
-      cells: { ...(preset.cells || {}) },
-      damage: { ...(preset.damage || {}) },
-    };
-    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: [...list, row] } };
-    setEdited(ne);
-    triggerAutoSave(ne);
-  };
+  const mapRow = (storeKey, fieldKey, rowId, updater) =>
+    commitEdited(withRows(edited, storeKey, fieldKey, rowsOf(storeKey, fieldKey).map(r => (r.id === rowId ? updater(r) : r))));
 
-  const removeWeaponRow = (fieldKey, rowId) => {
-    const list = (edited.weapons[fieldKey] || []).filter(r => r.id !== rowId);
-    // Drop the removed row from favorites too, so CharacterDetails doesn't keep a dangling id.
-    const favoriteWeapons = (edited.favoriteWeapons || []).filter(id => id !== rowId);
-    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list }, favoriteWeapons };
-    setEdited(ne);
-    triggerAutoSave(ne);
-  };
+  const removeRow = (storeKey, fieldKey, rowId, extra = {}) =>
+    commitEdited({ ...withRows(edited, storeKey, fieldKey, rowsOf(storeKey, fieldKey).filter(r => r.id !== rowId)), ...extra });
 
-  const mapWeaponRow = (fieldKey, rowId, updater) => {
-    const list = (edited.weapons[fieldKey] || []).map(r => (r.id === rowId ? updater(r) : r));
-    const ne = { ...edited, weapons: { ...edited.weapons, [fieldKey]: list } };
-    setEdited(ne);
-    triggerAutoSave(ne);
-  };
+  const setCell = (colKey, value) => r => ({ ...r, cells: { ...r.cells, [colKey]: value } });
 
-  const updateWeaponCell = (fieldKey, rowId, colKey, value) =>
-    mapWeaponRow(fieldKey, rowId, r => ({ ...r, cells: { ...r.cells, [colKey]: value } }));
-
+  // weapons_table. A catalog preset is copied (snapshot — later GM edits to the catalog do not
+  // touch the copy; the player owns it and may edit/remove it).
+  const addWeaponRow = (fieldKey) => addRow('weapons', fieldKey, { id: genRowId('w'), cells: {}, damage: {} });
+  const addWeaponFromPreset = (fieldKey, preset) => addRow('weapons', fieldKey, {
+    id: genRowId('w'),
+    cells: { ...(preset.cells || {}) },
+    damage: { ...(preset.damage || {}) },
+  });
+  // Drop the removed row from favorites too, so CharacterDetails doesn't keep a dangling id.
+  const removeWeaponRow = (fieldKey, rowId) => removeRow('weapons', fieldKey, rowId, {
+    favoriteWeapons: (edited.favoriteWeapons || []).filter(id => id !== rowId),
+  });
+  const updateWeaponCell = (fieldKey, rowId, colKey, value) => mapRow('weapons', fieldKey, rowId, setCell(colKey, value));
   const updateWeaponDamage = (fieldKey, rowId, blockId, value) =>
-    mapWeaponRow(fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
+    mapRow('weapons', fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
+
+  // data_table
+  const addTableRow = (fieldKey) => addRow('tables', fieldKey, { id: genRowId('r'), cells: {} });
+  const addTableRowFromPreset = (fieldKey, preset) =>
+    addRow('tables', fieldKey, { id: genRowId('r'), cells: { ...(preset.cells || {}) } });
+  const removeTableRow = (fieldKey, rowId) => removeRow('tables', fieldKey, rowId);
+  const updateTableCell = (fieldKey, rowId, colKey, value) => mapRow('tables', fieldKey, rowId, setCell(colKey, value));
 
   // Weapon favorites are tracked by weapon id in favoriteWeapons — for player rows and GM
   // presets alike — so CharacterDetails can resolve and roll either kind the same way. (Preset
@@ -415,6 +419,10 @@ function CustomCharacterSheet({
       weaponCell:     (fieldKey, rowId, colKey, val) => updateWeaponCell(fieldKey, rowId, colKey, val),
       weaponDamage:   (fieldKey, rowId, blockId, val) => updateWeaponDamage(fieldKey, rowId, blockId, val),
       weaponFavorite: (weaponId)                     => toggleWeaponFavorite(weaponId),
+      tableAdd:           (fieldKey)                     => addTableRow(fieldKey),
+      tableAddFromPreset: (fieldKey, preset)             => addTableRowFromPreset(fieldKey, preset),
+      tableCell:          (fieldKey, rowId, colKey, val) => updateTableCell(fieldKey, rowId, colKey, val),
+      tableRemove:        (fieldKey, rowId)              => removeTableRow(fieldKey, rowId),
     }}
     onRoll={promptRoll}
     favoriteWeapons={edited.favoriteWeapons}

@@ -19,6 +19,11 @@ oba typy. Dziś renderowanie komórki wg typu kolumny jest skopiowane 3 razy
 | Predefiniowane wiersze | Jak w broni: `alwaysOn` = renderowane z szablonu, tylko do odczytu (edycja GM-a dociera do wszystkich); bez `alwaysOn` = katalog, gracz kopiuje do własnego wiersza (snapshot). |
 | Długi tekst | Nie w siatce. Rozwijany wiersz: przycisk strzałki przełącza panel pod wierszem na pełną szerokość. |
 | Edycja długiego tekstu | Tylko w trybie edycji wiersza (ołówek) — spójnie z resztą komórek. Rozwinięcie w spoczynku jest tylko do odczytu. |
+| Usuwanie wiersza (dopisane po review) | Kosz obok ołówka w spoczynku i obok ✓ w edycji, w obu tabelach (broń i dane). Zawsze przez `ConfirmModal` z nazwą wiersza — brak undo, a przycisk jest w zasięgu przypadkowego kliknięcia. |
+| Kolejność kolumn w kreatorze (dopisane po review) | Przeciąganie uchwytem (dnd-kit, jak `AttrRowsEditor`) zamiast strzałek ↑↓; wspólne `utils/sortableList.js`. |
+| Dwie kolumny (dopisane po review) | Flaga `twoColumns` (ta sama co w umiejętnościach) w grupie „Wyświetlanie”, dla `data_table` i `weapons_table`. Wiersze GM-a i gracza dzielone razem na pół (GM-a pierwsze, nieparzysty idzie w lewo); każda połowa ma własny nagłówek, stopka jedna pod obiema. |
+| Sortowanie (dopisane po review) | Flaga `sortAlphabetically` + nowe `sortColumn` (klucz kolumny), w obu tabelach. Wybór tylko spośród kolumn tekstowych; brak/zmiana typu wybranej → kolumna nazwy. Wiersze GM-a i gracza sortowane razem, przed podziałem na dwie kolumny. Edytowany wiersz trzyma miejsce do zatwierdzenia, nowy zostaje na dole (jak w `SkillTable`). |
+| Panel właściwości (dopisane po review) | Grupa „Wyświetlanie” jako pierwsza, dla wszystkich typów pól. |
 | Rzuty, gwiazdka ulubionych | Brak |
 | Skrócona karta | Tabela się na niej nie pojawia |
 | Wiersz podsumowania / agregaty | Poza zakresem etapu 1 |

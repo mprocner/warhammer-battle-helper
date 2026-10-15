@@ -1,5 +1,6 @@
-// Weapons-table helpers: the completeness verdict for a row, the name a roll is logged under,
-// which column asks for skills, and the damage formula's rendering. collectSkillOptions — the
+// Weapons-table helpers: the completeness verdict for a row, the name a roll is logged under, which
+// column asks for skills, and the damage formula's rendering. The table's geometry and generic
+// labels live in rowTableLayout.js, shared with data_table. collectSkillOptions — the
 // actual skill enumeration a "from skills" column offers — moved to skillLayout.js: it is skill-key
 // composition, not a weapons concern, and weaponSkillColumn here only answers which column wants it.
 //
@@ -13,20 +14,14 @@
 // that always change together.
 
 import React from 'react';
+import { rowLabel } from './rowTableLayout';
 
 const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
 
-// weaponRowLabel picks a display name for a weapon row: the first text column's value,
-// then any non-empty cell, falling back to the field label.
+// weaponRowLabel is the name a weapon is logged and listed under: rowLabel over the weapon's
+// columns, falling back to the field label and then to the generic "Weapon".
 export function weaponRowLabel(field, row, t) {
-  const cells = row.cells || {};
-  for (const c of (field.columns || [])) {
-    if (c.type === 'text' && (cells[c.key] || '').trim()) return cells[c.key].trim();
-  }
-  for (const c of (field.columns || [])) {
-    if ((cells[c.key] || '').trim()) return cells[c.key].trim();
-  }
-  return field.label || t('customSheet.weapon');
+  return rowLabel(field.columns, row, field.label || t('customSheet.weapon'));
 }
 
 // diceFaces returns a dice block's fixed face count (e.g. 10 for "d10"), or null when the
@@ -160,44 +155,4 @@ export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t
         return null;
     }
   });
-}
-
-// weaponGridTemplate builds ONE grid-template-columns string for a weapons_table. The header and
-// every row of the field must be handed the same string; until FEATURE-224 they were two flex
-// rows that happened to hold the same number of flex: 1 children, which nothing enforced while
-// the columns themselves are defined by the GM.
-//
-// A column's track comes from its TYPE, never from its content. auto and max-content would make
-// the width depend on the data, so a column would grow while the player types into it and shove
-// its neighbours sideways under the cursor.
-//
-// The name column — the one that gets what is left over — is the first column of type text,
-// which is exactly the column weaponRowLabel already treats as the weapon's name. One definition
-// of "the name", not two that can drift. Note: weaponRowLabel searches each row for the first
-// non-empty text cell (content-aware), while this template must be content-blind — a single string
-// shared by header and all rows — so it picks the column by schema order alone.
-//
-// minmax(0, …) on every flexible track: without the zero floor a track refuses to shrink below
-// its content, which is the very behaviour this function exists to avoid.
-//
-// The die's track is separate from the actions track because the actions cell is about to hold
-// two player buttons in edit mode, and a die wedged between them would leave no room for either
-// one in the 52px the actions cell has for three controls.
-export function weaponGridTemplate(field, { showStar = false, showRoll = false, showActions = false, hasDamage = false } = {}) {
-  const columns = field.columns || [];
-  const nameKey = (columns.find(c => c.type === 'text') || {}).key;
-
-  const trackFor = (c) => {
-    if (c.type === 'number') return '56px';
-    if (c.type === 'select') return 'minmax(0, 140px)';
-    return c.key === nameKey ? 'minmax(0, 2fr)' : 'minmax(0, 1fr)';
-  };
-
-  return [
-    showStar && '22px',
-    ...columns.map(trackFor),
-    hasDamage && 'minmax(0, 1fr)',
-    showRoll && '28px',
-    showActions && '52px',
-  ].filter(Boolean).join(' ');
 }

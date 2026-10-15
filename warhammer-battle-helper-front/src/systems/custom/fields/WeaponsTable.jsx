@@ -3,30 +3,14 @@ import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import { AFFORDANCE_ICON_SIZE } from './affordances';
 import {
-  weaponGridTemplate, weaponRowLabel, weaponIssueTitle, weaponSkillColumn,
+  renderDamageFormula, weaponRowLabel, weaponRowIssue, weaponIssueTitle, weaponSkillColumn,
 } from '../weaponLayout';
 import { collectSkillOptions } from '../skillLayout';
-import WeaponsPresetRow from './WeaponsPresetRow';
-import WeaponsTableRow from './WeaponsTableRow';
+import RowTable from './RowTable';
+import { sortColumnKey } from '../rowTableLayout';
 
-// The weapons_table field: a header bar, the GM's always-on weapons, the player's own, and a
-// footer that adds either kind.
-//
-// The columns are the GM's, so their widths come from weaponGridTemplate and the same string goes
-// to the header and to every row. Before FEATURE-224 both were flex rows that happened to hold
-// the same number of flex: 1 children — an agreement nothing enforced, over a column set the GM
-// can change.
-//
-// The footer is a sibling of the table container, not of the rows: the zebra striping counts
-// sibling parity, so a footer inside would be counted as a row and flip the tint of everything
-// after it.
-//
-// editingPath/setEditingPath are the same pair CustomSheetBody hands to SkillTable and SkillTree:
-// on the whole sheet exactly one thing is being edited at a time, so opening a weapon's pencil
-// closes an open skill rename and vice versa. There is no key collision to guard against — skill
-// edit paths carry a dot and the owning field's key prefix (`${field.key}.${genId('skill')}`),
-// while weapon row ids come from CharacterSheet's own genWeaponId() ("w_<timestamp>_<rand>") and
-// never contain a dot.
+// The weapons_table field: the row-table core plus the three things only a weapon has — the
+// favourites star before the GM's columns, and the damage formula and the die after them.
 function WeaponsTable({
   field,
   sections,
@@ -47,51 +31,22 @@ function WeaponsTable({
 }) {
   const { t } = useTranslation();
 
-  const cols      = field.columns || [];
-  const rows      = weapons[field.key] || [];
   const dmgBlocks = field.damageFormula || [];
-  const hasDamage = dmgBlocks.length > 0;
-  const presets   = field.presetWeapons || [];
-  const alwaysOnPresets = presets.filter(p => p.alwaysOn);
-  const catalogPresets  = presets.filter(p => !p.alwaysOn);
-
   const skillOptions = weaponSkillColumn(field)
     ? collectSkillOptions(sections, customSkillNodes)
     : [];
-
-  // The name column is the first text column — the same one weaponRowLabel logs a roll under.
-  const nameKey = (cols.find(c => c.type === 'text') || {}).key;
-
-  const gridTemplate = weaponGridTemplate(field, {
-    showStar,
-    showRoll,
-    showActions: true,
-    hasDamage,
-  });
-
-  // Resolves a select cell to its display label (skill name or option label). A key that no
-  // longer resolves — a removed skill, a deleted custom node — returns '' rather than the raw
-  // surrogate key: those ids are internal and must never reach the screen, so callers' own
-  // `|| '—'` is what the player sees instead.
-  const cellLabel = (c, val) => {
-    if (c.type !== 'select') return val;
-    const opts = c.optionsFromSkills
-      ? skillOptions
-      : (c.options || []).map(o => ({ key: o, label: o }));
-    return opts.find(o => o.key === val)?.label || '';
-  };
 
   // The star is the weapons table's own, not starAffordance's: favourites here are toggled
   // through onChange.weaponFavorite by row id, while the skill fields' helper calls
   // onToggleFavorite with a skill key. What it borrows is the rule that matters — render a dead
   // copy when there is no handler, so the creator reserves the same width the game fills.
-  const renderStar = (id) => {
-    const active = favoriteWeapons.includes(id);
+  const renderStar = (row) => {
+    const active = favoriteWeapons.includes(row.id);
     if (onToggleFavorite) {
       return (
         <button
           className={`custom-sheet__star-btn${active ? ' custom-sheet__star-btn--active' : ''}`}
-          onClick={() => onChange && onChange.weaponFavorite(id)}
+          onClick={() => onChange && onChange.weaponFavorite(row.id)}
           disabled={readOnly}
           title={t('customSheet.favorite')}
         >
@@ -106,97 +61,59 @@ function WeaponsTable({
     );
   };
 
-  const renderRoll = (row, issue) => rollAffordance(
-    () => !issue && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) }),
-    { disabled: !!issue, title: weaponIssueTitle(issue, t) },
+  // Damage is read-only on a GM row and on a player row at rest: its number inputs are part of the
+  // weapon's definition, not of play.
+  const renderDamage = (row, { isPreset, editing }) => (
+    <div className="custom-sheet__weapon-damage">
+      {renderDamageFormula(dmgBlocks, row, field.key, isPreset ? null : onChange, isPreset || !editing, t)}
+    </div>
   );
+
+  const renderRoll = (row) => {
+    const issue = weaponRowIssue(field, row);
+    return rollAffordance(
+      () => !issue && onRoll({ weaponFieldKey: field.key, weaponRowId: row.id, label: weaponRowLabel(field, row, t) }),
+      { disabled: !!issue, title: weaponIssueTitle(issue, t) },
+    );
+  };
+
+  const leading = showStar ? [{ key: 'star', track: '22px', header: null, render: renderStar }] : [];
+  const trailing = [
+    dmgBlocks.length > 0 && { key: 'damage', track: 'minmax(0, 1fr)', header: t('customSheet.damage'), render: renderDamage },
+    showRoll && { key: 'roll', track: '28px', header: null, render: renderRoll },
+  ].filter(Boolean);
 
   return (
     <div className="custom-sheet__field custom-sheet__field--weapon-table">
       <div className="custom-sheet__section-title">{field.label}</div>
-      <div className="custom-sheet__weapon-table">
-        <div className="custom-sheet__field-header" style={{ gridTemplateColumns: gridTemplate }}>
-          {showStar && <span className="custom-sheet__weapon-col-label" />}
-          {cols.map(c => (
-            <span key={c.key} className="custom-sheet__weapon-col-label">{c.label}</span>
-          ))}
-          {hasDamage && <span className="custom-sheet__weapon-col-label">{t('customSheet.damage')}</span>}
-          {showRoll && <span className="custom-sheet__weapon-col-label" />}
-          <span className="custom-sheet__weapon-col-label" />
-        </div>
-
-        {alwaysOnPresets.map(preset => (
-          <WeaponsPresetRow
-            key={preset.id}
-            field={field}
-            preset={preset}
-            cols={cols}
-            cellLabel={cellLabel}
-            nameKey={nameKey}
-            gridTemplate={gridTemplate}
-            hasDamage={hasDamage}
-            showStar={showStar}
-            showRoll={showRoll}
-            renderStar={renderStar}
-            renderRoll={renderRoll}
-            showTooltip={showTooltip}
-            hideTooltip={hideTooltip}
-          />
-        ))}
-
-        {rows.map(row => (
-          <WeaponsTableRow
-            key={row.id}
-            field={field}
-            row={row}
-            cols={cols}
-            cellLabel={cellLabel}
-            skillOptions={skillOptions}
-            nameKey={nameKey}
-            gridTemplate={gridTemplate}
-            hasDamage={hasDamage}
-            showStar={showStar}
-            showRoll={showRoll}
-            editing={editingPath === row.id}
-            onStartEdit={setEditingPath}
-            onFinishEdit={() => setEditingPath(null)}
-            onChange={onChange}
-            renderStar={renderStar}
-            renderRoll={renderRoll}
-            showTooltip={showTooltip}
-            hideTooltip={hideTooltip}
-          />
-        ))}
-      </div>
-
-      {onChange && (
-        <div className="custom-sheet__weapon-add-row">
-          {/* The new row has no values yet — opening it straight into edit mode is what saves the
-              player from a line of em-dashes and a hunt for the pencil. A catalogue pick (below)
-              arrives pre-filled and reads fine at rest, so it does not get the same treatment. */}
-          <button
-            className="custom-sheet__weapon-add-btn"
-            onClick={() => setEditingPath(onChange.weaponAdd(field.key))}
-          >
-            + {t('customSheet.addWeapon')}
-          </button>
-          {catalogPresets.length > 0 && (
-            <select
-              className="custom-sheet__weapon-preset-picker"
-              value=""
-              onChange={e => {
-                const preset = catalogPresets.find(p => p.id === e.target.value);
-                if (preset) onChange.weaponAddFromPreset(field.key, preset);
-              }}
-            >
-              <option value="">+ {t('customSheet.addWeaponFromList')}</option>
-              {catalogPresets.map(p => (
-                <option key={p.id} value={p.id}>{weaponRowLabel(field, p, t)}</option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
+      <RowTable
+        columns={field.columns || []}
+        presets={field.presetWeapons || []}
+        rows={weapons[field.key] || []}
+        skillOptions={skillOptions}
+        leading={leading}
+        trailing={trailing}
+        labels={{
+          add:         t('customSheet.addWeapon'),
+          addFromList: t('customSheet.addWeaponFromList'),
+          edit:        t('customSheet.editWeapon'),
+          save:        t('customSheet.saveWeapon'),
+          remove:      t('customSheet.removeWeapon'),
+          locked:      t('customSheet.weaponPresetLocked'),
+          rowFallback: field.label || t('customSheet.weapon'),
+          removeConfirm: name => t('customSheet.removeWeaponConfirm', { name }),
+        }}
+        onAdd={onChange ? () => onChange.weaponAdd(field.key) : null}
+        onAddFromPreset={onChange ? preset => onChange.weaponAddFromPreset(field.key, preset) : null}
+        onCell={onChange ? (rowId, colKey, val) => onChange.weaponCell(field.key, rowId, colKey, val) : null}
+        onRemove={onChange ? rowId => onChange.weaponRemove(field.key, rowId) : null}
+        twoColumns={!!field.twoColumns}
+        sortKey={sortColumnKey(field)}
+        editingPath={editingPath}
+        setEditingPath={setEditingPath}
+        showTooltip={showTooltip}
+        hideTooltip={hideTooltip}
+      />
     </div>
   );
 }

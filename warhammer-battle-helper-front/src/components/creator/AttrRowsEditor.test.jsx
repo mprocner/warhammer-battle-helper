@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import i18n from '../../i18n';
-import AttrRowsEditor, { reorderRows } from './AttrRowsEditor';
+import AttrRowsEditor from './AttrRowsEditor';
 
 const rows = [{ id: 'attr_ws', label: 'Walka wręcz', abbr: 'WW', default: 31, min: 0, max: 100 }];
 
@@ -67,21 +67,6 @@ test('editing row 2 leaves row 1 untouched', () => {
 test('shows the empty hint with no rows', () => {
   setup([]);
   expect(screen.getByText(i18n.t('creator.attrRowsEmpty'))).toBeTruthy();
-});
-
-describe('reorderRows', () => {
-  const three = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
-
-  test('moves the dragged row to the slot of the row it was dropped on', () => {
-    expect(reorderRows(three, 'a', 'c').map(r => r.id)).toEqual(['b', 'c', 'a']);
-    expect(reorderRows(three, 'c', 'a').map(r => r.id)).toEqual(['c', 'a', 'b']);
-  });
-
-  test('a drop outside the list or on itself changes nothing', () => {
-    expect(reorderRows(three, 'a', null)).toBe(three);
-    expect(reorderRows(three, 'b', 'b')).toBe(three);
-    expect(reorderRows(three, 'a', 'gone')).toBe(three);
-  });
 });
 
 test('every row has a labelled drag handle', () => {

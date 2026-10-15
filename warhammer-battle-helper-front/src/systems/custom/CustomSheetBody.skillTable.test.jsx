@@ -210,7 +210,7 @@ describe('CustomSheetBody skill_table — two columns', () => {
 // node would never actually arrive and an assertion about its edit state would prove nothing.
 // This harness plays the part GameSession plays for real, holding the nodes in state; optional
 // spies let a test observe the calls without giving up the state wiring. Same pattern as
-// WeaponColumnsEditor.test.jsx's Harness.
+// TableColumnsEditor.test.jsx's Harness.
 function Harness({ sections, initialNodes = {}, addSpy, updateSpy, removeSpy }) {
   const [nodes, setNodes] = useState(initialNodes);
   return (

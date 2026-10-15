@@ -13,6 +13,7 @@ import AttrTable from './fields/AttrTable';
 import SkillTable from './fields/SkillTable';
 import SkillTree from './fields/SkillTree';
 import WeaponsTable from './fields/WeaponsTable';
+import DataTable from './fields/DataTable';
 import SheetImagePicker from './fields/SheetImagePicker';
 import { fieldRowSpan } from './fieldRowSpan';
 import { PRESETS } from '../../utils/imageProcessing';
@@ -20,7 +21,8 @@ import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 import NumberInput from '../../components/common/NumberInput';
 
 // onChange = { attr, advances, skill, skillAdvances, text, progress, number, name, avatar, image,
-//              weaponAdd, weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite }
+//              weaponAdd, weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite,
+//              tableAdd, tableAddFromPreset, tableCell, tableRemove }
 //            | null (read-only)
 // onRoll   = (rollModal) => void | null (no rolls)
 // uploadImage = (File) => Promise<url> | null — uploads for char_avatar and image fields
@@ -49,6 +51,7 @@ function CustomSheetBody({
   const progress = values.progress   || {};
   const numbers  = values.numbers    || {};
   const weapons  = values.weapons    || {};
+  const tables   = values.tables     || {};
   const images   = values.images     || {};
   const readOnly = !onChange;
 
@@ -487,6 +490,20 @@ function CustomSheetBody({
           />
         );
       }
+
+      case 'data_table':
+        return (
+          <DataTable
+            key={field.key}
+            field={field}
+            rows={tables[field.key] || []}
+            onChange={onChange}
+            editingPath={editingPath}
+            setEditingPath={setEditingPath}
+            showTooltip={showTooltip}
+            hideTooltip={hideTooltip}
+          />
+        );
 
       case 'weapons_table': {
         // The star joins the affordance policy the skill fields have used since FEATURE-219:

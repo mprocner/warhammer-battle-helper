@@ -39,11 +39,16 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ImageIcon from '@mui/icons-material/Image';
 import GridOnIcon from '@mui/icons-material/GridOn';
+import ViewListIcon from '@mui/icons-material/ViewList';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
+import { sortColumnKey } from '../../systems/custom/rowTableLayout';
 import { collectSkillOptions } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import { SHORT_CARD_TYPES } from '../../systems/custom/shortCard';
+import OptionsEditor from './OptionsEditor';
+import TableColumnsEditor from './TableColumnsEditor';
+import TablePresetsEditor from './TablePresetsEditor';
 import PropertyPopup from './PropertyPopup';
 import ConfirmModal from '../common/ConfirmModal';
 import FieldChrome from './FieldChrome';
@@ -100,6 +105,9 @@ function removeTreeAtPath(node, path) {
 
 // ── field type config ─────────────────────────────────────────────────────────
 
+const WEAPON_COLUMN_TYPES = ['text', 'number', 'select'];
+const DATA_TABLE_COLUMN_TYPES = ['text', 'number', 'select', 'long_text'];
+
 const FIELD_TYPES = [
   { type: 'section',     labelKey: 'creator.fieldType.section',     icon: <ViewQuiltIcon fontSize="small" />,  desc: 'creator.fieldType.sectionDesc' },
   { type: 'char_name',   labelKey: 'creator.fieldType.charName',    icon: <BadgeIcon fontSize="small" />,         desc: 'creator.fieldType.charNameDesc' },
@@ -116,6 +124,7 @@ const FIELD_TYPES = [
   { type: 'select',      labelKey: 'creator.fieldType.select',      icon: <ListIcon fontSize="small" />,       desc: 'creator.fieldType.selectDesc' },
   { type: 'skill_table',   labelKey: 'creator.fieldType.skillTable',    icon: <TableRowsIcon fontSize="small" />,  desc: 'creator.fieldType.skillTableDesc' },
   { type: 'weapons_table', labelKey: 'creator.fieldType.weaponsTable',  icon: <GavelIcon fontSize="small" />,      desc: 'creator.fieldType.weaponsTableDesc' },
+  { type: 'data_table',    labelKey: 'creator.fieldType.dataTable',     icon: <ViewListIcon fontSize="small" />,    desc: 'creator.fieldType.dataTableDesc' },
   { type: 'skill_tree',    labelKey: 'creator.fieldType.skillTree',     icon: <AccountTreeIcon fontSize="small" />, desc: 'creator.fieldType.skillTreeDesc' },
   { type: 'label',         labelKey: 'creator.fieldType.label',         icon: <LabelIcon fontSize="small" />,       desc: 'creator.fieldType.labelDesc' },
 ];
@@ -127,7 +136,7 @@ const PALETTE_GROUPS = [
   { labelKey: 'creator.paletteGroupStats',   types: ['attr', 'attr_table', 'number', 'computed', 'progress'] },
   { labelKey: 'creator.paletteGroupText',    types: ['text_short', 'text_long', 'label'] },
   { labelKey: 'creator.paletteGroupChoice',  types: ['checkbox', 'select'] },
-  { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'skill_tree'] },
+  { labelKey: 'creator.paletteGroupTables',  types: ['skill_table', 'weapons_table', 'data_table', 'skill_tree'] },
 ];
 
 // Label colours (FEATURE-156). A fixed set, not a free colour picker: the character sheet sits on a
@@ -156,6 +165,7 @@ export function makeDefaultField(type, t) {
   if (type === 'select') return { ...base, options: [] };
   if (type === 'skill_table') return { ...base, skills: [], rollable: true, assignAttrToSkill: false, hasAdvances: false, baseFromAttr: false, advancesLabel: t('creator.fieldAdvancesDefault') };
   if (type === 'weapons_table') return { ...base, columns: [], rollable: true, rollConfig: defaultRollConfig(), damageFormula: [], presetWeapons: [] };
+  if (type === 'data_table') return { ...base, columns: [], presetRows: [] };
   if (type === 'skill_tree') return { ...base, tree: { key: genId('tree'), label: t('creator.treeDefaultRoot'), children: [] }, playerCanAddSkills: false, assignAttrToSkill: false };
   if (type === 'label') return { ...base, text: '', textColor: '', textSize: 'normal' };
   // A section field wraps a whole SectionDef. section.id mirrors the field key so DnD,
@@ -225,51 +235,6 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
   );
 }
 
-// ── OptionsEditor ────────────────────────────────────────────────────────────
-
-// Plain-string options editor for "select" fields and weapon select-columns. The stored
-// value IS the label (no stable id needed — a select stores the chosen text verbatim).
-function OptionsEditor({ label, options, onChange }) {
-  const { t } = useTranslation();
-  const [draftLabel, setDraftLabel] = useState('');
-
-  const commit = () => {
-    if (!draftLabel.trim()) return;
-    onChange([...(options || []), draftLabel.trim()]);
-    setDraftLabel('');
-  };
-
-  return (
-    <div className="creator__options-editor">
-      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
-      <div className="creator__options-list">
-        {(options || []).map((opt, i) => (
-          <div key={i} className="creator__option-row">
-            <input className="creator__option-input" value={opt} onChange={e => {
-              const n = [...options];
-              n[i] = e.target.value;
-              onChange(n);
-            }} />
-            <button className="creator__option-del" onClick={() => onChange((options || []).filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
-          </div>
-        ))}
-      </div>
-      <div className="creator__options-add">
-        <input
-          className="creator__option-input"
-          value={draftLabel}
-          onChange={e => setDraftLabel(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') commit(); }}
-          placeholder={t('creator.optionsAddPlaceholder')}
-        />
-        <button className="creator__option-add-btn" onClick={commit}>
-          <AddIcon style={{ fontSize: 13 }} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── SkillOptionsEditor ───────────────────────────────────────────────────────
 
 // Skill rows for a "skill_table" field. Each row is { id, label, attr? }: id is a stable key
@@ -327,116 +292,6 @@ function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false
   );
 }
 
-// ── WeaponColumnsEditor ──────────────────────────────────────────────────────
-
-// updateWeaponColumns patches one weapon column while keeping the invariant that at most one
-// column supplies skills. Two columns would not be an error the GM could see — the backend
-// simply rolls with the first one in array order (weapon.go:73) — so the creator settles it
-// at edit time instead. A column leaving the "select" type also drops the flag: keeping it
-// would leave data only the creator honours, while the backend already ignores it.
-export function updateWeaponColumns(cols, index, patch) {
-  const next = cols.map((c, j) => (j === index ? { ...c, ...patch } : c));
-  const edited = next[index];
-  if (edited.type !== 'select' && edited.optionsFromSkills) {
-    next[index] = { ...edited, optionsFromSkills: false };
-    return next;
-  }
-  if (edited.type === 'select' && edited.optionsFromSkills) {
-    for (let j = 0; j < next.length; j += 1) {
-      if (j !== index && next[j].optionsFromSkills) next[j] = { ...next[j], optionsFromSkills: false };
-    }
-  }
-  return next;
-}
-
-// Editor for the GM-defined columns of a weapons_table field. Each column has a
-// stable key, a label, a type (text/number/select), and — for select columns —
-// either a manual options list or "options from the character's skills".
-export function WeaponColumnsEditor({ columns, onChange }) {
-  const { t } = useTranslation();
-  const cols = columns || [];
-  const [movedFrom, setMovedFrom] = useState(null);
-  const skillCol = weaponSkillColumn({ columns: cols });
-
-  // commit is the one place that decides whether an edit counts as a hand-over: the column that
-  // used to hold the flag differs from the one that holds it now. update, add, remove and move
-  // all go through it, so no edit made here can leave a stale notice behind. The other way a
-  // notice could go stale — the popup switching to a different field — is not handled here at
-  // all: PropertyPanel is keyed by the edited path, so that switch unmounts this editor and the
-  // notice goes with it.
-  const commit = (next) => {
-    const before = skillCol;
-    const after  = weaponSkillColumn({ columns: next });
-    // Only an actual hand-over is announced. A column that merely loses the role (its type
-    // changed) leaves the table with none, which the roll-config warning already reports.
-    const handover = before && after && before.key !== after.key;
-    setMovedFrom(handover ? before.label : null);
-    onChange(next);
-  };
-
-  const update = (i, patch) => commit(updateWeaponColumns(cols, i, patch));
-  const remove = (i) => commit(cols.filter((_, j) => j !== i));
-  const move = (i, dir) => {
-    const j = i + dir;
-    if (j < 0 || j >= cols.length) return;
-    const next = [...cols];
-    [next[i], next[j]] = [next[j], next[i]];
-    commit(next);
-  };
-  const add = () => commit([...cols, { key: `col_${Date.now()}`, label: '', type: 'text', options: [], optionsFromSkills: false }]);
-
-  return (
-    <div className="creator__weapon-columns">
-      <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        {t('creator.weaponColumns')}
-      </Typography>
-      {movedFrom && (
-        <div className="creator__weapon-col-moved">
-          {t('creator.weaponSkillColumnMoved', { column: movedFrom })}
-        </div>
-      )}
-      {cols.map((col, i) => (
-        <div key={col.key} className="creator__weapon-col">
-          <div className="creator__weapon-col-head">
-            <input
-              className="creator__option-input"
-              value={col.label}
-              placeholder={t('creator.weaponColumnLabel')}
-              onChange={e => update(i, { label: e.target.value })}
-            />
-            <select className="creator__option-attr-select" value={col.type} onChange={e => update(i, { type: e.target.value })}>
-              <option value="text">{t('creator.weaponColTypeText')}</option>
-              <option value="number">{t('creator.weaponColTypeNumber')}</option>
-              <option value="select">{t('creator.weaponColTypeSelect')}</option>
-            </select>
-            {skillCol && skillCol.key === col.key && (
-              <span className="creator__weapon-col-badge">{t('creator.weaponSkillColumnBadge')}</span>
-            )}
-            <button className="creator__option-del" onClick={() => move(i, -1)} disabled={i === 0} title={t('creator.sectionMoveUp')}><ArrowUpwardIcon style={{ fontSize: 13 }} /></button>
-            <button className="creator__option-del" onClick={() => move(i, +1)} disabled={i === cols.length - 1} title={t('creator.sectionMoveDown')}><ArrowDownwardIcon style={{ fontSize: 13 }} /></button>
-            <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}><DeleteIcon style={{ fontSize: 13 }} /></button>
-          </div>
-          {col.type === 'select' && (
-            <div className="creator__weapon-col-select">
-              <FormControlLabel
-                control={<Switch size="small" checked={!!col.optionsFromSkills} onChange={e => update(i, { optionsFromSkills: e.target.checked })} />}
-                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponColFromSkills')}</Typography>}
-                sx={{ display: 'block' }}
-              />
-              {!col.optionsFromSkills && (
-                <OptionsEditor label={t('creator.selectOptions')} options={col.options || []} onChange={opts => update(i, { options: opts })} />
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-      <button className="creator__tree-add-root" onClick={add}>
-        <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponAddColumn')}
-      </button>
-    </div>
-  );
-}
-
 // MUI renders a Select's menu as a Popover portalled to document.body at the theme's modal
 // level (1300), but the creator's property panel lives in a DraggablePopup whose
 // .character-sheet-popup sits at z-index 9999 (style.css) — so a menu opened inside the panel
@@ -462,12 +317,41 @@ export function weaponThresholdHint(skillColumnLabel, successType) {
     : { key: 'creator.weaponThresholdNoSkillColumn', warning: true };
 }
 
-// Which FEATURE-217 display flags a field type offers. Both skill types offer all four; the
+const ROW_TABLE_TYPES = ['weapons_table', 'data_table'];
+
+// The column a sorted row table orders by. Only short text columns are offered — a number column
+// would sort as text and a paragraph is no name. The value shown is the effective one
+// (sortColumnKey), so a pick that was deleted or changed type reads as the fallback the sheet uses.
+function SortColumnPicker({ field, onChange, t }) {
+  const textColumns = (field.columns || []).filter(c => c.type === 'text');
+  if (textColumns.length === 0) {
+    return <div className="creator__sort-column-none">{t('creator.sortColumnNone')}</div>;
+  }
+  return (
+    <label className="creator__sort-column">
+      <span className="creator__sort-column-label">{t('creator.sortColumn')}</span>
+      <select
+        className="creator__option-attr-select"
+        aria-label={t('creator.sortColumn')}
+        value={sortColumnKey(field) || ''}
+        onChange={e => onChange(e.target.value)}
+      >
+        {textColumns.map(c => <option key={c.key} value={c.key}>{c.label || '—'}</option>)}
+      </select>
+    </label>
+  );
+}
+
+// Which display flags a field type offers. Both skill types offer all four (FEATURE-217); the
 // two-column split simply means something different in each (rows vs. root branches), which is the
-// renderer's business, not the panel's.
-export function skillDisplayFlags(fieldType) {
+// renderer's business, not the panel's. Row tables have no favourites to hide and no development
+// mark; they sort by a GM-picked short text column (SortColumnPicker) and split by row.
+export function displayFlags(fieldType) {
   if (fieldType === 'skill_table' || fieldType === 'skill_tree') {
     return ['hideFavorites', 'showDevelopment', 'sortAlphabetically', 'twoColumns'];
+  }
+  if (fieldType === 'weapons_table' || fieldType === 'data_table') {
+    return ['sortAlphabetically', 'twoColumns'];
   }
   return [];
 }
@@ -486,7 +370,7 @@ export const SKILL_FLAG_META = {
   showDevelopment:    { labelKey: 'creator.skillShowDevelopment', hintKey: 'creator.skillShowDevelopmentHint' },
   sortAlphabetically: { labelKey: 'creator.skillSortAlphabetically' },
   twoColumns:         { labelKey: 'creator.skillTwoColumns' },
-  // Rendered directly in PropertyPanel's "Content" group, not via skillDisplayFlags() — it belongs
+  // Rendered directly in PropertyPanel's "Content" group, not via displayFlags() — it belongs
   // next to assignAttrToSkill, not among the display-only flags that group returns.
   baseFromAttr:       {
     labelKey: 'creator.skillAttrAsBase',
@@ -593,110 +477,6 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
             InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }, inputProps: { min: 1 } }}
           />
         </>
-      )}
-    </div>
-  );
-}
-
-// ── WeaponPresetsEditor ──────────────────────────────────────────────────────
-
-// GM editor for a weapons_table field's preset weapons. Each preset is a "row template":
-// the GM fills the same column cells and damage blocks a player would, plus an "always on
-// the sheet" switch. AlwaysOn presets are shown read-only on every sheet (a GM edit
-// propagates); the rest form a catalog the player can copy into their own editable rows.
-// Inlined into the Content group of the field property panel, right below the weapon
-// columns editor — a preset is filled in per column, so the two are read together.
-function WeaponPresetsEditor({ field, sections, onChange }) {
-  const { t } = useTranslation();
-  const presets   = field.presetWeapons || [];
-  const cols      = field.columns || [];
-  const dmgBlocks = field.damageFormula || [];
-  const hasDamage = dmgBlocks.length > 0;
-  // "from skills" columns resolve to the skills defined in the template (no character yet).
-  const skillOptions = !!weaponSkillColumn(field)
-    ? collectSkillOptions(sections, {})
-    : [];
-
-  const update = (i, patch) => onChange(presets.map((p, j) => (j === i ? { ...p, ...patch } : p)));
-  const updateCell   = (i, colKey, val)   => update(i, { cells:  { ...(presets[i].cells  || {}), [colKey]: val } });
-  const updateDamage = (i, blockId, val)  => update(i, { damage: { ...(presets[i].damage || {}), [blockId]: Number(val) || 0 } });
-  const remove = (i) => onChange(presets.filter((_, j) => j !== i));
-  const add = () => onChange([
-    ...presets,
-    { id: genId('preset'), cells: {}, damage: {}, alwaysOn: false },
-  ]);
-
-  return (
-    <div className="creator__weapon-presets-editor">
-      <div className="creator__props-subhead">
-        <GavelIcon fontSize="small" />
-        {t('creator.weaponPresetsTitle')}
-      </div>
-      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontStyle: 'italic' }}>
-        {t('creator.weaponPresetsHint')}
-      </Typography>
-
-      {cols.length === 0 ? (
-        <Typography sx={{ color: 'text.secondary', fontStyle: 'italic', py: 2 }}>
-          {t('creator.weaponPresetsNoColumns')}
-        </Typography>
-      ) : (
-        <div className="creator__weapon-presets">
-          {presets.map((preset, i) => (
-            <div key={preset.id} className="creator__weapon-preset">
-              <div className="creator__weapon-preset-fields">
-                {cols.map(c => {
-                  const val = (preset.cells && preset.cells[c.key]) || '';
-                  if (c.type === 'select') {
-                    const opts = c.optionsFromSkills
-                      ? skillOptions
-                      : (c.options || []).map(o => ({ key: o, label: o }));
-                    return (
-                      <label key={c.key} className="creator__weapon-preset-field">
-                        <span className="creator__weapon-preset-field-label">{c.label}</span>
-                        <select className="creator__weapon-preset-select" value={val}
-                          onChange={e => updateCell(i, c.key, e.target.value)}>
-                          <option value="">—</option>
-                          {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-                        </select>
-                      </label>
-                    );
-                  }
-                  return (
-                    <label key={c.key} className="creator__weapon-preset-field">
-                      <span className="creator__weapon-preset-field-label">{c.label}</span>
-                      <input type={c.type === 'number' ? 'number' : 'text'} className="creator__weapon-preset-input"
-                        value={val} onChange={e => updateCell(i, c.key, e.target.value)} />
-                    </label>
-                  );
-                })}
-              </div>
-
-              {hasDamage && (
-                <div className="creator__weapon-preset-damage">
-                  <span className="creator__weapon-preset-field-label">{t('customSheet.damage')}</span>
-                  <div className="custom-sheet__weapon-damage">
-                    {renderDamageFormula(dmgBlocks, preset, field.key,
-                      { weaponDamage: (_fk, _rowId, blockId, val) => updateDamage(i, blockId, val) }, false, t)}
-                  </div>
-                </div>
-              )}
-
-              <div className="creator__weapon-preset-actions">
-                <FormControlLabel
-                  control={<Switch size="small" checked={!!preset.alwaysOn} onChange={e => update(i, { alwaysOn: e.target.checked })} />}
-                  label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponPresetAlwaysOn')}</Typography>}
-                />
-                <button className="creator__option-del" onClick={() => remove(i)} title={t('creator.sectionDelete')}>
-                  <DeleteIcon style={{ fontSize: 14 }} />
-                </button>
-              </div>
-            </div>
-          ))}
-          <button className="creator__tree-add-root" onClick={add}>
-            <AddIcon style={{ fontSize: 14 }} /> {t('creator.weaponPresetAdd')}
-          </button>
-        </div>
       )}
     </div>
   );
@@ -813,6 +593,29 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
   return (
     <div className="creator__props-panel">
       <PropsHead caption={t('creator.fieldProperties')} typeInfo={typeInfo} t={t} />
+
+      {/* Display opens the panel: it is short, and the switches a GM flips most when laying out a
+          sheet, so it never sits below a long column or formula editor. */}
+      {displayFlags(field.type).length > 0 && (
+        <PropsGroup title={t('creator.propsGroupDisplay')}>
+          {displayFlags(field.type).map(flag => (
+            <React.Fragment key={flag}>
+              <FlagSwitch
+                field={field}
+                flag={flag}
+                meta={SKILL_FLAG_META[flag]}
+                onChange={patch => up(clearDependentFlags(field, patch))}
+                showTooltip={showTooltip}
+                hideTooltip={hideTooltip}
+                t={t}
+              />
+              {flag === 'sortAlphabetically' && field.sortAlphabetically && ROW_TABLE_TYPES.includes(field.type) && (
+                <SortColumnPicker field={field} onChange={sortColumn => up({ sortColumn })} t={t} />
+              )}
+            </React.Fragment>
+          ))}
+        </PropsGroup>
+      )}
 
       <PropsGroup title={t('creator.propsGroupBasics')}>
         {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
@@ -1015,7 +818,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
         </PropsGroup>
       )}
 
-      {['select', 'skill_table', 'weapons_table', 'skill_tree'].includes(field.type) && (
+      {['select', 'skill_table', 'weapons_table', 'data_table', 'skill_tree'].includes(field.type) && (
         <PropsGroup title={t('creator.propsGroupContent')}>
           {field.type === 'select' && (
             <OptionsEditor
@@ -1064,7 +867,12 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
 
           {field.type === 'weapons_table' && (
             <>
-              <WeaponColumnsEditor columns={field.columns || []} onChange={cols => up({ columns: cols })} />
+              <TableColumnsEditor
+                columns={field.columns || []}
+                onChange={cols => up({ columns: cols })}
+                columnTypes={WEAPON_COLUMN_TYPES}
+                allowSkillColumn
+              />
 
               <Divider sx={{ my: 1.5 }} />
               <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1083,10 +891,52 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               />
 
               <Divider sx={{ my: 1.5 }} />
-              <WeaponPresetsEditor
-                field={field}
-                sections={sections}
+              <TablePresetsEditor
+                columns={field.columns || []}
+                presets={field.presetWeapons || []}
                 onChange={presetWeapons => up({ presetWeapons })}
+                skillOptions={weaponSkillColumn(field) ? collectSkillOptions(sections, {}) : []}
+                icon={<GavelIcon fontSize="small" />}
+                labels={{
+                  title:     t('creator.weaponPresetsTitle'),
+                  hint:      t('creator.weaponPresetsHint'),
+                  noColumns: t('creator.weaponPresetsNoColumns'),
+                  add:       t('creator.weaponPresetAdd'),
+                }}
+                renderPresetExtra={(field.damageFormula || []).length > 0 ? (preset, patch) => (
+                  <div className="creator__table-preset-damage">
+                    <span className="creator__table-preset-field-label">{t('customSheet.damage')}</span>
+                    <div className="custom-sheet__weapon-damage">
+                      {renderDamageFormula(field.damageFormula, preset, field.key, {
+                        weaponDamage: (_fk, _rowId, blockId, val) =>
+                          patch({ damage: { ...(preset.damage || {}), [blockId]: Number(val) || 0 } }),
+                      }, false, t)}
+                    </div>
+                  </div>
+                ) : null}
+              />
+            </>
+          )}
+
+          {field.type === 'data_table' && (
+            <>
+              <TableColumnsEditor
+                columns={field.columns || []}
+                onChange={cols => up({ columns: cols })}
+                columnTypes={DATA_TABLE_COLUMN_TYPES}
+              />
+              <Divider sx={{ my: 1.5 }} />
+              <TablePresetsEditor
+                columns={field.columns || []}
+                presets={field.presetRows || []}
+                onChange={presetRows => up({ presetRows })}
+                icon={<ViewListIcon fontSize="small" />}
+                labels={{
+                  title:     t('creator.dataTablePresetsTitle'),
+                  hint:      t('creator.dataTablePresetsHint'),
+                  noColumns: t('creator.dataTablePresetsNoColumns'),
+                  add:       t('creator.dataTablePresetAdd'),
+                }}
               />
             </>
           )}
@@ -1109,23 +959,6 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               <SkillTreeEditor tree={field.tree} onChange={tree => up({ tree })} numberFields={numberFields} assignAttrToSkill={!!field.assignAttrToSkill} />
             </>
           )}
-        </PropsGroup>
-      )}
-
-      {skillDisplayFlags(field.type).length > 0 && (
-        <PropsGroup title={t('creator.propsGroupDisplay')}>
-          {skillDisplayFlags(field.type).map(flag => (
-            <FlagSwitch
-              key={flag}
-              field={field}
-              flag={flag}
-              meta={SKILL_FLAG_META[flag]}
-              onChange={patch => up(clearDependentFlags(field, patch))}
-              showTooltip={showTooltip}
-              hideTooltip={hideTooltip}
-              t={t}
-            />
-          ))}
         </PropsGroup>
       )}
 

@@ -41,6 +41,8 @@ type Stats struct {
 	// starred. Preset weapons live only in the template, so this per-player preference cannot
 	// be stored on the weapon itself — unlike player-added rows, which carry WeaponRow.Favorite.
 	FavoriteWeapons []string `bson:"favoriteWeapons,omitempty" json:"favoriteWeapons,omitempty"`
+	// Tables holds the player-added rows of each data_table field, keyed by field key.
+	Tables map[string][]TableRow `bson:"tables,omitempty" json:"tables,omitempty"`
 	// Images holds the URL of each image field (PLAYRPG-240), keyed by field key. Upload goes
 	// through POST /avatars; only the returned URL is stored here.
 	Images map[string]string `bson:"images,omitempty" json:"images,omitempty"`
@@ -54,6 +56,13 @@ type WeaponRow struct {
 	Cells    map[string]string  `bson:"cells,omitempty" json:"cells,omitempty"`
 	Damage   map[string]float64 `bson:"damage,omitempty" json:"damage,omitempty"`
 	Favorite bool               `bson:"favorite,omitempty" json:"favorite,omitempty"`
+}
+
+// TableRow is one player-added row in a data_table field. Cells maps a column key to the entered
+// value; long_text columns are cells like any other.
+type TableRow struct {
+	ID    string            `bson:"id" json:"id"`
+	Cells map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
 }
 
 // ProgressValue stores current/max for progress-type fields (e.g. HP).

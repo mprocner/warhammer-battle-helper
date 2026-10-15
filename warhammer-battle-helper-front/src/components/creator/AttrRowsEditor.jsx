@@ -13,34 +13,19 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { genId } from '../../utils/surrogateKeys';
+import { reorderById, lockToVerticalAxis } from '../../utils/sortableList';
 
 // GM-side editor of an attr_table's rows (PLAYRPG-235). Each row is a full attribute: its id is
 // minted once and becomes the key in stats.attributes, so it is never derived from the label.
 // Numbers are truncated for the same reason as the attr field's own inputs: a decimal 400s the
 // template PATCH, and saveTemplate swallows that error silently.
 const toInt = (raw) => (raw === '' ? null : Math.trunc(Number(raw)));
-
-// Rows only ever move up or down. Written inline rather than pulled from @dnd-kit/modifiers:
-// a modifier is a plain transform function, and a new dependency costs a container volume rebuild.
-const lockToVerticalAxis = ({ transform }) => ({ ...transform, x: 0 });
-
-// reorderRows moves the dragged row into the slot of the row it was dropped on. Ids, not indices,
-// cross the drag boundary: row.id is unique and stable, so it doubles as the dnd-kit item id.
-// Returns the same array when nothing moves, so the caller can skip a template save.
-export function reorderRows(rows, activeId, overId) {
-  if (!overId || activeId === overId) return rows;
-  const from = rows.findIndex(r => r.id === activeId);
-  const to = rows.findIndex(r => r.id === overId);
-  if (from === -1 || to === -1) return rows;
-  return arrayMove(rows, from, to);
-}
 
 // One row of the editor. It is its own grid element (not a fragment of a shared grid) because
 // useSortable moves the row by a CSS transform on a single node. Only the grip starts a drag:
@@ -51,13 +36,16 @@ function SortableAttrRow({ row, children, handleLabel }) {
   return (
     <div
       ref={setNodeRef}
-      className={`creator__attr-rows-row${isDragging ? ' creator__attr-rows-row--dragging' : ''}`}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`creator__attr-rows-row${isDragging ? ' creator__drag-item--dragging' : ''}`}
+      // Translate, not Transform: the sortable strategy also reports a scale that morphs the
+      // dragged item into the size of the slot it hovers, which squashes or stretches items of
+      // unequal height. Items only swap places; they never change size.
+      style={{ transform: CSS.Translate.toString(transform), transition }}
     >
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="creator__attr-rows-grip"
+        className="creator__drag-grip"
         aria-label={handleLabel}
         {...attributes}
         {...listeners}
@@ -82,7 +70,7 @@ function AttrRowsEditor({ rows, onChange }) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const handleDragEnd = ({ active, over }) => {
-    const next = reorderRows(list, active.id, over?.id);
+    const next = reorderById(list, active.id, over?.id);
     if (next !== list) onChange(next);
   };
 

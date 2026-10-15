@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
 
@@ -73,40 +73,54 @@ describe('CustomSheetBody weapons_table — read first, edit on the pencil', () 
 
   it('shows the weapon as text, not as inputs, until asked', () => {
     const { container } = renderRow();
-    expect(container.querySelector('.custom-sheet__weapon-cell-input')).toBeNull();
-    expect(container.querySelector('.custom-sheet__weapon-cell-static').textContent).toBe('Miecz');
+    expect(container.querySelector('.custom-sheet__row-table-cell-input')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-cell-static').textContent).toBe('Miecz');
   });
 
-  // The whole point: the destructive control is the one a stray click must not reach.
-  it('keeps the delete button out of reach while the row is at rest', () => {
-    const { container } = renderRow();
-    expect(container.querySelector('.custom-sheet__weapon-remove')).toBeNull();
+  // Delete sits next to the pencil in both modes, so a stray click can reach it — which is why it
+  // never removes anything on its own: it asks first, naming the weapon.
+  it('offers delete at rest but only removes after confirmation', () => {
+    const weaponRemove = jest.fn();
+    const { container } = render(
+      <CustomSheetBody sections={playerWeaponSections()} values={playerValues} onChange={{ ...sheetHandlers, weaponRemove }} />
+    );
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-remove'));
+    expect(weaponRemove).not.toHaveBeenCalled();
+    expect(screen.getByText('Remove weapon "Miecz"?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(weaponRemove).not.toHaveBeenCalled();
+    expect(screen.queryByText('Remove weapon "Miecz"?')).not.toBeInTheDocument();
+
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-remove'));
+    fireEvent.click(screen.getByText('Delete'));
+    expect(weaponRemove).toHaveBeenCalledWith('wpn_table', 'w1');
   });
 
   it('turns the cells into inputs when the pencil is clicked', () => {
     const { container } = renderRow();
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
-    expect(container.querySelector('.custom-sheet__weapon-cell-input').value).toBe('Miecz');
-    expect(container.querySelector('.custom-sheet__weapon-remove')).not.toBeNull();
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-edit'));
+    expect(container.querySelector('.custom-sheet__row-table-cell-input').value).toBe('Miecz');
+    expect(container.querySelector('.custom-sheet__row-table-remove')).not.toBeNull();
   });
 
   it('goes back to text when the edit is closed', () => {
     const { container } = renderRow();
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-save'));
-    expect(container.querySelector('.custom-sheet__weapon-cell-input')).toBeNull();
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-edit'));
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-save'));
+    expect(container.querySelector('.custom-sheet__row-table-cell-input')).toBeNull();
   });
 
   // A GM weapon is not the player's to change, so it has no way in at all.
   it('gives a GM weapon no pencil', () => {
     const { container } = render(<CustomSheetBody sections={weaponsSections()} onChange={sheetHandlers} />);
-    expect(container.querySelector('.custom-sheet__weapon-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
   });
 });
 
 // Extra requirement A (task-8 review carryover): the previous task's only weapons_table fixture
 // in the snapshot suite (CustomSheetBody.domShape.test.jsx) never sets field.rollable, so the die
-// branch in weaponGridTemplate/WeaponsTableRow was never exercised end-to-end — a control could
+// (a trailing slot in WeaponsTable.jsx) was never exercised end-to-end — a control could
 // sit in the wrong grid cell and still pass every existing test. This fixture sets rollable: true
 // and checks the die's DOM position relative to the actions cell, not just that a die exists.
 const rollablePlayerWeaponSections = () => ([{
@@ -128,7 +142,7 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
     const children = Array.from(row.children);
     return {
       dieIndex: children.findIndex(el => el.classList.contains('custom-sheet__roll-btn')),
-      actionsIndex: children.findIndex(el => el.classList.contains('custom-sheet__weapon-actions')),
+      actionsIndex: children.findIndex(el => el.classList.contains('custom-sheet__row-table-actions')),
       children,
     };
   };
@@ -137,7 +151,7 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
     const { container } = render(
       <CustomSheetBody sections={rollablePlayerWeaponSections()} values={playerValues} onChange={sheetHandlers} onRoll={noop} />
     );
-    const row = container.querySelector('.custom-sheet__weapon-row');
+    const row = container.querySelector('.custom-sheet__row-table-row');
     const { dieIndex, actionsIndex, children } = dieAndActionsIndices(row);
     expect(dieIndex).toBeGreaterThan(-1);
     expect(actionsIndex).toBe(dieIndex + 1);
@@ -148,8 +162,8 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
     const { container } = render(
       <CustomSheetBody sections={rollablePlayerWeaponSections()} values={playerValues} onChange={sheetHandlers} onRoll={noop} />
     );
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
-    const row = container.querySelector('.custom-sheet__weapon-row');
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-edit'));
+    const row = container.querySelector('.custom-sheet__row-table-row');
     const { dieIndex, actionsIndex, children } = dieAndActionsIndices(row);
     expect(dieIndex).toBeGreaterThan(-1);
     expect(actionsIndex).toBe(dieIndex + 1);
@@ -159,8 +173,8 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
   });
 });
 
-// GAP 1: The damage formula is read-only at rest because of the ternary in WeaponsTableRow:
-// `rendering ? readOnly : true`. This test pins the guarantee that player-fillable damage
+// GAP 1: The damage formula is read-only at rest because of the rule in WeaponsTable.jsx
+// renderDamage: `isPreset || !editing`. This test pins the guarantee that player-fillable damage
 // blocks cannot be typed into while the row is at rest.
 const damageFormulaWithPlayerInput = () => ([{
   id: 'sec1',
@@ -196,7 +210,7 @@ describe('CustomSheetBody weapons_table — damage formula read-only at rest (FE
 
   it('makes the damage input editable after clicking the pencil', () => {
     const { container } = renderWithDamage();
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-edit'));
     const damageInput = container.querySelector('.custom-sheet__weapon-dmg-input');
     expect(damageInput).not.toBeNull();
     expect(damageInput.readOnly).toBe(false);
@@ -247,12 +261,12 @@ describe('CustomSheetBody — one edit at a time across skill_table and weapons_
     expect(container.querySelector('.custom-sheet__skill-name-input')).not.toBeNull();
 
     // Click the weapon's pencil
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-edit'));
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-edit'));
 
     // Skill's rename input should be gone now
     expect(container.querySelector('.custom-sheet__skill-name-input')).toBeNull();
     // Weapon's edit inputs should be present
-    expect(container.querySelector('.custom-sheet__weapon-cell-input')).not.toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-cell-input')).not.toBeNull();
   });
 });
 
@@ -279,8 +293,22 @@ describe('CustomSheetBody weapons_table — a newly added row opens in edit mode
 
   it('renders the new row as inputs, not static text, right after "+ Add weapon" is clicked', () => {
     const { container } = render(<Harness />);
-    fireEvent.click(container.querySelector('.custom-sheet__weapon-add-btn'));
-    expect(container.querySelector('.custom-sheet__weapon-cell-input')).not.toBeNull();
-    expect(container.querySelector('.custom-sheet__weapon-cell-static')).toBeNull();
+    fireEvent.click(container.querySelector('.custom-sheet__row-table-add-btn'));
+    expect(container.querySelector('.custom-sheet__row-table-cell-input')).not.toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-cell-static')).toBeNull();
+  });
+});
+
+// The weapons table shares the row-table core, so the same flag splits it too.
+describe('CustomSheetBody weapons_table — two columns', () => {
+  it('splits the rows into two halves when the GM turns it on', () => {
+    const sections = playerWeaponSections();
+    sections[0].fields[0].twoColumns = true;
+    const values = { weapons: { wpn_table: [
+      { id: 'w1', cells: { name: 'Miecz' }, damage: {} },
+      { id: 'w2', cells: { name: 'Łuk' }, damage: {} },
+    ] } };
+    const { container } = render(<CustomSheetBody sections={sections} values={values} onChange={sheetHandlers} />);
+    expect(container.querySelectorAll('.custom-sheet__row-table-cols > .custom-sheet__row-table')).toHaveLength(2);
   });
 });

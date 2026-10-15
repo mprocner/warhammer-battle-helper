@@ -8147,12 +8147,13 @@ align-items: center;
 }
 
 /* A skill or weapons list has fixed minimum column widths (see .custom-sheet__field-header and
-   the grid templates in skillLayout.js / weaponLayout.js), and in a narrow multi-column section
+   the grid templates in skillLayout.js / rowTableLayout.js), and in a narrow multi-column section
    their sum can exceed the width of the grid track holding the field (`minmax(0, 1fr)`, above).
    The overflow scrolls inside the field's own cell rather than painting over the field beside
    it. */
 .custom-sheet__field--skill-table,
 .custom-sheet__field--weapon-table,
+.custom-sheet__field--data-table,
 .custom-sheet__field--skill-tree {
     overflow-x: auto;
 }
@@ -8798,15 +8799,15 @@ align-items: center;
     justify-self: center;
 }
 
-/* The star's width is reserved by the grid track from weaponGridTemplate's showStar column,
+/* The star's width is reserved by the grid track of the `leading` slot WeaponsTable passes to RowTable,
    aligned with the label above it. justify-content centers the icon inside that width; the base
    .custom-sheet__star-btn rule already supplies the inline-flex box it acts on, and the row being
    display: grid now means a flex-basis here would have nothing to size against. */
-.custom-sheet__weapon-row .custom-sheet__star-btn {
+.custom-sheet__row-table-row .custom-sheet__star-btn {
     justify-content: center;
 }
 
-.custom-sheet__weapon-row .custom-sheet__roll-btn {
+.custom-sheet__row-table-row .custom-sheet__roll-btn {
     justify-self: center;
 }
 
@@ -9041,7 +9042,7 @@ align-items: center;
     justify-content: flex-end;
     gap: 2px;
     /* Not reachable today — content fits the track and the track is definite — but
-       .custom-sheet__weapon-actions needed this against its own grid item's min-width: auto
+       .custom-sheet__row-table-actions needed this against its own grid item's min-width: auto
        floor, and the three action cells are meant to read as one system. */
     min-width: 0;
 }
@@ -9062,10 +9063,10 @@ align-items: center;
     color: #c9975b;
 }
 
-/* One delete mark (✕), one colour, one hover, across skill_table, skill_tree and weapons_table —
-   see the matching .custom-sheet__skill-tree-del and .custom-sheet__weapon-remove. Split out of
+/* One delete mark (✕), one colour, one hover, across skill_table, skill_tree and the row tables —
+   see the matching .custom-sheet__skill-tree-del and .custom-sheet__row-table-remove. Split out of
    the rule above (which still holds save/edit) because delete now needs its own colour. Padding
-   and border-radius match .custom-sheet__weapon-remove, the value the three converged on; this
+   and border-radius match .custom-sheet__row-table-remove, the value the three converged on; this
    button never had a border-radius while it shared a rule with save/edit, which didn't need one —
    without it the hover wash below would be a square behind a round icon. */
 .custom-sheet__skill-del {
@@ -9107,16 +9108,16 @@ align-items: center;
     opacity: 0.55;
 }
 
-/* Weapons table — GM-defined columns, player-added rows. */
+/* Row tables (weapons_table, data_table) — GM-defined columns, player-added rows. */
 
-.custom-sheet__weapon-table {
+.custom-sheet__row-table {
     display: flex;
     flex-direction: column;
     gap: 0;
     width: 100%;
 }
 
-.custom-sheet__weapon-col-label {
+.custom-sheet__row-table-col-label {
     font-family: 'Cinzel', serif;
     font-size: 10px;
     color: #fff9f0;
@@ -9128,13 +9129,13 @@ align-items: center;
     white-space: nowrap;
 }
 
-/* One grid per weapon row, its columns handed in from JS (weaponGridTemplate) so the header and
+/* One grid per row, its columns handed in from JS (rowGridTemplate) so the header and
    the rows of a field can never disagree about where a column starts — which matters more here
    than in the skill lists, because the GM defines the columns.
    The zebra below counts SIBLING parity and the header is the first child of the table, so the
-   header must stay unconditional. The add-weapon footer is a sibling of the table container, not
+   header must stay unconditional. The add-row footer is a sibling of the table container, not
    of the rows, and must stay there: inside, it would be counted as a row. */
-.custom-sheet__weapon-row {
+.custom-sheet__row-table-row {
     display: grid;
     align-items: center;
     gap: 8px;
@@ -9144,21 +9145,21 @@ align-items: center;
     transition: background 0.12s;
 }
 
-.custom-sheet__weapon-row:nth-child(even) {
+.custom-sheet__row-table-row:nth-child(even) {
     background: rgba(255, 249, 240, 0.55);
 }
 
 /* Equal specificity with the zebra rule above (0,2,0), so it must come after it to win. Gold
    here, unlike the skill tree's brown: that field has depth bands this value would land between,
    and this one has none. */
-.custom-sheet__weapon-row:hover {
+.custom-sheet__row-table-row:hover {
     background: rgba(201, 151, 91, 0.14);
 }
 
 /* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
    holds three field skins and the anchor is what keeps them apart. */
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-input,
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-select {
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-input,
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-select {
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
@@ -9171,8 +9172,8 @@ align-items: center;
     font-family: inherit;
 }
 
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-input:focus,
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-select:focus {
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-input:focus,
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-select:focus {
     outline: 2px solid #7a5c42;
     outline-offset: -2px;
     background: rgba(255, 255, 255, 0.55);
@@ -9240,9 +9241,9 @@ align-items: center;
     color: #c0392b;
 }
 
-/* A GM preset row is read-only, and .custom-sheet__weapon-row--preset is the only DOM hook that
+/* A GM preset row is read-only, and .custom-sheet__row-table-row--preset is the only DOM hook that
    says so — every other cell in the row is muted through it (see
-   .custom-sheet__weapon-row .custom-sheet__weapon-cell-static above), but renderDamageFormula's
+   .custom-sheet__row-table-row .custom-sheet__row-table-cell-static above), but renderDamageFormula's
    readOnly flag only sets the input's readonly attribute: the fill, border and --missing state
    still read as "fill me in." This selector matches an input carrying --missing too (an extra
    class on the element doesn't stop a selector that doesn't mention it from matching), and at
@@ -9253,21 +9254,21 @@ align-items: center;
    same way the static cells are: no fill, no border, second-plane text. The placeholder still
    needs its own rule below — --missing's ::placeholder color is a separate declaration this
    selector doesn't reach.
-   .custom-sheet__weapon-row--reading is the same defect on the second row kind this applies to:
+   .custom-sheet__row-table-row--reading is the same defect on the second row kind this applies to:
    a player's own weapon at rest. Its pencil-gated inputs carry the readonly attribute exactly
    like the preset's, so they need the identical mute — the row still has its OWN damage input
    element in the DOM (renderDamageFormula renders unconditionally; editing only flips readOnly),
    it is just the wrong-looking one until this rule fires. Same two-class specificity, so it beats
    --missing on its own merits without needing to race it in source order. */
-.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input,
-.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input {
+.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input,
+.custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input {
     background: transparent;
     border-color: transparent;
     color: #6b5a45;
 }
 
-.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input--missing::placeholder,
-.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input--missing::placeholder {
+.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input--missing::placeholder,
+.custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input--missing::placeholder {
     color: #6b5a45;
 }
 
@@ -9277,8 +9278,8 @@ align-items: center;
    tab stops (readonly, not disabled), so a keyboard user still needs to see where focus landed.
    This rule adds the pseudo-class to both selectors, which raises it to (0,3,0) — it wins by
    specificity, not source order, so it cannot be re-broken by reordering the block above. */
-.custom-sheet__weapon-row--preset .custom-sheet__weapon-dmg-input:focus,
-.custom-sheet__weapon-row--reading .custom-sheet__weapon-dmg-input:focus {
+.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input:focus,
+.custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input:focus {
     border-color: #7a5c42;
 }
 
@@ -9302,7 +9303,7 @@ align-items: center;
     font-weight: 600;
 }
 
-.custom-sheet__weapon-actions {
+.custom-sheet__row-table-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -9318,10 +9319,10 @@ align-items: center;
    contents have to match, not just the boxes. One rule for the shared geometry: each control used
    to re-declare it dozens of lines apart, so changing one could silently break the alignment this
    comment promises. Only color and :hover are left per control below. */
-.custom-sheet__weapon-remove,
-.custom-sheet__weapon-lock,
-.custom-sheet__weapon-edit,
-.custom-sheet__weapon-save {
+.custom-sheet__row-table-remove,
+.custom-sheet__row-table-lock,
+.custom-sheet__row-table-edit,
+.custom-sheet__row-table-save {
     border: none;
     background: transparent;
     display: inline-flex;
@@ -9335,17 +9336,17 @@ align-items: center;
 /* Colour and hover shared with .custom-sheet__skill-del and .custom-sheet__skill-tree-del — one
    delete mark, one red, across all three lists. This rule's own padding/border-radius (in the
    shared geometry block above) is the value the other two were unified onto. */
-.custom-sheet__weapon-remove {
+.custom-sheet__row-table-remove {
     color: #b57a5a;
     cursor: pointer;
 }
 
-.custom-sheet__weapon-remove:hover {
+.custom-sheet__row-table-remove:hover {
     color: #8b3a2a;
     background: rgba(180, 60, 40, 0.1);
 }
 
-.custom-sheet__weapon-add-btn {
+.custom-sheet__row-table-add-btn {
     align-self: flex-start;
     margin-top: 2px;
     padding: 4px 10px;
@@ -9358,15 +9359,15 @@ align-items: center;
     transition: background 0.12s, border-color 0.12s;
 }
 
-.custom-sheet__weapon-add-btn:hover {
+.custom-sheet__row-table-add-btn:hover {
     background: rgba(201, 151, 91, 0.12);
     border-color: #7a5c42;
 }
 
 /* Geometry shared with the other actions-cell controls — see the comment on
-   .custom-sheet__weapon-remove. The padlock is inert, so it keeps the default cursor and sits at
+   .custom-sheet__row-table-remove. The padlock is inert, so it keeps the default cursor and sits at
    reduced opacity: it reports a state rather than offering an action. */
-.custom-sheet__weapon-lock {
+.custom-sheet__row-table-lock {
     color: #7a5c42;
     opacity: 0.7;
     cursor: default;
@@ -9374,7 +9375,7 @@ align-items: center;
 
 /* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
    holds three field skins and the anchor is what keeps them apart. */
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-static {
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-static {
     min-width: 0;
     padding: 2px 4px;
     font-size: 0.9rem;
@@ -9384,32 +9385,32 @@ align-items: center;
     color: #3a2f1f;
 }
 
-.custom-sheet__weapon-row .custom-sheet__weapon-cell-static--name {
+.custom-sheet__row-table-row .custom-sheet__row-table-cell-static--name {
     font-weight: 700;
 }
 
-/* Muted only for the GM's own weapons. The base static cell is now what a player's row renders at
+/* Muted only for the GM's own preset rows. The base static cell is now what a player's row renders at
    rest too, so the colour has to mean "not yours to change" rather than "not an input".
    --preset is the only hook that tells the two apart; it also mutes the preset's damage inputs. */
-.custom-sheet__weapon-row--preset .custom-sheet__weapon-cell-static {
+.custom-sheet__row-table-row--preset .custom-sheet__row-table-cell-static {
     color: #6b5a45;
 }
 
 /* Geometry shared with the other actions-cell controls — see the comment on
-   .custom-sheet__weapon-remove. */
-.custom-sheet__weapon-edit,
-.custom-sheet__weapon-save {
+   .custom-sheet__row-table-remove. */
+.custom-sheet__row-table-edit,
+.custom-sheet__row-table-save {
     cursor: pointer;
 }
 
-.custom-sheet__weapon-edit { color: #7a5c42; }
-.custom-sheet__weapon-save { color: #4a7a4a; }
+.custom-sheet__row-table-edit { color: #7a5c42; }
+.custom-sheet__row-table-save { color: #4a7a4a; }
 
-.custom-sheet__weapon-edit:hover { background: rgba(122, 92, 66, 0.15); }
-.custom-sheet__weapon-save:hover { background: rgba(74, 122, 74, 0.15); }
+.custom-sheet__row-table-edit:hover { background: rgba(122, 92, 66, 0.15); }
+.custom-sheet__row-table-save:hover { background: rgba(74, 122, 74, 0.15); }
 
 /* Footer row: manual add button + catalog picker side by side. */
-.custom-sheet__weapon-add-row {
+.custom-sheet__row-table-add-row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -9417,7 +9418,7 @@ align-items: center;
     margin-top: 6px;
 }
 
-.custom-sheet__weapon-preset-picker {
+.custom-sheet__row-table-preset-picker {
     padding: 4px 8px;
     background: #fff9f0;
     border: 1px dashed #c9975b;
@@ -9427,7 +9428,98 @@ align-items: center;
     cursor: pointer;
 }
 
-.custom-sheet__weapon-preset-picker:focus {
+.custom-sheet__row-table-preset-picker:focus {
+    outline: none;
+    border-color: #7a5c42;
+}
+
+/* Row table split into two halves (field.twoColumns). Each half is a full .custom-sheet__row-table
+   with its own header. The wrapper needs width: 100% because .custom-sheet__field is a column
+   flexbox with align-items: flex-start: without it the wrapper shrinks to its content and the
+   halves split only that (two short columns sat at ~30% each until an expanded description widened
+   them). flex: 1 1 0 then gives each half exactly 50% whatever it holds; min-width: 0 lets a long
+   cell stay inside its half instead of widening it. */
+.custom-sheet__row-table-cols {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+}
+
+.custom-sheet__row-table-cols > .custom-sheet__row-table {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* data_table long_text columns: an expander at the start of the row and a details panel under it.
+   The panel is the row's own last child spanning every track, never a sibling of the row — the
+   zebra above counts sibling parity. */
+.custom-sheet__row-table-expander {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: #7a5c42;
+}
+
+button.custom-sheet__row-table-expander {
+    cursor: pointer;
+    /* Lifted above the creator's selection outline; see .custom-sheet__skill-tree-toggle. */
+    position: relative;
+    z-index: 999;
+}
+
+button.custom-sheet__row-table-expander:hover {
+    background: rgba(122, 92, 66, 0.15);
+}
+
+.custom-sheet__row-table-details {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 2px 4px 6px 30px;
+}
+
+.custom-sheet__row-table-detail-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.custom-sheet__row-table-detail-text {
+    font-size: 0.9rem;
+    color: #3a2f1f;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.custom-sheet__row-table-row--preset .custom-sheet__row-table-detail-text {
+    color: #6b5a45;
+}
+
+.custom-sheet__row-table-row .custom-sheet__row-table-detail-input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 60px;
+    resize: vertical;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 4px;
+    padding: 4px 6px;
+    color: #3a2f1f;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.custom-sheet__row-table-row .custom-sheet__row-table-detail-input:focus {
     outline: none;
     border-color: #7a5c42;
 }
@@ -9580,7 +9672,7 @@ align-items: center;
     justify-content: flex-end;
     gap: 2px;
     /* Not reachable today — content fits the track and the track is definite — but
-       .custom-sheet__weapon-actions needed this against its own grid item's min-width: auto
+       .custom-sheet__row-table-actions needed this against its own grid item's min-width: auto
        floor, and the three action cells are meant to read as one system. */
     min-width: 0;
 }
@@ -9605,8 +9697,8 @@ align-items: center;
 }
 
 /* Colour and hover are the source the other two delete buttons (.custom-sheet__skill-del,
-   .custom-sheet__weapon-remove) were unified onto — see their comments. Padding now matches
-   .custom-sheet__weapon-remove's 2px (was 0 3px): the tree's actions cell holds three buttons in a
+   .custom-sheet__row-table-remove) were unified onto — see their comments. Padding now matches
+   .custom-sheet__row-table-remove's 2px (was 0 3px): the tree's actions cell holds three buttons in a
    64px track (add-child, rename, delete) and the two unchanged neighbours already fit there today,
    so trimming delete's own horizontal footprint by 2px only adds slack, never removes it. */
 .custom-sheet__skill-tree-del {
@@ -10466,13 +10558,13 @@ align-items: center;
 }
 
 /* Lifted above its siblings while dragged, so it never slides under the row it passes. */
-.creator__attr-rows-row--dragging {
+.creator__drag-item--dragging {
     position: relative;
     z-index: 1;
     opacity: 0.85;
 }
 
-.creator__attr-rows-grip {
+.creator__drag-grip {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -10484,7 +10576,7 @@ align-items: center;
     touch-action: none;
 }
 
-.creator__attr-rows-grip:active {
+.creator__drag-grip:active {
     cursor: grabbing;
 }
 
@@ -10508,12 +10600,30 @@ align-items: center;
     gap: 4px;
 }
 
-/* Weapons table — column editor in the field property panel. */
-.creator__weapon-columns {
+/* Row tables (weapons_table, data_table) — column editor in the field property panel. */
+/* Sort column picker under the "Sort alphabetically" switch of a row table. */
+.creator__sort-column {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    color: #7a5c42;
+}
+
+.creator__sort-column-none {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #7a5c42;
+}
+
+.creator__table-columns {
     margin-bottom: 12px;
 }
 
-.creator__weapon-col {
+.creator__table-col {
     margin-bottom: 8px;
     padding: 6px;
     border: 1px solid rgba(201, 151, 91, 0.3);
@@ -10521,13 +10631,13 @@ align-items: center;
     background: rgba(255, 255, 255, 0.35);
 }
 
-.creator__weapon-col-head {
+.creator__table-col-head {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.creator__weapon-col-badge {
+.creator__table-col-badge {
     padding: 1px 6px;
     border-radius: 8px;
     background: rgba(201, 151, 91, 0.25);
@@ -10538,14 +10648,14 @@ align-items: center;
     white-space: nowrap;
 }
 
-.creator__weapon-col-moved {
+.creator__table-col-moved {
     margin-bottom: 6px;
     color: #7a5c42;
     font-size: 0.75rem;
     font-style: italic;
 }
 
-.creator__weapon-col-select {
+.creator__table-col-select {
     margin-top: 6px;
     padding-left: 4px;
 }
@@ -10565,32 +10675,32 @@ align-items: center;
     font-style: normal;
 }
 
-/* Preset weapons — editor rows inlined into the Content group, below the weapon columns
-   editor (FEATURE-214: no longer a separate modal). */
-.creator__weapon-presets-editor {
+/* Row table presets (weapons_table, data_table) — editor rows inlined into the Content group,
+   below the columns editor (FEATURE-214: no longer a separate modal). */
+.creator__table-presets-editor {
     margin-top: 4px;
 }
 
-.creator__weapon-presets {
+.creator__table-presets {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.creator__weapon-preset {
+.creator__table-preset {
     padding: 10px;
     border: 1px solid rgba(201, 151, 91, 0.4);
     border-radius: 6px;
     background: rgba(255, 249, 240, 0.6);
 }
 
-.creator__weapon-preset-fields {
+.creator__table-preset-fields {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
 
-.creator__weapon-preset-field {
+.creator__table-preset-field {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -10598,7 +10708,7 @@ align-items: center;
     min-width: 120px;
 }
 
-.creator__weapon-preset-field-label {
+.creator__table-preset-field-label {
     font-family: 'Cinzel', serif;
     font-size: 9px;
     color: #7a5c42;
@@ -10606,14 +10716,15 @@ align-items: center;
     letter-spacing: 0.04em;
 }
 
-/* The preset editor's own cells. These used to borrow .custom-sheet__weapon-cell-input/-select,
+/* The preset editor's own cells. These used to borrow .custom-sheet__row-table-cell-input/-select,
    which worked only because that pair's rule was unanchored; anchoring it under
-   .custom-sheet__weapon-row (this file's three-skins-one-stylesheet discipline) left these two
+   .custom-sheet__row-table-row (this file's three-skins-one-stylesheet discipline) left these two
    native with no styling at all. Own classes, same seven declarations the borrowed look used to
    carry — this editor lives in a creator label, not a weapon row, so it gets its own rule rather
    than widening the sheet's anchor back open. */
-.creator__weapon-preset-input,
-.creator__weapon-preset-select {
+.creator__table-preset-input,
+.creator__table-preset-select,
+.creator__table-preset-textarea {
     background: #fff9f0;
     border: 1px solid #c4a882;
     border-radius: 4px;
@@ -10623,20 +10734,28 @@ align-items: center;
     box-sizing: border-box;
 }
 
-.creator__weapon-preset-input:focus,
-.creator__weapon-preset-select:focus {
+.creator__table-preset-input:focus,
+.creator__table-preset-select:focus,
+.creator__table-preset-textarea:focus {
     outline: none;
     border-color: #c9975b;
 }
 
-.creator__weapon-preset-damage {
+.creator__table-preset-textarea {
+    width: 100%;
+    min-height: 56px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.creator__table-preset-damage {
     margin-top: 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.creator__weapon-preset-actions {
+.creator__table-preset-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;

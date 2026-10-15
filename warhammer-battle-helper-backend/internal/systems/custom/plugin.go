@@ -211,6 +211,9 @@ func decodeStats(raw bson.Raw) (*Stats, error) {
 	if s.Weapons == nil {
 		s.Weapons = map[string][]WeaponRow{}
 	}
+	if s.Tables == nil {
+		s.Tables = map[string][]TableRow{}
+	}
 	return &s, nil
 }
 

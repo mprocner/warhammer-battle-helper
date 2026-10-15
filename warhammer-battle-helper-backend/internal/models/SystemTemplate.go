@@ -233,7 +233,7 @@ type SystemTemplate struct {
 // FieldDef describes one field in a custom character sheet.
 type FieldDef struct {
 	Key   string `bson:"key" json:"key"`
-	Type  string `bson:"type" json:"type"` // "attr"|"attr_table"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"label"|"section"|"char_name"|"char_avatar"|"image"
+	Type  string `bson:"type" json:"type"` // "attr"|"attr_table"|"number"|"computed"|"progress"|"text_short"|"text_long"|"checkbox"|"select"|"skill_table"|"skill_tree"|"weapons_table"|"data_table"|"label"|"section"|"char_name"|"char_avatar"|"image"
 	Label string `bson:"label" json:"label"`
 	Abbr  string `bson:"abbr,omitempty" json:"abbr,omitempty"`
 
@@ -289,10 +289,15 @@ type FieldDef struct {
 	// (the Call of Cthulhu improvement mechanic). Stored per character in Stats.DevelopmentSkills.
 	ShowDevelopment bool `bson:"showDevelopment,omitempty" json:"showDevelopment,omitempty"`
 	// SortAlphabetically orders a table's rows, or a tree's siblings within each level, by label.
+	// A weapons_table or data_table orders by SortColumn instead.
 	SortAlphabetically bool `bson:"sortAlphabetically,omitempty" json:"sortAlphabetically,omitempty"`
+	// SortColumn is the key of the short text column a sorted weapons_table or data_table orders
+	// by. Empty, or no longer a text column, means the first text column. Rendering only.
+	SortColumn string `bson:"sortColumn,omitempty" json:"sortColumn,omitempty"`
 	// TwoColumns splits the field into two columns side by side. The unit of the split differs by
-	// type: a table splits by row, a tree by root branch (its indent encodes hierarchy, so a
-	// branch may never be torn between columns).
+	// type: a table (skill, weapons or data table) splits by row, a tree by root branch (its
+	// indent encodes hierarchy, so a branch may never be torn between columns). Rendering only —
+	// nothing in Go reads it.
 	TwoColumns bool `bson:"twoColumns,omitempty" json:"twoColumns,omitempty"`
 
 	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
@@ -304,6 +309,10 @@ type FieldDef struct {
 	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
 	// player can copy into an editable weapon row of their own.
 	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
+	// PresetRows are GM-authored rows of a data_table field — the data_table counterpart of
+	// PresetWeapons, with the same AlwaysOn semantics (rendered from the template, never copied
+	// into stats) and the same catalog semantics for the rest. data_table reuses Columns.
+	PresetRows []PresetRow `bson:"presetRows,omitempty" json:"presetRows,omitempty"`
 
 	// Formula is the expression of a "computed" field. The front end evaluates it at render time
 	// from the character's attributes and numbers and never stores the result — Go only has to
@@ -328,14 +337,22 @@ type PresetWeapon struct {
 	AlwaysOn bool               `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
 }
 
-// WeaponColumn defines one GM-authored column of a weapons_table field.
-// Type is "text" | "number" | "select". For a select column the player picks from
-// Options (manual list), unless OptionsFromSkills is true — then the choices are the
-// character's skills and the picked skill drives the weapon's attack roll.
+// PresetRow is a GM-authored row of a data_table field. A separate type from PresetWeapon because
+// a data row has no damage: sharing the type would carry a field that is always empty.
+type PresetRow struct {
+	ID       string            `bson:"id" json:"id"`
+	Cells    map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	AlwaysOn bool              `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
+}
+
+// WeaponColumn defines one GM-authored column of a weapons_table or data_table field.
+// Type is "text" | "number" | "select", plus "long_text" in a data_table only. For a select
+// column the player picks from Options (manual list), unless OptionsFromSkills is true (weapons
+// only) — then the choices are the character's skills and the picked skill drives the attack roll.
 type WeaponColumn struct {
 	Key               string   `bson:"key" json:"key"`
 	Label             string   `bson:"label" json:"label"`
-	Type              string   `bson:"type" json:"type"` // "text"|"number"|"select"
+	Type              string   `bson:"type" json:"type"` // "text"|"number"|"select"|"long_text"
 	Options           []string `bson:"options,omitempty" json:"options,omitempty"`
 	OptionsFromSkills bool     `bson:"optionsFromSkills,omitempty" json:"optionsFromSkills,omitempty"`
 }
