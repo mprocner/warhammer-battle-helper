@@ -24,6 +24,8 @@ type RegisterRequest struct {
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
 	Signature string `json:"signature"`
+	// "required" on a bool rejects false as well as a missing field — exactly what we want here.
+	AcceptedTerms bool `json:"acceptedTerms" binding:"required"`
 }
 
 type LoginRequest struct {
@@ -50,6 +52,22 @@ func generateSecureToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
+// newRegisteredUser builds an inactive account awaiting e-mail activation. The terms version is
+// stamped by the server, never taken from the client.
+func newRegisteredUser(req RegisterRequest, passwordHash, activationToken string, now time.Time) *models.User {
+	return &models.User{
+		Email:           req.Email,
+		Password:        passwordHash,
+		Active:          false,
+		ActivationToken: activationToken,
+		Signature:       req.Signature,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		TermsAcceptedAt: &now,
+		TermsVersion:    models.TermsVersion,
+	}
+}
+
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,16 +89,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token generation error"})
 		return
 	}
-	now := time.Now()
-	user := &models.User{
-		Email:           req.Email,
-		Password:        string(hash),
-		Active:          false,
-		ActivationToken: token,
-		Signature:       req.Signature,
-		CreatedAt:       now,
-		UpdatedAt:       now,
-	}
+	user := newRegisteredUser(req, string(hash), token, time.Now())
 	if err := h.UserRepo.Create(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
 		return

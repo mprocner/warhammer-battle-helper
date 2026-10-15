@@ -40,6 +40,10 @@ type UpdateSettingsRequest struct {
 	FogGmOpacity       *float64 `json:"fogGmOpacity" binding:"omitempty,min=0.1,max=1"`
 }
 
+// TermsVersion identifies the terms of service a new account accepts. Keep in sync with
+// TERMS_EFFECTIVE_DATE in warhammer-battle-helper-front/src/legal/legalInfo.js.
+const TermsVersion = "2026-10-15"
+
 type User struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Email            string             `bson:"email" json:"email"`
@@ -60,4 +64,7 @@ type User struct {
 	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`
 	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
 	ActivatedAt      *time.Time         `bson:"activatedAt,omitempty" json:"activatedAt,omitempty"`
+	// Nil for accounts created before terms existed; those are deliberately left as they are.
+	TermsAcceptedAt *time.Time `bson:"termsAcceptedAt,omitempty" json:"-"`
+	TermsVersion    string     `bson:"termsVersion,omitempty" json:"-"`
 }

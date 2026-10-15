@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Box, Paper, Typography, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import PrivacySettings from './settings/PrivacySettings';
+import { PROVIDER_NAME, CONTACT_EMAIL } from '../legal/legalInfo';
 
 const SECTIONS = [
     'necessary',
@@ -32,7 +33,7 @@ const PrivacyPolicy = () => {
                                 {t(`privacy.${section}Title`)}
                             </Typography>
                             <Typography variant="body2">
-                                {t(`privacy.${section}Body`)}
+                                {t(`privacy.${section}Body`, { name: PROVIDER_NAME, email: CONTACT_EMAIL })}
                             </Typography>
                         </Box>
                     ))}

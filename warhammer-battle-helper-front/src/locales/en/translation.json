@@ -58,7 +58,8 @@
     "register": "Register",
     "settings": "Settings",
     "privacy": "Privacy policy",
-    "licenses": "Licenses"
+    "licenses": "Licenses",
+    "terms": "Terms of service"
   },
   "licenses": { "title": "Licenses", "intro": "Third-party material used in this app and the licences it is used under.", "srdTitle": "System Reference Document", "ccLink": "Creative Commons Attribution 4.0 International License" },
   "auth": {
@@ -78,6 +79,7 @@
     "minimumCharacters": "Minimum 6 characters",
     "signature": "Signature (optional)",
     "signaturePlaceholder": "How others will see you in games",
+    "acceptTerms": "I accept the <terms>Terms of Service</terms> and declare that I am at least 16 years old.",
     "emailNotConfirmed": "Please confirm your email address before logging in",
     "verifyEmailTitle": "Account Activated!",
     "verifyEmailSuccess": "Your email address has been confirmed. Your account is now active.",
@@ -127,7 +129,103 @@
     "withdrawTitle": "Withdrawing consent",
     "withdrawBody": "You can withdraw your consent at any time on this Privacy page, or in Settings, under Privacy, if you are logged in. We then stop sending data and delete the analytics cookies. Declining costs you nothing — the site works exactly the same.",
     "contactTitle": "Contact",
-    "contactBody": "Questions about your data: noreply@playrpg.net"
+    "contactBody": "The data controller is {{name}}. Questions about your data: {{email}}"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "effectiveDate": "Effective from {{date}}",
+    "sections": [
+      {
+        "title": "General provisions",
+        "paragraphs": [
+          "These Terms of Service set out the rules for using PlayRPG, available at playrpg.net (the \"Service\"), a tool for running tabletop role-playing sessions online.",
+          "The Service is provided by {{name}}, e-mail: {{email}} (the \"Provider\"). We correspond in Polish and English.",
+          "Definitions: User — a person using the Service; Account — the data of a User registered in the Service; Game — a virtual session in the Service; Game Master — the User who created a Game; Player — a User taking part in a Game; Content — any material shared by Users, in particular images, files, music, notes, messages, character sheets and game system templates.",
+          "Using the Service requires a device with internet access, an up-to-date web browser with JavaScript and WebSocket enabled, and an active e-mail address.",
+          "These Terms are available free of charge at playrpg.net/terms in a form that allows them to be saved and printed. The processing of personal data is described in the Privacy Policy."
+        ]
+      },
+      {
+        "title": "Account",
+        "paragraphs": [
+          "An Account may be created by a person who is at least 16 years old. By creating an Account, the User declares that they meet this requirement.",
+          "Registration requires an e-mail address and a password, acceptance of these Terms and confirmation of the e-mail address via the activation link. Once the Account is activated, an agreement for the provision of electronic services is concluded for an indefinite period.",
+          "The User is responsible for keeping their password secret and for actions taken using their Account.",
+          "The User may request deletion of their Account at any time by writing to {{email}} from the e-mail address linked to the Account. Deleting the Account terminates the agreement and deletes the Content linked to it, except for backup copies, which are removed as backups rotate."
+        ]
+      },
+      {
+        "title": "Free service",
+        "paragraphs": [
+          "Using the Service is free of charge.",
+          "The Provider may offer a way to voluntarily support the Service. Support is not payment for the service and grants no additional rights in the Service.",
+          "The Service is a project developed by a private individual and provided as is. The Provider makes efforts to keep the Service running without interruption but does not guarantee its continuous availability or the permanence of stored Content. Users should keep copies of important material outside the Service.",
+          "The Provider may temporarily suspend the Service, in particular for maintenance, updates or to fix failures.",
+          "Provisions limiting the Provider's liability do not apply to damage caused intentionally or to other cases in which limiting liability is not permitted by law."
+        ]
+      },
+      {
+        "title": "User Content",
+        "paragraphs": [
+          "Content belongs to the User who shared it or to its rightful owners. The Provider acquires no rights to it.",
+          "By sharing Content, the User grants the Provider a non-exclusive, royalty-free licence to store, reproduce and display it solely to the extent necessary to provide the service, in particular to the Game participants with whom the User shares it, and in backup copies. The licence expires when the Content or the Account is deleted; backup copies are removed as backups rotate.",
+          "The User declares that they hold the rights to the Content they share or use it lawfully, and that sharing it does not infringe the rights of third parties.",
+          "The User who shared Content is solely responsible for it. If a third party brings a claim against the Provider concerning a User's Content, the User undertakes, to the extent permitted by law, to indemnify the Provider and cover the costs the Provider incurs.",
+          "It is forbidden to share Content that: infringes copyright or other rights of third parties (including scans and excerpts of rulebooks without the rights holder's consent); is unlawful; depicts the sexual abuse of minors; incites hatred or violence against real persons or groups; contains malware; or contains personal data of third parties without a legal basis. Fictional content typical of role-playing games, such as violence or horror, is allowed.",
+          "The Provider does not review Content before it is shared.",
+          "Anyone, including a person without an Account, may report Content they consider unlawful or contrary to these Terms by writing to {{email}}. A report should include: identification of the Content (e.g. the Game name and a description or screenshot), an explanation, the reporter's name and e-mail address (not required for reports concerning the sexual abuse of children), and a statement that the report is made in good faith and the information in it is true.",
+          "The Provider handles reports without undue delay. Where there are reasonable doubts about the legality of Content, the Provider may block access to it while it is being assessed. The reporter is informed of the decision.",
+          "If the Provider removes Content, blocks access to it or restricts an Account, the User receives, at the Account's e-mail address, a statement of reasons indicating what the decision concerns, its grounds and how to appeal. An appeal may be sent to {{email}} within 6 months; the Provider handles it within 14 days. Once the infringement is removed, access to the Content may be restored."
+        ]
+      },
+      {
+        "title": "Intellectual property",
+        "paragraphs": [
+          "The Service, in particular its code, design and branding, is protected by law and belongs to the Provider. Using the Service grants the User no rights to these elements beyond the right to use the Service in accordance with these Terms.",
+          "Copying the Service or any part of it and automated collection of data from the Service (e.g. scraping) without the Provider's consent are forbidden.",
+          "Names and trademarks of third-party role-playing games belong to their owners. The Service is not affiliated with or endorsed by any game publisher.",
+          "Material made available under open licences (e.g. the SRD) is used under the terms of those licences, described on the Licenses page."
+        ]
+      },
+      {
+        "title": "Rules of use",
+        "paragraphs": [
+          "Users use the Service in accordance with the law, these Terms and good practice.",
+          "In particular, it is forbidden to harass other Users, send spam, impersonate others, attempt to gain unauthorised access to Accounts or Games, circumvent the Service's security, or overload the Service."
+        ]
+      },
+      {
+        "title": "Complaints",
+        "paragraphs": [
+          "Complaints about how the Service works may be sent to {{email}}.",
+          "A complaint should include the Account's e-mail address and a description of the problem.",
+          "The Provider responds to a complaint within 14 days of receiving it, to the e-mail address it was sent from."
+        ]
+      },
+      {
+        "title": "Blocking and termination",
+        "paragraphs": [
+          "The User may terminate the agreement at any time by requesting deletion of their Account.",
+          "The Provider may block or delete an Account in the event of a serious or repeated breach of these Terms or the law. The User receives a statement of reasons and may appeal under the rules described in the section on User Content.",
+          "The Provider may terminate the agreement for other important reasons, in particular if the Service is discontinued, with 30 days' notice sent to the Account's e-mail address."
+        ]
+      },
+      {
+        "title": "Changes to the Terms",
+        "paragraphs": [
+          "The Provider may change these Terms for important reasons, in particular changes in the law or changes to the Service's features.",
+          "Users are informed of a change by e-mail or by a notice in the Service at least 14 days before it takes effect. A User who does not accept the changes may terminate the agreement before that date by requesting deletion of their Account."
+        ]
+      },
+      {
+        "title": "Final provisions",
+        "paragraphs": [
+          "The agreement is governed by Polish law. This choice of law does not deprive a consumer of the protection afforded by the mandatory provisions of the law of the country of their habitual residence.",
+          "Disputes are resolved by the common courts having jurisdiction under general rules.",
+          "These Terms are available in Polish and English. In the event of any discrepancy, the Polish version prevails."
+        ]
+      }
+    ]
   },
   "userSettings": {
     "title": "Account Settings",

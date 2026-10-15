@@ -58,7 +58,8 @@
     "register": "Zarejestruj",
     "settings": "Ustawienia",
     "privacy": "Polityka prywatności",
-    "licenses": "Licencje"
+    "licenses": "Licencje",
+    "terms": "Regulamin"
   },
   "licenses": { "title": "Licencje", "intro": "Materiały zewnętrzne użyte w aplikacji oraz licencje, na podstawie których z nich korzystamy.", "srdTitle": "System Reference Document", "ccLink": "Licencja Creative Commons Uznanie autorstwa 4.0 Międzynarodowa" },
   "auth": {
@@ -78,6 +79,7 @@
     "minimumCharacters": "Minimum 6 znaków",
     "signature": "Podpis (opcjonalnie)",
     "signaturePlaceholder": "Jak inni będą Cię widzieć w grach",
+    "acceptTerms": "Akceptuję <terms>Regulamin</terms> i oświadczam, że mam ukończone 16 lat.",
     "emailNotConfirmed": "Potwierdź swój adres e-mail przed zalogowaniem",
     "verifyEmailTitle": "Konto aktywowane!",
     "verifyEmailSuccess": "Twój adres e-mail został potwierdzony. Konto jest teraz aktywne.",
@@ -127,7 +129,103 @@
     "withdrawTitle": "Wycofanie zgody",
     "withdrawBody": "Zgodę możesz wycofać w każdej chwili na tej stronie Prywatność albo, jeśli jesteś zalogowany/a, w Ustawieniach, w sekcji Prywatność. Przestajemy wtedy wysyłać dane i kasujemy pliki cookie analityki. Odmowa nic Cię nie kosztuje — serwis działa dokładnie tak samo.",
     "contactTitle": "Kontakt",
-    "contactBody": "Pytania o Twoje dane: noreply@playrpg.net"
+    "contactBody": "Administratorem danych jest {{name}}. Pytania o Twoje dane: {{email}}"
+  },
+  "terms": {
+    "title": "Regulamin",
+    "effectiveDate": "Obowiązuje od {{date}}",
+    "sections": [
+      {
+        "title": "Postanowienia ogólne",
+        "paragraphs": [
+          "Niniejszy regulamin określa zasady korzystania z serwisu PlayRPG dostępnego pod adresem playrpg.net (dalej: „Serwis”) — narzędzia do prowadzenia sesji gier fabularnych przez internet.",
+          "Usługodawcą jest {{name}}, e-mail: {{email}} (dalej: „Usługodawca”). Korespondencję prowadzimy w języku polskim i angielskim.",
+          "Definicje: Użytkownik — osoba korzystająca z Serwisu; Konto — dane Użytkownika zarejestrowanego w Serwisie; Gra — wirtualna sesja w Serwisie; Mistrz Gry — Użytkownik, który utworzył Grę; Gracz — Użytkownik uczestniczący w Grze; Treści — wszelkie materiały udostępniane przez Użytkowników, w szczególności obrazy, pliki, muzyka, notatki, wiadomości, karty postaci i szablony systemów gier.",
+          "Do korzystania z Serwisu potrzebne są: urządzenie z dostępem do internetu, aktualna przeglądarka internetowa z włączoną obsługą JavaScript i WebSocket oraz aktywny adres e-mail.",
+          "Regulamin jest udostępniany nieodpłatnie pod adresem playrpg.net/terms w sposób umożliwiający jego zapisanie i wydrukowanie. Zasady przetwarzania danych osobowych opisuje Polityka prywatności."
+        ]
+      },
+      {
+        "title": "Konto",
+        "paragraphs": [
+          "Konto może założyć osoba, która ukończyła 16 lat. Zakładając Konto, Użytkownik oświadcza, że spełnia ten warunek.",
+          "Rejestracja wymaga podania adresu e-mail i hasła, akceptacji Regulaminu oraz potwierdzenia adresu e-mail przez link aktywacyjny. Z chwilą aktywacji Konta zostaje zawarta umowa o świadczenie usług drogą elektroniczną na czas nieokreślony.",
+          "Użytkownik odpowiada za zachowanie hasła w tajemnicy i za działania wykonane z użyciem jego Konta.",
+          "Użytkownik może w każdej chwili zażądać usunięcia Konta, pisząc na {{email}} z adresu e-mail przypisanego do Konta. Usunięcie Konta rozwiązuje umowę i oznacza usunięcie powiązanych z nim Treści, z wyjątkiem kopii zapasowych, usuwanych w ramach ich rotacji."
+        ]
+      },
+      {
+        "title": "Usługa bezpłatna",
+        "paragraphs": [
+          "Korzystanie z Serwisu jest bezpłatne.",
+          "Usługodawca może umożliwić dobrowolne wsparcie Serwisu. Wsparcie nie jest zapłatą za usługę i nie daje dodatkowych uprawnień w Serwisie.",
+          "Serwis jest projektem rozwijanym przez osobę prywatną i udostępnianym w stanie, w jakim się znajduje. Usługodawca dokłada starań, aby Serwis działał nieprzerwanie, ale nie gwarantuje jego ciągłej dostępności ani trwałości przechowywanych Treści. Użytkownik powinien przechowywać kopie ważnych materiałów poza Serwisem.",
+          "Usługodawca może czasowo wstrzymać działanie Serwisu, w szczególności w celu konserwacji, aktualizacji lub usunięcia awarii.",
+          "Postanowienia ograniczające odpowiedzialność Usługodawcy nie dotyczą szkody wyrządzonej umyślnie ani innych przypadków, w których ograniczenie odpowiedzialności jest niedopuszczalne z mocy prawa."
+        ]
+      },
+      {
+        "title": "Treści Użytkowników",
+        "paragraphs": [
+          "Treści należą do Użytkownika, który je udostępnił, lub do ich prawowitych właścicieli. Usługodawca nie nabywa do nich praw.",
+          "Udostępniając Treści, Użytkownik udziela Usługodawcy niewyłącznej, nieodpłatnej licencji na ich przechowywanie, zwielokrotnianie i wyświetlanie wyłącznie w zakresie niezbędnym do świadczenia usługi, w szczególności uczestnikom Gry, z którymi Użytkownik je współdzieli, oraz w kopiach zapasowych. Licencja wygasa z chwilą usunięcia Treści lub Konta; kopie zapasowe są usuwane w ramach ich rotacji.",
+          "Użytkownik oświadcza, że przysługują mu prawa do udostępnianych Treści albo korzysta z nich zgodnie z prawem, oraz że ich udostępnienie nie narusza praw osób trzecich.",
+          "Za Treści odpowiada wyłącznie Użytkownik, który je udostępnił. Jeżeli osoba trzecia wystąpi przeciwko Usługodawcy z roszczeniem dotyczącym Treści Użytkownika, Użytkownik zobowiązuje się, w granicach przewidzianych prawem, zwolnić Usługodawcę z odpowiedzialności i pokryć poniesione przez niego koszty.",
+          "Zakazane jest udostępnianie Treści: naruszających prawa autorskie lub inne prawa osób trzecich (w tym skanów i fragmentów podręczników bez zgody uprawnionego), niezgodnych z prawem, przedstawiających wykorzystywanie seksualne małoletnich, nawołujących do nienawiści lub przemocy wobec rzeczywistych osób lub grup, zawierających złośliwe oprogramowanie oraz zawierających dane osobowe osób trzecich bez podstawy prawnej. Fikcyjne treści typowe dla gier fabularnych, takie jak przemoc czy horror, są dozwolone.",
+          "Usługodawca nie przegląda Treści przed ich udostępnieniem.",
+          "Każdy, także osoba bez Konta, może zgłosić Treść, którą uważa za nielegalną lub sprzeczną z Regulaminem, pisząc na {{email}}. Zgłoszenie powinno zawierać: wskazanie Treści (np. nazwę Gry oraz opis lub zrzut ekranu), uzasadnienie, imię i nazwisko lub nazwę oraz adres e-mail zgłaszającego (niewymagane przy zgłoszeniach dotyczących wykorzystywania seksualnego dzieci), a także oświadczenie, że zgłoszenie jest składane w dobrej wierze, a zawarte w nim informacje są prawdziwe.",
+          "Usługodawca rozpatruje zgłoszenia niezwłocznie. W razie uzasadnionych wątpliwości co do legalności Treści może zablokować do niej dostęp na czas oceny. Zgłaszający otrzymuje informację o podjętej decyzji.",
+          "Jeżeli Usługodawca usunie Treść, zablokuje do niej dostęp lub ograniczy Konto, Użytkownik otrzymuje na adres e-mail Konta uzasadnienie wskazujące, czego dotyczy decyzja, jej podstawę oraz sposób odwołania. Odwołanie można przesłać na {{email}} w ciągu 6 miesięcy; Usługodawca rozpatruje je w ciągu 14 dni. Po usunięciu naruszenia dostęp do Treści może zostać przywrócony."
+        ]
+      },
+      {
+        "title": "Własność intelektualna",
+        "paragraphs": [
+          "Serwis, w szczególności jego kod, wygląd i oznaczenia, jest chroniony prawem i należy do Usługodawcy. Korzystanie z Serwisu nie daje Użytkownikowi żadnych praw do tych elementów poza prawem korzystania z Serwisu zgodnie z Regulaminem.",
+          "Zakazane jest kopiowanie Serwisu lub jego części oraz automatyczne pobieranie danych z Serwisu (np. scraping) bez zgody Usługodawcy.",
+          "Nazwy i znaki gier fabularnych osób trzecich należą do ich właścicieli. Serwis nie jest powiązany z wydawcami gier ani przez nich wspierany.",
+          "Materiały udostępnione na licencjach otwartych (np. SRD) są wykorzystywane na warunkach tych licencji, opisanych na stronie Licencje."
+        ]
+      },
+      {
+        "title": "Zasady korzystania",
+        "paragraphs": [
+          "Użytkownik korzysta z Serwisu zgodnie z prawem, Regulaminem i dobrymi obyczajami.",
+          "Zakazane jest w szczególności: nękanie innych Użytkowników, wysyłanie spamu, podszywanie się pod inne osoby, próby uzyskania nieuprawnionego dostępu do Kont lub Gier, obchodzenie zabezpieczeń Serwisu oraz działania przeciążające Serwis."
+        ]
+      },
+      {
+        "title": "Reklamacje",
+        "paragraphs": [
+          "Reklamacje dotyczące działania Serwisu można przesyłać na {{email}}.",
+          "Reklamacja powinna zawierać adres e-mail Konta i opis problemu.",
+          "Usługodawca odpowiada na reklamację w ciągu 14 dni od jej otrzymania, na adres e-mail, z którego ją przesłano."
+        ]
+      },
+      {
+        "title": "Blokada i rozwiązanie umowy",
+        "paragraphs": [
+          "Użytkownik może rozwiązać umowę w każdej chwili, żądając usunięcia Konta.",
+          "Usługodawca może zablokować lub usunąć Konto w razie rażącego lub powtarzającego się naruszenia Regulaminu albo prawa. Użytkownik otrzymuje uzasadnienie decyzji i może się od niej odwołać na zasadach opisanych w części o Treściach Użytkowników.",
+          "Usługodawca może rozwiązać umowę z innych ważnych przyczyn, w szczególności w razie zakończenia działania Serwisu, z 30-dniowym wyprzedzeniem przekazanym na adres e-mail Konta."
+        ]
+      },
+      {
+        "title": "Zmiany Regulaminu",
+        "paragraphs": [
+          "Usługodawca może zmienić Regulamin z ważnych przyczyn, w szczególności w razie zmiany przepisów prawa lub zmiany funkcji Serwisu.",
+          "O zmianie Użytkownik zostaje poinformowany e-mailem lub komunikatem w Serwisie co najmniej 14 dni przed jej wejściem w życie. Użytkownik, który nie akceptuje zmian, może przed tym terminem rozwiązać umowę, żądając usunięcia Konta."
+        ]
+      },
+      {
+        "title": "Postanowienia końcowe",
+        "paragraphs": [
+          "Do umowy stosuje się prawo polskie. Wybór prawa nie pozbawia konsumenta ochrony przyznanej mu przez bezwzględnie obowiązujące przepisy prawa państwa jego zwykłego pobytu.",
+          "Spory rozstrzygają sądy powszechne właściwe według przepisów ogólnych.",
+          "Regulamin jest dostępny w języku polskim i angielskim. W razie rozbieżności rozstrzyga wersja polska."
+        ]
+      }
+    ]
   },
   "userSettings": {
     "title": "Ustawienia konta",

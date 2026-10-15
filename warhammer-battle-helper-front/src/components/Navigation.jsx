@@ -18,7 +18,8 @@ import {
     Language as LanguageIcon,
     Settings as SettingsIcon,
     Policy as PolicyIcon,
-    Gavel as GavelIcon
+    Gavel as GavelIcon,
+    Description as DescriptionIcon
 } from '@mui/icons-material';
 
 const Navigation = ({ user, onLogout, inGame }) => {
@@ -76,6 +77,13 @@ const Navigation = ({ user, onLogout, inGame }) => {
                             title={t('navigation.licenses')}
                         >
                             <GavelIcon />
+                        </IconButton>
+                        <IconButton
+                            color="inherit"
+                            onClick={() => navigate('/terms')}
+                            title={t('navigation.terms')}
+                        >
+                            <DescriptionIcon />
                         </IconButton>
                         {user ? (
                             <>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import {
@@ -11,6 +11,8 @@ import {
     Button,
     Typography,
     Alert,
+    Checkbox,
+    FormControlLabel,
     Link,
     CircularProgress
 } from '@mui/material';
@@ -27,6 +29,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const handleChange = (e) => {
         setFormData({
@@ -56,6 +59,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
             const response = await axios.post(`${getApiUrl()}/register`, {
                 email: formData.email,
                 password: formData.password,
+                acceptedTerms,
                 ...(formData.signature.trim() && { signature: formData.signature.trim() })
             }, {
                 headers: getApiHeaders()
@@ -71,6 +75,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                 confirmPassword: '',
                 signature: ''
             });
+            setAcceptedTerms(false);
 
             if (onRegisterSuccess) {
                 onRegisterSuccess(formData.email);
@@ -160,6 +165,30 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             helperText={t('auth.signaturePlaceholder')}
                         />
 
+                        <FormControlLabel
+                            sx={{ mt: 1 }}
+                            control={
+                                <Checkbox
+                                    required
+                                    checked={acceptedTerms}
+                                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                    disabled={isLoading}
+                                />
+                            }
+                            label={
+                                <Typography variant="body2">
+                                    {/* A link inside a label does not toggle the checkbox: clicks on
+                                        interactive content are excluded from label activation. */}
+                                    <Trans
+                                        i18nKey="auth.acceptTerms"
+                                        components={{
+                                            terms: <Link href="/terms" target="_blank" rel="noopener noreferrer" />,
+                                        }}
+                                    />
+                                </Typography>
+                            }
+                        />
+
                         {error && (
                             <Alert severity="error" sx={{ mt: 2 }}>
                                 {error}
@@ -178,7 +207,7 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             variant="contained"
                             color="success"
                             sx={{ mt: 3, mb: 2, py: 1.5 }}
-                            disabled={isLoading}
+                            disabled={isLoading || !acceptedTerms}
                             startIcon={isLoading ? <CircularProgress size={20} /> : <PersonAddIcon />}
                         >
                             {isLoading ? t('auth.creatingAccount') : t('auth.registerButton')}

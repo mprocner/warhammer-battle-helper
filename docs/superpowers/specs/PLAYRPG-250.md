@@ -61,7 +61,10 @@ oparte na ich stronie pomocy i wynikach wyszukiwania, nie na pełnym dokumencie.
      dane osobowe osób trzecich bez podstawy prawnej; fikcja RPG (przemoc, horror) dozwolona;
    - zgłoszenia (DSA art. 16): każdy, także bez konta, na `{{email}}`; zgłoszenie zawiera
      wskazanie treści, uzasadnienie, dane zgłaszającego i oświadczenie o dobrej wierze;
-   - po zgłoszeniu usługodawca niezwłocznie blokuje dostęp do treści, potem ją ocenia;
+   - zgłoszenia rozpatrywane niezwłocznie; przy uzasadnionych wątpliwościach co do legalności
+     usługodawca może zablokować dostęp na czas oceny (nie blokuje automatycznie każdej
+     zgłoszonej treści — to zapraszałoby do nadużyć zgłoszeń); zgłaszający dostaje informację
+     o decyzji;
    - uzasadnienie (DSA art. 17): użytkownik dostaje informację, co zablokowano, dlaczego i jak
      się odwołać; po usunięciu naruszenia dostęp może zostać przywrócony.
 5. **Własność intelektualna** — kod, wygląd i oznaczenia Serwisu należą do usługodawcy; zakaz
