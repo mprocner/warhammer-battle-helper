@@ -239,7 +239,7 @@ test('a gated step is only shown once the panel its anchor lives in actually ope
 
   // Next celuje w tabsNav (reveal: 'right'). Ten krok żąda otwarcia prawego
   // panelu przez onReveal — dopiero gdy panels.rightHidden faktycznie
-  // spadnie na false, useGameTour zwalnia zatrzymany stepIndex i biblioteka
+  // spadnie na false, useTour zwalnia zatrzymany stepIndex i biblioteka
   // dostaje nowy krok do wyrenderowania.
   await act(async () => {
     fireEvent.click(screen.getByText('Next'));

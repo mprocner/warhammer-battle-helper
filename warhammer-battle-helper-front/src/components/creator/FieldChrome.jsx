@@ -28,7 +28,7 @@ function FieldChrome({
   return (
     <>
       <div
-        className={`creator__chrome-outline${selected ? ' creator__chrome-outline--selected' : ''}`}
+        className={`creator__chrome-outline creator__chrome-outline--field${selected ? ' creator__chrome-outline--selected' : ''}`}
         // Depth decides which outline is hit-tested. Every outline shares one stacking context —
         // .custom-sheet__editable is position:relative with no z-index, and nothing between here
         // and the sheet root creates a context either — so without this they are painted in tree

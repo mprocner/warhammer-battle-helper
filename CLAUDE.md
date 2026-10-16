@@ -69,6 +69,13 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
   jako `disabled` przez prop bramkujący (`showAffordances`), nie
   pomijaj. Kontrolka, której kreator nie pokazuje,
   to kontrolka, o której szerokość wiersza kłamie.
+- **Kreator ma tutorial** (`src/components/tutorial/tours/creator*.js` + klucze `tutorial.creator*`
+  w en/pl). Przy każdej zmianie w kreatorze — nowy typ pola, nowa grupa w panelu właściwości, nowa
+  karta w zakładce Ogólne, zmiana klasy będącej kotwicą kroku, zmiana znaczenia sekcji — sprawdź,
+  czy tutorial nie potrzebuje nowego kroku, wariantu tekstu (`byFieldType`, z fallbackiem
+  `default`) albo poprawionego selektora. Nowy typ pola wymaga tekstu
+  `tutorial.creatorField.head.body.<typ>` (pilnuje `tourTranslations.test.js`); nowa grupa/karta bez
+  kroku wywala `creatorTour.coverage.test.jsx`. Sens i aktualność tekstów — tylko Ty.
 
 ### Schemat kolorów — karty postaci (jasne tło)
 Popup `.character-sheet-popup` ma jasne kremowe tło: `linear-gradient(135deg, #f4e8d8, #e8dcc4)`.

@@ -12,7 +12,7 @@ import { TutorialProvider } from './TutorialContext';
 // czyszczony — GameTour.jsx wywołuje teraz clearTour() na FINISHED/SKIPPED).
 //
 // Drugi tour wstrzykujemy przez rejestr tym samym mechanizmem co
-// engine/useGameTour.test.js (jest.mock('../tours') + requireActual dla
+// engine/useTour.test.js (jest.mock('../tours') + requireActual dla
 // nieprzykrytych id) — żaden prawdziwy tour zakładki jeszcze nie istnieje.
 const FIXTURE_TOUR_ID = 'fixtureTab';
 const FIXTURE_TOUR = {
@@ -208,7 +208,7 @@ test('after a tab tour ends by switching tabs (TARGET_NOT_FOUND runs it off its 
 
   // GameTour.jsx łapie STATUS.FINISHED/SKIPPED i Escape (ACTIONS.CLOSE), ale
   // TARGET_NOT_FOUND → goTo(index + 1) → koniec listy kroków kończy tour
-  // wewnątrz useGameTour (finish()), które o kontekście nic nie wie — to
+  // wewnątrz useTour (finish()), które o kontekście nic nie wie — to
   // trzecia, pominięta ścieżka wyjścia (patrz Fix 1).
   expect(await screen.findByText('Selected character')).toBeInTheDocument();
   expect(screen.queryByText(FIXTURE_TITLE_ONE)).toBeNull();

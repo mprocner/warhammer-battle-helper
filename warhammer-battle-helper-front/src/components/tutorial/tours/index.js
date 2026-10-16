@@ -7,6 +7,9 @@ import handouts from './handouts';
 import music from './music';
 import players from './players';
 import minigames from './minigames';
+import creatorGeneral from './creatorGeneral';
+import creatorSheet from './creatorSheet';
+import creatorField from './creatorField';
 
 // Jedno miejsce, w którym silnik dowiaduje się o istnieniu samouczka.
 // Dodanie kolejnego to jeden import i jeden wpis — zero zmian w engine/.
@@ -20,7 +23,13 @@ const TOURS = {
   music,
   players,
   minigames,
+  creatorGeneral,
+  creatorSheet,
+  creatorField,
 };
+
+// Tours of the character-sheet creator; everything else in TOURS belongs to the game screen.
+export const CREATOR_TOUR_IDS = ['creatorGeneral', 'creatorSheet', 'creatorField'];
 
 export const TOUR_IDS = Object.keys(TOURS);
 

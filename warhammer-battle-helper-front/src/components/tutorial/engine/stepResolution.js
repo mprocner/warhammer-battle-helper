@@ -6,6 +6,8 @@ export const VARIANT_AXES = {
   byTarget: (ctx) => String(ctx.targetIndex),
   byRole: (ctx) => ctx.role,
   byScheme: (ctx) => (ctx.controlScheme === 'classic' ? 'classic' : 'modern'),
+  // Which field type the creator's property panel is showing ('section' for a section).
+  byFieldType: (ctx) => ctx.fieldType,
 };
 
 export const resolveTarget = (step, queryTarget) => {
@@ -18,16 +20,23 @@ export const resolveTarget = (step, queryTarget) => {
 
 export const titleKeyFor = (step, tourId) => `tutorial.${tourId}.${step.id}.title`;
 
-export const bodyKeyFor = (step, tourId, ctx) => {
+// bodyKeysFor lists the keys a step's body may live under, most specific first; the renderer
+// passes the list to t(), which takes the first that exists. A step with `variantFallback`
+// ends the list with `<base>.default`, so a variant written for only some contexts (e.g. a few
+// field types) falls back to general text instead of showing a raw key.
+export const bodyKeysFor = (step, tourId, ctx) => {
   const base = `tutorial.${tourId}.${step.id}.body`;
-  // Oś, której nie ma w VARIANT_AXES, to literówka w pliku tury — pomijamy ją
-  // przy budowaniu klucza zamiast wywalić render całej sesji gry bare
-  // TypeError-em (patrz tours/index.test.js: sprawdza to na poziomie rejestru).
+  // An axis missing from VARIANT_AXES is a typo in the tour file — skip it rather than crash the
+  // render (tours/index.test.js catches it at registry level).
   const suffixes = (step.variants || [])
     .filter(axis => Object.prototype.hasOwnProperty.call(VARIANT_AXES, axis))
     .map(axis => VARIANT_AXES[axis](ctx));
-  return [base, ...suffixes].join('.');
+  const keys = [[base, ...suffixes].join('.')];
+  if (step.variantFallback) keys.push(`${base}.default`);
+  return keys;
 };
+
+export const bodyKeyFor = (step, tourId, ctx) => bodyKeysFor(step, tourId, ctx)[0];
 
 // Krok może wymagać, żeby panel z jego kotwicą był naprawdę odsłonięty —
 // deklaruje to polem `reveal`, a stan paneli przychodzi z ekranu.

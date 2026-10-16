@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { getTour, TOUR_IDS } from './index';
+import { getTour, TOUR_IDS, CREATOR_TOUR_IDS } from './index';
 import { TAB_DEFS } from '../../panels/tabDefinitions';
 import { VARIANT_AXES } from '../engine/stepResolution';
 
@@ -18,8 +18,9 @@ describe('registry covers the right panel', () => {
     TABS_WITHOUT_TOUR.forEach(id => expect(getTour(id)).toBeNull());
   });
 
-  it('registers exactly the game screen tour plus one per covered tab', () => {
-    expect(TOUR_IDS.length).toBe(TAB_DEFS.length - TABS_WITHOUT_TOUR.length + 1);
+  it('registers exactly the game screen tour plus one per covered tab, plus the creator tours', () => {
+    const gameTours = TOUR_IDS.filter(id => !CREATOR_TOUR_IDS.includes(id));
+    expect(gameTours.length).toBe(TAB_DEFS.length - TABS_WITHOUT_TOUR.length + 1);
   });
 });
 
@@ -106,7 +107,7 @@ describe('game screen tour', () => {
 // Kotwice kroków to gołe selektory CSS na istniejące klasy (patrz komentarz
 // na górze tours/gameScreen.js) — nie ma nic, co by je wiązało z markupem na
 // poziomie kompilatora. Już raz przemianowanie klasy po cichu wyrzuciło krok
-// z samouczka (patrz engine/useGameTour). Ten test czyta całe źródło src/ i
+// z samouczka (patrz engine/useTour). Ten test czyta całe źródło src/ i
 // pilnuje, żeby każda klasa z target dalej istniała gdziekolwiek w drzewie.
 // Katalog tours/ jest wykluczony: to tam żyją definicje target, więc każda
 // klasa "istnieje" w nim trywialnie jako literał selektora — sprawdzenie musi
@@ -135,9 +136,20 @@ describe('tour anchors', () => {
       getTour(tourId).steps.forEach(step => {
         const targets = Array.isArray(step.target) ? step.target : [step.target];
         targets.forEach(target => {
-          expect(source.includes(target.replace(/^\./, ''))).toBe(true);
+          const cls = target.replace(/^\./, '');
+          // A modifier built from a template literal (`block--${id}`) cannot be grepped
+          // literally; the stem still catches a renamed block, and
+          // creatorTour.coverage.test.jsx pins the full rendered names.
+          const stem = cls.includes('--') ? `${cls.split('--')[0]}--\${` : null;
+          expect(source.includes(cls) || (stem !== null && source.includes(stem))).toBe(true);
         });
       });
     });
+  });
+});
+
+describe('creator tours', () => {
+  it('registers the three creator tours', () => {
+    CREATOR_TOUR_IDS.forEach(id => expect(getTour(id)).not.toBeNull());
   });
 });

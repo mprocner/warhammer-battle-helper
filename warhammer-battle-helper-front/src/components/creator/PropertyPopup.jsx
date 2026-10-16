@@ -18,14 +18,15 @@ import { WindowManagerProvider } from '../../contexts/WindowManagerContext';
 // lobby-launched creator brings the app down. The popup is unmanaged, so it never registers in a
 // taskbar and this registry stays empty; inside a session it shadows the real provider for this
 // subtree only, which costs nothing an unmanaged popup was using.
-function PropertyPopup({ open, title, onClose, children }) {
+function PropertyPopup({ open, title, onClose, headerButtons, children }) {
   const { t } = useTranslation();
   if (!open) return null;
   return (
     <WindowManagerProvider>
       <DraggablePopup
-        title={title || t('creator.propsClickHint')}
+        title={<span className="creator__props-title">{title || t('creator.propsClickHint')}</span>}
         onClose={onClose}
+        headerButtons={headerButtons}
         initialWidth={680}
         initialPosition="center"
         className="creator__props-popup"

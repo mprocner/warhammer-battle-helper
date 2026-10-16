@@ -11,6 +11,12 @@ jest.mock('axios', () => {
   return { __esModule: true, default: { create: () => inst, ...inst } };
 });
 
+// These tests are about the creator, not its tutorial: mark both tab tours seen so none auto-starts.
+beforeEach(() => {
+  localStorage.setItem('tutorialSeen:creator:general', '1');
+  localStorage.setItem('tutorialSeen:creator:sheet', '1');
+});
+
 // What the chrome components do with a callback is already covered by FieldChrome.test.jsx.
 // What is NOT covered anywhere is what TemplateBuilder BINDS to those callbacks — the direction
 // of an arrow, the path it targets, and what happens to the open properties popup afterwards.
@@ -51,9 +57,8 @@ const chromeFor = (root, label) => {
   return labelEl.closest('.custom-sheet__editable');
 };
 
-// The popup's own heading, from ModalHeader's `.modal-header__title` — distinct from
-// PropertyPanel's internal "Field properties" caption, which renders the same t() string
-// inside the popup body, so a plain screen.getByText('Field properties') matches both.
+// The popup's own heading, from ModalHeader's `.modal-header__title`. For a field it also names
+// the type ("Field properties · Short text"), so it is matched by content, not exact text.
 const popupTitle = () => document.querySelector('.modal-header__title');
 
 // Deleting a node asks for confirmation first (ConfirmModal, portalled to body).
@@ -124,7 +129,7 @@ describe('TemplateBuilder chrome wiring', () => {
     const { baseElement } = mount();
     openSheetTab();
     fireEvent.click(within(chromeFor(baseElement, 'Gamma')).getByLabelText('Edit'));
-    expect(popupTitle()).toHaveTextContent('Field properties');
+    expect(popupTitle()).toHaveTextContent('Field properties · Short text');
     expect(screen.getByDisplayValue('Gamma')).toBeInTheDocument();
   });
 

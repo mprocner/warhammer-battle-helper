@@ -12,6 +12,12 @@ jest.mock('axios', () => {
   return { __esModule: true, default: { create: () => inst, ...inst } };
 });
 
+// These tests are about the creator, not its tutorial: mark both tab tours seen so none auto-starts.
+beforeEach(() => {
+  localStorage.setItem('tutorialSeen:creator:general', '1');
+  localStorage.setItem('tutorialSeen:creator:sheet', '1');
+});
+
 const template = {
   id: 't1',
   name: 'T',

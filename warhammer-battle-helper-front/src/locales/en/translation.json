@@ -1026,6 +1026,166 @@
         "title": "Starting a game",
         "body": "Pick a game and choose which online players join — offline ones can't be picked. The board pops up for the whole table right away — the people you picked take turns, everyone else just watches. Only one minigame runs at a time."
       }
+    },
+    "creatorGeneral": {
+      "name": {
+        "title": "Template name",
+        "body": "This is how the system appears in the list when someone creates a game. Every change saves automatically."
+      },
+      "tabs": {
+        "title": "Two steps",
+        "body": "General holds the settings of the whole system; Sheet is where you build the character sheet itself, field by field."
+      },
+      "visibility": {
+        "title": "Who can use it",
+        "body": "Anyone can create a game from a public template, but only you can edit it. A private template can also be shared with specific people by email."
+      },
+      "sheetWidth": {
+        "title": "Sheet window width",
+        "body": "How wide the character sheet opens for players. The Sheet tab shows the sheet at exactly this width."
+      },
+      "dice": {
+        "title": "Dice under the chat",
+        "body": "Choose which quick-roll dice buttons appear under the chat in games using this system."
+      },
+      "modifier": {
+        "title": "Roll modifier",
+        "body": "When on, every roll from this sheet first asks the player for a modifier, such as a bonus or a penalty from the situation."
+      },
+      "token": {
+        "title": "Token display",
+        "body": "Decide what a character's token shows on the map, e.g. a health bar or states read from fields on the sheet."
+      },
+      "help": {
+        "title": "Help is always here",
+        "body": "Click the question mark to replay the tutorial of the tab you are on."
+      }
+    },
+    "creatorSheet": {
+      "palette": {
+        "title": "Components",
+        "body": "Click a field type to add it to the active section — its name is shown above the list. Click any element on the sheet to make its section active. Types are grouped: layout, character, stats, text, choice and tables."
+      },
+      "canvas": {
+        "title": "The sheet",
+        "body": {
+          "0": "The sheet is empty. Start with a section — the box that holds fields and decides how many columns they sit in.",
+          "1": "This is the sheet exactly as players will see it: the same width and the same look. Hover an element and click the pencil in its toolbar to edit it."
+        }
+      },
+      "section": {
+        "title": "Sections",
+        "body": "A section groups fields under a heading and splits them into columns. Sections can be nested; drag one by its handle to move it."
+      },
+      "field": {
+        "title": "Fields",
+        "body": "Hover a field to see its toolbar: drag handle, move up and down, edit, duplicate and delete. The pencil opens the field's properties: label, values, rolls and display options. The question mark in that window's title bar explains the field you are editing."
+      },
+      "preview": {
+        "title": "Clean preview",
+        "body": "Hide every editing tool to see the sheet exactly as a player will."
+      },
+      "status": {
+        "title": "Saving",
+        "body": "How many sections and fields the sheet has. Every change saves automatically — there is no save button."
+      },
+      "help": {
+        "title": "Help is always here",
+        "body": "Click the question mark to replay this tutorial. A field's properties window has its own question mark that explains that field."
+      }
+    },
+    "creatorField": {
+      "head": {
+        "title": "What this is",
+        "body": {
+          "section": "A section holds fields under a heading and arranges them in columns.",
+          "char_name": "The character's name, shown on the character list and next to the map token. One per sheet.",
+          "char_avatar": "The character's portrait, used on the character list and as the map token. One per sheet.",
+          "image": "An image the player uploads to the sheet, e.g. a coat of arms or a sketch.",
+          "attr": "An attribute: a number the player can roll against, optionally split into a base value and advances.",
+          "attr_table": "A table of attributes sharing one set of settings — handy for a whole set such as strength, agility and intelligence.",
+          "number": "A plain number the player types in, e.g. money or experience. Formulas can read it.",
+          "computed": "A value calculated from a formula over attributes and numbers. The player cannot type into it.",
+          "progress": "A current/maximum pair shown as a bar, e.g. health or mana.",
+          "text_short": "A single line of text, e.g. profession or origin.",
+          "text_long": "A multi-line text area, e.g. a backstory or notes.",
+          "checkbox": "A yes/no tick, e.g. a condition or an ability already used.",
+          "select": "A choice from a list you define, e.g. race or class.",
+          "skill_table": "A list of skills with values the player rolls against. Players can add their own if you allow it.",
+          "weapons_table": "A table of weapons with your columns, an attack roll and a damage formula.",
+          "data_table": "A table with your own columns for anything that is not rolled, e.g. equipment.",
+          "skill_tree": "Skills arranged in a hierarchy, e.g. a skill and its specialisations.",
+          "label": "Fixed text on the sheet — a heading, a hint or a rule reminder. It holds no value."
+        }
+      },
+      "display": {
+        "title": "Display",
+        "body": {
+          "default": "How the field looks on the sheet.",
+          "skill_table": "The favourites star, a development mark for skills used this session, alphabetical order and a two-column layout.",
+          "skill_tree": "The favourites star, a development mark for skills used this session, alphabetical order and a two-column layout split by branch.",
+          "weapons_table": "Sort the rows by a short-text column you pick, and split the table into two columns.",
+          "data_table": "Sort the rows by a short-text column you pick, and split the table into two columns."
+        }
+      },
+      "basics": {
+        "title": "Basics",
+        "body": {
+          "default": "The label players see, an optional abbreviation for compact views, and whether the field also appears on the short character card.",
+          "label": "The text shown on the sheet, its colour and its size. The internal name only identifies the label here in the creator."
+        }
+      },
+      "values": {
+        "title": "Values",
+        "body": {
+          "default": "The field's starting value, limits and step.",
+          "attr": "Minimum, maximum, starting value and step. Turn on advances to split the value into a base plus advances.",
+          "number": "Minimum, maximum, starting value and the step of the arrow keys.",
+          "skill_table": "Turn on advances to give every skill a base value plus advances; the base can come from the linked attribute."
+        }
+      },
+      "attrRows": {
+        "title": "Attributes",
+        "body": {
+          "default": "The attributes in this table: name, abbreviation, starting value and limits. Drag a row by its handle to reorder it."
+        }
+      },
+      "formula": {
+        "title": "Formula",
+        "body": {
+          "default": "Build the value from blocks: attributes, numbers, constants and operators. The sheet recalculates it as values change."
+        }
+      },
+      "content": {
+        "title": "Content",
+        "body": {
+          "default": "What the field contains.",
+          "select": "The options the player chooses from.",
+          "skill_table": "The skills on the list, optionally linked to an attribute, and whether players may add their own.",
+          "skill_tree": "The tree of skills — add children to build specialisations — and whether players may add their own.",
+          "weapons_table": "The columns (one may supply the attack skill), the damage formula and the preset weapons the GM provides.",
+          "data_table": "The columns — including long text shown in an expandable row — and preset rows, always on the sheet or offered as a list."
+        }
+      },
+      "roll": {
+        "title": "Roll",
+        "body": {
+          "default": "Whether the field can be rolled and how: the dice, the success condition and the levels of success.",
+          "weapons_table": "The attack roll: dice and success condition. The threshold comes from the skill picked in the skill column."
+        }
+      },
+      "sectionTitle": {
+        "title": "Heading",
+        "body": "The heading shown above the section. Leave it empty for a section without one."
+      },
+      "sectionColumns": {
+        "title": "Columns",
+        "body": "How many columns the fields sit in. A field can span several rows of its column."
+      },
+      "sectionActions": {
+        "title": "Order and removal",
+        "body": "Move the section up or down among its neighbours, or delete it together with its fields."
+      }
     }
   },
   "rightPanel": {

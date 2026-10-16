@@ -10406,31 +10406,6 @@ button.custom-sheet__row-table-expander:hover {
     border-color: #a93226;
 }
 
-/* Properties panel — sticky header naming the node being edited (FEATURE-214 restyle). Sticks to
-   the top of .sheet-content, the popup's own scroll container, so the GM always knows what they
-   are configuring even after scrolling the groups below it out of view. */
-.creator__props-head {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
-    padding-bottom: 8px;
-    margin-bottom: 12px;
-    border-bottom: 1px solid rgba(122, 92, 66, 0.35);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.creator__props-head-type {
-    font-family: 'Crimson Text', serif;
-    font-size: 12px;
-    color: #7a5c42;
-    opacity: 0.75;
-    white-space: nowrap;
-}
-
 /* Properties panel — titled groups (FEATURE-214 restyle). A flat stack of twenty controls forces
    the GM to read every label to find one; four labelled groups let them jump instead. The
    divider is a hairline rather than a box so the groups still read as one surface. */

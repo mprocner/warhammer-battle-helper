@@ -1026,6 +1026,166 @@
         "title": "Uruchomienie gry",
         "body": "Wybierz grę i zaznacz, którzy gracze online dołączają — offline nie da się wybrać. Plansza od razu wyskakuje całemu stołowi — zaznaczeni grają na zmianę, reszta tylko patrzy. Druga minigra jest zablokowana, dopóki ta się nie skończy."
       }
+    },
+    "creatorGeneral": {
+      "name": {
+        "title": "Nazwa szablonu",
+        "body": "Pod tą nazwą system pojawia się na liście przy tworzeniu gry. Każda zmiana zapisuje się sama."
+      },
+      "tabs": {
+        "title": "Dwa kroki",
+        "body": "Ogólne to ustawienia całego systemu, a w zakładce Karta budujesz samą kartę postaci, pole po polu."
+      },
+      "visibility": {
+        "title": "Kto może z niego korzystać",
+        "body": "Z szablonu publicznego każdy może stworzyć grę, ale edytować go możesz tylko Ty. Prywatny możesz też udostępnić konkretnym osobom po adresie e-mail."
+      },
+      "sheetWidth": {
+        "title": "Szerokość okna karty",
+        "body": "Jak szeroko karta postaci otwiera się graczom. Zakładka Karta pokazuje kartę dokładnie w tej szerokości."
+      },
+      "dice": {
+        "title": "Kości pod czatem",
+        "body": "Wybierz, które przyciski szybkiego rzutu pojawią się pod czatem w grach na tym systemie."
+      },
+      "modifier": {
+        "title": "Modyfikator rzutu",
+        "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator, np. premię albo karę wynikającą z sytuacji."
+      },
+      "token": {
+        "title": "Wyświetlanie tokenów",
+        "body": "Zdecyduj, co token postaci pokazuje na mapie, np. pasek zdrowia albo stany odczytywane z pól karty."
+      },
+      "help": {
+        "title": "Pomoc jest zawsze pod ręką",
+        "body": "Kliknij znak zapytania, aby ponownie obejrzeć samouczek bieżącej zakładki."
+      }
+    },
+    "creatorSheet": {
+      "palette": {
+        "title": "Komponenty",
+        "body": "Kliknij typ pola, aby dodać je do aktywnej sekcji — jej nazwa widnieje nad listą. Kliknij dowolny element na karcie, aby jego sekcja stała się aktywna. Typy są pogrupowane: układ, postać, statystyki, tekst, wybór i tabele."
+      },
+      "canvas": {
+        "title": "Karta",
+        "body": {
+          "0": "Karta jest pusta. Zacznij od sekcji — ramki, która trzyma pola i decyduje, w ilu kolumnach stoją.",
+          "1": "Tak dokładnie gracze zobaczą kartę: ta sama szerokość i ten sam wygląd. Najedź na element i kliknij ołówek na jego pasku, aby go edytować."
+        }
+      },
+      "section": {
+        "title": "Sekcje",
+        "body": "Sekcja grupuje pola pod nagłówkiem i dzieli je na kolumny. Sekcje można zagnieżdżać; przeciągnij sekcję za uchwyt, aby ją przenieść."
+      },
+      "field": {
+        "title": "Pola",
+        "body": "Najedź na pole, aby zobaczyć jego pasek: uchwyt do przeciągania, przesuwanie w górę i w dół, edycja, duplikowanie i usuwanie. Ołówek otwiera właściwości pola: etykietę, wartości, rzuty i opcje wyświetlania. Znak zapytania na pasku tytułu tego okna wyjaśnia edytowane pole."
+      },
+      "preview": {
+        "title": "Czysty podgląd",
+        "body": "Ukryj wszystkie narzędzia edycji, aby zobaczyć kartę dokładnie tak, jak zobaczy ją gracz."
+      },
+      "status": {
+        "title": "Zapisywanie",
+        "body": "Ile sekcji i pól ma karta. Każda zmiana zapisuje się sama — nie ma przycisku zapisu."
+      },
+      "help": {
+        "title": "Pomoc jest zawsze pod ręką",
+        "body": "Kliknij znak zapytania, aby ponownie obejrzeć ten samouczek. Okno właściwości pola ma własny znak zapytania, który wyjaśnia to pole."
+      }
+    },
+    "creatorField": {
+      "head": {
+        "title": "Co to jest",
+        "body": {
+          "section": "Sekcja trzyma pola pod nagłówkiem i układa je w kolumny.",
+          "char_name": "Imię postaci, widoczne na liście postaci i przy tokenie na mapie. Jedno na kartę.",
+          "char_avatar": "Portret postaci, używany na liście postaci i jako token na mapie. Jeden na kartę.",
+          "image": "Obrazek, który gracz wgrywa na kartę, np. herb albo szkic.",
+          "attr": "Atrybut: liczba, na którą gracz może rzucać, opcjonalnie rozbita na wartość bazową i rozwinięcia.",
+          "attr_table": "Tabela atrybutów ze wspólnymi ustawieniami — wygodna dla całego zestawu, np. siły, zręczności i inteligencji.",
+          "number": "Zwykła liczba wpisywana przez gracza, np. pieniądze albo doświadczenie. Formuły mogą ją odczytać.",
+          "computed": "Wartość liczona z formuły na podstawie atrybutów i liczb. Gracz nie może jej wpisać.",
+          "progress": "Para aktualna/maksymalna pokazana jako pasek, np. zdrowie albo mana.",
+          "text_short": "Jedna linia tekstu, np. profesja albo pochodzenie.",
+          "text_long": "Wielowierszowe pole tekstowe, np. historia postaci albo notatki.",
+          "checkbox": "Pole tak/nie, np. stan postaci albo już wykorzystana zdolność.",
+          "select": "Wybór z listy, którą definiujesz, np. rasa albo klasa.",
+          "skill_table": "Lista umiejętności z wartościami, na które gracz rzuca. Gracze mogą dodawać własne, jeśli na to pozwolisz.",
+          "weapons_table": "Tabela broni z Twoimi kolumnami, rzutem na atak i formułą obrażeń.",
+          "data_table": "Tabela z Twoimi kolumnami na wszystko, na co się nie rzuca, np. ekwipunek.",
+          "skill_tree": "Umiejętności ułożone w hierarchię, np. umiejętność i jej specjalizacje.",
+          "label": "Stały tekst na karcie — nagłówek, wskazówka albo przypomnienie zasady. Nie przechowuje wartości."
+        }
+      },
+      "display": {
+        "title": "Wyświetlanie",
+        "body": {
+          "default": "Jak pole wygląda na karcie.",
+          "skill_table": "Gwiazdka ulubionych, znacznik rozwoju umiejętności użytych w sesji, kolejność alfabetyczna i układ w dwóch kolumnach.",
+          "skill_tree": "Gwiazdka ulubionych, znacznik rozwoju umiejętności użytych w sesji, kolejność alfabetyczna i układ w dwóch kolumnach dzielony po gałęziach.",
+          "weapons_table": "Sortowanie wierszy według wybranej kolumny tekstowej i podział tabeli na dwie kolumny.",
+          "data_table": "Sortowanie wierszy według wybranej kolumny tekstowej i podział tabeli na dwie kolumny."
+        }
+      },
+      "basics": {
+        "title": "Podstawowe",
+        "body": {
+          "default": "Etykieta widoczna dla graczy, opcjonalny skrót do zwartych widoków i to, czy pole pojawia się także na skróconej karcie postaci.",
+          "label": "Tekst widoczny na karcie, jego kolor i rozmiar. Nazwa wewnętrzna służy tylko do rozpoznania etykiety tutaj, w kreatorze."
+        }
+      },
+      "values": {
+        "title": "Wartości",
+        "body": {
+          "default": "Wartość początkowa pola, jego ograniczenia i krok.",
+          "attr": "Minimum, maksimum, wartość początkowa i krok. Włącz rozwinięcia, aby rozbić wartość na bazę plus rozwinięcia.",
+          "number": "Minimum, maksimum, wartość początkowa i krok strzałek.",
+          "skill_table": "Włącz rozwinięcia, aby każda umiejętność miała wartość bazową plus rozwinięcia; baza może pochodzić z powiązanego atrybutu."
+        }
+      },
+      "attrRows": {
+        "title": "Atrybuty",
+        "body": {
+          "default": "Atrybuty w tej tabeli: nazwa, skrót, wartość początkowa i ograniczenia. Przeciągnij wiersz za uchwyt, aby zmienić kolejność."
+        }
+      },
+      "formula": {
+        "title": "Formuła",
+        "body": {
+          "default": "Złóż wartość z bloków: atrybutów, liczb, stałych i działań. Karta przelicza ją, gdy zmieniają się wartości."
+        }
+      },
+      "content": {
+        "title": "Treść",
+        "body": {
+          "default": "Co zawiera pole.",
+          "select": "Opcje, spośród których gracz wybiera.",
+          "skill_table": "Umiejętności na liście, opcjonalnie powiązane z atrybutem, oraz to, czy gracze mogą dodawać własne.",
+          "skill_tree": "Drzewo umiejętności — dodawaj podrzędne, aby tworzyć specjalizacje — oraz to, czy gracze mogą dodawać własne.",
+          "weapons_table": "Kolumny (jedna może wskazywać umiejętność ataku), formuła obrażeń i predefiniowane bronie od MG.",
+          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, zawsze na karcie albo jako lista do wyboru."
+        }
+      },
+      "roll": {
+        "title": "Rzut",
+        "body": {
+          "default": "Czy na pole można rzucać i jak: kości, warunek sukcesu i poziomy sukcesu.",
+          "weapons_table": "Rzut na atak: kości i warunek sukcesu. Próg pochodzi z umiejętności wybranej w kolumnie umiejętności."
+        }
+      },
+      "sectionTitle": {
+        "title": "Nagłówek",
+        "body": "Nagłówek nad sekcją. Zostaw pusty dla sekcji bez nagłówka."
+      },
+      "sectionColumns": {
+        "title": "Kolumny",
+        "body": "W ilu kolumnach stoją pola. Pole może zajmować kilka wierszy swojej kolumny."
+      },
+      "sectionActions": {
+        "title": "Kolejność i usuwanie",
+        "body": "Przesuń sekcję w górę lub w dół między sąsiednimi albo usuń ją razem z jej polami."
+      }
     }
   },
   "rightPanel": {

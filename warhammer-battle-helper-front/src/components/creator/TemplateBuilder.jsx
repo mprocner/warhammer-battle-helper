@@ -59,6 +59,8 @@ import AttrRowsEditor from './AttrRowsEditor';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
+import { TutorialProvider } from '../tutorial/TutorialContext';
+import CreatorTour, { CreatorTourButton, CreatorFieldTourButton, CREATOR_TAB_TOURS } from './CreatorTour';
 import {
   SECTION_TYPE, sectionOf, nodeAt, locate, childrenOf, samePath,
   updateAtPath, insertAtPath, removeAtPath, duplicateNodeAtPath, walkFields, walkValueFields,
@@ -108,7 +110,7 @@ function removeTreeAtPath(node, path) {
 const WEAPON_COLUMN_TYPES = ['text', 'number', 'select'];
 const DATA_TABLE_COLUMN_TYPES = ['text', 'number', 'select', 'long_text'];
 
-const FIELD_TYPES = [
+export const FIELD_TYPES = [
   { type: 'section',     labelKey: 'creator.fieldType.section',     icon: <ViewQuiltIcon fontSize="small" />,  desc: 'creator.fieldType.sectionDesc' },
   { type: 'char_name',   labelKey: 'creator.fieldType.charName',    icon: <BadgeIcon fontSize="small" />,         desc: 'creator.fieldType.charNameDesc' },
   { type: 'char_avatar', labelKey: 'creator.fieldType.charAvatar',  icon: <AccountCircleIcon fontSize="small" />, desc: 'creator.fieldType.charAvatarDesc' },
@@ -143,6 +145,14 @@ const PALETTE_GROUPS = [
 // light cream background, so an unrestricted picker lets a GM choose white and make the text vanish.
 // The hex is what gets stored — not an index — so reordering this list never repaints existing templates.
 const LABEL_COLORS = ['#3a2f1f', '#7a5c42', '#c9975b', '#8b2c2c', '#3f6b3f', '#2f4a6b', '#5c3a6b', '#4a4a4a'];
+
+// The property popup's title names the field's TYPE, so the GM always knows which kind of node
+// they are configuring - the title bar stays on screen while the groups below scroll away.
+const fieldPopupTitle = (field, t) => {
+  const typeInfo = field && FIELD_TYPES.find(ft => ft.type === field.type);
+  const caption = t('creator.fieldProperties');
+  return typeInfo ? `${caption} · ${t(typeInfo.labelKey, { defaultValue: typeInfo.type })}` : caption;
+};
 
 // Every new field starts labelled with its type's name, translated at the moment the GM adds it
 // and stored in the template like any label they type. An empty label left a bare tile on the
@@ -485,29 +495,12 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
 // A titled group in the properties panel. Inspector panels live or die on grouping: a flat stack
 // of twenty controls forces the GM to read every label to find one, while four labelled groups
 // let them jump. The divider is a hairline rather than a box so the groups read as one surface.
-function PropsGroup({ title, children }) {
+// The id is the tutorial anchor (tours/creatorField.js).
+function PropsGroup({ id, title, children }) {
   return (
-    <div className="creator__props-group">
+    <div className={`creator__props-group creator__props-group--${id}`}>
       <div className="creator__props-group-title">{title}</div>
       {children}
-    </div>
-  );
-}
-
-// The panel's sticky header: the caption naming what is being edited, plus the field/section
-// TYPE so the GM always knows which kind of node they are configuring, even after scrolling
-// the controls below it out of view.
-function PropsHead({ caption, typeInfo, t }) {
-  return (
-    <div className="creator__props-head">
-      <Typography variant="subtitle2" sx={{ fontFamily: 'Cinzel, serif', color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.75rem' }}>
-        {caption}
-      </Typography>
-      {typeInfo && (
-        <Typography variant="caption" className="creator__props-head-type">
-          {t(typeInfo.labelKey, { defaultValue: typeInfo.type })}
-        </Typography>
-      )}
     </div>
   );
 }
@@ -588,16 +581,13 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
   }
 
   const up = (patch) => onChange({ ...field, ...patch });
-  const typeInfo = FIELD_TYPES.find(ft => ft.type === field.type);
 
   return (
     <div className="creator__props-panel">
-      <PropsHead caption={t('creator.fieldProperties')} typeInfo={typeInfo} t={t} />
-
       {/* Display opens the panel: it is short, and the switches a GM flips most when laying out a
           sheet, so it never sits below a long column or formula editor. */}
       {displayFlags(field.type).length > 0 && (
-        <PropsGroup title={t('creator.propsGroupDisplay')}>
+        <PropsGroup id="display" title={t('creator.propsGroupDisplay')}>
           {displayFlags(field.type).map(flag => (
             <React.Fragment key={flag}>
               <FlagSwitch
@@ -617,7 +607,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
         </PropsGroup>
       )}
 
-      <PropsGroup title={t('creator.propsGroupBasics')}>
+      <PropsGroup id="basics" title={t('creator.propsGroupBasics')}>
         {/* key is an internal, immutable surrogate id (see genId) — never derived from the label,
             so renaming a field never orphans player data stored under it. Not shown to the GM. */}
         {/* A label field renames this input: in Polish creator.fieldLabel reads "Etykieta", the same
@@ -689,7 +679,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
       </PropsGroup>
 
       {['attr', 'attr_table', 'number', 'skill_table'].includes(field.type) && (
-        <PropsGroup title={t('creator.propsGroupValues')}>
+        <PropsGroup id="values" title={t('creator.propsGroupValues')}>
           {/* type="number" only rejects non-numeric input, not decimals — a value like "2.5" would
               reach the backend as *int and 400 the whole template PATCH. saveTemplate swallows that
               error silently, so every later edit to the template would appear to vanish with no
@@ -788,13 +778,13 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
       )}
 
       {field.type === 'attr_table' && (
-        <PropsGroup title={t('creator.attrRows')}>
+        <PropsGroup id="attrRows" title={t('creator.attrRows')}>
           <AttrRowsEditor rows={field.attrRows} onChange={attrRows => up({ attrRows })} />
         </PropsGroup>
       )}
 
       {field.type === 'computed' && (
-        <PropsGroup title={t('creator.propsGroupFormula')}>
+        <PropsGroup id="formula" title={t('creator.propsGroupFormula')}>
           {/* Truncated for the same reason as the attr/number default above: a decimal 400s the PATCH. */}
           <TextField
             size="small"
@@ -819,7 +809,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
       )}
 
       {['select', 'skill_table', 'weapons_table', 'data_table', 'skill_tree'].includes(field.type) && (
-        <PropsGroup title={t('creator.propsGroupContent')}>
+        <PropsGroup id="content" title={t('creator.propsGroupContent')}>
           {field.type === 'select' && (
             <OptionsEditor
               label={t('creator.selectOptions')}
@@ -963,7 +953,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
       )}
 
       {['attr', 'attr_table', 'skill_table', 'skill_tree', 'weapons_table'].includes(field.type) && (
-        <PropsGroup title={t('creator.propsGroupRoll')}>
+        <PropsGroup id="roll" title={t('creator.propsGroupRoll')}>
           {(field.type === 'attr' || field.type === 'attr_table' || field.type === 'skill_table' || field.type === 'skill_tree') && (
             <>
               <FormControlLabel
@@ -1012,12 +1002,10 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
 
 function SectionPropertyPanel({ section, onChange, onDelete, index, siblingCount, onMove }) {
   const { t } = useTranslation();
-  const typeInfo = FIELD_TYPES.find(ft => ft.type === 'section');
   return (
     <div className="creator__props-panel">
-      <PropsHead caption={t('creator.sectionProperties')} typeInfo={typeInfo} t={t} />
-
       <TextField
+        className="creator__section-title-input"
         size="small"
         fullWidth
         label={t('creator.sectionTitleLabel')}
@@ -1299,6 +1287,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [isSaving,    setIsSaving]    = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [activeTab,   setActiveTab]   = useState('general');
+  const [tourRunning, setTourRunning] = useState(false);
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
   // Which one-per-template types are already placed; drives the palette, the inline picker
   // and the missing-name warning.
@@ -1743,7 +1732,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     : null;
 
   return (
-    <Dialog open fullScreen onClose={handleClose}
+    <TutorialProvider>
+    {/* The joyride tooltip is portalled to body, outside the dialog's DOM, so the focus trap is
+        released while a tour runs rather than left to decide whether the tour's focus is inside.
+        Escape is the tour's own "close": MUI would read the same keydown as onClose('escapeKeyDown')
+        and close the whole creator, so the dialog ignores Escape while a tour runs. */}
+    <Dialog open fullScreen onClose={handleClose} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
       PaperProps={{ sx: { background: 'linear-gradient(160deg, #f4e8d8 0%, #ede0ce 100%)' } }}>
 
       {/* Top bar */}
@@ -1751,6 +1745,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         <Box sx={{ display: 'flex', alignItems: 'center', px: 3, py: 1.5 }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <TextField
+              className="creator__name-input"
               variant="standard"
               value={name}
               onChange={e => setNameAndSave(e.target.value)}
@@ -1759,7 +1754,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               sx={{ maxWidth: 320 }}
             />
           </Box>
-          <nav className="creator__tab-nav">
+          <nav className={`creator__tab-nav${isVariant ? '' : ' creator__tab-nav--two-tabs'}`}>
             <button
               className={`creator__tab${activeTab === 'general' ? ' creator__tab--active' : ''}`}
               onClick={() => setActiveTab('general')}
@@ -1781,11 +1776,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             )}
           </nav>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
+            <Typography className="creator__status" variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
               {sectionCount} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
             </Typography>
             {!isVariant && activeTab === 'fields' && (
               <IconButton
+                className="creator__preview-toggle"
                 onClick={() => setCleanPreview(v => !v)}
                 size="small"
                 aria-label={t('creator.previewToggle')}
@@ -1798,6 +1794,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               : saveSuccess
               ? <Chip icon={<CheckIcon />} label={t('common.saved')} size="small" color="success" variant="outlined" sx={{ fontFamily: 'Crimson Text, serif' }} />
               : null}
+            <CreatorTourButton tourId={CREATOR_TAB_TOURS[activeTab]} />
             <IconButton onClick={handleClose} size="small">
               <CloseIcon />
             </IconButton>
@@ -1812,7 +1809,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 config: it is a private per-user singleton, never shared. Only custom
                 templates expose it. */}
             {!isVariant && (
-            <div className="creator__settings-card">
+            <div className="creator__settings-card creator__settings-card--visibility">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.visibilityTitle')}</span>
                 <span className="creator__settings-card-hint">{t('creator.general.visibilityHint')}</span>
@@ -1892,7 +1889,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             </div>
             )}
             {!isVariant && (
-            <div className="creator__settings-card">
+            <div className="creator__settings-card creator__settings-card--sheet-width">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.sheetWidthTitle')}</span>
                 <span className="creator__settings-card-hint">{t('creator.general.sheetWidthHint')}</span>
@@ -1917,7 +1914,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               </div>
             </div>
             )}
-            <div className="creator__settings-card">
+            <div className="creator__settings-card creator__settings-card--dice">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.diceTitle')}</span>
                 <span className="creator__settings-card-hint">{t('creator.general.diceHint')}</span>
@@ -1929,7 +1926,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 />
               </div>
             </div>
-            <div className="creator__settings-card">
+            <div className="creator__settings-card creator__settings-card--modifier">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.general.modifierTitle')}</span>
                 <span className="creator__settings-card-hint">{t('creator.general.modifierHint')}</span>
@@ -1941,7 +1938,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 />
               </div>
             </div>
-            <div className="creator__settings-card">
+            <div className="creator__settings-card creator__settings-card--token">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.tokenDisplay.cardTitle')}</span>
                 <span className="creator__settings-card-hint">{t('creator.tokenDisplay.cardHint')}</span>
@@ -2086,8 +2083,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
         <PropertyPopup
           open={editingPath !== null}
-          title={editingIsSection ? t('creator.sectionProperties') : t('creator.fieldProperties')}
+          title={editingIsSection ? t('creator.sectionProperties') : fieldPopupTitle(editingNode, t)}
           onClose={() => setEditingPath(null)}
+          headerButtons={<CreatorFieldTourButton />}
         >
           {editingNode && !editingIsSection ? (
             <PropertyPanel
@@ -2139,7 +2137,19 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         </div>,
         document.body
       )}
+
+      {/* Inside the Dialog on purpose: the Dialog mounts its content a commit after itself, so a
+          tour mounted beside it would look for its anchors before they exist and never
+          auto-start. Keyed by tab: see CreatorTour. */}
+      <CreatorTour
+        key={activeTab}
+        activeTab={activeTab}
+        fieldType={editingPath ? (editingIsSection ? 'section' : editingNode?.type) : null}
+        popupKey={editingPath ? editingPath.join('.') : null}
+        onRunningChange={setTourRunning}
+      />
     </Dialog>
+    </TutorialProvider>
   );
 }
 

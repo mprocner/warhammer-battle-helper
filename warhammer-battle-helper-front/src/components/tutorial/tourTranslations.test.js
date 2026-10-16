@@ -2,11 +2,21 @@ import i18n from '../../i18n';
 import { getTour, TOUR_IDS } from './tours';
 import { titleKeyFor, bodyKeyFor } from './engine/stepResolution';
 import { TAB_DEFS } from '../panels/tabDefinitions';
+import { FIELD_TYPES } from '../creator/TemplateBuilder';
+
+// TemplateBuilder pulls in api/axios and, through the system registry, axios itself — the ESM
+// import jest cannot parse. Mocking the instance is enough to load the module.
+jest.mock('axios', () => {
+  const inst = { get: jest.fn(), post: jest.fn(), put: jest.fn(),
+    interceptors: { request: { use: jest.fn() }, response: { use: jest.fn() } } };
+  return { __esModule: true, default: { create: () => inst, ...inst } };
+});
 
 const LANGS = ['en', 'pl'];
 const ROLES = ['gm', 'player'];
 const SCHEMES = ['modern', 'classic'];
 const TARGET_INDEXES = [0, 1];
+const FIELD_TYPE_IDS = FIELD_TYPES.map(ft => ft.type);
 
 // getFixedT() spada przez fallbackLng ('en'), więc klucz brakujący w pl,
 // ale obecny w en, wraca jako poprawny angielski tekst i nie zostaje wykryty.
@@ -29,6 +39,20 @@ describe('tutorial translations', () => {
     const gaps = new Set();
     TOUR_IDS.forEach(tourId => {
       getTour(tourId).steps.forEach(step => {
+        if ((step.variants || []).includes('byFieldType')) {
+          if (step.variantFallback) {
+            const key = `tutorial.${tourId}.${step.id}.body.default`;
+            if (missing(lng, key)) gaps.add(key);
+          } else {
+            FIELD_TYPE_IDS.forEach(fieldType => {
+              const key = bodyKeyFor(step, tourId, { fieldType });
+              if (missing(lng, key)) gaps.add(key);
+            });
+          }
+          const title = titleKeyFor(step, tourId);
+          if (missing(lng, title)) gaps.add(title);
+          return;
+        }
         // byTarget wariantuje tylko tam, gdzie krok ma tyle kotwic ile wariantów.
         // Pozycję jego przyrostka w kluczu wyznaczamy z deklaracji kroku, nie
         // zakładamy że byTarget jest zawsze pierwszą osią (patrz stepResolution.test.js:

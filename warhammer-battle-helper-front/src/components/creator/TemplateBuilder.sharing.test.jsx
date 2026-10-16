@@ -25,6 +25,9 @@ const respond = (status, body) => Promise.resolve({
 // baseSystem template. Give it a harmless default; mockReturnValueOnce below still takes
 // priority for the share/unshare calls under test.
 beforeEach(() => {
+  // These tests are about the creator, not its tutorial: mark both tab tours seen so none auto-starts.
+  localStorage.setItem('tutorialSeen:creator:general', '1');
+  localStorage.setItem('tutorialSeen:creator:sheet', '1');
   global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) });
 });
 afterEach(() => { jest.resetAllMocks(); });

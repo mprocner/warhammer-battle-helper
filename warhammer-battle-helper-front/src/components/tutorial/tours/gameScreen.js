@@ -1,6 +1,6 @@
 // Kotwice to istniejące, unikalne klasy CSS ekranu gry — świadomie nie dokładamy
 // atrybutów data-* do markupu. Gdy któraś klasa zostanie przemianowana, krok bez
-// kotwicy po prostu wypadnie z samouczka (patrz engine/useGameTour), a nie
+// kotwicy po prostu wypadnie z samouczka (patrz engine/useTour), a nie
 // wysypie ekranu.
 //   .sidebar-top-section        components/common/ResizableSplitPane.jsx
 //   .sidebar-bottom-section     components/common/ResizableSplitPane.jsx

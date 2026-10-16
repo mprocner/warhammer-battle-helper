@@ -1,4 +1,4 @@
-import { resolveTarget, titleKeyFor, bodyKeyFor, isRevealSatisfied } from './stepResolution';
+import { resolveTarget, titleKeyFor, bodyKeyFor, bodyKeysFor, isRevealSatisfied } from './stepResolution';
 
 const present = (...selectors) => (sel) => (selectors.includes(sel) ? {} : null);
 
@@ -95,5 +95,26 @@ describe('isRevealSatisfied', () => {
     expect(isRevealSatisfied({ id: 'a', reveal: 'left' }, ALL_VISIBLE)).toBe(true);
     expect(isRevealSatisfied({ id: 'a', reveal: 'top' }, { ...ALL_VISIBLE, topCollapsed: true })).toBe(false);
     expect(isRevealSatisfied({ id: 'a', reveal: 'top' }, ALL_VISIBLE)).toBe(true);
+  });
+});
+
+describe('field-type variants', () => {
+  it('appends the field type for byFieldType', () => {
+    expect(bodyKeyFor({ id: 'content', variants: ['byFieldType'] }, 'creatorField', { fieldType: 'select' }))
+      .toBe('tutorial.creatorField.content.body.select');
+  });
+
+  // A group step says something general that a few field types sharpen: the variant is tried
+  // first and the step's `default` text is the fallback i18next lands on when it is missing.
+  it('chains the default key after the variant when the step declares a fallback', () => {
+    const step = { id: 'content', variants: ['byFieldType'], variantFallback: true };
+    expect(bodyKeysFor(step, 'creatorField', { fieldType: 'number' })).toEqual([
+      'tutorial.creatorField.content.body.number',
+      'tutorial.creatorField.content.body.default',
+    ]);
+  });
+
+  it('returns a single key for a step without fallback', () => {
+    expect(bodyKeysFor({ id: 'upload' }, 'files', {})).toEqual(['tutorial.files.upload.body']);
   });
 });

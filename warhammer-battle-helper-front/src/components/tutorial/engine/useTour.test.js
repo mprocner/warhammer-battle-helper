@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react';
-import { useGameTour, seenKey } from './useGameTour';
+import { useTour } from './useTour';
+import { seenKey } from './GameTour';
 
 // Krok z listą kotwic nie istnieje jeszcze w żadnym zarejestrowanym turze
 // (patrz tours/gameScreen.js), więc żeby dowieść, że hook przekazuje trafiony
@@ -14,11 +15,14 @@ const ARRAY_TARGET_TOUR = {
   ],
 };
 
+const NO_ROLE_TOUR_ID = 'noRoleTest';
+const NO_ROLE_TOUR = { id: NO_ROLE_TOUR_ID, steps: [{ id: 'open', target: '.anything' }] };
+
 jest.mock('../tours', () => {
   const actual = jest.requireActual('../tours');
   return {
     ...actual,
-    getTour: (id) => (id === ARRAY_TARGET_TOUR_ID ? ARRAY_TARGET_TOUR : actual.getTour(id)),
+    getTour: (id) => (id === ARRAY_TARGET_TOUR_ID ? ARRAY_TARGET_TOUR : id === NO_ROLE_TOUR_ID ? NO_ROLE_TOUR : actual.getTour(id)),
   };
 });
 
@@ -31,13 +35,19 @@ const allTargets = () => jest.fn(() => ({}));
 const setup = ({ tourId = 'gameScreen', role = 'gm', panels = OPEN, queryTarget = allTargets(), screenReady = true } = {}, options = {}) => {
   const onReveal = jest.fn();
   const view = renderHook(
-    (props) => useGameTour({ tourId, role, onReveal, queryTarget, ...props }),
+    (props) => {
+      const r = 'role' in props ? props.role : role;
+      return useTour({
+        tourId, onReveal, queryTarget, ...props,
+        role: r, autoStart: !!r, storageKey: r ? seenKey(r) : null,
+      });
+    },
     { initialProps: { panels, screenReady }, ...options }
   );
   return { view, onReveal, queryTarget };
 };
 
-describe('useGameTour', () => {
+describe('useTour', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => jest.restoreAllMocks());
 
@@ -237,5 +247,29 @@ describe('useGameTour', () => {
       expect(onReveal).toHaveBeenCalledTimes(1);
       expect(onReveal).toHaveBeenCalledWith(expect.objectContaining({ id: 'characterCard' }));
     });
+  });
+});
+
+describe('useTour without a game', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('keeps no seen flag when storageKey is null', () => {
+    const { result } = renderHook(() => useTour({ tourId: 'gameScreen', role: 'gm', queryTarget: () => ({}), storageKey: null }));
+    act(() => result.current.finish());
+    expect(Object.keys(localStorage)).toEqual([]);
+  });
+
+  it('uses the storage key it is given', () => {
+    const { result } = renderHook(() => useTour({ tourId: 'gameScreen', role: 'gm', queryTarget: () => ({}), storageKey: 'tutorialSeen:x' }));
+    act(() => result.current.finish());
+    expect(localStorage.getItem('tutorialSeen:x')).toBe('1');
+  });
+
+  // Creator tours have no roles at all: a step without `roles` must pass for a null role.
+  it('keeps steps without roles when there is no role', () => {
+    const { result } = renderHook(() => useTour({ tourId: NO_ROLE_TOUR_ID, queryTarget: () => ({}), autoStart: false }));
+    act(() => { result.current.start(); });
+    expect(result.current.running).toBe(true);
+    expect(result.current.steps.map(s => s.id)).toEqual(['open']);
   });
 });
