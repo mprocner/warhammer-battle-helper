@@ -160,7 +160,7 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 // attribute instead of the stored value. The flag only means anything with both
 // preconditions; a hand-edited template can carry it without them, and deriving a base for a
 // field with no advances column would replace the player's stored value with the attribute
-// behind their back.
+// behind their back. Mirrored in the front end by isSkillBaseDerived (systems/custom/skillLayout.js).
 func skillBaseDerived(field models.FieldDef) bool {
 	return field.BaseFromAttr && field.AssignAttrToSkill && field.HasAdvances
 }

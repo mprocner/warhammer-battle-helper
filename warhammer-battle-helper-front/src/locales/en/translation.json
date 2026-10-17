@@ -1161,7 +1161,7 @@
         "body": {
           "default": "What the field contains.",
           "select": "The options the player chooses from.",
-          "skill_table": "The skills on the list, optionally linked to an attribute, and whether players may add their own.",
+          "skill_table": "The skills on the list with an optional starting value, optionally linked to an attribute, and whether players may add their own.",
           "skill_tree": "The tree of skills — add children to build specialisations — and whether players may add their own.",
           "weapons_table": "The columns (one may supply the attack skill), the damage formula and the preset weapons the GM provides.",
           "data_table": "The columns — including long text shown in an expandable row — and preset rows, always on the sheet or offered as a list."
@@ -1835,6 +1835,10 @@
     "playerCanAddSkills": "Player can add skills",
     "selectOptions": "Options",
     "skillTableSkills": "Skills",
+    "skillDefaultPlaceholder": "Start",
+    "skillDefaultAria": "Starting value – {{skill}}",
+    "skillDefaultDraftAria": "Starting value of the new skill",
+    "skillAddAria": "Add skill",
     "tableColumns": "Columns",
     "tableColumnLabel": "Column name",
     "tableColumnReorder": "Move column",

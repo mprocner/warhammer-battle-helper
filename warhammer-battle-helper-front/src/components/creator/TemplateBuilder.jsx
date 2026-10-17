@@ -43,7 +43,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/weaponLayout';
 import { sortColumnKey } from '../../systems/custom/rowTableLayout';
-import { collectSkillOptions } from '../../systems/custom/skillLayout';
+import { collectSkillOptions, isSkillBaseDerived } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
 import { SHORT_CARD_TYPES } from '../../systems/custom/shortCard';
 import OptionsEditor from './OptionsEditor';
@@ -55,7 +55,7 @@ import FieldChrome from './FieldChrome';
 import SectionChrome from './SectionChrome';
 import EditablePlaceholder from './EditablePlaceholder';
 import FormulaBuilder from './FormulaBuilder';
-import AttrRowsEditor from './AttrRowsEditor';
+import AttrRowsEditor, { toInt } from './AttrRowsEditor';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
@@ -247,19 +247,25 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
 
 // ── SkillOptionsEditor ───────────────────────────────────────────────────────
 
-// Skill rows for a "skill_table" field. Each row is { id, label, attr? }: id is a stable key
-// minted once (never derived from label), so renaming a skill keeps the player's stored value
+// Skill rows for a "skill_table" field. Each row is { id, label, attr?, default? }: id is a stable
+// key minted once (never derived from label), so renaming a skill keeps the player's stored value
 // under "<fieldKey>.<id>". attr is only edited when the field has assignAttrToSkill enabled.
-function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false, numberFields = [] }) {
+// default is the base a new character starts with (PLAYRPG-277; seeded by SeedDefaults). It is
+// hidden while baseDerived, because the base then comes from the attribute — but never cleared,
+// so toggling the derived mode back and forth keeps what the GM typed.
+export function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false, numberFields = [], baseDerived = false }) {
   const { t } = useTranslation();
-  const [draftLabel, setDraftLabel] = useState('');
-  const [draftAttr,  setDraftAttr]  = useState('');
+  const [draftLabel,   setDraftLabel]   = useState('');
+  const [draftAttr,    setDraftAttr]    = useState('');
+  const [draftDefault, setDraftDefault] = useState('');
   const list = skills || [];
 
   const commit = () => {
     if (!draftLabel.trim()) return;
-    onChange([...list, { id: genId('skill'), label: draftLabel.trim(), attr: assignAttrToSkill ? draftAttr : '' }]);
-    setDraftLabel(''); setDraftAttr('');
+    const opt = { id: genId('skill'), label: draftLabel.trim(), attr: assignAttrToSkill ? draftAttr : '' };
+    const def = baseDerived ? null : toInt(draftDefault);
+    onChange([...list, def === null ? opt : { ...opt, default: def }]);
+    setDraftLabel(''); setDraftAttr(''); setDraftDefault('');
   };
   const update = (i, patch) => onChange(list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
 
@@ -270,6 +276,17 @@ function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false
         {list.map((opt, i) => (
           <div key={opt.id} className="creator__option-row">
             <input className="creator__option-input" value={opt.label} onChange={e => update(i, { label: e.target.value })} />
+            {!baseDerived && (
+              <input
+                className="creator__option-default-input"
+                type="number"
+                step={1}
+                value={opt.default ?? ''}
+                placeholder={t('creator.skillDefaultPlaceholder')}
+                aria-label={t('creator.skillDefaultAria', { skill: opt.label })}
+                onChange={e => update(i, { default: toInt(e.target.value) })}
+              />
+            )}
             {assignAttrToSkill && (
               <select className="creator__option-attr-select" value={opt.attr || ''} onChange={e => update(i, { attr: e.target.value })}>
                 <option value="">{t('creator.optionsNoAttr')}</option>
@@ -288,13 +305,25 @@ function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false
           onKeyDown={e => { if (e.key === 'Enter') commit(); }}
           placeholder={t('creator.optionsAddPlaceholder')}
         />
+        {!baseDerived && (
+          <input
+            className="creator__option-default-input"
+            type="number"
+            step={1}
+            value={draftDefault}
+            placeholder={t('creator.skillDefaultPlaceholder')}
+            aria-label={t('creator.skillDefaultDraftAria')}
+            onChange={e => setDraftDefault(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') commit(); }}
+          />
+        )}
         {assignAttrToSkill && (
           <select className="creator__option-attr-select" value={draftAttr} onChange={e => setDraftAttr(e.target.value)}>
             <option value="">{t('creator.optionsNoAttr')}</option>
             {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
           </select>
         )}
-        <button className="creator__option-add-btn" onClick={commit}>
+        <button className="creator__option-add-btn" onClick={commit} aria-label={t('creator.skillAddAria')}>
           <AddIcon style={{ fontSize: 13 }} />
         </button>
       </div>
@@ -852,6 +881,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               onChange={skills => up({ skills })}
               assignAttrToSkill={!!field.assignAttrToSkill}
               numberFields={numberFields}
+              baseDerived={isSkillBaseDerived(field)}
             />
           )}
 

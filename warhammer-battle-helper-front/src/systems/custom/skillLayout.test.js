@@ -1,6 +1,6 @@
 import {
   skillGridTemplate, buildSkillRows, splitHalf, siblingItems, sortItems,
-  subtreeSize, splitBranchesWeighted, resolveSkillValues,
+  subtreeSize, splitBranchesWeighted, resolveSkillValues, isSkillBaseDerived,
   flattenTree, treeGridTemplate,
 } from './skillLayout';
 
@@ -458,5 +458,17 @@ describe('flattenTree', () => {
     expect(formRow.kind).toBe('addForm');
     expect(formRow.depth).toBe(3);
     expect(formRow.parentPath).toBe('fld_tree.melee.one_h.sword');
+  });
+});
+
+describe('isSkillBaseDerived', () => {
+  it.each([
+    [{ hasAdvances: true, assignAttrToSkill: true, baseFromAttr: true }, true],
+    [{ hasAdvances: false, assignAttrToSkill: true, baseFromAttr: true }, false],
+    [{ hasAdvances: true, assignAttrToSkill: false, baseFromAttr: true }, false],
+    [{ hasAdvances: true, assignAttrToSkill: true, baseFromAttr: false }, false],
+    [{}, false],
+  ])('%j -> %s', (field, want) => {
+    expect(isSkillBaseDerived(field)).toBe(want);
   });
 });

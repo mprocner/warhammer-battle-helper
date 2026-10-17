@@ -193,6 +193,14 @@ export function sortItems(items, fieldSort) {
   return [...items].sort((a, b) => (a.label || '').localeCompare(b.label || ''));
 }
 
+// isSkillBaseDerived reports whether a skill_table takes each skill's base from the linked
+// attribute. The flag is meaningless without both preconditions, and a hand-edited template can
+// carry it without them. The creator enforces them; this is the second line of defence.
+// Mirrors skillBaseDerived in internal/systems/custom/plugin.go.
+export function isSkillBaseDerived(field) {
+  return !!field.baseFromAttr && !!field.assignAttrToSkill && !!field.hasAdvances;
+}
+
 // resolveSkillValues answers "what numbers does this row show, and is its base editable". It is the
 // one place that knows a derived row's stored `current` is stale: with baseFromAttr the base comes
 // from the attribute at read time and nothing ever writes it back, so `current` in stats still holds
@@ -207,9 +215,7 @@ export function sortItems(items, fieldSort) {
 export function resolveSkillValues(field, row, skills = {}, attributes = {}) {
   const sv = skills[row.key] || {};
   const advances = sv.advances ?? 0;
-  // The flag is meaningless without both preconditions, and a hand-edited template can carry it
-  // without them. The creator enforces them; this is the second line of defence.
-  const derived = !!field.baseFromAttr && !!field.assignAttrToSkill && !!field.hasAdvances;
+  const derived = isSkillBaseDerived(field);
 
   if (derived) {
     const base = row.attr ? (attributes[row.attr]?.current ?? 0) : 0;

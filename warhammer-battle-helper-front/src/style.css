@@ -10813,6 +10813,25 @@ button.custom-sheet__row-table-expander:hover {
     border-color: #c9975b;
 }
 
+/* Starting value of a skill_table option (PLAYRPG-277): narrow, sits between the label and the
+   attribute select. */
+.creator__option-default-input {
+    width: 56px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(201, 151, 91, 0.3);
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    color: #3d2b1a;
+    font-family: 'Crimson Text', serif;
+}
+
+.creator__option-default-input:focus {
+    outline: none;
+    border-color: #c9975b;
+}
+
 /* Skill tree editor */
 
 .creator__skill-tree-editor {

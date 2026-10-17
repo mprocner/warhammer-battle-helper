@@ -25,7 +25,7 @@ import { reorderById, lockToVerticalAxis } from '../../utils/sortableList';
 // minted once and becomes the key in stats.attributes, so it is never derived from the label.
 // Numbers are truncated for the same reason as the attr field's own inputs: a decimal 400s the
 // template PATCH, and saveTemplate swallows that error silently.
-const toInt = (raw) => (raw === '' ? null : Math.trunc(Number(raw)));
+export const toInt = (raw) => (raw === '' ? null : Math.trunc(Number(raw)));
 
 // One row of the editor. It is its own grid element (not a fragment of a shared grid) because
 // useSortable moves the row by a CSS transform on a single node. Only the grip starts a drag:
