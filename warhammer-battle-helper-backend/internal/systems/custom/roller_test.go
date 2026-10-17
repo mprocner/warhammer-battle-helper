@@ -1433,6 +1433,9 @@ func TestSeedDefaults_OtherTypesIgnored(t *testing.T) {
 	if len(s.Numbers) != 0 {
 		t.Errorf("Numbers = %v, want empty", s.Numbers)
 	}
+	if len(s.Skills) != 0 {
+		t.Errorf("Skills = %v, want empty — a skill_table's own Default means nothing", s.Skills)
+	}
 }
 
 func TestSeedDefaults_AllSectionsAreVisited(t *testing.T) {
@@ -1459,6 +1462,105 @@ func TestSeedDefaults_NilTemplateIsANoOp(t *testing.T) {
 	s, _ := decodeStats(out)
 	if len(s.Attributes) != 0 || len(s.Numbers) != 0 {
 		t.Errorf("expected untouched stats, got attributes=%v numbers=%v", s.Attributes, s.Numbers)
+	}
+}
+
+// skillTableField builds a skill_table field with the given options and no flags set.
+func skillTableField(opts ...models.SkillOption) models.FieldDef {
+	return models.FieldDef{Key: "tbl_1", Type: "skill_table", Skills: opts}
+}
+
+func TestSeedDefaults_SkillTableSeedsBaseAdvancesStayZero(t *testing.T) {
+	s := seedBlank(t, seedTemplate(skillTableField(
+		models.SkillOption{ID: "skill_a", Label: "Athletics", Default: intPtr(25)},
+	)))
+
+	sv, ok := s.Skills["tbl_1.skill_a"]
+	if !ok {
+		t.Fatal("expected Skills[\"tbl_1.skill_a\"] to be seeded")
+	}
+	if sv.Base != 25 {
+		t.Errorf("base = %d, want 25", sv.Base)
+	}
+	if sv.Advances != 0 {
+		t.Errorf("advances = %d, want 0", sv.Advances)
+	}
+}
+
+func TestSeedDefaults_SkillTableZeroIsSeeded(t *testing.T) {
+	s := seedBlank(t, seedTemplate(skillTableField(
+		models.SkillOption{ID: "skill_a", Label: "Athletics", Default: intPtr(0)},
+	)))
+
+	if _, ok := s.Skills["tbl_1.skill_a"]; !ok {
+		t.Fatal("a default of 0 must still create the key — nil and zero are different states")
+	}
+}
+
+func TestSeedDefaults_SkillTableNilDefaultLeavesKeyAbsent(t *testing.T) {
+	s := seedBlank(t, seedTemplate(skillTableField(
+		models.SkillOption{ID: "skill_a", Label: "Athletics", Default: intPtr(10)},
+		models.SkillOption{ID: "skill_b", Label: "Swim"},
+	)))
+
+	if _, ok := s.Skills["tbl_1.skill_b"]; ok {
+		t.Error("an option without a Default must not be seeded")
+	}
+	if s.Skills["tbl_1.skill_a"].Base != 10 {
+		t.Errorf("sibling option lost its default: %v", s.Skills)
+	}
+}
+
+func TestSeedDefaults_SkillTableDerivedBaseIsNotSeeded(t *testing.T) {
+	field := skillTableField(models.SkillOption{ID: "skill_a", Label: "Athletics", Attr: "attr_s", Default: intPtr(25)})
+	field.HasAdvances, field.AssignAttrToSkill, field.BaseFromAttr = true, true, true
+
+	s := seedBlank(t, seedTemplate(field))
+
+	if _, ok := s.Skills["tbl_1.skill_a"]; ok {
+		t.Error("a derived base comes from the attribute; seeding it would write a value nothing reads")
+	}
+}
+
+// Before PLAYRPG-277 the loop skipped every field whose own Default was nil, which is every
+// skill_table. Attr and number fields next to a table must keep being seeded.
+func TestSeedDefaults_SkillTableAlongsideAttrAndNumber(t *testing.T) {
+	s := seedBlank(t, seedTemplate(
+		models.FieldDef{Key: "attr_1", Type: "attr", Default: intPtr(5)},
+		skillTableField(models.SkillOption{ID: "skill_a", Label: "Athletics", Default: intPtr(25)}),
+		models.FieldDef{Key: "num_1", Type: "number", Default: intPtr(7)},
+	))
+
+	if s.Attributes["attr_1"].Base != 5 {
+		t.Errorf("attr_1 base = %d, want 5", s.Attributes["attr_1"].Base)
+	}
+	if s.Numbers["num_1"] != 7 {
+		t.Errorf("num_1 = %d, want 7", s.Numbers["num_1"])
+	}
+	if s.Skills["tbl_1.skill_a"].Base != 25 {
+		t.Errorf("tbl_1.skill_a base = %d, want 25", s.Skills["tbl_1.skill_a"].Base)
+	}
+}
+
+func TestSkillBaseDerived(t *testing.T) {
+	cases := []struct {
+		name                       string
+		advances, assign, fromAttr bool
+		want                       bool
+	}{
+		{"all three", true, true, true, true},
+		{"no advances column", false, true, true, false},
+		{"no attribute assignment", true, false, true, false},
+		{"flag off", true, true, false, false},
+		{"nothing set", false, false, false, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := models.FieldDef{Type: "skill_table", HasAdvances: c.advances, AssignAttrToSkill: c.assign, BaseFromAttr: c.fromAttr}
+			if got := skillBaseDerived(f); got != c.want {
+				t.Errorf("skillBaseDerived = %v, want %v", got, c.want)
+			}
+		})
 	}
 }
 

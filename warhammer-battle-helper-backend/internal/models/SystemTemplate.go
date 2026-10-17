@@ -10,11 +10,15 @@ import (
 // SkillOption is one skill row of a "skill_table" field. ID is a stable, GM-opaque key
 // generated once when the option is created; it never derives from Label, so renaming a
 // skill does not orphan the value a player stored under "<fieldKey>.<id>". Attr links the
-// skill to an attribute (empty unless the field has assignAttrToSkill enabled).
+// skill to an attribute (empty unless the field has assignAttrToSkill enabled). Default is
+// the base a freshly created character starts with (PLAYRPG-277); nil means "no default",
+// which is not the same as a default of 0. It is ignored while the field derives the base
+// from the attribute.
 type SkillOption struct {
-	ID    string `bson:"id" json:"id"`
-	Label string `bson:"label" json:"label"`
-	Attr  string `bson:"attr,omitempty" json:"attr,omitempty"`
+	ID      string `bson:"id" json:"id"`
+	Label   string `bson:"label" json:"label"`
+	Attr    string `bson:"attr,omitempty" json:"attr,omitempty"`
+	Default *int   `bson:"default,omitempty" json:"default,omitempty"`
 }
 
 // AttrRow is one attribute of an "attr_table" field (PLAYRPG-235). Its ID is the attribute's

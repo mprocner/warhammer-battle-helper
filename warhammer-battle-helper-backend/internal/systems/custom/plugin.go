@@ -60,12 +60,14 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	return out, nil
 }
 
-// SeedDefaults writes each field's FieldDef.Default into a stats document, which is how a
-// freshly created character starts with GM-chosen values instead of blanks (FEATURE-158).
-// Attr fields land in Attributes[key].Base with Advances left at 0 — advances are earned in
-// play, not granted at creation — so a later ComputeDerived sets current = base. Number fields
-// land in Numbers[key]. Fields with a nil Default, and every type other than "attr"/"number",
-// are left untouched: nil means "no default", which is not the same as a default of 0.
+// SeedDefaults writes the template's defaults into a stats document, which is how a freshly
+// created character starts with GM-chosen values instead of blanks (FEATURE-158). Attr fields
+// land in Attributes[key].Base with Advances left at 0 — advances are earned in play, not
+// granted at creation — so a later ComputeDerived sets current = base. Number fields land in
+// Numbers[key]. Each skill_table option with a Default lands in Skills["<fieldKey>.<id>"].Base
+// (PLAYRPG-277), unless the table derives its base from the attribute (skillBaseDerived), in
+// which case nothing reads a stored base. A nil Default means "no default", which is not the
+// same as a default of 0; every other field type is left untouched.
 //
 // This hangs off *Plugin rather than the systems.GameSystem interface for the same reason as
 // RollWithTemplate: only the custom system has a template to read.
@@ -80,16 +82,29 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 	if s.Numbers == nil {
 		s.Numbers = map[string]int{}
 	}
+	if s.Skills == nil {
+		s.Skills = map[string]AttrValue{}
+	}
 	for _, section := range tmpl.Sections {
 		for _, field := range flattenFields(section.Fields) {
-			if field.Default == nil {
-				continue
-			}
 			switch field.Type {
 			case "attr":
-				s.Attributes[field.Key] = AttrValue{Base: *field.Default}
+				if field.Default != nil {
+					s.Attributes[field.Key] = AttrValue{Base: *field.Default}
+				}
 			case "number":
-				s.Numbers[field.Key] = *field.Default
+				if field.Default != nil {
+					s.Numbers[field.Key] = *field.Default
+				}
+			case "skill_table":
+				if skillBaseDerived(field) {
+					continue
+				}
+				for _, opt := range field.Skills {
+					if opt.Default != nil {
+						s.Skills[field.Key+"."+opt.ID] = AttrValue{Base: *opt.Default}
+					}
+				}
 			}
 		}
 	}
@@ -139,6 +154,15 @@ func (p *Plugin) RollWithTemplate(raw bson.Raw, template *models.SystemTemplate,
 		return nil, fmt.Errorf("custom: field %q has no roll formula", skillKey)
 	}
 	return p.rollFromFormula(stats, template, skillKey, target.linkedAttr, target.baseFromAttr, target.cfg, modifier)
+}
+
+// skillBaseDerived reports whether a skill_table takes each skill's base from the linked
+// attribute instead of the stored value. The flag only means anything with both
+// preconditions; a hand-edited template can carry it without them, and deriving a base for a
+// field with no advances column would replace the player's stored value with the attribute
+// behind their back.
+func skillBaseDerived(field models.FieldDef) bool {
+	return field.BaseFromAttr && field.AssignAttrToSkill && field.HasAdvances
 }
 
 // flattenFields returns every leaf VALUE field of the given list, descending into nested
@@ -286,11 +310,7 @@ func resolveRollConfig(template *models.SystemTemplate, stats *Stats, skillKey s
 						}
 					}
 				}
-				// The flag only means anything with both preconditions; a hand-edited template can
-				// carry it without them, and deriving a base for a field with no advances column
-				// would replace the player's stored value with the attribute behind their back.
-				derived := field.BaseFromAttr && field.AssignAttrToSkill && field.HasAdvances
-				return rollTarget{cfg: field.RollConfig, linkedAttr: linkedAttr, baseFromAttr: derived, fieldType: "skill_table"}, nil
+				return rollTarget{cfg: field.RollConfig, linkedAttr: linkedAttr, baseFromAttr: skillBaseDerived(field), fieldType: "skill_table"}, nil
 			}
 			if field.Key == skillKey && field.Rollable && field.RollConfig != nil {
 				return rollTarget{cfg: field.RollConfig, linkedAttr: field.RollConfig.LinkedAttr, baseFromAttr: false, fieldType: field.Type}, nil
