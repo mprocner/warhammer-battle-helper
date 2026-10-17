@@ -1583,6 +1583,26 @@ func TestSeedDefaults_ComputeDerivedMakesCurrentEqualBase(t *testing.T) {
 	}
 }
 
+func TestSeedDefaults_SkillTableComputeDerivedMakesCurrentEqualBase(t *testing.T) {
+	p := New()
+	blank, _ := p.DefaultStats()
+	tmpl := seedTemplate(skillTableField(models.SkillOption{ID: "skill_a", Label: "Athletics", Default: intPtr(25)}))
+
+	seeded, err := p.SeedDefaults(blank, tmpl)
+	if err != nil {
+		t.Fatalf("SeedDefaults() error: %v", err)
+	}
+	derived, err := p.ComputeDerived(seeded)
+	if err != nil {
+		t.Fatalf("ComputeDerived() error: %v", err)
+	}
+	s, _ := decodeStats(derived)
+	sk := s.Skills["tbl_1.skill_a"]
+	if sk.Base != 25 || sk.Current != 25 {
+		t.Errorf("skill base/current = %d/%d, want 25/25", sk.Base, sk.Current)
+	}
+}
+
 // A label field is template-only decoration (FEATURE-156). Even if a stale Default survives on
 // it from an earlier field type, seeding must not create a stats key for it — otherwise every
 // character would carry a phantom value nothing reads.

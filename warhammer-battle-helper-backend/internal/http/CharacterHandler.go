@@ -184,8 +184,8 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 		// died in decodeStats.
 		if len(statsRaw) == 0 {
 			statsRaw = defaultStatsFor(sys, req.Name)
-			// FEATURE-158: a custom game's template can give attr/number fields a default value,
-			// which the character starts with. Seeding here (and not in the client) keeps the whole
+			// FEATURE-158: a custom game's template can give attr/number fields and skill_table
+			// options (PLAYRPG-277) a default value, which the character starts with. Seeding here (and not in the client) keeps the whole
 			// blank-sheet shape on the backend, and running before ComputeDerived below means the
 			// seeded base already reaches the client with current computed.
 			if customPlugin, ok := sys.(*custom.Plugin); ok && game.CustomSystemTemplate != nil {

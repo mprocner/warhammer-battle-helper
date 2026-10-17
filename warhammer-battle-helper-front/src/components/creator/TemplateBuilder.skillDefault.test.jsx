@@ -56,6 +56,14 @@ test('a new skill carries the draft default', () => {
   expect(added.id).toMatch(/^skill_/);
 });
 
+test('pressing Enter in the draft default input commits the new skill', () => {
+  const onChange = setup();
+  fireEvent.change(screen.getByPlaceholderText(i18n.t('creator.optionsAddPlaceholder')), { target: { value: 'Swim' } });
+  fireEvent.change(draftDefault(), { target: { value: '15' } });
+  fireEvent.keyDown(draftDefault(), { key: 'Enter' });
+  expect(onChange.mock.calls[0][0][1]).toMatchObject({ label: 'Swim', default: 15 });
+});
+
 test('a new skill without a draft default has no default key', () => {
   const onChange = setup();
   fireEvent.change(screen.getByPlaceholderText(i18n.t('creator.optionsAddPlaceholder')), { target: { value: 'Swim' } });
