@@ -149,7 +149,7 @@ describe('RichTextToolbar', () => {
   });
 });
 
-test('a disabled toolbar disables every control and opens no popover', () => {
+test('a disabled toolbar disables every control', () => {
   const editor = createFakeEditor();
   render(<RichTextToolbar editor={editor} disabled />);
   const toolbar = screen.getByRole('toolbar');

@@ -39,10 +39,10 @@ test('the echo of its own edit does not reset the editor', () => {
   const { container, rerender } = render(<RichTextEditor value="<p>a</p>" onChange={() => {}} />);
   const editor = editorIn(container);
   act(() => { editor.commands.insertContent('b'); });
-  const html = editor.getHTML();
-  const setContent = jest.spyOn(editor.commands, 'setContent');
-  rerender(<RichTextEditor value={html} onChange={() => {}} />);
-  expect(setContent).not.toHaveBeenCalled();
+  // setContent replaces the document object, so an unchanged identity proves no reset happened.
+  const docBefore = editor.state.doc;
+  rerender(<RichTextEditor value={editor.getHTML()} onChange={() => {}} />);
+  expect(editor.state.doc).toBe(docBefore);
 });
 
 test('a read-only editor cannot be edited and disables its toolbar', () => {
