@@ -34,7 +34,7 @@ Zapytaj użytkownika ALBO oddeleguj do agenta `fullstack-architect`:
 - **Operacje**: Create / Update / Delete / Reorder / List — które?
 - **Walidacja/dostęp**: kto może? Tylko GM, każdy uczestnik, tylko twórca (jak private notes)?
 - **Widoczność**: broadcast do wszystkich, czy z pominięciem nadawcy (`Except`), czy do wybranych userów?
-- **Rich text?** — jeśli treść to HTML, użyj sanitizacji `bluemonday` (patrz `noteHTMLPolicy` w NoteService).
+- **Rich text?** — jeśli treść to HTML, użyj sanitizacji `bluemonday` (patrz `sanitize.RichHTML` w `internal/sanitize/richhtml.go` — wspólna polityka notatek i pól tekstu ze stylami).
 
 ## Krok 1 — backend, warstwa po warstwie
 
