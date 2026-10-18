@@ -72,6 +72,24 @@ func defaultStatsFor(sys systems.GameSystem, name string) bson.Raw {
 	return named
 }
 
+// sanitizeRichTexts cleans the HTML of a custom game's styled text fields (PLAYRPG-256). Every
+// path that writes client- or copy-supplied stats goes through it; other systems and games
+// without a template pass through untouched. A failure keeps the stats as they are, like
+// SeedDefaults: a document that cannot be decoded also fails ComputeDerived, and the client
+// renders these fields only through the editor's schema, which drops unknown markup.
+func sanitizeRichTexts(sys systems.GameSystem, game *models.Game, raw bson.Raw, where string) bson.Raw {
+	customPlugin, ok := sys.(*custom.Plugin)
+	if !ok || game == nil || game.CustomSystemTemplate == nil {
+		return raw
+	}
+	clean, err := customPlugin.SanitizeRichTexts(raw, game.CustomSystemTemplate)
+	if err != nil {
+		log.Printf("%s: SanitizeRichTexts failed for game %s: %v", where, game.ID.Hex(), err)
+		return raw
+	}
+	return clean
+}
+
 // GetGameCharacters returns characters for a game.
 // GM gets all characters; player gets only characters where their userId is in VisibleTo.
 func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
@@ -196,6 +214,7 @@ func (h *CharacterHandler) CreateGameCharacter(c *gin.Context) {
 				}
 			}
 		}
+		statsRaw = sanitizeRichTexts(sys, game, statsRaw, "CreateGameCharacter")
 		// Run derived-stat computation (e.g. wounds/movement for Warhammer)
 		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
 			statsRaw = derived
@@ -278,6 +297,7 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 
 	// Run derived-stat computation (e.g. wounds/movement for Warhammer)
 	if sys, sysErr := registry.Get(existingCharacter.GameSystem); sysErr == nil {
+		statsRaw = sanitizeRichTexts(sys, game, statsRaw, "UpdateGameCharacter")
 		if derived, derivedErr := sys.ComputeDerived(statsRaw); derivedErr == nil {
 			statsRaw = derived
 		} else {
@@ -641,6 +661,7 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 			clone.Stats = updated
 		}
 
+		clone.Stats = sanitizeRichTexts(sys, game, clone.Stats, "CloneGameCharacter")
 		// Recompute derived stats for the clone
 		if derived, derivedErr := sys.ComputeDerived(clone.Stats); derivedErr == nil {
 			clone.Stats = derived

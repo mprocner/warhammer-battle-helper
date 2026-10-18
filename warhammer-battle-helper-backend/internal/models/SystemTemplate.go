@@ -248,6 +248,11 @@ type FieldDef struct {
 	TextColor string `bson:"textColor,omitempty" json:"textColor,omitempty"` // hex; empty = default sheet text color
 	TextSize  string `bson:"textSize,omitempty" json:"textSize,omitempty"`   // "small"|"normal"|"large"|"heading"; empty = "normal"
 
+	// RichText turns a text_long field into a styled editor (PLAYRPG-256); its value in
+	// Stats.Texts is then sanitized HTML instead of plain text. Ignored on every other type.
+	// Off by default, so omitempty is safe: an absent key reads as "plain text".
+	RichText bool `bson:"richText,omitempty" json:"richText,omitempty"`
+
 	Min *int `bson:"min,omitempty" json:"min,omitempty"`
 	Max *int `bson:"max,omitempty" json:"max,omitempty"`
 	// Default is the value written into a freshly created character's stats for this field
