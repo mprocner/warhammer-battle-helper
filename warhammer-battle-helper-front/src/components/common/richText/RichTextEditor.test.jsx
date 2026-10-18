@@ -58,3 +58,52 @@ test('toggling editability is not an edit', () => {
   expect(editorIn(container).isEditable).toBe(true);
   expect(onChange).not.toHaveBeenCalled();
 });
+
+test('the sanitized echo of its own edit does not reset the editor', () => {
+  // The backend sanitizer escapes quotes as entities, so the saved HTML comes back as a different
+  // string describing the same document; that must not count as a new value.
+  const { container, rerender } = render(<RichTextEditor value="" onChange={() => {}} />);
+  const editor = editorIn(container);
+  act(() => { editor.commands.insertContent("don't"); });
+  const docBefore = editor.state.doc;
+  // A JS string, not a JSX attribute string: JSX would decode the entity before the editor saw it.
+  rerender(<RichTextEditor value={'<p>don&#39;t</p>'} onChange={() => {}} />);
+  expect(editor.state.doc).toBe(docBefore);
+});
+
+test('an empty value matches an empty editor', () => {
+  const { container, rerender } = render(<RichTextEditor value="<p></p>" onChange={() => {}} />);
+  const editor = editorIn(container);
+  const docBefore = editor.state.doc;
+  rerender(<RichTextEditor value="" onChange={() => {}} />);
+  expect(editor.state.doc).toBe(docBefore);
+});
+
+test('a focused editor keeps its caret when an outside value replaces the content', () => {
+  const { container, rerender } = render(<RichTextEditor value="<p>abcdefghij</p>" onChange={() => {}} />);
+  const editor = editorIn(container);
+  act(() => { editor.commands.setTextSelection(3); });
+  editor.isFocused = true;
+  rerender(<RichTextEditor value="<p>abcdefghijXYZ</p>" onChange={() => {}} />);
+  expect(editor.state.selection.from).toBe(3);
+});
+
+test('a focused editor clamps its caret into a shorter outside value', () => {
+  const { container, rerender } = render(<RichTextEditor value="<p>abcdefghij</p>" onChange={() => {}} />);
+  const editor = editorIn(container);
+  act(() => { editor.commands.setTextSelection(11); });
+  editor.isFocused = true;
+  rerender(<RichTextEditor value="<p>ab</p>" onChange={() => {}} />);
+  expect(editor.getText()).toBe('ab');
+  expect(editor.state.selection.from).toBeLessThanOrEqual(editor.state.doc.content.size);
+});
+
+test('an unfocused editor does not restore its caret', () => {
+  const { container, rerender } = render(<RichTextEditor value="<p>abcdefghij</p>" onChange={() => {}} />);
+  const editor = editorIn(container);
+  act(() => { editor.commands.setTextSelection(3); });
+  editor.isFocused = false;
+  rerender(<RichTextEditor value="<p>abcdefghijXYZ</p>" onChange={() => {}} />);
+  expect(editor.getText()).toBe('abcdefghijXYZ');
+  expect(editor.state.selection.from).not.toBe(3);
+});

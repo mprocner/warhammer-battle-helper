@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+// @tiptap/react re-exports @tiptap/core, which is not a direct dependency.
+import { useEditor, EditorContent, createDocument } from '@tiptap/react';
 import { RICH_TEXT_EXTENSIONS } from './richTextExtensions';
 import RichTextToolbar from './RichTextToolbar';
 
 // A self-contained styled text box: the shared formatting toolbar over a Tiptap editor. The
-// editor is uncontrolled, so `value` is pushed into it only when it differs from what the
-// editor already holds — otherwise the echo of every keystroke would reset the caret.
+// editor is uncontrolled, so `value` is pushed into it only when it describes a different document
+// than the editor already holds — otherwise the echo of every keystroke would reset the caret.
 const RichTextEditor = ({ value = '', onChange, editable = true, className = '' }) => {
   const [, forceUpdate] = useState(0);
   const onChangeRef = useRef(onChange);
@@ -30,7 +31,10 @@ const RichTextEditor = ({ value = '', onChange, editable = true, className = '' 
   useEffect(() => {
     if (!editor) return;
     const next = value || '';
-    if (next === (editor.isEmpty ? '' : editor.getHTML())) return;
+    // Compare documents, not HTML strings: the backend sanitizer escapes text differently
+    // (`'` -> `&#39;`, `&nbsp;` -> U+00A0), so the echo of a save is a different string
+    // describing the same document. '' parses to the same empty paragraph the editor holds.
+    if (createDocument(next, editor.schema).eq(editor.state.doc)) return;
     // Restore the caret only when the editor had focus — otherwise we would steal it.
     const hadFocus = editor.isFocused;
     const { from } = editor.state.selection;
