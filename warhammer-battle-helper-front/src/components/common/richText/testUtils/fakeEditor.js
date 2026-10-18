@@ -1,6 +1,6 @@
 // Stand-in for a Tiptap editor in toolbar tests. Records every command of
 // editor.chain()...run() as [name, ...args], so a test asserts on what would reach Tiptap
-// without a ProseMirror instance (which CRA's Jest cannot load anyway).
+// without a ProseMirror instance, so toolbar tests stay fast and deterministic.
 export const createFakeEditor = ({ active = [], attributes = {}, selectionEmpty = false } = {}) => {
   const calls = [];
   const chain = () => {

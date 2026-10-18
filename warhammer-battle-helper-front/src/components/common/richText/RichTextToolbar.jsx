@@ -32,7 +32,7 @@ import {
 
 const TOOLTIP_HIDE_DELAY = 100;
 
-const RichTextToolbar = ({ editor }) => {
+const RichTextToolbar = ({ editor, disabled = false }) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(null); // 'textColor' | 'highlight' | 'link' | null
   const [tooltip, setTooltip] = useState(null);
@@ -102,7 +102,10 @@ const RichTextToolbar = ({ editor }) => {
   };
 
   return (
-    <div className="rich-toolbar" role="toolbar" aria-label={t('richText.toolbar.label')}>
+    // A disabled fieldset disables every control inside it natively — buttons, the heading
+    // select, the size input — so no control needs a disabled prop of its own, and a disabled
+    // button fires no click, so no popover can open.
+    <fieldset className="rich-toolbar" role="toolbar" aria-label={t('richText.toolbar.label')} disabled={disabled}>
       <div className="rich-toolbar__group">
         <HeadingSelect editor={editor} {...tip} />
         <FontSizeCombo
@@ -198,7 +201,7 @@ const RichTextToolbar = ({ editor }) => {
         </div>,
         document.body,
       )}
-    </div>
+    </fieldset>
   );
 };
 

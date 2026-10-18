@@ -52,6 +52,19 @@
   color: #3a2f1f;
 }
 
+.rich-toolbar:disabled .rich-toolbar__btn,
+.rich-toolbar:disabled .rich-toolbar__heading,
+.rich-toolbar:disabled .rich-toolbar__size-input,
+.rich-toolbar:disabled .rich-toolbar__size-toggle {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.rich-toolbar:disabled .rich-toolbar__btn:hover {
+  background: none;
+  border-color: transparent;
+}
+
 .rich-toolbar__indicator {
   position: absolute;
   left: 4px;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import '../../../i18n';
 import RichTextToolbar from './RichTextToolbar';
 import { createFakeEditor } from './testUtils/fakeEditor';
@@ -147,4 +147,18 @@ describe('RichTextToolbar', () => {
     const tooltip = document.querySelector('.portal-tooltip.portal-tooltip--below');
     expect(tooltip).toHaveTextContent('Bold');
   });
+});
+
+test('a disabled toolbar disables every control and opens no popover', () => {
+  const editor = createFakeEditor();
+  render(<RichTextToolbar editor={editor} disabled />);
+  const toolbar = screen.getByRole('toolbar');
+  within(toolbar).getAllByRole('button').forEach((b) => expect(b).toBeDisabled());
+  expect(within(toolbar).getByRole('combobox')).toBeDisabled();
+  expect(within(toolbar).getByRole('textbox')).toBeDisabled();
+});
+
+test('an enabled toolbar keeps its controls enabled', () => {
+  render(<RichTextToolbar editor={createFakeEditor()} />);
+  within(screen.getByRole('toolbar')).getAllByRole('button').forEach((b) => expect(b).toBeEnabled());
 });
