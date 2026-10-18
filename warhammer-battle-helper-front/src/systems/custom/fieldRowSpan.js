@@ -5,8 +5,9 @@
 // field's height follows its content (tables, free images, nested sections): those cannot be
 // quantised without measuring them, and the sheet deliberately does no layout measurement.
 //
-// The span is derived from the type alone, never stored on the template, so changing this
-// table re-lays out every existing sheet and there is nothing to migrate.
+// The span is derived from the field's type (and, for a long text, its richText flag), never
+// stored on the template, so changing this table re-lays out every existing sheet and there is
+// nothing to migrate.
 const TWO_ROWS = new Set(['char_avatar', 'text_long']);
 const ONE_ROW = new Set([
   'text_short', 'char_name', 'number', 'computed', 'progress', 'select', 'checkbox', 'label',
@@ -17,6 +18,9 @@ export function fieldRowSpan(field) {
   // An attribute with advances shows base + advances beside its total; without them it is a
   // single number, as compact as any other value tile.
   if (field.type === 'attr') return field.hasAdvances ? 2 : 1;
+  // A styled long text carries the formatting toolbar above its text (PLAYRPG-256); two rows
+  // would leave about one line to write in.
+  if (field.type === 'text_long' && field.richText) return 4;
   if (TWO_ROWS.has(field.type)) return 2;
   if (ONE_ROW.has(field.type)) return 1;
   return null;

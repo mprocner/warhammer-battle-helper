@@ -19,6 +19,8 @@ import { fieldRowSpan } from './fieldRowSpan';
 import { PRESETS } from '../../utils/imageProcessing';
 import { AFFORDANCE_ICON_SIZE } from './fields/affordances';
 import NumberInput from '../../components/common/NumberInput';
+import RichTextEditor from '../../components/common/richText/RichTextEditor';
+import { plainToHtml, htmlToPlain, looksLikeHtml } from '../../components/common/richText/richTextConvert';
 
 // onChange = { attr, advances, skill, skillAdvances, text, progress, number, name, avatar, image,
 //              weaponAdd, weaponAddFromPreset, weaponRemove, weaponCell, weaponDamage, weaponFavorite,
@@ -357,16 +359,28 @@ function CustomSheetBody({
           />
         ));
 
-      case 'text_long':
-        return renderTile(field, 'text', (
+      // PLAYRPG-256: a styled field stores HTML. The value is converted at read time in both
+      // directions, so flipping the flag in the creator needs no data migration; the stored
+      // format follows the flag from the field's next edit.
+      case 'text_long': {
+        const raw = texts[field.key] || '';
+        return renderTile(field, 'text', field.richText ? (
+          <RichTextEditor
+            className="custom-sheet__rich-text"
+            value={looksLikeHtml(raw) ? raw : plainToHtml(raw)}
+            onChange={onChange ? html => onChange.text(field.key, html) : undefined}
+            editable={!readOnly}
+          />
+        ) : (
           <textarea
             className="custom-sheet__textarea"
-            value={texts[field.key] || ''}
+            value={looksLikeHtml(raw) ? htmlToPlain(raw) : raw}
             onChange={onChange ? e => onChange.text(field.key, e.target.value) : undefined}
             readOnly={readOnly}
             rows={3}
           />
         ));
+      }
 
       // The character's own name, not a stats value: values.name is character.name, which
       // tokens, lists and the short card all read. Same tile as a short text field.

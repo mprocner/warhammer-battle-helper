@@ -40,3 +40,8 @@ describe('fieldRowSpan', () => {
     expect(fieldRowSpan({ type: 'attr_table', hasAdvances: true })).toBeNull();
   });
 });
+
+test('a styled long text spans four rows', () => {
+  expect(fieldRowSpan({ key: 'bio', type: 'text_long', richText: true })).toBe(4);
+  expect(fieldRowSpan({ key: 'bio', type: 'text_long', richText: false })).toBe(2);
+});

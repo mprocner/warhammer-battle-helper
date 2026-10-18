@@ -7891,6 +7891,18 @@ align-items: center;
     min-height: calc(2 * var(--sheet-row-unit) + 8px);
 }
 
+/* A styled long text (PLAYRPG-256) is four rows tall and FIXED at that height: grid rows are
+   minmax(unit, auto), so with only a min-height every new paragraph would grow the row. The
+   toolbar keeps its natural height and the text scrolls inside what is left. */
+.custom-sheet__cell.custom-sheet__cell--rows-4 {
+    grid-row: span 4;
+    height: calc(4 * var(--sheet-row-unit) + 24px);
+}
+
+.custom-sheet__cell--rows-4 > .custom-sheet__tile {
+    min-height: 0;
+}
+
 /* Only section cells stretch to their row (FEATURE-213): a nested section has a visible frame,
    and frames that end at different heights read as an accident. One-row fields beside a section
    keep their unit, because the grid itself uses align-items: start. */
@@ -8370,6 +8382,40 @@ align-items: center;
 .custom-sheet__cell--rows-2 > .custom-sheet__tile--text > .custom-sheet__tile-value {
     flex: 1 1 auto;
     align-items: stretch;
+}
+
+.custom-sheet__cell--rows-4 > .custom-sheet__tile--text > .custom-sheet__tile-value {
+    flex: 1 1 auto;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.custom-sheet__rich-text {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.custom-sheet__rich-text .rich-toolbar {
+    flex: none;
+}
+
+.custom-sheet__rich-text .rich-text__content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    transition: border-color 0.15s;
+}
+
+.custom-sheet__rich-text .rich-text__content:focus-within {
+    border-color: #7a5c42;
 }
 
 .custom-sheet__image {
