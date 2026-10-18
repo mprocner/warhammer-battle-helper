@@ -90,6 +90,15 @@ func sanitizeRichTexts(sys systems.GameSystem, game *models.Game, raw bson.Raw, 
 	return clean
 }
 
+// characterInGame reports whether the character belongs to the game named in the URL. Every
+// :charId route loads the game from :id and the character from :charId independently; without
+// this check a GM of one game could act on another game's character, and the game's template
+// (which drives sanitizeRichTexts) would not be the character's. A character outside the game
+// is answered like a missing one, so the route does not reveal that the id exists elsewhere.
+func characterInGame(ch *models.Character, game *models.Game) bool {
+	return ch != nil && game != nil && ch.GameID == game.ID
+}
+
 // GetGameCharacters returns characters for a game.
 // GM gets all characters; player gets only characters where their userId is in VisibleTo.
 func (h *CharacterHandler) GetGameCharacters(c *gin.Context) {
@@ -262,7 +271,7 @@ func (h *CharacterHandler) UpdateGameCharacter(c *gin.Context) {
 	isGM := game.GameMasterID == userObjID
 
 	existingCharacter, err := h.CharacterRepo.GetByID(charID)
-	if err != nil {
+	if err != nil || !characterInGame(existingCharacter, game) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
 	}
@@ -378,7 +387,7 @@ func (h *CharacterHandler) authorizeCharacterEdit(c *gin.Context) (*models.Chara
 		return nil, false
 	}
 	ch, err := h.CharacterRepo.GetByID(charID)
-	if err != nil {
+	if err != nil || !characterInGame(ch, game) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return nil, false
 	}
@@ -588,7 +597,7 @@ func (h *CharacterHandler) DeleteGameCharacter(c *gin.Context) {
 	isGM := game.GameMasterID == userObjID
 
 	existingCharacter, err := h.CharacterRepo.GetByID(charID)
-	if err != nil {
+	if err != nil || !characterInGame(existingCharacter, game) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
 	}
@@ -635,7 +644,7 @@ func (h *CharacterHandler) CloneGameCharacter(c *gin.Context) {
 	}
 
 	original, err := h.CharacterRepo.GetByID(charID)
-	if err != nil {
+	if err != nil || !characterInGame(original, game) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
 	}
@@ -698,6 +707,12 @@ func (h *CharacterHandler) UpdateCharacterVisibility(c *gin.Context) {
 
 	if game.GameMasterID != userObjID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Only the Game Master can manage character visibility"})
+		return
+	}
+
+	existingCharacter, err := h.CharacterRepo.GetByID(charID)
+	if err != nil || !characterInGame(existingCharacter, game) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Character not found"})
 		return
 	}
 
