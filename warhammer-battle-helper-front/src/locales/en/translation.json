@@ -1110,7 +1110,7 @@
           "computed": "A value calculated from a formula over attributes and numbers. The player cannot type into it.",
           "progress": "A current/maximum pair shown as a bar, e.g. health or mana.",
           "text_short": "A single line of text, e.g. profession or origin.",
-          "text_long": "A multi-line text area, e.g. a backstory or notes.",
+          "text_long": "A multi-line text area, e.g. a backstory or notes. It can also get a formatting toolbar.",
           "checkbox": "A yes/no tick, e.g. a condition or an ability already used.",
           "select": "A choice from a list you define, e.g. race or class.",
           "skill_table": "A list of skills with values the player rolls against. Players can add their own if you allow it.",
@@ -1127,7 +1127,8 @@
           "skill_table": "The favourites star, a development mark for skills used this session, alphabetical order and a two-column layout.",
           "skill_tree": "The favourites star, a development mark for skills used this session, alphabetical order and a two-column layout split by branch.",
           "weapons_table": "Sort the rows by a short-text column you pick, and split the table into two columns.",
-          "data_table": "Sort the rows by a short-text column you pick, and split the table into two columns."
+          "data_table": "Sort the rows by a short-text column you pick, and split the table into two columns.",
+          "text_long": "Turn on text formatting: headings, colours, lists and links, with the same toolbar as notes. The field grows to four rows to fit it."
         }
       },
       "basics": {
@@ -1809,6 +1810,8 @@
     "sortColumn": "Sort by column",
     "sortColumnNone": "Add a short text column to sort by.",
     "skillTwoColumns": "Two columns",
+    "richText": "Text formatting",
+    "richTextHint": "Players get the same formatting toolbar as in notes. Turning it off makes existing texts plain on their next edit.",
     "skillAttrAsBase": "Attribute as the base value",
     "skillAttrAsBaseHint": "The base column shows the linked attribute and cannot be edited; the total is the attribute plus advances.",
     "skillFlagRequires": "Needs: {{flags}}",

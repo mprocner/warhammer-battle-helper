@@ -25,6 +25,14 @@ test('row tables offer sorting and the two-column split', () => {
   expect(displayFlags('data_table')).toEqual(['sortAlphabetically', 'twoColumns']);
 });
 
+test('a long text offers the formatting switch', () => {
+  expect(displayFlags('text_long')).toEqual(['richText']);
+});
+
+test('the formatting switch has a label and a hint, and depends on nothing', () => {
+  expect(SKILL_FLAG_META.richText).toEqual({ labelKey: 'creator.richText', hintKey: 'creator.richTextHint' });
+});
+
 test('any other field type gets no display group at all', () => {
   expect(displayFlags('attr')).toEqual([]);
 });

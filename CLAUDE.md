@@ -152,6 +152,9 @@ zarządza CRA. Znany baseline fail: `App.test.js`, axios ESM — nie jest regres
   `TypeError: Cannot redefine property: isTrusted` nawet z `configurable: true`. Trusted zdarzenia
   nie da się zasymulować przez DOM; predykat testuj wywołując handler bezpośrednio obiektem `{ isTrusted, button, preventDefault, stopPropagation }`.
 - `getBoundingClientRect` zwraca zera (brak layoutu) — stubuj (wzorzec: `useTokenRotate.test.jsx`).
+- **TipTap działa w jsdom** dzięki `jest.transformIgnorePatterns` w `package.json` (transpiluje ESM
+  `@tiptap/*` i `prosemirror-*`). Instancję edytora bierz z węzła: `container.querySelector('.tiptap').editor`
+  (wzorzec: `RichTextEditor.test.jsx`). Testy toolbara zostają na `createFakeEditor`.
 - `scrollLeft` / `scrollTop` **są** zwykłymi zapisywalnymi właściwościami — działają normalnie.
 - i18n w testach renderujących: `import '../../i18n';` (side-effect, bez providera) na górze pliku
   (wzorzec: `ModeSwitchLabel.test.jsx`, `LayerSelector.smoke.test.jsx`, `ConsentBanner.test.jsx` i

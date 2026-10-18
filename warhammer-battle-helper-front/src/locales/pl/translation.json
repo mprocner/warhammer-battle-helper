@@ -1110,7 +1110,7 @@
           "computed": "Wartość liczona z formuły na podstawie atrybutów i liczb. Gracz nie może jej wpisać.",
           "progress": "Para aktualna/maksymalna pokazana jako pasek, np. zdrowie albo mana.",
           "text_short": "Jedna linia tekstu, np. profesja albo pochodzenie.",
-          "text_long": "Wielowierszowe pole tekstowe, np. historia postaci albo notatki.",
+          "text_long": "Wielowierszowe pole tekstowe, np. historia postaci albo notatki. Może też dostać pasek formatowania.",
           "checkbox": "Pole tak/nie, np. stan postaci albo już wykorzystana zdolność.",
           "select": "Wybór z listy, którą definiujesz, np. rasa albo klasa.",
           "skill_table": "Lista umiejętności z wartościami, na które gracz rzuca. Gracze mogą dodawać własne, jeśli na to pozwolisz.",
@@ -1127,7 +1127,8 @@
           "skill_table": "Gwiazdka ulubionych, znacznik rozwoju umiejętności użytych w sesji, kolejność alfabetyczna i układ w dwóch kolumnach.",
           "skill_tree": "Gwiazdka ulubionych, znacznik rozwoju umiejętności użytych w sesji, kolejność alfabetyczna i układ w dwóch kolumnach dzielony po gałęziach.",
           "weapons_table": "Sortowanie wierszy według wybranej kolumny tekstowej i podział tabeli na dwie kolumny.",
-          "data_table": "Sortowanie wierszy według wybranej kolumny tekstowej i podział tabeli na dwie kolumny."
+          "data_table": "Sortowanie wierszy według wybranej kolumny tekstowej i podział tabeli na dwie kolumny.",
+          "text_long": "Włącz formatowanie tekstu: nagłówki, kolory, listy i linki, z tym samym paskiem co w notatkach. Pole urośnie do czterech wierszy, żeby go zmieścić."
         }
       },
       "basics": {
@@ -1809,6 +1810,8 @@
     "sortColumn": "Sortuj według kolumny",
     "sortColumnNone": "Dodaj kolumnę z krótkim tekstem, aby sortować.",
     "skillTwoColumns": "Dwie kolumny",
+    "richText": "Formatowanie tekstu",
+    "richTextHint": "Gracz dostaje pasek formatowania jak w notatkach. Po wyłączeniu istniejące teksty staną się zwykłym tekstem przy następnej edycji.",
     "skillAttrAsBase": "Atrybut jako wartość bazowa",
     "skillAttrAsBaseHint": "Kolumna bazy pokazuje powiązany atrybut i nie da się jej edytować; suma to atrybut plus rozwinięcia.",
     "skillFlagRequires": "Wymaga: {{flags}}",

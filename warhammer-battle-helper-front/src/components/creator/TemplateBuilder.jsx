@@ -392,6 +392,9 @@ export function displayFlags(fieldType) {
   if (fieldType === 'weapons_table' || fieldType === 'data_table') {
     return ['sortAlphabetically', 'twoColumns'];
   }
+  if (fieldType === 'text_long') {
+    return ['richText'];
+  }
   return [];
 }
 
@@ -409,6 +412,8 @@ export const SKILL_FLAG_META = {
   showDevelopment:    { labelKey: 'creator.skillShowDevelopment', hintKey: 'creator.skillShowDevelopmentHint' },
   sortAlphabetically: { labelKey: 'creator.skillSortAlphabetically' },
   twoColumns:         { labelKey: 'creator.skillTwoColumns' },
+  // PLAYRPG-256: a long text with the notes' formatting toolbar.
+  richText:           { labelKey: 'creator.richText', hintKey: 'creator.richTextHint' },
   // Rendered directly in PropertyPanel's "Content" group, not via displayFlags() — it belongs
   // next to assignAttrToSkill, not among the display-only flags that group returns.
   baseFromAttr:       {
