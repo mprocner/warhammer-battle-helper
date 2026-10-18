@@ -1,0 +1,304 @@
+/* Shared rich-text editor (PLAYRPG-256): notes and styled sheet fields. */
+
+/* Toolbar */
+.rich-toolbar {
+  display: flex;
+  margin: 0;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid #d4a574;
+  border-radius: 4px;
+}
+
+/* Groups wrap as a whole, so a group never splits across two rows. */
+.rich-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-right: 1px solid #d4a574;
+}
+
+.rich-toolbar__group:last-child {
+  border-right: none;
+}
+
+.rich-toolbar__btn {
+  position: relative;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #6b4423;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.rich-toolbar__btn:hover {
+  background: rgba(201, 151, 91, 0.2);
+  border-color: #c9975b;
+}
+
+.rich-toolbar__btn--active {
+  background: rgba(201, 151, 91, 0.3);
+  border-color: #c9975b;
+  color: #3a2f1f;
+}
+
+.rich-toolbar__indicator {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.rich-toolbar__heading,
+.rich-toolbar__size-input {
+  height: 26px;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.rich-toolbar__heading:focus,
+.rich-toolbar__size-input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.rich-toolbar__heading {
+  padding: 0 4px;
+}
+
+.rich-toolbar__anchor {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rich-toolbar__size-input {
+  width: 38px;
+  padding: 0 4px;
+  text-align: center;
+  border-radius: 3px 0 0 3px;
+}
+
+.rich-toolbar__size-toggle {
+  height: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-left: none;
+  border-radius: 0 3px 3px 0;
+  color: #6b4423;
+  cursor: pointer;
+}
+
+.rich-toolbar__popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  background: #fff9f0;
+  border: 1px solid #c4a882;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(58, 47, 31, 0.25);
+}
+
+.rich-toolbar__size-list {
+  padding: 4px;
+  min-width: 56px;
+}
+
+.rich-toolbar__size-option {
+  width: 100%;
+  padding: 3px 8px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rich-toolbar__size-option:hover,
+.rich-toolbar__size-option--active {
+  background: rgba(201, 151, 91, 0.25);
+}
+
+.rich-toolbar__color-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+}
+
+.rich-toolbar__swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  gap: 6px;
+}
+
+.rich-toolbar__swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.rich-toolbar__swatch:hover,
+.rich-toolbar__swatch--active {
+  border-color: #7a5c42;
+  box-shadow: 0 0 0 2px #c9975b;
+}
+
+.rich-toolbar__custom-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7a5c42;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rich-toolbar__custom-color input[type="color"] {
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+
+.rich-toolbar__text-btn {
+  padding: 3px 8px;
+  background: none;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #6b4423;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rich-toolbar__text-btn:hover {
+  background: rgba(201, 151, 91, 0.2);
+  border-color: #c9975b;
+}
+
+.rich-toolbar__link-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 240px;
+}
+
+.rich-toolbar__link-input {
+  padding: 4px 6px;
+  background: #fff;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  color: #3a2f1f;
+  font-size: 12px;
+}
+
+.rich-toolbar__link-input:focus {
+  outline: none;
+  border-color: #7a5c42;
+}
+
+.rich-toolbar__link-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* Editor typography. The container (border, size, scroll) belongs to each host. */
+.rich-text__content .tiptap {
+  padding: 10px;
+  outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: #3a2f1f;
+  height: 100%;
+}
+
+.rich-text__content .tiptap p {
+  margin: 0 0 8px 0;
+}
+
+.rich-text__content .tiptap h1,
+.rich-text__content .tiptap h2,
+.rich-text__content .tiptap h3 {
+  margin: 12px 0 8px 0;
+  font-family: 'Cinzel', serif;
+  color: #6b4423;
+}
+
+/* Headings carry their own size and weight; a font-size span inside still wins. */
+.rich-text__content .tiptap h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.rich-text__content .tiptap h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rich-text__content .tiptap h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.rich-text__content .tiptap mark {
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+.rich-text__content .tiptap ul,
+.rich-text__content .tiptap ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.rich-text__content .tiptap blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 3px solid #c9975b;
+  color: #7a5c42;
+  font-style: italic;
+}
+
+.rich-text__content .tiptap a {
+  color: #8b5e3c;
+  text-decoration: underline;
+}
+
+.rich-text__content .tiptap hr {
+  border: none;
+  border-top: 1px dashed #c9975b;
+  margin: 12px 0;
+}
+

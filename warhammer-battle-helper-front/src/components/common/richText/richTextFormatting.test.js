@@ -8,10 +8,10 @@ import {
   readFontSize,
   toCssFontSize,
   normalizeHref,
-} from './noteFormatting';
+} from './richTextFormatting';
 
 describe('font size helpers', () => {
-  it('uses the same range as noteFontSizeRe in NoteService.go', () => {
+  it('uses the same range as fontSizeRe in richhtml.go', () => {
     expect([FONT_SIZE_MIN, FONT_SIZE_MAX]).toEqual([8, 72]);
   });
 
@@ -44,7 +44,7 @@ describe('font size helpers', () => {
 });
 
 describe('palettes', () => {
-  // The backend keeps a colour only when it matches noteColorRe.
+  // The backend keeps a colour only when it matches the colour regexp in richhtml.go.
   const backendColorRe = /^#[0-9a-fA-F]{6}$/;
 
   it.each([...TEXT_COLORS, ...HIGHLIGHT_COLORS])('$key is a #rrggbb colour', ({ hex }) => {

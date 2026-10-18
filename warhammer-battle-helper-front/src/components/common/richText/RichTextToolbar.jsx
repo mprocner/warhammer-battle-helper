@@ -21,17 +21,18 @@ import ColorPopover from './toolbar/ColorPopover';
 import FontSizeCombo from './toolbar/FontSizeCombo';
 import HeadingSelect from './toolbar/HeadingSelect';
 import LinkPopover from './toolbar/LinkPopover';
+import './RichText.css';
 import {
   DEFAULT_TEXT_COLOR,
   HIGHLIGHT_COLORS,
   TEXT_COLORS,
   readFontSize,
   toCssFontSize,
-} from './noteFormatting';
+} from './richTextFormatting';
 
 const TOOLTIP_HIDE_DELAY = 100;
 
-const NoteToolbar = ({ editor }) => {
+const RichTextToolbar = ({ editor }) => {
   const { t } = useTranslation();
   const [openPopover, setOpenPopover] = useState(null); // 'textColor' | 'highlight' | 'link' | null
   const [tooltip, setTooltip] = useState(null);
@@ -66,14 +67,14 @@ const NoteToolbar = ({ editor }) => {
     <ToolbarButton
       key={key}
       icon={<Icon fontSize="small" />}
-      label={t(`notes.toolbar.${key}`)}
+      label={t(`richText.toolbar.${key}`)}
       onClick={() => command(editor.chain().focus()).run()}
       active={active}
       {...tip}
     />
   );
 
-  // The default swatch stores nothing, so the note keeps following the editor's own colour.
+  // The default swatch stores nothing, so the text keeps following the editor's own colour.
   // The custom path skips .focus(): it runs on every drag step of the native chooser, and
   // moving focus to the editor would steal it (Chrome may close the chooser). The editor
   // keeps its selection in state, so the command still lands.
@@ -101,8 +102,8 @@ const NoteToolbar = ({ editor }) => {
   };
 
   return (
-    <div className="note-toolbar" role="toolbar" aria-label={t('notes.toolbar.label')}>
-      <div className="note-toolbar__group">
+    <div className="rich-toolbar" role="toolbar" aria-label={t('richText.toolbar.label')}>
+      <div className="rich-toolbar__group">
         <HeadingSelect editor={editor} {...tip} />
         <FontSizeCombo
           value={readFontSize(textStyle.fontSize)}
@@ -111,17 +112,17 @@ const NoteToolbar = ({ editor }) => {
         />
       </div>
 
-      <div className="note-toolbar__group">
+      <div className="rich-toolbar__group">
         {button('bold', FormatBoldIcon, (c) => c.toggleBold(), editor.isActive('bold'))}
         {button('italic', FormatItalicIcon, (c) => c.toggleItalic(), editor.isActive('italic'))}
         {button('underline', FormatUnderlinedIcon, (c) => c.toggleUnderline(), editor.isActive('underline'))}
         {button('strike', FormatStrikethroughIcon, (c) => c.toggleStrike(), editor.isActive('strike'))}
       </div>
 
-      <div className="note-toolbar__group">
+      <div className="rich-toolbar__group">
         <ToolbarPopoverButton
           icon={<FormatColorTextIcon fontSize="small" />}
-          label={t('notes.toolbar.textColor')}
+          label={t('richText.toolbar.textColor')}
           indicatorColor={textColor}
           isOpen={openPopover === 'textColor'}
           onToggle={() => togglePopover('textColor')}
@@ -133,12 +134,12 @@ const NoteToolbar = ({ editor }) => {
             activeHex={textColor}
             onSelect={(hex) => { applyTextColor(hex); closePopover(); }}
             onCustom={(hex) => applyTextColor(hex, false)}
-            customLabel={t('notes.toolbar.customColor')}
+            customLabel={t('richText.toolbar.customColor')}
           />
         </ToolbarPopoverButton>
         <ToolbarPopoverButton
           icon={<BorderColorIcon fontSize="small" />}
-          label={t('notes.toolbar.highlight')}
+          label={t('richText.toolbar.highlight')}
           indicatorColor={highlightColor}
           active={editor.isActive('highlight')}
           isOpen={openPopover === 'highlight'}
@@ -152,29 +153,29 @@ const NoteToolbar = ({ editor }) => {
             onSelect={(hex) => { applyHighlight(hex); closePopover(); }}
             onCustom={(hex) => applyHighlight(hex, false)}
             onClear={() => { editor.chain().focus().unsetHighlight().run(); closePopover(); }}
-            clearLabel={t('notes.toolbar.noHighlight')}
-            customLabel={t('notes.toolbar.customColor')}
+            clearLabel={t('richText.toolbar.noHighlight')}
+            customLabel={t('richText.toolbar.customColor')}
           />
         </ToolbarPopoverButton>
       </div>
 
-      <div className="note-toolbar__group">
+      <div className="rich-toolbar__group">
         {button('alignLeft', FormatAlignLeftIcon, (c) => c.setTextAlign('left'), editor.isActive({ textAlign: 'left' }))}
         {button('alignCenter', FormatAlignCenterIcon, (c) => c.setTextAlign('center'), editor.isActive({ textAlign: 'center' }))}
         {button('alignRight', FormatAlignRightIcon, (c) => c.setTextAlign('right'), editor.isActive({ textAlign: 'right' }))}
       </div>
 
-      <div className="note-toolbar__group">
+      <div className="rich-toolbar__group">
         {button('bulletList', FormatListBulletedIcon, (c) => c.toggleBulletList(), editor.isActive('bulletList'))}
         {button('orderedList', FormatListNumberedIcon, (c) => c.toggleOrderedList(), editor.isActive('orderedList'))}
         {button('blockquote', FormatQuoteIcon, (c) => c.toggleBlockquote(), editor.isActive('blockquote'))}
         {button('horizontalRule', HorizontalRuleIcon, (c) => c.setHorizontalRule())}
       </div>
 
-      <div className="note-toolbar__group">
+      <div className="rich-toolbar__group">
         <ToolbarPopoverButton
           icon={<LinkIcon fontSize="small" />}
-          label={t('notes.toolbar.link')}
+          label={t('richText.toolbar.link')}
           active={editor.isActive('link')}
           isOpen={openPopover === 'link'}
           onToggle={() => togglePopover('link')}
@@ -201,4 +202,4 @@ const NoteToolbar = ({ editor }) => {
   );
 };
 
-export default NoteToolbar;
+export default RichTextToolbar;

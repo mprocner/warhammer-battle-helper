@@ -11,27 +11,27 @@ const ColorPopover = ({ colors, activeHex, onSelect, onCustom, onClear, clearLab
   const pickerValue = HEX_RE.test(activeHex ?? '') ? active : colors[0].hex;
 
   return (
-    <div className="note-toolbar__popover note-toolbar__color-popover" role="dialog">
-      <div className="note-toolbar__swatches">
+    <div className="rich-toolbar__popover rich-toolbar__color-popover" role="dialog">
+      <div className="rich-toolbar__swatches">
         {colors.map(({ key, hex }) => (
           <button
             key={key}
             type="button"
-            className={`note-toolbar__swatch ${active === hex ? 'note-toolbar__swatch--active' : ''}`}
+            className={`rich-toolbar__swatch ${active === hex ? 'rich-toolbar__swatch--active' : ''}`}
             style={{ backgroundColor: hex }}
-            aria-label={t(`notes.toolbar.colors.${key}`)}
+            aria-label={t(`richText.toolbar.colors.${key}`)}
             aria-pressed={active === hex}
             onMouseDown={preventFocusLoss}
             onClick={() => onSelect(hex)}
           />
         ))}
       </div>
-      <label className="note-toolbar__custom-color">
+      <label className="rich-toolbar__custom-color">
         <input type="color" value={pickerValue} onChange={(e) => onCustom(e.target.value)} />
         {customLabel}
       </label>
       {onClear && (
-        <button type="button" className="note-toolbar__text-btn" onMouseDown={preventFocusLoss} onClick={onClear}>
+        <button type="button" className="rich-toolbar__text-btn" onMouseDown={preventFocusLoss} onClick={onClear}>
           {clearLabel}
         </button>
       )}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import usePopoverDismiss from './usePopoverDismiss';
 import { preventFocusLoss } from './ToolbarButton';
-import { DEFAULT_FONT_SIZE, FONT_SIZE_PRESETS, parseFontSize } from '../noteFormatting';
+import { DEFAULT_FONT_SIZE, FONT_SIZE_PRESETS, parseFontSize } from '../richTextFormatting';
 
 const asDraft = (value) => (value == null ? '' : String(value));
 
@@ -33,17 +33,17 @@ const FontSizeCombo = ({ value, onApply, onShowTooltip, onHideTooltip }) => {
     apply(n);
   };
 
-  const label = t('notes.toolbar.fontSize');
+  const label = t('richText.toolbar.fontSize');
 
   return (
     <div
-      className="note-toolbar__anchor note-toolbar__size"
+      className="rich-toolbar__anchor rich-toolbar__size"
       ref={rootRef}
       onMouseEnter={(e) => { if (!isOpen) onShowTooltip?.(label, e.currentTarget); }}
       onMouseLeave={onHideTooltip}
     >
       <input
-        className="note-toolbar__size-input"
+        className="rich-toolbar__size-input"
         type="text"
         inputMode="numeric"
         value={draft}
@@ -62,8 +62,8 @@ const FontSizeCombo = ({ value, onApply, onShowTooltip, onHideTooltip }) => {
       />
       <button
         type="button"
-        className="note-toolbar__size-toggle"
-        aria-label={t('notes.toolbar.fontSizePresets')}
+        className="rich-toolbar__size-toggle"
+        aria-label={t('richText.toolbar.fontSizePresets')}
         aria-expanded={isOpen}
         onMouseDown={preventFocusLoss}
         onClick={() => setIsOpen((open) => !open)}
@@ -71,14 +71,14 @@ const FontSizeCombo = ({ value, onApply, onShowTooltip, onHideTooltip }) => {
         <ArrowDropDownIcon fontSize="small" />
       </button>
       {isOpen && (
-        <ul className="note-toolbar__popover note-toolbar__size-list" role="listbox">
+        <ul className="rich-toolbar__popover rich-toolbar__size-list" role="listbox">
           {FONT_SIZE_PRESETS.map((n) => (
             <li key={n}>
               <button
                 type="button"
                 role="option"
                 aria-selected={n === value}
-                className={`note-toolbar__size-option ${n === value ? 'note-toolbar__size-option--active' : ''}`}
+                className={`rich-toolbar__size-option ${n === value ? 'rich-toolbar__size-option--active' : ''}`}
                 onMouseDown={preventFocusLoss}
                 onClick={() => apply(n)}
               >

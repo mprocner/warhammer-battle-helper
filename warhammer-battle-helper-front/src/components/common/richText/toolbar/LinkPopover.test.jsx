@@ -37,7 +37,7 @@ describe('LinkPopover', () => {
     expect(onApply).not.toHaveBeenCalled();
   });
 
-  // Fresh mounts, not rerender: NoteToolbar mounts LinkPopover anew on every open, and
+  // Fresh mounts, not rerender: RichTextToolbar mounts LinkPopover anew on every open, and
   // useState(initialHref) seeds the field only on mount.
   it('offers remove only for an existing link', () => {
     render(<LinkPopover onApply={() => {}} onRemove={() => {}} />);

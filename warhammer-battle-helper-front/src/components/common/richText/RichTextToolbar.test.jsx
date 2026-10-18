@@ -1,19 +1,19 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '../../../i18n';
-import NoteToolbar from './NoteToolbar';
+import RichTextToolbar from './RichTextToolbar';
 import { createFakeEditor } from './testUtils/fakeEditor';
 
 const btn = (name) => screen.getByRole('button', { name });
 const renderToolbar = (options) => {
   const editor = createFakeEditor(options);
-  render(<NoteToolbar editor={editor} />);
+  render(<RichTextToolbar editor={editor} />);
   return editor;
 };
 
-describe('NoteToolbar', () => {
+describe('RichTextToolbar', () => {
   it('renders nothing before the editor exists', () => {
-    const { container } = render(<NoteToolbar editor={null} />);
+    const { container } = render(<RichTextToolbar editor={null} />);
     expect(container).toBeEmptyDOMElement();
   });
 

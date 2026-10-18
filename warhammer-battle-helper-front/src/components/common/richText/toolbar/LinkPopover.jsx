@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { normalizeHref } from '../noteFormatting';
+import { normalizeHref } from '../richTextFormatting';
 
 // Mounted fresh on every open, so initialHref only seeds the field once.
 const LinkPopover = ({ initialHref, onApply, onRemove }) => {
@@ -20,21 +20,21 @@ const LinkPopover = ({ initialHref, onApply, onRemove }) => {
   };
 
   return (
-    <form className="note-toolbar__popover note-toolbar__link-popover" onSubmit={handleSubmit}>
+    <form className="rich-toolbar__popover rich-toolbar__link-popover" onSubmit={handleSubmit}>
       <input
         ref={inputRef}
-        className="note-toolbar__link-input"
+        className="rich-toolbar__link-input"
         type="text"
         value={href}
-        placeholder={t('notes.toolbar.linkPlaceholder')}
-        aria-label={t('notes.toolbar.linkUrl')}
+        placeholder={t('richText.toolbar.linkPlaceholder')}
+        aria-label={t('richText.toolbar.linkUrl')}
         onChange={(e) => setHref(e.target.value)}
       />
-      <div className="note-toolbar__link-actions">
-        <button type="submit" className="note-toolbar__text-btn">{t('notes.toolbar.applyLink')}</button>
+      <div className="rich-toolbar__link-actions">
+        <button type="submit" className="rich-toolbar__text-btn">{t('richText.toolbar.applyLink')}</button>
         {initialHref && (
-          <button type="button" className="note-toolbar__text-btn" onClick={onRemove}>
-            {t('notes.toolbar.removeLink')}
+          <button type="button" className="rich-toolbar__text-btn" onClick={onRemove}>
+            {t('richText.toolbar.removeLink')}
           </button>
         )}
       </div>

@@ -7,7 +7,7 @@ import NoteEditorModal from './NoteEditorModal';
 // Ta sama atrapa TipTapa co w NoteEditorModal.autosaveEcho.test.jsx — tu interesuje
 // nas wyłącznie nagłówek, więc realny edytor byłby tylko kosztem.
 let mockEditor;
-jest.mock('./noteExtensions', () => ({ NOTE_EXTENSIONS: [] }));
+jest.mock('../../common/richText/richTextExtensions', () => ({ RICH_TEXT_EXTENSIONS: [] }));
 jest.mock('@tiptap/react', () => ({
   __esModule: true,
   useEditor: () => mockEditor,

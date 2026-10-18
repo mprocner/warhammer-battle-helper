@@ -89,6 +89,6 @@ describe('ToolbarPopoverButton', () => {
         <div />
       </ToolbarPopoverButton>,
     );
-    expect(document.querySelector('.note-toolbar__indicator')).toHaveStyle({ backgroundColor: '#a8322d' });
+    expect(document.querySelector('.rich-toolbar__indicator')).toHaveStyle({ backgroundColor: '#a8322d' });
   });
 });

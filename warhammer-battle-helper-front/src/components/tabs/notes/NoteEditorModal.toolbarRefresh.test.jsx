@@ -8,7 +8,7 @@ import NoteEditorModal from './NoteEditorModal';
 // the editor callbacks by hand.
 let mockEditor;
 let mockOptions;
-jest.mock('./noteExtensions', () => ({ NOTE_EXTENSIONS: [] }));
+jest.mock('../../common/richText/richTextExtensions', () => ({ RICH_TEXT_EXTENSIONS: [] }));
 jest.mock('@tiptap/react', () => ({
   __esModule: true,
   useEditor: (options) => { mockOptions = options; return mockEditor; },

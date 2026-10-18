@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '../../../../i18n';
 import ColorPopover from './ColorPopover';
-import { TEXT_COLORS, HIGHLIGHT_COLORS } from '../noteFormatting';
+import { TEXT_COLORS, HIGHLIGHT_COLORS } from '../richTextFormatting';
 
 const renderPopover = (props = {}) => {
   const handlers = { onSelect: jest.fn(), onCustom: jest.fn(), ...props };
@@ -13,7 +13,7 @@ const renderPopover = (props = {}) => {
 describe('ColorPopover', () => {
   it('renders one labelled swatch per palette entry', () => {
     renderPopover();
-    expect(document.querySelectorAll('.note-toolbar__swatch')).toHaveLength(TEXT_COLORS.length);
+    expect(document.querySelectorAll('.rich-toolbar__swatch')).toHaveLength(TEXT_COLORS.length);
     expect(screen.getByRole('button', { name: 'Red' })).toBeInTheDocument();
   });
 

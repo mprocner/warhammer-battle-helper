@@ -8,7 +8,7 @@ export const preventFocusLoss = (e) => e.preventDefault();
 export const ToolbarButton = ({ icon, label, onClick, active = false, onShowTooltip, onHideTooltip }) => (
   <button
     type="button"
-    className={`note-toolbar__btn ${active ? 'note-toolbar__btn--active' : ''}`}
+    className={`rich-toolbar__btn ${active ? 'rich-toolbar__btn--active' : ''}`}
     aria-label={label}
     aria-pressed={active}
     onMouseDown={preventFocusLoss}
@@ -36,10 +36,10 @@ export const ToolbarPopoverButton = ({
   usePopoverDismiss(anchorRef, isOpen, onClose);
 
   return (
-    <div className="note-toolbar__anchor" ref={anchorRef}>
+    <div className="rich-toolbar__anchor" ref={anchorRef}>
       <button
         type="button"
-        className={`note-toolbar__btn ${active || isOpen ? 'note-toolbar__btn--active' : ''}`}
+        className={`rich-toolbar__btn ${active || isOpen ? 'rich-toolbar__btn--active' : ''}`}
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
@@ -49,7 +49,7 @@ export const ToolbarPopoverButton = ({
         onMouseLeave={onHideTooltip}
       >
         {icon}
-        {indicatorColor && <span className="note-toolbar__indicator" style={{ backgroundColor: indicatorColor }} />}
+        {indicatorColor && <span className="rich-toolbar__indicator" style={{ backgroundColor: indicatorColor }} />}
       </button>
       {isOpen && children}
     </div>

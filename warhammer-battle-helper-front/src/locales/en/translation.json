@@ -778,7 +778,9 @@
     "loadError": "Failed to load notes",
     "createError": "Failed to create note",
     "updateError": "Failed to update note",
-    "deleteError": "Failed to delete note",
+    "deleteError": "Failed to delete note"
+  },
+  "richText": {
     "toolbar": {
       "label": "Formatting",
       "textStyle": "Text style",

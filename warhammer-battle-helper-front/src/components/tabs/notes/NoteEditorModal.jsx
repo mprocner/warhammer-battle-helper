@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
-import { NOTE_EXTENSIONS } from './noteExtensions';
-import NoteToolbar from './NoteToolbar';
+import { RICH_TEXT_EXTENSIONS } from '../../common/richText/richTextExtensions';
+import RichTextToolbar from '../../common/richText/RichTextToolbar';
 import ModalHeader from '../../common/ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../../contexts/WindowManagerContext';
 import { shouldApplyRemoteNote } from '../../../utils/noteSync';
@@ -52,7 +52,7 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
   const { hidden, zIndex, focus } = useManagedWindow({ id: windowId, kind: 'note', title: title || t('notes.newNote'), onClose });
 
   const editor = useEditor({
-    extensions: NOTE_EXTENSIONS,
+    extensions: RICH_TEXT_EXTENSIONS,
     content: '',
     onUpdate: () => scheduleAutoSave(),
     // Re-render the toolbar on every transaction: stored marks and node attrs applied on a
@@ -340,10 +340,10 @@ const NoteEditorModal = ({ isOpen, note, onClose, onSave, windowKey, index = 0 }
             </label>
           </div>
 
-          <NoteToolbar editor={editor} />
+          <RichTextToolbar editor={editor} />
 
           {/* Editor content */}
-          <div className="note-editor__content">
+          <div className="note-editor__content rich-text__content">
             <EditorContent editor={editor} />
           </div>
         </div>

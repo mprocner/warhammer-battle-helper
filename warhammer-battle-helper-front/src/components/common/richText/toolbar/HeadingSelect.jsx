@@ -8,7 +8,7 @@ const LEVELS = [1, 2, 3];
 const HeadingSelect = ({ editor, onShowTooltip, onHideTooltip }) => {
   const { t } = useTranslation();
   const current = LEVELS.find((level) => editor.isActive('heading', { level })) ?? 0;
-  const label = t('notes.toolbar.textStyle');
+  const label = t('richText.toolbar.textStyle');
 
   const handleChange = (e) => {
     const level = Number(e.target.value);
@@ -18,16 +18,16 @@ const HeadingSelect = ({ editor, onShowTooltip, onHideTooltip }) => {
 
   return (
     <select
-      className="note-toolbar__heading"
+      className="rich-toolbar__heading"
       value={current}
       onChange={handleChange}
       aria-label={label}
       onMouseEnter={(e) => onShowTooltip?.(label, e.currentTarget)}
       onMouseLeave={onHideTooltip}
     >
-      <option value={0}>{t('notes.toolbar.paragraph')}</option>
+      <option value={0}>{t('richText.toolbar.paragraph')}</option>
       {LEVELS.map((level) => (
-        <option key={level} value={level}>{t(`notes.toolbar.heading${level}`)}</option>
+        <option key={level} value={level}>{t(`richText.toolbar.heading${level}`)}</option>
       ))}
     </select>
   );

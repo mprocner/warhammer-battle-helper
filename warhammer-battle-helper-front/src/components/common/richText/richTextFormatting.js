@@ -1,13 +1,13 @@
-// Formatting constants and pure helpers for the note editor toolbar. No Tiptap import here,
+// Formatting constants and pure helpers for the rich-text editor toolbar. No Tiptap import here,
 // so toolbar components and their tests stay independent of the editor runtime.
 
-// Keep in sync with noteFontSizeRe in
-// warhammer-battle-helper-backend/internal/service/NoteService.go — the server strips any
+// Keep in sync with fontSizeRe in
+// warhammer-battle-helper-backend/internal/sanitize/richhtml.go — the server strips any
 // size outside this range, so a wider range here would silently lose formatting on save.
 export const FONT_SIZE_MIN = 8;
 export const FONT_SIZE_MAX = 72;
 export const FONT_SIZE_PRESETS = [12, 14, 16, 20, 24, 32];
-// Base size of .note-editor__content .tiptap in NotesTab.css.
+// Base size of .rich-text__content .tiptap in RichText.css.
 export const DEFAULT_FONT_SIZE = 13;
 
 // Every text colour has contrast >= 4.5:1 on #fff9f0. The first entry is the editor's own
