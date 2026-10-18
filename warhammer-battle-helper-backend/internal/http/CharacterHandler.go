@@ -75,10 +75,10 @@ func defaultStatsFor(sys systems.GameSystem, name string) bson.Raw {
 // sanitizeRichTexts cleans the HTML of a custom game's styled text fields (PLAYRPG-256). Create,
 // update and clone run it; other systems and games without a template pass through untouched.
 // It cleans only fields flagged as styled at write time, so a plain value saved before the GM
-// enabled the flag stays as it was until its next edit — safe, because the client escapes plain
-// values (plainToHtml) before the editor parses them. A failure keeps the stats as they are, like
-// SeedDefaults: a document that cannot be decoded also fails ComputeDerived, and the client
-// renders these fields only through the editor's schema, which drops unknown markup.
+// enabled the flag stays as it was until its next edit. That is safe because the client never
+// injects a stored value as HTML: the editor parses it inertly and keeps only what its schema
+// allows. A failure keeps the stats as they are, like SeedDefaults — a document that cannot be
+// decoded also fails ComputeDerived — and the same schema guarantee covers what is left.
 func sanitizeRichTexts(sys systems.GameSystem, game *models.Game, raw bson.Raw, where string) bson.Raw {
 	customPlugin, ok := sys.(*custom.Plugin)
 	if !ok || game == nil || game.CustomSystemTemplate == nil {
