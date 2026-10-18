@@ -1,11 +1,11 @@
-package service
+package sanitize
 
 import "testing"
 
-// Inputs in the "kept" cases mirror Tiptap 3.22.3 getHTML() output for the note editor
-// extensions (noteExtensions.js). If a Tiptap upgrade changes that markup, refresh these
+// Inputs in the "kept" cases mirror Tiptap 3.22.3 getHTML() output for the rich-text editor
+// extensions (richTextExtensions.js). If a Tiptap upgrade changes that markup, refresh these
 // strings from a real browser session, not from memory.
-func TestNoteHTMLPolicy(t *testing.T) {
+func TestRichHTML(t *testing.T) {
 	tests := []struct {
 		name string
 		in   string
@@ -64,7 +64,7 @@ func TestNoteHTMLPolicy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := noteHTMLPolicy.Sanitize(tt.in); got != tt.want {
+			if got := RichHTML(tt.in); got != tt.want {
 				t.Errorf("Sanitize(%q)\n got %q\nwant %q", tt.in, got, tt.want)
 			}
 		})
