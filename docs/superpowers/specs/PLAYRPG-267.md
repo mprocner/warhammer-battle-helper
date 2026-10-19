@@ -56,8 +56,9 @@ Bez zmian (`reorderById`, `lockToVerticalAxis` — czyste funkcje z własnymi te
 
 ### Migracja istniejących edytorów
 
-`AttrRowsEditor` i `TableColumnsEditor` przechodzą na moduł; `SortableAttrRow` i `SortableColumn`
-usunięte. Własne sensory/`DndContext` w obu plikach znikają. Zachowanie i DOM (klasy, etykiety
+`AttrRowsEditor` i `TableColumnsEditor` przechodzą na moduł. `SortableAttrRow` i `SortableColumn`
+zostają jako cienkie wrappery układu (hook trzeba wołać w komponencie per element), ale bez
+własnej logiki `useSortable`/`CSS`. Własne sensory/`DndContext` w obu plikach znikają. Zachowanie i DOM (klasy, etykiety
 uchwytów) bez zmian.
 
 ## 2. Nowe miejsca z DnD
