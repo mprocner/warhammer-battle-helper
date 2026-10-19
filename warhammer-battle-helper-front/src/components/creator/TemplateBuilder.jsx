@@ -946,6 +946,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
 
               <Divider sx={{ my: 1.5 }} />
               <TablePresetsEditor
+                sortedOnSheet={!!sortColumnKey(field)}
                 columns={field.columns || []}
                 presets={field.presetWeapons || []}
                 onChange={presetWeapons => up({ presetWeapons })}
@@ -981,6 +982,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               />
               <Divider sx={{ my: 1.5 }} />
               <TablePresetsEditor
+                sortedOnSheet={!!sortColumnKey(field)}
                 columns={field.columns || []}
                 presets={field.presetRows || []}
                 onChange={presetRows => up({ presetRows })}

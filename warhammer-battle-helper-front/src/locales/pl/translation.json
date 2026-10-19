@@ -1861,6 +1861,7 @@
     "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Bronie „zawsze na karcie\" pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
     "weaponPresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować bronie.",
     "tablePresetAlwaysOn": "Zawsze na karcie",
+    "tablePresetReorder": "Przesuń pozycję {{n}}",
     "weaponPresetAdd": "Dodaj broń",
     "weaponAttackRoll": "Rzut na atak",
     "weaponThresholdFromSkill": "Próg = wartość umiejętności wybranej w kolumnie „{{column}}”",

@@ -27,3 +27,24 @@ test('an unsorted skill table shows no hint', () => {
   renderPanel({ ...makeDefaultField('skill_table', t), skills: [{ id: 'skill_a', label: 'A' }] });
   expect(hint()).not.toBeInTheDocument();
 });
+
+const textCol = { key: 'c1', label: 'Name', type: 'text', options: [], optionsFromSkills: false };
+const numberCol = { key: 'c2', label: 'Weight', type: 'number', options: [], optionsFromSkills: false };
+const preset = { id: 'preset_a', cells: {}, alwaysOn: false };
+
+test('a sorted data table with a text column shows the hint', () => {
+  renderPanel({ ...makeDefaultField('data_table', t), columns: [textCol], presetRows: [preset], sortAlphabetically: true });
+  expect(hint()).toBeInTheDocument();
+});
+
+// sortColumnKey finds no text column to sort by, so the sheet keeps the GM's order despite the
+// flag — the hint would be false.
+test('a sorted data table without a text column shows no hint', () => {
+  renderPanel({ ...makeDefaultField('data_table', t), columns: [numberCol], presetRows: [preset], sortAlphabetically: true });
+  expect(hint()).not.toBeInTheDocument();
+});
+
+test('a sorted weapons table shows the hint under its preset weapons', () => {
+  renderPanel({ ...makeDefaultField('weapons_table', t), columns: [textCol], presetWeapons: [preset], sortAlphabetically: true });
+  expect(hint()).toBeInTheDocument();
+});
