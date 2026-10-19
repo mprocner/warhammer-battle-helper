@@ -1844,6 +1844,8 @@
     "skillDefaultAria": "Starting value – {{skill}}",
     "skillDefaultDraftAria": "Starting value of the new skill",
     "skillAddAria": "Add skill",
+    "skillReorder": "Move skill",
+    "reorderSortedHint": "The sheet sorts this list alphabetically — the order set here applies once sorting is turned off.",
     "tableColumns": "Columns",
     "tableColumnLabel": "Column name",
     "tableColumnReorder": "Move column",

@@ -77,3 +77,25 @@ test('with a derived base the default inputs are hidden, the stored value untouc
   expect(screen.queryByLabelText(i18n.t('creator.skillDefaultDraftAria'))).toBeNull();
   expect(onChange).not.toHaveBeenCalled();
 });
+
+describe('reordering', () => {
+  const two = [
+    { id: 'skill_a', label: 'Athletics', attr: '' },
+    { id: 'skill_b', label: '', attr: '' },
+  ];
+
+  test('every skill has a labelled drag handle, the add row has none', () => {
+    setup({ skills: two });
+    expect(screen.getByLabelText(`${i18n.t('creator.skillReorder')} – Athletics`)).toBeInTheDocument();
+    // An unnamed skill still gets a handle, labelled without the dash.
+    expect(screen.getAllByLabelText(i18n.t('creator.skillReorder'))).toHaveLength(1);
+  });
+
+  test('the sorted-on-sheet hint shows only when the sheet sorts', () => {
+    const { unmount } = render(<SkillOptionsEditor label="Skills" skills={two} onChange={() => {}} />);
+    expect(screen.queryByText(i18n.t('creator.reorderSortedHint'))).not.toBeInTheDocument();
+    unmount();
+    render(<SkillOptionsEditor label="Skills" skills={two} onChange={() => {}} sortedOnSheet />);
+    expect(screen.getByText(i18n.t('creator.reorderSortedHint'))).toBeInTheDocument();
+  });
+});

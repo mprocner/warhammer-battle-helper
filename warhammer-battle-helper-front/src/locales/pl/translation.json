@@ -1844,6 +1844,8 @@
     "skillDefaultAria": "Wartość startowa – {{skill}}",
     "skillDefaultDraftAria": "Wartość startowa nowej umiejętności",
     "skillAddAria": "Dodaj umiejętność",
+    "skillReorder": "Przesuń umiejętność",
+    "reorderSortedHint": "Karta sortuje tę listę alfabetycznie — ustawiona tu kolejność zadziała po wyłączeniu sortowania.",
     "tableColumns": "Kolumny",
     "tableColumnLabel": "Nazwa kolumny",
     "tableColumnReorder": "Przesuń kolumnę",

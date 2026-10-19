@@ -56,6 +56,9 @@ import SectionChrome from './SectionChrome';
 import EditablePlaceholder from './EditablePlaceholder';
 import FormulaBuilder from './FormulaBuilder';
 import AttrRowsEditor, { toInt } from './AttrRowsEditor';
+import SortableList from '../common/sortable/SortableList';
+import useSortableItem from '../common/sortable/useSortableItem';
+import DragGrip from '../common/sortable/DragGrip';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
@@ -247,13 +250,27 @@ function SkillTreeEditor({ tree, onChange, numberFields, assignAttrToSkill = fal
 
 // ── SkillOptionsEditor ───────────────────────────────────────────────────────
 
+// One skill row. The row moves under the drag transform; the grip in front of it is the only
+// part that starts a drag, so the label and default inputs stay selectable.
+function SortableSkillRow({ id, gripLabel, children }) {
+  const { rootProps, gripProps, isDragging } = useSortableItem(id);
+  return (
+    <div {...rootProps} className={`creator__option-row${isDragging ? ' creator__drag-item--dragging' : ''}`}>
+      <DragGrip label={gripLabel} {...gripProps} />
+      {children}
+    </div>
+  );
+}
+
 // Skill rows for a "skill_table" field. Each row is { id, label, attr?, default? }: id is a stable
 // key minted once (never derived from label), so renaming a skill keeps the player's stored value
 // under "<fieldKey>.<id>". attr is only edited when the field has assignAttrToSkill enabled.
 // default is the base a new character starts with (PLAYRPG-277; seeded by SeedDefaults). It is
 // hidden while baseDerived, because the base then comes from the attribute — but never cleared,
 // so toggling the derived mode back and forth keeps what the GM typed.
-export function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false, numberFields = [], baseDerived = false }) {
+// Rows are reordered by their grip; sortedOnSheet says the sheet sorts them alphabetically anyway,
+// which the editor states rather than hiding the grips — the order is kept for when sorting is off.
+export function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill = false, numberFields = [], baseDerived = false, sortedOnSheet = false }) {
   const { t } = useTranslation();
   const [draftLabel,   setDraftLabel]   = useState('');
   const [draftAttr,    setDraftAttr]    = useState('');
@@ -273,31 +290,37 @@ export function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill 
     <div className="creator__options-editor">
       <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
       <div className="creator__options-list">
-        {list.map((opt, i) => (
-          <div key={opt.id} className="creator__option-row">
-            <input className="creator__option-input" value={opt.label} onChange={e => update(i, { label: e.target.value })} />
-            {!baseDerived && (
-              <input
-                className="creator__option-default-input"
-                type="number"
-                step={1}
-                value={opt.default ?? ''}
-                placeholder={t('creator.skillDefaultPlaceholder')}
-                aria-label={t('creator.skillDefaultAria', { skill: opt.label })}
-                onChange={e => update(i, { default: toInt(e.target.value) })}
-              />
-            )}
-            {assignAttrToSkill && (
-              <select className="creator__option-attr-select" value={opt.attr || ''} onChange={e => update(i, { attr: e.target.value })}>
-                <option value="">{t('creator.optionsNoAttr')}</option>
-                {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
-              </select>
-            )}
-            <button className="creator__option-del" onClick={() => onChange(list.filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
-          </div>
-        ))}
+        <SortableList items={list} onReorder={onChange}>
+          {list.map((opt, i) => (
+            <SortableSkillRow
+              key={opt.id}
+              id={opt.id}
+              gripLabel={opt.label ? `${t('creator.skillReorder')} – ${opt.label}` : t('creator.skillReorder')}
+            >
+              <input className="creator__option-input" value={opt.label} onChange={e => update(i, { label: e.target.value })} />
+              {!baseDerived && (
+                <input
+                  className="creator__option-default-input"
+                  type="number"
+                  step={1}
+                  value={opt.default ?? ''}
+                  placeholder={t('creator.skillDefaultPlaceholder')}
+                  aria-label={t('creator.skillDefaultAria', { skill: opt.label })}
+                  onChange={e => update(i, { default: toInt(e.target.value) })}
+                />
+              )}
+              {assignAttrToSkill && (
+                <select className="creator__option-attr-select" value={opt.attr || ''} onChange={e => update(i, { attr: e.target.value })}>
+                  <option value="">{t('creator.optionsNoAttr')}</option>
+                  {numberFields.map(f => <option key={f.key} value={f.key}>{f.abbr || f.label}</option>)}
+                </select>
+              )}
+              <button className="creator__option-del" onClick={() => onChange(list.filter((_, j) => j !== i))}><DeleteIcon style={{ fontSize: 13 }} /></button>
+            </SortableSkillRow>
+          ))}
+        </SortableList>
       </div>
-      <div className="creator__options-add">
+      <div className="creator__options-add creator__options-add--grip-offset">
         <input
           className="creator__option-input"
           value={draftLabel}
@@ -327,6 +350,11 @@ export function SkillOptionsEditor({ label, skills, onChange, assignAttrToSkill 
           <AddIcon style={{ fontSize: 13 }} />
         </button>
       </div>
+      {sortedOnSheet && (
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontStyle: 'italic' }}>
+          {t('creator.reorderSortedHint')}
+        </Typography>
+      )}
     </div>
   );
 }
@@ -887,6 +915,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               assignAttrToSkill={!!field.assignAttrToSkill}
               numberFields={numberFields}
               baseDerived={isSkillBaseDerived(field)}
+              sortedOnSheet={!!field.sortAlphabetically}
             />
           )}
 
