@@ -13,7 +13,7 @@ jest.mock('@dnd-kit/sortable', () => {
   return {
     ...actual,
     useSortable: () => ({
-      attributes: {},
+      attributes: { 'aria-roledescription': 'sortable' },
       listeners: {},
       setNodeRef: () => {},
       setActivatorNodeRef: () => {},
@@ -46,5 +46,6 @@ test('the grip is a labelled non-submit button', () => {
   const grip = screen.getByLabelText('Move');
   expect(grip.tagName).toBe('BUTTON');
   expect(grip).toHaveAttribute('type', 'button');
+  expect(grip).toHaveAttribute('aria-roledescription', 'sortable');
   expect(grip).toHaveClass('creator__drag-grip');
 });

@@ -21,8 +21,8 @@ test('every preset has a numbered drag handle', () => {
 
 test('the sorted-on-sheet hint shows only when the sheet sorts', () => {
   const { unmount } = renderEditor();
-  expect(screen.queryByText(i18n.t('creator.reorderSortedHint'))).not.toBeInTheDocument();
+  expect(screen.queryByText(i18n.t('creator.presetReorderSortedHint'))).not.toBeInTheDocument();
   unmount();
   renderEditor({ sortedOnSheet: true });
-  expect(screen.getByText(i18n.t('creator.reorderSortedHint'))).toBeInTheDocument();
+  expect(screen.getByText(i18n.t('creator.presetReorderSortedHint'))).toBeInTheDocument();
 });

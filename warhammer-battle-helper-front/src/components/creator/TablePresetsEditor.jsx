@@ -104,9 +104,11 @@ function TablePresetsEditor({ columns, presets, onChange, skillOptions = [], ico
           <button className="creator__tree-add-root" onClick={add}>
             <AddIcon style={{ fontSize: 14 }} /> {labels.add}
           </button>
+          {/* Differs from the skill hint: catalog presets (alwaysOn=false) are not sorted on the sheet,
+              so the GM's order still drives the players' add-from-list immediately. */}
           {sortedOnSheet && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontStyle: 'italic' }}>
-              {t('creator.reorderSortedHint')}
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontStyle: 'italic', mt: 0.5 }}>
+              {t('creator.presetReorderSortedHint')}
             </Typography>
           )}
         </div>

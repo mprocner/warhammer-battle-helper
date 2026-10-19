@@ -13,6 +13,7 @@ jest.mock('axios', () => {
 
 const t = i18n.t.bind(i18n);
 const hint = () => screen.queryByText(t('creator.reorderSortedHint'));
+const presetHint = () => screen.queryByText(t('creator.presetReorderSortedHint'));
 
 const renderPanel = (field) => render(
   <PropertyPanel field={field} onChange={() => {}} onDelete={() => {}} numberFields={[]} numericFields={[]} sections={[]} />
@@ -21,6 +22,7 @@ const renderPanel = (field) => render(
 test('a skill table sorted on the sheet tells the GM the order is set aside', () => {
   renderPanel({ ...makeDefaultField('skill_table', t), skills: [{ id: 'skill_a', label: 'A' }], sortAlphabetically: true });
   expect(hint()).toBeInTheDocument();
+  expect(presetHint()).not.toBeInTheDocument();
 });
 
 test('an unsorted skill table shows no hint', () => {
@@ -34,17 +36,18 @@ const preset = { id: 'preset_a', cells: {}, alwaysOn: false };
 
 test('a sorted data table with a text column shows the hint', () => {
   renderPanel({ ...makeDefaultField('data_table', t), columns: [textCol], presetRows: [preset], sortAlphabetically: true });
-  expect(hint()).toBeInTheDocument();
+  expect(presetHint()).toBeInTheDocument();
+  expect(hint()).not.toBeInTheDocument();
 });
 
 // sortColumnKey finds no text column to sort by, so the sheet keeps the GM's order despite the
 // flag — the hint would be false.
 test('a sorted data table without a text column shows no hint', () => {
   renderPanel({ ...makeDefaultField('data_table', t), columns: [numberCol], presetRows: [preset], sortAlphabetically: true });
-  expect(hint()).not.toBeInTheDocument();
+  expect(presetHint()).not.toBeInTheDocument();
 });
 
 test('a sorted weapons table shows the hint under its preset weapons', () => {
   renderPanel({ ...makeDefaultField('weapons_table', t), columns: [textCol], presetWeapons: [preset], sortAlphabetically: true });
-  expect(hint()).toBeInTheDocument();
+  expect(presetHint()).toBeInTheDocument();
 });

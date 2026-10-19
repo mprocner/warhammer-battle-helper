@@ -1862,6 +1862,7 @@
     "weaponPresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować bronie.",
     "tablePresetAlwaysOn": "Zawsze na karcie",
     "tablePresetReorder": "Przesuń pozycję {{n}}",
+    "presetReorderSortedHint": "Karta sortuje tę tabelę alfabetycznie — ustawiona tu kolejność obowiązuje na liście, z której gracze dodają, oraz w tabeli po wyłączeniu sortowania.",
     "weaponPresetAdd": "Dodaj broń",
     "weaponAttackRoll": "Rzut na atak",
     "weaponThresholdFromSkill": "Próg = wartość umiejętności wybranej w kolumnie „{{column}}”",

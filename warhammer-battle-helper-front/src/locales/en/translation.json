@@ -1862,6 +1862,7 @@
     "weaponPresetsNoColumns": "Add at least one column above before defining preset weapons.",
     "tablePresetAlwaysOn": "Always on the sheet",
     "tablePresetReorder": "Move preset {{n}}",
+    "presetReorderSortedHint": "The sheet sorts this table alphabetically — the order set here applies to the list players add from, and to the table once sorting is turned off.",
     "weaponPresetAdd": "Add preset weapon",
     "weaponAttackRoll": "Attack roll",
     "weaponThresholdFromSkill": "Threshold = the value of the skill picked in the \"{{column}}\" column",
