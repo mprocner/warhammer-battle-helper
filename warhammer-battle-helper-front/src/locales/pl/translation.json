@@ -1164,10 +1164,10 @@
         "body": {
           "default": "Co zawiera pole.",
           "select": "Opcje, spośród których gracz wybiera.",
-          "skill_table": "Umiejętności na liście z opcjonalną wartością startową, opcjonalnie powiązane z atrybutem, oraz to, czy gracze mogą dodawać własne.",
+          "skill_table": "Umiejętności na liście z opcjonalną wartością startową, opcjonalnie powiązane z atrybutem, oraz to, czy gracze mogą dodawać własne. Kolejność ustawisz, przeciągając uchwyt.",
           "skill_tree": "Drzewo umiejętności — dodawaj podrzędne, aby tworzyć specjalizacje — oraz to, czy gracze mogą dodawać własne.",
-          "weapons_table": "Kolumny (jedna może wskazywać umiejętność ataku), formuła obrażeń i predefiniowane bronie od MG.",
-          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, zawsze na karcie albo jako lista do wyboru."
+          "weapons_table": "Kolumny (jedna może wskazywać umiejętność ataku), formuła obrażeń i predefiniowane bronie od MG. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt.",
+          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, zawsze na karcie albo jako lista do wyboru. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt."
         }
       },
       "roll": {
