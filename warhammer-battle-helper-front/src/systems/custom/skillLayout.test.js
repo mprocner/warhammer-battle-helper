@@ -1,8 +1,36 @@
 import {
   skillGridTemplate, buildSkillRows, splitHalf, siblingItems, sortItems,
   subtreeSize, splitBranchesWeighted, resolveSkillValues, isSkillBaseDerived,
-  flattenTree, treeGridTemplate,
+  flattenTree, treeGridTemplate, collectSkillOptions,
 } from './skillLayout';
+
+describe('collectSkillOptions', () => {
+  it('lists every skill alphabetically, the player\'s own among the template ones', () => {
+    const sections = [{
+      fields: [
+        { type: 'skill_table', key: 'combat', skills: [{ id: 's1', label: 'Swords' }, { id: 's2', label: 'Axes' }] },
+        { type: 'skill_table', key: 'lore', skills: [{ id: 's3', label: 'History' }] },
+      ],
+    }];
+    const customSkillNodes = { 'combat.c1': { label: 'Bows' } };
+    expect(collectSkillOptions(sections, customSkillNodes)).toEqual([
+      { key: 'combat.s2', label: 'Axes' },
+      { key: 'combat.c1', label: 'Bows' },
+      { key: 'lore.s3', label: 'History' },
+      { key: 'combat.s1', label: 'Swords' },
+    ]);
+  });
+
+  it('sorts skill_tree nodes flat together with table skills', () => {
+    const sections = [{
+      fields: [
+        { type: 'skill_table', key: 'basic', skills: [{ id: 's1', label: 'Melee' }] },
+        { type: 'skill_tree', key: 'tree', tree: { children: [{ key: 'craft', label: 'Craft', children: [{ key: 'alchemy', label: 'Alchemy' }] }] } },
+      ],
+    }];
+    expect(collectSkillOptions(sections, {}).map(o => o.label)).toEqual(['Alchemy', 'Craft', 'Melee']);
+  });
+});
 
 describe('skillGridTemplate', () => {
   it('lays out the bare minimum: name plus one value', () => {

@@ -58,14 +58,17 @@ function isDirectChild(key, prefix) {
   return key.startsWith(prefix) && !key.slice(prefix.length).includes('.');
 }
 
-// collectSkillOptions gathers {key, label} for every skill the character has. Its only caller is
-// the weapons table's "from skills" select (WeaponsTable.jsx), but it lives here rather than in
-// weaponLayout.js because what it does is compose skill keys, not lay out weapons: skill_table
-// rows use `${field.key}.${opt.id}` (stable id, not the label) — the exact same grammar
-// buildSkillRows below uses — and skill_tree nodes use the dot-path `${field.key}.${node.key}…`.
-// Keeping every piece of skill-key composition in one file means a change to how a skill_table row
-// is keyed happens in the obvious place; split across two modules, the weapons select could keep
-// offering keys nothing resolves — a roll that silently misses.
+// collectSkillOptions gathers {key, label} for every skill the character has, sorted by label. Its
+// callers are the weapons table's "from skills" select (WeaponsTable.jsx) and the creator's preset
+// weapon editor (TemplateBuilder.jsx). The list is always alphabetical, whatever the skill fields'
+// own sortAlphabetically says: whoever picks a weapon's skill already knows its name, and a sorted
+// list is the one you can scan for a name. The select stores the key, so order carries no data.
+// It lives here rather than in weaponLayout.js because what it does is compose skill keys, not lay
+// out weapons: skill_table rows use `${field.key}.${opt.id}` (stable id, not the label) — the exact
+// same grammar buildSkillRows below uses — and skill_tree nodes use the dot-path
+// `${field.key}.${node.key}…`. Keeping every piece of skill-key composition in one file means a
+// change to how a skill_table row is keyed happens in the obvious place; split across two modules,
+// the weapons select could keep offering keys nothing resolves — a roll that silently misses.
 export function collectSkillOptions(sections, customSkillNodes) {
   const out = [];
   const seen = new Set();
@@ -85,7 +88,7 @@ export function collectSkillOptions(sections, customSkillNodes) {
     }
   });
   for (const [key, node] of Object.entries(customSkillNodes || {})) push(key, node.label);
-  return out;
+  return out.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 // buildSkillRows merges a skill_table's GM-defined rows with the player's own additions into one
