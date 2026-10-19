@@ -90,7 +90,10 @@ uchwytów) bez zmian.
 
 ### i18n (en + pl)
 
-Nowe klucze: `creator.skillReorder`, `creator.tablePresetReorder`, `creator.reorderSortedHint`.
+Nowe klucze: `creator.skillReorder`, `creator.tablePresetReorder`, `creator.reorderSortedHint`
+(umiejętności), `creator.presetReorderSortedHint` (presety — osobny tekst, bo arkusz sortuje tylko
+presety „zawsze na karcie” i wiersze gracza; lista „dodaj z listy” w `RowTable.jsx` idzie w
+kolejności MG także przy włączonym sortowaniu).
 
 ## 3. Tutorial
 
