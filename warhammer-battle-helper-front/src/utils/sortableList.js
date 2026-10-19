@@ -1,6 +1,6 @@
 import { arrayMove } from '@dnd-kit/sortable';
 
-// Helpers shared by the creator's drag-to-reorder lists (attr_table rows, table columns).
+// Helpers behind components/common/sortable (the creator's drag-to-reorder lists).
 
 // Items only ever move up or down. Written inline rather than pulled from @dnd-kit/modifiers:
 // a modifier is a plain transform function, and a new dependency costs a container volume rebuild.
