@@ -1352,7 +1352,14 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // { kind: 'forbidden' } once the server refused a save and autosave is paused.
   const [saveBlock, setSaveBlock] = useState(null);
   const saveBlockRef = useRef(null);
-  saveBlockRef.current = saveBlock;
+  // The ref is written together with the state, at the moment of the change: queued saves and
+  // timers read it before React re-renders, so a render-time sync would leave a window.
+  // Setting a block also drops the pending debounce timer, which would otherwise fire later.
+  const changeSaveBlock = useCallback((block) => {
+    saveBlockRef.current = block;
+    setSaveBlock(block);
+    if (block) clearTimeout(saveTimer.current);
+  }, []);
 
   // ── Drag-and-drop state ─────────────────────────────────────────────────────
   //
@@ -1456,7 +1463,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   useEffect(() => {
     applyTemplate(template);
-    setSaveBlock(null);
+    changeSaveBlock(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
@@ -1464,6 +1471,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // makes the server accept this state on top of the other person's save.
   const sendSave = useCallback(async (currentSections, currentName, versionOverride) => {
     if (!template?.id) return;
+    // A save queued before the refusal must not run after it; only "overwrite with mine"
+    // (which passes versionOverride) may send while a block is up.
+    if (saveBlockRef.current && versionOverride === undefined) return;
     setIsSaving(true);
     try {
       const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
@@ -1478,23 +1488,25 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       });
       if (res.status === 409) {
         const body = await res.json();
-        setSaveBlock({ kind: 'conflict', email: body.updatedBy, updatedAt: body.updatedAt, version: body.version });
+        changeSaveBlock({ kind: 'conflict', email: body.updatedBy, updatedAt: body.updatedAt, version: body.version });
         return;
       }
       if (res.status === 403) {
-        setSaveBlock({ kind: 'forbidden' });
+        changeSaveBlock({ kind: 'forbidden' });
         return;
       }
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
       versionRef.current = updated.version;
+      // A save the server accepted means no refusal is outstanding (e.g. after overwrite).
+      changeSaveBlock(null);
       onTemplateUpdated?.(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch { /* silent */ } finally {
       setIsSaving(false);
     }
-  }, [template?.id, token, onTemplateUpdated]);
+  }, [template?.id, token, onTemplateUpdated, changeSaveBlock]);
 
   const saveTemplate = useCallback((currentSections, currentName, versionOverride) => {
     saveChain.current = saveChain.current.then(() => sendSave(currentSections, currentName, versionOverride));
@@ -1530,6 +1542,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   }, [onClose]);
 
   const handleReloadTheirs = useCallback(async () => {
+    // A timer set before the conflict would save the discarded local copy over the server copy.
+    clearTimeout(saveTimer.current);
     try {
       const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
         headers: getApiHeaders({ 'Authorization': `Bearer ${token}` }),
@@ -1538,17 +1552,16 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
       const fresh = await res.json();
       applyTemplate(fresh);
       onTemplateUpdated?.(fresh);
-      setSaveBlock(null);
+      changeSaveBlock(null);
     } catch { /* banner stays; the user can retry */ }
-  }, [template?.id, token, applyTemplate, onTemplateUpdated]);
+  }, [template?.id, token, applyTemplate, onTemplateUpdated, changeSaveBlock]);
 
   const handleOverwriteMine = useCallback(() => {
     const version = saveBlockRef.current?.version;
-    setSaveBlock(null);
-    saveBlockRef.current = null;
+    changeSaveBlock(null);
     clearTimeout(saveTimer.current);
     saveTemplate(sectionsRef.current, nameRef.current, version);
-  }, [saveTemplate]);
+  }, [saveTemplate, changeSaveBlock]);
 
   // ── Tree operations ────────────────────────────────────────────────────────
   //

@@ -107,3 +107,60 @@ test('saves are serialized: a second save waits for the first and sends its new 
   await waitFor(() => expect(patches()).toHaveLength(2));
   expect(JSON.parse(patches()[1][1].body).version).toBe(4);
 });
+
+test('a timer pending when the 409 lands does not save after "Load their version"', async () => {
+  let resolveFirst;
+  global.fetch.mockReturnValueOnce(new Promise(r => { resolveFirst = r; }));
+  mount();
+  rename('A');
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+  rename('Mine');
+
+  await act(async () => { resolveFirst({ ok: false, status: 409, json: () => Promise.resolve({ error: 'version conflict', version: 9, updatedBy: '', updatedAt: '2026-10-20T14:32:00Z' }) }); });
+  await screen.findByText(/Someone else saved this template/);
+
+  global.fetch.mockReturnValueOnce(respond(200, { ...base, name: 'Theirs', version: 9 }));
+  fireEvent.click(screen.getByRole('button', { name: 'Load their version' }));
+  await waitFor(() => expect(screen.getByPlaceholderText('System name')).toHaveValue('Theirs'));
+
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+  expect(screen.getByPlaceholderText('System name')).toHaveValue('Theirs');
+});
+
+test('a save queued behind a save that gets a 409 is not sent, and overwrite leaves no banner', async () => {
+  let resolveFirst;
+  global.fetch.mockReturnValueOnce(new Promise(r => { resolveFirst = r; }));
+  mount();
+  rename('A');
+  await flushDebounce();
+  rename('AB');
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+
+  await act(async () => { resolveFirst({ ok: false, status: 409, json: () => Promise.resolve({ error: 'version conflict', version: 9, updatedBy: 'anna@example.com', updatedAt: '2026-10-20T14:32:00Z' }) }); });
+  await screen.findByText(/anna@example\.com saved this template/);
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+
+  global.fetch.mockReturnValueOnce(respond(200, { ...base, name: 'AB', version: 10 }));
+  fireEvent.click(screen.getByRole('button', { name: 'Overwrite with mine' }));
+  await waitFor(() => expect(patches()).toHaveLength(2));
+  await waitFor(() => expect(screen.queryByText(/saved this template/)).not.toBeInTheDocument());
+  await flushDebounce();
+  expect(patches()).toHaveLength(2);
+});
+
+test('closing the dialog while a banner is up sends no save', async () => {
+  global.fetch.mockReturnValueOnce(respond(409, { error: 'version conflict', version: 9, updatedBy: '', updatedAt: '2026-10-20T14:32:00Z' }));
+  mount();
+  rename('A');
+  await flushDebounce();
+  await screen.findByText(/Someone else saved this template/);
+  rename('AB');
+
+  fireEvent.click(screen.getAllByTestId('CloseIcon')[0]);
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+});
