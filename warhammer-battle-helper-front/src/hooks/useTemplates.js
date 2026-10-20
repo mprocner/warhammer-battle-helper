@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 
-// useTemplates owns the custom-system templates visible to the user: their own plus every
-// public one (flagged isOwner by the server). Token-config templates are filtered out
+// useTemplates owns the custom-system templates visible to the user: those they are a member of
+// plus every public one (each carrying myRole/permissions from the server). Token-config templates are filtered out
 // server-side — they describe a hardcoded system's token overlay, not a playable system.
 //
 // Template failures are non-critical: the lobby stays usable without the list, so errors
@@ -68,13 +68,29 @@ export function useTemplates(token) {
     }
   }, [authHeaders, t]);
 
+  // Leaving answers ok only once the server removed the membership; a refused leave (last owner)
+  // keeps the row, so the list never shows a state the server does not have.
+  const leaveTemplate = useCallback(async (templateId) => {
+    try {
+      const res = await fetch(`${getApiUrl()}/templates/${templateId}/membership`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (!res.ok) return false;
+      setTemplates(prev => prev.filter(tpl => tpl.id !== templateId));
+      return true;
+    } catch {
+      return false;
+    }
+  }, [authHeaders]);
+
   // Swaps in a template edited elsewhere (the builder) without a refetch.
   const replaceTemplate = useCallback((updated) => {
     if (!updated?.id) return;
     setTemplates(prev => prev.map(tpl => (tpl.id === updated.id ? updated : tpl)));
   }, []);
 
-  return { templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, replaceTemplate };
+  return { templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, leaveTemplate, replaceTemplate };
 }
 
 export default useTemplates;

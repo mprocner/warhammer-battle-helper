@@ -25,14 +25,14 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
     setError, fetchGames, createGame, deleteGame, leaveGame, syncTemplate,
   } = useGames(token);
   const {
-    templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, replaceTemplate,
+    templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, leaveTemplate, replaceTemplate,
   } = useTemplates(token);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [gamePrompt, setGamePrompt] = useState(null);          // { type: 'delete'|'leave'|'sync', game }
-  const [templatePrompt, setTemplatePrompt] = useState(null);  // template pending deletion
+  const [templatePrompt, setTemplatePrompt] = useState(null);  // { type: 'delete'|'leave', template }
 
   // The lists change rarely — a single fetch on mount is enough (F5 refreshes them),
   // and every lobby action updates state itself.
@@ -70,11 +70,13 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
     else leaveGame(game.id);
   }, [gamePrompt, deleteGame, leaveGame, syncTemplate]);
 
-  const handleConfirmTemplateDelete = useCallback(() => {
+  const handleConfirmTemplatePrompt = useCallback(() => {
     if (!templatePrompt) return;
-    deleteTemplate(templatePrompt.id);
+    const { type, template } = templatePrompt;
     setTemplatePrompt(null);
-  }, [templatePrompt, deleteTemplate]);
+    if (type === 'delete') deleteTemplate(template.id);
+    else leaveTemplate(template.id);
+  }, [templatePrompt, deleteTemplate, leaveTemplate]);
 
   return (
     <>
@@ -140,7 +142,8 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
         onCreateTemplate={handleCreateTemplate}
         onEditTemplate={setEditingTemplate}
         onCloneTemplate={cloneTemplate}
-        onDeleteTemplate={setTemplatePrompt}
+        onDeleteTemplate={(tpl) => setTemplatePrompt({ type: 'delete', template: tpl })}
+        onLeaveTemplate={(tpl) => setTemplatePrompt({ type: 'leave', template: tpl })}
       />
 
       <ConfirmDialog
@@ -164,10 +167,12 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
       <ConfirmDialog
         open={!!templatePrompt}
         danger
-        title={t('common.delete')}
-        message={t('creator.deleteConfirm', { name: templatePrompt?.name })}
-        confirmLabel={t('common.delete')}
-        onConfirm={handleConfirmTemplateDelete}
+        title={templatePrompt?.type === 'leave' ? t('creator.leaveTemplate') : t('common.delete')}
+        message={templatePrompt?.type === 'leave'
+          ? t('creator.leaveTemplateConfirm', { name: templatePrompt?.template?.name })
+          : t('creator.deleteConfirm', { name: templatePrompt?.template?.name })}
+        confirmLabel={templatePrompt?.type === 'leave' ? t('creator.leaveTemplate') : t('common.delete')}
+        onConfirm={handleConfirmTemplatePrompt}
         onCancel={() => setTemplatePrompt(null)}
       />
 

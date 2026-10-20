@@ -13,9 +13,9 @@ jest.mock('axios', () => {
 });
 
 const templates = [
-  { id: 'm1', name: 'Moja Kampania', isOwner: true, updatedAt: '2026-10-01T10:00:00Z' },
-  { id: 's1', name: 'Łowcy Czarownic', isOwner: false, sharedWithMe: true, ownerEmail: 'alice@example.com' },
-  { id: 'p1', name: 'Mroczne Ziemie', isOwner: false, isPublic: true },
+  { id: 'm1', name: 'Moja Kampania', myRole: 'owner', updatedAt: '2026-10-01T10:00:00Z' },
+  { id: 's1', name: 'Łowcy Czarownic', myRole: 'viewer', ownerEmails: ['alice@example.com'] },
+  { id: 'p1', name: 'Mroczne Ziemie', isPublic: true },
 ];
 
 const ALL_SYSTEMS = ['warhammer4e', 'coc7e', 'coc7e_dark_ages', 'srd5', 'custom'];
@@ -83,8 +83,8 @@ describe('CreateGameDialog system search', () => {
   it('renders same-named templates as separate options without duplicate-key warnings', async () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const twins = [
-      { id: 'p1', name: 'Dwojaki', isOwner: false, isPublic: true },
-      { id: 'p2', name: 'Dwojaki', isOwner: false, isPublic: true },
+      { id: 'p1', name: 'Dwojaki', isPublic: true },
+      { id: 'p2', name: 'Dwojaki', isPublic: true },
     ];
     await renderDialog({ templates: twins });
     const listbox = search('dwojaki');

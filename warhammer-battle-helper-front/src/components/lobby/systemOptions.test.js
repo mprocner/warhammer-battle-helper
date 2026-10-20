@@ -8,13 +8,13 @@ const systems = [
 ];
 
 const templates = [
-  { id: 'p2', name: 'zombie Apocalypse', isOwner: false, isPublic: true },
-  { id: 'm-old', name: 'Old Mine', isOwner: true, updatedAt: '2026-09-01T10:00:00Z' },
-  { id: 's1', name: 'Wiedźmin', isOwner: false, sharedWithMe: true, ownerEmail: 'alice@example.com' },
-  { id: 'p1', name: 'Arkham Nights', isOwner: false, isPublic: true },
-  { id: 'm-new', name: 'New Mine', isOwner: true, updatedAt: '2026-10-04T10:00:00.5Z' },
-  { id: 's2', name: 'Bastion', isOwner: false, isPublic: true, sharedWithMe: true, ownerEmail: 'bob@example.com' },
-  { id: 's3', name: 'Cień', isOwner: false, sharedWithMe: true },
+  { id: 'p2', name: 'zombie Apocalypse', isPublic: true },
+  { id: 'm-old', name: 'Old Mine', myRole: 'owner', updatedAt: '2026-09-01T10:00:00Z' },
+  { id: 's1', name: 'Wiedźmin', myRole: 'viewer', ownerEmails: ['alice@example.com'] },
+  { id: 'p1', name: 'Arkham Nights', isPublic: true },
+  { id: 'm-new', name: 'New Mine', myRole: 'owner', updatedAt: '2026-10-04T10:00:00.5Z' },
+  { id: 's2', name: 'Bastion', isPublic: true, myRole: 'editor', ownerEmails: ['bob@example.com', 'carol@example.com'] },
+  { id: 's3', name: 'Cień', myRole: 'viewer' },
 ];
 
 describe('buildSystemOptions', () => {
@@ -43,7 +43,7 @@ describe('buildSystemOptions', () => {
     expect(options.find(o => o.label === 'Bastion').group).toBe('shared');
   });
 
-  it('groups by sharedWithMe even when the owner email is missing', () => {
+  it('groups by myRole even when the owner emails are missing', () => {
     const cien = options.find(o => o.label === 'Cień');
     expect(cien.group).toBe('shared');
     expect(cien.ownerEmail).toBeUndefined();

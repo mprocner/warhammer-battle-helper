@@ -9,18 +9,18 @@ const byLabel = (a, b) => a.label.localeCompare(b.label, undefined, { sensitivit
 // Date.parse, not string comparison: Go's RFC3339 output has a variable number of fractional digits.
 const byUpdatedDesc = (a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0);
 
-// sharedWithMe, not ownerEmail, decides the group: the email lookup may fail server-side and
-// a missing email must not move a template the viewer was given into "public".
+// myRole, not ownerEmails, decides the group: the email lookup may fail server-side and a
+// missing email must not move a template the viewer belongs to into "public".
 const groupOf = (tpl) => {
-  if (tpl.isOwner) return 'mine';
-  return tpl.sharedWithMe ? 'shared' : 'public';
+  if (tpl.myRole === 'owner') return 'mine';
+  return tpl.myRole ? 'shared' : 'public';
 };
 
 const toOption = (tpl, group) => ({
   value: `${CUSTOM_PREFIX}${tpl.id}`,
   label: tpl.name,
   group,
-  ...(group === 'shared' && tpl.ownerEmail ? { ownerEmail: tpl.ownerEmail } : {}),
+  ...(group === 'shared' && tpl.ownerEmails?.length ? { ownerEmail: tpl.ownerEmails.join(', ') } : {}),
 });
 
 // Array order IS group order: Autocomplete's groupBy only merges adjacent options.

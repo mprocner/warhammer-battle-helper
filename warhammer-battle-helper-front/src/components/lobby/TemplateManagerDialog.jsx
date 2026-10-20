@@ -8,6 +8,7 @@ import AddIcon from '@mui/icons-material/Add';
 import TuneIcon from '@mui/icons-material/Tune';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import LogoutIcon from '@mui/icons-material/Logout';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import { usePortalTooltip } from '../common/PortalTooltip';
@@ -24,10 +25,10 @@ const countFields = (tpl) => {
 };
 
 // Manages custom system templates. Rows are deliberately NOT clickable: a template affords
-// three equal actions (edit, clone, delete) and which ones apply depends on ownership, so a
+// three equal actions (edit, clone, delete) and which ones apply depends on the viewer's permissions, so a
 // row-wide click would mean different things on different rows. Every action is an explicit,
 // always-visible icon instead.
-function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onEditTemplate, onCloneTemplate, onDeleteTemplate }) {
+function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onEditTemplate, onCloneTemplate, onDeleteTemplate, onLeaveTemplate }) {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -76,7 +77,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                   sx={{ borderRadius: 1, mb: 0.5, border: '1px solid', borderColor: 'primary.light', background: 'rgba(255,255,255,0.4)', pr: 1 }}
                   secondaryAction={
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      {tpl.isOwner && (
+                      {tpl.permissions?.edit && (
                         <IconButton size="small" onClick={() => onEditTemplate(tpl)}
                           onMouseEnter={e => showTooltip(t('creator.editTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
                           sx={{ color: 'primary.main' }}>
@@ -88,11 +89,18 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                         sx={{ color: 'primary.main' }}>
                         <ContentCopyIcon fontSize="small" />
                       </IconButton>
-                      {tpl.isOwner && (
+                      {tpl.permissions?.delete && (
                         <IconButton size="small" onClick={() => onDeleteTemplate(tpl)}
                           onMouseEnter={e => showTooltip(t('creator.deleteTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
                           sx={{ color: 'error.light' }}>
                           <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      {tpl.myRole && tpl.myRole !== 'owner' && (
+                        <IconButton size="small" onClick={() => onLeaveTemplate(tpl)}
+                          onMouseEnter={e => showTooltip(t('creator.leaveTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
+                          sx={{ color: 'error.light' }}>
+                          <LogoutIcon fontSize="small" />
                         </IconButton>
                       )}
                     </Box>
@@ -110,7 +118,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                     }
                     secondary={
                       <Typography sx={{ fontFamily: BODY_FONT, fontSize: '0.85rem', color: 'text.secondary', px: 1.5, pb: 0.5 }}>
-                        v{tpl.version} · {countFields(tpl)} {t('creator.fields')}{!tpl.isOwner && ` · ${t('creator.sharedTemplate')}`}
+                        v{tpl.version} · {countFields(tpl)} {t('creator.fields')}{tpl.myRole && tpl.myRole !== 'owner' && ` · ${t(`creator.roles.${tpl.myRole}`)}`}
                       </Typography>
                     }
                   />
