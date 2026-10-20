@@ -91,3 +91,43 @@ func CanUseTemplate(t *models.SystemTemplate, userID primitive.ObjectID) bool {
 	}
 	return slices.Contains(t.SharedWith, userID)
 }
+
+// RoleOf returns userID's role on t, or "" when they are not a member (or t is nil).
+func RoleOf(t *models.SystemTemplate, userID primitive.ObjectID) string {
+	if t == nil {
+		return ""
+	}
+	for _, m := range t.Members {
+		if m.UserID == userID {
+			return m.Role
+		}
+	}
+	return ""
+}
+
+// CanOnTemplate reports whether userID may perform a on t. Membership grants what the role map in
+// models/template_roles.go says; a public template additionally lets anyone use it. A nil template
+// (a failed fetch) authorises nobody.
+//
+// The same rule exists as Mongo filters in TemplateRepository (built from models.RolesWith) and as
+// the visibility query in ListVisibleToMember. They read the same role map, so only the
+// "public means use" clause is duplicated by hand.
+func CanOnTemplate(t *models.SystemTemplate, userID primitive.ObjectID, a models.TemplateAction) bool {
+	if t == nil {
+		return false
+	}
+	if a == models.ActionUse && t.IsPublic {
+		return true
+	}
+	return models.RoleCan(RoleOf(t, userID), a)
+}
+
+// PermissionsFor is the client-facing summary of what userID may do with t.
+func PermissionsFor(t *models.SystemTemplate, userID primitive.ObjectID) models.TemplatePermissions {
+	role := RoleOf(t, userID)
+	return models.TemplatePermissions{
+		Edit:   models.RoleCan(role, models.ActionEdit),
+		Share:  models.RoleCan(role, models.ActionShare),
+		Delete: models.RoleCan(role, models.ActionDelete),
+	}
+}

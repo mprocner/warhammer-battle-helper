@@ -194,6 +194,28 @@ type TemplateShare struct {
 	Email  string             `json:"email"`
 }
 
+// TemplateMember is one user's access to a template. Stored in SystemTemplate.Members.
+type TemplateMember struct {
+	UserID primitive.ObjectID `bson:"userId" json:"userId"`
+	Role   string             `bson:"role" json:"role"`
+}
+
+// TemplatePermissions is what the requesting user may do with a template, computed per request
+// from their role. The client gates its UI on these flags, never on the role name.
+type TemplatePermissions struct {
+	Edit   bool `json:"edit"`
+	Share  bool `json:"share"`
+	Delete bool `json:"delete"`
+}
+
+// TemplateMemberView is one member as an owner sees it in the access card.
+type TemplateMemberView struct {
+	UserID primitive.ObjectID `json:"userId"`
+	Email  string             `json:"email"`
+	Role   string             `json:"role"`
+	IsMe   bool               `json:"isMe,omitempty"`
+}
+
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
@@ -209,6 +231,23 @@ type SystemTemplate struct {
 	// rejected), so this never holds an id that points at nobody. Not serialised to JSON: the
 	// client has no use for raw ids, and non-owners must not learn who else has access.
 	SharedWith []primitive.ObjectID `bson:"sharedWith,omitempty" json:"-"`
+	// Members lists everyone with access and their role; always at least one owner. Not
+	// serialised: only owners see the list, and they get it resolved to emails in MembersView.
+	Members []TemplateMember `bson:"members" json:"-"`
+	// UpdatedBy is the user behind the last save that changed the content. The creator names
+	// them when a save is rejected as a version conflict.
+	UpdatedBy primitive.ObjectID `bson:"updatedBy,omitempty" json:"-"`
+	// MyRole is computed per request: the viewer's role, "" for a public template they are not
+	// a member of.
+	MyRole string `bson:"-" json:"myRole,omitempty"`
+	// Permissions is computed per request from MyRole.
+	Permissions TemplatePermissions `bson:"-" json:"permissions"`
+	// MembersView is computed per request and filled ONLY for a viewer who may share: who else
+	// has access is nobody else's business.
+	MembersView []TemplateMemberView `bson:"-" json:"members,omitempty"`
+	// OwnerEmails is computed per request and filled ONLY for a member who is not an owner.
+	// Public templates never carry it, so no account can harvest authors' addresses.
+	OwnerEmails []string `bson:"-" json:"ownerEmails,omitempty"`
 	// SharedWithUsers is computed per-request (not persisted), exactly like IsOwner, and filled
 	// ONLY for the owner: the recipients' addresses are nobody else's business.
 	SharedWithUsers []TemplateShare `bson:"-" json:"sharedWithUsers,omitempty"`

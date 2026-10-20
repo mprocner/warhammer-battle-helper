@@ -79,3 +79,45 @@ func TestCanUseTemplate(t *testing.T) {
 		t.Error("a nil template must never authorise anyone")
 	}
 }
+
+func TestCanOnTemplate(t *testing.T) {
+	owner, editor, viewer, stranger := primitive.NewObjectID(), primitive.NewObjectID(), primitive.NewObjectID(), primitive.NewObjectID()
+	members := []models.TemplateMember{
+		{UserID: owner, Role: models.RoleOwner},
+		{UserID: editor, Role: models.RoleEditor},
+		{UserID: viewer, Role: models.RoleViewer},
+	}
+	private := &models.SystemTemplate{Members: members}
+	public := &models.SystemTemplate{Members: members, IsPublic: true}
+
+	cases := []struct {
+		name   string
+		tpl    *models.SystemTemplate
+		user   primitive.ObjectID
+		action models.TemplateAction
+		want   bool
+	}{
+		{"owner deletes", private, owner, models.ActionDelete, true},
+		{"editor edits", private, editor, models.ActionEdit, true},
+		{"editor cannot share", private, editor, models.ActionShare, false},
+		{"editor cannot delete", private, editor, models.ActionDelete, false},
+		{"viewer uses", private, viewer, models.ActionUse, true},
+		{"viewer cannot edit", private, viewer, models.ActionEdit, false},
+		{"stranger cannot use private", private, stranger, models.ActionUse, false},
+		{"stranger uses public", public, stranger, models.ActionUse, true},
+		{"public grants nothing beyond use", public, stranger, models.ActionEdit, false},
+		{"nil template authorises nobody", nil, owner, models.ActionUse, false},
+	}
+	for _, c := range cases {
+		if got := CanOnTemplate(c.tpl, c.user, c.action); got != c.want {
+			t.Errorf("%s: CanOnTemplate = %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	if got := PermissionsFor(private, editor); got != (models.TemplatePermissions{Edit: true}) {
+		t.Errorf("PermissionsFor(editor) = %+v, want edit only", got)
+	}
+	if got := RoleOf(public, stranger); got != "" {
+		t.Errorf("RoleOf(stranger) = %q, want empty", got)
+	}
+}
