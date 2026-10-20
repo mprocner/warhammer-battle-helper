@@ -61,7 +61,12 @@
     "licenses": "Licenses",
     "terms": "Terms of service"
   },
-  "licenses": { "title": "Licenses", "intro": "Third-party material used in this app and the licences it is used under.", "srdTitle": "System Reference Document", "ccLink": "Creative Commons Attribution 4.0 International License" },
+  "licenses": {
+    "title": "Licenses",
+    "intro": "Third-party material used in this app and the licences it is used under.",
+    "srdTitle": "System Reference Document",
+    "ccLink": "Creative Commons Attribution 4.0 International License"
+  },
   "auth": {
     "email": "Email Address",
     "password": "Password",
@@ -1039,8 +1044,8 @@
         "body": "General holds the settings of the whole system; Sheet is where you build the character sheet itself, field by field."
       },
       "visibility": {
-        "title": "Who can use it",
-        "body": "Anyone can create a game from a public template, but only you can edit it. A private template can also be shared with specific people by email."
+        "title": "Who can use and edit it",
+        "body": "Owners manage access here. Viewers can use and clone the template, Editors can also change it, Owners can also manage access and delete it. A public template can be used by anyone, but only members can edit it."
       },
       "sheetWidth": {
         "title": "Sheet window width",
@@ -1777,7 +1782,11 @@
     "cloneTemplate": "Clone template",
     "copySuffix": "(copy)",
     "publicBadge": "Public",
-    "roles": { "viewer": "Viewer", "editor": "Editor", "owner": "Owner" },
+    "roles": {
+      "viewer": "Viewer",
+      "editor": "Editor",
+      "owner": "Owner"
+    },
     "leaveTemplate": "Leave template",
     "leaveTemplateConfirm": "Leave \"{{name}}\"? It disappears from your list until an owner shares it with you again.",
     "templateCreated": "Template created",
@@ -1880,22 +1889,26 @@
     "general": {
       "diceTitle": "Dice Buttons",
       "diceHint": "Choose which dice appear under the chat during play.",
-      "visibilityTitle": "Visibility",
-      "visibilityHint": "Public templates can be used by anyone creating a game, but only you can edit them.",
+      "visibilityTitle": "Access",
+      "visibilityHint": "Owners decide who can use, edit and manage this template.",
       "makePublic": "Public template",
-      "publicDesc": "Everyone can use this template to create a game (read-only for others).",
-      "privateDesc": "Only you can see and use this template.",
-      "shareTitle": "Share with specific people",
-      "shareHint": "They can use and clone this template, but never edit it.",
+      "publicDesc": "Everyone can use this template to create a game. Only members with the Editor or Owner role can change it.",
+      "privateDesc": "Only the people listed below can see and use this template.",
+      "visibilityError": "Could not change the visibility.",
+      "shareTitle": "People with access",
+      "shareHint": "Viewers can use and clone the template. Editors can also change it. Owners can also manage access and delete it.",
       "shareEmailLabel": "Email address",
+      "shareRoleLabel": "Role",
+      "shareRoleOf": "Role of {{email}}",
       "shareButton": "Share",
-      "shareEmpty": "Not shared with anyone yet.",
-      "shareRemove": "Revoke access",
+      "shareRemove": "Remove access",
+      "memberYou": "(you)",
       "shareErrorNotFound": "No account uses this address.",
       "shareErrorSelf": "That is your own address.",
       "shareErrorInvalid": "That doesn't look like a valid email address.",
-      "shareErrorFailed": "Could not share the template.",
-      "sharePublicNote": "This template is public, so everyone can already use it. The list below starts mattering again the moment you switch it back to private.",
+      "shareErrorFailed": "Could not change access.",
+      "memberErrorLastOwner": "A template needs at least one owner. Make someone else an owner first.",
+      "sharePublicNote": "This template is public, so everyone can already use it. The roles below still decide who may edit it.",
       "modifierTitle": "Roll modifier",
       "modifierHint": "Ask for a modifier before each roll on this card",
       "sheetWidthTitle": "Character sheet window",

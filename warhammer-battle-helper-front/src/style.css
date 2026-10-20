@@ -11644,7 +11644,6 @@ button.custom-sheet__row-table-expander:hover {
 }
 
 .creator__share-hint,
-.creator__share-empty,
 .creator__share-note {
     font-family: 'Crimson Text', serif;
     font-size: 0.85rem;
@@ -11688,6 +11687,11 @@ button.custom-sheet__row-table-expander:hover {
     font-size: 0.9rem;
     color: #3a2f1f;
     overflow-wrap: anywhere;
+}
+
+.creator__share-you {
+    font-style: italic;
+    color: #7a5c42;
 }
 
 /* ── Dice config builder (dcb) — mirrors FormulaBuilder (fb) ──────────── */

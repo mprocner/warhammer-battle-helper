@@ -44,7 +44,7 @@ test.each(FIELD_TYPES.filter(ft => ft.type !== 'section').map(ft => ft.type))(
 );
 
 test('every General-tab settings card has a tutorial step', () => {
-  render(<TemplateBuilder template={{ id: 't', name: 'T', settings: {}, sections: [] }} token="x" onClose={() => {}} onTemplateUpdated={() => {}} />);
+  render(<TemplateBuilder template={{ id: 't', name: 'T', settings: {}, sections: [], permissions: { edit: true, share: true, delete: true }, members: [] }} token="x" onClose={() => {}} onTemplateUpdated={() => {}} />);
   const targets = targetsOf('creatorGeneral');
   const cards = [...document.querySelectorAll('.creator__settings-card')];
   expect(cards.length).toBeGreaterThan(0);

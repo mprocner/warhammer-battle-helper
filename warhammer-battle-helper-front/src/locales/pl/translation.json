@@ -61,7 +61,12 @@
     "licenses": "Licencje",
     "terms": "Regulamin"
   },
-  "licenses": { "title": "Licencje", "intro": "Materiały zewnętrzne użyte w aplikacji oraz licencje, na podstawie których z nich korzystamy.", "srdTitle": "System Reference Document", "ccLink": "Licencja Creative Commons Uznanie autorstwa 4.0 Międzynarodowa" },
+  "licenses": {
+    "title": "Licencje",
+    "intro": "Materiały zewnętrzne użyte w aplikacji oraz licencje, na podstawie których z nich korzystamy.",
+    "srdTitle": "System Reference Document",
+    "ccLink": "Licencja Creative Commons Uznanie autorstwa 4.0 Międzynarodowa"
+  },
   "auth": {
     "email": "Adres Email",
     "password": "Hasło",
@@ -1039,8 +1044,8 @@
         "body": "Ogólne to ustawienia całego systemu, a w zakładce Karta budujesz samą kartę postaci, pole po polu."
       },
       "visibility": {
-        "title": "Kto może z niego korzystać",
-        "body": "Z szablonu publicznego każdy może stworzyć grę, ale edytować go możesz tylko Ty. Prywatny możesz też udostępnić konkretnym osobom po adresie e-mail."
+        "title": "Kto może go używać i edytować",
+        "body": "Tutaj właściciele zarządzają dostępem. Podgląd pozwala używać i klonować szablon, Edytor może go też zmieniać, a Właściciel dodatkowo zarządza dostępem i może go usunąć. Z publicznego szablonu może skorzystać każdy, ale edytować go mogą tylko członkowie."
       },
       "sheetWidth": {
         "title": "Szerokość okna karty",
@@ -1777,7 +1782,11 @@
     "cloneTemplate": "Sklonuj szablon",
     "copySuffix": "(kopia)",
     "publicBadge": "Publiczny",
-    "roles": { "viewer": "Podgląd", "editor": "Edytor", "owner": "Właściciel" },
+    "roles": {
+      "viewer": "Podgląd",
+      "editor": "Edytor",
+      "owner": "Właściciel"
+    },
     "leaveTemplate": "Opuść szablon",
     "leaveTemplateConfirm": "Opuścić „{{name}}”? Zniknie z Twojej listy, dopóki właściciel znów Ci go nie udostępni.",
     "templateCreated": "Szablon utworzony",
@@ -1880,22 +1889,26 @@
     "general": {
       "diceTitle": "Kości pod czatem",
       "diceHint": "Wybierz, które kości pojawiają się pod czatem w grze.",
-      "visibilityTitle": "Widoczność",
-      "visibilityHint": "Publiczne szablony może wykorzystać każdy przy tworzeniu gry, ale edytować możesz je tylko Ty.",
+      "visibilityTitle": "Dostęp",
+      "visibilityHint": "Właściciele decydują, kto może używać, edytować i zarządzać tym szablonem.",
       "makePublic": "Szablon publiczny",
-      "publicDesc": "Każdy może użyć tego szablonu do stworzenia gry (dla innych tylko do odczytu).",
-      "privateDesc": "Tylko Ty widzisz i możesz użyć tego szablonu.",
-      "shareTitle": "Udostępnij konkretnym osobom",
-      "shareHint": "Mogą używać i klonować ten szablon, ale nigdy go nie edytują.",
+      "publicDesc": "Każdy może użyć tego szablonu do stworzenia gry. Zmieniać go mogą tylko członkowie z rolą Edytor lub Właściciel.",
+      "privateDesc": "Tylko osoby z listy poniżej widzą ten szablon i mogą go używać.",
+      "visibilityError": "Nie udało się zmienić widoczności.",
+      "shareTitle": "Osoby z dostępem",
+      "shareHint": "Podgląd: może używać i klonować szablon. Edytor: może też go zmieniać. Właściciel: może też zarządzać dostępem i usunąć szablon.",
       "shareEmailLabel": "Adres email",
+      "shareRoleLabel": "Rola",
+      "shareRoleOf": "Rola: {{email}}",
       "shareButton": "Udostępnij",
-      "shareEmpty": "Nikomu jeszcze nie udostępniono.",
       "shareRemove": "Odbierz dostęp",
+      "memberYou": "(Ty)",
       "shareErrorNotFound": "Żadne konto nie używa tego adresu.",
       "shareErrorSelf": "To Twój własny adres.",
       "shareErrorInvalid": "To nie wygląda na poprawny adres email.",
-      "shareErrorFailed": "Nie udało się udostępnić szablonu.",
-      "sharePublicNote": "Ten szablon jest publiczny, więc i tak mogą go używać wszyscy. Lista poniżej zacznie mieć znaczenie, gdy przełączysz go z powrotem na prywatny.",
+      "shareErrorFailed": "Nie udało się zmienić dostępu.",
+      "memberErrorLastOwner": "Szablon musi mieć co najmniej jednego właściciela. Najpierw nadaj tę rolę komuś innemu.",
+      "sharePublicNote": "Ten szablon jest publiczny, więc i tak mogą go używać wszyscy. Role poniżej nadal decydują, kto może go edytować.",
       "modifierTitle": "Modyfikator rzutu",
       "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie",
       "sheetWidthTitle": "Okno karty postaci",
