@@ -81,7 +81,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			return
 		}
 		// Check that the user is authorized to use this template
-		if !service.CanUseTemplate(t, userID) {
+		if !service.CanOnTemplate(t, userID, models.ActionUse) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
 			return
 		}
@@ -105,7 +105,7 @@ func (h *GameHandler) CreateGame(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "template does not match selected system"})
 			return
 		}
-		if !service.CanUseTemplate(t, userID) {
+		if !service.CanOnTemplate(t, userID, models.ActionUse) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized to use this template"})
 			return
 		}

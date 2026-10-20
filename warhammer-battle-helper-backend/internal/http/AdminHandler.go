@@ -16,6 +16,7 @@ import (
 type AdminHandler struct {
 	AdminRepo    *repository.AdminRepository
 	SystemAccess *service.SystemAccessService
+	Templates    *service.TemplateService
 }
 
 func (h *AdminHandler) withTimeout() (context.Context, context.CancelFunc) {
@@ -94,6 +95,11 @@ func (h *AdminHandler) DeleteUser(c *gin.Context) {
 
 	// Remove access first: if the delete then fails, the user merely loses system access and the delete can be retried.
 	if err := h.SystemAccess.RemoveUser(ctx, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		return
+	}
+	// Same reasoning: losing template memberships before a failed delete is harmless and retryable.
+	if err := h.Templates.RemoveUserEverywhere(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
 		return
 	}

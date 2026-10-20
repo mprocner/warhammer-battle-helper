@@ -8,11 +8,36 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"slices"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+// Template errors. The messages are stable codes: handlers send them verbatim and the creator
+// maps them to translated text (memberErrorKey in TemplateAccessCard.jsx).
+var (
+	ErrTemplateNotFound        = errors.New("template not found")
+	ErrTemplateForbidden       = errors.New("not authorized")
+	ErrTemplateVersionRequired = errors.New("version is required")
+	ErrTemplateLastOwner       = errors.New("template must keep at least one owner")
+	ErrTemplateMemberNotFound  = errors.New("member not found")
+	ErrTemplateInvalidRole     = errors.New("invalid role")
+	ErrTemplateNotShareable    = errors.New("token config templates cannot be shared")
+	ErrShareUserNotFound       = errors.New("user not found")
+	ErrShareSelf               = errors.New("cannot share with yourself")
+)
+
+// TemplateConflictError rejects a save made against a version somebody else has already
+// replaced. It carries what the creator shows before the user picks "load theirs" or "overwrite":
+// the version to overwrite with, and who saved it when.
+type TemplateConflictError struct {
+	Version   int
+	UpdatedBy string // email; "" when the account could not be resolved
+	UpdatedAt time.Time
+}
+
+func (e *TemplateConflictError) Error() string { return "version conflict" }
 
 type TemplateService struct {
 	repo     *repository.TemplateRepository
@@ -23,26 +48,69 @@ func NewTemplateService(repo *repository.TemplateRepository, userRepo *repositor
 	return &TemplateService{repo: repo, userRepo: userRepo}
 }
 
-// attachShares fills SharedWithUsers on every template viewerID owns, resolving all their
-// recipient ids in ONE FindByIDs across the whole batch — a query per template would turn a
-// lobby load into N+1. Templates the viewer does not own are left untouched: who else may use
-// somebody's template is the owner's business alone.
-//
-// An id that resolves to no account is skipped rather than reported. Accounts are not deleted
-// anywhere in this codebase today, so this is defence against a hand-edited document, not an
-// expected state — and a share list that hides one dead row is better than a creator that
-// cannot open.
-func (s *TemplateService) attachShares(templates []*models.SystemTemplate, viewerID primitive.ObjectID) error {
+// load reads a template; any read failure is reported as not found, as before PLAYRPG-279.
+func (s *TemplateService) load(id string) (*models.SystemTemplate, error) {
+	t, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, ErrTemplateNotFound
+	}
+	return t, nil
+}
+
+// deny picks the error for a user lacking an action. Somebody who cannot even use the template
+// must not learn it exists, so they get "not found" rather than "not authorized".
+func deny(t *models.SystemTemplate, userID primitive.ObjectID) error {
+	if CanOnTemplate(t, userID, models.ActionUse) {
+		return ErrTemplateForbidden
+	}
+	return ErrTemplateNotFound
+}
+
+func (s *TemplateService) loadFor(id string, userID primitive.ObjectID, a models.TemplateAction) (*models.SystemTemplate, error) {
+	t, err := s.load(id)
+	if err != nil {
+		return nil, err
+	}
+	if !CanOnTemplate(t, userID, a) {
+		return nil, deny(t, userID)
+	}
+	return t, nil
+}
+
+// loadForShare is loadFor(ActionShare) that also refuses token-config singletons, which are
+// private per user and have no access card.
+func (s *TemplateService) loadForShare(id string, callerID primitive.ObjectID) (*models.SystemTemplate, error) {
+	t, err := s.loadFor(id, callerID, models.ActionShare)
+	if err != nil {
+		return nil, err
+	}
+	if t.BaseSystem != "" {
+		return nil, ErrTemplateNotShareable
+	}
+	return t, nil
+}
+
+// stamp sets the per-request role fields that need no database lookup.
+func stamp(t *models.SystemTemplate, viewerID primitive.ObjectID) {
+	t.MyRole = RoleOf(t, viewerID)
+	t.Permissions = PermissionsFor(t, viewerID)
+}
+
+// decorate fills every per-request field for viewerID, resolving all needed emails in ONE
+// FindByIDs across the batch — a query per template would turn a lobby load into N+1.
+// MembersView goes only to viewers who may share; OwnerEmails only to members below owner.
+// Role and permissions are set before the lookup, so a failed lookup costs the emails, never the
+// gating: callers log the error and still answer.
+func (s *TemplateService) decorate(templates []*models.SystemTemplate, viewerID primitive.ObjectID) error {
 	var ids []primitive.ObjectID
 	seen := make(map[primitive.ObjectID]bool)
 	for _, t := range templates {
-		if t.OwnerID != viewerID {
-			continue
-		}
-		for _, id := range t.SharedWith {
-			if !seen[id] {
-				seen[id] = true
-				ids = append(ids, id)
+		stamp(t, viewerID)
+		for _, m := range t.Members {
+			wanted := t.Permissions.Share || (t.MyRole != "" && m.Role == models.RoleOwner)
+			if wanted && !seen[m.UserID] {
+				seen[m.UserID] = true
+				ids = append(ids, m.UserID)
 			}
 		}
 	}
@@ -60,88 +128,104 @@ func (s *TemplateService) attachShares(templates []*models.SystemTemplate, viewe
 	}
 
 	for _, t := range templates {
-		if t.OwnerID != viewerID || len(t.SharedWith) == 0 {
+		if t.Permissions.Share {
+			views := make([]models.TemplateMemberView, 0, len(t.Members))
+			for _, m := range t.Members {
+				// An id with no account behind it is skipped: a list hiding one dead row beats a
+				// creator that cannot open.
+				if email, ok := emails[m.UserID]; ok {
+					views = append(views, models.TemplateMemberView{UserID: m.UserID, Email: email, Role: m.Role, IsMe: m.UserID == viewerID})
+				}
+			}
+			t.MembersView = views
 			continue
 		}
-		shares := make([]models.TemplateShare, 0, len(t.SharedWith))
-		for _, id := range t.SharedWith {
-			if email, ok := emails[id]; ok {
-				shares = append(shares, models.TemplateShare{UserID: id, Email: email})
+		if t.MyRole == "" {
+			continue
+		}
+		for _, m := range t.Members {
+			if email, ok := emails[m.UserID]; ok && m.Role == models.RoleOwner {
+				t.OwnerEmails = append(t.OwnerEmails, email)
 			}
 		}
-		t.SharedWithUsers = shares
 	}
 	return nil
 }
 
-// listShares re-reads the template and resolves its recipients, so every share endpoint answers
-// with the list as actually stored rather than one the handler assembled optimistically.
-// It returns an empty (non-nil) slice for a template shared with nobody, so the client always
-// receives [] and never null.
-func (s *TemplateService) listShares(id string, ownerID primitive.ObjectID) ([]models.TemplateShare, error) {
-	t, err := s.repo.GetByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("template not found")
+func (s *TemplateService) decorateOrLog(templates []*models.SystemTemplate, viewerID primitive.ObjectID) {
+	if err := s.decorate(templates, viewerID); err != nil {
+		log.Printf("warn: failed to resolve template member emails for user %s: %v", viewerID.Hex(), err)
 	}
-	if t.OwnerID != ownerID {
-		return nil, fmt.Errorf("not authorized")
-	}
-	if err := s.attachShares([]*models.SystemTemplate{t}, ownerID); err != nil {
-		return nil, err
-	}
-	if t.SharedWithUsers == nil {
-		return []models.TemplateShare{}, nil
-	}
-	return t.SharedWithUsers, nil
 }
 
-// AddShare grants the account behind email read/clone access to a template the caller owns and
-// returns the resulting recipient list. The address is resolved here, and a miss is a loud
-// error: that is what keeps SharedWith free of ids pointing at nobody, and what makes a typo
-// visible to the owner instead of silently granting access to no one.
-//
-// Ownership is confirmed BEFORE the address is resolved. FindByEmailCI's hit/miss split is
-// itself sensitive information ("this address has an account"); resolving it first would let
-// any authenticated caller probe arbitrary addresses against any template id — their own,
-// someone else's, or a stale one — since the hit/miss answer never depended on owning anything.
-// Checking ownership first closes that off at no extra cost to the legitimate path: listShares
-// re-reads the template at the end regardless, to answer with state as actually stored.
-func (s *TemplateService) AddShare(id string, ownerID primitive.ObjectID, email string) ([]models.TemplateShare, error) {
-	t, err := s.repo.GetByID(id)
+// listMembers re-reads the template and answers with its members as stored, never a list the
+// handler assembled optimistically. Always a non-nil slice, so the client gets [] and not null.
+func (s *TemplateService) listMembers(id string, callerID primitive.ObjectID) ([]models.TemplateMemberView, error) {
+	t, err := s.load(id)
 	if err != nil {
-		return nil, fmt.Errorf("template not found")
-	}
-	if t.OwnerID != ownerID {
-		return nil, fmt.Errorf("template not found or not owned by user")
-	}
-
-	target, err := s.userRepo.FindByEmailCI(email)
-	if err != nil {
-		// Only a genuine miss is "user not found" — a user-facing, expected outcome. Any other
-		// failure (connection drop, timeout) is an infrastructure problem the owner did nothing
-		// to cause and must not be told their address is the problem.
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, fmt.Errorf("user not found")
-		}
 		return nil, err
 	}
-	if target.ID == ownerID {
-		return nil, fmt.Errorf("cannot share with yourself")
-	}
-	if err := s.repo.AddShare(id, ownerID, target.ID); err != nil {
+	if err := s.decorate([]*models.SystemTemplate{t}, callerID); err != nil {
 		return nil, err
 	}
-	return s.listShares(id, ownerID)
+	if t.MembersView == nil {
+		return []models.TemplateMemberView{}, nil
+	}
+	return t.MembersView, nil
 }
 
-// RemoveShare revokes one recipient's access and returns the remaining list. It takes a user id,
-// not an email: the client already has the id from the list it is showing, so there is nothing
-// to resolve and nothing to get wrong.
-func (s *TemplateService) RemoveShare(id string, ownerID, targetID primitive.ObjectID) ([]models.TemplateShare, error) {
-	if err := s.repo.RemoveShare(id, ownerID, targetID); err != nil {
+// explainNoMatch names the condition that made a conditional member write match nothing, by
+// re-reading the template: gone, caller lost the share role, target is no member, or — the
+// remaining guard in the filter — the write would have left no owner. A zero targetID is a write
+// with no target guard (visibility, add): once share holds, only a concurrent delete is left.
+func (s *TemplateService) explainNoMatch(id string, callerID, targetID primitive.ObjectID) error {
+	t, err := s.load(id)
+	if err != nil {
+		return ErrTemplateNotFound
+	}
+	if !CanOnTemplate(t, callerID, models.ActionShare) {
+		return deny(t, callerID)
+	}
+	if targetID.IsZero() {
+		return ErrTemplateNotFound
+	}
+	if RoleOf(t, targetID) == "" {
+		return ErrTemplateMemberNotFound
+	}
+	return ErrTemplateLastOwner
+}
+
+func (s *TemplateService) ListForUser(viewerID primitive.ObjectID) ([]models.SystemTemplate, error) {
+	templates, err := s.repo.ListVisibleToMember(viewerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list templates: %w", err)
+	}
+	refs := make([]*models.SystemTemplate, len(templates))
+	for i := range templates {
+		refs[i] = &templates[i]
+	}
+	// Emails are decoration: useTemplates.js swallows a fetch error wholesale, so failing here
+	// would empty the whole lobby over a problem with one column.
+	s.decorateOrLog(refs, viewerID)
+	return templates, nil
+}
+
+// Get reads a template with no access check. Internal callers only (game creation checks
+// CanOnTemplate itself; SyncTemplate re-reads the template a game was created from, which its GM
+// keeps the right to do even after losing access). HTTP reads go through GetForUser.
+func (s *TemplateService) Get(id string) (*models.SystemTemplate, error) {
+	return s.load(id)
+}
+
+// GetForUser reads a template the viewer may use. Without access it is "not found", so ids
+// cannot be probed for existence.
+func (s *TemplateService) GetForUser(id string, viewerID primitive.ObjectID) (*models.SystemTemplate, error) {
+	t, err := s.loadFor(id, viewerID, models.ActionUse)
+	if err != nil {
 		return nil, err
 	}
-	return s.listShares(id, ownerID)
+	s.decorateOrLog([]*models.SystemTemplate{t}, viewerID)
+	return t, nil
 }
 
 func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTemplateRequest) (*models.SystemTemplate, error) {
@@ -149,7 +233,7 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 		req.Sections = []models.SectionDef{}
 	}
 	t := &models.SystemTemplate{
-		OwnerID:  ownerID,
+		Members:  []models.TemplateMember{{UserID: ownerID, Role: models.RoleOwner}},
 		Name:     req.Name,
 		Sections: req.Sections,
 		Settings: models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
@@ -168,17 +252,8 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create template: %w", err)
 	}
-	// IsOwner is computed, not stored; the creator is the owner by definition, and without
-	// it the fresh row would be filed under "public templates" by the client.
-	t.IsOwner = true
-	return t, nil
-}
-
-func (s *TemplateService) Get(id string) (*models.SystemTemplate, error) {
-	t, err := s.repo.GetByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("template not found")
-	}
+	// Without the per-request fields the fresh row would be filed under "public" by the client.
+	s.decorateOrLog([]*models.SystemTemplate{t}, ownerID)
 	return t, nil
 }
 
@@ -187,35 +262,32 @@ func (s *TemplateService) GetVersionsByIDs(ids []primitive.ObjectID) (map[primit
 	return s.repo.GetVersionsByIDs(ids)
 }
 
-// FindTokenConfig returns the user's token-display config singleton for a hardcoded
-// system, or nil when not yet configured. Read-only (no creation) — used by the
-// resolve-on-read path when assembling game state.
+// FindTokenConfig returns the user's token-display config singleton for a hardcoded system, or
+// nil when not yet configured. Read-only — used when assembling game state.
 func (s *TemplateService) FindTokenConfig(ownerID primitive.ObjectID, baseSystem string) (*models.SystemTemplate, error) {
-	t, err := s.repo.FindByOwnerAndBaseSystem(ownerID, baseSystem)
+	t, err := s.repo.FindTokenConfig(ownerID, baseSystem)
 	if err != nil {
 		return nil, err
 	}
 	if t != nil {
-		t.IsOwner = t.OwnerID == ownerID
+		stamp(t, ownerID)
 	}
 	return t, nil
 }
 
-// GetOrCreateTokenConfig returns the user's single token-display config for a
-// hardcoded system, creating an empty one on first use. Enforces the singleton per
-// (owner, baseSystem): the sheet/rolls come from the Go plugin, so Sections stay
-// empty and only Settings (dice + token display) are meaningful.
+// GetOrCreateTokenConfig returns the user's single token-display config for a hardcoded system,
+// creating an empty one on first use. Sections stay empty; only Settings are meaningful.
 func (s *TemplateService) GetOrCreateTokenConfig(ownerID primitive.ObjectID, baseSystem string) (*models.SystemTemplate, error) {
-	existing, err := s.repo.FindByOwnerAndBaseSystem(ownerID, baseSystem)
+	existing, err := s.repo.FindTokenConfig(ownerID, baseSystem)
 	if err != nil {
 		return nil, err
 	}
 	if existing != nil {
-		existing.IsOwner = true
+		stamp(existing, ownerID)
 		return existing, nil
 	}
 	t := &models.SystemTemplate{
-		OwnerID:    ownerID,
+		Members:    []models.TemplateMember{{UserID: ownerID, Role: models.RoleOwner}},
 		Name:       baseSystem + " tokens",
 		Sections:   []models.SectionDef{},
 		Settings:   models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
@@ -224,76 +296,19 @@ func (s *TemplateService) GetOrCreateTokenConfig(ownerID primitive.ObjectID, bas
 	if err := s.repo.Create(t); err != nil {
 		return nil, fmt.Errorf("failed to create token config: %w", err)
 	}
-	t.IsOwner = true
+	stamp(t, ownerID)
 	return t, nil
 }
 
-func (s *TemplateService) ListForUser(ownerID primitive.ObjectID) ([]models.SystemTemplate, error) {
-	templates, err := s.repo.ListVisibleToUser(ownerID)
+// Update saves content for a member who may edit. Order matters: permission first (a demoted
+// editor with the creator still open gets 403, not a conflict), then the version.
+func (s *TemplateService) Update(id string, editorID primitive.ObjectID, req models.UpdateTemplateRequest) (*models.SystemTemplate, error) {
+	t, err := s.loadFor(id, editorID, models.ActionEdit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list templates: %w", err)
+		return nil, err
 	}
-	refs := make([]*models.SystemTemplate, len(templates))
-	for i := range templates {
-		templates[i].IsOwner = templates[i].OwnerID == ownerID
-		// Set here, from the document alone, so the lobby's grouping never depends on the
-		// owner lookup below succeeding.
-		templates[i].SharedWithMe = !templates[i].IsOwner && slices.Contains(templates[i].SharedWith, ownerID)
-		refs[i] = &templates[i]
-	}
-	// SharedWithUsers is decoration on the owner's own rows, not the list itself: useTemplates.js
-	// (frontend) swallows a fetch error wholesale, so failing ListForUser here would empty the
-	// whole lobby over a problem with the recipients column. Log it and answer with templates
-	// that simply have no resolved share emails, rather than no templates at all.
-	if err := s.attachShares(refs, ownerID); err != nil {
-		log.Printf("warn: failed to resolve template shares for user %s: %v", ownerID.Hex(), err)
-	}
-	// Same trade-off for the owner's email on rows shared with the viewer.
-	if err := s.attachOwners(refs); err != nil {
-		log.Printf("warn: failed to resolve template owners for user %s: %v", ownerID.Hex(), err)
-	}
-	return templates, nil
-}
-
-// attachOwners fills OwnerEmail on the rows shared with the viewer, resolving every owner in
-// ONE FindByIDs across the whole batch. It only reads SharedWithMe, so ListForUser must set
-// that flag first. An owner id that resolves to no account leaves the row without an email.
-func (s *TemplateService) attachOwners(templates []*models.SystemTemplate) error {
-	var ids []primitive.ObjectID
-	seen := make(map[primitive.ObjectID]bool)
-	for _, t := range templates {
-		if t.SharedWithMe && !seen[t.OwnerID] {
-			seen[t.OwnerID] = true
-			ids = append(ids, t.OwnerID)
-		}
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-
-	users, err := s.userRepo.FindByIDs(ids)
-	if err != nil {
-		return err
-	}
-	emails := make(map[primitive.ObjectID]string, len(users))
-	for _, u := range users {
-		emails[u.ID] = u.Email
-	}
-	for _, t := range templates {
-		if t.SharedWithMe {
-			t.OwnerEmail = emails[t.OwnerID]
-		}
-	}
-	return nil
-}
-
-func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req models.UpdateTemplateRequest) (*models.SystemTemplate, error) {
-	t, err := s.repo.GetByID(id)
-	if err != nil {
-		return nil, fmt.Errorf("template not found")
-	}
-	if t.OwnerID != ownerID {
-		return nil, fmt.Errorf("not authorized")
+	if req.Version == nil {
+		return nil, ErrTemplateVersionRequired
 	}
 	if t.BaseSystem == "" {
 		incoming := &models.SystemTemplate{Sections: req.Sections}
@@ -301,45 +316,177 @@ func (s *TemplateService) Update(id string, ownerID primitive.ObjectID, req mode
 			return nil, err
 		}
 	}
-	if err := s.repo.Update(id, req.Name, req.Sections, req.Settings, req.IsPublic, templateContentChanged(t, req)); err != nil {
-		return nil, err
+	err = s.repo.UpdateContent(id, *req.Version, editorID, req.Name, req.Sections, req.Settings, templateContentChanged(t, req))
+	if errors.Is(err, repository.ErrTemplateNoMatch) {
+		return nil, s.saveRejection(id, editorID)
 	}
-	updated, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
-	// The creator replaces its whole template object with this response, so anything computed
-	// per-request has to be recomputed here. Without SharedWithUsers the debounced save would
-	// blank the share list in the UI without touching the database; without IsOwner the manager
-	// row would lose its edit and delete buttons until the next refetch.
-	updated.IsOwner = updated.OwnerID == ownerID
-	if err := s.attachShares([]*models.SystemTemplate{updated}, ownerID); err != nil {
+	updated, err := s.load(id)
+	if err != nil {
 		return nil, err
 	}
+	// The creator replaces its template object with this response, so every per-request field
+	// must be recomputed here or the UI would lose its members and permissions until a refetch.
+	s.decorateOrLog([]*models.SystemTemplate{updated}, editorID)
 	return updated, nil
 }
 
-// Clone creates a private copy of a visible template (owned or public) for the
-// given user. The copy keeps the source's sections and settings, records the
-// source via OriginTemplateID, and is always private regardless of the source.
-func (s *TemplateService) Clone(sourceID string, ownerID primitive.ObjectID, name string) (*models.SystemTemplate, error) {
-	src, err := s.repo.GetByID(sourceID)
+// saveRejection explains an UpdateContent that matched nothing: the template is gone, the editor
+// lost the role between read and write, or — the usual case — somebody saved first.
+func (s *TemplateService) saveRejection(id string, editorID primitive.ObjectID) error {
+	current, err := s.load(id)
 	if err != nil {
-		return nil, fmt.Errorf("template not found")
+		return ErrTemplateNotFound
 	}
-	// Visibility guard: GetByID does not filter by visibility, so block cloning a template the
-	// requester may not use. One predicate, the same one the game-creation path uses.
-	if !CanUseTemplate(src, ownerID) {
-		return nil, fmt.Errorf("not authorized")
+	if !CanOnTemplate(current, editorID, models.ActionEdit) {
+		return deny(current, editorID)
 	}
+	conflict := &TemplateConflictError{Version: current.Version, UpdatedAt: current.UpdatedAt}
+	if !current.UpdatedBy.IsZero() {
+		if users, err := s.userRepo.FindByIDs([]primitive.ObjectID{current.UpdatedBy}); err == nil && len(users) == 1 {
+			conflict.UpdatedBy = users[0].Email
+		}
+	}
+	return conflict
+}
 
+// SetVisibility switches isPublic for a member who may share.
+func (s *TemplateService) SetVisibility(id string, callerID primitive.ObjectID, isPublic bool) (*models.SystemTemplate, error) {
+	if _, err := s.loadForShare(id, callerID); err != nil {
+		return nil, err
+	}
+	if err := s.repo.SetVisibility(id, callerID, isPublic); err != nil {
+		if errors.Is(err, repository.ErrTemplateNoMatch) {
+			return nil, s.explainNoMatch(id, callerID, primitive.NilObjectID)
+		}
+		return nil, err
+	}
+	updated, err := s.load(id)
+	if err != nil {
+		return nil, err
+	}
+	s.decorateOrLog([]*models.SystemTemplate{updated}, callerID)
+	return updated, nil
+}
+
+// AddMember grants the account behind email the given role and returns the member list. Adding
+// somebody who is already a member changes their role instead.
+//
+// The share permission is confirmed BEFORE the address is resolved: FindByEmailCI's hit/miss split
+// is itself sensitive ("this address has an account"), and resolving first would let any caller
+// probe arbitrary addresses against any template id.
+func (s *TemplateService) AddMember(id string, callerID primitive.ObjectID, email, role string) ([]models.TemplateMemberView, error) {
+	if !models.IsValidRole(role) {
+		return nil, ErrTemplateInvalidRole
+	}
+	t, err := s.loadForShare(id, callerID)
+	if err != nil {
+		return nil, err
+	}
+	target, err := s.userRepo.FindByEmailCI(email)
+	if err != nil {
+		// Only a genuine miss is "user not found"; an infrastructure failure must not be blamed
+		// on the address the owner typed.
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrShareUserNotFound
+		}
+		return nil, err
+	}
+	if target.ID == callerID {
+		return nil, ErrShareSelf
+	}
+	if RoleOf(t, target.ID) != "" {
+		return s.SetMemberRole(id, callerID, target.ID, role)
+	}
+	err = s.repo.AddMember(id, callerID, models.TemplateMember{UserID: target.ID, Role: role})
+	if errors.Is(err, repository.ErrTemplateNoMatch) {
+		// Lost a race to another owner adding the same person: that is a role change now.
+		if current, rerr := s.load(id); rerr == nil && RoleOf(current, target.ID) != "" {
+			return s.SetMemberRole(id, callerID, target.ID, role)
+		}
+		return nil, s.explainNoMatch(id, callerID, primitive.NilObjectID)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.listMembers(id, callerID)
+}
+
+// SetMemberRole changes a member's role and returns the member list.
+func (s *TemplateService) SetMemberRole(id string, callerID, targetID primitive.ObjectID, role string) ([]models.TemplateMemberView, error) {
+	if !models.IsValidRole(role) {
+		return nil, ErrTemplateInvalidRole
+	}
+	t, err := s.loadForShare(id, callerID)
+	if err != nil {
+		return nil, err
+	}
+	if RoleOf(t, targetID) == "" {
+		return nil, ErrTemplateMemberNotFound
+	}
+	if err := s.repo.SetMemberRole(id, callerID, targetID, role); err != nil {
+		if errors.Is(err, repository.ErrTemplateNoMatch) {
+			return nil, s.explainNoMatch(id, callerID, targetID)
+		}
+		return nil, err
+	}
+	return s.listMembers(id, callerID)
+}
+
+// RemoveMember revokes a member's access and returns the remaining list.
+func (s *TemplateService) RemoveMember(id string, callerID, targetID primitive.ObjectID) ([]models.TemplateMemberView, error) {
+	t, err := s.loadForShare(id, callerID)
+	if err != nil {
+		return nil, err
+	}
+	if RoleOf(t, targetID) == "" {
+		return nil, ErrTemplateMemberNotFound
+	}
+	if err := s.repo.RemoveMember(id, callerID, targetID); err != nil {
+		if errors.Is(err, repository.ErrTemplateNoMatch) {
+			return nil, s.explainNoMatch(id, callerID, targetID)
+		}
+		return nil, err
+	}
+	return s.listMembers(id, callerID)
+}
+
+// Leave removes the caller from a template's members. Leaving twice is not an error.
+func (s *TemplateService) Leave(id string, userID primitive.ObjectID) error {
+	t, err := s.load(id)
+	if err != nil {
+		return err
+	}
+	if RoleOf(t, userID) == "" {
+		return ErrTemplateNotFound
+	}
+	if err := s.repo.Leave(id, userID); err != nil {
+		if !errors.Is(err, repository.ErrTemplateNoMatch) {
+			return err
+		}
+		current, rerr := s.load(id)
+		if rerr != nil || RoleOf(current, userID) == "" {
+			return nil
+		}
+		return ErrTemplateLastOwner
+	}
+	return nil
+}
+
+// Clone creates a private copy of a template the caller may use, owned by the caller alone.
+func (s *TemplateService) Clone(sourceID string, ownerID primitive.ObjectID, name string) (*models.SystemTemplate, error) {
+	src, err := s.loadFor(sourceID, ownerID, models.ActionUse)
+	if err != nil {
+		return nil, err
+	}
 	cloneName := name
 	if cloneName == "" {
 		cloneName = src.Name
 	}
-
 	clone := &models.SystemTemplate{
-		OwnerID:          ownerID,
+		Members:          []models.TemplateMember{{UserID: ownerID, Role: models.RoleOwner}},
 		Name:             cloneName,
 		Sections:         src.Sections,
 		Settings:         src.Settings,
@@ -349,12 +496,27 @@ func (s *TemplateService) Clone(sourceID string, ownerID primitive.ObjectID, nam
 	if err := s.repo.Create(clone); err != nil {
 		return nil, fmt.Errorf("failed to clone template: %w", err)
 	}
-	clone.IsOwner = true
+	s.decorateOrLog([]*models.SystemTemplate{clone}, ownerID)
 	return clone, nil
 }
 
-func (s *TemplateService) Delete(id string, ownerID primitive.ObjectID) error {
-	return s.repo.Delete(id, ownerID)
+// Delete removes a template for a member who may delete it.
+func (s *TemplateService) Delete(id string, callerID primitive.ObjectID) error {
+	if _, err := s.loadFor(id, callerID, models.ActionDelete); err != nil {
+		return err
+	}
+	if err := s.repo.DeleteAsMember(id, callerID); err != nil {
+		if errors.Is(err, repository.ErrTemplateNoMatch) {
+			return ErrTemplateNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// RemoveUserEverywhere drops a deleted account from every template's members.
+func (s *TemplateService) RemoveUserEverywhere(userID primitive.ObjectID) error {
+	return s.repo.PullMemberEverywhere(userID)
 }
 
 // templateContentChanged reports whether req alters what players see (name, sections, settings).

@@ -206,8 +206,11 @@ func main() {
 	auth.GET("/templates/:id", templateHandler.GetTemplate)
 	auth.PATCH("/templates/:id", templateHandler.UpdateTemplate)
 	auth.POST("/templates/:id/clone", templateHandler.CloneTemplate)
-	auth.POST("/templates/:id/shares", templateHandler.ShareTemplate)
-	auth.DELETE("/templates/:id/shares/:userId", templateHandler.UnshareTemplate)
+	auth.PATCH("/templates/:id/visibility", templateHandler.SetTemplateVisibility)
+	auth.POST("/templates/:id/members", templateHandler.AddTemplateMember)
+	auth.PATCH("/templates/:id/members/:userId", templateHandler.SetTemplateMemberRole)
+	auth.DELETE("/templates/:id/members/:userId", templateHandler.RemoveTemplateMember)
+	auth.DELETE("/templates/:id/membership", templateHandler.LeaveTemplate)
 	auth.DELETE("/templates/:id", templateHandler.DeleteTemplate)
 
 	// Per-user token-display config for hardcoded systems (singleton per user+system).
@@ -367,7 +370,7 @@ func main() {
 	auth.PUT("/playlists/reorder", musicHandler.ReorderPlaylists)
 	// --- ADMIN (JWT + isAdmin required) ---
 	adminRepo := repository.NewAdminRepository(db.UsersCollection, db.GamesCollection, db.OnlineSessionsCollection)
-	adminHandler := http.AdminHandler{AdminRepo: adminRepo, SystemAccess: systemAccessService}
+	adminHandler := http.AdminHandler{AdminRepo: adminRepo, SystemAccess: systemAccessService, Templates: templateService}
 	admin := r.Group("/admin").Use(http.JWTAuthMiddleware(), http.AdminAuthMiddleware())
 	admin.GET("/users", adminHandler.ListUsers)
 	admin.GET("/users/:id", adminHandler.GetUser)

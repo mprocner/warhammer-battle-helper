@@ -187,13 +187,6 @@ func DefaultDiceButtons() []int {
 	return []int{4, 6, 8, 10, 12, 20, 100}
 }
 
-// TemplateShare is one recipient of a template share, as the creator shows it to the owner:
-// the id the server needs to revoke access, plus the address a human recognises.
-type TemplateShare struct {
-	UserID primitive.ObjectID `json:"userId"`
-	Email  string             `json:"email"`
-}
-
 // TemplateMember is one user's access to a template. Stored in SystemTemplate.Members.
 type TemplateMember struct {
 	UserID primitive.ObjectID `bson:"userId" json:"userId"`
@@ -219,18 +212,12 @@ type TemplateMemberView struct {
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	OwnerID  primitive.ObjectID `bson:"ownerId" json:"ownerId"`
 	Name     string             `bson:"name" json:"name"`
 	Version  int                `bson:"version" json:"version"`
 	Sections []SectionDef       `bson:"sections" json:"sections"`
 	Settings TemplateSettings   `bson:"settings,omitempty" json:"settings"`
-	// IsPublic exposes the template to everyone creating a game (read-only for non-owners).
+	// IsPublic lets every logged-in user use (create a game from, clone) the template. Editing still needs a member role.
 	IsPublic bool `bson:"isPublic" json:"isPublic"`
-	// SharedWith lists the users the owner granted read/clone access to, by user id. The email
-	// typed in the creator is resolved to an account at share time (an unknown address is
-	// rejected), so this never holds an id that points at nobody. Not serialised to JSON: the
-	// client has no use for raw ids, and non-owners must not learn who else has access.
-	SharedWith []primitive.ObjectID `bson:"sharedWith,omitempty" json:"-"`
 	// Members lists everyone with access and their role; always at least one owner. Not
 	// serialised: only owners see the list, and they get it resolved to emails in MembersView.
 	Members []TemplateMember `bson:"members" json:"-"`
@@ -248,9 +235,6 @@ type SystemTemplate struct {
 	// OwnerEmails is computed per request and filled ONLY for a member who is not an owner.
 	// Public templates never carry it, so no account can harvest authors' addresses.
 	OwnerEmails []string `bson:"-" json:"ownerEmails,omitempty"`
-	// SharedWithUsers is computed per-request (not persisted), exactly like IsOwner, and filled
-	// ONLY for the owner: the recipients' addresses are nobody else's business.
-	SharedWithUsers []TemplateShare `bson:"-" json:"sharedWithUsers,omitempty"`
 	// OriginTemplateID points to the template this one was cloned from (zero/absent for originals).
 	OriginTemplateID primitive.ObjectID `bson:"originTemplateId,omitempty" json:"originTemplateId,omitempty"`
 	// BaseSystem is "" for a genuine custom template (sheet described by Sections/FieldDef),
@@ -260,17 +244,6 @@ type SystemTemplate struct {
 	BaseSystem string    `bson:"baseSystem,omitempty" json:"baseSystem,omitempty"`
 	CreatedAt  time.Time `bson:"createdAt" json:"createdAt"`
 	UpdatedAt  time.Time `bson:"updatedAt" json:"updatedAt"`
-
-	// IsOwner is computed per-request (not persisted): true when the requesting
-	// user owns this template. The client uses it to gate edit/delete actions.
-	IsOwner bool `bson:"-" json:"isOwner"`
-	// SharedWithMe is computed per-request (not persisted): true when the requesting user is in
-	// SharedWith and does not own the template. The lobby groups templates on it.
-	SharedWithMe bool `bson:"-" json:"sharedWithMe,omitempty"`
-	// OwnerEmail is computed per-request (not persisted) and filled ONLY when SharedWithMe is
-	// true: sharing is the owner revealing themselves to this user. Public templates never carry
-	// it — every logged-in account would otherwise be able to harvest their authors' addresses.
-	OwnerEmail string `bson:"-" json:"ownerEmail,omitempty"`
 }
 
 // FieldDef describes one field in a custom character sheet.
@@ -468,22 +441,34 @@ type CreateTemplateRequest struct {
 	BaseSystem string `json:"baseSystem,omitempty"`
 }
 
-// UpdateTemplateRequest is the request body for PATCH /templates/:id.
+// UpdateTemplateRequest is the request body for PATCH /templates/:id. Version is the template
+// version the client last saw; the save is refused with 409 when it is stale.
 type UpdateTemplateRequest struct {
 	Name     *string           `json:"name"`
 	Sections []SectionDef      `json:"sections"`
 	Settings *TemplateSettings `json:"settings"`
-	IsPublic *bool             `json:"isPublic"`
+	Version  *int              `json:"version"`
+}
+
+// SetTemplateVisibilityRequest is the request body for PATCH /templates/:id/visibility.
+type SetTemplateVisibilityRequest struct {
+	IsPublic *bool `json:"isPublic" binding:"required"`
+}
+
+// AddTemplateMemberRequest is the request body for POST /templates/:id/members.
+type AddTemplateMemberRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Role  string `json:"role" binding:"required"`
+}
+
+// SetTemplateMemberRoleRequest is the request body for PATCH /templates/:id/members/:userId.
+type SetTemplateMemberRoleRequest struct {
+	Role string `json:"role" binding:"required"`
 }
 
 // CloneTemplateRequest is the request body for POST /templates/:id/clone.
 type CloneTemplateRequest struct {
 	Name string `json:"name"` // full localized name (with "(copy)" suffix); optional
-}
-
-// ShareTemplateRequest is the request body for POST /templates/:id/shares.
-type ShareTemplateRequest struct {
-	Email string `json:"email" binding:"required,email"`
 }
 
 // Field types bound to the character document rather than to Stats (PLAYRPG-240). A char_name

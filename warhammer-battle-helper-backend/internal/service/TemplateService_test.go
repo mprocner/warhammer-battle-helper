@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"battle-helper/internal/models"
 	"battle-helper/internal/repository"
@@ -11,73 +13,96 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
-func templateDoc(id, owner primitive.ObjectID, name string, public bool, sharedWith ...primitive.ObjectID) bson.D {
-	shared := bson.A{}
-	for _, s := range sharedWith {
-		shared = append(shared, s)
+func member(id primitive.ObjectID, role string) models.TemplateMember {
+	return models.TemplateMember{UserID: id, Role: role}
+}
+
+func templateDoc(id primitive.ObjectID, name string, public bool, members ...models.TemplateMember) bson.D {
+	ms := bson.A{}
+	for _, m := range members {
+		ms = append(ms, bson.D{{Key: "userId", Value: m.UserID}, {Key: "role", Value: m.Role}})
 	}
 	return bson.D{
 		{Key: "_id", Value: id},
-		{Key: "ownerId", Value: owner},
 		{Key: "name", Value: name},
 		{Key: "isPublic", Value: public},
-		{Key: "sharedWith", Value: shared},
+		{Key: "version", Value: 1},
+		{Key: "members", Value: ms},
 	}
 }
 
-func TestListForUser_OwnerEmail(t *testing.T) {
+func found(docs ...bson.D) bson.D {
+	return mtest.CreateCursorResponse(0, "db.templates", mtest.FirstBatch, docs...)
+}
+
+func users(pairs ...interface{}) bson.D {
+	var docs []bson.D
+	for i := 0; i < len(pairs); i += 2 {
+		docs = append(docs, bson.D{{Key: "_id", Value: pairs[i]}, {Key: "email", Value: pairs[i+1]}})
+	}
+	return mtest.CreateCursorResponse(0, "db.users", mtest.FirstBatch, docs...)
+}
+
+var (
+	wrote    = bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 1}, {Key: "nModified", Value: 1}}
+	matched0 = bson.D{{Key: "ok", Value: 1}, {Key: "n", Value: 0}, {Key: "nModified", Value: 0}}
+)
+
+func newSvc(mt *mtest.T) *TemplateService {
+	// Both repositories read the same mocked collection; responses are consumed in call order.
+	return NewTemplateService(repository.NewTemplateRepository(mt.Coll), repository.NewUserRepository(mt.Coll))
+}
+
+func TestListForUser_Decoration(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 
-	mt.Run("only rows shared with the viewer reveal their owner", func(mt *mtest.T) {
-		// Both repositories read the same mocked collection; responses are consumed in call order.
-		svc := NewTemplateService(repository.NewTemplateRepository(mt.Coll), repository.NewUserRepository(mt.Coll))
-		viewer, alice, bob := primitive.NewObjectID(), primitive.NewObjectID(), primitive.NewObjectID()
-
+	mt.Run("owners see members, other members see owners, public strangers see neither", func(mt *mtest.T) {
+		svc := newSvc(mt)
+		viewer, alice := primitive.NewObjectID(), primitive.NewObjectID()
 		mt.AddMockResponses(
-			mtest.CreateCursorResponse(0, "db.templates", mtest.FirstBatch,
-				templateDoc(primitive.NewObjectID(), viewer, "Own", false),
-				templateDoc(primitive.NewObjectID(), alice, "Public", true),
-				templateDoc(primitive.NewObjectID(), alice, "Shared", false, viewer),
-				templateDoc(primitive.NewObjectID(), alice, "SharedToo", false, viewer),
-				templateDoc(primitive.NewObjectID(), bob, "PublicShared", true, viewer),
+			found(
+				templateDoc(primitive.NewObjectID(), "Own", false, member(viewer, models.RoleOwner), member(alice, models.RoleViewer)),
+				templateDoc(primitive.NewObjectID(), "Public", true, member(alice, models.RoleOwner)),
+				templateDoc(primitive.NewObjectID(), "Edits", false, member(alice, models.RoleOwner), member(viewer, models.RoleEditor)),
 			),
-			mtest.CreateCursorResponse(0, "db.users", mtest.FirstBatch,
-				bson.D{{Key: "_id", Value: alice}, {Key: "email", Value: "alice@example.com"}},
-				bson.D{{Key: "_id", Value: bob}, {Key: "email", Value: "bob@example.com"}},
-			),
+			users(viewer, "me@example.com", alice, "alice@example.com"),
 		)
 
 		got, err := svc.ListForUser(viewer)
 		if err != nil {
-			t.Fatalf("ListForUser() returned unexpected error: %v", err)
+			t.Fatal(err)
 		}
-		byName := make(map[string]models.SystemTemplate, len(got))
+		by := map[string]models.SystemTemplate{}
 		for _, tpl := range got {
-			byName[tpl.Name] = tpl
+			by[tpl.Name] = tpl
 		}
 
-		cases := []struct {
-			name         string
-			sharedWithMe bool
-			ownerEmail   string
-		}{
-			{"Own", false, ""},
-			{"Public", false, ""},
-			{"Shared", true, "alice@example.com"},
-			{"SharedToo", true, "alice@example.com"},
-			{"PublicShared", true, "bob@example.com"},
+		own := by["Own"]
+		if own.MyRole != models.RoleOwner || own.Permissions != (models.TemplatePermissions{Edit: true, Share: true, Delete: true}) {
+			t.Errorf("Own: role %q perms %+v", own.MyRole, own.Permissions)
 		}
-		for _, c := range cases {
-			tpl := byName[c.name]
-			if tpl.SharedWithMe != c.sharedWithMe {
-				t.Errorf("%s: SharedWithMe = %v, want %v", c.name, tpl.SharedWithMe, c.sharedWithMe)
-			}
-			if tpl.OwnerEmail != c.ownerEmail {
-				t.Errorf("%s: OwnerEmail = %q, want %q", c.name, tpl.OwnerEmail, c.ownerEmail)
+		if len(own.MembersView) != 2 || own.OwnerEmails != nil {
+			t.Errorf("Own: members %+v ownerEmails %v", own.MembersView, own.OwnerEmails)
+		}
+		for _, m := range own.MembersView {
+			if m.IsMe != (m.UserID == viewer) {
+				t.Errorf("Own: IsMe wrong on %+v", m)
 			}
 		}
 
-		// One find for the templates, ONE for all owners — never a query per row.
+		pub := by["Public"]
+		if pub.MyRole != "" || pub.Permissions != (models.TemplatePermissions{}) || pub.MembersView != nil || pub.OwnerEmails != nil {
+			t.Errorf("Public must reveal nothing: %+v", pub)
+		}
+
+		edits := by["Edits"]
+		if edits.MyRole != models.RoleEditor || edits.Permissions != (models.TemplatePermissions{Edit: true}) {
+			t.Errorf("Edits: role %q perms %+v", edits.MyRole, edits.Permissions)
+		}
+		if edits.MembersView != nil || len(edits.OwnerEmails) != 1 || edits.OwnerEmails[0] != "alice@example.com" {
+			t.Errorf("Edits: members %+v ownerEmails %v", edits.MembersView, edits.OwnerEmails)
+		}
+
 		finds := 0
 		for _, e := range mt.GetAllStartedEvents() {
 			if e.CommandName == "find" {
@@ -85,30 +110,140 @@ func TestListForUser_OwnerEmail(t *testing.T) {
 			}
 		}
 		if finds != 2 {
-			t.Errorf("expected 2 find commands, got %d", finds)
+			t.Errorf("expected 2 finds (templates + one batched user lookup), got %d", finds)
 		}
 	})
 
-	mt.Run("a failed owner lookup keeps the row in its group", func(mt *mtest.T) {
-		svc := NewTemplateService(repository.NewTemplateRepository(mt.Coll), repository.NewUserRepository(mt.Coll))
+	mt.Run("a failed email lookup keeps roles and permissions", func(mt *mtest.T) {
+		svc := newSvc(mt)
 		viewer, alice := primitive.NewObjectID(), primitive.NewObjectID()
-
 		mt.AddMockResponses(
-			mtest.CreateCursorResponse(0, "db.templates", mtest.FirstBatch,
-				templateDoc(primitive.NewObjectID(), alice, "Shared", false, viewer),
-			),
+			found(templateDoc(primitive.NewObjectID(), "Edits", false, member(alice, models.RoleOwner), member(viewer, models.RoleEditor))),
 			mtest.CreateCommandErrorResponse(mtest.CommandError{Code: 1, Message: "users unavailable"}),
 		)
-
 		got, err := svc.ListForUser(viewer)
 		if err != nil {
-			t.Fatalf("the owner email is decoration; its failure must not fail the list: %v", err)
+			t.Fatalf("emails are decoration; their failure must not fail the list: %v", err)
 		}
-		if len(got) != 1 || !got[0].SharedWithMe {
-			t.Fatal("the row must stay shared-with-me even without its owner's email")
+		if got[0].MyRole != models.RoleEditor || !got[0].Permissions.Edit {
+			t.Errorf("gating must survive a failed lookup: %+v", got[0])
 		}
-		if got[0].OwnerEmail != "" {
-			t.Errorf("OwnerEmail = %q, want empty after a failed lookup", got[0].OwnerEmail)
+	})
+}
+
+func TestUpdate_Authorisation(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	owner, editor, viewer, stranger := primitive.NewObjectID(), primitive.NewObjectID(), primitive.NewObjectID(), primitive.NewObjectID()
+	id := primitive.NewObjectID()
+	doc := templateDoc(id, "T", false, member(owner, models.RoleOwner), member(editor, models.RoleEditor), member(viewer, models.RoleViewer))
+	v := 1
+
+	mt.Run("viewer gets forbidden before any version check", func(mt *mtest.T) {
+		mt.AddMockResponses(found(doc))
+		_, err := newSvc(mt).Update(id.Hex(), viewer, models.UpdateTemplateRequest{})
+		if !errors.Is(err, ErrTemplateForbidden) {
+			t.Errorf("err = %v, want ErrTemplateForbidden", err)
+		}
+	})
+
+	mt.Run("stranger gets not found", func(mt *mtest.T) {
+		mt.AddMockResponses(found(doc))
+		_, err := newSvc(mt).Update(id.Hex(), stranger, models.UpdateTemplateRequest{Version: &v})
+		if !errors.Is(err, ErrTemplateNotFound) {
+			t.Errorf("err = %v, want ErrTemplateNotFound", err)
+		}
+	})
+
+	mt.Run("missing version is rejected", func(mt *mtest.T) {
+		mt.AddMockResponses(found(doc))
+		_, err := newSvc(mt).Update(id.Hex(), editor, models.UpdateTemplateRequest{})
+		if !errors.Is(err, ErrTemplateVersionRequired) {
+			t.Errorf("err = %v, want ErrTemplateVersionRequired", err)
+		}
+	})
+
+	mt.Run("stale version is a conflict naming who saved", func(mt *mtest.T) {
+		saved := time.Date(2026, 10, 20, 14, 32, 0, 0, time.UTC)
+		current := bson.D{
+			{Key: "_id", Value: id},
+			{Key: "name", Value: "T"},
+			{Key: "isPublic", Value: false},
+			{Key: "version", Value: 7},
+			{Key: "members", Value: bson.A{
+				bson.D{{Key: "userId", Value: owner}, {Key: "role", Value: models.RoleOwner}},
+				bson.D{{Key: "userId", Value: editor}, {Key: "role", Value: models.RoleEditor}},
+			}},
+			{Key: "updatedBy", Value: owner},
+			{Key: "updatedAt", Value: saved},
+		}
+		mt.AddMockResponses(found(doc), matched0, found(current), users(owner, "owner@example.com"))
+
+		_, err := newSvc(mt).Update(id.Hex(), editor, models.UpdateTemplateRequest{Version: &v})
+		var conflict *TemplateConflictError
+		if !errors.As(err, &conflict) {
+			t.Fatalf("err = %v, want *TemplateConflictError", err)
+		}
+		if conflict.Version != 7 || conflict.UpdatedBy != "owner@example.com" || !conflict.UpdatedAt.Equal(saved) {
+			t.Errorf("conflict = %+v", conflict)
+		}
+	})
+}
+
+func TestMembers(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	owner, editor := primitive.NewObjectID(), primitive.NewObjectID()
+	id := primitive.NewObjectID()
+
+	mt.Run("a non-owner cannot probe addresses", func(mt *mtest.T) {
+		mt.AddMockResponses(found(templateDoc(id, "T", false, member(owner, models.RoleOwner), member(editor, models.RoleEditor))))
+		_, err := newSvc(mt).AddMember(id.Hex(), editor, "nobody@example.com", models.RoleViewer)
+		if !errors.Is(err, ErrTemplateForbidden) {
+			t.Errorf("err = %v, want ErrTemplateForbidden", err)
+		}
+		if n := len(mt.GetAllStartedEvents()); n != 1 {
+			t.Errorf("the address must not be resolved before authorisation: %d commands", n)
+		}
+	})
+
+	mt.Run("an unknown role is rejected", func(mt *mtest.T) {
+		_, err := newSvc(mt).AddMember(id.Hex(), owner, "x@example.com", "admin")
+		if !errors.Is(err, ErrTemplateInvalidRole) {
+			t.Errorf("err = %v, want ErrTemplateInvalidRole", err)
+		}
+	})
+
+	mt.Run("demoting the last owner is refused", func(mt *mtest.T) {
+		solo := templateDoc(id, "T", false, member(owner, models.RoleOwner), member(editor, models.RoleEditor))
+		mt.AddMockResponses(found(solo), matched0, found(solo))
+		_, err := newSvc(mt).SetMemberRole(id.Hex(), owner, owner, models.RoleEditor)
+		if !errors.Is(err, ErrTemplateLastOwner) {
+			t.Errorf("err = %v, want ErrTemplateLastOwner", err)
+		}
+	})
+
+	mt.Run("the last owner cannot leave; a viewer can", func(mt *mtest.T) {
+		solo := templateDoc(id, "T", false, member(owner, models.RoleOwner), member(editor, models.RoleViewer))
+		mt.AddMockResponses(found(solo), matched0, found(solo))
+		if err := newSvc(mt).Leave(id.Hex(), owner); !errors.Is(err, ErrTemplateLastOwner) {
+			t.Errorf("owner leave err = %v, want ErrTemplateLastOwner", err)
+		}
+		mt.AddMockResponses(found(solo), wrote)
+		if err := newSvc(mt).Leave(id.Hex(), editor); err != nil {
+			t.Errorf("viewer leave err = %v, want nil", err)
+		}
+	})
+
+	mt.Run("an editor cannot delete", func(mt *mtest.T) {
+		mt.AddMockResponses(found(templateDoc(id, "T", false, member(owner, models.RoleOwner), member(editor, models.RoleEditor))))
+		if err := newSvc(mt).Delete(id.Hex(), editor); !errors.Is(err, ErrTemplateForbidden) {
+			t.Errorf("err = %v, want ErrTemplateForbidden", err)
+		}
+	})
+
+	mt.Run("a stranger reading a private template gets not found", func(mt *mtest.T) {
+		mt.AddMockResponses(found(templateDoc(id, "T", false, member(owner, models.RoleOwner))))
+		if _, err := newSvc(mt).GetForUser(id.Hex(), primitive.NewObjectID()); !errors.Is(err, ErrTemplateNotFound) {
+			t.Errorf("err = %v, want ErrTemplateNotFound", err)
 		}
 	})
 }

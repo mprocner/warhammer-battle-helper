@@ -3,6 +3,7 @@ package http
 import (
 	"battle-helper/internal/models"
 	"battle-helper/internal/service"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,141 +26,174 @@ func (h *TemplateHandler) ListTemplates(c *gin.Context) {
 	c.JSON(http.StatusOK, templates)
 }
 
-// CreateTemplate creates a new system template.
+// CreateTemplate creates a new system template owned by the caller.
 func (h *TemplateHandler) CreateTemplate(c *gin.Context) {
 	var req models.CreateTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userID := mustUserID(c)
-	t, err := h.TemplateService.Create(userID, req)
+	t, err := h.TemplateService.Create(mustUserID(c), req)
 	if err != nil {
-		if models.IsTemplateValidationError(err) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		writeTemplateError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, t)
 }
 
-// GetTemplate returns a single template by ID.
+// GetTemplate returns a single template the caller may use.
 func (h *TemplateHandler) GetTemplate(c *gin.Context) {
-	t, err := h.TemplateService.Get(c.Param("id"))
+	t, err := h.TemplateService.GetForUser(c.Param("id"), mustUserID(c))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "template not found"})
+		writeTemplateError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, t)
 }
 
-// UpdateTemplate updates name and/or fields of a template and returns the updated document.
+// UpdateTemplate saves name, sections and settings, guarded by the version the client last saw.
 func (h *TemplateHandler) UpdateTemplate(c *gin.Context) {
 	var req models.UpdateTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userID := mustUserID(c)
-	updated, err := h.TemplateService.Update(c.Param("id"), userID, req)
+	updated, err := h.TemplateService.Update(c.Param("id"), mustUserID(c), req)
 	if err != nil {
-		if models.IsTemplateValidationError(err) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		if err.Error() == "not authorized" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
-			return
-		}
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		writeTemplateError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, updated)
 }
 
-// CloneTemplate creates a private copy of a visible template for the authenticated user.
+// SetTemplateVisibility switches isPublic; owner-only, kept out of the autosave body.
+func (h *TemplateHandler) SetTemplateVisibility(c *gin.Context) {
+	var req models.SetTemplateVisibilityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	updated, err := h.TemplateService.SetVisibility(c.Param("id"), mustUserID(c), *req.IsPublic)
+	if err != nil {
+		writeTemplateError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, updated)
+}
+
+// CloneTemplate creates a private copy of a usable template for the caller.
 func (h *TemplateHandler) CloneTemplate(c *gin.Context) {
 	var req models.CloneTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userID := mustUserID(c)
-	clone, err := h.TemplateService.Clone(c.Param("id"), userID, req.Name)
+	clone, err := h.TemplateService.Clone(c.Param("id"), mustUserID(c), req.Name)
 	if err != nil {
-		if err.Error() == "not authorized" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
-			return
-		}
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		writeTemplateError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, clone)
 }
 
-// ShareTemplate grants another user, named by email, the right to use and clone the caller's
-// template. It answers with the full recipient list rather than the added entry, so the client
-// never has to merge a partial response into state it is already showing.
-func (h *TemplateHandler) ShareTemplate(c *gin.Context) {
-	var req models.ShareTemplateRequest
+// AddTemplateMember grants an account, named by email, a role. Every member endpoint answers
+// with the full member list, so the client never merges a partial response into what it shows.
+func (h *TemplateHandler) AddTemplateMember(c *gin.Context) {
+	var req models.AddTemplateMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	userID := mustUserID(c)
-	shares, err := h.TemplateService.AddShare(c.Param("id"), userID, req.Email)
+	members, err := h.TemplateService.AddMember(c.Param("id"), mustUserID(c), req.Email, req.Role)
 	if err != nil {
-		writeShareError(c, err)
+		writeTemplateError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, shares)
+	c.JSON(http.StatusOK, members)
 }
 
-// UnshareTemplate revokes one user's access and answers with the remaining list.
-func (h *TemplateHandler) UnshareTemplate(c *gin.Context) {
+// SetTemplateMemberRole changes one member's role.
+func (h *TemplateHandler) SetTemplateMemberRole(c *gin.Context) {
 	targetID, err := primitive.ObjectIDFromHex(c.Param("userId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
-	userID := mustUserID(c)
-	shares, err := h.TemplateService.RemoveShare(c.Param("id"), userID, targetID)
-	if err != nil {
-		writeShareError(c, err)
+	var req models.SetTemplateMemberRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, shares)
-}
-
-// writeShareError maps the service's sentinel messages onto status codes. Sharing is the only
-// place where "this address matches no account" is a normal, user-facing outcome, so the client
-// must be able to tell it apart from a missing template — hence a distinct message rather than a
-// bare 404. A template that exists but belongs to somebody else also answers 404, not 403: the
-// owner id sits inside the update filter, so the two cases are indistinguishable here, and
-// leaking "this template exists" to a non-owner buys nothing.
-func writeShareError(c *gin.Context, err error) {
-	switch err.Error() {
-	case "not authorized":
-		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
-	case "cannot share with yourself":
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot share with yourself"})
-	case "user not found":
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-	default:
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	members, err := h.TemplateService.SetMemberRole(c.Param("id"), mustUserID(c), targetID, req.Role)
+	if err != nil {
+		writeTemplateError(c, err)
+		return
 	}
+	c.JSON(http.StatusOK, members)
 }
 
-// DeleteTemplate deletes a template owned by the authenticated user.
-func (h *TemplateHandler) DeleteTemplate(c *gin.Context) {
-	userID := mustUserID(c)
-	if err := h.TemplateService.Delete(c.Param("id"), userID); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+// RemoveTemplateMember revokes one member's access.
+func (h *TemplateHandler) RemoveTemplateMember(c *gin.Context) {
+	targetID, err := primitive.ObjectIDFromHex(c.Param("userId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	members, err := h.TemplateService.RemoveMember(c.Param("id"), mustUserID(c), targetID)
+	if err != nil {
+		writeTemplateError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, members)
+}
+
+// LeaveTemplate removes the caller from a template's members; the client needs no own user id.
+func (h *TemplateHandler) LeaveTemplate(c *gin.Context) {
+	if err := h.TemplateService.Leave(c.Param("id"), mustUserID(c)); err != nil {
+		writeTemplateError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// DeleteTemplate deletes a template the caller may delete.
+func (h *TemplateHandler) DeleteTemplate(c *gin.Context) {
+	if err := h.TemplateService.Delete(c.Param("id"), mustUserID(c)); err != nil {
+		writeTemplateError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// writeTemplateError maps service errors onto status codes. The body's error string is the
+// sentinel's stable message; the creator tells cases with the same status apart by it.
+func writeTemplateError(c *gin.Context, err error) {
+	var conflict *service.TemplateConflictError
+	switch {
+	case errors.As(err, &conflict):
+		c.JSON(http.StatusConflict, gin.H{
+			"error":     conflict.Error(),
+			"version":   conflict.Version,
+			"updatedBy": conflict.UpdatedBy,
+			"updatedAt": conflict.UpdatedAt,
+		})
+		return
+	case models.IsTemplateValidationError(err),
+		errors.Is(err, service.ErrTemplateVersionRequired),
+		errors.Is(err, service.ErrTemplateLastOwner),
+		errors.Is(err, service.ErrTemplateInvalidRole),
+		errors.Is(err, service.ErrTemplateNotShareable),
+		errors.Is(err, service.ErrShareSelf):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	case errors.Is(err, service.ErrTemplateForbidden):
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+	case errors.Is(err, service.ErrTemplateNotFound),
+		errors.Is(err, service.ErrTemplateMemberNotFound),
+		errors.Is(err, service.ErrShareUserNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
 }
 
 func mustUserID(c *gin.Context) primitive.ObjectID {

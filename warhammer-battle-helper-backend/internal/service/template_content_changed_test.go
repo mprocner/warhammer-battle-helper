@@ -13,7 +13,6 @@ func TestTemplateContentChanged(t *testing.T) {
 		Settings: models.TemplateSettings{},
 	}
 	str := func(s string) *string { return &s }
-	yes := true
 
 	cases := []struct {
 		name string
@@ -22,8 +21,7 @@ func TestTemplateContentChanged(t *testing.T) {
 	}{
 		{"identical full body (no-op autosave)", models.UpdateTemplateRequest{
 			Name: str("Krypta"), Sections: []models.SectionDef{{ID: "s1", Title: "Attrs"}},
-			Settings: &models.TemplateSettings{}, IsPublic: &yes}, false},
-		{"visibility only", models.UpdateTemplateRequest{IsPublic: &yes}, false},
+			Settings: &models.TemplateSettings{}}, false},
 		{"name changed", models.UpdateTemplateRequest{Name: str("Krypta 2")}, true},
 		{"section title changed", models.UpdateTemplateRequest{
 			Sections: []models.SectionDef{{ID: "s1", Title: "Attributes"}}}, true},
