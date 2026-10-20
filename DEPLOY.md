@@ -162,6 +162,28 @@ docker run --rm --network warhammer-battle-helper_default \
 It prints one count per update; a second run prints zeros. Then check in the admin panel (Systems)
 that `srd5` inherited the access settings of the old key.
 
+### PLAYRPG-279 — template member roles
+
+Templates move from `ownerId` + `sharedWith` to `members` with roles. Until the migration runs,
+every template is invisible to its owner, and a GM who opens token config gets a duplicate
+token-config singleton. Same procedure as above:
+
+1. Stop `autopull.service` if enabled.
+2. Deploy: `cd /opt/warhammer-battle-helper && bash scripts/deploy.sh`
+3. Immediately run:
+
+```bash
+cd /opt/warhammer-battle-helper
+docker run --rm --network warhammer-battle-helper_default \
+  -v "$PWD/warhammer-battle-helper-backend":/src -w /src \
+  -e MONGO_URI='mongodb://<user>:<password>@mongo:27017/?authSource=admin' \
+  -e MONGO_DB=<db-name> \
+  golang:1.24-alpine go run ./cmd/migrate-template-members/
+```
+
+It prints two counts; a second run prints zeros. Then open the creator on a shared template and
+check that its access card lists the previous recipients as Viewers.
+
 ---
 
 ## Automated deployment
