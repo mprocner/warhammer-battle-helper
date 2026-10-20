@@ -42,6 +42,18 @@ test('adding posts email and role and adopts the returned list', async () => {
   expect(screen.getByLabelText('Email address')).toHaveValue('');
 });
 
+test('a successful member write hands the fresh list to the parent template', async () => {
+  const list = [me, anna, { userId: 'u7', email: 'kolega@example.com', role: 'editor' }];
+  global.fetch.mockReturnValueOnce(respond(200, list));
+  const onTemplateUpdated = jest.fn();
+  mount(base, { onTemplateUpdated });
+
+  fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'kolega@example.com' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+
+  await waitFor(() => expect(onTemplateUpdated).toHaveBeenCalledWith({ ...base, members: list }));
+});
+
 test('an unknown address keeps the typed email and says so', async () => {
   global.fetch.mockReturnValueOnce(respond(404, { error: 'user not found' }));
   mount();

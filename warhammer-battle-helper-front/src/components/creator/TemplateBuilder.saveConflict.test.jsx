@@ -92,6 +92,17 @@ test('losing edit access shows the banner and stops autosave', async () => {
   expect(patches()).toHaveLength(1);
 });
 
+test('a vanished template (404) shows the banner and stops autosave', async () => {
+  global.fetch.mockReturnValueOnce(respond(404, { error: 'not found' }));
+  mount();
+  rename('A');
+  await flushDebounce();
+  await screen.findByText(/deleted or you no longer have access/);
+  rename('AB');
+  await flushDebounce();
+  expect(patches()).toHaveLength(1);
+});
+
 test('saves are serialized: a second save waits for the first and sends its new version', async () => {
   let resolveFirst;
   global.fetch.mockReturnValueOnce(new Promise(r => { resolveFirst = r; }));

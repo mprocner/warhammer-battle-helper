@@ -74,6 +74,9 @@ export default function TemplateAccessCard({ template, token, onTemplateUpdated,
         return true;
       }
       setMembers(list);
+      // The card unmounts on a tab switch and remounts from the builder's template, which would
+      // otherwise still carry the pre-write member list.
+      onTemplateUpdated?.({ ...template, members: list });
       return true;
     } catch {
       setError(t('creator.general.shareErrorFailed'));

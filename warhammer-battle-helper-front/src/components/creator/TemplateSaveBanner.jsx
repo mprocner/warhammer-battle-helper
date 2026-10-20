@@ -4,14 +4,18 @@ import { Alert, Button } from '@mui/material';
 
 const FONT = { fontFamily: 'Crimson Text, serif' };
 
-// Shown when the creator stopped autosaving: somebody else saved first (conflict) or the user
-// lost edit access (forbidden). Nothing is saved or discarded until the user picks an action.
+// Shown when the creator stopped autosaving: somebody else saved first (conflict) the user
+// lost edit access (forbidden) or the template vanished (gone). Nothing is saved or discarded until the user picks an action.
 export default function TemplateSaveBanner({ block, onReload, onOverwrite }) {
   const { t, i18n } = useTranslation();
   if (!block) return null;
 
   if (block.kind === 'forbidden') {
     return <Alert severity="error" sx={{ borderRadius: 0, ...FONT }}>{t('creator.saveForbidden')}</Alert>;
+  }
+
+  if (block.kind === 'gone') {
+    return <Alert severity="error" sx={{ borderRadius: 0, ...FONT }}>{t('creator.saveGone')}</Alert>;
   }
 
   const time = new Date(block.updatedAt).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });

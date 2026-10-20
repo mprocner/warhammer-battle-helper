@@ -1762,6 +1762,7 @@
       "overwrite": "Overwrite with mine"
     },
     "saveForbidden": "You no longer have edit access to this template. Unsaved changes will be lost when you close it.",
+    "saveGone": "This template was deleted or you no longer have access to it. Unsaved changes will be lost when you close it.",
     "dataTablePresetsTitle": "Preset rows",
     "dataTablePresetsHint": "Define rows the GM provides. \"Always on the sheet\" rows appear read-only on every character; the rest form a list players can add from.",
     "dataTablePresetsNoColumns": "Add at least one column above before defining preset rows.",
@@ -1795,7 +1796,7 @@
       "owner": "Owner"
     },
     "leaveTemplate": "Leave template",
-    "leaveTemplateConfirm": "Leave \"{{name}}\"? It disappears from your list until an owner shares it with you again.",
+    "leaveTemplateConfirm": "Leave \"{{name}}\"? You lose your role in it. A private template disappears from your list until an owner shares it with you again.",
     "templateCreated": "Template created",
     "noTemplate": "No template defined for this game",
     "syncFailed": "Failed to sync template",

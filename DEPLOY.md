@@ -181,8 +181,11 @@ docker run --rm --network warhammer-battle-helper_default \
   golang:1.24-alpine go run ./cmd/migrate-template-members/
 ```
 
-It prints two counts; a second run prints zeros. Then open the creator on a shared template and
-check that its access card lists the previous recipients as Viewers.
+It prints two counts; a second run prints zeros, and it is safe to re-run if it fails midway.
+Browser tabs left open on the old frontend send saves without a version and get refused, so ask
+active creators to reload (or deploy when nobody is editing).
+
+Then open the creator on a shared template and check that its access card lists the previous recipients as Viewers.
 
 ---
 

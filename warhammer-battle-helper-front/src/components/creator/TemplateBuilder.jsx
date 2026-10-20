@@ -1495,6 +1495,12 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         changeSaveBlock({ kind: 'forbidden' });
         return;
       }
+      // The backend hides a template the user can no longer even use (removed from a private
+      // template, or deleted) behind 404, so this is the common revocation path.
+      if (res.status === 404) {
+        changeSaveBlock({ kind: 'gone' });
+        return;
+      }
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
       versionRef.current = updated.version;
@@ -1527,7 +1533,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // (e.g. a just-bound HP bar goes missing). Awaiting the save here fixes that race.
   const handleClose = useCallback(async () => {
     clearTimeout(saveTimer.current);
-    // A refused save stays refused: flushing would only hit the same 409/403 again.
+    // A refused save stays refused: flushing would only hit the same 409/403/404 again.
     if (!saveBlockRef.current) {
       try { await saveTemplate(sectionsRef.current, nameRef.current); } catch { /* ignore */ }
     }

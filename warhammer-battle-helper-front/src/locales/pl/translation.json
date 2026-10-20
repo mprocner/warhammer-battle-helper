@@ -1762,6 +1762,7 @@
       "overwrite": "Nadpisz moją"
     },
     "saveForbidden": "Nie masz już uprawnień do edycji tego szablonu. Niezapisane zmiany przepadną po zamknięciu.",
+    "saveGone": "Ten szablon został usunięty albo nie masz już do niego dostępu. Niezapisane zmiany przepadną po zamknięciu.",
     "dataTablePresetsTitle": "Predefiniowane wiersze",
     "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Wiersze „zawsze na karcie” pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
     "dataTablePresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować wiersze.",
@@ -1795,7 +1796,7 @@
       "owner": "Właściciel"
     },
     "leaveTemplate": "Opuść szablon",
-    "leaveTemplateConfirm": "Opuścić „{{name}}”? Zniknie z Twojej listy, dopóki właściciel znów Ci go nie udostępni.",
+    "leaveTemplateConfirm": "Opuścić „{{name}}”? Stracisz swoją rolę w tym szablonie. Prywatny szablon zniknie z Twojej listy, dopóki właściciel znów Ci go nie udostępni.",
     "templateCreated": "Szablon utworzony",
     "noTemplate": "Brak szablonu dla tej gry",
     "syncFailed": "Nie udało się zsynchronizować szablonu",
