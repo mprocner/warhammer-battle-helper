@@ -1755,6 +1755,13 @@
     "addChildSkill": "Dodaj podrzędną umiejętność"
   },
   "creator": {
+    "saveConflict": {
+      "message": "{{email}} zapisał(a) ten szablon o {{time}}.",
+      "messageUnknown": "Ktoś inny zapisał ten szablon o {{time}}.",
+      "reload": "Wczytaj jego wersję",
+      "overwrite": "Nadpisz moją"
+    },
+    "saveForbidden": "Nie masz już uprawnień do edycji tego szablonu. Niezapisane zmiany przepadną po zamknięciu.",
     "dataTablePresetsTitle": "Predefiniowane wiersze",
     "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Wiersze „zawsze na karcie” pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
     "dataTablePresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować wiersze.",

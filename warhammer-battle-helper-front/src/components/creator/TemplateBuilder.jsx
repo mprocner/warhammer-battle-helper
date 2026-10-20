@@ -31,6 +31,7 @@ import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import TemplateAccessCard from './TemplateAccessCard';
+import TemplateSaveBanner from './TemplateSaveBanner';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -1341,6 +1342,17 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   settingsRef.current = settings;
   const nameRef = useRef(name);
   nameRef.current = name;
+  // version the server last confirmed; every save sends it and the server refuses a stale one.
+  const versionRef = useRef(template?.version);
+  // Saves run one at a time: two in flight would carry the same version and the second would
+  // conflict with the first. Each save chains onto the previous one and reads versionRef only
+  // when it actually starts.
+  const saveChain = useRef(Promise.resolve());
+  // null while autosave runs; { kind: 'conflict', email, updatedAt, version } or
+  // { kind: 'forbidden' } once the server refused a save and autosave is paused.
+  const [saveBlock, setSaveBlock] = useState(null);
+  const saveBlockRef = useRef(null);
+  saveBlockRef.current = saveBlock;
 
   // ── Drag-and-drop state ─────────────────────────────────────────────────────
   //
@@ -1429,28 +1441,53 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
 
   const handleDragCancel = () => setDragState(null);
 
-  useEffect(() => {
-    setSections(template?.sections || []);
-    setName(template?.name || '');
-    setSettings(template?.settings || { diceButtons: [] });
+  // Puts a server copy of the template into local state: on first mount of an id and when the
+  // user chooses "load their version" after a conflict.
+  const applyTemplate = useCallback((tpl) => {
+    setSections(tpl?.sections || []);
+    setName(tpl?.name || '');
+    setSettings(tpl?.settings || { diceButtons: [] });
+    versionRef.current = tpl?.version;
     setSelected(null);
     setEditingPath(null);
     setAddingToPath(null);
     setDragState(null);
+  }, []);
+
+  useEffect(() => {
+    applyTemplate(template);
+    setSaveBlock(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
-  const saveTemplate = useCallback(async (currentSections, currentName) => {
+  // Sends one save. versionOverride is "overwrite with mine": the version from the 409, which
+  // makes the server accept this state on top of the other person's save.
+  const sendSave = useCallback(async (currentSections, currentName, versionOverride) => {
     if (!template?.id) return;
     setIsSaving(true);
     try {
       const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
         method: 'PATCH',
         headers: getApiHeaders({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }),
-        body: JSON.stringify({ name: currentName, sections: currentSections, settings: settingsRef.current }),
+        body: JSON.stringify({
+          name: currentName,
+          sections: currentSections,
+          settings: settingsRef.current,
+          version: versionOverride ?? versionRef.current,
+        }),
       });
+      if (res.status === 409) {
+        const body = await res.json();
+        setSaveBlock({ kind: 'conflict', email: body.updatedBy, updatedAt: body.updatedAt, version: body.version });
+        return;
+      }
+      if (res.status === 403) {
+        setSaveBlock({ kind: 'forbidden' });
+        return;
+      }
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
+      versionRef.current = updated.version;
       onTemplateUpdated?.(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
@@ -1459,8 +1496,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     }
   }, [template?.id, token, onTemplateUpdated]);
 
+  const saveTemplate = useCallback((currentSections, currentName, versionOverride) => {
+    saveChain.current = saveChain.current.then(() => sendSave(currentSections, currentName, versionOverride));
+    return saveChain.current;
+  }, [sendSave]);
+
   const triggerSave = useCallback((s, n) => {
     setDuplicateKeys(findDuplicateKeys(s));
+    // Paused until the user resolves the banner; local edits keep accumulating.
+    if (saveBlockRef.current) return;
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => saveTemplate(s, n), 1200);
   }, [saveTemplate]);
@@ -1471,7 +1515,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   // (e.g. a just-bound HP bar goes missing). Awaiting the save here fixes that race.
   const handleClose = useCallback(async () => {
     clearTimeout(saveTimer.current);
-    try { await saveTemplate(sectionsRef.current, nameRef.current); } catch { /* ignore */ }
+    // A refused save stays refused: flushing would only hit the same 409/403 again.
+    if (!saveBlockRef.current) {
+      try { await saveTemplate(sectionsRef.current, nameRef.current); } catch { /* ignore */ }
+    }
     onClose?.();
   }, [saveTemplate, onClose]);
 
@@ -1481,6 +1528,27 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     clearTimeout(saveTimer.current);
     onClose?.();
   }, [onClose]);
+
+  const handleReloadTheirs = useCallback(async () => {
+    try {
+      const res = await fetch(`${getApiUrl()}/templates/${template.id}`, {
+        headers: getApiHeaders({ 'Authorization': `Bearer ${token}` }),
+      });
+      if (!res.ok) return;
+      const fresh = await res.json();
+      applyTemplate(fresh);
+      onTemplateUpdated?.(fresh);
+      setSaveBlock(null);
+    } catch { /* banner stays; the user can retry */ }
+  }, [template?.id, token, applyTemplate, onTemplateUpdated]);
+
+  const handleOverwriteMine = useCallback(() => {
+    const version = saveBlockRef.current?.version;
+    setSaveBlock(null);
+    saveBlockRef.current = null;
+    clearTimeout(saveTimer.current);
+    saveTemplate(sectionsRef.current, nameRef.current, version);
+  }, [saveTemplate]);
 
   // ── Tree operations ────────────────────────────────────────────────────────
   //
@@ -1793,6 +1861,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           </Box>
         </Box>
       </DialogTitle>
+      <TemplateSaveBanner block={saveBlock} onReload={handleReloadTheirs} onOverwrite={handleOverwriteMine} />
 
       <DialogContent sx={{ p: 0, display: 'flex', overflow: 'hidden' }}>
         {activeTab === 'general' ? (
