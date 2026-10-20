@@ -51,6 +51,7 @@ type TemplateMemberView struct {
     UserID primitive.ObjectID `json:"userId"`
     Email  string             `json:"email"`
     Role   string             `json:"role"`
+    IsMe   bool               `json:"isMe,omitempty"` // the requesting user's own row
 }
 ```
 
@@ -105,7 +106,7 @@ func IsValidRole(role string) bool
 
 - `ListVisibleToUser`: `$or: [{"members.userId": u}, {isPublic: true}]`, `baseSystem` jak dziś.
 - `FindByOwnerAndBaseSystem`: filtr `members` `$elemMatch {userId, role: "owner"}`.
-- `Update(id, version, editorID, …)`: `UpdateOne({_id, version: seen}, …)`; przy zmianie treści
+- `Update(id, version, editorID, …)`: `UpdateOne({_id, version: seen, members: wołający z rolą dającą edit}, …)`; przy zmianie treści
   `$inc version` i `$set updatedBy`. `MatchedCount == 0` → odczyt dokumentu rozróżnia
   „nie istnieje” od konfliktu wersji.
 - `SetVisibility(id, callerID, isPublic)` — autoryzacja w filtrze (`rolesWith(ActionShare)`).
@@ -113,8 +114,9 @@ func IsValidRole(role string) bool
   `$push`. Gdy target już jest członkiem → zmiana roli tą samą ścieżką co `SetMemberRole`.
 - `SetMemberRole(id, callerID, target, role)` — `arrayFilters` na `userId`. Gdy nowa rola ≠ owner,
   filtr dodatkowo wymaga innego ownera: `members: {$elemMatch: {role: "owner", userId: {$ne: target}}}`.
-- `RemoveMember(id, callerID, target)` — `$pull`; filtr: caller ma `share` **lub** `callerID == target`;
-  zawsze wymaga innego ownera niż target, jeśli target jest ownerem.
+- `RemoveMember(id, callerID, target)` — `$pull`; filtr: caller ma `share`; wymaga innego ownera
+  niż target, jeśli target jest ownerem.
+- `Leave(id, userID)` — `$pull` siebie; ten sam warunek ostatniego ownera, bez wymogu `share`.
 - `Delete(id, callerID)` — filtr z `rolesWith(ActionDelete)`.
 - `PullUserEverywhere(userID)` — dla usuwania konta przez admina (patrz niżej).
 - Zmiany członków nie zwiększają `version` (stempel `updatedAt` zostaje) — `version` opisuje
@@ -150,11 +152,15 @@ błąd: `template not found` / `not authorized` / `template must keep at least o
 | PATCH | `/templates/:id/visibility` | `share` | `{isPublic}` → szablon |
 | POST | `/templates/:id/members` | `share` | `{email, role}` → lista członków |
 | PATCH | `/templates/:id/members/:userId` | `share` | `{role}` → lista członków |
-| DELETE | `/templates/:id/members/:userId` | `share` lub sam siebie | → lista członków |
+| DELETE | `/templates/:id/members/:userId` | `share` | → lista członków |
+| DELETE | `/templates/:id/membership` | członkostwo | opuszczenie szablonu przez wołającego; klient nie musi znać własnego id |
 | DELETE | `/templates/:id` | `delete` | |
 | POST | `/templates/:id/clone` | `use` | bez zmian |
 
 Usuwane: `POST /templates/:id/shares`, `DELETE /templates/:id/shares/:userId`.
+
+Klient serializuje zapisy (kolejny autosave czeka na odpowiedź poprzedniego), inaczej dwa
+zapisy w locie z tą samą wersją dałyby konflikt z samym sobą.
 
 Kody: brak dostępu do odczytu → 404; członek bez uprawnienia → 403; ostatni owner, zła rola, brak
 wersji, szablon token-config w endpointach członków → 400; konflikt wersji → 409.
@@ -195,7 +201,8 @@ sharedWith.map(id → {id, "viewer"})`, następnie `$unset: {ownerId, sharedWith
 - Switch publiczny → od razu `PATCH /templates/:id/visibility`; błąd przywraca poprzednią wartość.
 - Lista członków (`template.members`): ikona, e-mail, „(ty)” przy sobie, `Select` roli
   (Viewer/Editor/Owner, zmiana → `PATCH …/members/:userId`), przycisk usunięcia
-  (na sobie: „Opuść szablon” z confirmem; po sukcesie kreator się zamyka, lobby odświeża listę).
+  (na własnym wierszu — `isMe` — „Opuść szablon” z confirmem → `DELETE /templates/:id/membership`;
+  po sukcesie kreator się zamyka bez flusha zapisu, lobby odświeża listę).
 - Wiersz dodawania: e-mail + `Select` roli (domyślnie Viewer) + „Udostępnij” → `POST …/members`.
 - `shareErrorKey` → `memberErrorKey`, dodany przypadek `template must keep at least one owner`.
 - Klasa `.creator__settings-card--visibility` zostaje (kotwica kroku `visibility` w
@@ -206,8 +213,8 @@ sharedWith.map(id → {id, "viewer"})`, następnie `$unset: {ownerId, sharedWith
 ### Lobby
 
 - `TemplateManagerDialog.jsx`: edycja przy `permissions.edit`, usuwanie przy `permissions.delete`,
-  „Opuść” (`LogoutIcon`, confirm) przy `myRole` viewer/editor → `DELETE …/members/<ja>`.
-  Zamiast „· udostępniony” chip roli (Editor/Viewer).
+  „Opuść” (`LogoutIcon`, confirm) przy `myRole` viewer/editor → `DELETE /templates/:id/membership`.
+  Zamiast „· udostępniony” nazwa roli w linii pomocniczej („· Editor”).
 - `components/lobby/systemOptions.js`: `mine` = `myRole === 'owner'`, `shared` = pozostałe
   niepuste `myRole`, `public` = reszta. Etykieta autora z `ownerEmails.join(', ')`.
 - `hooks/useTemplates.js` i inne miejsca czytające `isOwner` / `sharedWithMe` / `ownerEmail` /
