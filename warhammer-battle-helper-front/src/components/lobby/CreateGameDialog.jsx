@@ -2,13 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import axiosInstance from '../../api/axios';
 import {
-  Autocomplete, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  ListSubheader, TextField, Typography,
+  Autocomplete, Box, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
+  IconButton, ListSubheader, TextField, Typography,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 import { listSystems } from '../../systems/registry';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
-import { CUSTOM_PREFIX, buildSystemOptions, filterSystemOptions, findMatch } from './systemOptions';
+import { CUSTOM_PREFIX, buildSystemOptions, filterByLanguages, filterSystemOptions, findMatch } from './systemOptions';
+import LanguageFilter, { loadLanguageFilter, saveLanguageFilter } from './LanguageFilter';
+import TemplateDescriptionDialog from './TemplateDescriptionDialog';
+import RichTextEditor from '../common/richText/RichTextEditor';
 
 const isCustom = (value) => Boolean(value) && value.startsWith(CUSTOM_PREFIX);
 const templateIdOf = (value) => value.slice(CUSTOM_PREFIX.length);
@@ -56,6 +60,9 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
   // Hardcoded systems this user may create games in; null until /features answers. Fetched on
   // every open so an access change made in the admin panel shows without a page reload.
   const [allowedSystems, setAllowedSystems] = useState(null);
+  const [languages, setLanguages] = useState(loadLanguageFilter);
+  // The option whose description is open in the popup; null = closed.
+  const [describing, setDescribing] = useState(null);
 
   // Until /features answers (or if it fails) no hardcoded system is offered; the backend
   // enforces access on create anyway. Custom templates are never gated.
@@ -65,9 +72,13 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
   [allowedSystems, t]);
 
   const options = useMemo(
-    () => buildSystemOptions(regularSystems, templates),
-    [regularSystems, templates]
+    () => filterByLanguages(buildSystemOptions(regularSystems, templates), languages),
+    [regularSystems, templates, languages]
   );
+  const handleLanguagesChange = (langs) => {
+    setLanguages(langs);
+    saveLanguageFilter(langs);
+  };
   const selectedOption = options.find(opt => opt.value === selection) ?? null;
 
   // Every open starts from a clean form — a half-filled name from a cancelled attempt
@@ -87,13 +98,13 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     return () => { cancelled = true; };
   }, [open]);
 
-  // A template selected here can be deleted from the manager stacked on top of this dialog;
-  // clear the choice rather than submitting a dangling id.
+  // A template selected here can be deleted from the manager stacked on top of this dialog, or
+  // hidden by the language filter; clear the choice rather than submit something not on the list.
   useEffect(() => {
-    if (isCustom(selection) && !templates.some(tpl => `${CUSTOM_PREFIX}${tpl.id}` === selection)) {
+    if (isCustom(selection) && !options.some(opt => opt.value === selection)) {
       setSelection(null);
     }
-  }, [templates, selection]);
+  }, [options, selection]);
 
   const handleSubmit = () => {
     if (!name.trim() || !selection || loading) return;
@@ -103,6 +114,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
   };
 
   return (
+    <>
     <Dialog open={open} onClose={() => !loading && onClose()} maxWidth="sm" fullWidth
       PaperProps={parchmentDialogProps()}>
       <DialogTitle sx={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: '1.8rem', color: 'primary.main' }}>
@@ -113,6 +125,8 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           value={name} onChange={(e) => setName(e.target.value)} disabled={loading}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' } }} />
+
+        <LanguageFilter value={languages} onChange={handleLanguagesChange} disabled={loading} />
 
         <Autocomplete
           disableClearable
@@ -145,13 +159,24 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
             const { key, ...optionProps } = props;
             return (
               <li key={key} {...optionProps}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', fontFamily: BODY_FONT }}>
-                  <span><HighlightedLabel label={opt.label} query={query} /></span>
-                  {opt.ownerEmail && (
-                    <Typography component="span" variant="caption"
-                      sx={{ fontFamily: BODY_FONT, color: 'text.secondary' }}>
-                      {opt.ownerEmail}
-                    </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', fontFamily: BODY_FONT, flex: 1, minWidth: 0 }}>
+                    <span><HighlightedLabel label={opt.label} query={query} /></span>
+                    {opt.ownerEmail && (
+                      <Typography component="span" variant="caption"
+                        sx={{ fontFamily: BODY_FONT, color: 'text.secondary' }}>
+                        {opt.ownerEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                  {opt.description && (
+                    // mousedown would otherwise select the row before click ever fires.
+                    <IconButton size="small" aria-label={t('creator.about.showDescription')}
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); }}
+                      onClick={e => { e.stopPropagation(); setDescribing(opt); }}
+                      sx={{ color: 'primary.main' }}>
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
                   )}
                 </Box>
               </li>
@@ -171,6 +196,24 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
               }} />
           )}
         />
+
+        {selectedOption?.description && (
+          <Box className="create-game__selected-about"
+            sx={{ mt: 1.5, p: 1.5, borderRadius: 1, border: '1px solid', borderColor: 'primary.light', background: 'rgba(255,255,255,0.4)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Typography sx={{ fontFamily: DISPLAY_FONT, fontWeight: 600, color: 'primary.main' }}>{selectedOption.label}</Typography>
+              {selectedOption.language && (
+                <Chip size="small" variant="outlined" label={t(`languages.${selectedOption.language}`)} sx={{ fontFamily: BODY_FONT }} />
+              )}
+            </Box>
+            <Box sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              <RichTextEditor value={selectedOption.description} editable={false} toolbar={false} />
+            </Box>
+            <Button size="small" onClick={() => setDescribing(selectedOption)} sx={{ fontFamily: BODY_FONT, textTransform: 'none', mt: 0.5, px: 0 }}>
+              {t('creator.about.more')}
+            </Button>
+          </Box>
+        )}
 
         {/* Creator CTA — a secondary "soft button". It must NOT read as a second primary
             action next to "Create": gold accent (not the leather primary), sentence case,
@@ -207,6 +250,10 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
         </Button>
       </DialogActions>
     </Dialog>
+    <TemplateDescriptionDialog
+      template={describing && { name: describing.label, description: describing.description, language: describing.language }}
+      onClose={() => setDescribing(null)} />
+    </>
   );
 }
 
