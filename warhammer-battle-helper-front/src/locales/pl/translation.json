@@ -1786,7 +1786,10 @@
       "showDescription": "Pokaż opis",
       "more": "Więcej",
       "filterLabel": "Język szablonu",
-      "filterAll": "Wszystkie"
+      "filterAll": "Wszystkie",
+      "filterButton": "Języki: {{list}}",
+      "hiddenByFilter": "Ukryte przez filtr języka: {{count}}",
+      "showAll": "Pokaż wszystkie"
     },
     "saveConflict": {
       "message": "{{email}} zapisał(a) ten szablon o {{time}}.",

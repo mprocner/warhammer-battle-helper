@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Button, Chip, ListSubheader, MenuItem, TextField } from '@mui/material';
+import { Box, Button, ListItemIcon, Menu, MenuItem } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import { TEMPLATE_LANGUAGES } from '../../utils/templateLanguages';
 import { BODY_FONT } from './lobbyStyles';
 
@@ -21,42 +24,46 @@ export function saveLanguageFilter(langs) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(langs)); } catch { /* storage unavailable */ }
 }
 
-// Empty selection means "all languages", so the field shows that instead of a blank box.
+// A filter of the system picker, so it reads as one: a compact text button above the picker, not
+// a form field of its own. Each pick applies at once; Confirm (or a click outside) only closes.
 function LanguageFilter({ value, onChange, disabled }) {
   const { t } = useTranslation();
-  // A multiple select stays open after each pick, so the menu is controlled and closes on Confirm
-  // (or a click outside / Escape, as before).
-  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState(null);
+  const toggle = (code) => onChange(value.includes(code) ? value.filter(c => c !== code) : [...value, code]);
+  const summary = value.length === 0
+    ? t('creator.about.filterAll')
+    : value.map(code => code.toUpperCase()).join(', ');
+
   return (
-    <TextField select fullWidth size="small" disabled={disabled}
-      label={t('creator.about.filterLabel')} value={value}
-      onChange={e => onChange(e.target.value)}
-      InputLabelProps={{ shrink: true }}
-      SelectProps={{
-        multiple: true,
-        displayEmpty: true,
-        open,
-        onOpen: () => setOpen(true),
-        onClose: () => setOpen(false),
-        renderValue: (selected) => (selected.length === 0
-          ? t('creator.about.filterAll')
-          : (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {selected.map(code => <Chip key={code} size="small" label={t(`languages.${code}`)} />)}
-            </Box>
-          )),
-      }}
-      sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT } }}>
-      {TEMPLATE_LANGUAGES.map(code => (
-        <MenuItem key={code} value={code} sx={{ fontFamily: BODY_FONT }}>{t(`languages.${code}`)}</MenuItem>
-      ))}
-      {/* Select ignores clicks on a child without tabindex, so this footer never toggles a value. */}
-      <ListSubheader sx={{ position: 'sticky', top: 'auto', bottom: 0, display: 'flex', justifyContent: 'flex-end', py: 0.5, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button size="small" variant="contained" onClick={() => setOpen(false)} sx={{ fontFamily: BODY_FONT }}>
-          {t('common.confirm')}
-        </Button>
-      </ListSubheader>
-    </TextField>
+    <>
+      <Button size="small" disabled={disabled} onClick={e => setAnchor(e.currentTarget)}
+        endIcon={<ArrowDropDownIcon />}
+        sx={{ fontFamily: BODY_FONT, textTransform: 'none', color: '#7a5c42', px: 1, minWidth: 0 }}>
+        {t('creator.about.filterButton', { list: summary })}
+      </Button>
+      <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}
+        MenuListProps={{ 'aria-label': t('creator.about.filterLabel'), dense: true }}
+        slotProps={{ paper: { sx: { maxHeight: 'min(420px, 60vh)' } } }}>
+        {TEMPLATE_LANGUAGES.map(code => {
+          const checked = value.includes(code);
+          return (
+            <MenuItem key={code} role="menuitemcheckbox" aria-checked={checked} onClick={() => toggle(code)}
+              sx={{ fontFamily: BODY_FONT }}>
+              <ListItemIcon sx={{ color: '#c9975b' }}>
+                {checked ? <CheckBoxIcon fontSize="small" /> : <CheckBoxOutlineBlankIcon fontSize="small" />}
+              </ListItemIcon>
+              {t(`languages.${code}`)}
+            </MenuItem>
+          );
+        })}
+        <Box sx={{ position: 'sticky', bottom: 0, display: 'flex', justifyContent: 'flex-end', px: 1.5, py: 0.75,
+          borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Button size="small" variant="contained" onClick={() => setAnchor(null)} sx={{ fontFamily: BODY_FONT }}>
+            {t('common.confirm')}
+          </Button>
+        </Box>
+      </Menu>
+    </>
   );
 }
 

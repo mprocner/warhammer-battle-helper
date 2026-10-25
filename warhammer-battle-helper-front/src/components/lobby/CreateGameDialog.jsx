@@ -71,10 +71,13 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     .map(sys => ({ ...sys, label: t(`gameSystems.${sys.value}`) })),
   [allowedSystems, t]);
 
-  const options = useMemo(
-    () => filterByLanguages(buildSystemOptions(regularSystems, templates), languages),
-    [regularSystems, templates, languages]
+  const allOptions = useMemo(
+    () => buildSystemOptions(regularSystems, templates),
+    [regularSystems, templates]
   );
+  const options = useMemo(() => filterByLanguages(allOptions, languages), [allOptions, languages]);
+  // Said out loud under the picker, so templates never vanish without a trace.
+  const hiddenByFilter = allOptions.length - options.length;
   const handleLanguagesChange = (langs) => {
     setLanguages(langs);
     saveLanguageFilter(langs);
@@ -126,7 +129,9 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' } }} />
 
-        <LanguageFilter value={languages} onChange={handleLanguagesChange} disabled={loading} />
+        <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+          <LanguageFilter value={languages} onChange={handleLanguagesChange} disabled={loading} />
+        </Box>
 
         <Autocomplete
           disableClearable
@@ -169,6 +174,12 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
                       </Typography>
                     )}
                   </Box>
+                  {opt.language && (
+                    <Typography component="span" className="create-game__option-lang"
+                      sx={{ fontFamily: BODY_FONT, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: '#7a5c42' }}>
+                      {opt.language.toUpperCase()}
+                    </Typography>
+                  )}
                   {opt.description && (
                     // mousedown would otherwise select the row before click ever fires.
                     <IconButton size="small" aria-label={t('creator.about.showDescription')}
@@ -185,7 +196,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           // Capped by the viewport too: the list opens below a field in the middle of the dialog,
           // so a fixed 380px ran off the bottom of a laptop screen and hid the lower groups.
           slotProps={{ listbox: { sx: { maxHeight: 'min(380px, 40vh)' } } }}
-          sx={{ mt: 2 }}
+          sx={{ mt: 0.5 }}
           renderInput={(params) => (
             <TextField {...params} label={t('game.gameSystem')} placeholder={t('creator.searchSystem')}
               // Keep the label raised so the placeholder shows on an empty, unfocused field.
@@ -196,6 +207,18 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
               }} />
           )}
         />
+
+        {hiddenByFilter > 0 && (
+          <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+            <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary' }}>
+              {t('creator.about.hiddenByFilter', { count: hiddenByFilter })}
+            </Typography>
+            <Button size="small" onClick={() => handleLanguagesChange([])}
+              sx={{ fontFamily: BODY_FONT, textTransform: 'none', minWidth: 0, px: 0.5 }}>
+              {t('creator.about.showAll')}
+            </Button>
+          </Box>
+        )}
 
         {selectedOption?.description && (
           <Box className="create-game__selected-about"

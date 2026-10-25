@@ -179,23 +179,27 @@ const openSystems = () => {
   fireEvent.mouseDown(systemInput());
   return screen.getByRole('listbox');
 };
-const chooseLanguage = async (name) => {
-  fireEvent.mouseDown(screen.getByRole('combobox', { name: i18n.t('creator.about.filterLabel') }));
-  fireEvent.click(screen.getByRole('option', { name }));
+const openLanguages = () => fireEvent.click(screen.getByRole('button', { name: /^Languages:/ }));
+const confirmLanguages = async () => {
   fireEvent.click(screen.getByRole('button', { name: i18n.t('common.confirm') }));
   // The menu leaves through a transition, so it lingers in the DOM for a moment.
-  await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
+};
+const chooseLanguage = async (name) => {
+  openLanguages();
+  fireEvent.click(screen.getByRole('menuitemcheckbox', { name }));
+  await confirmLanguages();
 };
 
 describe('CreateGameDialog language filter', () => {
   it('stays open while picking several languages and closes on confirm', async () => {
     await renderDialog();
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: i18n.t('creator.about.filterLabel') }));
-    fireEvent.click(screen.getByRole('option', { name: 'Polish' }));
-    fireEvent.click(screen.getByRole('option', { name: 'English' }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.confirm') }));
-    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+    openLanguages();
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Polish' }));
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'English' }));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await confirmLanguages();
+    expect(screen.getByRole('button', { name: 'Languages: PL, EN' })).toBeInTheDocument();
     const list = openSystems();
     expect(within(list).getByText('Moja Kampania')).toBeInTheDocument();
     expect(within(list).getByText('Łowcy Czarownic')).toBeInTheDocument();
@@ -203,6 +207,25 @@ describe('CreateGameDialog language filter', () => {
 
   it('shows everything until a language is chosen', async () => {
     await renderDialog();
+    expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
+    expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
+    expect(screen.queryByText(/Hidden by the language filter/)).not.toBeInTheDocument();
+  });
+
+  it('each template row shows its language code; unspecified shows none', async () => {
+    await renderDialog();
+    const list = openSystems();
+    expect(within(list).getByText('Moja Kampania').closest('li')).toHaveTextContent('PL');
+    expect(within(list).getByText('Łowcy Czarownic').closest('li')).toHaveTextContent('EN');
+    expect(within(list).getByText('Mroczne Ziemie').closest('li').querySelector('.create-game__option-lang')).toBeNull();
+  });
+
+  it('says how many templates the filter hides and "Show all" clears it', async () => {
+    await renderDialog();
+    await chooseLanguage('Polish');
+    expect(screen.getByText('Hidden by the language filter: 2')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
   });
 

@@ -1786,7 +1786,10 @@
       "showDescription": "Show description",
       "more": "More",
       "filterLabel": "Template language",
-      "filterAll": "All"
+      "filterAll": "All",
+      "filterButton": "Languages: {{list}}",
+      "hiddenByFilter": "Hidden by the language filter: {{count}}",
+      "showAll": "Show all"
     },
     "saveConflict": {
       "message": "{{email}} saved this template at {{time}}.",
