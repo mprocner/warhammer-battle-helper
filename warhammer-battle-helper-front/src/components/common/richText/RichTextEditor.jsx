@@ -12,13 +12,21 @@ const RichTextEditor = ({ value = '', onChange, editable = true, toolbar = true,
   const [, forceUpdate] = useState(0);
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  // The HTML this editor last reported. A parent that passes it straight back must not have it
+  // re-parsed: parsing collapses whitespace (a just-typed trailing space), so the echo would read
+  // as a different document and setContent would eat the space and move the caret.
+  const lastEmittedRef = useRef(null);
 
   const editor = useEditor({
     extensions: RICH_TEXT_EXTENSIONS,
     content: value,
     editable,
     // An empty document is stored as '', not '<p></p>', so a cleared field leaves nothing behind.
-    onUpdate: ({ editor: ed }) => onChangeRef.current?.(ed.isEmpty ? '' : ed.getHTML()),
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.isEmpty ? '' : ed.getHTML();
+      lastEmittedRef.current = html;
+      onChangeRef.current?.(html);
+    },
     // Stored marks and node attrs applied on a collapsed caret fire neither a selection update
     // nor a doc update; re-rendering on every transaction keeps the toolbar's state current.
     onTransaction: () => forceUpdate((n) => n + 1),
@@ -32,6 +40,7 @@ const RichTextEditor = ({ value = '', onChange, editable = true, toolbar = true,
   useEffect(() => {
     if (!editor) return;
     const next = value || '';
+    if (next === lastEmittedRef.current) return;
     // Compare documents, not HTML strings: the backend sanitizer escapes text differently
     // (`'` -> `&#39;`, `&nbsp;` -> U+00A0), so the echo of a save is a different string
     // describing the same document. '' parses to the same empty paragraph the editor holds.
@@ -40,6 +49,8 @@ const RichTextEditor = ({ value = '', onChange, editable = true, toolbar = true,
     const hadFocus = editor.isFocused;
     const { from } = editor.state.selection;
     editor.commands.setContent(next, { emitUpdate: false });
+    // The editor now holds an outside document; a later value equal to the old report is a real change.
+    lastEmittedRef.current = null;
     if (hadFocus) {
       // The incoming version can be shorter; the position must fit the new document.
       editor.commands.setTextSelection(Math.min(from, editor.state.doc.content.size));

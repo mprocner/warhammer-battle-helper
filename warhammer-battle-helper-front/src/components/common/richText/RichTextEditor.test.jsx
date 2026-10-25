@@ -1,5 +1,5 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-container */
-import React from 'react';
+import React, { useState } from 'react';
 import { render, act, screen, within } from '@testing-library/react';
 import '../../../i18n';
 import RichTextEditor from './RichTextEditor';
@@ -112,4 +112,23 @@ test('toolbar={false} renders content only', () => {
   const { container } = render(<RichTextEditor value="<p>x</p>" editable={false} toolbar={false} />);
   expect(container.querySelector('.rich-toolbar')).toBeNull();
   expect(container.querySelector('.tiptap').textContent).toBe('x');
+});
+
+// A parent that stores every reported HTML and passes it straight back, like the creator's
+// description card. Parsing "<p>Ala </p>" collapses the trailing space, so treating the echo as
+// a new document would eat the space just typed and move the caret.
+function Controlled() {
+  const [value, setValue] = useState('');
+  return <RichTextEditor value={value} onChange={setValue} />;
+}
+
+test('the echo of its own edit keeps a trailing space and the caret', () => {
+  const { container } = render(<Controlled />);
+  const editor = editorIn(container);
+  act(() => {
+    editor.commands.focus();
+    for (const ch of 'Ala ') editor.view.dispatch(editor.state.tr.insertText(ch));
+  });
+  expect(editor.getHTML()).toBe('<p>Ala </p>');
+  expect(editor.state.selection.from).toBe(5);
 });
