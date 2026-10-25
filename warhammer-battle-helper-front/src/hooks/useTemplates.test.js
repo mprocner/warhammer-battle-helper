@@ -1,5 +1,4 @@
 import { renderHook, act } from '@testing-library/react';
-import '../i18n';
 import i18n from '../i18n';
 import { useTemplates } from './useTemplates';
 

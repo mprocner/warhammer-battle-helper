@@ -30,7 +30,7 @@ function TemplateAboutCard({ description, language, onChange }) {
         <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem', color: '#7a5c42', mb: 0.5 }}>
           {t('creator.about.description')}
         </Typography>
-        <RichTextEditor value={description} onChange={html => onChange({ description: html })} />
+        <RichTextEditor className="creator__about-editor" value={description} onChange={html => onChange({ description: html })} />
       </div>
     </div>
   );

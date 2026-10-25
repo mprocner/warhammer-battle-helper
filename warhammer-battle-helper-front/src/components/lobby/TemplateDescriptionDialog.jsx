@@ -20,7 +20,7 @@ function TemplateDescriptionDialog({ template, onClose }) {
             )}
           </DialogTitle>
           <DialogContent>
-            <RichTextEditor className="template-description" value={template.description} editable={false} toolbar={false} />
+            <RichTextEditor value={template.description} editable={false} toolbar={false} />
           </DialogContent>
           <DialogActions sx={{ p: 2, pt: 0 }}>
             <Button onClick={onClose} sx={{ fontFamily: BODY_FONT }}>{t('common.close')}</Button>

@@ -11628,6 +11628,24 @@ button.custom-sheet__row-table-expander:hover {
     padding: 14px 16px;
 }
 
+/* Description editor in the About card: framed like the styled sheet field */
+.creator__about-editor .rich-text__content {
+    min-height: 120px;
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    transition: border-color 0.15s;
+}
+
+.creator__about-editor .rich-text__content:focus-within {
+    border-color: #7a5c42;
+}
+
+.creator__about-editor .rich-text__content .tiptap {
+    box-sizing: border-box;
+    min-height: 118px;
+}
+
 /* ── Share list inside the visibility card ───────────────────────────── */
 
 .creator__share {

@@ -114,7 +114,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.5 }}>
                         <Typography sx={{ fontFamily: DISPLAY_FONT, fontWeight: 600, fontSize: '0.95rem', color: 'primary.main' }}>{tpl.name}</Typography>
                         {tpl.description && (
-                          <IconButton size="small" onClick={() => setDescribing(tpl)}
+                          <IconButton size="small" onClick={() => setDescribing(tpl)} aria-label={t('creator.about.showDescription')}
                             onMouseEnter={e => showTooltip(t('creator.about.showDescription'), e.currentTarget)} onMouseLeave={hideTooltip}
                             sx={{ color: 'primary.main', p: 0.25 }}>
                             <InfoOutlinedIcon fontSize="small" />
