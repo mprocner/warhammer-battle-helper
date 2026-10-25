@@ -7,6 +7,7 @@ const creatorGeneral = {
     { id: 'name', target: '.creator__name-input', placement: 'bottom' },
     { id: 'tabs', target: '.creator__tab-nav--two-tabs', placement: 'bottom' },
     { id: 'visibility', target: '.creator__settings-card--visibility', placement: 'auto' },
+    { id: 'about', target: '.creator__settings-card--about', placement: 'auto' },
     { id: 'sheetWidth', target: '.creator__settings-card--sheet-width', placement: 'auto' },
     { id: 'dice', target: '.creator__settings-card--dice', placement: 'auto' },
     { id: 'modifier', target: '.creator__settings-card--modifier', placement: 'auto' },

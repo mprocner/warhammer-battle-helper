@@ -1065,6 +1065,10 @@
         "title": "Who can use and edit it",
         "body": "Owners manage access here. Viewers can use and clone the template, Editors can also change it, Owners can also manage access and delete it. A public template can be used by anyone, but only members can edit it."
       },
+      "about": {
+        "title": "Description and language",
+        "body": "Tell players what this system is about. The description shows next to the template when someone creates a game, and the language lets them find it with the language filter."
+      },
       "sheetWidth": {
         "title": "Sheet window width",
         "body": "How wide the character sheet opens for players. The Sheet tab shows the sheet at exactly this width."

@@ -31,6 +31,7 @@ import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import TemplateAccessCard from './TemplateAccessCard';
+import TemplateAboutCard from './TemplateAboutCard';
 import TemplateSaveBanner from './TemplateSaveBanner';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -1309,6 +1310,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [sections,    setSections]    = useState(template?.sections || []);
   const [name,        setName]        = useState(template?.name     || '');
   const [settings,    setSettings]    = useState(template?.settings || { diceButtons: [] });
+  const [about, setAbout] = useState({ description: template?.description || '', language: template?.language || '' });
   // selected is a PATH: [2] = third root section, [2,0] = its first child (field or
   // subsection), [2,0,1] = a child of that subsection. null = nothing selected.
   const [selected,    setSelected]    = useState(null);
@@ -1340,6 +1342,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   sectionsRef.current = sections;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const aboutRef = useRef(about);
+  aboutRef.current = about;
   const nameRef = useRef(name);
   nameRef.current = name;
   // version the server last confirmed; every save sends it and the server refuses a stale one.
@@ -1454,6 +1458,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     setSections(tpl?.sections || []);
     setName(tpl?.name || '');
     setSettings(tpl?.settings || { diceButtons: [] });
+    setAbout({ description: tpl?.description || '', language: tpl?.language || '' });
     versionRef.current = tpl?.version;
     setSelected(null);
     setEditingPath(null);
@@ -1483,6 +1488,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           name: currentName,
           sections: currentSections,
           settings: settingsRef.current,
+          // A token-display variant has no about fields; the server rejects non-empty ones.
+          ...(isVariant ? {} : aboutRef.current),
           version: versionOverride ?? versionRef.current,
         }),
       });
@@ -1512,7 +1519,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     } catch { /* silent */ } finally {
       setIsSaving(false);
     }
-  }, [template?.id, token, onTemplateUpdated, changeSaveBlock]);
+  }, [template?.id, token, onTemplateUpdated, changeSaveBlock, isVariant]);
 
   const saveTemplate = useCallback((currentSections, currentName, versionOverride) => {
     saveChain.current = saveChain.current.then(() => sendSave(currentSections, currentName, versionOverride));
@@ -1678,6 +1685,13 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     const next = { ...settings, ...patch };
     setSettings(next);
     settingsRef.current = next; // sync so the debounced save reads fresh settings
+    triggerSave(sections, name);
+  };
+
+  const updateAbout = (patch) => {
+    const next = { ...about, ...patch };
+    setAbout(next);
+    aboutRef.current = next; // sync so the debounced save reads the fresh value
     triggerSave(sections, name);
   };
 
@@ -1895,6 +1909,9 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 onTemplateUpdated={onTemplateUpdated}
                 onLeft={handleLeft}
               />
+            )}
+            {!isVariant && (
+              <TemplateAboutCard description={about.description} language={about.language} onChange={updateAbout} />
             )}
             {!isVariant && (
             <div className="creator__settings-card creator__settings-card--sheet-width">

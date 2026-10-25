@@ -1065,6 +1065,10 @@
         "title": "Kto może go używać i edytować",
         "body": "Tutaj właściciele zarządzają dostępem. Podgląd pozwala używać i klonować szablon, Edytor może go też zmieniać, a Właściciel dodatkowo zarządza dostępem i może go usunąć. Z publicznego szablonu może skorzystać każdy, ale edytować go mogą tylko członkowie."
       },
+      "about": {
+        "title": "Opis i język",
+        "body": "Napisz graczom, czym jest ten system. Opis widać przy szablonie, gdy ktoś tworzy grę, a język pozwala go znaleźć filtrem języka."
+      },
       "sheetWidth": {
         "title": "Szerokość okna karty",
         "body": "Jak szeroko karta postaci otwiera się graczom. Zakładka Karta pokazuje kartę dokładnie w tej szerokości."
