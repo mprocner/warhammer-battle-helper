@@ -20,6 +20,7 @@ usunąć. Kilku równorzędnych ownerów pozwala przekazać rozwój szablonu inn
 | Opuszczenie | Każdy członek może się sam wypisać (owner tylko, gdy nie jest ostatnim). |
 | Zmiana roli na żywo | Bez WS. Lobby pobiera przy otwarciu, kreator dowiaduje się przy zapisie (403). |
 | Poza zakresem | Admin przypisujący ownera porzuconemu szablonowi — osobny ticket. Uprawnienia per sekcja. |
+| Sync gry po utracie dostępu | Bez bramki: GM, który stracił dostęp do szablonu, nadal widzi „dostępna aktualizacja” i może zsynchronizować grę (`SyncTemplate` czyta szablon przez `TemplateService.Get` bez sprawdzenia). Decyzja świadoma (2026-10-25) — gra raz utworzona z szablonu zachowuje do niego ścieżkę aktualizacji. |
 
 ## Macierz uprawnień
 
