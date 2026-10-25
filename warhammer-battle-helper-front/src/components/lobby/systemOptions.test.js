@@ -1,5 +1,5 @@
 import {
-  CUSTOM_PREFIX, buildSystemOptions, normalizeForSearch, findMatch, filterSystemOptions,
+  CUSTOM_PREFIX, buildSystemOptions, normalizeForSearch, findMatch, filterSystemOptions, filterByLanguages,
 } from './systemOptions';
 
 const systems = [
@@ -84,5 +84,35 @@ describe('filterSystemOptions', () => {
 
   it('matches the owner email only for shared templates', () => {
     expect(filterSystemOptions(options, 'alice@').map(o => o.label)).toEqual(['Wiedźmin']);
+  });
+});
+
+describe('filterByLanguages', () => {
+  const opts = buildSystemOptions(systems, [
+    { id: 'a', name: 'A', myRole: 'owner', language: 'pl', description: '<p>x</p>' },
+    { id: 'b', name: 'B', myRole: 'owner', language: 'en' },
+    { id: 'c', name: 'C', myRole: 'owner' },
+  ]);
+  const labels = (list) => list.map(o => o.label);
+
+  it('carries language and description onto template options', () => {
+    const a = opts.find(o => o.label === 'A');
+    expect(a.language).toBe('pl');
+    expect(a.description).toBe('<p>x</p>');
+    expect(opts.find(o => o.label === 'C').language).toBe('');
+  });
+
+  it('passes everything through with no language chosen', () => {
+    expect(filterByLanguages(opts, [])).toBe(opts);
+  });
+
+  it('keeps built-in systems and templates in a chosen language, drops unspecified', () => {
+    expect(labels(filterByLanguages(opts, ['pl']))).toEqual([
+      'Warhammer Fantasy Roleplay 4e', 'Call of Cthulhu 7e', 'A',
+    ]);
+  });
+
+  it('matches any of several chosen languages', () => {
+    expect(labels(filterByLanguages(opts, ['pl', 'en'])).slice(2)).toEqual(['A', 'B']);
   });
 });

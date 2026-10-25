@@ -1,4 +1,22 @@
 {
+  "languages": {
+    "unspecified": "Nieokreślony",
+    "pl": "Polski",
+    "en": "Angielski",
+    "de": "Niemiecki",
+    "fr": "Francuski",
+    "es": "Hiszpański",
+    "it": "Włoski",
+    "pt": "Portugalski",
+    "cs": "Czeski",
+    "sk": "Słowacki",
+    "uk": "Ukraiński",
+    "ru": "Rosyjski",
+    "hu": "Węgierski",
+    "ja": "Japoński",
+    "zh": "Chiński",
+    "ko": "Koreański"
+  },
   "imageCrop": {
     "title": "Przytnij obraz",
     "zoom": "Powiększenie",

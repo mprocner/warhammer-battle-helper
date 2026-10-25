@@ -1,4 +1,22 @@
 {
+  "languages": {
+    "unspecified": "Unspecified",
+    "pl": "Polish",
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "cs": "Czech",
+    "sk": "Slovak",
+    "uk": "Ukrainian",
+    "ru": "Russian",
+    "hu": "Hungarian",
+    "ja": "Japanese",
+    "zh": "Chinese",
+    "ko": "Korean"
+  },
   "imageCrop": {
     "title": "Crop image",
     "zoom": "Zoom",

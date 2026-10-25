@@ -20,6 +20,8 @@ const toOption = (tpl, group) => ({
   value: `${CUSTOM_PREFIX}${tpl.id}`,
   label: tpl.name,
   group,
+  language: tpl.language || '',
+  description: tpl.description || '',
   ...(group === 'shared' && tpl.ownerEmails?.length ? { ownerEmail: tpl.ownerEmails.join(', ') } : {}),
 });
 
@@ -63,4 +65,11 @@ export function filterSystemOptions(options, query) {
   if (!query.trim()) return options;
   return options.filter(opt => findMatch(opt.label, query)
     || (opt.group === 'shared' && opt.ownerEmail && findMatch(opt.ownerEmail, query)));
+}
+
+// Built-in systems have translated UI and no content language, so a language filter never
+// hides them. A template with no language set has nothing to match and drops out.
+export function filterByLanguages(options, langs) {
+  if (langs.length === 0) return options;
+  return options.filter(opt => opt.group === 'systems' || langs.includes(opt.language));
 }
