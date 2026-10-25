@@ -211,11 +211,16 @@ type TemplateMemberView struct {
 
 // SystemTemplate defines the structure of a custom game system built via the template creator.
 type SystemTemplate struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name     string             `bson:"name" json:"name"`
-	Version  int                `bson:"version" json:"version"`
-	Sections []SectionDef       `bson:"sections" json:"sections"`
-	Settings TemplateSettings   `bson:"settings,omitempty" json:"settings"`
+	ID   primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Name string             `bson:"name" json:"name"`
+	// Description is the author's rich-text blurb shown in the lobby; sanitized HTML.
+	Description string `bson:"description,omitempty" json:"description,omitempty"`
+	// Language is the ISO 639-1 code the template is written in; "" means unspecified, which is
+	// also what templates saved before PLAYRPG-261 read as.
+	Language string           `bson:"language,omitempty" json:"language,omitempty"`
+	Version  int              `bson:"version" json:"version"`
+	Sections []SectionDef     `bson:"sections" json:"sections"`
+	Settings TemplateSettings `bson:"settings,omitempty" json:"settings"`
 	// IsPublic lets every logged-in user use (create a game from, clone) the template. Editing still needs a member role.
 	IsPublic bool `bson:"isPublic" json:"isPublic"`
 	// Members lists everyone with access and their role; always at least one owner. Not
@@ -434,8 +439,10 @@ type RollConfig struct {
 
 // CreateTemplateRequest is the request body for POST /templates.
 type CreateTemplateRequest struct {
-	Name     string       `json:"name" binding:"required"`
-	Sections []SectionDef `json:"sections"`
+	Name        string       `json:"name" binding:"required"`
+	Sections    []SectionDef `json:"sections"`
+	Description *string      `json:"description"`
+	Language    *string      `json:"language"`
 	// BaseSystem is set only when creating a named token-display variant of a hardcoded
 	// system (e.g. "warhammer4e"); empty for genuine custom templates.
 	BaseSystem string `json:"baseSystem,omitempty"`
@@ -444,10 +451,12 @@ type CreateTemplateRequest struct {
 // UpdateTemplateRequest is the request body for PATCH /templates/:id. Version is the template
 // version the client last saw; the save is refused with 409 when it is stale.
 type UpdateTemplateRequest struct {
-	Name     *string           `json:"name"`
-	Sections []SectionDef      `json:"sections"`
-	Settings *TemplateSettings `json:"settings"`
-	Version  *int              `json:"version"`
+	Name        *string           `json:"name"`
+	Sections    []SectionDef      `json:"sections"`
+	Settings    *TemplateSettings `json:"settings"`
+	Description *string           `json:"description"`
+	Language    *string           `json:"language"`
+	Version     *int              `json:"version"`
 }
 
 // SetTemplateVisibilityRequest is the request body for PATCH /templates/:id/visibility.
@@ -493,7 +502,10 @@ var (
 func IsTemplateValidationError(err error) bool {
 	return errors.Is(err, ErrMissingCharName) ||
 		errors.Is(err, ErrDuplicateCharName) ||
-		errors.Is(err, ErrDuplicateCharAvatar)
+		errors.Is(err, ErrDuplicateCharAvatar) ||
+		errors.Is(err, ErrInvalidTemplateLanguage) ||
+		errors.Is(err, ErrTemplateDescriptionTooLong) ||
+		errors.Is(err, ErrTemplateAboutOnVariant)
 }
 
 // CountFieldsOfType counts leaf fields of the given type at any depth. Nested sections
