@@ -174,25 +174,33 @@ func (r *TemplateRepository) FindTokenConfig(userID primitive.ObjectID, baseSyst
 	return &t, nil
 }
 
-// UpdateContent saves name/sections/settings when the stored version still equals version and
-// editorID may edit — optimistic locking with the authorisation in the same filter. The filter
-// checks version even when nothing changes: a stale client is stale regardless of its payload.
-// Only a real content change (bumpVersion, decided by the service) increments version — lobby
-// compares it with each game's embedded copy to offer a sync — and records editorID in updatedBy.
-func (r *TemplateRepository) UpdateContent(id string, version int, editorID primitive.ObjectID, name *string, sections []models.SectionDef, settings *models.TemplateSettings, bumpVersion bool) error {
+// UpdateContent saves the content fields present in req (name, sections, settings, description,
+// language) when the stored version still equals *req.Version (the caller guarantees it is set)
+// and editorID may edit — optimistic locking with the authorisation in the same filter. The
+// filter checks version even when nothing changes: a stale client is stale regardless of its
+// payload. Only a real content change (bumpVersion, decided by the service) increments version —
+// lobby compares it with each game's embedded copy to offer a sync — and records editorID in
+// updatedBy. Description and language go through a bson.M, so "" is written explicitly (clearing).
+func (r *TemplateRepository) UpdateContent(id string, editorID primitive.ObjectID, req models.UpdateTemplateRequest, bumpVersion bool) error {
 	objID, err := templateObjectID(id)
 	if err != nil {
 		return err
 	}
 	set := bson.M{"updatedAt": time.Now()}
-	if name != nil {
-		set["name"] = *name
+	if req.Name != nil {
+		set["name"] = *req.Name
 	}
-	if sections != nil {
-		set["sections"] = sections
+	if req.Sections != nil {
+		set["sections"] = req.Sections
 	}
-	if settings != nil {
-		set["settings"] = *settings
+	if req.Settings != nil {
+		set["settings"] = *req.Settings
+	}
+	if req.Description != nil {
+		set["description"] = *req.Description
+	}
+	if req.Language != nil {
+		set["language"] = *req.Language
 	}
 	update := bson.M{"$set": set}
 	if bumpVersion {
@@ -201,7 +209,7 @@ func (r *TemplateRepository) UpdateContent(id string, version int, editorID prim
 	}
 	filter := memberWith(editorID, models.ActionEdit)
 	filter["_id"] = objID
-	filter["version"] = version
+	filter["version"] = *req.Version
 	return r.conditionalUpdate(filter, update)
 }
 

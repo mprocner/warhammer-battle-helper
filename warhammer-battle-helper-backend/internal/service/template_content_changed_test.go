@@ -8,9 +8,10 @@ import (
 
 func TestTemplateContentChanged(t *testing.T) {
 	current := &models.SystemTemplate{
-		Name:     "Krypta",
-		Sections: []models.SectionDef{{ID: "s1", Title: "Attrs"}},
-		Settings: models.TemplateSettings{},
+		Name:        "Krypta",
+		Sections:    []models.SectionDef{{ID: "s1", Title: "Attrs"}},
+		Settings:    models.TemplateSettings{},
+		Description: "<p>a</p>", Language: "pl",
 	}
 	str := func(s string) *string { return &s }
 
@@ -29,6 +30,10 @@ func TestTemplateContentChanged(t *testing.T) {
 			Sections: []models.SectionDef{{ID: "s1", Title: "Attrs"}, {ID: "s2"}}}, true},
 		{"settings changed", models.UpdateTemplateRequest{
 			Settings: &models.TemplateSettings{SheetWidth: 900}}, true},
+		{"description changed", models.UpdateTemplateRequest{Description: str("<p>b</p>")}, true},
+		{"language changed", models.UpdateTemplateRequest{Language: str("en")}, true},
+		{"same description and language", models.UpdateTemplateRequest{
+			Description: str("<p>a</p>"), Language: str("pl")}, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

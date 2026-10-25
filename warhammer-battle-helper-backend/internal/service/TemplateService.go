@@ -232,11 +232,16 @@ func (s *TemplateService) Create(ownerID primitive.ObjectID, req models.CreateTe
 	if req.Sections == nil {
 		req.Sections = []models.SectionDef{}
 	}
+	if err := models.NormalizeTemplateAbout(req.BaseSystem, req.Description, req.Language); err != nil {
+		return nil, err
+	}
 	t := &models.SystemTemplate{
-		Members:  []models.TemplateMember{{UserID: ownerID, Role: models.RoleOwner}},
-		Name:     req.Name,
-		Sections: req.Sections,
-		Settings: models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
+		Members:     []models.TemplateMember{{UserID: ownerID, Role: models.RoleOwner}},
+		Name:        req.Name,
+		Sections:    req.Sections,
+		Description: derefOr(req.Description),
+		Language:    derefOr(req.Language),
+		Settings:    models.TemplateSettings{DiceButtons: models.DefaultDiceButtons()},
 		// BaseSystem marks this as a named token-display variant of a hardcoded system
 		// (FEATURE-102); "" keeps it a genuine custom template. Sections are ignored
 		// when BaseSystem is set — the sheet comes from the Go plugin.
@@ -316,7 +321,10 @@ func (s *TemplateService) Update(id string, editorID primitive.ObjectID, req mod
 			return nil, err
 		}
 	}
-	err = s.repo.UpdateContent(id, *req.Version, editorID, req.Name, req.Sections, req.Settings, templateContentChanged(t, req))
+	if err := models.NormalizeTemplateAbout(t.BaseSystem, req.Description, req.Language); err != nil {
+		return nil, err
+	}
+	err = s.repo.UpdateContent(id, editorID, req, templateContentChanged(t, req))
 	if errors.Is(err, repository.ErrTemplateNoMatch) {
 		return nil, s.saveRejection(id, editorID)
 	}
@@ -492,6 +500,8 @@ func (s *TemplateService) Clone(sourceID string, ownerID primitive.ObjectID, nam
 		Settings:         src.Settings,
 		IsPublic:         false,
 		OriginTemplateID: src.ID,
+		Description:      src.Description,
+		Language:         src.Language,
 	}
 	if err := s.repo.Create(clone); err != nil {
 		return nil, fmt.Errorf("failed to clone template: %w", err)
@@ -519,7 +529,7 @@ func (s *TemplateService) RemoveUserEverywhere(userID primitive.ObjectID) error 
 	return s.repo.PullMemberEverywhere(userID)
 }
 
-// templateContentChanged reports whether req alters what players see (name, sections, settings).
+// templateContentChanged reports whether req alters what players see (name, sections, settings, description, language).
 // The creator sends the whole body on every save — visibility toggles and no-op autosaves
 // included — so "field present" says nothing; only a value comparison does. JSON is the
 // comparison form because encoding/json sorts map keys (TemplateSettings carries maps),
@@ -534,6 +544,12 @@ func templateContentChanged(current *models.SystemTemplate, req models.UpdateTem
 	if req.Settings != nil && !sameJSON(*req.Settings, current.Settings) {
 		return true
 	}
+	if req.Description != nil && *req.Description != current.Description {
+		return true
+	}
+	if req.Language != nil && *req.Language != current.Language {
+		return true
+	}
 	return false
 }
 
@@ -543,4 +559,12 @@ func sameJSON(a, b interface{}) bool {
 	ja, errA := json.Marshal(a)
 	jb, errB := json.Marshal(b)
 	return errA == nil && errB == nil && bytes.Equal(ja, jb)
+}
+
+// derefOr returns *s, or "" for a field the request left out.
+func derefOr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

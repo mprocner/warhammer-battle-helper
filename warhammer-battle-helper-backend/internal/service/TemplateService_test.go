@@ -247,3 +247,53 @@ func TestMembers(t *testing.T) {
 		}
 	})
 }
+
+func TestAboutFields(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	owner := primitive.NewObjectID()
+	id := primitive.NewObjectID()
+	v := 1
+	str := func(s string) *string { return &s }
+
+	mt.Run("update with an unknown language is rejected before writing", func(mt *mtest.T) {
+		mt.AddMockResponses(found(templateDoc(id, "T", false, member(owner, models.RoleOwner))))
+		_, err := newSvc(mt).Update(id.Hex(), owner, models.UpdateTemplateRequest{Version: &v, Language: str("xx")})
+		if !errors.Is(err, models.ErrInvalidTemplateLanguage) {
+			t.Errorf("err = %v, want ErrInvalidTemplateLanguage", err)
+		}
+	})
+
+	mt.Run("update on a variant with a language is rejected", func(mt *mtest.T) {
+		doc := append(templateDoc(id, "T", false, member(owner, models.RoleOwner)), bson.E{Key: "baseSystem", Value: "warhammer4e"})
+		mt.AddMockResponses(found(doc))
+		_, err := newSvc(mt).Update(id.Hex(), owner, models.UpdateTemplateRequest{Version: &v, Language: str("pl")})
+		if !errors.Is(err, models.ErrTemplateAboutOnVariant) {
+			t.Errorf("err = %v, want ErrTemplateAboutOnVariant", err)
+		}
+	})
+
+	mt.Run("create stores the sanitized description and the language", func(mt *mtest.T) {
+		mt.AddMockResponses(wrote, users(owner, "me@example.com"))
+		created, err := newSvc(mt).Create(owner, models.CreateTemplateRequest{
+			Name: "T", Description: str(`<p>a</p><script>x</script>`), Language: str("pl")})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if created.Language != "pl" || created.Description != "<p>a</p>" {
+			t.Errorf("created = %q / %q", created.Language, created.Description)
+		}
+	})
+
+	mt.Run("clone copies description and language", func(mt *mtest.T) {
+		src := append(templateDoc(id, "T", true, member(primitive.NewObjectID(), models.RoleOwner)),
+			bson.E{Key: "description", Value: "<p>d</p>"}, bson.E{Key: "language", Value: "en"})
+		mt.AddMockResponses(found(src), wrote, users(owner, "me@example.com"))
+		clone, err := newSvc(mt).Clone(id.Hex(), owner, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if clone.Description != "<p>d</p>" || clone.Language != "en" {
+			t.Errorf("clone = %q / %q", clone.Description, clone.Language)
+		}
+	})
+}

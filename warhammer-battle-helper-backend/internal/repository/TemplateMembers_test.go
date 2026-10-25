@@ -66,7 +66,8 @@ func TestUpdateContent(t *testing.T) {
 		mt.AddMockResponses(okWrite)
 		editor := primitive.NewObjectID()
 		name := "New"
-		if err := repo.UpdateContent(primitive.NewObjectID().Hex(), 3, editor, &name, nil, nil, true); err != nil {
+		v := 3
+		if err := repo.UpdateContent(primitive.NewObjectID().Hex(), editor, models.UpdateTemplateRequest{Name: &name, Version: &v}, true); err != nil {
 			t.Fatal(err)
 		}
 		st := firstStatement(mt, "updates")
@@ -87,7 +88,8 @@ func TestUpdateContent(t *testing.T) {
 	mt.Run("no content change: no bump, no updatedBy, version still checked", func(mt *mtest.T) {
 		repo := NewTemplateRepository(mt.Coll)
 		mt.AddMockResponses(okWrite)
-		if err := repo.UpdateContent(primitive.NewObjectID().Hex(), 5, primitive.NewObjectID(), nil, nil, nil, false); err != nil {
+		v := 5
+		if err := repo.UpdateContent(primitive.NewObjectID().Hex(), primitive.NewObjectID(), models.UpdateTemplateRequest{Version: &v}, false); err != nil {
 			t.Fatal(err)
 		}
 		st := firstStatement(mt, "updates")
@@ -106,9 +108,24 @@ func TestUpdateContent(t *testing.T) {
 	mt.Run("nothing matched is ErrTemplateNoMatch", func(mt *mtest.T) {
 		repo := NewTemplateRepository(mt.Coll)
 		mt.AddMockResponses(noneWrite)
-		err := repo.UpdateContent(primitive.NewObjectID().Hex(), 1, primitive.NewObjectID(), nil, nil, nil, false)
+		v := 1
+		err := repo.UpdateContent(primitive.NewObjectID().Hex(), primitive.NewObjectID(), models.UpdateTemplateRequest{Version: &v}, false)
 		if !errors.Is(err, ErrTemplateNoMatch) {
 			t.Errorf("err = %v, want ErrTemplateNoMatch", err)
+		}
+	})
+
+	mt.Run("writes description and language when present", func(mt *mtest.T) {
+		repo := NewTemplateRepository(mt.Coll)
+		mt.AddMockResponses(okWrite)
+		v, desc, lang := 2, "<p>d</p>", "pl"
+		req := models.UpdateTemplateRequest{Version: &v, Description: &desc, Language: &lang}
+		if err := repo.UpdateContent(primitive.NewObjectID().Hex(), primitive.NewObjectID(), req, true); err != nil {
+			t.Fatal(err)
+		}
+		set := firstStatement(mt, "updates").Lookup("u", "$set").Document()
+		if set.Lookup("description").StringValue() != desc || set.Lookup("language").StringValue() != lang {
+			t.Errorf("$set = %s", relaxed(t, set))
 		}
 	})
 }
