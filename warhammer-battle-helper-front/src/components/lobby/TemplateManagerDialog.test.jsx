@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-node-access */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '../../i18n';
@@ -44,4 +45,11 @@ test('leave hands the template to the lobby', () => {
   mount([viewerTpl], { leave });
   fireEvent.click(icons('LogoutIcon')[0]);
   expect(leave).toHaveBeenCalledWith(viewerTpl);
+});
+
+test('only a template with a description gets the info icon, which opens it', () => {
+  mount([tpl({ id: 'a', name: 'With', description: '<p>d</p>', language: 'pl' }), tpl({ id: 'b', name: 'Without' })]);
+  expect(icons('InfoOutlinedIcon')).toHaveLength(1);
+  fireEvent.click(icons('InfoOutlinedIcon')[0].closest('button'));
+  expect(screen.getAllByRole('dialog').pop()).toHaveTextContent('With');
 });

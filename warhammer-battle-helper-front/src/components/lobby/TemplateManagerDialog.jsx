@@ -11,7 +11,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { usePortalTooltip } from '../common/PortalTooltip';
+import TemplateDescriptionDialog from './TemplateDescriptionDialog';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
 import { walkFields } from '../../utils/templateSections';
 
@@ -27,12 +29,14 @@ const countFields = (tpl) => {
 // Manages custom system templates. Rows are deliberately NOT clickable: a template affords
 // three equal actions (edit, clone, delete) and which ones apply depends on the viewer's permissions, so a
 // row-wide click would mean different things on different rows. Every action is an explicit,
-// always-visible icon instead.
+// always-visible icon instead. The ⓘ icon (shown only when a template has a description) opens a
+// read-only view; it is not one of the row's actions.
 function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onEditTemplate, onCloneTemplate, onDeleteTemplate, onLeaveTemplate }) {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
   const [newTemplateName, setNewTemplateName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [describing, setDescribing] = useState(null);
 
   const handleCreate = async () => {
     if (!newTemplateName.trim() || creating) return;
@@ -109,6 +113,13 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 0.5 }}>
                         <Typography sx={{ fontFamily: DISPLAY_FONT, fontWeight: 600, fontSize: '0.95rem', color: 'primary.main' }}>{tpl.name}</Typography>
+                        {tpl.description && (
+                          <IconButton size="small" onClick={() => setDescribing(tpl)}
+                            onMouseEnter={e => showTooltip(t('creator.about.showDescription'), e.currentTarget)} onMouseLeave={hideTooltip}
+                            sx={{ color: 'primary.main', p: 0.25 }}>
+                            <InfoOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        )}
                         {tpl.isPublic && (
                           <Chip icon={<PublicIcon sx={{ fontSize: '0.9rem !important' }} />} label={t('creator.publicBadge')} size="small"
                             sx={{ height: 20, fontFamily: BODY_FONT, fontSize: '0.7rem', color: 'primary.main', borderColor: 'primary.light' }}
@@ -132,6 +143,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
         </DialogActions>
       </Dialog>
       {tooltipNode}
+      <TemplateDescriptionDialog template={describing} onClose={() => setDescribing(null)} />
     </>
   );
 }

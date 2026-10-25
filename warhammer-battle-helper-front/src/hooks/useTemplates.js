@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiUrl, getApiHeaders } from '../api/axios';
+import { isTemplateLanguage } from '../utils/templateLanguages';
 
 // useTemplates owns the custom-system templates visible to the user: those they are a member of
 // plus every public one (each carrying myRole/permissions from the server). Token-config templates are filtered out
@@ -9,7 +10,7 @@ import { getApiUrl, getApiHeaders } from '../api/axios';
 // Template failures are non-critical: the lobby stays usable without the list, so errors
 // here never surface as a page-level alert.
 export function useTemplates(token) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [templates, setTemplates] = useState([]);
 
   const authHeaders = useCallback(
@@ -27,11 +28,14 @@ export function useTemplates(token) {
 
   // Returns the created template so the caller can open it in the builder right away.
   const createTemplate = useCallback(async (name) => {
+    // A new template starts in the UI language: right for most authors, and it keeps the
+    // language filter useful without asking for one more field up front.
+    const language = isTemplateLanguage(i18n.language) ? i18n.language : '';
     try {
       const response = await fetch(`${getApiUrl()}/templates`, {
         method: 'POST',
         headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ name, sections: [] }),
+        body: JSON.stringify({ name, sections: [], language }),
       });
       if (!response.ok) throw new Error('Failed to create template');
       const created = await response.json();
@@ -40,7 +44,7 @@ export function useTemplates(token) {
     } catch {
       return null;
     }
-  }, [authHeaders]);
+  }, [authHeaders, i18n]);
 
   const deleteTemplate = useCallback(async (templateId) => {
     try {
