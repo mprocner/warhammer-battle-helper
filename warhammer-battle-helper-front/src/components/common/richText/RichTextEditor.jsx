@@ -7,7 +7,8 @@ import RichTextToolbar from './RichTextToolbar';
 // A self-contained styled text box: the shared formatting toolbar over a Tiptap editor. The
 // editor is uncontrolled, so `value` is pushed into it only when it describes a different document
 // than the editor already holds — otherwise the echo of every keystroke would reset the caret.
-const RichTextEditor = ({ value = '', onChange, editable = true, className = '' }) => {
+// `toolbar={false}` with `editable={false}` is the read-only view.
+const RichTextEditor = ({ value = '', onChange, editable = true, toolbar = true, className = '' }) => {
   const [, forceUpdate] = useState(0);
   const onChangeRef = useRef(onChange);
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
@@ -47,7 +48,7 @@ const RichTextEditor = ({ value = '', onChange, editable = true, className = '' 
 
   return (
     <div className={`rich-text ${className}`.trim()}>
-      <RichTextToolbar editor={editor} disabled={!editable} />
+      {toolbar && <RichTextToolbar editor={editor} disabled={!editable} />}
       <div className="rich-text__content">
         <EditorContent editor={editor} />
       </div>

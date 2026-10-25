@@ -107,3 +107,9 @@ test('an unfocused editor does not restore its caret', () => {
   expect(editor.getText()).toBe('abcdefghijXYZ');
   expect(editor.state.selection.from).not.toBe(3);
 });
+
+test('toolbar={false} renders content only', () => {
+  const { container } = render(<RichTextEditor value="<p>x</p>" editable={false} toolbar={false} />);
+  expect(container.querySelector('.rich-toolbar')).toBeNull();
+  expect(container.querySelector('.tiptap').textContent).toBe('x');
+});

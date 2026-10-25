@@ -1773,6 +1773,17 @@
     "addChildSkill": "Dodaj podrzędną umiejętność"
   },
   "creator": {
+    "about": {
+      "title": "Opis i język",
+      "hint": "Widoczne dla graczy, którzy wybierają system nowej gry.",
+      "language": "Język szablonu",
+      "description": "Opis",
+      "languageMissing": "Ustaw język, żeby gracze znaleźli ten szablon przez filtr języka.",
+      "showDescription": "Pokaż opis",
+      "more": "Więcej",
+      "filterLabel": "Język szablonu",
+      "filterAll": "Wszystkie"
+    },
     "saveConflict": {
       "message": "{{email}} zapisał(a) ten szablon o {{time}}.",
       "messageUnknown": "Ktoś inny zapisał ten szablon o {{time}}.",

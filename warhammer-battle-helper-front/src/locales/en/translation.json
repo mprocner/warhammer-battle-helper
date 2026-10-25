@@ -1773,6 +1773,17 @@
     "addChildSkill": "Add a skill under this one"
   },
   "creator": {
+    "about": {
+      "title": "Description and language",
+      "hint": "Shown to players picking a system for a new game.",
+      "language": "Template language",
+      "description": "Description",
+      "languageMissing": "Set the language so players can find this template with the language filter.",
+      "showDescription": "Show description",
+      "more": "More",
+      "filterLabel": "Template language",
+      "filterAll": "All"
+    },
     "saveConflict": {
       "message": "{{email}} saved this template at {{time}}.",
       "messageUnknown": "Someone else saved this template at {{time}}.",
