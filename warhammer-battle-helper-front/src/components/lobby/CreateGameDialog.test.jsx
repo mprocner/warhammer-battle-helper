@@ -182,12 +182,25 @@ const openSystems = () => {
 const chooseLanguage = async (name) => {
   fireEvent.mouseDown(screen.getByRole('combobox', { name: i18n.t('creator.about.filterLabel') }));
   fireEvent.click(screen.getByRole('option', { name }));
-  fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+  fireEvent.click(screen.getByRole('button', { name: i18n.t('common.confirm') }));
   // The menu leaves through a transition, so it lingers in the DOM for a moment.
   await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
 };
 
 describe('CreateGameDialog language filter', () => {
+  it('stays open while picking several languages and closes on confirm', async () => {
+    await renderDialog();
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: i18n.t('creator.about.filterLabel') }));
+    fireEvent.click(screen.getByRole('option', { name: 'Polish' }));
+    fireEvent.click(screen.getByRole('option', { name: 'English' }));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('common.confirm') }));
+    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+    const list = openSystems();
+    expect(within(list).getByText('Moja Kampania')).toBeInTheDocument();
+    expect(within(list).getByText('Łowcy Czarownic')).toBeInTheDocument();
+  });
+
   it('shows everything until a language is chosen', async () => {
     await renderDialog();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
