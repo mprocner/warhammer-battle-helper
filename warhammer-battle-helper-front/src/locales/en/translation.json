@@ -1788,8 +1788,8 @@
       "filterLabel": "Template language",
       "filterAll": "All",
       "filterButton": "Languages: {{list}}",
-      "hiddenByFilter": "Hidden by the language filter: {{count}}",
-      "showAll": "Show all"
+      "hiddenByFilter": "Hidden by the filter: {{count}}",
+      "clearFilter": "Clear"
     },
     "saveConflict": {
       "message": "{{email}} saved this template at {{time}}.",

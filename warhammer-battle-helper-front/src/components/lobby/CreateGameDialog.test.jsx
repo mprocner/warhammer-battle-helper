@@ -209,7 +209,7 @@ describe('CreateGameDialog language filter', () => {
     await renderDialog();
     expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
-    expect(screen.queryByText(/Hidden by the language filter/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hidden by the filter/)).not.toBeInTheDocument();
   });
 
   it('each template row shows its language code; unspecified shows none', async () => {
@@ -220,12 +220,20 @@ describe('CreateGameDialog language filter', () => {
     expect(within(list).getByText('Mroczne Ziemie').closest('li').querySelector('.create-game__option-lang')).toBeNull();
   });
 
-  it('says how many templates the filter hides and "Show all" clears it', async () => {
+  it('says how many templates the filter hides, next to the filter', async () => {
     await renderDialog();
     await chooseLanguage('Polish');
-    expect(screen.getByText('Hidden by the language filter: 2')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByText('Hidden by the filter: 2')).toBeInTheDocument();
+  });
+
+  it('"Clear" inside the filter menu brings every template back', async () => {
+    await renderDialog();
+    await chooseLanguage('Polish');
+    openLanguages();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await confirmLanguages();
     expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
+    expect(screen.queryByText(/Hidden by the filter/)).not.toBeInTheDocument();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
   });
 

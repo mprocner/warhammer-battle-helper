@@ -1788,8 +1788,8 @@
       "filterLabel": "Język szablonu",
       "filterAll": "Wszystkie",
       "filterButton": "Języki: {{list}}",
-      "hiddenByFilter": "Ukryte przez filtr języka: {{count}}",
-      "showAll": "Pokaż wszystkie"
+      "hiddenByFilter": "Ukryte przez filtr: {{count}}",
+      "clearFilter": "Wyczyść"
     },
     "saveConflict": {
       "message": "{{email}} zapisał(a) ten szablon o {{time}}.",

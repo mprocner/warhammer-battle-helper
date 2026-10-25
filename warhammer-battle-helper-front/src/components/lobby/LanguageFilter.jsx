@@ -25,7 +25,7 @@ export function saveLanguageFilter(langs) {
 }
 
 // A filter of the system picker, so it reads as one: a compact text button above the picker, not
-// a form field of its own. Each pick applies at once; Confirm (or a click outside) only closes.
+// a form field of its own. Each pick and Clear apply at once; Confirm (or a click outside) only closes.
 function LanguageFilter({ value, onChange, disabled }) {
   const { t } = useTranslation();
   const [anchor, setAnchor] = useState(null);
@@ -56,8 +56,12 @@ function LanguageFilter({ value, onChange, disabled }) {
             </MenuItem>
           );
         })}
-        <Box sx={{ position: 'sticky', bottom: 0, display: 'flex', justifyContent: 'flex-end', px: 1.5, py: 0.75,
+        <Box sx={{ position: 'sticky', bottom: 0, display: 'flex', justifyContent: 'flex-end', gap: 1, px: 1.5, py: 0.75,
           borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Button size="small" disabled={value.length === 0} onClick={() => onChange([])}
+            sx={{ fontFamily: BODY_FONT, textTransform: 'none' }}>
+            {t('creator.about.clearFilter')}
+          </Button>
           <Button size="small" variant="contained" onClick={() => setAnchor(null)} sx={{ fontFamily: BODY_FONT }}>
             {t('common.confirm')}
           </Button>

@@ -129,7 +129,13 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' } }} />
 
-        <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Status and control of the filter sit together, right above the list they narrow. */}
+        <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+          {hiddenByFilter > 0 && (
+            <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary', mr: 'auto' }}>
+              {t('creator.about.hiddenByFilter', { count: hiddenByFilter })}
+            </Typography>
+          )}
           <LanguageFilter value={languages} onChange={handleLanguagesChange} disabled={loading} />
         </Box>
 
@@ -207,18 +213,6 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
               }} />
           )}
         />
-
-        {hiddenByFilter > 0 && (
-          <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-            <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary' }}>
-              {t('creator.about.hiddenByFilter', { count: hiddenByFilter })}
-            </Typography>
-            <Button size="small" onClick={() => handleLanguagesChange([])}
-              sx={{ fontFamily: BODY_FONT, textTransform: 'none', minWidth: 0, px: 0.5 }}>
-              {t('creator.about.showAll')}
-            </Button>
-          </Box>
-        )}
 
         {selectedOption?.description && (
           <Box className="create-game__selected-about"
