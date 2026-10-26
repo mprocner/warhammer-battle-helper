@@ -12,8 +12,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PublicIcon from '@mui/icons-material/Public';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { usePortalTooltip } from '../common/PortalTooltip';
 import TemplateDescriptionDialog from './TemplateDescriptionDialog';
+import TemplateSheetPreview from './TemplateSheetPreview';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
 import { walkFields } from '../../utils/templateSections';
 
@@ -30,13 +32,15 @@ const countFields = (tpl) => {
 // three equal actions (edit, clone, delete) and which ones apply depends on the viewer's permissions, so a
 // row-wide click would mean different things on different rows. Every action is an explicit,
 // always-visible icon instead. The ⓘ icon (shown only when a template has a description) opens a
-// read-only view; it is not one of the row's actions.
+// read-only view; it is not one of the row's actions. The eye opens a read-only preview of the
+// character sheet and, unlike ⓘ, is shown for every template.
 function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onEditTemplate, onCloneTemplate, onDeleteTemplate, onLeaveTemplate }) {
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
   const [newTemplateName, setNewTemplateName] = useState('');
   const [creating, setCreating] = useState(false);
   const [describing, setDescribing] = useState(null);
+  const [previewing, setPreviewing] = useState(null);
 
   const handleCreate = async () => {
     if (!newTemplateName.trim() || creating) return;
@@ -81,8 +85,13 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
                   sx={{ borderRadius: 1, mb: 0.5, border: '1px solid', borderColor: 'primary.light', background: 'rgba(255,255,255,0.4)', pr: 1 }}
                   secondaryAction={
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton size="small" onClick={() => setPreviewing(tpl)}
+                        onMouseEnter={e => showTooltip(t('creator.previewSheet'), e.currentTarget)} onMouseLeave={hideTooltip}
+                        sx={{ color: 'primary.main' }}>
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      </IconButton>
                       {tpl.permissions?.edit && (
-                        <IconButton size="small" onClick={() => onEditTemplate(tpl)}
+                        <IconButton size="small" onClick={() => { setPreviewing(null); onEditTemplate(tpl); }}
                           onMouseEnter={e => showTooltip(t('creator.editTemplate'), e.currentTarget)} onMouseLeave={hideTooltip}
                           sx={{ color: 'primary.main' }}>
                           <EditIcon fontSize="small" />
@@ -144,6 +153,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
       </Dialog>
       {tooltipNode}
       <TemplateDescriptionDialog template={describing} onClose={() => setDescribing(null)} />
+      {open && <TemplateSheetPreview template={previewing} onClose={() => setPreviewing(null)} />}
     </>
   );
 }

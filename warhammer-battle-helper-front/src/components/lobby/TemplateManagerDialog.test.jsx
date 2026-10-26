@@ -53,3 +53,23 @@ test('only a template with a description gets the info icon, which opens it', ()
   fireEvent.click(icons('InfoOutlinedIcon')[0].closest('button'));
   expect(screen.getAllByRole('dialog').pop()).toHaveTextContent('With');
 });
+
+const withField = { sections: [{ id: 'sec1', title: 'Atrybuty', columns: 2, fields: [{ key: 'fld_str', type: 'number', label: 'Siła' }] }] };
+
+test('every template gets the eye, which opens its sheet', () => {
+  mount([tpl({ id: 'a', name: 'Mine', myRole: 'owner', ...withField }), tpl({ id: 'b', name: 'Public', isPublic: true })]);
+  expect(icons('VisibilityOutlinedIcon')).toHaveLength(2);
+  fireEvent.click(icons('VisibilityOutlinedIcon')[0].closest('button'));
+  const popup = document.querySelector('.character-sheet-popup');
+  expect(popup.querySelector('.modal-header__title')).toHaveTextContent('Mine');
+  expect(popup).toHaveTextContent('Siła');
+});
+
+test('edit closes the preview so it does not cover the creator', () => {
+  const edit = jest.fn();
+  mount([tpl({ myRole: 'owner', permissions: { edit: true, share: true, delete: true }, ...withField })], { edit });
+  fireEvent.click(icons('VisibilityOutlinedIcon')[0].closest('button'));
+  fireEvent.click(icons('EditIcon')[0].closest('button'));
+  expect(edit).toHaveBeenCalled();
+  expect(document.querySelector('.character-sheet-popup')).toBeNull();
+});
