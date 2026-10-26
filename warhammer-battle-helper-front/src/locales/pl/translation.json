@@ -1788,7 +1788,9 @@
       "filterLabel": "Język szablonu",
       "filterAll": "Wszystkie",
       "filterButton": "Języki: {{list}}",
-      "hiddenByFilter": "Ukryte przez filtr: {{count}}",
+      "filterHidesMatches": "Brak wyników w wybranych językach.",
+      "filterOtherMatches": "Pasujące szablony w innych językach: {{count}}",
+      "showAllLanguages": "Pokaż wszystkie języki",
       "clearFilter": "Wyczyść"
     },
     "saveConflict": {

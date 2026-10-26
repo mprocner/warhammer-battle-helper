@@ -76,8 +76,11 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     [regularSystems, templates]
   );
   const options = useMemo(() => filterByLanguages(allOptions, languages), [allOptions, languages]);
-  // Said out loud under the picker, so templates never vanish without a trace.
-  const hiddenByFilter = allOptions.length - options.length;
+  // A search that finds nothing only because of the language filter says so, instead of the
+  // plain "no match" — otherwise a template in another language looks like it does not exist.
+  const hiddenMatches = filterSystemOptions(options, query).length === 0
+    ? filterSystemOptions(allOptions, query).length
+    : 0;
   const handleLanguagesChange = (langs) => {
     setLanguages(langs);
     saveLanguageFilter(langs);
@@ -129,13 +132,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
           sx={{ mt: 2, '& .MuiInputBase-input': { fontFamily: BODY_FONT, fontSize: '1.1rem' }, '& .MuiInputLabel-root': { fontFamily: BODY_FONT, fontSize: '1.1rem' } }} />
 
-        {/* Status and control of the filter sit together, right above the list they narrow. */}
-        <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-          {hiddenByFilter > 0 && (
-            <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary', mr: 'auto' }}>
-              {t('creator.about.hiddenByFilter', { count: hiddenByFilter })}
-            </Typography>
-          )}
+        <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
           <LanguageFilter value={languages} onChange={handleLanguagesChange} disabled={loading} />
         </Box>
 
@@ -159,7 +156,18 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           // Labels are not unique (two templates may share a name); MUI would key options by label.
           getOptionKey={(opt) => opt.value}
           isOptionEqualToValue={(opt, val) => opt.value === val.value}
-          noOptionsText={t('creator.noSystemMatch')}
+          noOptionsText={hiddenMatches > 0 ? (
+            // MUI already keeps mousedown here from blurring the input, so the list stays open
+            // and the typed query survives the clear.
+            <Box sx={{ fontFamily: BODY_FONT }}>
+              <div>{t('creator.about.filterHidesMatches')}</div>
+              <div>{t('creator.about.filterOtherMatches', { count: hiddenMatches })}</div>
+              <Button size="small" onClick={() => handleLanguagesChange([])}
+                sx={{ fontFamily: BODY_FONT, textTransform: 'none', mt: 0.5, px: 0 }}>
+                {t('creator.about.showAllLanguages')}
+              </Button>
+            </Box>
+          ) : t('creator.noSystemMatch')}
           renderGroup={(params) => (
             <li key={params.key}>
               <ListSubheader component="div" sx={subheaderSx}>{t(GROUP_LABEL_KEYS[params.group])}</ListSubheader>

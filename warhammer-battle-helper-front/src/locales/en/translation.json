@@ -1788,7 +1788,9 @@
       "filterLabel": "Template language",
       "filterAll": "All",
       "filterButton": "Languages: {{list}}",
-      "hiddenByFilter": "Hidden by the filter: {{count}}",
+      "filterHidesMatches": "No results in the selected languages.",
+      "filterOtherMatches": "Matching templates in other languages: {{count}}",
+      "showAllLanguages": "Show all languages",
       "clearFilter": "Clear"
     },
     "saveConflict": {

@@ -38,7 +38,11 @@ function LanguageFilter({ value, onChange, disabled }) {
     <>
       <Button size="small" disabled={disabled} onClick={e => setAnchor(e.currentTarget)}
         endIcon={<ArrowDropDownIcon />}
-        sx={{ fontFamily: BODY_FONT, textTransform: 'none', color: '#7a5c42', px: 1, minWidth: 0 }}>
+        // Gold fill while active: the filter narrows the list, so it must not look like the default.
+        sx={{
+          fontFamily: BODY_FONT, textTransform: 'none', color: '#7a5c42', px: 1, minWidth: 0,
+          ...(value.length > 0 && { fontWeight: 600, backgroundColor: 'rgba(201, 151, 91, 0.18)' }),
+        }}>
         {t('creator.about.filterButton', { list: summary })}
       </Button>
       <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}

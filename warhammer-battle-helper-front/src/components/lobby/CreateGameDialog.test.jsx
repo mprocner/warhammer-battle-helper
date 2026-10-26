@@ -209,7 +209,6 @@ describe('CreateGameDialog language filter', () => {
     await renderDialog();
     expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
-    expect(screen.queryByText(/Hidden by the filter/)).not.toBeInTheDocument();
   });
 
   it('each template row shows its language code; unspecified shows none', async () => {
@@ -217,13 +216,27 @@ describe('CreateGameDialog language filter', () => {
     const list = openSystems();
     expect(within(list).getByText('Moja Kampania').closest('li')).toHaveTextContent('PL');
     expect(within(list).getByText('Łowcy Czarownic').closest('li')).toHaveTextContent('EN');
-    expect(within(list).getByText('Mroczne Ziemie').closest('li').querySelector('.create-game__option-lang')).toBeNull();
+    const unspecified = within(list).getByText('Mroczne Ziemie').closest('li');
+    expect(unspecified.querySelector('.create-game__option-lang')).toBeNull();
   });
 
-  it('says how many templates the filter hides, next to the filter', async () => {
+  it('a search emptied only by the filter says so and offers to show all languages', async () => {
     await renderDialog();
     await chooseLanguage('Polish');
-    expect(screen.getByText('Hidden by the filter: 2')).toBeInTheDocument();
+    expect(search('lowc')).toBeNull();
+    expect(screen.getByText('No results in the selected languages.')).toBeInTheDocument();
+    expect(screen.getByText('Matching templates in other languages: 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show all languages' }));
+    expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
+    expect(within(screen.getByRole('listbox')).getByRole('option', { name: /Czarownic/ })).toBeInTheDocument();
+  });
+
+  it('a search with no match anywhere keeps the plain message', async () => {
+    await renderDialog();
+    await chooseLanguage('Polish');
+    search('zzz');
+    expect(screen.getByText('No matching system or template')).toBeInTheDocument();
+    expect(screen.queryByText('No results in the selected languages.')).not.toBeInTheDocument();
   });
 
   it('"Clear" inside the filter menu brings every template back', async () => {
@@ -233,7 +246,6 @@ describe('CreateGameDialog language filter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     await confirmLanguages();
     expect(screen.getByRole('button', { name: 'Languages: All' })).toBeInTheDocument();
-    expect(screen.queryByText(/Hidden by the filter/)).not.toBeInTheDocument();
     expect(within(openSystems()).getByText('Mroczne Ziemie')).toBeInTheDocument();
   });
 
