@@ -1793,6 +1793,7 @@
       "showAllLanguages": "Pokaż wszystkie języki",
       "clearFilter": "Wyczyść"
     },
+    "previewSheet": "Podgląd karty postaci",
     "saveConflict": {
       "message": "{{email}} zapisał(a) ten szablon o {{time}}.",
       "messageUnknown": "Ktoś inny zapisał ten szablon o {{time}}.",

@@ -1793,6 +1793,7 @@
       "showAllLanguages": "Show all languages",
       "clearFilter": "Clear"
     },
+    "previewSheet": "Preview character sheet",
     "saveConflict": {
       "message": "{{email}} saved this template at {{time}}.",
       "messageUnknown": "Someone else saved this template at {{time}}.",
