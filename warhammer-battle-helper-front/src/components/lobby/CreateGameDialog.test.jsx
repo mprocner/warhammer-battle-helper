@@ -16,7 +16,8 @@ jest.mock('axios', () => {
 const systemInput = () => screen.getByRole('combobox', { name: i18n.t('game.gameSystem') });
 
 const templates = [
-  { id: 'm1', name: 'Moja Kampania', myRole: 'owner', updatedAt: '2026-10-01T10:00:00Z', language: 'pl', description: '<p>Opis <strong>kampanii</strong></p>' },
+  { id: 'm1', name: 'Moja Kampania', myRole: 'owner', updatedAt: '2026-10-01T10:00:00Z', language: 'pl', description: '<p>Opis <strong>kampanii</strong></p>',
+    sections: [{ id: 'sec1', title: 'Atrybuty', columns: 2, fields: [{ key: 'fld_str', type: 'number', label: 'Siła' }] }] },
   { id: 's1', name: 'Łowcy Czarownic', myRole: 'viewer', ownerEmails: ['alice@example.com'], language: 'en' },
   { id: 'p1', name: 'Mroczne Ziemie', isPublic: true },
 ];
@@ -302,5 +303,45 @@ describe('CreateGameDialog description', () => {
     expect(card).toHaveTextContent('kampanii');
     fireEvent.click(within(card).getByRole('button', { name: i18n.t('creator.about.more') }));
     expect(screen.getByRole('dialog', { name: /Moja Kampania/ })).toBeInTheDocument();
+  });
+});
+
+describe('CreateGameDialog sheet preview', () => {
+  it('only custom templates get the eye', async () => {
+    await renderDialog();
+    const list = openSystems();
+    const builtIn = within(list).getByText(i18n.t('gameSystems.warhammer4e')).closest('li');
+    expect(within(builtIn).queryByTestId('VisibilityOutlinedIcon')).not.toBeInTheDocument();
+    const custom = within(list).getByText('Mroczne Ziemie').closest('li');
+    expect(within(custom).getByTestId('VisibilityOutlinedIcon')).toBeInTheDocument();
+  });
+
+  it('the eye opens the sheet without selecting the template', async () => {
+    await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    const eye = within(row).getByTestId('VisibilityOutlinedIcon').closest('button');
+    fireEvent.mouseDown(eye);
+    fireEvent.click(eye);
+    const popup = document.querySelector('.character-sheet-popup');
+    expect(popup).toHaveTextContent('Siła');
+    expect(popup.querySelector('.modal-header__title')).toHaveTextContent('Moja Kampania');
+    expect(screen.getByRole('combobox', { name: i18n.t('game.gameSystem'), hidden: true })).toHaveValue('');
+  });
+
+  it('the selected-template card offers the preview', async () => {
+    await renderDialog();
+    fireEvent.click(within(openSystems()).getByText('Moja Kampania'));
+    const card = document.querySelector('.create-game__selected-about');
+    fireEvent.click(within(card).getByRole('button', { name: i18n.t('creator.previewSheet') }));
+    expect(document.querySelector('.character-sheet-popup')).toHaveTextContent('Siła');
+  });
+
+  it('closing the dialog closes the preview', async () => {
+    const { rerender } = await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    rerender(dialog({ open: false }));
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
   });
 });

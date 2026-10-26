@@ -6,12 +6,14 @@ import {
   IconButton, ListSubheader, TextField, Typography,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 import { listSystems } from '../../systems/registry';
 import { parchmentDialogProps, DISPLAY_FONT, BODY_FONT } from './lobbyStyles';
 import { CUSTOM_PREFIX, buildSystemOptions, filterByLanguages, filterSystemOptions, findMatch } from './systemOptions';
 import LanguageFilter, { loadLanguageFilter, saveLanguageFilter } from './LanguageFilter';
 import TemplateDescriptionDialog from './TemplateDescriptionDialog';
+import TemplateSheetPreview from './TemplateSheetPreview';
 import RichTextEditor from '../common/richText/RichTextEditor';
 
 const isCustom = (value) => Boolean(value) && value.startsWith(CUSTOM_PREFIX);
@@ -63,6 +65,10 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
   const [languages, setLanguages] = useState(loadLanguageFilter);
   // The option whose description is open in the popup; null = closed.
   const [describing, setDescribing] = useState(null);
+  // The template whose character sheet is open in the preview popup; null = closed.
+  const [previewing, setPreviewing] = useState(null);
+  // Picker options carry no sections, so the preview reads the full template from the list.
+  const openPreview = (opt) => setPreviewing(templates.find(tpl => tpl.id === templateIdOf(opt.value)) ?? null);
 
   // Until /features answers (or if it fails) no hardcoded system is offered; the backend
   // enforces access on create anyway. Custom templates are never gated.
@@ -95,6 +101,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     setSelection(null);
     setPickerOpen(false);
     setQuery('');
+    setPreviewing(null);
     setAllowedSystems(null);
     // A reply from an earlier open must not overwrite the current one.
     let cancelled = false;
@@ -194,6 +201,15 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
                       {opt.language.toUpperCase()}
                     </Typography>
                   )}
+                  {isCustom(opt.value) && (
+                    // mousedown would otherwise select the row before click ever fires.
+                    <IconButton size="small" aria-label={t('creator.previewSheet')}
+                      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); }}
+                      onClick={e => { e.stopPropagation(); openPreview(opt); }}
+                      sx={{ color: 'primary.main' }}>
+                      <VisibilityOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  )}
                   {opt.description && (
                     // mousedown would otherwise select the row before click ever fires.
                     <IconButton size="small" aria-label={t('creator.about.showDescription')}
@@ -234,9 +250,16 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
             <Box sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               <RichTextEditor value={selectedOption.description} editable={false} toolbar={false} />
             </Box>
-            <Button size="small" onClick={() => setDescribing(selectedOption)} sx={{ fontFamily: BODY_FONT, textTransform: 'none', mt: 0.5, px: 0 }}>
-              {t('creator.about.more')}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+              <Button size="small" onClick={() => setDescribing(selectedOption)} sx={{ fontFamily: BODY_FONT, textTransform: 'none', px: 0 }}>
+                {t('creator.about.more')}
+              </Button>
+              <Button size="small" onClick={() => openPreview(selectedOption)}
+                startIcon={<VisibilityOutlinedIcon fontSize="small" />}
+                sx={{ fontFamily: BODY_FONT, textTransform: 'none', px: 0 }}>
+                {t('creator.previewSheet')}
+              </Button>
+            </Box>
           </Box>
         )}
 
@@ -278,6 +301,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     <TemplateDescriptionDialog
       template={describing && { name: describing.label, description: describing.description, language: describing.language }}
       onClose={() => setDescribing(null)} />
+    {open && <TemplateSheetPreview template={previewing} onClose={() => setPreviewing(null)} />}
     </>
   );
 }
