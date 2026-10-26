@@ -32,3 +32,11 @@ test('the header X closes it', () => {
   fireEvent.click(document.querySelector('.modal-header__btn--close'));
   expect(onClose).toHaveBeenCalled();
 });
+
+test('previewing another template remounts the popup so it takes that template\'s width', () => {
+  const { rerender } = render(<TemplateSheetPreview template={template} onClose={() => {}} />);
+  expect(document.querySelector('.character-sheet-popup')).toHaveStyle({ width: '700px' });
+  const other = { ...template, id: 'b', settings: { sheetWidth: 1000 } };
+  rerender(<TemplateSheetPreview template={other} onClose={() => {}} />);
+  expect(document.querySelector('.character-sheet-popup')).toHaveStyle({ width: '1000px' });
+});

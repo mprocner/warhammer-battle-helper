@@ -119,6 +119,12 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
     }
   }, [options, selection]);
 
+  // Same for the preview: a template deleted from the manager while its sheet is open would
+  // otherwise stay on screen.
+  useEffect(() => {
+    if (previewing && !templates.some(tpl => tpl.id === previewing.id)) setPreviewing(null);
+  }, [templates, previewing]);
+
   const handleSubmit = () => {
     if (!name.trim() || !selection || loading) return;
     onCreate(isCustom(selection)
@@ -272,7 +278,10 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
           <Typography variant="body2" sx={{ fontFamily: BODY_FONT, color: 'text.secondary', fontSize: '0.95rem' }}>
             {t('creator.noSystemPrompt')}
           </Typography>
-          <Button size="small" variant="outlined" onClick={onOpenCreator}
+          <Button size="small" variant="outlined"
+            // The manager opens on top of this dialog without closing it, so the preview (z-index
+            // above every Dialog) must go first or it would cover the manager and the creator.
+            onClick={() => { setPreviewing(null); onOpenCreator(); }}
             startIcon={<TuneIcon sx={{ fontSize: 18 }} />}
             sx={{
               fontFamily: BODY_FONT, textTransform: 'none', fontWeight: 600, fontSize: '0.9rem',

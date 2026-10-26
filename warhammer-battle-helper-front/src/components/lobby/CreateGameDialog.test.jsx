@@ -343,5 +343,29 @@ describe('CreateGameDialog sheet preview', () => {
     expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
     rerender(dialog({ open: false }));
     expect(document.querySelector('.character-sheet-popup')).toBeNull();
+    // Reopening must not bring the old preview back (state survives while the dialog stays mounted).
+    rerender(dialog({ open: true }));
+    await act(async () => {});
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
+  });
+
+  it('opening the creator closes the preview so it does not cover the manager', async () => {
+    const onOpenCreator = jest.fn();
+    await renderDialog({ onOpenCreator });
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('creator.designYours') }));
+    expect(onOpenCreator).toHaveBeenCalled();
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
+  });
+
+  it('a previewed template that leaves the list closes the preview', async () => {
+    const { rerender } = await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    rerender(dialog({ templates: templates.filter(tp => tp.name !== 'Moja Kampania') }));
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
   });
 });

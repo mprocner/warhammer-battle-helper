@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Divider,
@@ -41,6 +41,16 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
   const [creating, setCreating] = useState(false);
   const [describing, setDescribing] = useState(null);
   const [previewing, setPreviewing] = useState(null);
+
+  // The dialog stays mounted while closed, so without this a reopen would show the old sheet.
+  useEffect(() => {
+    if (!open) setPreviewing(null);
+  }, [open]);
+
+  // A template deleted or left while its sheet is open must not stay previewed.
+  useEffect(() => {
+    if (previewing && !templates.some(tpl => tpl.id === previewing.id)) setPreviewing(null);
+  }, [templates, previewing]);
 
   const handleCreate = async () => {
     if (!newTemplateName.trim() || creating) return;
