@@ -34,14 +34,15 @@ WindowManagerProvider                      — lokalny, jak w PropertyPopup (Dra
     onClose={onClose}
     initialWidth={clampSheetWidth(template.settings?.sheetWidth)}
     initialPosition="center"
-    windowId={`templatePreview:${template.id}`}
+    key={template.id}
     <div className="custom-sheet" style={{ maxWidth: sheetWidth }}>
       <CustomSheetBody sections={template.sections} showAffordances />
 ```
 
-`windowId` zawiera id szablonu, więc przełączenie na inny szablon montuje okno od nowa (świeża
-pozycja i szerokość z `sheetWidth` nowego szablonu) — `DraggablePopup` liczy rozmiar tylko przy
-montażu. Wymaga `key={template.id}` na `DraggablePopup`.
+Okno niezarządzane (bez `windowId`, jak `PropertyPopup`) — nie trafia na listwę, minimalizacja
+zwija je w miejscu. `key={template.id}` montuje okno od nowa przy przełączeniu na inny szablon
+(świeża pozycja i szerokość z `sheetWidth` nowego szablonu) — `DraggablePopup` liczy rozmiar tylko
+przy montażu.
 
 z-index: `.character-sheet-popup` ma 9999, więc popup leży nad MUI Dialogami lobby (1300).
 Focus trap MUI Dialogu pod spodem może przejmować focus — przy treści tylko do odczytu bez skutków.
