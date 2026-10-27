@@ -12648,3 +12648,194 @@ button.custom-sheet__row-table-expander:hover {
 .mcb__limit input:focus {
     border-color: #c9975b;
 }
+
+/* ===== Landing page (PLAYRPG-284) ===== */
+.landing {
+    color: #3a2f1f;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.landing__hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: 64px 16px;
+    text-align: center;
+    color: #f4e8d8;
+    /* Base colour stays when the screenshot is missing, so the text remains readable. */
+    background:
+        linear-gradient(180deg, rgba(30, 22, 14, 0.55) 0%, rgba(30, 22, 14, 0.9) 100%),
+        var(--landing-hero-image, none) center / cover no-repeat,
+        #3a2f1f;
+}
+
+.landing__hero-content {
+    max-width: 760px;
+}
+
+.landing__hero-title {
+    margin: 0 0 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.landing__hero-subtitle {
+    margin: 0 0 32px;
+    font-size: 1.35rem;
+    line-height: 1.45;
+    color: #e8d5b7;
+}
+
+.landing__hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+
+.landing__cta {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 4px;
+    background: #8b2f2f;
+    color: #ffffff;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.landing__cta:hover {
+    background: #a93434;
+}
+
+.landing__cta-secondary {
+    padding: 11px 27px;
+    border: 1px solid #c9975b;
+    border-radius: 4px;
+    background: transparent;
+    color: #c9975b;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.landing__cta-secondary:hover {
+    background: rgba(201, 151, 91, 0.12);
+}
+
+.landing__features {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    padding: 72px 16px;
+    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+}
+
+.landing__feature {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.landing__feature-text {
+    flex: 1 1 0;
+}
+
+.landing__feature-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.75rem;
+    color: #3a2f1f;
+}
+
+.landing__feature-icon {
+    color: #c9975b;
+}
+
+.landing__feature-body {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: #5a4a3a;
+}
+
+.landing__feature-media {
+    flex: 1.2 1 0;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid #7a5c42;
+    border-radius: 6px;
+    background: #e8dcc4;
+    box-shadow: 0 8px 24px rgba(58, 47, 31, 0.25);
+}
+
+.landing__feature-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Declared after the base .landing__feature rule, otherwise it loses the cascade. */
+.landing__feature--reversed {
+    flex-direction: row-reverse;
+}
+
+.landing__cta-band {
+    padding: 56px 16px;
+    text-align: center;
+    background: #7a5c42;
+    color: #f4e8d8;
+}
+
+.landing__cta-band-title {
+    margin: 0 0 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+}
+
+@media (max-width: 768px) {
+    .landing__hero {
+        min-height: auto;
+        padding: 48px 16px;
+    }
+
+    .landing__hero-title {
+        font-size: 2rem;
+    }
+
+    .landing__hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    /* Doubled selector beats .landing__feature--reversed regardless of order. */
+    .landing__feature,
+    .landing__feature.landing__feature--reversed {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .landing__feature-text,
+    .landing__feature-media {
+        flex: none;
+        width: 100%;
+    }
+
+    /* Image above text on mobile. */
+    .landing__feature-media {
+        order: -1;
+    }
+}
