@@ -46,10 +46,13 @@ describe('LandingPage', () => {
     const scrollIntoView = jest.fn();
     // jsdom has no layout, so scrollIntoView does not exist on elements.
     Element.prototype.scrollIntoView = scrollIntoView;
-    renderPage(null);
-    fireEvent.click(screen.getByRole('button', { name: i18n.t('landing.cta.features') }));
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
-    delete Element.prototype.scrollIntoView;
+    try {
+      renderPage(null);
+      fireEvent.click(screen.getByRole('button', { name: i18n.t('landing.cta.features') }));
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+    } finally {
+      delete Element.prototype.scrollIntoView;
+    }
   });
 
   it('has the same landing keys in English and Polish', () => {
