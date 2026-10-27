@@ -40,15 +40,15 @@ Poza zakresem: moduł aktualności, sekcja „Jak zacząć”, SEO/prerender, gl
 
 1. **Hero** (pełna szerokość, `min-height: 70vh` na desktopie, auto na mobile).
    Tło warstwowe: `linear-gradient(180deg, rgba(30,22,14,.55), rgba(30,22,14,.9))`,
-   `url(/img/landing/hero.webp)` `center / cover`, kolor bazowy `#3a2f1f` — gdy obraz się nie
+   `var(--landing-hero-image)` `center / cover` (zmienna ustawiana inline w JSX na `url(/img/landing/hero.webp)` — CRA 5 rozwiązuje `url('/…')` w `style.css` jako moduł i build pada), kolor bazowy `#3a2f1f` — gdy obraz się nie
    wczyta, zostaje ciemne tło i tekst dalej jest czytelny. Treść wyśrodkowana:
    - H1 (Cinzel): „Twoja kampania. Twój stół. W przeglądarce.”
    - Podtytuł (Crimson Text, `#e8d5b7`): „Mapy z mgłą wojny, własne karty postaci i wszystko,
      czego MG potrzebuje przy sesji online.”
    - CTA główne (`LandingCta`, tło `#8b2f2f`).
-   - CTA drugie (obrys `#c9975b`): „Zobacz funkcje”, przewija do `#features`
-     (`element.scrollIntoView({ behavior: 'smooth' })`).
-2. **Funkcje** (`id="features"`, tło `linear-gradient(135deg, #f4e8d8, #e8dcc4)`). Trzy wiersze
+   - CTA drugie (obrys `#c9975b`): „Zobacz funkcje”, przewija do sekcji funkcji
+     (ref + `scrollIntoView({ behavior: 'smooth' })`).
+2. **Funkcje** (tło `linear-gradient(135deg, #f4e8d8, #e8dcc4)`). Trzy wiersze
    tekst + obraz, co drugi odwrócony:
    - `scene` — „Scena, która żyje”: mgła wojny odkrywana pędzlem, rysowanie, tokeny z HP i
      stanami; wszyscy widzą zmiany na żywo. Ikona `Map`.
