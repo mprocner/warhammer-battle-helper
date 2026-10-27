@@ -1,4 +1,4 @@
-# Inwentaryzacja funkcji (szkic do przeglądu)
+# Inwentaryzacja funkcji
 
 Źródło: kod na gałęzi z 2026-10-26 (routing `main.go`, `tabDefinitions.jsx`, `sceneModes.js`,
 `FIELD_TYPES` w `TemplateBuilder.jsx`, `chat/commands/commandRegistry`, tłumaczenia `en`).
@@ -93,7 +93,8 @@ Multiplayer przez WebSocket (`hub.BroadcastToGame` → klient robi `fetchGameSta
 systemów gry (backend i frontend), przechowywanie plików (S3 / Wasabi), deploy (Docker, nginx,
 autopull), testy.
 
-## Pytania do Mateusza
-1. Czy czegoś brakuje albo coś jest już wycofane?
-2. Czy panel admina ma trafić do wersji dla użytkowników? Proponuję, żeby nie.
-3. Czy przewodnik użytkownika ma opisywać każdy system gry osobno, czy tylko to, co je różni?
+## Ustalenia (2026-10-27)
+1. Lista jest kompletna. Jeśli czegoś zabraknie, dopiszemy.
+2. Panel admina nie trafia do wersji dla użytkowników.
+3. Przewodnik użytkownika nie opisuje systemów gry. Systemy będą głównie tworzone przez
+   użytkowników, więc przewodnik skupia się na kreatorze szablonów.
