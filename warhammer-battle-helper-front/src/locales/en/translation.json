@@ -2451,5 +2451,36 @@
     "unshareAll": "Unlock for all tokens in the game",
     "shareAllConfirm": "Set this slot for all tokens in the game, on every scene? Their live values reset, new tokens will get this slot too, and editing it will then change every token.",
     "unshareAllConfirm": "Unlock this slot for all tokens in the game? New tokens stop getting it and edits affect only this token again."
+  },
+  "landing": {
+    "hero": {
+      "title": "Your campaign. Your table. In the browser.",
+      "subtitle": "Maps with fog of war, custom character sheets and everything a GM needs to run a session online."
+    },
+    "cta": {
+      "register": "Create a free account",
+      "games": "Go to your games",
+      "features": "See features"
+    },
+    "features": {
+      "scene": {
+        "title": "A scene that comes alive",
+        "body": "Reveal the fog of war with a brush, draw on the map, track tokens with HP and conditions — everyone sees every change live.",
+        "imageAlt": "Game scene with fog of war and tokens"
+      },
+      "creator": {
+        "title": "Build your own system",
+        "body": "The sheet creator gives you fields, formulas and sections. Players see exactly what you design.",
+        "imageAlt": "Character sheet template creator"
+      },
+      "gmTools": {
+        "title": "Everything a GM needs at hand",
+        "body": "Handouts, music, files, hidden rolls and a chat with dice commands.",
+        "imageAlt": "GM tools: handouts, music and chat"
+      }
+    },
+    "ctaBand": {
+      "title": "Ready for your first session?"
+    }
   }
 }

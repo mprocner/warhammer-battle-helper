@@ -2451,5 +2451,36 @@
     "unshareAll": "Odblokuj dla wszystkich tokenów w grze",
     "shareAllConfirm": "Ustawić ten slot dla wszystkich tokenów w grze, na każdej scenie? Wartości zostaną zresetowane, nowe tokeny też dostaną ten slot, a jego edycja będzie zmieniać wszystkie tokeny.",
     "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów w grze? Nowe tokeny przestaną go dostawać, a zmiany będą znów dotyczyć tylko tego tokena."
+  },
+  "landing": {
+    "hero": {
+      "title": "Twoja kampania. Twój stół. W przeglądarce.",
+      "subtitle": "Mapy z mgłą wojny, własne karty postaci i wszystko, czego MG potrzebuje przy sesji online."
+    },
+    "cta": {
+      "register": "Załóż darmowe konto",
+      "games": "Przejdź do gier",
+      "features": "Zobacz funkcje"
+    },
+    "features": {
+      "scene": {
+        "title": "Scena, która żyje",
+        "body": "Mgła wojny odkrywana pędzlem, rysowanie po mapie, tokeny z HP i stanami — wszyscy widzą każdą zmianę na żywo.",
+        "imageAlt": "Scena gry z mgłą wojny i tokenami"
+      },
+      "creator": {
+        "title": "Zbuduj własny system",
+        "body": "Kreator kart daje Ci pola, formuły i sekcje. Gracz widzi dokładnie to, co zaprojektujesz.",
+        "imageAlt": "Kreator szablonu karty postaci"
+      },
+      "gmTools": {
+        "title": "MG ma wszystko pod ręką",
+        "body": "Handouty, muzyka, pliki, ukryte rzuty i chat z komendami kości.",
+        "imageAlt": "Narzędzia MG: handouty, muzyka i chat"
+      }
+    },
+    "ctaBand": {
+      "title": "Gotowy na pierwszą sesję?"
+    }
   }
 }
