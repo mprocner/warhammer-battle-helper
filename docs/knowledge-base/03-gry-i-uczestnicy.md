@@ -9,8 +9,8 @@ jak i szablony dostępne dla użytkownika. Filtr języka zawęża tę listę i j
 w przeglądarce. Gdy wyszukiwanie nic nie znajduje tylko przez filtr, dialog mówi o tym wprost.
 
 **Szablon w grze to kopia.** Gra własnego systemu osadza kopię szablonu
-(`Game.customSystemTemplate`). Zmiany w kreatorze nie trafiają do gry same: MG uruchamia
-`POST /games/:id/syncTemplate`, które pobiera aktualną wersję.
+(`Game.customSystemTemplate`). Zmiany w kreatorze nie trafiają do gry same: MG klika „Synchronizuj” na karcie gry
+w lobby (`GameCard.jsx` → `POST /games/:id/syncTemplate`), co pobiera aktualną wersję.
 
 **Uczestnicy.** MG zaprasza graczy (`/invite`), gracz może odejść (`/leave`), MG może go
 wyrzucić (`DELETE /participants/:userId`). Wyrzucony dostaje `KICKED_FROM_GAME` i klient od razu
@@ -40,9 +40,9 @@ komórki, jednostka odległości, przyciąganie do siatki oraz konfiguracja wygl
 
 ## Pułapki
 
-- `syncTemplate` nadpisuje kopię w grze. Wartości postaci zapisane pod kluczami pól usuniętych
-  z szablonu przestają być wyświetlane, więc usuwanie pól w używanym szablonie warto
-  przemyśleć. Klucze pól są stabilne (np. `SkillOption.ID`), więc zmiana etykiety jest bezpieczna.
+- `syncTemplate` nadpisuje kopię w grze. Wartości pól usuniętych z szablonu przepadają
+  (dialog ostrzega o tym użytkownika), więc usuwanie pól w używanym szablonie warto
+  przemyśleć. Klucze pól to generowane id (`genId(type)`), a nie slug etykiety, więc zmiana etykiety jest bezpieczna.
 - `FilterVisibleToParticipants` wycina z `VisibleTo` osoby spoza gry. Bez tego nieaktualny
   klient MG mógłby z powrotem dodać gracza, który odszedł.
 - Zakładki `gmOnly` są ukrywane na froncie, ale prawdziwą granicą jest `requireGM` na backendzie.
