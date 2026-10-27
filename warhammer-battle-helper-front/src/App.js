@@ -18,6 +18,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
 import CharacterSheetPage from './components/CharacterSheetPage';
+import LandingPage from './components/landing/LandingPage';
 import SettingsPage from './components/settings/SettingsPage';
 import { ConsentProvider } from './analytics/ConsentContext';
 import AnalyticsGate from './analytics/AnalyticsGate';
@@ -155,7 +156,7 @@ function App() {
                             path="/login"
                             element={
                                 user ?
-                                <Navigate to="/" replace /> :
+                                <Navigate to="/games" replace /> :
                                 <Login onLogin={handleLogin} addLogMessage={addLogMessage} />
                             }
                         />
@@ -163,7 +164,7 @@ function App() {
                             path="/register"
                             element={
                                 user ?
-                                <Navigate to="/" replace /> :
+                                <Navigate to="/games" replace /> :
                                 <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
                             }
                         />
@@ -190,33 +191,31 @@ function App() {
                             element={<CharacterSheetPage />}
                         />
 
-                        {/* Game Lobby - Main multiplayer hub */}
+                        <Route path="/" element={<LandingPage user={user} />} />
+
+                        {/* Game Lobby - Main multiplayer hub. ProtectedRoute sends guests to /login. */}
                         <Route
-                            path="/"
+                            path="/games"
                             element={
-                                user ? (
-                                    <ProtectedRoute user={user}>
-                                        {currentGameId ? (
-                                            <GameSession
-                                                gameId={currentGameId}
-                                                token={user.token}
-                                                onGoToGameList={handleGoToGameList}
-                                                onSessionEnded={handleSessionEnded}
-                                                onLogout={handleLogout}
-                                            />
-                                        ) : (
-                                            <GameLobby
-                                                onJoinGame={handleJoinGame}
-                                                token={user.token}
-                                                userEmail={user.email}
-                                                notice={lobbyNotice}
-                                                onDismissNotice={() => setLobbyNotice(null)}
-                                            />
-                                        )}
-                                    </ProtectedRoute>
-                                ) : (
-                                    <Navigate to="/login" replace />
-                                )
+                                <ProtectedRoute user={user}>
+                                    {currentGameId ? (
+                                        <GameSession
+                                            gameId={currentGameId}
+                                            token={user?.token}
+                                            onGoToGameList={handleGoToGameList}
+                                            onSessionEnded={handleSessionEnded}
+                                            onLogout={handleLogout}
+                                        />
+                                    ) : (
+                                        <GameLobby
+                                            onJoinGame={handleJoinGame}
+                                            token={user?.token}
+                                            userEmail={user?.email}
+                                            notice={lobbyNotice}
+                                            onDismissNotice={() => setLobbyNotice(null)}
+                                        />
+                                    )}
+                                </ProtectedRoute>
                             }
                         />
                         </Routes>
