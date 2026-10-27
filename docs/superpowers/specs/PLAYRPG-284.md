@@ -42,7 +42,7 @@ Poza zakresem: moduł aktualności, sekcja „Jak zacząć”, SEO/prerender, gl
    Tło warstwowe: `linear-gradient(180deg, rgba(30,22,14,.55), rgba(30,22,14,.9))`,
    `var(--landing-hero-image)` `center / cover` (zmienna ustawiana inline w JSX na `url(/img/landing/hero.webp)` — CRA 5 rozwiązuje `url('/…')` w `style.css` jako moduł i build pada), kolor bazowy `#3a2f1f` — gdy obraz się nie
    wczyta, zostaje ciemne tło i tekst dalej jest czytelny. Treść wyśrodkowana:
-   - H1 (Cinzel): „Twoja kampania. Twój stół. W przeglądarce.”
+   - H1 (Cinzel): „Zbierz drużynę. Rozłóż mapę. Rzuć kośćmi.”
    - Podtytuł (Crimson Text, `#e8d5b7`): „Mapy z mgłą wojny, własne karty postaci i wszystko,
      czego MG potrzebuje przy sesji online.”
    - CTA główne (`LandingCta`, tło `#8b2f2f`).
