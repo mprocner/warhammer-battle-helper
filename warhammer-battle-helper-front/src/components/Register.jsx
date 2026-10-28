@@ -175,7 +175,9 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                                 />
                             }
                             label={
-                                <Typography variant="body2">
+                                // Inline span: for a required control MUI appends the asterisk right
+                                // after the label, and a block <p> would push it onto its own line.
+                                <Typography variant="body2" component="span">
                                     {/* A link inside a label does not toggle the checkbox: clicks on
                                         interactive content are excluded from label activation. */}
                                     <Trans
