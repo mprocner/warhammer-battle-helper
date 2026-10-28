@@ -1547,6 +1547,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     onClose?.();
   }, [saveTemplate, onClose]);
 
+  // The fullScreen dialog has no backdrop to click, so Escape is the only way MUI calls onClose.
+  // It closes the topmost popup the creator owns and never the creator itself (PLAYRPG-285) —
+  // leaving is the close button's job. Popups with their own Escape (ConfirmModal, nested MUI
+  // dialogs) stop the keydown before it gets here; the confirm check covers focus that left it.
+  const handleDialogEscape = useCallback(() => {
+    if (pendingRemovePath !== null) setPendingRemovePath(null);
+    else if (editingPath !== null) setEditingPath(null);
+  }, [pendingRemovePath, editingPath]);
+
   // After leaving the template the user may no longer save it, so a pending debounced save is
   // dropped rather than flushed.
   const handleLeft = useCallback(() => {
@@ -1828,9 +1837,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     <TutorialProvider>
     {/* The joyride tooltip is portalled to body, outside the dialog's DOM, so the focus trap is
         released while a tour runs rather than left to decide whether the tour's focus is inside.
-        Escape is the tour's own "close": MUI would read the same keydown as onClose('escapeKeyDown')
-        and close the whole creator, so the dialog ignores Escape while a tour runs. */}
-    <Dialog open fullScreen onClose={handleClose} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
+        Escape is the tour's own "close", so the dialog ignores Escape while a tour runs. */}
+    <Dialog open fullScreen onClose={handleDialogEscape} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
       PaperProps={{ sx: { background: 'linear-gradient(160deg, #f4e8d8 0%, #ede0ce 100%)' } }}>
 
       {/* Top bar */}
