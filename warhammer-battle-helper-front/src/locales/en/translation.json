@@ -2481,6 +2481,7 @@
     },
     "ctaBand": {
       "title": "Ready for your first session?"
-    }
+    },
+    "zoom": "Enlarge: {{name}}"
   }
 }

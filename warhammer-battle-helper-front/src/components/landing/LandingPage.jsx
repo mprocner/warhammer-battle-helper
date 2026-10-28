@@ -1,9 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MapIcon from '@mui/icons-material/Map';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import LandingCta from './LandingCta';
+import LandingLightbox from './LandingLightbox';
 
 const HERO_IMAGE = '/img/landing/hero.webp';
 
@@ -16,6 +18,8 @@ const FEATURES = [
 const LandingPage = ({ user }) => {
     const { t } = useTranslation();
     const featuresRef = useRef(null);
+    const [zoomedKey, setZoomedKey] = useState(null);
+    const zoomed = FEATURES.find(feature => feature.key === zoomedKey);
 
     return (
         <div className="landing">
@@ -51,14 +55,20 @@ const LandingPage = ({ user }) => {
                             </h2>
                             <p className="landing__feature-body">{t(`landing.features.${key}.body`)}</p>
                         </div>
-                        <div className="landing__feature-media">
+                        <button
+                            type="button"
+                            className="landing__feature-media"
+                            onClick={() => setZoomedKey(key)}
+                            aria-label={t('landing.zoom', { name: t(`landing.features.${key}.imageAlt`) })}
+                        >
                             <img
                                 className="landing__feature-image"
                                 src={image}
                                 alt={t(`landing.features.${key}.imageAlt`)}
                                 loading="lazy"
                             />
-                        </div>
+                            <ZoomInIcon className="landing__feature-zoom" />
+                        </button>
                     </article>
                 ))}
             </section>
@@ -67,6 +77,12 @@ const LandingPage = ({ user }) => {
                 <h2 className="landing__cta-band-title">{t('landing.ctaBand.title')}</h2>
                 <LandingCta user={user} />
             </section>
+
+            <LandingLightbox
+                image={zoomed?.image}
+                alt={zoomed ? t(`landing.features.${zoomed.key}.imageAlt`) : ''}
+                onClose={() => setZoomedKey(null)}
+            />
         </div>
     );
 };

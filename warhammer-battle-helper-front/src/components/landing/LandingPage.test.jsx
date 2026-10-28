@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import i18n from '../../i18n';
 import en from '../../locales/en/translation.json';
@@ -53,6 +53,18 @@ describe('LandingPage', () => {
     } finally {
       delete Element.prototype.scrollIntoView;
     }
+  });
+
+  it('enlarges a feature screenshot on click and closes it with Escape', async () => {
+    renderPage(null);
+    const alt = i18n.t('landing.features.creator.imageAlt');
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('landing.zoom', { name: alt }) }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByAltText(alt)).toHaveAttribute('src', '/img/landing/creator.webp');
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
   it('has the same landing keys in English and Polish', () => {
