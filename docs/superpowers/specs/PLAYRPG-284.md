@@ -86,6 +86,17 @@ w ramce z `aspect-ratio: 16 / 10`, żeby layout nie skakał przy ładowaniu.
 
 Renderuje `react-router-dom` `<Link>` z klasą `landing__cta`. Używany w hero i w pasie CTA.
 
+### `components/landing/LandingLightbox.jsx`
+
+`({ image, alt, onClose })`, otwarty, gdy `image` ustawiony. MUI `Dialog` (`maxWidth={false}`,
+przezroczysty Paper, ciemne tło) z obrazem w pełnej rozdzielczości (`.landing__lightbox-image`,
+max `100vw/100vh - 32px`) i przyciskiem `Close`. Zamyka Esc, klik w tło, w obraz albo X.
+Obrazek funkcji w `LandingPage` jest `<button className="landing__feature-media">` z
+`aria-label={t('landing.zoom', { name: alt })}` i ikoną `ZoomIn` widoczną na hover/focus;
+`LandingPage` trzyma `zoomedKey` (`useState`). Dodane po pierwszym przeglądzie w przeglądarce —
+zrzuty całej aplikacji w miniaturze były nieczytelne; wiersz funkcji poszerzony do 1280px,
+proporcja tekst:obraz 1:1.8.
+
 ### Style — blok `.landing` w `style.css`
 
 Elementy: `__hero`, `__hero-content`, `__hero-title`, `__hero-subtitle`, `__hero-actions`,
