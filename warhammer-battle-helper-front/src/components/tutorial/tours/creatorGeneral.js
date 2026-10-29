@@ -11,6 +11,7 @@ const creatorGeneral = {
     { id: 'sheetWidth', target: '.creator__settings-card--sheet-width', placement: 'auto' },
     { id: 'dice', target: '.creator__settings-card--dice', placement: 'auto' },
     { id: 'modifier', target: '.creator__settings-card--modifier', placement: 'auto' },
+    { id: 'successLevels', target: '.creator__settings-card--success-levels', placement: 'auto' },
     { id: 'token', target: '.creator__settings-card--token', placement: 'auto' },
     { id: 'help', target: '.creator__tour-btn', placement: 'bottom' },
   ],

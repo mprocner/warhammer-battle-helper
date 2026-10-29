@@ -1082,6 +1082,10 @@
         "title": "Roll modifier",
         "body": "When on, every roll from this sheet first asks the player for a modifier, such as a bonus or a penalty from the situation."
       },
+      "successLevels": {
+        "title": "Success levels",
+        "body": "Choose how the log grades a roll: a signed number of levels per step, or named thresholds such as half or a fifth of the target, each in its own colour."
+      },
       "token": {
         "title": "Token display",
         "body": "Decide what a character's token shows on the map, e.g. a health bar or states read from fields on the sheet."
@@ -1959,10 +1963,29 @@
       "sharePublicNote": "This template is public, so everyone can already use it. The roles below still decide who may edit it.",
       "modifierTitle": "Roll modifier",
       "modifierHint": "Ask for a modifier before each roll on this card",
+      "successLevelsTitle": "Success levels",
+      "successLevelsHint": "How the log reports how well a roll went",
       "sheetWidthTitle": "Character sheet window",
       "sheetWidthHint": "How wide the sheet opens for players",
       "sheetWidthValue": "{{width}} px",
       "sheetWidthNote": "The window never opens wider than the player's browser, and players can resize it."
+    },
+    "successLevels": {
+      "mode": { "off": "Off", "tens": "Levels per step", "tiers": "Thresholds" },
+      "offHint": "Rolls show only success or failure.",
+      "step": "Step",
+      "tensHint": "One level for every step between the tens digits of the target and of the roll. A failure counts down.",
+      "tensExample": "Target {{target}}, roll {{roll}} → {{level}} {{abbr}}",
+      "tiersHint": "The hardest threshold is checked first. Thresholds apply to roll-under fields; a roll-over field shows only success or failure.",
+      "divisor": "Fraction of the target",
+      "divisorError": "Each fraction must be different, from 1/2 to 1/100.",
+      "label": "Name",
+      "labelPlaceholder": "Threshold name",
+      "color": "Colour",
+      "remove": "Remove threshold",
+      "add": "Add threshold",
+      "failureRow": "none",
+      "default": { "extreme": "Extreme success", "hard": "Hard success", "success": "Success", "failure": "Failure" }
     },
     "modifier": {
       "enable": "Ask for a modifier before rolling",

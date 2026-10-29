@@ -1082,6 +1082,10 @@
         "title": "Modyfikator rzutu",
         "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator, np. premię albo karę wynikającą z sytuacji."
       },
+      "successLevels": {
+        "title": "Poziomy sukcesu",
+        "body": "Wybierz, jak log ocenia rzut: liczbą poziomów ze znakiem co krok albo nazwanymi progami, np. połową czy piątą częścią progu, każdy w swoim kolorze."
+      },
       "token": {
         "title": "Wyświetlanie tokenów",
         "body": "Zdecyduj, co token postaci pokazuje na mapie, np. pasek zdrowia albo stany odczytywane z pól karty."
@@ -1959,10 +1963,29 @@
       "sharePublicNote": "Ten szablon jest publiczny, więc i tak mogą go używać wszyscy. Role poniżej nadal decydują, kto może go edytować.",
       "modifierTitle": "Modyfikator rzutu",
       "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie",
+      "successLevelsTitle": "Poziomy sukcesu",
+      "successLevelsHint": "Jak log pokazuje, jak dobrze poszedł rzut",
       "sheetWidthTitle": "Okno karty postaci",
       "sheetWidthHint": "Jak szeroko karta otwiera się graczom",
       "sheetWidthValue": "{{width}} px",
       "sheetWidthNote": "Okno nigdy nie otworzy się szersze niż przeglądarka gracza, a gracz może je rozciągnąć."
+    },
+    "successLevels": {
+      "mode": { "off": "Wyłączone", "tens": "Poziomy co krok", "tiers": "Progi" },
+      "offHint": "Rzuty pokazują tylko sukces albo porażkę.",
+      "step": "Krok",
+      "tensHint": "Jeden poziom za każdy krok różnicy między cyframi dziesiątek progu i rzutu. Porażka liczy w dół.",
+      "tensExample": "Próg {{target}}, rzut {{roll}} → {{level}} {{abbr}}",
+      "tiersHint": "Najtrudniejszy próg sprawdzany jest pierwszy. Progi dotyczą pól z rzutem pod próg; rzut nad próg pokazuje tylko sukces albo porażkę.",
+      "divisor": "Ułamek progu",
+      "divisorError": "Każdy ułamek musi być inny, od 1/2 do 1/100.",
+      "label": "Nazwa",
+      "labelPlaceholder": "Nazwa progu",
+      "color": "Kolor",
+      "remove": "Usuń próg",
+      "add": "Dodaj próg",
+      "failureRow": "brak",
+      "default": { "extreme": "Ekstremalny sukces", "hard": "Trudny sukces", "success": "Sukces", "failure": "Porażka" }
     },
     "modifier": {
       "enable": "Pytaj o modyfikator przed rzutem",

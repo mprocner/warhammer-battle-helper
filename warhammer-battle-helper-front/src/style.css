@@ -12649,6 +12649,183 @@ button.custom-sheet__row-table-expander:hover {
     border-color: #c9975b;
 }
 
+.slb__root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.slb__modes {
+    display: flex;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.slb__mode {
+    padding: 5px 12px;
+    background: #fff9f0;
+    border: none;
+    border-right: 1px solid #c4a882;
+    color: #7a5c42;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.slb__mode:last-child {
+    border-right: none;
+}
+
+.slb__mode.slb__mode--active {
+    background: #c9975b;
+    color: #fff9f0;
+}
+
+.slb__hint,
+.slb__example {
+    font-size: 0.78rem;
+    color: rgba(58, 47, 31, 0.6);
+    line-height: 1.35;
+}
+
+.slb__example {
+    color: #3a2f1f;
+}
+
+.slb__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slb__field-label {
+    font-size: 0.78rem;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.slb__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.slb__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.slb__fraction {
+    color: #7a5c42;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.slb__fraction.slb__fraction--fixed {
+    min-width: 72px;
+}
+
+.slb__step,
+.slb__divisor,
+.slb__label {
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    color: #3a2f1f;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+}
+
+.slb__step {
+    width: 80px;
+}
+
+.slb__divisor {
+    width: 56px;
+}
+
+.slb__label {
+    flex: 1;
+    min-width: 0;
+}
+
+.slb__step:focus,
+.slb__divisor:focus,
+.slb__label:focus {
+    border-color: #7a5c42;
+}
+
+.slb__divisor.slb__divisor--invalid {
+    border-color: #c94444;
+}
+
+.slb__color {
+    width: 32px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
+.slb__remove,
+.slb__remove-spacer {
+    width: 26px;
+    flex-shrink: 0;
+}
+
+.slb__remove {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #7a5c42;
+    cursor: pointer;
+}
+
+.slb__remove:hover {
+    color: #c94444;
+}
+
+.slb__error {
+    font-size: 0.78rem;
+    color: #c94444;
+}
+
+.slb__add {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px dashed #c4a882;
+    border-radius: 3px;
+    padding: 4px 10px;
+    color: #7a5c42;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.slb__add:hover:not(:disabled) {
+    border-color: #c9975b;
+    color: #3a2f1f;
+}
+
+.slb__add:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 /* ===== Landing page (PLAYRPG-284) ===== */
 .landing {
     color: #3a2f1f;

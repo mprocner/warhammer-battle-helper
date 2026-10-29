@@ -60,6 +60,7 @@ import useSortableItem from '../common/sortable/useSortableItem';
 import DragGrip from '../common/sortable/DragGrip';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
+import SuccessLevelsBuilder from './SuccessLevelsBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
 import { TutorialProvider } from '../tutorial/TutorialContext';
 import CreatorTour, { CreatorTourButton, CreatorFieldTourButton, CREATOR_TAB_TOURS } from './CreatorTour';
@@ -1971,6 +1972,20 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 />
               </div>
             </div>
+            {!isVariant && (
+            <div className="creator__settings-card creator__settings-card--success-levels">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.successLevelsTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.successLevelsHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <SuccessLevelsBuilder
+                  value={settings.successLevels}
+                  onChange={successLevels => updateSettings({ successLevels })}
+                />
+              </div>
+            </div>
+            )}
             <div className="creator__settings-card creator__settings-card--token">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.tokenDisplay.cardTitle')}</span>
