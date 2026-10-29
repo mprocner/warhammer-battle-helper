@@ -322,3 +322,29 @@ describe('CustomSheetBody skill_tree — regressions from the flattening (FEATUR
     expect(input).toHaveClass('custom-sheet__skill-tree-edit-input');
   });
 });
+
+describe('CustomSheetBody skill_tree — full label on hover (PLAYRPG-290)', () => {
+  // jsdom has no layout, so scrollWidth/clientWidth are 0; stub them to fake an ellipsis.
+  const stubWidths = (el, scroll, client) => {
+    Object.defineProperty(el, 'scrollWidth', { configurable: true, value: scroll });
+    Object.defineProperty(el, 'clientWidth', { configurable: true, value: client });
+  };
+
+  it('shows the full label in a tooltip when the ellipsis cut it', () => {
+    const { container } = render(<CustomSheetBody sections={filledTreeSections} />);
+    const label = container.querySelector('.custom-sheet__skill-tree-node-label');
+    stubWidths(label, 200, 80);
+
+    fireEvent.mouseEnter(label);
+    expect(document.body.querySelector('.portal-tooltip')).toHaveTextContent('Broń biała');
+  });
+
+  it('shows no tooltip for a label that fits', () => {
+    const { container } = render(<CustomSheetBody sections={filledTreeSections} />);
+    const label = container.querySelector('.custom-sheet__skill-tree-node-label');
+    stubWidths(label, 80, 80);
+
+    fireEvent.mouseEnter(label);
+    expect(document.body.querySelector('.portal-tooltip')).toBeNull();
+  });
+});

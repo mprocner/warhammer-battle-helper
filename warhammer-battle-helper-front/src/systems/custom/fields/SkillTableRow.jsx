@@ -101,7 +101,17 @@ function SkillTableRow({
           )}
         </span>
       ) : (
-        <span className="custom-sheet__skill-name">{displayName}</span>
+        <span
+          className="custom-sheet__skill-name"
+          // Only a name the ellipsis actually cut needs the full text on hover.
+          onMouseEnter={e => {
+            const el = e.currentTarget;
+            if (el.scrollWidth > el.clientWidth) showTooltip(displayName, el);
+          }}
+          onMouseLeave={hideTooltip}
+        >
+          {displayName}
+        </span>
       )}
       <NumberInput
         className={`custom-sheet__skill-val-input${hasAdvances ? ' custom-sheet__skill-val-input--base' : ''}${baseReadOnly ? ' custom-sheet__skill-val-input--derived' : ''}`}

@@ -110,7 +110,15 @@ function SkillTreeRow({
             )}
           </>
         ) : (
-          <span className={`custom-sheet__skill-tree-node-label${row.custom ? ' custom-sheet__skill-tree-node-label--custom' : ''}`}>
+          <span
+            className={`custom-sheet__skill-tree-node-label${row.custom ? ' custom-sheet__skill-tree-node-label--custom' : ''}`}
+            // Only a label the ellipsis actually cut needs the full text on hover.
+            onMouseEnter={e => {
+              const el = e.currentTarget;
+              if (el.scrollWidth > el.clientWidth) showTooltip(displayLabel, el);
+            }}
+            onMouseLeave={hideTooltip}
+          >
             {displayLabel}
           </span>
         )}
