@@ -44,7 +44,6 @@ function CustomRoll({ data, timestamp }) {
   const skillLabel = data.skillName || data.skillKey || '';
   const diceLabel  = data.diceType ? `D${data.diceType}` : '';
 
-
   const modifierText = data.modifier && data.modifier !== 0
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
     : '';

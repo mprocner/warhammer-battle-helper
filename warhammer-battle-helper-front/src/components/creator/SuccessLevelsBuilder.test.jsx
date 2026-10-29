@@ -91,4 +91,50 @@ describe('SuccessLevelsBuilder', () => {
     fireEvent.change(screen.getByTestId('slb-label-failure'), { target: { value: 'Miss' } });
     expect(onChange.mock.calls[0][0].failure).toEqual({ label: 'Miss', color: '#222222' });
   });
+
+  it('does not write a config when the active mode is clicked again', () => {
+    const onChange = jest.fn();
+    render(<SuccessLevelsBuilder value={undefined} onChange={onChange} />);
+    fireEvent.click(screen.getByTestId('slb-mode-off'));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('never commits a fractional divisor', () => {
+    const onChange = jest.fn();
+    render(<SuccessLevelsBuilder value={tiersValue()} onChange={onChange} />);
+    fireEvent.change(screen.getByTestId('slb-divisor-b'), { target: { value: '2.5' } });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('flags an out-of-range step draft without committing it', () => {
+    const onChange = jest.fn();
+    render(<SuccessLevelsBuilder value={{ mode: 'tens', step: 10 }} onChange={onChange} />);
+    const input = screen.getByTestId('slb-step');
+    fireEvent.change(input, { target: { value: '0' } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(input).toHaveClass('slb__step--invalid');
+  });
+
+  it('re-sorts the tiers on blur', () => {
+    const onChange = jest.fn();
+    const { rerender } = render(<SuccessLevelsBuilder value={tiersValue()} onChange={onChange} />);
+    fireEvent.change(screen.getByTestId('slb-divisor-b'), { target: { value: '7' } });
+    const committed = onChange.mock.calls[0][0];
+    expect(committed.tiers.map(x => x.id)).toEqual(['a', 'b']);
+    onChange.mockClear();
+    rerender(<SuccessLevelsBuilder value={committed} onChange={onChange} />);
+    fireEvent.blur(screen.getByTestId('slb-divisor-b'));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].tiers.map(x => x.id)).toEqual(['b', 'a']);
+  });
+
+  it('reverts an invalid divisor draft on blur without committing', () => {
+    const onChange = jest.fn();
+    render(<SuccessLevelsBuilder value={tiersValue()} onChange={onChange} />);
+    const input = screen.getByTestId('slb-divisor-b');
+    fireEvent.change(input, { target: { value: '5' } });
+    fireEvent.blur(input);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue(2);
+  });
 });

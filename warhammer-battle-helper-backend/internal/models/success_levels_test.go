@@ -31,6 +31,10 @@ func TestSuccessLevelsValidate(t *testing.T) {
 		// The creator autosaves on every keystroke, so a GM clearing a name to retype it must not get a 400.
 		{"empty label allowed", func(c *SuccessLevelsConfig) { c.Tiers[0].Label = ""; c.Success.Label = "" }, true},
 		{"empty colour allowed", func(c *SuccessLevelsConfig) { c.Failure.Color = "" }, true},
+		{"step at max", func(c *SuccessLevelsConfig) { c.Mode = SuccessLevelsTens; c.Step = 100 }, true},
+		{"divisor at min", func(c *SuccessLevelsConfig) { c.Tiers[1].Divisor = 2 }, true},
+		{"divisor at max", func(c *SuccessLevelsConfig) { c.Tiers[1].Divisor = 100 }, true},
+		{"label at max runes", func(c *SuccessLevelsConfig) { c.Tiers[0].Label = strings.Repeat("ś", 40) }, true},
 		{"unknown mode", func(c *SuccessLevelsConfig) { c.Mode = "difference" }, false},
 		{"negative step", func(c *SuccessLevelsConfig) { c.Step = -1 }, false},
 		{"step over max", func(c *SuccessLevelsConfig) { c.Step = 101 }, false},

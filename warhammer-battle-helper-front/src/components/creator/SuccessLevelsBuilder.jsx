@@ -12,6 +12,8 @@ import {
 const MODES = [SL_MODE_OFF, SL_MODE_TENS, SL_MODE_TIERS];
 const MODE_KEYS = { [SL_MODE_OFF]: 'off', [SL_MODE_TENS]: 'tens', [SL_MODE_TIERS]: 'tiers' };
 const EXAMPLE = { target: 45, roll: 38 };
+// '' reads as 0 through Number(), so the range check rejects it.
+const isStepValid = raw => Number.isInteger(Number(raw)) && Number(raw) >= 1 && Number(raw) <= MAX_SL_STEP;
 const EMPTY_ROW = { label: '', color: '' };
 
 function SuccessLevelsBuilder({ value, onChange }) {
@@ -25,6 +27,8 @@ function SuccessLevelsBuilder({ value, onChange }) {
   const draftOf = (id, stored) => (draft && draft.id === id ? draft.raw : String(stored));
 
   const setMode = mode => {
+    // Re-clicking the active mode must not write a config (it would bump the template version).
+    if (mode === cfg.mode) return;
     setDraft(null);
     // The fixed rows get a colour only from seeding, so a missing colour means "never seeded" —
     // a GM who cleared every name keeps their empty table instead of getting the defaults back.
@@ -37,16 +41,15 @@ function SuccessLevelsBuilder({ value, onChange }) {
 
   const handleStepChange = raw => {
     setDraft({ id: 'step', raw });
-    const parsed = parseInt(raw, 10);
-    if (parsed >= 1 && parsed <= MAX_SL_STEP) up({ step: parsed });
+    if (isStepValid(raw)) up({ step: Number(raw) });
   };
 
   const updateTier = (id, patch) => up({ tiers: cfg.tiers.map(x => (x.id === id ? { ...x, ...patch } : x)) });
 
   const handleDivisorChange = (id, raw) => {
     setDraft({ id, raw });
-    const parsed = parseInt(raw, 10);
-    if (isDivisorValid(parsed, cfg.tiers, id)) updateTier(id, { divisor: parsed });
+    const parsed = Number(raw);
+    if (Number.isInteger(parsed) && isDivisorValid(parsed, cfg.tiers, id)) updateTier(id, { divisor: parsed });
   };
 
   // Rows re-sort on blur, not per keystroke: moving the row being typed into would steal focus.
@@ -62,13 +65,14 @@ function SuccessLevelsBuilder({ value, onChange }) {
     up({ tiers: sortTiers([...cfg.tiers, { id: genId('tier'), divisor, label: '', color: SL_COLORS.hard }]) });
   };
 
-  const draftInvalid = draft && draft.id !== 'step'
-    && !isDivisorValid(parseInt(draft.raw, 10), cfg.tiers, draft.id);
+  const divisorDraftInvalid = draft && draft.id !== 'step'
+    && !(Number.isInteger(Number(draft.raw)) && isDivisorValid(Number(draft.raw), cfg.tiers, draft.id));
+  const stepDraftInvalid = draft?.id === 'step' && !isStepValid(draft.raw);
 
   const step = cfg.step || DEFAULT_SL_STEP;
   const exampleLevel = tensLevel(EXAMPLE.roll, EXAMPLE.target, step);
 
-  const renderNameAndColor = (testKey, row, onRowChange) => (
+  const renderNameAndColor = (testKey, row, fallbackColor, onRowChange) => (
     <>
       <input
         type="text"
@@ -84,7 +88,7 @@ function SuccessLevelsBuilder({ value, onChange }) {
         type="color"
         className="slb__color"
         data-testid={`slb-color-${testKey}`}
-        value={row.color || SL_COLORS.success}
+        value={row.color || fallbackColor}
         aria-label={t('creator.successLevels.color')}
         onChange={e => onRowChange({ color: e.target.value })}
       />
@@ -93,7 +97,7 @@ function SuccessLevelsBuilder({ value, onChange }) {
 
   return (
     <div className="slb__root">
-      <div className="slb__modes" role="group">
+      <div className="slb__modes" role="group" aria-label={t('creator.general.successLevelsTitle')}>
         {MODES.map(mode => (
           <button
             key={MODE_KEYS[mode]}
@@ -117,7 +121,7 @@ function SuccessLevelsBuilder({ value, onChange }) {
             <input
               id="slb-step"
               data-testid="slb-step"
-              className="slb__step"
+              className={`slb__step${stepDraftInvalid ? ' slb__step--invalid' : ''}`}
               type="number"
               min={1}
               max={MAX_SL_STEP}
@@ -146,7 +150,7 @@ function SuccessLevelsBuilder({ value, onChange }) {
                 <span className="slb__fraction">1/</span>
                 <input
                   type="number"
-                  className={`slb__divisor${draft && draft.id === tier.id && draftInvalid ? ' slb__divisor--invalid' : ''}`}
+                  className={`slb__divisor${draft?.id === tier.id && divisorDraftInvalid ? ' slb__divisor--invalid' : ''}`}
                   data-testid={`slb-divisor-${tier.id}`}
                   min={MIN_TIER_DIVISOR}
                   max={MAX_TIER_DIVISOR}
@@ -155,7 +159,7 @@ function SuccessLevelsBuilder({ value, onChange }) {
                   onChange={e => handleDivisorChange(tier.id, e.target.value)}
                   onBlur={handleDivisorBlur}
                 />
-                {renderNameAndColor(tier.id, tier, patch => updateTier(tier.id, patch))}
+                {renderNameAndColor(tier.id, tier, SL_COLORS.hard, patch => updateTier(tier.id, patch))}
                 <button
                   type="button"
                   className="slb__remove"
@@ -170,16 +174,16 @@ function SuccessLevelsBuilder({ value, onChange }) {
             ))}
             <div className="slb__row slb__row--fixed">
               <span className="slb__fraction slb__fraction--fixed">1/1</span>
-              {renderNameAndColor('success', cfg.success, patch => up({ success: { ...cfg.success, ...patch } }))}
+              {renderNameAndColor('success', cfg.success, SL_COLORS.success, patch => up({ success: { ...cfg.success, ...patch } }))}
               <span className="slb__remove-spacer" />
             </div>
             <div className="slb__row slb__row--fixed">
               <span className="slb__fraction slb__fraction--fixed">{t('creator.successLevels.failureRow')}</span>
-              {renderNameAndColor('failure', cfg.failure, patch => up({ failure: { ...cfg.failure, ...patch } }))}
+              {renderNameAndColor('failure', cfg.failure, SL_COLORS.failure, patch => up({ failure: { ...cfg.failure, ...patch } }))}
               <span className="slb__remove-spacer" />
             </div>
           </div>
-          {draftInvalid && <div className="slb__error">{t('creator.successLevels.divisorError')}</div>}
+          {divisorDraftInvalid && <div className="slb__error">{t('creator.successLevels.divisorError')}</div>}
           <button
             type="button"
             className="slb__add"

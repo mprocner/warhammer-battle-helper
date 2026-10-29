@@ -115,8 +115,8 @@ Nowy komponent `components/creator/SuccessLevelsBuilder.jsx`, klasa
   - stały „Sukces” z napisem `1/1` i stała „Porażka” — nazwa + kolor, bez dzielnika i usuwania;
   - „Dodaj próg” (`Add`) wstawia najmniejszy wolny dzielnik ≥ 2;
   - notka: progi dotyczą rzutów pod próg; rzut nad próg pokazuje tylko sukces/porażkę.
-- **Wartości domyślne** przy pierwszym wejściu w „Progi” (gdy `success.label` puste), nazwy przez
-  `t()` w języku MG, zapisywane jako zwykły tekst: `1/5` Ekstremalny sukces (złoty `#c9975b`),
+- **Wartości domyślne** przy pierwszym wejściu w „Progi” (gdy stały wiersz Sukces nie ma koloru, `!success.color` — MG, który wyczyścił wszystkie nazwy, nie dostaje domyślnych z powrotem), nazwy przez
+  `t()` w języku MG, zapisywane jako zwykły tekst: `1/5` Ekstremalny sukces (złoty `#b8941f`),
   `1/2` Trudny sukces (ciemniejsza zieleń), `1/1` Sukces (zieleń logu), Porażka (czerwień logu) —
   konkretne hexy dobrane z istniejących `--log-*`.
 - Dzielnik edytowany jest „draftem” (wzorzec `ModifierConfigBuilder`): wartość spoza 2–100 albo
