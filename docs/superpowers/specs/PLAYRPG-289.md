@@ -67,10 +67,12 @@ TierColor       string `json:"tierColor,omitempty"`
 Nowy plik `systems/custom/successlevel.go`, czysta funkcja:
 
 ```go
-func applySuccessLevels(cfg *models.SuccessLevelsConfig, successType string, roll, threshold int, hasThreshold, success bool, res *gsys.RollResult)
+func applySuccessLevels(cfg *models.SuccessLevelsConfig, successType string, roll, threshold int, res *gsys.RollResult)
 ```
 
-Wywoływana w `rollFromFormula` po `evalOutcome`, na progu **po** modyfikatorze. Rzut bronią
+Wywoływana w `rollFromFormula` po `evalOutcome`, na progu **po** modyfikatorze. Działa tylko gdy
+`Outcome` to `regular_success` albo `failure` — `raw` i brak progu dają liczbę jako outcome, więc
+same odpadają. Rzut bronią
 przechodzi tą samą ścieżką, więc dostaje poziomy bez osobnego kodu. `rollFromFormulaDicePool` jej
 nie wywołuje.
 
@@ -83,14 +85,18 @@ nie wywołuje.
   `Success` przy sukcesie, `Failure` przy porażce. `above` — tylko `Success` / `Failure`. Ustawia
   `TierLabel` i `TierColor`.
 
-### Walidacja (serwis, przy zapisie szablonu)
+### Walidacja (`SuccessLevelsConfig.Validate`, wołana w `TemplateService.Update`)
 
 - `Mode` ∈ {`""`, `tens`, `tiers`}
 - `Step` 0 lub 1–100
 - `Divisor` dodatkowych progów 2–100, bez duplikatów
-- `Color` w formacie `#rrggbb` (wszystkie wiersze)
-- `Label` niepusty, ≤ 40 znaków — sprawdzane tylko gdy `Mode == "tiers"` (wyłączony tryb może
-  przechowywać cokolwiek zapisał wcześniej)
+- `Color` pusty albo `#rrggbb` (wszystkie wiersze)
+- `Label` ≤ 40 znaków; **pusty dozwolony** — kreator zapisuje się automatycznie (debounce), więc
+  MG czyszczący nazwę, żeby wpisać nową, nie może dostać 400. Pusta nazwa progu w logu = zwykła
+  etykieta wyniku („Sukces!” / „Porażka!”), kolor progu zostaje.
+- Błąd: jeden sentinel `ErrInvalidSuccessLevels` (`template_invalid_success_levels`), klasyfikowany
+  przez `IsTemplateValidationError` → 400. UI nie dopuszcza do wysłania złych wartości, więc to
+  tylko obrona.
 
 ## Frontend — kreator
 
@@ -113,7 +119,12 @@ Nowy komponent `components/creator/SuccessLevelsBuilder.jsx`, klasa
   `t()` w języku MG, zapisywane jako zwykły tekst: `1/5` Ekstremalny sukces (złoty `#c9975b`),
   `1/2` Trudny sukces (ciemniejsza zieleń), `1/1` Sukces (zieleń logu), Porażka (czerwień logu) —
   konkretne hexy dobrane z istniejących `--log-*`.
-- Zduplikowany dzielnik: czerwona ramka + blokada zapisu jak inne błędy kreatora.
+- Dzielnik edytowany jest „draftem” (wzorzec `ModifierConfigBuilder`): wartość spoza 2–100 albo
+  zduplikowana dostaje czerwoną ramkę + komunikat i **nie** trafia do `onChange` (autosave nie ma
+  blokady zapisu); blur porzuca nieprawidłowy draft. Wiersze sortują się malejąco dopiero na blur
+  (sortowanie przy każdym klawiszu przenosiłoby wiersz spod kursora).
+- Karta tylko dla szablonów custom (`!isVariant`) — warianty systemów wbudowanych liczą rzuty
+  własnym pluginem.
 
 Karta postaci w podglądzie kreatora nie renderuje wyników rzutów — zasada „kreator = gra” nie
 wymaga tu nic więcej.
