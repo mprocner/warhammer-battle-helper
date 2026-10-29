@@ -324,6 +324,11 @@ func (s *TemplateService) Update(id string, editorID primitive.ObjectID, req mod
 	if err := models.NormalizeTemplateAbout(t.BaseSystem, req.Description, req.Language); err != nil {
 		return nil, err
 	}
+	if req.Settings != nil {
+		if err := req.Settings.SuccessLevels.Validate(); err != nil {
+			return nil, err
+		}
+	}
 	err = s.repo.UpdateContent(id, editorID, req, templateContentChanged(t, req))
 	if errors.Is(err, repository.ErrTemplateNoMatch) {
 		return nil, s.saveRejection(id, editorID)

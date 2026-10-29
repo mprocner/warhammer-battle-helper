@@ -64,6 +64,10 @@ type TemplateSettings struct {
 	// cannot erase a meaningful value the way it could for FieldDef.Default, whose 0 is real.
 	// Nothing in Go reads it: the client is the only consumer.
 	SheetWidth int `bson:"sheetWidth,omitempty" json:"sheetWidth,omitempty"`
+
+	// SuccessLevels configures how traditional rolls report their degree of success (PLAYRPG-289).
+	// nil means off, which is how every pre-existing template starts — no migration needed.
+	SuccessLevels *SuccessLevelsConfig `bson:"successLevels,omitempty" json:"successLevels,omitempty"`
 }
 
 // ModifierConfig is the template-wide setup of the roll-modifier prompt shown before a roll on
@@ -505,7 +509,8 @@ func IsTemplateValidationError(err error) bool {
 		errors.Is(err, ErrDuplicateCharAvatar) ||
 		errors.Is(err, ErrInvalidTemplateLanguage) ||
 		errors.Is(err, ErrTemplateDescriptionTooLong) ||
-		errors.Is(err, ErrTemplateAboutOnVariant)
+		errors.Is(err, ErrTemplateAboutOnVariant) ||
+		errors.Is(err, ErrInvalidSuccessLevels)
 }
 
 // CountFieldsOfType counts leaf fields of the given type at any depth. Nested sections
