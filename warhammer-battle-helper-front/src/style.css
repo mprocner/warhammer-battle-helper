@@ -2158,7 +2158,7 @@ align-items: center;
 .resize-handle.resize-e,
 .resize-handle.resize-w {
     height: 100%;
-    width: 8px;
+    width: 7px; /* 3px ramki + 4px poza oknem - nie zachodzi na scrollbar przy krawędzi */
     cursor: ew-resize;
     top: 0;
 }
@@ -2172,11 +2172,11 @@ align-items: center;
 }
 
 .resize-handle.resize-e {
-    right: 0;
+    right: -7px;
 }
 
 .resize-handle.resize-w {
-    left: 0;
+    left: -7px;
 }
 
 .resize-handle.resize-ne,
