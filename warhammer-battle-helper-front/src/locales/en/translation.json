@@ -586,6 +586,7 @@
     "STEALTH": "Stealth"
   },
   "customRoll": {
+    "slAbbr": "SL",
     "critical_success": "Critical success!",
     "regular_success": "Success!",
     "failure": "Failure!",

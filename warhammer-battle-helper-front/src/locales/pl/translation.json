@@ -586,6 +586,7 @@
     "STEALTH": "Skradanie"
   },
   "customRoll": {
+    "slAbbr": "PS",
     "critical_success": "Krytyczny sukces!",
     "regular_success": "Sukces!",
     "failure": "Porażka!",
