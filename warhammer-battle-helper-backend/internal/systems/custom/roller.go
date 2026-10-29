@@ -81,7 +81,7 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		appliedTarget, appliedValue = ModTargetNone, 0
 	}
 
-	return &gsys.RollResult{
+	res := &gsys.RollResult{
 		DiceType:         diceType,
 		RollType:         "skill",
 		Roll:             finalRoll,
@@ -92,7 +92,9 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		Modifier:         appliedValue,
 		ModifierTarget:   appliedTarget,
 		FormulaBreakdown: breakdown,
-	}, nil
+	}
+	applySuccessLevels(template.Settings.SuccessLevels, cfg.SuccessType, finalRoll, threshold, res)
+	return res, nil
 }
 
 // evalFormula parses the formula blocks and evaluates them with operator precedence and
