@@ -468,7 +468,7 @@ function CustomCharacterSheet({
 
   return (
     <DraggablePopup
-      title={template ? `${template.name} — ${charName || character?.name}` : (character?.name || '')}
+      title={charName || character?.name || ''}
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={sheetWidth}
