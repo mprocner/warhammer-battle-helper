@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
+import { addOnCreateValues } from './addOnCreate';
 
 const dataSections = (field = {}) => ([{
   id: 'sec1',
@@ -106,14 +107,13 @@ describe('data_table — removing a row', () => {
 });
 
 describe('data_table — two columns', () => {
-  const preset = { id: 'p1', cells: { name: 'Plecak' }, alwaysOn: true };
   const values = { tables: { inv: [{ id: 'r1', cells: { name: 'Lina' } }, { id: 'r2', cells: { name: 'Kostur' } }] } };
 
-  // GM rows and player rows are one list for the split: the GM's come first, and the odd row goes
-  // left. Each half is its own table with its own header, so a column is never unlabelled.
-  it('splits GM and player rows into two halves, each with its own header', () => {
+  // The odd row goes left. Each half is its own table with its own header, so a column is never
+  // unlabelled.
+  it('splits the rows into two halves, each with its own header', () => {
     const { container } = render(
-      <CustomSheetBody sections={dataSections({ presetRows: [preset], twoColumns: true })} values={values} onChange={handlers} />
+      <CustomSheetBody sections={dataSections({ twoColumns: true })} values={{ tables: { inv: [{ id: 'r0', cells: { name: 'Plecak' } }, ...values.tables.inv] } }} onChange={handlers} />
     );
     const halves = container.querySelectorAll('.custom-sheet__row-table-cols > .custom-sheet__row-table');
     expect(halves).toHaveLength(2);
@@ -147,11 +147,9 @@ describe('data_table — sorting', () => {
     return cell.value ?? cell.textContent;
   });
 
-  // GM rows and player rows are one list: a GM row lands wherever its name puts it.
-  it('orders GM and player rows together by the picked column', () => {
-    const preset = { id: 'p1', cells: { name: 'Kostur' }, alwaysOn: true };
-    const values = { tables: { inv: [{ id: 'r1', cells: { name: 'Lina' } }, { id: 'r2', cells: { name: 'Akwawit' } }] } };
-    const { container } = render(<CustomSheetBody sections={sorted({ presetRows: [preset] })} values={values} onChange={handlers} />);
+  it('orders rows by the picked column', () => {
+    const values = { tables: { inv: [{ id: 'r1', cells: { name: 'Lina' } }, { id: 'r2', cells: { name: 'Akwawit' } }, { id: 'r3', cells: { name: 'Kostur' } }] } };
+    const { container } = render(<CustomSheetBody sections={sorted()} values={values} onChange={handlers} />);
     expect(names(container)).toEqual(['Akwawit', 'Kostur', 'Lina']);
   });
 
@@ -193,21 +191,19 @@ describe('data_table — sorting', () => {
   });
 });
 
-describe('data_table — GM rows', () => {
-  const preset = { id: 'p1', cells: { name: 'Plecak', desc: 'Skórzany' }, alwaysOn: true };
+describe('data_table — presets', () => {
+  const preset = { id: 'p1', cells: { name: 'Plecak', desc: 'Skórzany' }, addOnCreate: true };
 
-  it('shows an always-on row read-only with a lock, still expandable', () => {
+  it('does not render an addOnCreate preset as a row but offers it in the picker', () => {
     const { container } = render(<CustomSheetBody sections={dataSections({ presetRows: [preset] })} onChange={handlers} />);
-    const row = container.querySelector('.custom-sheet__row-table-row--preset');
-    expect(row.querySelector('.custom-sheet__row-table-lock')).not.toBeNull();
-    expect(row.querySelector('.custom-sheet__row-table-edit')).toBeNull();
-    fireEvent.click(screen.getByTitle('Show details'));
-    expect(container.querySelector('.custom-sheet__row-table-detail-text').textContent).toBe('Skórzany');
+    expect(container.querySelector('.custom-sheet__row-table-row')).toBeNull();
+    const picker = container.querySelector('.custom-sheet__row-table-preset-picker');
+    expect(Array.from(picker.options).map(o => o.textContent)).toContain('Plecak');
   });
 
   it('offers catalog rows in the footer and copies the picked one', () => {
     const tableAddFromPreset = jest.fn();
-    const catalog = { id: 'p2', cells: { name: 'Lina' }, alwaysOn: false };
+    const catalog = { id: 'p2', cells: { name: 'Lina' } };
     const { container } = render(
       <CustomSheetBody sections={dataSections({ presetRows: [catalog] })} onChange={{ ...handlers, tableAddFromPreset }} />
     );
@@ -237,10 +233,11 @@ describe('data_table — a newly added row opens in edit mode', () => {
 });
 
 describe('data_table — creator', () => {
-  it('renders the GM row and no footer without handlers', () => {
-    const preset = { id: 'p1', cells: { name: 'Plecak' }, alwaysOn: true };
-    const { container } = render(<CustomSheetBody sections={dataSections({ presetRows: [preset] })} showAffordances />);
-    expect(container.querySelector('.custom-sheet__row-table-row--preset')).not.toBeNull();
+  it('renders the addOnCreate preset as a row and no footer without handlers', () => {
+    const preset = { id: 'p1', cells: { name: 'Plecak' }, addOnCreate: true };
+    const sections = dataSections({ presetRows: [preset] });
+    const { container } = render(<CustomSheetBody sections={sections} values={addOnCreateValues(sections)} showAffordances />);
+    expect(container.querySelectorAll('.custom-sheet__row-table-row')).toHaveLength(1);
     expect(container.querySelector('.custom-sheet__row-table-add-row')).toBeNull();
   });
 });

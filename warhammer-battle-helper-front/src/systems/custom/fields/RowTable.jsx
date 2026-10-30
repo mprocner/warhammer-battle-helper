@@ -2,11 +2,10 @@ import React, { useState, useRef } from 'react';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { splitHalf } from '../skillLayout';
 import { rowGridTemplate, rowLabel, gridColumns, detailColumns, sortByText } from '../rowTableLayout';
-import RowTablePresetRow from './RowTablePresetRow';
 import RowTablePlayerRow from './RowTablePlayerRow';
 
 // The core of every table whose columns the GM defines and whose rows the player adds: a header
-// bar, the GM's always-on rows, the player's own rows, and a footer that adds either kind.
+// bar, the player's rows, and a footer that adds a row or copies one from the GM's catalog.
 //
 // What a particular table adds of its own — the weapons table's star, damage and die — comes in as
 // slots: extra columns before (`leading`) or after (`trailing`) the GM's. The grid template is
@@ -60,8 +59,6 @@ function RowTable({
     return next;
   });
 
-  const alwaysOnPresets = presets.filter(p => p.alwaysOn);
-  const catalogPresets  = presets.filter(p => !p.alwaysOn);
   const gridTemplate = rowGridTemplate(columns, {
     leading:  leading.map(s => s.track),
     trailing: trailing.map(s => s.track),
@@ -103,29 +100,17 @@ function RowTable({
     </div>
   );
 
-  // GM rows and player rows as one list, so the two-column split can treat them alike.
-  const unsorted = [
-    ...alwaysOnPresets.map(preset => ({ preset })),
-    ...rows.map(row => ({ row })),
-  ];
+  const unsorted = rows.map(row => ({ row }));
   const isEditing = item => item.row && item.row.id === editingPath;
   const pinned = item => isEditing(item) && newRows.has(item.row.id);
   const sortText = (item) => {
     if (isEditing(item) && item.row.id in editSortText.current) return editSortText.current[item.row.id];
-    return ((item.preset || item.row).cells || {})[sortKey];
+    return (item.row.cells || {})[sortKey];
   };
   const items = sortKey
     ? [...sortByText(unsorted.filter(item => !pinned(item)), sortText), ...unsorted.filter(pinned)]
     : unsorted;
-  const renderItem = ({ preset, row }) => (preset ? (
-    <RowTablePresetRow
-      key={preset.id}
-      {...shared}
-      preset={preset}
-      expanded={expanded.has(preset.id)}
-      onToggleExpand={() => toggle(preset.id)}
-    />
-  ) : (
+  const renderItem = ({ row }) => (
     <RowTablePlayerRow
       key={row.id}
       {...shared}
@@ -138,7 +123,7 @@ function RowTable({
       onCell={onCell}
       onRequestRemove={setPendingRemove}
     />
-  ));
+  );
   const halves = twoColumns ? splitHalf(items) : null;
 
   return (
@@ -167,17 +152,17 @@ function RowTable({
           <button className="custom-sheet__row-table-add-btn" onClick={addRow}>
             + {labels.add}
           </button>
-          {catalogPresets.length > 0 && (
+          {presets.length > 0 && (
             <select
               className="custom-sheet__row-table-preset-picker"
               value=""
               onChange={e => {
-                const preset = catalogPresets.find(p => p.id === e.target.value);
+                const preset = presets.find(p => p.id === e.target.value);
                 if (preset) onAddFromPreset(preset);
               }}
             >
               <option value="">+ {labels.addFromList}</option>
-              {catalogPresets.map(p => (
+              {presets.map(p => (
                 <option key={p.id} value={p.id}>{rowLabel(columns, p, labels.rowFallback)}</option>
               ))}
             </select>

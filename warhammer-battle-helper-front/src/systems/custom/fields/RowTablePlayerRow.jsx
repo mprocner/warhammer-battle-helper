@@ -34,7 +34,7 @@ function RowTablePlayerRow({
 }) {
   const details = detailColumns(columns);
   const nameKey = nameColumnKey(columns);
-  const ctx = { isPreset: false, editing };
+  const ctx = { editing };
   const cell = (colKey, value) => onCell && onCell(row.id, colKey, value);
 
   // Enter closes the edit the same way the tick does — there is no buffer to flush.

@@ -1199,7 +1199,7 @@
           "skill_table": "The skills on the list with an optional starting value, optionally linked to an attribute, and whether players may add their own. Drag the grip to set their order.",
           "skill_tree": "The tree of skills — add children to build specialisations — and whether players may add their own.",
           "weapons_table": "The columns (one may supply the attack skill), the damage formula and the preset weapons the GM provides. Drag the grip to reorder columns and presets.",
-          "data_table": "The columns — including long text shown in an expandable row — and preset rows, always on the sheet or offered as a list. Drag the grip to reorder columns and presets."
+          "data_table": "The columns — including long text shown in an expandable row — and preset rows, added to every new character or offered as a list. Drag the grip to reorder columns and presets."
         }
       },
       "roll": {
@@ -1742,7 +1742,6 @@
     "saveRow": "Done",
     "removeRow": "Remove row",
     "removeRowConfirm": "Remove row \"{{name}}\"?",
-    "rowPresetLocked": "GM row — always on the sheet, read-only",
     "expandRow": "Show details",
     "collapseRow": "Hide details",
     "attrTableEmpty": "No attributes defined",
@@ -1773,7 +1772,6 @@
     "damageExprHint": "Number or dice, e.g. 2, -1, 1d4, 1d6+1",
     "damageExprInvalid": "Invalid expression",
     "weaponSkillMissing": "Pick a skill before rolling",
-    "weaponPresetLocked": "GM weapon — always on the sheet, read-only",
     "editWeapon": "Edit weapon",
     "saveWeapon": "Done",
     "addSkill": "Add skill",
@@ -1811,7 +1809,7 @@
     "saveForbidden": "You no longer have edit access to this template. Unsaved changes will be lost when you close it.",
     "saveGone": "This template was deleted or you no longer have access to it. Unsaved changes will be lost when you close it.",
     "dataTablePresetsTitle": "Preset rows",
-    "dataTablePresetsHint": "Define rows the GM provides. \"Always on the sheet\" rows appear read-only on every character; the rest form a list players can add from.",
+    "dataTablePresetsHint": "Define rows the GM provides. Players add them from a list; rows marked \"add when a character is created\" are already on every new character's sheet, as the player's own editable rows.",
     "dataTablePresetsNoColumns": "Add at least one column above before defining preset rows.",
     "dataTablePresetAdd": "Add preset row",
     "tileTitle": "System Creator",
@@ -1924,9 +1922,9 @@
     "weaponSkillColumnMoved": "Skill column moved from \"{{column}}\"",
     "tableAddColumn": "Add column",
     "weaponPresetsTitle": "Preset weapons",
-    "weaponPresetsHint": "Define weapons the GM provides. \"Always on the sheet\" weapons appear read-only on every character; the rest form a list players can add from.",
+    "weaponPresetsHint": "Define weapons the GM provides. Players add them from a list; weapons marked \"add when a character is created\" are already on every new character's sheet, as the player's own editable rows.",
     "weaponPresetsNoColumns": "Add at least one column above before defining preset weapons.",
-    "tablePresetAlwaysOn": "Always on the sheet",
+    "tablePresetAddOnCreate": "Add when a character is created",
     "tablePresetReorder": "Move preset {{n}}",
     "presetReorderSortedHint": "The sheet sorts this table alphabetically — the order set here applies to the list players add from, and to the table once sorting is turned off.",
     "weaponPresetAdd": "Add preset weapon",

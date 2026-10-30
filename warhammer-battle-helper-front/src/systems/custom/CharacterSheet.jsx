@@ -347,10 +347,8 @@ function CustomCharacterSheet({
   const removeTableRow = (fieldKey, rowId) => removeRow('tables', fieldKey, rowId);
   const updateTableCell = (fieldKey, rowId, colKey, value) => mapRow('tables', fieldKey, rowId, setCell(colKey, value));
 
-  // Weapon favorites are tracked by weapon id in favoriteWeapons — for player rows and GM
-  // presets alike — so CharacterDetails can resolve and roll either kind the same way. (Preset
-  // weapons live in the template, not in stats, so a per-player id list is the only place to
-  // mark them; player rows reuse the same list for consistency.)
+  // Weapon favorites are tracked by row id in favoriteWeapons, so CharacterDetails can resolve and
+  // roll them.
   const toggleWeaponFavorite = (weaponId) => {
     setEdited(prev => {
       const favs = prev.favoriteWeapons || [];

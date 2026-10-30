@@ -32,7 +32,7 @@ test('an unsorted skill table shows no hint', () => {
 
 const textCol = { key: 'c1', label: 'Name', type: 'text', options: [], optionsFromSkills: false };
 const numberCol = { key: 'c2', label: 'Weight', type: 'number', options: [], optionsFromSkills: false };
-const preset = { id: 'preset_a', cells: {}, alwaysOn: false };
+const preset = { id: 'preset_a', cells: {}, addOnCreate: false };
 
 test('a sorted data table with a text column shows the hint', () => {
   renderPanel({ ...makeDefaultField('data_table', t), columns: [textCol], presetRows: [preset], sortAlphabetically: true });

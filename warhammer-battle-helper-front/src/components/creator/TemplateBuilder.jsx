@@ -44,6 +44,7 @@ import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/wea
 import { sortColumnKey } from '../../systems/custom/rowTableLayout';
 import { collectSkillOptions, isSkillBaseDerived } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import { addOnCreateValues } from '../../systems/custom/addOnCreate';
 import { SHORT_CARD_TYPES } from '../../systems/custom/shortCard';
 import OptionsEditor from './OptionsEditor';
 import TableColumnsEditor from './TableColumnsEditor';
@@ -1330,6 +1331,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
   // Which one-per-template types are already placed; drives the palette, the inline picker
   // and the missing-name warning.
+  // What a new character starts with: the creator shows the GM's addOnCreate presets as rows.
+  const previewValues = useMemo(() => addOnCreateValues(sections), [sections]);
   const usedSingletons = useMemo(() => usedSingletonTypes(sections), [sections]);
   // Toggles renderChrome off so the sheet tab shows exactly what a player would see — the
   // top-bar eye icon, not a third tab (there is nothing else to show alongside it).
@@ -2107,6 +2110,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               <div className="custom-sheet" ref={sheetWrapperRef} style={{ maxWidth: clampSheetWidth(settings.sheetWidth) }}>
                 <CustomSheetBody
                   sections={sections}
+                  values={previewValues}
                   renderChrome={cleanPreview ? null : buildChrome}
                   showAffordances
                 />
@@ -2117,7 +2121,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                   exactly what the dragged node would look like once it lands. */}
               {ghostRect && draggedGhostSections && (
                 <div className="creator__drop-ghost" style={ghostRect}>
-                  <CustomSheetBody sections={draggedGhostSections} />
+                  <CustomSheetBody sections={draggedGhostSections} values={addOnCreateValues(draggedGhostSections)} />
                 </div>
               )}
               {!cleanPreview && (
@@ -2168,7 +2172,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         <DragOverlay dropAnimation={null}>
           {dragState && draggedGhostSections && (
             <div className="creator__drag-overlay" style={{ width: dragState.draggedRect?.width }}>
-              <CustomSheetBody sections={draggedGhostSections} />
+              <CustomSheetBody sections={draggedGhostSections} values={addOnCreateValues(draggedGhostSections)} />
             </div>
           )}
         </DragOverlay>

@@ -1199,7 +1199,7 @@
           "skill_table": "Umiejętności na liście z opcjonalną wartością startową, opcjonalnie powiązane z atrybutem, oraz to, czy gracze mogą dodawać własne. Kolejność ustawisz, przeciągając uchwyt.",
           "skill_tree": "Drzewo umiejętności — dodawaj podrzędne, aby tworzyć specjalizacje — oraz to, czy gracze mogą dodawać własne.",
           "weapons_table": "Kolumny (jedna może wskazywać umiejętność ataku), formuła obrażeń i predefiniowane bronie od MG. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt.",
-          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, zawsze na karcie albo jako lista do wyboru. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt."
+          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, dodawane każdej nowej postaci albo jako lista do wyboru. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt."
         }
       },
       "roll": {
@@ -1742,7 +1742,6 @@
     "saveRow": "Gotowe",
     "removeRow": "Usuń wiersz",
     "removeRowConfirm": "Usunąć wiersz „{{name}}”?",
-    "rowPresetLocked": "Wiersz MG — zawsze na karcie, tylko do odczytu",
     "expandRow": "Pokaż szczegóły",
     "collapseRow": "Ukryj szczegóły",
     "attrTableEmpty": "Brak zdefiniowanych atrybutów",
@@ -1773,7 +1772,6 @@
     "damageExprHint": "Liczba lub kość, np. 2, -1, 1K4, 1K6+1",
     "damageExprInvalid": "Niepoprawne wyrażenie",
     "weaponSkillMissing": "Wybierz umiejętność przed rzutem",
-    "weaponPresetLocked": "Broń MG — zawsze na karcie, tylko do odczytu",
     "editWeapon": "Edytuj broń",
     "saveWeapon": "Gotowe",
     "addSkill": "Dodaj umiejętność",
@@ -1811,7 +1809,7 @@
     "saveForbidden": "Nie masz już uprawnień do edycji tego szablonu. Niezapisane zmiany przepadną po zamknięciu.",
     "saveGone": "Ten szablon został usunięty albo nie masz już do niego dostępu. Niezapisane zmiany przepadną po zamknięciu.",
     "dataTablePresetsTitle": "Predefiniowane wiersze",
-    "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Wiersze „zawsze na karcie” pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
+    "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Gracze dodają je z listy; wiersze oznaczone „dodaj przy tworzeniu postaci” są od razu na karcie każdej nowej postaci jako jej własne, edytowalne wiersze.",
     "dataTablePresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować wiersze.",
     "dataTablePresetAdd": "Dodaj wiersz",
     "tileTitle": "Kreator systemów",
@@ -1924,9 +1922,9 @@
     "weaponSkillColumnMoved": "Kolumna umiejętności przeniesiona z „{{column}}”",
     "tableAddColumn": "Dodaj kolumnę",
     "weaponPresetsTitle": "Predefiniowane bronie",
-    "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Bronie „zawsze na karcie\" pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
+    "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Gracze dodają je z listy; bronie oznaczone „dodaj przy tworzeniu postaci” są od razu na karcie każdej nowej postaci jako jej własne, edytowalne wiersze.",
     "weaponPresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować bronie.",
-    "tablePresetAlwaysOn": "Zawsze na karcie",
+    "tablePresetAddOnCreate": "Dodaj przy tworzeniu postaci",
     "tablePresetReorder": "Przesuń pozycję {{n}}",
     "presetReorderSortedHint": "Karta sortuje tę tabelę alfabetycznie — ustawiona tu kolejność obowiązuje na liście, z której gracze dodają, oraz w tabeli po wyłączeniu sortowania.",
     "weaponPresetAdd": "Dodaj broń",

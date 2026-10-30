@@ -17,7 +17,7 @@ const template = {
   sections: [{ id: 's', fields: [{
     key: 'inv', type: 'data_table', label: 'Ekwipunek',
     columns: [{ key: 'name', label: 'Nazwa', type: 'text' }],
-    presetRows: [{ id: 'p1', cells: { name: 'Lina' }, alwaysOn: false }],
+    presetRows: [{ id: 'p1', cells: { name: 'Lina' } }],
   }] }],
 };
 

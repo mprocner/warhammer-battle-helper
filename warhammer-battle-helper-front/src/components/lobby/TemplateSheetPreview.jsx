@@ -2,6 +2,7 @@ import React from 'react';
 import DraggablePopup from '../common/DraggablePopup';
 import { WindowManagerProvider } from '../../contexts/WindowManagerContext';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import { addOnCreateValues } from '../../systems/custom/addOnCreate';
 import { clampSheetWidth } from '../../utils/sheetWidth';
 
 // Read-only look at a template's character sheet, opened from the system picker and "My
@@ -25,7 +26,7 @@ function TemplateSheetPreview({ template, onClose }) {
         initialPosition="center"
       >
         <div className="custom-sheet" style={{ maxWidth: sheetWidth }}>
-          <CustomSheetBody sections={template.sections} showAffordances />
+          <CustomSheetBody sections={template.sections} values={addOnCreateValues(template.sections)} showAffordances />
         </div>
       </DraggablePopup>
     </WindowManagerProvider>

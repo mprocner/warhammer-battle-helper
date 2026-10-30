@@ -1,12 +1,12 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import i18n from '../../i18n';
 import TablePresetsEditor from './TablePresetsEditor';
 
 const columns = [{ key: 'c1', label: 'Name', type: 'text', options: [], optionsFromSkills: false }];
 const presets = [
-  { id: 'preset_a', cells: { c1: 'Sword' }, alwaysOn: false },
-  { id: 'preset_b', cells: { c1: 'Axe' }, alwaysOn: true },
+  { id: 'preset_a', cells: { c1: 'Sword' } },
+  { id: 'preset_b', cells: { c1: 'Axe' }, addOnCreate: true },
 ];
 const labels = { title: 'Presets', hint: 'Hint', noColumns: 'No columns', add: 'Add' };
 
@@ -17,6 +17,15 @@ test('every preset has a numbered drag handle', () => {
   renderEditor();
   expect(screen.getByLabelText(i18n.t('creator.tablePresetReorder', { n: 1 }))).toBeInTheDocument();
   expect(screen.getByLabelText(i18n.t('creator.tablePresetReorder', { n: 2 }))).toBeInTheDocument();
+});
+
+test('the add-on-create switch reflects each preset and sets the flag', () => {
+  const onChange = jest.fn();
+  renderEditor({ onChange });
+  const switches = screen.getAllByLabelText(i18n.t('creator.tablePresetAddOnCreate'));
+  expect(switches.map(s => s.checked)).toEqual([false, true]);
+  fireEvent.click(switches[0]);
+  expect(onChange).toHaveBeenCalledWith([{ ...presets[0], addOnCreate: true }, presets[1]]);
 });
 
 test('the sorted-on-sheet hint shows only when the sheet sorts', () => {

@@ -246,9 +246,8 @@ function CustomCharacterDetails({
     }).filter(Boolean);
   }, [stats, template]);
 
-  // Favourite weapons are stored as a flat list of weapon ids covering both player-added rows
-  // (in stats.weapons) and GM presets (in the template). We resolve each id to its owning
-  // weapons_table field so a roll can carry the {fieldKey, rowId} the backend expects.
+  // Favourite weapons are a flat list of weapon row ids (stats.weapons). We resolve each id to its
+  // owning weapons_table field so a roll can carry the {fieldKey, rowId} the backend expects.
   const favoriteWeaponsData = useMemo(() => {
     const favSet = new Set(stats.favoriteWeapons || []);
     if (!favSet.size) return [];
@@ -270,7 +269,6 @@ function CustomCharacterDetails({
         });
       };
       (playerWeapons[f.key] || []).forEach(collect);
-      (f.presetWeapons || []).forEach(collect);
     }
     return out;
   }, [stats, template, t]);

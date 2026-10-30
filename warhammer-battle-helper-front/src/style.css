@@ -9299,33 +9299,19 @@ align-items: center;
     color: #c0392b;
 }
 
-/* A GM preset row is read-only, and .custom-sheet__row-table-row--preset is the only DOM hook that
-   says so — every other cell in the row is muted through it (see
-   .custom-sheet__row-table-row .custom-sheet__row-table-cell-static above), but renderDamageFormula's
-   readOnly flag only sets the input's readonly attribute: the fill, border and --missing state
-   still read as "fill me in." This selector matches an input carrying --missing too (an extra
-   class on the element doesn't stop a selector that doesn't mention it from matching), and at
+/* A player's weapon row at rest keeps a `readonly` damage input (renderDamageFormula renders it
+   unconditionally; editing only flips readOnly). Left alone, its fill, border and --missing state
+   still read as "fill me in", so a row at rest mutes it the way the static cells are muted: no
+   fill, no border, second-plane text. The selector matches an input carrying --missing too, and at
    two classes (0,2,0) it outranks --missing's one (0,1,0), so it wins the background and
-   border-color regardless of source order — which it must, because an always-on preset whose GM
-   left a damage block empty would otherwise show the red "incomplete" border on a field the
-   player has no way to complete, next to a roll button disabled for the same reason. Muted the
-   same way the static cells are: no fill, no border, second-plane text. The placeholder still
-   needs its own rule below — --missing's ::placeholder color is a separate declaration this
-   selector doesn't reach.
-   .custom-sheet__row-table-row--reading is the same defect on the second row kind this applies to:
-   a player's own weapon at rest. Its pencil-gated inputs carry the readonly attribute exactly
-   like the preset's, so they need the identical mute — the row still has its OWN damage input
-   element in the DOM (renderDamageFormula renders unconditionally; editing only flips readOnly),
-   it is just the wrong-looking one until this rule fires. Same two-class specificity, so it beats
-   --missing on its own merits without needing to race it in source order. */
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input,
+   border-color regardless of source order. The placeholder still needs its own rule below —
+   --missing's ::placeholder color is a separate declaration this selector doesn't reach. */
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input {
     background: transparent;
     border-color: transparent;
     color: #6b5a45;
 }
 
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input--missing::placeholder,
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input--missing::placeholder {
     color: #6b5a45;
 }
@@ -9334,9 +9320,8 @@ align-items: center;
    .custom-sheet__weapon-dmg-input:focus's border-color: #c9975b, so whichever comes later in the
    source wins — the mute does, since it is declared after. Muted or not, these inputs remain real
    tab stops (readonly, not disabled), so a keyboard user still needs to see where focus landed.
-   This rule adds the pseudo-class to both selectors, which raises it to (0,3,0) — it wins by
+   This rule adds the pseudo-class to this selector, which raises it to (0,3,0) — it wins by
    specificity, not source order, so it cannot be re-broken by reordering the block above. */
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input:focus,
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input:focus {
     border-color: #7a5c42;
 }
@@ -9369,16 +9354,13 @@ align-items: center;
     min-width: 0;
 }
 
-/* Every control in the actions cell — delete, the padlock, edit, save — is an MUI icon at
-   AFFORDANCE_ICON_SIZE in a box of identical padding, so all four occupy exactly the same width
-   without any of them declaring one. They used to be three different kinds of thing — an icon, a
-   text glyph and an emoji — and the glyph's wider padding made the delete control visibly broader
-   than the padlock beside it. A declared width would have hidden that rather than fixed it: the
-   contents have to match, not just the boxes. One rule for the shared geometry: each control used
-   to re-declare it dozens of lines apart, so changing one could silently break the alignment this
-   comment promises. Only color and :hover are left per control below. */
+/* Every control in the actions cell — delete, edit, save — is an MUI icon at AFFORDANCE_ICON_SIZE
+   in a box of identical padding, so all three occupy exactly the same width without any of them
+   declaring one. A declared width would hide a mismatch rather than fix it: the contents have to
+   match, not just the boxes. One rule for the shared geometry: each control used to re-declare it
+   dozens of lines apart, so changing one could silently break the alignment this comment
+   promises. Only color and :hover are left per control below. */
 .custom-sheet__row-table-remove,
-.custom-sheet__row-table-lock,
 .custom-sheet__row-table-edit,
 .custom-sheet__row-table-save {
     border: none;
@@ -9422,15 +9404,6 @@ align-items: center;
     border-color: #7a5c42;
 }
 
-/* Geometry shared with the other actions-cell controls — see the comment on
-   .custom-sheet__row-table-remove. The padlock is inert, so it keeps the default cursor and sits at
-   reduced opacity: it reports a state rather than offering an action. */
-.custom-sheet__row-table-lock {
-    color: #7a5c42;
-    opacity: 0.7;
-    cursor: default;
-}
-
 /* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
    holds three field skins and the anchor is what keeps them apart. */
 .custom-sheet__row-table-row .custom-sheet__row-table-cell-static {
@@ -9445,13 +9418,6 @@ align-items: center;
 
 .custom-sheet__row-table-row .custom-sheet__row-table-cell-static--name {
     font-weight: 700;
-}
-
-/* Muted only for the GM's own preset rows. The base static cell is now what a player's row renders at
-   rest too, so the colour has to mean "not yours to change" rather than "not an input".
-   --preset is the only hook that tells the two apart; it also mutes the preset's damage inputs. */
-.custom-sheet__row-table-row--preset .custom-sheet__row-table-cell-static {
-    color: #6b5a45;
 }
 
 /* Geometry shared with the other actions-cell controls — see the comment on
@@ -9557,10 +9523,6 @@ button.custom-sheet__row-table-expander:hover {
     color: #3a2f1f;
     white-space: pre-wrap;
     word-break: break-word;
-}
-
-.custom-sheet__row-table-row--preset .custom-sheet__row-table-detail-text {
-    color: #6b5a45;
 }
 
 .custom-sheet__row-table-row .custom-sheet__row-table-detail-input {

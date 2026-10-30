@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import i18n from '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
+import { addOnCreateValues } from './addOnCreate';
 
 // Test the creator's affordance policy for weapons_table. This is the width-parity guarantee:
 // the creator must reserve the same column widths as the game, so a layout the GM judges to be
@@ -10,9 +11,8 @@ import CustomSheetBody from './CustomSheetBody';
 // column; without `showAffordances` the column would silently disappear and every other column
 // would shift one star-width away from its label. This test guards against reverting
 // showStar to `!!onToggleFavorite` alone.
-// Module-scoped (not inside the describe below) so the GM-row fixture is also reachable from the
-// "read first, edit on the pencil" describe further down — a GM weapon there needs the exact same
-// always-on preset shape.
+// Module-scoped (not inside the describe below) so the preset fixture is also reachable from the
+// "read first, edit on the pencil" describe further down.
 const weaponsSections = () => ([{
   id: 'sec1',
   columns: 1,
@@ -27,7 +27,7 @@ const weaponsSections = () => ([{
           id: 'preset_sword',
           cells: { name: 'Miecz' },
           damage: {},
-          alwaysOn: true,
+          addOnCreate: true,
         },
       ],
     },
@@ -36,7 +36,7 @@ const weaponsSections = () => ([{
 
 describe('CustomSheetBody weapons_table — creator affordance policy', () => {
   it('renders the star statically in the creator when showAffordances is true and onToggleFavorite is absent', () => {
-    const { container } = render(<CustomSheetBody sections={weaponsSections()} showAffordances />);
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} showAffordances />);
     // Static star should be present for layout parity
     expect(container.querySelector('.custom-sheet__star-btn--static')).not.toBeNull();
     // Interactive button should NOT be present
@@ -111,10 +111,13 @@ describe('CustomSheetBody weapons_table — read first, edit on the pencil', () 
     expect(container.querySelector('.custom-sheet__row-table-cell-input')).toBeNull();
   });
 
-  // A GM weapon is not the player's to change, so it has no way in at all.
-  it('gives a GM weapon no pencil', () => {
+  // An addOnCreate preset is copied into a new character by the backend; the sheet never renders
+  // the template's preset itself, it only offers it in the add-from-list picker.
+  it('does not render an addOnCreate preset as a row but offers it in the picker', () => {
     const { container } = render(<CustomSheetBody sections={weaponsSections()} onChange={sheetHandlers} />);
-    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-row')).toBeNull();
+    const picker = container.querySelector('.custom-sheet__row-table-preset-picker');
+    expect(Array.from(picker.options).map(o => o.textContent)).toContain('Miecz');
   });
 });
 
@@ -174,7 +177,7 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
 });
 
 // GAP 1: The damage formula is read-only at rest because of the rule in WeaponsTable.jsx
-// renderDamage: `isPreset || !editing`. This test pins the guarantee that player-fillable damage
+// renderDamage: `!editing`. This test pins the guarantee that player-fillable damage
 // blocks cannot be typed into while the row is at rest.
 const damageFormulaWithPlayerInput = () => ([{
   id: 'sec1',
