@@ -34,7 +34,8 @@ var damageTermRe = regexp.MustCompile(`^(?:(\d*)[dk](\d+)|(\d+))$`)
 //	expr := [sign] term (sign term)*
 //	term := [count] ('k' | 'd') faces | number
 //
-// A leading minus on dice becomes "0 -" (on a lone constant it negates the number) because the formula grammar has no unary minus. Block ids are
+// The formula grammar has no unary minus, so a leading minus on dice becomes "0 -"; on a lone
+// constant it negates the number instead, so the breakdown reads "(-1)". Block ids are
 // idPrefix + "." + n, so expanded blocks never collide with the GM's own ids.
 func parseDamageExpr(s, idPrefix string) ([]models.FormulaBlock, error) {
 	s = strings.ToLower(strings.Join(strings.Fields(s), ""))
