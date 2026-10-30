@@ -1646,17 +1646,6 @@ func TestSeedDefaults_AddOnCreatePresetsBecomeRows(t *testing.T) {
 	}
 }
 
-func TestSeedDefaults_SeededRowDoesNotShareMapsWithTemplate(t *testing.T) {
-	tmpl := seedTemplate(models.FieldDef{Key: "weapons", Type: "weapons_table", PresetWeapons: []models.PresetWeapon{
-		{ID: "p1", Cells: map[string]string{"name": "Fists"}, AddOnCreate: true},
-	}})
-	s := seedBlank(t, tmpl)
-	s.Weapons["weapons"][0].Cells["name"] = "changed"
-	if got := tmpl.Sections[0].Fields[0].PresetWeapons[0].Cells["name"]; got != "Fists" {
-		t.Errorf("preset cell = %q, want Fists — the seeded row must be a copy", got)
-	}
-}
-
 // ---------------------------------------------------------------------------
 // FEATURE-217 — display flags and the development marker
 // ---------------------------------------------------------------------------

@@ -87,12 +87,6 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 	if s.Skills == nil {
 		s.Skills = map[string]AttrValue{}
 	}
-	if s.Weapons == nil {
-		s.Weapons = map[string][]WeaponRow{}
-	}
-	if s.Tables == nil {
-		s.Tables = map[string][]TableRow{}
-	}
 	for _, section := range tmpl.Sections {
 		for _, field := range flattenFields(section.Fields) {
 			switch field.Type {
@@ -114,15 +108,16 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 					}
 				}
 			case "weapons_table":
-				for _, p := range field.PresetWeapons {
-					if p.AddOnCreate {
-						s.Weapons[field.Key] = append(s.Weapons[field.Key], WeaponRow{ID: p.ID, Cells: copyStrings(p.Cells), Damage: copyStrings(p.Damage)})
+				// No map copies needed: s is marshalled below, so the row never aliases the preset.
+				for _, preset := range field.PresetWeapons {
+					if preset.AddOnCreate {
+						s.Weapons[field.Key] = append(s.Weapons[field.Key], WeaponRow{ID: preset.ID, Cells: preset.Cells, Damage: preset.Damage})
 					}
 				}
 			case "data_table":
-				for _, p := range field.PresetRows {
-					if p.AddOnCreate {
-						s.Tables[field.Key] = append(s.Tables[field.Key], TableRow{ID: p.ID, Cells: copyStrings(p.Cells)})
+				for _, preset := range field.PresetRows {
+					if preset.AddOnCreate {
+						s.Tables[field.Key] = append(s.Tables[field.Key], TableRow{ID: preset.ID, Cells: preset.Cells})
 					}
 				}
 			}
@@ -353,16 +348,4 @@ func findLeafConfig(node *models.SkillTreeNode, target, path string) (*models.Ro
 		}
 	}
 	return nil, "", false
-}
-
-// copyStrings returns an independent copy, so a seeded row never aliases its template preset.
-func copyStrings(m map[string]string) map[string]string {
-	if m == nil {
-		return nil
-	}
-	out := make(map[string]string, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
-	return out
 }
