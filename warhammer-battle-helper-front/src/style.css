@@ -9287,6 +9287,18 @@ align-items: center;
     color: #c0392b;
 }
 
+/* The ▢ takes an expression ("1K6+1"), wider than the faces of a die. */
+.custom-sheet__weapon-dmg-input.custom-sheet__weapon-dmg-input--expr {
+    width: 64px;
+}
+
+/* First line of the ▢ tooltip when the entry is invalid. */
+.custom-sheet__weapon-dmg-hint-error {
+    display: block;
+    font-weight: 700;
+    color: #c0392b;
+}
+
 /* A GM preset row is read-only, and .custom-sheet__row-table-row--preset is the only DOM hook that
    says so — every other cell in the row is muted through it (see
    .custom-sheet__row-table-row .custom-sheet__row-table-cell-static above), but renderDamageFormula's

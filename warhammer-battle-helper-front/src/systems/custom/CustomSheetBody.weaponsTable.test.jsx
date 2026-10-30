@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
-import '../../i18n';
+import i18n from '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
 
 // Test the creator's affordance policy for weapons_table. This is the width-parity guarantee:
@@ -310,5 +310,52 @@ describe('CustomSheetBody weapons_table — two columns', () => {
     ] } };
     const { container } = render(<CustomSheetBody sections={sections} values={values} onChange={sheetHandlers} />);
     expect(container.querySelectorAll('.custom-sheet__row-table-cols > .custom-sheet__row-table')).toHaveLength(2);
+  });
+});
+
+const diceAndExprSections = () => ([{
+  id: 'sec1',
+  columns: 1,
+  fields: [
+    {
+      key: 'wpn_table',
+      type: 'weapons_table',
+      label: 'Bronie',
+      columns: [{ key: 'name', label: 'Nazwa', type: 'text' }],
+      damageFormula: [
+        { id: 'd1', type: 'dice', value: 'd4' },
+        { type: 'op', value: '+' },
+        { id: 'm1', type: 'const_input' },
+      ],
+    },
+  ],
+}]);
+
+describe('CustomSheetBody weapons_table — player damage expression field', () => {
+  const renderEditing = (m1) => {
+    const utils = render(
+      <CustomSheetBody
+        sections={diceAndExprSections()}
+        values={{ weapons: { wpn_table: [{ id: 'w1', cells: { name: 'Knife' }, damage: { m1 } }] } }}
+        onChange={sheetHandlers}
+      />
+    );
+    fireEvent.click(utils.container.querySelector('.custom-sheet__row-table-edit'));
+    return utils;
+  };
+
+  test('the player field is a text input that accepts dice', () => {
+    renderEditing('1K4');
+    const input = screen.getByDisplayValue('1K4');
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).not.toHaveClass('custom-sheet__weapon-dmg-input--missing');
+  });
+
+  test('an invalid player field is marked and explains itself on hover', () => {
+    renderEditing('1K');
+    const input = screen.getByDisplayValue('1K');
+    expect(input).toHaveClass('custom-sheet__weapon-dmg-input--missing');
+    fireEvent.mouseEnter(input);
+    expect(screen.getByText(i18n.t('customSheet.damageExprInvalid'))).toBeInTheDocument();
   });
 });

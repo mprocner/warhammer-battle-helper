@@ -338,7 +338,7 @@ function CustomCharacterSheet({
   });
   const updateWeaponCell = (fieldKey, rowId, colKey, value) => mapRow('weapons', fieldKey, rowId, setCell(colKey, value));
   const updateWeaponDamage = (fieldKey, rowId, blockId, value) =>
-    mapRow('weapons', fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
+    mapRow('weapons', fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: value } }));
 
   // data_table
   const addTableRow = (fieldKey) => addRow('tables', fieldKey, { id: genRowId('r'), cells: {} });

@@ -65,7 +65,7 @@ function WeaponsTable({
   // weapon's definition, not of play.
   const renderDamage = (row, { isPreset, editing }) => (
     <div className="custom-sheet__weapon-damage">
-      {renderDamageFormula(dmgBlocks, row, field.key, isPreset ? null : onChange, isPreset || !editing, t)}
+      {renderDamageFormula(dmgBlocks, row, field.key, isPreset ? null : onChange, isPreset || !editing, t, { show: showTooltip, hide: hideTooltip })}
     </div>
   );
 

@@ -14,7 +14,7 @@ test('weaponSkillColumn needs both the select type and the flag', () => {
 
 test('a complete row has no issue', () => {
   const field = { columns: [skillCol], damageFormula: [playerDie] };
-  const row = { id: 'r1', cells: { c_skill: 'sk_1' }, damage: { b1: 6 } };
+  const row = { id: 'r1', cells: { c_skill: 'sk_1' }, damage: { b1: '6' } };
   expect(weaponRowIssue(field, row)).toBeNull();
 });
 
@@ -36,4 +36,26 @@ test('unfilled damage blocks the roll', () => {
 test('both missing at once reports the skill first', () => {
   const field = { columns: [skillCol], damageFormula: [playerDie] };
   expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: {} })).toBe('skill');
+});
+
+const playerExpr = { id: 'm1', type: 'const_input' };
+
+test('a dice expression in the player field is rollable', () => {
+  const field = { columns: [textCol], damageFormula: [playerExpr] };
+  expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { m1: '1K4' } })).toBeNull();
+});
+
+test('an empty player field blocks the roll as incomplete', () => {
+  const field = { columns: [textCol], damageFormula: [playerExpr] };
+  expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { m1: '  ' } })).toBe('damage');
+});
+
+test('an invalid player field blocks the roll as invalid', () => {
+  const field = { columns: [textCol], damageFormula: [playerExpr] };
+  expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { m1: 'abc' } })).toBe('damageInvalid');
+});
+
+test('incomplete wins over invalid', () => {
+  const field = { columns: [textCol], damageFormula: [playerExpr, playerDie] };
+  expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { m1: 'abc' } })).toBe('damage');
 });

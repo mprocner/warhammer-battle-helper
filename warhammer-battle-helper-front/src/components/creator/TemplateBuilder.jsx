@@ -964,8 +964,8 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                     <div className="custom-sheet__weapon-damage">
                       {renderDamageFormula(field.damageFormula, preset, field.key, {
                         weaponDamage: (_fk, _rowId, blockId, val) =>
-                          patch({ damage: { ...(preset.damage || {}), [blockId]: Number(val) || 0 } }),
-                      }, false, t)}
+                          patch({ damage: { ...(preset.damage || {}), [blockId]: val } }),
+                      }, false, t, { show: showTooltip, hide: hideTooltip })}
                     </div>
                   </div>
                 ) : null}

@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { rowLabel } from './rowTableLayout';
+import { isValidDamageExpr } from './formula/damageExpr';
 
 const DMG_OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
 
@@ -37,25 +38,23 @@ function isPlayerDie(b) {
   return b.type === 'dice' && diceFaces(b) === null;
 }
 
-// weaponDamageIncomplete reports whether any player-filled damage block is still empty.
-// Internal to weaponRowIssue since FEATURE-208: a row has one completeness verdict, and
-// callers need to know *which* part is missing, not just that something is.
-// GM-fixed blocks (consts, fixed dice) and backend-resolved tokens (attr/skill) are always
-// complete — a fully-fixed formula needs no input at all. Player dice must be positive; a
-// player flat number (const_input) may be any number, including 0 or negative (a penalty),
-// so we only require that it is filled.
-function weaponDamageIncomplete(blocks, row) {
+// weaponDamageIssue reports what is wrong with a row's player-filled damage blocks: 'damage' when
+// any is empty, 'damageInvalid' when all are filled but one is unusable, null when the row can
+// roll. Empty wins: it is the gap the player most likely still means to fill. A die's faces must
+// be a positive integer; a ▢ (const_input) takes a number or dice in the damageExpr grammar.
+// GM-fixed blocks and backend-resolved tokens are always complete.
+function weaponDamageIssue(blocks, row) {
   const dmg = row.damage || {};
+  let invalid = false;
   for (const b of (blocks || [])) {
-    if (b.type === 'const_input') {
-      const v = dmg[b.id];
-      if (v === '' || v == null || !Number.isFinite(Number(v))) return true;
-    } else if (isPlayerDie(b)) {
-      const v = dmg[b.id];
-      if (v === '' || v == null || !Number.isFinite(Number(v)) || Number(v) <= 0) return true;
+    if (b.type !== 'const_input' && !isPlayerDie(b)) continue;
+    const v = dmg[b.id];
+    if (v == null || String(v).trim() === '') return 'damage';
+    if (b.type === 'const_input' ? !isValidDamageExpr(v) : !(Number.isInteger(Number(v)) && Number(v) > 0)) {
+      invalid = true;
     }
   }
-  return false;
+  return invalid ? 'damageInvalid' : null;
 }
 
 // weaponSkillColumn returns the column that supplies skills for this weapons_table, or null.
@@ -71,13 +70,12 @@ export function weaponSkillColumn(field) {
 // The skill wins over the damage when both are missing: columns render to the left of the
 // damage blocks, so the tooltip points at the leftmost gap and moves right as the player
 // fills them; and the damage formula resolves the same skill key (weapon.go:57), so an
-// empty skill would silently contribute 0 to damage the player believes is complete.
+// empty skill would silently contribute 0 to damage the player believes is complete. Damage
+// reports 'damage' (something empty) or 'damageInvalid' (filled, but not a usable expression).
 export function weaponRowIssue(field, row) {
   const skillCol = weaponSkillColumn(field);
   if (skillCol && !(row.cells || {})[skillCol.key]) return 'skill';
-  const blocks = field.damageFormula || [];
-  if (blocks.length > 0 && weaponDamageIncomplete(blocks, row)) return 'damage';
-  return null;
+  return weaponDamageIssue(field.damageFormula || [], row);
 }
 
 // weaponIssueTitle maps an issue to its tooltip. Written as literal t() calls rather than a
@@ -86,13 +84,15 @@ export function weaponRowIssue(field, row) {
 export function weaponIssueTitle(issue, t) {
   if (issue === 'skill')  return t('customSheet.weaponSkillMissing');
   if (issue === 'damage') return t('customSheet.weaponDamageIncomplete');
+  if (issue === 'damageInvalid') return t('customSheet.weaponDamageInvalid');
   return undefined;
 }
 
-// renderDamageFormula renders a weapon's damage skeleton inline. Numeric blocks (const
-// values, die faces) become editable inputs bound to row.damage[block.id]; attribute and
-// skill tokens are static — the backend resolves them from stats at roll time.
-export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t) {
+// renderDamageFormula renders a weapon's damage skeleton inline. Player-filled blocks (a die's
+// faces, the ▢ expression) become inputs bound to row.damage[block.id]; GM constants and dice,
+// attribute and skill tokens are static — the backend resolves tokens from stats at roll time.
+// tooltip ({ show, hide } from usePortalTooltip) adds the ▢ examples on hover while editing.
+export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t, tooltip = null) {
   const dmg = row.damage || {};
   const onDmg = (blockId, val) => onChange && onChange.weaponDamage(fieldKey, row.id, blockId, val);
   return (blocks || []).map(b => {
@@ -104,16 +104,26 @@ export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t
         // GM-fixed constant — same for every weapon, shown read-only.
         return <span key={b.id} className="custom-sheet__weapon-dmg-fixed">{b.num ?? 0}</span>;
       case 'const_input': {
-        // Player-filled flat number per weapon; empty blocks the roll.
+        // Player-filled number or dice per weapon; empty or invalid blocks the roll.
         const cv = dmg[b.id] ?? '';
+        const invalid = cv !== '' && !isValidDamageExpr(cv);
+        const hint = (
+          <>
+            {invalid && <span className="custom-sheet__weapon-dmg-hint-error">{t('customSheet.damageExprInvalid')}</span>}
+            {t('customSheet.damageExprHint')}
+          </>
+        );
+        const hover = tooltip && !readOnly;
         return (
           <input
             key={b.id}
-            type="number"
-            className={`custom-sheet__weapon-dmg-input${cv === '' ? ' custom-sheet__weapon-dmg-input--missing' : ''}`}
+            type="text"
+            className={`custom-sheet__weapon-dmg-input custom-sheet__weapon-dmg-input--expr${cv === '' || invalid ? ' custom-sheet__weapon-dmg-input--missing' : ''}`}
             value={cv}
             placeholder="?"
             onChange={onChange ? e => onDmg(b.id, e.target.value) : undefined}
+            onMouseEnter={hover ? e => tooltip.show(hint, e.currentTarget) : undefined}
+            onMouseLeave={hover ? tooltip.hide : undefined}
             readOnly={readOnly}
           />
         );
