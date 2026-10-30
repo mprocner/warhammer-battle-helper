@@ -67,7 +67,9 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 // Numbers[key]. Each skill_table option with a Default lands in Skills["<fieldKey>.<id>"].Base
 // (PLAYRPG-277), unless the table derives its base from the attribute (skillBaseDerived), in
 // which case nothing reads a stored base. A nil Default means "no default", which is not the
-// same as a default of 0; every other field type is left untouched.
+// same as a default of 0. AddOnCreate presets of weapons_table and data_table fields are copied
+// into Weapons / Tables as rows that keep the preset's ID (PLAYRPG-288) — the id is what makes
+// migrate-weapon-presets idempotent. Every other field type is left untouched.
 //
 // This hangs off *Plugin rather than the systems.GameSystem interface for the same reason as
 // RollWithTemplate: only the custom system has a template to read.
@@ -84,6 +86,12 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 	}
 	if s.Skills == nil {
 		s.Skills = map[string]AttrValue{}
+	}
+	if s.Weapons == nil {
+		s.Weapons = map[string][]WeaponRow{}
+	}
+	if s.Tables == nil {
+		s.Tables = map[string][]TableRow{}
 	}
 	for _, section := range tmpl.Sections {
 		for _, field := range flattenFields(section.Fields) {
@@ -103,6 +111,18 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 				for _, opt := range field.Skills {
 					if opt.Default != nil {
 						s.Skills[field.Key+"."+opt.ID] = AttrValue{Base: *opt.Default}
+					}
+				}
+			case "weapons_table":
+				for _, p := range field.PresetWeapons {
+					if p.AddOnCreate {
+						s.Weapons[field.Key] = append(s.Weapons[field.Key], WeaponRow{ID: p.ID, Cells: copyStrings(p.Cells), Damage: copyStrings(p.Damage)})
+					}
+				}
+			case "data_table":
+				for _, p := range field.PresetRows {
+					if p.AddOnCreate {
+						s.Tables[field.Key] = append(s.Tables[field.Key], TableRow{ID: p.ID, Cells: copyStrings(p.Cells)})
 					}
 				}
 			}
@@ -333,4 +353,16 @@ func findLeafConfig(node *models.SkillTreeNode, target, path string) (*models.Ro
 		}
 	}
 	return nil, "", false
+}
+
+// copyStrings returns an independent copy, so a seeded row never aliases its template preset.
+func copyStrings(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }

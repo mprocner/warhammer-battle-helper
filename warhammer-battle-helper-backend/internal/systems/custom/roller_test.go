@@ -1625,6 +1625,38 @@ func TestSeedDefaults_LabelFieldIsNeverSeeded(t *testing.T) {
 	}
 }
 
+func TestSeedDefaults_AddOnCreatePresetsBecomeRows(t *testing.T) {
+	s := seedBlank(t, seedTemplate(
+		models.FieldDef{Key: "weapons", Type: "weapons_table", PresetWeapons: []models.PresetWeapon{
+			{ID: "preset_fists", Cells: map[string]string{"name": "Fists"}, Damage: map[string]string{"d1": "3"}, AddOnCreate: true},
+			{ID: "preset_sword", Cells: map[string]string{"name": "Sword"}},
+		}},
+		models.FieldDef{Key: "gear", Type: "data_table", PresetRows: []models.PresetRow{
+			{ID: "preset_rope", Cells: map[string]string{"name": "Rope"}, AddOnCreate: true},
+		}},
+	))
+
+	w := s.Weapons["weapons"]
+	if len(w) != 1 || w[0].ID != "preset_fists" || w[0].Cells["name"] != "Fists" || w[0].Damage["d1"] != "3" {
+		t.Errorf("Weapons = %+v, want only the add-on-create preset, id kept", w)
+	}
+	r := s.Tables["gear"]
+	if len(r) != 1 || r[0].ID != "preset_rope" || r[0].Cells["name"] != "Rope" {
+		t.Errorf("Tables = %+v, want the add-on-create row, id kept", r)
+	}
+}
+
+func TestSeedDefaults_SeededRowDoesNotShareMapsWithTemplate(t *testing.T) {
+	tmpl := seedTemplate(models.FieldDef{Key: "weapons", Type: "weapons_table", PresetWeapons: []models.PresetWeapon{
+		{ID: "p1", Cells: map[string]string{"name": "Fists"}, AddOnCreate: true},
+	}})
+	s := seedBlank(t, tmpl)
+	s.Weapons["weapons"][0].Cells["name"] = "changed"
+	if got := tmpl.Sections[0].Fields[0].PresetWeapons[0].Cells["name"]; got != "Fists" {
+		t.Errorf("preset cell = %q, want Fists — the seeded row must be a copy", got)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // FEATURE-217 — display flags and the development marker
 // ---------------------------------------------------------------------------
