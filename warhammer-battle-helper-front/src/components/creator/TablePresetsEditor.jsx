@@ -36,8 +36,9 @@ function SortablePreset({ id, gripLabel, addOnCreate, remove, children }) {
 // GM editor for a table's preset rows. Each preset is a "row template": the GM fills the same
 // cells a player would, plus an "add when a character is created" switch. Every preset is in the
 // catalog players copy from; a flagged one is also copied into each new character (a later GM edit
-// does not reach existing characters). Whatever else a table's preset carries (a weapon's damage) comes in through
-// renderPresetExtra, which receives a patch function for that one preset.
+// does not reach existing characters). Whatever else a table's preset carries (a weapon's
+// damage) comes in through renderPresetExtra, which receives a patch function for that one
+// preset.
 // Presets are reordered by their grip; sortedOnSheet says the sheet sorts the table anyway.
 function TablePresetsEditor({ columns, presets, onChange, skillOptions = [], icon, labels, renderPresetExtra = null, sortedOnSheet = false }) {
   const { t } = useTranslation();

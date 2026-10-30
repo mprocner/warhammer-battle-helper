@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -122,7 +123,7 @@ func applyDamageOverrides(blocks []models.FormulaBlock, overrides map[string]str
 		case "const":
 			if ov != "" {
 				v, err := strconv.ParseFloat(ov, 64)
-				if err != nil {
+				if err != nil || math.IsNaN(v) || math.IsInf(v, 0) {
 					return nil, fmt.Errorf("%w: %q", ErrInvalidDamageExpr, ov)
 				}
 				b.Num = &v

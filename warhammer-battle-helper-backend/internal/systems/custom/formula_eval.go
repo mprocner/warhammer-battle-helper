@@ -61,8 +61,8 @@ func (e *formulaEnv) blockValue(b models.FormulaBlock) (int, string) {
 		}
 		return e.stats.Attributes[e.linkedAttr].Current, label
 	}
-	// const_input: applyDamageOverrides turns it into a const before any walk, so reaching
-	// here means an unfilled player number — the same 0 the sheet's safety net assumes.
+	// const_input: applyDamageOverrides expands a filled ▢ into a parenthesised group and an
+	// empty one into const 0, so reaching here is impossible in practice; 0 is the safety net.
 	return 0, "0"
 }
 

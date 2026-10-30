@@ -21,7 +21,8 @@ import RowTablePlayerRow from './RowTablePlayerRow';
 // skill edit paths always do, so they cannot collide.
 //
 // onCell and onRemove travel together: a caller passes both or neither (RowTablePlayerRow gates
-// the remove button on onCell).
+// the remove button on onCell). With neither, `showAffordances` (the creator's preview) renders the
+// pencil, bin and footer as disabled copies so the row reads as the player will see it.
 //
 // Removing a row always goes through a confirmation, from either mode: there is no undo, and the
 // button sits next to the pencil where a stray click can reach it. The modal names the row by
@@ -42,7 +43,7 @@ import RowTablePlayerRow from './RowTablePlayerRow';
 // Which rows are expanded is view state, like scroll position: local to this component, never
 // saved, never broadcast.
 function RowTable({
-  columns, presets, rows, skillOptions = [], leading = [], trailing = [], labels, twoColumns = false, sortKey = null,
+  columns, presets, rows, skillOptions = [], leading = [], trailing = [], labels, twoColumns = false, sortKey = null, showAffordances = false,
   onAdd, onAddFromPreset, onCell, onRemove, editingPath, setEditingPath, showTooltip, hideTooltip,
 }) {
   const [expanded, setExpanded] = useState(() => new Set());
@@ -101,7 +102,7 @@ function RowTable({
   );
 
   const unsorted = rows.map(row => ({ row }));
-  const isEditing = item => item.row && item.row.id === editingPath;
+  const isEditing = item => item.row.id === editingPath;
   const pinned = item => isEditing(item) && newRows.has(item.row.id);
   const sortText = (item) => {
     if (isEditing(item) && item.row.id in editSortText.current) return editSortText.current[item.row.id];
@@ -121,6 +122,7 @@ function RowTable({
       onStartEdit={startEdit}
       onFinishEdit={() => finishEdit(row.id)}
       onCell={onCell}
+      showAffordances={showAffordances}
       onRequestRemove={setPendingRemove}
     />
   );
@@ -144,18 +146,21 @@ function RowTable({
         </div>
       )}
 
-      {onAdd && (
+      {/* Without handlers (the creator's preview) the footer still shows, disabled, because the
+          player sees it. A read-only sheet of someone else's character omits it. */}
+      {(onAdd || showAffordances) && (
         <div className="custom-sheet__row-table-add-row">
           {/* A new row has no values yet — opening it straight into edit mode saves the player a
               line of em-dashes and a hunt for the pencil. A catalogue pick arrives pre-filled and
               reads fine at rest, so it does not get the same treatment. */}
-          <button className="custom-sheet__row-table-add-btn" onClick={addRow}>
+          <button className="custom-sheet__row-table-add-btn" onClick={onAdd ? addRow : undefined} disabled={!onAdd}>
             + {labels.add}
           </button>
           {presets.length > 0 && (
             <select
               className="custom-sheet__row-table-preset-picker"
               value=""
+              disabled={!onAdd}
               onChange={e => {
                 const preset = presets.find(p => p.id === e.target.value);
                 if (preset) onAddFromPreset(preset);

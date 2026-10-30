@@ -15,6 +15,7 @@
   { "input": "-1K4", "valid": true },
   { "input": "+1K4", "valid": true },
   { "input": "1K4+1K6", "valid": true },
+  { "input": "1+1+1+1+1+1+1+1+1+1", "valid": true, "value": 10 },
   { "input": "100K6", "valid": true },
   { "input": "1K1000", "valid": true },
   { "input": "", "valid": false },
@@ -35,5 +36,7 @@
   { "input": "(1)", "valid": false },
   { "input": "1.5", "valid": false },
   { "input": "1K4K6", "valid": false },
-  { "input": "1x4", "valid": false }
+  { "input": "1x4", "valid": false },
+  { "input": "1+1+1+1+1+1+1+1+1+1+1", "valid": false },
+  { "input": "1k4+1k4+1k4+1k4+1k4+1k4+1k4+1k4+1", "valid": false }
 ]

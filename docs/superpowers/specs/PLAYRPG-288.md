@@ -121,7 +121,9 @@ Kopie map, nie współdzielone referencje. `SeedDefaults` woła dziś tylko `Cha
 ## Limity gramatyki
 
 Liczba kości 1–100 (`maxDicePerTerm`), ścianki 1–1000, stała 0–9999 — identycznie w Go i JS,
-przypięte `damage_expr_cases.json`.
+przypięte `damage_expr_cases.json`. Dodatkowo wpis ma najwyżej 32 znaki (po usunięciu białych znaków)
+i 10 składników (`maxDamageExprLen`, `maxDamageExprTerms`; JS: `MAX_LEN`, `MAX_TERMS`) — wynik trafia do
+rozbicia w zdarzeniach gry, więc musi być ograniczony.
 
 ## Parzystość Go/JS
 
@@ -142,7 +144,7 @@ Dla każdej postaci custom: `Damage` w `stats.weapons.*[]` liczby → tekst; usu
 
 Krok 2 przed 3, per gra. Ponowne uruchomienie jest bezpieczne: po kroku 3 brak `alwaysOn`, a
 przerwanie w połowie kończy dedup po id. Dokumenty czytane jako `bson.M` (nie przez nowe typy, które
-nie zdekodują `double` do `string`). Flaga `-dry-run` raportuje liczby zmian.
+nie zdekodują `double` do `string`). Bez flagi -dry-run — deploy.sh robi backup bazy przed wdrożeniem, a migracja jest przećwiczona lokalnie (decyzja przy przeglądzie końcowym).
 
 **Kolejność wdrożenia:** deploy → natychmiast migracja. Do jej końca postacie i gry z bronią
 z wpisanymi obrażeniami nie wczytają się (`cannot decode double into a string type`).

@@ -24,6 +24,7 @@ function WeaponsTable({
   showStar,
   showRoll,
   rollAffordance,
+  showAffordances,
   editingPath,
   setEditingPath,
   showTooltip,
@@ -107,6 +108,7 @@ function WeaponsTable({
         onRemove={onChange ? rowId => onChange.weaponRemove(field.key, rowId) : null}
         twoColumns={!!field.twoColumns}
         sortKey={sortColumnKey(field)}
+        showAffordances={showAffordances}
         editingPath={editingPath}
         setEditingPath={setEditingPath}
         showTooltip={showTooltip}

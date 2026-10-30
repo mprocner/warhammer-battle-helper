@@ -327,7 +327,7 @@ const diceAndExprSections = () => ([{
       columns: [{ key: 'name', label: 'Nazwa', type: 'text' }],
       damageFormula: [
         { id: 'd1', type: 'dice', value: 'd4' },
-        { type: 'op', value: '+' },
+        { id: 'o1', type: 'op', value: '+' },
         { id: 'm1', type: 'const_input' },
       ],
     },
@@ -360,5 +360,19 @@ describe('CustomSheetBody weapons_table — player damage expression field', () 
     expect(input).toHaveClass('custom-sheet__weapon-dmg-input--missing');
     fireEvent.mouseEnter(input);
     expect(screen.getByText(i18n.t('customSheet.damageExprInvalid'))).toBeInTheDocument();
+  });
+});
+
+describe('CustomSheetBody weapons_table — seeded rows in the creator', () => {
+  it('shows disabled edit and remove buttons on a seeded row with showAffordances', () => {
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} showAffordances />);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeDisabled();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeDisabled();
+  });
+
+  it('shows none without showAffordances', () => {
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} />);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeNull();
   });
 });

@@ -8,6 +8,10 @@
 const MAX_DICE = 100;
 const MAX_FACES = 1000;
 const MAX_CONST = 9999;
+// Input length (after whitespace stripping) and term count bound the breakdown string that lands in
+// the game's embedded events.
+const MAX_LEN = 32;
+const MAX_TERMS = 10;
 const TERM = /^(?:(\d*)[dk](\d+)|(\d+))$/;
 
 function validTerm(term) {
@@ -24,6 +28,7 @@ function validTerm(term) {
 export function isValidDamageExpr(input) {
   const s = String(input ?? '').replace(/\s+/g, '').toLowerCase();
   const body = /^[+-]/.test(s) ? s.slice(1) : s;
-  if (body === '') return false;
-  return body.split(/[+-]/).every(validTerm);
+  if (body === '' || s.length > MAX_LEN) return false;
+  const terms = body.split(/[+-]/);
+  return terms.length <= MAX_TERMS && terms.every(validTerm);
 }

@@ -516,6 +516,19 @@ func TestRollWeaponWithTemplate_NegativeModifier(t *testing.T) {
 	if res.DamageRoll != 2 {
 		t.Errorf("DamageRoll = %d, want 2", res.DamageRoll)
 	}
+	if !strings.Contains(res.DamageBreakdown, "(-1)") {
+		t.Errorf("DamageBreakdown = %q, want it to contain (-1)", res.DamageBreakdown)
+	}
+}
+
+func TestApplyDamageOverrides_NonFiniteConstRejected(t *testing.T) {
+	blocks := []models.FormulaBlock{{ID: "c1", Type: "const"}}
+	for _, ov := range []string{"NaN", "Inf", "-Inf"} {
+		_, err := applyDamageOverrides(blocks, map[string]string{"c1": ov})
+		if !errors.Is(err, ErrInvalidDamageExpr) {
+			t.Errorf("override %q: err = %v, want ErrInvalidDamageExpr", ov, err)
+		}
+	}
 }
 
 func TestRollWeaponWithTemplate_InvalidModifierRollsNothing(t *testing.T) {

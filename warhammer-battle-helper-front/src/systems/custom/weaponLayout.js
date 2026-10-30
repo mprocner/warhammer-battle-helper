@@ -38,6 +38,10 @@ function isPlayerDie(b) {
   return b.type === 'dice' && diceFaces(b) === null;
 }
 
+// isValidDieFaces: digits only, positive — the same set Go's strconv.Atoi accepts ("6.0" and "1e1"
+// pass Number() but not the backend).
+const isValidDieFaces = v => /^\d+$/.test(String(v).trim()) && Number(v) > 0;
+
 // weaponDamageIssue reports what is wrong with a row's player-filled damage blocks: 'damage' when
 // any is empty, 'damageInvalid' when all are filled but one is unusable, null when the row can
 // roll. Empty wins: it is the gap the player most likely still means to fill. A die's faces must
@@ -50,7 +54,7 @@ function weaponDamageIssue(blocks, row) {
     if (b.type !== 'const_input' && !isPlayerDie(b)) continue;
     const v = dmg[b.id];
     if (v == null || String(v).trim() === '') return 'damage';
-    if (b.type === 'const_input' ? !isValidDamageExpr(v) : !(Number.isInteger(Number(v)) && Number(v) > 0)) {
+    if (b.type === 'const_input' ? !isValidDamageExpr(v) : !isValidDieFaces(v)) {
       invalid = true;
     }
   }
@@ -141,7 +145,7 @@ export function renderDamageFormula(blocks, row, fieldKey, onChange, readOnly, t
             d
             <input
               type="number"
-              className={`custom-sheet__weapon-dmg-input${v === '' ? ' custom-sheet__weapon-dmg-input--missing' : ''}`}
+              className={`custom-sheet__weapon-dmg-input${v === '' || !isValidDieFaces(v) ? ' custom-sheet__weapon-dmg-input--missing' : ''}`}
               value={v}
               placeholder="?"
               onChange={onChange ? e => onDmg(b.id, e.target.value) : undefined}

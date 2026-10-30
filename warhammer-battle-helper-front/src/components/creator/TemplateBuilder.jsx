@@ -1329,10 +1329,10 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [activeTab,   setActiveTab]   = useState('general');
   const [tourRunning, setTourRunning] = useState(false);
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
-  // Which one-per-template types are already placed; drives the palette, the inline picker
-  // and the missing-name warning.
   // What a new character starts with: the creator shows the GM's addOnCreate presets as rows.
   const previewValues = useMemo(() => addOnCreateValues(sections), [sections]);
+  // Which one-per-template types are already placed; drives the palette, the inline picker
+  // and the missing-name warning.
   const usedSingletons = useMemo(() => usedSingletonTypes(sections), [sections]);
   // Toggles renderChrome off so the sheet tab shows exactly what a player would see — the
   // top-bar eye icon, not a third tab (there is nothing else to show alongside it).

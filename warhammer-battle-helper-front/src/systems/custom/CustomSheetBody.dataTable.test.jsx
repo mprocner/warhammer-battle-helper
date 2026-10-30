@@ -233,11 +233,27 @@ describe('data_table — a newly added row opens in edit mode', () => {
 });
 
 describe('data_table — creator', () => {
-  it('renders the addOnCreate preset as a row and no footer without handlers', () => {
-    const preset = { id: 'p1', cells: { name: 'Plecak' }, addOnCreate: true };
-    const sections = dataSections({ presetRows: [preset] });
-    const { container } = render(<CustomSheetBody sections={sections} values={addOnCreateValues(sections)} showAffordances />);
+  const preset = { id: 'p1', cells: { name: 'Plecak' }, addOnCreate: true };
+  const sections = () => dataSections({ presetRows: [preset] });
+
+  it('renders the addOnCreate preset as a row with disabled edit and remove buttons', () => {
+    const { container } = render(<CustomSheetBody sections={sections()} values={addOnCreateValues(sections())} showAffordances />);
     expect(container.querySelectorAll('.custom-sheet__row-table-row')).toHaveLength(1);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeDisabled();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeDisabled();
+  });
+
+  it('shows the footer add button and catalog picker disabled', () => {
+    const { container } = render(<CustomSheetBody sections={sections()} values={addOnCreateValues(sections())} showAffordances />);
+    expect(container.querySelector('.custom-sheet__row-table-add-btn')).toBeDisabled();
+    expect(container.querySelector('.custom-sheet__row-table-preset-picker')).toBeDisabled();
+  });
+
+  it('renders no row buttons and no footer without showAffordances (read-only sheet)', () => {
+    const { container } = render(<CustomSheetBody sections={sections()} values={addOnCreateValues(sections())} />);
+    expect(container.querySelectorAll('.custom-sheet__row-table-row')).toHaveLength(1);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeNull();
     expect(container.querySelector('.custom-sheet__row-table-add-row')).toBeNull();
   });
 });

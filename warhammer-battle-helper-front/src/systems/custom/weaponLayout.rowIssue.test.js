@@ -59,3 +59,8 @@ test('incomplete wins over invalid', () => {
   const field = { columns: [textCol], damageFormula: [playerExpr, playerDie] };
   expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { m1: 'abc' } })).toBe('damage');
 });
+
+test.each(['6.0', '1e1', '0'])('a player die with faces %s blocks the roll as invalid', faces => {
+  const field = { columns: [textCol], damageFormula: [playerDie] };
+  expect(weaponRowIssue(field, { id: 'r1', cells: {}, damage: { [playerDie.id]: faces } })).toBe('damageInvalid');
+});
