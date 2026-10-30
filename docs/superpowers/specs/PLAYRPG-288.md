@@ -113,6 +113,15 @@ Kopie map, nie współdzielone referencje. `SeedDefaults` woła dziś tylko `Cha
   `constInputTitle`, tutorial `tutorial.creatorField.*.data_table` (dziś mówi „zawsze na karcie”) —
   przepisać na nową semantykę. Klucz `tablePresetAlwaysOn` usunąć.
 - Tutorial: brak nowego kroku (żadna nowa grupa/karta/typ pola); tylko tekst wyżej.
+- **Podgląd = gra:** kreator (`TemplateBuilder`, także render „ducha” przy przeciąganiu) i podgląd
+  w lobby (`TemplateSheetPreview`) przekazują do `CustomSheetBody` `values` z helpera
+  `addOnCreateValues(sections)` (`systems/custom/addOnCreate.js`) — frontowe lustro `SeedDefaults`.
+  Bez tego presety `addOnCreate` zniknęłyby z podglądu, choć nowa postać je dostanie.
+
+## Limity gramatyki
+
+Liczba kości 1–100 (`maxDicePerTerm`), ścianki 1–1000, stała 0–9999 — identycznie w Go i JS,
+przypięte `damage_expr_cases.json`.
 
 ## Parzystość Go/JS
 
