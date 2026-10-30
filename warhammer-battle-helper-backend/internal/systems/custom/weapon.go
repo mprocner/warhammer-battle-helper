@@ -4,6 +4,7 @@ import (
 	"battle-helper/internal/models"
 	gsys "battle-helper/internal/systems"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,7 +26,7 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 	if !ok {
 		return nil, fmt.Errorf("custom: weapons_table field %q not found", fieldKey)
 	}
-	row, ok := resolveWeaponRow(stats, field, fieldKey, rowID)
+	row, ok := findWeaponRow(stats, fieldKey, rowID)
 	if !ok {
 		return nil, fmt.Errorf("custom: weapon row %q not found", rowID)
 	}
@@ -33,9 +34,12 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 		return nil, fmt.Errorf("custom: weapons_table %q has no attack roll formula", fieldKey)
 	}
 
-	// Parse errors are deterministic, so reject a broken damage formula before the attack is
-	// rolled instead of rolling and then discarding it.
-	damageBlocks := applyDamageOverrides(field.DamageFormula, row.Damage)
+	// Parse errors are deterministic, so reject a broken damage formula — or a player entry the
+	// grammar rejects — before the attack is rolled instead of rolling and then discarding it.
+	damageBlocks, err := applyDamageOverrides(field.DamageFormula, row.Damage)
+	if err != nil {
+		return nil, fmt.Errorf("custom: damage: %w", err)
+	}
 	if len(damageBlocks) > 0 {
 		if _, err := parseFormula(damageBlocks); err != nil {
 			return nil, fmt.Errorf("custom: damage formula: %w", err)
@@ -105,38 +109,52 @@ func resolveWeaponSkill(template *models.SystemTemplate, stats *Stats, field *mo
 	return skillKey, linkedAttr, baseFromAttr
 }
 
-// applyDamageOverrides clones the GM-authored damage blocks and substitutes the numbers
-// the player entered per weapon row (keyed by block id): player die faces and player flat
-// numbers (const_input). GM-fixed blocks (const, fixed dice) and attribute/skill blocks are
-// left untouched — they resolve from their authored value or from stats at roll time.
-// A const_input collapses to a plain const so evalFormula needs no awareness of it.
-func applyDamageOverrides(blocks []models.FormulaBlock, overrides map[string]float64) []models.FormulaBlock {
-	out := make([]models.FormulaBlock, len(blocks))
-	copy(out, blocks)
-	for i := range out {
-		ov, ok := overrides[out[i].ID]
-		switch out[i].Type {
+// applyDamageOverrides clones the GM-authored damage blocks and substitutes what the player
+// entered per weapon row (keyed by block id): a die's faces, an overridden constant, and the ▢
+// (const_input) expression. A ▢ expands into its parsed blocks wrapped in parentheses, so the
+// breakdown shows it as one group and evalFormula needs no awareness of it. Attribute/skill blocks
+// are left untouched — they resolve from stats at roll time.
+func applyDamageOverrides(blocks []models.FormulaBlock, overrides map[string]string) ([]models.FormulaBlock, error) {
+	out := make([]models.FormulaBlock, 0, len(blocks))
+	for _, b := range blocks {
+		ov := strings.TrimSpace(overrides[b.ID])
+		switch b.Type {
 		case "const":
-			if ok {
-				v := ov
-				out[i].Num = &v
+			if ov != "" {
+				v, err := strconv.ParseFloat(ov, 64)
+				if err != nil {
+					return nil, fmt.Errorf("%w: %q", ErrInvalidDamageExpr, ov)
+				}
+				b.Num = &v
 			}
 		case "dice":
-			if ok {
-				out[i].Value = fmt.Sprintf("d%d", int(ov))
+			if ov != "" {
+				sides, err := strconv.Atoi(ov)
+				if err != nil || sides < 1 {
+					return nil, fmt.Errorf("%w: %q", ErrInvalidDamageExpr, ov)
+				}
+				b.Value = fmt.Sprintf("d%d", sides)
 			}
 		case "const_input":
-			// Player-filled flat number; falls back to 0 if unfilled (the sheet blocks
-			// rolling with an empty input, so this is only a safety net).
-			v := 0.0
-			if ok {
-				v = ov
+			// Unfilled falls back to 0 (the sheet blocks rolling with an empty ▢, so this is only
+			// a safety net).
+			if ov == "" {
+				zero := 0.0
+				out = append(out, models.FormulaBlock{ID: b.ID, Type: "const", Num: &zero})
+				continue
 			}
-			out[i].Type = "const"
-			out[i].Num = &v
+			expr, err := parseDamageExpr(ov, b.ID)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, models.FormulaBlock{ID: b.ID + ".open", Type: "paren_open"})
+			out = append(out, expr...)
+			out = append(out, models.FormulaBlock{ID: b.ID + ".close", Type: "paren_close"})
+			continue
 		}
+		out = append(out, b)
 	}
-	return out
+	return out, nil
 }
 
 // findWeaponFieldInFields recursively searches a field list for a weapons_table field
@@ -168,23 +186,6 @@ func findWeaponField(template *models.SystemTemplate, fieldKey string) (*models.
 		}
 	}
 	return nil, false
-}
-
-// resolveWeaponRow finds the weapon to roll, looking first among the player's own rows in
-// stats and then — falling back — among the field's GM-authored presets (AlwaysOn weapons
-// live only in the template, never in stats, so a GM edit reaches every player). A matched
-// preset is synthesized into a WeaponRow so the rest of the roll path treats both identically.
-func resolveWeaponRow(stats *Stats, field *models.FieldDef, fieldKey, rowID string) (WeaponRow, bool) {
-	if row, ok := findWeaponRow(stats, fieldKey, rowID); ok {
-		return row, true
-	}
-	for i := range field.PresetWeapons {
-		p := field.PresetWeapons[i]
-		if p.ID == rowID {
-			return WeaponRow{ID: p.ID, Cells: p.Cells, Damage: p.Damage}, true
-		}
-	}
-	return WeaponRow{}, false
 }
 
 func findWeaponRow(stats *Stats, fieldKey, rowID string) (WeaponRow, bool) {

@@ -333,15 +333,13 @@ type FieldDef struct {
 	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
 	Columns       []WeaponColumn `bson:"columns,omitempty" json:"columns,omitempty"`
 	DamageFormula []FormulaBlock `bson:"damageFormula,omitempty" json:"damageFormula,omitempty"`
-	// PresetWeapons are GM-authored weapons attached to the template (weapons_table only).
-	// An AlwaysOn preset is shown read-only on every character sheet and is never copied
-	// into the character's stats — it is rendered and rolled straight from the template,
-	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
-	// player can copy into an editable weapon row of their own.
+	// PresetWeapons are GM-authored weapons attached to the template (weapons_table only). Every
+	// preset is a catalog entry the player can copy into a weapon row of their own; an AddOnCreate
+	// preset is also copied into every new character's rows by SeedDefaults (PLAYRPG-288). Once
+	// copied, the row is the player's: a later GM edit of the preset does not reach it.
 	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
 	// PresetRows are GM-authored rows of a data_table field — the data_table counterpart of
-	// PresetWeapons, with the same AlwaysOn semantics (rendered from the template, never copied
-	// into stats) and the same catalog semantics for the rest. data_table reuses Columns.
+	// PresetWeapons, with the same catalog and AddOnCreate semantics. data_table reuses Columns.
 	PresetRows []PresetRow `bson:"presetRows,omitempty" json:"presetRows,omitempty"`
 
 	// Formula is the expression of a "computed" field. The front end evaluates it at render time
@@ -357,22 +355,21 @@ type FieldDef struct {
 }
 
 // PresetWeapon is a GM-authored weapon template attached to a weapons_table field.
-// Cells and Damage mirror WeaponRow exactly (column key → value, damage block id → number),
-// so a preset is just a "row template": copying it to a player row is a plain value copy,
-// and rolling an AlwaysOn preset reuses the same WeaponRow-based roll path.
+// Cells and Damage mirror WeaponRow exactly (column key → value, damage block id → entered text),
+// so a preset is just a "row template": copying it to a player row is a plain value copy.
 type PresetWeapon struct {
-	ID       string             `bson:"id" json:"id"`
-	Cells    map[string]string  `bson:"cells,omitempty" json:"cells,omitempty"`
-	Damage   map[string]float64 `bson:"damage,omitempty" json:"damage,omitempty"`
-	AlwaysOn bool               `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
+	ID          string            `bson:"id" json:"id"`
+	Cells       map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	Damage      map[string]string `bson:"damage,omitempty" json:"damage,omitempty"`
+	AddOnCreate bool              `bson:"addOnCreate,omitempty" json:"addOnCreate,omitempty"`
 }
 
 // PresetRow is a GM-authored row of a data_table field. A separate type from PresetWeapon because
 // a data row has no damage: sharing the type would carry a field that is always empty.
 type PresetRow struct {
-	ID       string            `bson:"id" json:"id"`
-	Cells    map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
-	AlwaysOn bool              `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
+	ID          string            `bson:"id" json:"id"`
+	Cells       map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	AddOnCreate bool              `bson:"addOnCreate,omitempty" json:"addOnCreate,omitempty"`
 }
 
 // WeaponColumn defines one GM-authored column of a weapons_table or data_table field.

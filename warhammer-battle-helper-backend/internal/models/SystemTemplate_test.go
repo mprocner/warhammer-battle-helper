@@ -319,7 +319,7 @@ func TestFieldDef_DataTableRoundTripsThroughBSON(t *testing.T) {
 			{Key: "desc", Label: "Opis", Type: "long_text"},
 		},
 		PresetRows: []PresetRow{
-			{ID: "preset_1", Cells: map[string]string{"name": "Lina", "desc": "10 m"}, AlwaysOn: true},
+			{ID: "preset_1", Cells: map[string]string{"name": "Lina", "desc": "10 m"}, AddOnCreate: true},
 		},
 	}
 
@@ -332,8 +332,8 @@ func TestFieldDef_DataTableRoundTripsThroughBSON(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	if len(out.PresetRows) != 1 || out.PresetRows[0].Cells["desc"] != "10 m" || !out.PresetRows[0].AlwaysOn {
-		t.Errorf("PresetRows = %+v, want one always-on row with desc \"10 m\"", out.PresetRows)
+	if len(out.PresetRows) != 1 || out.PresetRows[0].Cells["desc"] != "10 m" || !out.PresetRows[0].AddOnCreate {
+		t.Errorf("PresetRows = %+v, want one add-on-create row with desc \"10 m\"", out.PresetRows)
 	}
 	if out.SortColumn != "name" {
 		t.Errorf("SortColumn = %q, want \"name\"", out.SortColumn)
