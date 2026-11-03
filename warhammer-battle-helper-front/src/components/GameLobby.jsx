@@ -103,10 +103,23 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: 2.5, alignItems: 'stretch' }}>
             {games.length === 0 && (
-              <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 6, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
-                <Typography variant="h5" sx={{ fontFamily: 'Crimson Text, serif', color: 'text.secondary', fontStyle: 'italic' }}>
-                  {t('game.noActiveGames')}
+              <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 6, px: 3, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
+                <Typography variant="h5" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 700, color: 'primary.dark' }}>
+                  {t('game.emptyLobbyTitle')}
                 </Typography>
+                <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', color: 'text.secondary', fontStyle: 'italic', mt: 1 }}>
+                  {t('game.emptyLobbyDesc')}
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mt: 3 }}>
+                  <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} disabled={loading}
+                    sx={{ fontFamily: 'Crimson Text, serif', fontWeight: 600 }}>
+                    {t('game.emptyLobbyCreate')}
+                  </Button>
+                  <Button variant="outlined" startIcon={<TuneIcon />} onClick={openManager}
+                    sx={{ fontFamily: 'Crimson Text, serif', fontWeight: 600 }}>
+                    {t('game.emptyLobbyDesign')}
+                  </Button>
+                </Box>
               </Card>
             )}
 

@@ -47,3 +47,20 @@ test('the lobby grid has no creator tile', () => {
   // Resolved before the key is deleted, the tile's description; after, the bare key — absent either way once the tile is gone.
   expect(screen.queryByText(i18n.t('creator.tileDesc'))).not.toBeInTheDocument();
 });
+
+test('the empty lobby explains the invite path and offers both actions', () => {
+  mount([]);
+  expect(screen.getByText(i18n.t('game.emptyLobbyTitle'))).toBeInTheDocument();
+  expect(screen.getByText(i18n.t('game.emptyLobbyDesc'))).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: i18n.t('game.emptyLobbyCreate') }));
+  expect(screen.getByText('create-game-dialog')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: i18n.t('game.emptyLobbyDesign') }));
+  expect(screen.getByText('template-manager-dialog')).toBeInTheDocument();
+});
+
+test('a lobby with games shows no empty state', () => {
+  mount([game]);
+  expect(screen.queryByText(i18n.t('game.emptyLobbyTitle'))).not.toBeInTheDocument();
+});
