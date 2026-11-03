@@ -15,7 +15,7 @@ export const MAX_TIER_LABEL = 40;
 // Hex because <input type="color"> takes nothing else; values match LogWindow.css --log-* tokens.
 export const SL_COLORS = {
   extreme: '#b8941f', // --log-gold-medium
-  hard: '#5a7a4a',    // --log-green-medium
+  hard: '#4a7fa5',    // --log-blue, the Call of Cthulhu hard success colour
   success: '#4a7c59', // --log-success
   failure: '#c94444', // --log-red-light
 };

@@ -117,7 +117,7 @@ Nowy komponent `components/creator/SuccessLevelsBuilder.jsx`, klasa
   - notka: progi dotyczą rzutów pod próg; rzut nad próg pokazuje tylko sukces/porażkę.
 - **Wartości domyślne** przy pierwszym wejściu w „Progi” (gdy stały wiersz Sukces nie ma koloru, `!success.color` — MG, który wyczyścił wszystkie nazwy, nie dostaje domyślnych z powrotem), nazwy przez
   `t()` w języku MG, zapisywane jako zwykły tekst: `1/5` Ekstremalny sukces (złoty `#b8941f`),
-  `1/2` Trudny sukces (ciemniejsza zieleń), `1/1` Sukces (zieleń logu), Porażka (czerwień logu) —
+  `1/2` Trudny sukces (niebieski `--log-blue`, jak trudny sukces w CoC), `1/1` Sukces (zieleń logu), Porażka (czerwień logu) —
   konkretne hexy dobrane z istniejących `--log-*`.
 - Dzielnik edytowany jest „draftem” (wzorzec `ModifierConfigBuilder`): wartość spoza 2–100 albo
   zduplikowana dostaje czerwoną ramkę + komunikat i **nie** trafia do `onChange` (autosave nie ma
