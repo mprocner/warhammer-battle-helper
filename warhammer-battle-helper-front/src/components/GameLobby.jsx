@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Box, Button, Card, Container, Typography } from '@mui/material';
 import { trackEvent } from '../analytics/gtag';
 import AddIcon from '@mui/icons-material/Add';
+import TuneIcon from '@mui/icons-material/Tune';
 import { useGames } from '../hooks/useGames';
 import { useTemplates } from '../hooks/useTemplates';
 import { usePortalTooltip } from './common/PortalTooltip';
 import TemplateBuilder from './creator/TemplateBuilder';
 import GameCard from './lobby/GameCard';
-import CreatorTile from './lobby/CreatorTile';
 import CreateGameDialog from './lobby/CreateGameDialog';
 import TemplateManagerDialog from './lobby/TemplateManagerDialog';
 import ConfirmDialog from './lobby/ConfirmDialog';
@@ -82,14 +82,20 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
     <>
       <Container maxWidth="xl">
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Typography variant="h3" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 700, color: 'text.primary', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
               {t('game.gameRooms')}
             </Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} disabled={loading}
-              sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontWeight: 600, px: 3, py: 1.5 }}>
-              {t('game.createNewGame')}
-            </Button>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+              <Button variant="outlined" startIcon={<TuneIcon />} onClick={openManager}
+                sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontWeight: 600, px: 3, py: 1.5 }}>
+                {t('game.openCreator')}
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)} disabled={loading}
+                sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontWeight: 600, px: 3, py: 1.5 }}>
+                {t('game.createNewGame')}
+              </Button>
+            </Box>
           </Box>
 
           {notice && <Alert severity="warning" sx={{ mb: 3 }} onClose={onDismissNotice}>{t(`game.${notice}`)}</Alert>}
@@ -119,9 +125,6 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
                 hideTooltip={hideTooltip}
               />
             ))}
-
-            {/* Creator tile — always last */}
-            <CreatorTile onClick={openManager} />
           </Box>
         </Box>
       </Container>
