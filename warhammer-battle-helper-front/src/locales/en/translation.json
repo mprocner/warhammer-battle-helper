@@ -731,6 +731,7 @@
   "handouts": {
     "title": "Handouts",
     "addHandout": "Add Handout",
+    "addHandoutShort": "Handout",
     "createHandout": "Create Handout",
     "editHandout": "Edit Handout",
     "noHandouts": "No handouts yet",
@@ -772,7 +773,7 @@
     "unsupportedType": "This file type cannot be previewed",
     "loadContentError": "Failed to load content",
     "folders": {
-      "createFolder": "New Folder",
+      "createFolder": "Folder",
       "namePlaceholder": "Folder name...",
       "rename": "Rename folder",
       "delete": "Delete folder",

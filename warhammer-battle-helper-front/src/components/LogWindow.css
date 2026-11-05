@@ -385,11 +385,11 @@
   box-shadow: inset 0 0 20px rgba(107, 68, 35, 0.08);
 }
 
-/* The log has no container padding, so its header brings its own.
+/* The log has no container padding, so its header brings the 12px the other tabs' containers give.
    Doubled selector so it wins over .tab-header regardless of stylesheet order. */
 .tab-header.log-window__header {
   margin-bottom: 0;
-  padding: 6px 12px 10px;
+  padding: 12px 12px 10px;
 }
 
 .log-window__messages {

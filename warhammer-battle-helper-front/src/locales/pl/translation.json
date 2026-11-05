@@ -731,6 +731,7 @@
   "handouts": {
     "title": "Handouty",
     "addHandout": "Dodaj Handout",
+    "addHandoutShort": "Handout",
     "createHandout": "Utwórz Handout",
     "editHandout": "Edytuj Handout",
     "noHandouts": "Brak handoutów",
@@ -772,7 +773,7 @@
     "unsupportedType": "Ten typ pliku nie może być podglądany",
     "loadContentError": "Nie udało się załadować treści",
     "folders": {
-      "createFolder": "Nowy Folder",
+      "createFolder": "Folder",
       "namePlaceholder": "Nazwa folderu...",
       "rename": "Zmień nazwę folderu",
       "delete": "Usuń folder",

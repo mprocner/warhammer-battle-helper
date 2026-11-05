@@ -13034,21 +13034,24 @@ button.custom-sheet__row-table-expander:hover {
   color: #6b4423;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* Height of .tab-header__btn, so headers without a button are as tall as those with one */
+  min-height: 36px;
+  display: flex;
+  align-items: center;
 }
 
 .tab-header__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tab-header__btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
+  padding: 6px 8px;
   background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
   border: 2px solid #c9975b;
   border-radius: 4px;
@@ -13056,6 +13059,7 @@ button.custom-sheet__row-table-expander:hover {
   font-family: 'Cinzel', serif;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(107, 68, 35, 0.15);

@@ -91,12 +91,10 @@
   opacity: 0.7;
 }
 
-/* GM header buttons (add handout + folder) side by side, wrapping in a narrow panel */
+/* GM header buttons (add handout + folder) side by side */
 .handouts-tab__header-actions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* Inline folder creation form */

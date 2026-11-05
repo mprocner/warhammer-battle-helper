@@ -24,7 +24,7 @@ function HandoutTabHeader({ isGM, onOpenCreate, onFolderCreated }) {
           <div className="handouts-tab__header-actions">
             <button className="tab-header__btn handouts-tab__add-btn" onClick={onOpenCreate}>
               <AddIcon fontSize="small" />
-              {t('handouts.addHandout')}
+              {t('handouts.addHandoutShort')}
             </button>
             <button
               className="tab-header__btn handouts-tab__add-btn"

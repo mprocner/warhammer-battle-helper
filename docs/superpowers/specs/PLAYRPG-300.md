@@ -14,12 +14,13 @@ dwa warianty. Po przełączeniu zakładki nagłówek ma wyglądać identycznie.
 | Mechanizm | Wspólny komponent `components/tabs/TabHeader.jsx` + reguły `.tab-header*` w `style.css`. Stare reguły `__header` / `__title` / `__header-group` każdej zakładki usunięte. |
 | API | `<TabHeader title tourId className>{akcje}</TabHeader>` → `.tab-header` > `h3.tab-header__title` + `.tab-header__actions` (children, potem `TourButton tourId`). `className` dokleja klasę do korzenia. |
 | Styl nagłówka | Większościowy: Cinzel 14px 600, uppercase, `letter-spacing: 0.5px`, `#6b4423`; `padding-bottom: 10px`, `border-bottom: 1px dashed #c9975b`, `margin-bottom: 12px`, `flex-shrink: 0`; flex `space-between`, `gap: 8px`. |
-| Przycisk akcji | `.tab-header__btn`: `AddIcon fontSize="small"` + tekst, 11px, padding 6×12 (dzisiejszy wariant Notatek). Sceny, Pliki, Handouty: tekstowy `+` → `AddIcon`. |
-| Chat | `.log-window` nie ma paddingu → `TabHeader className="log-window__header"`, która dodaje tylko `padding: 6px 12px 10px`. Ciągła brązowa linia i 0.95rem bez uppercase znikają. |
+| Przycisk akcji | `.tab-header__btn`: `AddIcon fontSize="small"` + tekst, 11px, padding 6×8, `white-space: nowrap`, wysokość 36px. Sceny, Pliki, Handouty: tekstowy `+` → `AddIcon`. |
+| Wysokość | `.tab-header__title` ma `min-height: 36px` (wysokość przycisku) — nagłówki bez przycisku są tak samo wysokie (47px z linią). |
+| Chat | `.log-window` nie ma paddingu → `TabHeader className="log-window__header"`, która dodaje `padding: 12px 12px 10px` — górne 12px to padding, który innym zakładkom daje kontener, więc linia wypada na tej samej wysokości. Ciągła brązowa linia i 0.95rem bez uppercase znikają. |
 | Ogólne | Złoty 1rem bez linii → standard. |
 | Odstęp w kontenerach z `gap` | Muzyka, Gracze (16px), Ogólne (20px), Minigry (8px) mają `gap`. Tam `.music-tab > .tab-header` (itd.) `{ margin-bottom: 0 }` — odstęp daje sam `gap`. Gap kontenerów bez zmian. |
 | Kaskada | Nadpisania `.tab-header` w CSS zakładek mają specyficzność ≥ 0,2,0 (`.x > .tab-header`, `.tab-header.log-window__header`), bo kolejność arkuszy nie jest gwarantowana. |
-| Handouty — układ | Dwa przyciski MG obok siebie (dziś w kolumnie); `.tab-header__actions` i `.handouts-tab__header-actions` mają `flex-wrap: wrap`, więc w wąskim panelu zawijają się zamiast ściskać. |
+| Handouty — układ | Dwa przyciski MG i ikona pomocy w jednym rzędzie z tytułem, bez zawijania. Pełne etykiety (~419px) nie mieszczą się w 322px, więc nagłówek używa krótkich: `handouts.addHandoutShort` = „Handout”, `handouts.folders.createFolder` = „Folder” (klucz używany tylko tu). `handouts.addHandout` zostaje dla przycisku w sekcji folderu. Odstęp przycisków 4px, `.tab-header__actions` 6px — zmierzone: mieści się bez zapasu (322/322px). |
 | Padding kontenerów | Bez zmian (12 vs 16px) — poza zakresem. |
 
 ## Kotwice tutoriala i testów
