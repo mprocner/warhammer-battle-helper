@@ -17,7 +17,9 @@ dwa warianty. Po przełączeniu zakładki nagłówek ma wyglądać identycznie.
 | Przycisk akcji | `.tab-header__btn`: `AddIcon fontSize="small"` + tekst, 11px, padding 6×12 (dzisiejszy wariant Notatek). Sceny, Pliki, Handouty: tekstowy `+` → `AddIcon`. |
 | Chat | `.log-window` nie ma paddingu → `TabHeader className="log-window__header"`, która dodaje tylko `padding: 6px 12px 10px`. Ciągła brązowa linia i 0.95rem bez uppercase znikają. |
 | Ogólne | Złoty 1rem bez linii → standard. |
-| Odstęp w kontenerach z `gap` | Muzyka, Gracze, Ogólne mają `gap: 16px`. Tam `.music-tab > .tab-header` (itd.) `{ margin-bottom: 0 }`, żeby nie wyszło 28px. Gap kontenerów bez zmian. |
+| Odstęp w kontenerach z `gap` | Muzyka, Gracze (16px), Ogólne (20px), Minigry (8px) mają `gap`. Tam `.music-tab > .tab-header` (itd.) `{ margin-bottom: 0 }` — odstęp daje sam `gap`. Gap kontenerów bez zmian. |
+| Kaskada | Nadpisania `.tab-header` w CSS zakładek mają specyficzność ≥ 0,2,0 (`.x > .tab-header`, `.tab-header.log-window__header`), bo kolejność arkuszy nie jest gwarantowana. |
+| Handouty — układ | Dwa przyciski MG obok siebie (dziś w kolumnie); `.tab-header__actions` i `.handouts-tab__header-actions` mają `flex-wrap: wrap`, więc w wąskim panelu zawijają się zamiast ściskać. |
 | Padding kontenerów | Bez zmian (12 vs 16px) — poza zakresem. |
 
 ## Kotwice tutoriala i testów
@@ -26,8 +28,10 @@ Klasy zakładek używane jako selektory zostają jako kotwice (bez CSS) albo dos
 
 - `.notes-tab__add-btn` (tour notes) — zostaje na przycisku obok `tab-header__btn`; CSS usunięty.
 - `.handouts-tab__header-actions` (tour handouts) — zostaje jako wrapper dwóch przycisków MG
-  wewnątrz children; `.handouts-tab__add-btn` zostaje na przyciskach (używa go
-  `HandoutsTab.wsRace.test.jsx`); CSS obu usunięty.
+  wewnątrz children (z regułą flex-row + wrap); `.handouts-tab__add-btn` zostaje na przyciskach
+  (używa go `HandoutsTab.wsRace.test.jsx`, bierze pierwszy = „Dodaj handout”) — jego CSS usunięty.
+  Martwe przy okazji: `.handouts-tab__add-btn--folder` (brak użyć), `.handouts-tab__header-group`,
+  `.right-panel__tab-content .log-window__header { border-radius: 0 }`.
 - `.scenes-tab__btn` (tour scenes) — klasa jest współdzielona z przyciskami `--sm` w ustawieniach
   sceny, więc CSS zostaje. Przycisk w nagłówku dostaje kotwicę `scenes-tab__create-btn`, tour
   `scenes.js` celuje w nią.
