@@ -1085,7 +1085,7 @@
       },
       "modifier": {
         "title": "Roll modifier",
-        "body": "When on, every roll from this sheet first asks the player for a modifier, such as a bonus or a penalty from the situation."
+        "body": "When on, every roll from this sheet first asks the player for a modifier: either a number, such as a bonus or a penalty from the situation, or edge and setback dice that roll again and keep the best or the worst result."
       },
       "successLevels": {
         "title": "Success levels",
@@ -1968,7 +1968,7 @@
       "memberErrorLastOwner": "A template needs at least one owner. Make someone else an owner first.",
       "sharePublicNote": "This template is public, so everyone can already use it. The roles below still decide who may edit it.",
       "modifierTitle": "Roll modifier",
-      "modifierHint": "Ask for a modifier before each roll on this card",
+      "modifierHint": "Ask for a modifier or extra dice before each roll on this card",
       "successLevelsTitle": "Success levels",
       "successLevelsHint": "How the log reports how well a roll went",
       "sheetWidthTitle": "Character sheet window",
@@ -2009,6 +2009,17 @@
       "step": "Step",
       "min": "Min",
       "max": "Max",
+      "kind": "Modifier type",
+      "kindNumber": "Number",
+      "kindDice": "Edge and setback dice",
+      "diceMode": "How extra dice roll",
+      "diceModeFormula": "Whole formula",
+      "diceModeTens": "Tens die (d100 only)",
+      "hintDiceFormula": "Each extra die rolls the field's whole formula once more. Edge keeps the best result, setback the worst.",
+      "hintDiceTens": "Each extra die rolls only a new tens digit; the units stay. Works on fields whose formula is a single d100 — other fields roll without extra dice.",
+      "maxEdge": "Max edge dice",
+      "maxSetback": "Max setback dice",
+      "diceHint": "Best and worst follow each field's success rule: rolling under the threshold, lower is better; rolling over it, higher is. Fields with a raw result and dice pools roll without extra dice.",
       "limitsHint": "Min and max both at 0 means no limits.",
       "presetsTitle": "Quick picks",
       "presetsEmpty": "No quick picks — the prompt shows just the number field.",

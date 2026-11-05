@@ -128,4 +128,50 @@ describe('ModifierConfigBuilder', () => {
     fireEvent.blur(screen.getByTestId('mcb-step'));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ step: 1 }));
   });
+
+  it('switching to dice seeds two dice each way when both maxima are unset', () => {
+    const onChange = jest.fn();
+    render(<ModifierConfigBuilder value={{ enabled: true }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByTestId('mcb-kind'), { target: { value: 'dice' } });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ kind: 'dice', maxEdge: 2, maxSetback: 2 }));
+  });
+
+  it('switching to dice keeps maxima the GM already set', () => {
+    const onChange = jest.fn();
+    render(<ModifierConfigBuilder value={{ enabled: true, kind: 'number', maxEdge: 0, maxSetback: 3 }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByTestId('mcb-kind'), { target: { value: 'dice' } });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ kind: 'dice', maxEdge: 0, maxSetback: 3 }));
+  });
+
+  it('shows the dice fields instead of the number fields for the dice kind', () => {
+    render(<ModifierConfigBuilder value={{ enabled: true, kind: 'dice', maxEdge: 2, maxSetback: 2 }} onChange={() => {}} />);
+
+    expect(screen.getByTestId('mcb-dice-mode')).toBeInTheDocument();
+    expect(screen.queryByTestId('mcb-traditional-target')).toBeNull();
+    expect(screen.queryByTestId('mcb-step')).toBeNull();
+  });
+
+  it('clamps a maximum to the cap', () => {
+    const onChange = jest.fn();
+    render(<ModifierConfigBuilder value={{ enabled: true, kind: 'dice', maxEdge: 2, maxSetback: 2 }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByTestId('mcb-max-edge'), { target: { value: '9' } });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ maxEdge: 5 }));
+  });
+
+  // Switching back keeps the other kind's settings, as with success levels (PLAYRPG-289).
+  it('switching back to number keeps the presets', () => {
+    const onChange = jest.fn();
+    const presets = [{ value: -20, label: 'Hard' }];
+    render(<ModifierConfigBuilder value={{ enabled: true, kind: 'dice', presets }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByTestId('mcb-kind'), { target: { value: 'number' } });
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ kind: 'number', presets }));
+  });
 });

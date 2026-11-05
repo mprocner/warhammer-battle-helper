@@ -1085,7 +1085,7 @@
       },
       "modifier": {
         "title": "Modyfikator rzutu",
-        "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator, np. premię albo karę wynikającą z sytuacji."
+        "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator: liczbę, np. premię albo karę wynikającą z sytuacji, albo kości przewagi i utrudnienia, które rzucają ponownie i zostawiają najlepszy lub najgorszy wynik."
       },
       "successLevels": {
         "title": "Poziomy sukcesu",
@@ -1968,7 +1968,7 @@
       "memberErrorLastOwner": "Szablon musi mieć co najmniej jednego właściciela. Najpierw nadaj tę rolę komuś innemu.",
       "sharePublicNote": "Ten szablon jest publiczny, więc i tak mogą go używać wszyscy. Role poniżej nadal decydują, kto może go edytować.",
       "modifierTitle": "Modyfikator rzutu",
-      "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie",
+      "modifierHint": "Pytaj o modyfikator albo dodatkowe kości przed każdym rzutem na tej karcie",
       "successLevelsTitle": "Poziomy sukcesu",
       "successLevelsHint": "Jak log pokazuje, jak dobrze poszedł rzut",
       "sheetWidthTitle": "Okno karty postaci",
@@ -2009,6 +2009,17 @@
       "step": "Krok",
       "min": "Min",
       "max": "Maks",
+      "kind": "Rodzaj modyfikatora",
+      "kindNumber": "Liczba",
+      "kindDice": "Kości przewagi i utrudnienia",
+      "diceMode": "Jak rzucają dodatkowe kości",
+      "diceModeFormula": "Cała formuła",
+      "diceModeTens": "Kość dziesiątek (tylko d100)",
+      "hintDiceFormula": "Każda dodatkowa kość rzuca całą formułę pola jeszcze raz. Przewaga zostawia najlepszy wynik, utrudnienie najgorszy.",
+      "hintDiceTens": "Każda dodatkowa kość rzuca tylko nową cyfrę dziesiątek, jedności zostają. Działa dla pól, których formuła to samo d100 — pozostałe pola rzucają bez dodatkowych kości.",
+      "maxEdge": "Maks. kości przewagi",
+      "maxSetback": "Maks. kości utrudnienia",
+      "diceHint": "Najlepszy i najgorszy wynik zależą od reguły sukcesu pola: przy rzucie poniżej progu lepszy jest niższy, przy rzucie powyżej — wyższy. Pola z surowym wynikiem i pule kości rzucają bez dodatkowych kości.",
       "limitsHint": "Min i maks równe 0 znaczą brak ograniczeń.",
       "presetsTitle": "Szybki wybór",
       "presetsEmpty": "Brak szybkiego wyboru — w okienku zostaje samo pole liczbowe.",

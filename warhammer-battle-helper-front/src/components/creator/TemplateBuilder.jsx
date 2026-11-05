@@ -470,7 +470,6 @@ function defaultRollConfig() {
     rollMode: 'traditional',
     formula: [],
     successType: 'below_threshold',
-    rollAdvType: 'standard',
     poolSuccessThreshold: 6,
     poolSuccessCondition: 'gte',
   };

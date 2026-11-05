@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModifierPresetEditor from './ModifierPresetEditor';
+import EdgeDiceConfigFields from './EdgeDiceConfigFields';
 import {
   DEFAULT_MODIFIER_CONFIG,
+  MOD_KIND_NUMBER,
+  MOD_KIND_DICE,
   MOD_TARGET_ROLL,
   MOD_TARGET_THRESHOLD,
   MOD_TARGET_DICE_COUNT,
@@ -59,6 +62,15 @@ function ModifierConfigBuilder({ value, onChange }) {
     setDraft(null);
   };
 
+  // Both maxima at 0 is a dice column with only the plain roll in it — useless, so the first
+  // switch to dice seeds two each way. Maxima the GM already set are kept, as is everything of
+  // the other kind: switching back restores it.
+  const handleKindChange = kind => {
+    setDraft(null);
+    const seed = kind === MOD_KIND_DICE && !cfg.maxEdge && !cfg.maxSetback ? { maxEdge: 2, maxSetback: 2 } : {};
+    up({ kind, ...seed });
+  };
+
   return (
     <div className="mcb__root">
       <label className="mcb__enable">
@@ -76,70 +88,90 @@ function ModifierConfigBuilder({ value, onChange }) {
       ) : (
         <>
           <div className="mcb__field">
-            <label className="mcb__label" htmlFor="mcb-traditional-target">
-              {t('creator.modifier.traditionalTarget')}
-            </label>
+            <label className="mcb__label" htmlFor="mcb-kind">{t('creator.modifier.kind')}</label>
             <select
-              id="mcb-traditional-target"
-              data-testid="mcb-traditional-target"
+              id="mcb-kind"
+              data-testid="mcb-kind"
               className="mcb__select"
-              value={cfg.traditionalTarget}
-              onChange={e => up({ traditionalTarget: e.target.value })}
+              value={cfg.kind === MOD_KIND_DICE ? MOD_KIND_DICE : MOD_KIND_NUMBER}
+              onChange={e => handleKindChange(e.target.value)}
             >
-              <option value={MOD_TARGET_ROLL}>{t('creator.modifier.targetRoll')}</option>
-              <option value={MOD_TARGET_THRESHOLD}>{t('creator.modifier.targetThreshold')}</option>
+              <option value={MOD_KIND_NUMBER}>{t('creator.modifier.kindNumber')}</option>
+              <option value={MOD_KIND_DICE}>{t('creator.modifier.kindDice')}</option>
             </select>
-            <div className="mcb__hint" data-testid="mcb-traditional-hint">
-              {t(TRADITIONAL_HINTS[cfg.traditionalTarget] || TRADITIONAL_HINTS[MOD_TARGET_ROLL])}
-            </div>
           </div>
 
-          <div className="mcb__field">
-            <label className="mcb__label" htmlFor="mcb-pool-target">
-              {t('creator.modifier.poolTarget')}
-            </label>
-            <select
-              id="mcb-pool-target"
-              data-testid="mcb-pool-target"
-              className="mcb__select"
-              value={cfg.poolTarget}
-              onChange={e => up({ poolTarget: e.target.value })}
-            >
-              <option value={MOD_TARGET_DICE_COUNT}>{t('creator.modifier.targetDiceCount')}</option>
-              <option value={MOD_TARGET_SUCCESS_THRESHOLD}>{t('creator.modifier.targetSuccessThreshold')}</option>
-            </select>
-            <div className="mcb__hint" data-testid="mcb-pool-hint">
-              {t(POOL_HINTS[cfg.poolTarget] || POOL_HINTS[MOD_TARGET_DICE_COUNT])}
-            </div>
-          </div>
+          {cfg.kind === MOD_KIND_DICE ? (
+            <EdgeDiceConfigFields cfg={cfg} up={up} />
+          ) : (
+            <>
+              <div className="mcb__field">
+                <label className="mcb__label" htmlFor="mcb-traditional-target">
+                  {t('creator.modifier.traditionalTarget')}
+                </label>
+                <select
+                  id="mcb-traditional-target"
+                  data-testid="mcb-traditional-target"
+                  className="mcb__select"
+                  value={cfg.traditionalTarget}
+                  onChange={e => up({ traditionalTarget: e.target.value })}
+                >
+                  <option value={MOD_TARGET_ROLL}>{t('creator.modifier.targetRoll')}</option>
+                  <option value={MOD_TARGET_THRESHOLD}>{t('creator.modifier.targetThreshold')}</option>
+                </select>
+                <div className="mcb__hint" data-testid="mcb-traditional-hint">
+                  {t(TRADITIONAL_HINTS[cfg.traditionalTarget] || TRADITIONAL_HINTS[MOD_TARGET_ROLL])}
+                </div>
+              </div>
 
-          <div className="mcb__limits">
-            <div className="mcb__limit">
-              <label className="mcb__label" htmlFor="mcb-step">{t('creator.modifier.step')}</label>
-              <input id="mcb-step" data-testid="mcb-step" type="number" min={1}
-                     value={limitValue('step')}
-                     onChange={e => handleLimitChange('step', e.target.value)}
-                     onBlur={() => handleLimitBlur('step')} />
-            </div>
-            <div className="mcb__limit">
-              <label className="mcb__label" htmlFor="mcb-min">{t('creator.modifier.min')}</label>
-              <input id="mcb-min" data-testid="mcb-min" type="number" value={limitValue('min')}
-                     onChange={e => handleLimitChange('min', e.target.value)}
-                     onBlur={() => handleLimitBlur('min')} />
-            </div>
-            <div className="mcb__limit">
-              <label className="mcb__label" htmlFor="mcb-max">{t('creator.modifier.max')}</label>
-              <input id="mcb-max" data-testid="mcb-max" type="number" value={limitValue('max')}
-                     onChange={e => handleLimitChange('max', e.target.value)}
-                     onBlur={() => handleLimitBlur('max')} />
-            </div>
-          </div>
-          <div className="mcb__hint">{t('creator.modifier.limitsHint')}</div>
+              <div className="mcb__field">
+                <label className="mcb__label" htmlFor="mcb-pool-target">
+                  {t('creator.modifier.poolTarget')}
+                </label>
+                <select
+                  id="mcb-pool-target"
+                  data-testid="mcb-pool-target"
+                  className="mcb__select"
+                  value={cfg.poolTarget}
+                  onChange={e => up({ poolTarget: e.target.value })}
+                >
+                  <option value={MOD_TARGET_DICE_COUNT}>{t('creator.modifier.targetDiceCount')}</option>
+                  <option value={MOD_TARGET_SUCCESS_THRESHOLD}>{t('creator.modifier.targetSuccessThreshold')}</option>
+                </select>
+                <div className="mcb__hint" data-testid="mcb-pool-hint">
+                  {t(POOL_HINTS[cfg.poolTarget] || POOL_HINTS[MOD_TARGET_DICE_COUNT])}
+                </div>
+              </div>
 
-          <div className="mcb__field">
-            <span className="mcb__label">{t('creator.modifier.presetsTitle')}</span>
-            <ModifierPresetEditor presets={cfg.presets} onChange={presets => up({ presets })} />
-          </div>
+              <div className="mcb__limits">
+                <div className="mcb__limit">
+                  <label className="mcb__label" htmlFor="mcb-step">{t('creator.modifier.step')}</label>
+                  <input id="mcb-step" data-testid="mcb-step" type="number" min={1}
+                         value={limitValue('step')}
+                         onChange={e => handleLimitChange('step', e.target.value)}
+                         onBlur={() => handleLimitBlur('step')} />
+                </div>
+                <div className="mcb__limit">
+                  <label className="mcb__label" htmlFor="mcb-min">{t('creator.modifier.min')}</label>
+                  <input id="mcb-min" data-testid="mcb-min" type="number" value={limitValue('min')}
+                         onChange={e => handleLimitChange('min', e.target.value)}
+                         onBlur={() => handleLimitBlur('min')} />
+                </div>
+                <div className="mcb__limit">
+                  <label className="mcb__label" htmlFor="mcb-max">{t('creator.modifier.max')}</label>
+                  <input id="mcb-max" data-testid="mcb-max" type="number" value={limitValue('max')}
+                         onChange={e => handleLimitChange('max', e.target.value)}
+                         onBlur={() => handleLimitBlur('max')} />
+                </div>
+              </div>
+              <div className="mcb__hint">{t('creator.modifier.limitsHint')}</div>
+
+              <div className="mcb__field">
+                <span className="mcb__label">{t('creator.modifier.presetsTitle')}</span>
+                <ModifierPresetEditor presets={cfg.presets} onChange={presets => up({ presets })} />
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
