@@ -36,47 +36,6 @@
   box-shadow: 0 2px 8px rgba(107, 68, 35, 0.2);
 }
 
-.handouts-tab__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #c9975b;
-  flex-shrink: 0;
-}
-
-.handouts-tab__title {
-  margin: 0;
-  font-size: 14px;
-  font-family: 'Cinzel', serif;
-  font-weight: 600;
-  color: #6b4423;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.handouts-tab__add-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
-  border: 2px solid #c9975b;
-  border-radius: 4px;
-  color: #6b4423;
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(107, 68, 35, 0.15);
-}
-
-.handouts-tab__add-btn:hover {
-  border-color: #7a5c42;
-  background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
-}
-
 .handouts-tab__list {
   display: flex;
   flex-direction: column;
@@ -132,22 +91,12 @@
   opacity: 0.7;
 }
 
-.handouts-tab__header-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Header actions (folder + add buttons) */
+/* GM header buttons (add handout + folder) side by side, wrapping in a narrow panel */
 .handouts-tab__header-actions {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: stretch;
-}
-
-.handouts-tab__add-btn--folder {
-  background: linear-gradient(135deg, #f4efe5 0%, #ece4d4 100%);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* Inline folder creation form */
