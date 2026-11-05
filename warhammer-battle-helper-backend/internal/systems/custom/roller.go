@@ -20,16 +20,31 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, linkedLabel, baseFromAttr, cfg, modTarget, modValue)
 	}
 
-	result, diceType, labelStr, valueStr, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
+	eval := func() (int, int, string, string, error) {
+		return p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
+	}
+	var roll edgeRoll
+	var err error
+	switch {
+	case modTarget == ModTargetEdgeDice && template.Settings.Modifier.DiceMode == DiceModeTens:
+		roll = p.rollEdgeTens(modValue, lowerIsBetter(cfg.SuccessType))
+	case modTarget == ModTargetEdgeDice:
+		roll, err = rollEdgeFormula(modValue, lowerIsBetter(cfg.SuccessType), eval)
+	default:
+		roll.result, roll.diceType, roll.labelStr, roll.valueStr, err = eval()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
 	}
+	result, diceType, labelStr, valueStr := roll.result, roll.diceType, roll.labelStr, roll.valueStr
 
-	// The modifier lands on exactly one side of the comparison: the roll or the target.
+	// A numeric modifier lands on exactly one side of the comparison: the roll or the target.
+	// Edge dice already did their work above and add nothing here.
 	rollMod, thresholdMod := 0, 0
-	if modTarget == ModTargetThreshold {
+	switch modTarget {
+	case ModTargetThreshold:
 		thresholdMod = modValue
-	} else {
+	case ModTargetRoll:
 		rollMod = modValue
 	}
 
@@ -81,6 +96,13 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		appliedTarget, appliedValue = ModTargetNone, 0
 	}
 
+	// Edge dice report as a dice count, not a modifier: the log reads diceMod/allRolls for them,
+	// and a non-zero Modifier would print a phantom "(+1)".
+	diceMod := 0
+	if appliedTarget == ModTargetEdgeDice {
+		diceMod, appliedValue = appliedValue, 0
+	}
+
 	res := &gsys.RollResult{
 		DiceType:         diceType,
 		RollType:         "skill",
@@ -91,6 +113,8 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		SkillName:        skillLabel,
 		Modifier:         appliedValue,
 		ModifierTarget:   appliedTarget,
+		DiceMod:          diceMod,
+		AllRolls:         roll.all,
 		FormulaBreakdown: breakdown,
 	}
 	applySuccessLevels(template.Settings.SuccessLevels, cfg.SuccessType, finalRoll, threshold, res)
