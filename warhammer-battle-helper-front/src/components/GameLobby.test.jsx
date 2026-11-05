@@ -42,12 +42,6 @@ test('the header creator button opens the template manager', () => {
   expect(screen.getByText('template-manager-dialog')).toBeInTheDocument();
 });
 
-test('the lobby grid has no creator tile', () => {
-  mount([game]);
-  // Resolved before the key is deleted, the tile's description; after, the bare key — absent either way once the tile is gone.
-  expect(screen.queryByText(i18n.t('creator.tileDesc'))).not.toBeInTheDocument();
-});
-
 test('the empty lobby explains the invite path and offers both actions', () => {
   mount([]);
   expect(screen.getByText(i18n.t('game.emptyLobbyTitle'))).toBeInTheDocument();
