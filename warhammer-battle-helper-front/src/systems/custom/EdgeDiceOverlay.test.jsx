@@ -29,6 +29,25 @@ describe('EdgeDiceOverlay', () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
+  it('focuses the zero button on open', () => {
+    render(<EdgeDiceOverlay pos={{ x: 100, y: 300 }} config={{ maxEdge: 2, maxSetback: 2 }} onSelect={() => {}} onCancel={() => {}} />);
+    expect(document.activeElement).toBe(screen.getByText('0'));
+  });
+
+  it('cancels on Escape', () => {
+    const onCancel = jest.fn();
+    render(<EdgeDiceOverlay pos={{ x: 100, y: 300 }} config={{ maxEdge: 1, maxSetback: 1 }} onSelect={() => {}} onCancel={onCancel} />);
+    fireEvent.keyDown(screen.getByText('0'), { key: 'Escape' });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not cancel when a dice button is clicked', () => {
+    const onCancel = jest.fn();
+    render(<EdgeDiceOverlay pos={{ x: 100, y: 300 }} config={{ maxEdge: 1, maxSetback: 1 }} onSelect={() => {}} onCancel={onCancel} />);
+    fireEvent.click(screen.getByText('+1'));
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   // The 0 button's centre lands on the click: 2 edge buttons of 36px + 2px gap above it, half a
   // button, and the popup's 4px padding + 2px border.
   it('aligns the zero button with the click', () => {

@@ -34,6 +34,8 @@ export function useRollPrompt(template, onRoll) {
     }
     setPending(request);
     setPendingPos(lastClickRef.current);
+    // Consumed: a later roll without a click must not reuse this position.
+    lastClickRef.current = null;
   }, [modifierConfig, onRoll]);
 
   const cancelRoll = useCallback(() => {

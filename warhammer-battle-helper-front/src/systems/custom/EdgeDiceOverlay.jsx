@@ -23,6 +23,7 @@ export function zeroAlignedTop(y, edgeCount) {
 function EdgeDiceOverlay({ pos, config, onSelect, onCancel }) {
   const { t } = useTranslation();
   const popupRef = useRef(null);
+  const zeroRef = useRef(null);
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
   const buttons = edgeDiceButtons(config);
   const edgeCount = buttons.filter(b => b.diceMod > 0).length;
@@ -32,13 +33,17 @@ function EdgeDiceOverlay({ pos, config, onSelect, onCancel }) {
   useLayoutEffect(() => {
     const el = popupRef.current;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const maxLeft = window.innerWidth - rect.width - VIEWPORT_MARGIN;
-    const maxTop = window.innerHeight - rect.height - VIEWPORT_MARGIN;
-    const left = Math.max(VIEWPORT_MARGIN, Math.min(at.x - rect.width / 2, maxLeft));
+    // offsetWidth/Height ignore the pop-in animation's transform: scale(), unlike getBoundingClientRect.
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    const maxLeft = window.innerWidth - width - VIEWPORT_MARGIN;
+    const maxTop = window.innerHeight - height - VIEWPORT_MARGIN;
+    const left = Math.max(VIEWPORT_MARGIN, Math.min(at.x - width / 2, maxLeft));
     const top = Math.max(VIEWPORT_MARGIN, Math.min(zeroAlignedTop(at.y, edgeCount), maxTop));
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
+    // Focus the neutral button so Enter/Space rolls plainly and Escape reaches the popup.
+    if (zeroRef.current) zeroRef.current.focus();
   }, [at.x, at.y, edgeCount]);
 
   const describe = d => {
@@ -51,10 +56,20 @@ function EdgeDiceOverlay({ pos, config, onSelect, onCancel }) {
   // the card and whatever panel holds it.
   return createPortal(
     <div className="edge-dice-overlay" onClick={e => { e.stopPropagation(); onCancel(); }}>
-      <div ref={popupRef} className="edge-dice-popup" onClick={e => e.stopPropagation()}>
+      <div
+        ref={popupRef}
+        className="edge-dice-popup"
+        onClick={e => e.stopPropagation()}
+        onKeyDown={e => {
+          if (e.key !== 'Escape') return;
+          e.stopPropagation();
+          onCancel();
+        }}
+      >
         {buttons.map(({ diceMod, type }) => (
           <button
             key={diceMod}
+            ref={diceMod === 0 ? zeroRef : undefined}
             type="button"
             className={`edge-dice-btn edge-dice-btn--${type}`}
             aria-label={describe(diceMod)}

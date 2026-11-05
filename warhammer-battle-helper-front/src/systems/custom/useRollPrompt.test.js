@@ -69,6 +69,27 @@ describe('useRollPrompt', () => {
     expect(result.current.pendingPos).toEqual({ x: 40, y: 90 });
   });
 
+  it('clears the position on cancel', () => {
+    const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
+
+    act(() => result.current.trackClick({ detail: 1, clientX: 40, clientY: 90 }));
+    act(() => result.current.promptRoll(request));
+    act(() => result.current.cancelRoll());
+
+    expect(result.current.pendingPos).toBeNull();
+  });
+
+  it('does not reuse a consumed click for a later roll without one', () => {
+    const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
+
+    act(() => result.current.trackClick({ detail: 1, clientX: 40, clientY: 90 }));
+    act(() => result.current.promptRoll(request));
+    act(() => result.current.cancelRoll());
+    act(() => result.current.promptRoll(request));
+
+    expect(result.current.pendingPos).toBeNull();
+  });
+
   // Keyboard activation (Enter/Space) has detail 0 and clientX/Y 0, so the button's centre stands in.
   it('uses the element centre for a keyboard activation', () => {
     const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
