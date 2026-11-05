@@ -19,7 +19,8 @@ Nazwy CoC („bonus/penalty dice”) nie są używane w UI szablonu.
 | Maksima | Osobne dla przewagi i utrudnienia. `0` wyłącza daną stronę (np. 0/2 = tylko utrudnienie). |
 | Tryb | Do wyboru przez MG: `formula` (domyślny) — cała formuła rzucana N+1 razy; `tens` — jak CoC, nowa kość dziesiątek przy tych samych jednościach, tylko dla formuły `d100`. |
 | Kierunek „lepszego” | Z `successType` pola: `below_threshold` → niższy lepszy, `above_threshold` → wyższy lepszy. MG tego nie ustawia. |
-| Pola bez kości | `raw`, `dice_pool`, oraz tryb `tens` przy formule innej niż pojedyncze `d100` — rzut idzie od razu, bez pytania i bez błędu. |
+| Pola bez kości | `raw`, `dice_pool`, oraz tryb `tens` przy formule innej niż pojedyncze `d100`. Kolumna i tak się pokazuje (front nie zna `rollConfig` rzutu — rozwiązuje go tylko Go w `resolveRollConfig`); serwer ignoruje wybór, rzut idzie bez kości i bez błędu, log nie pokazuje linii kości. Portowanie predykatu do JS odrzucone — kolejny niezmiennik Go↔JS bez testu spinającego. |
+| Limit serwera | Niezależnie od konfiguracji serwer obcina liczbę kości do 5 w każdą stronę — tryb `formula` ewaluuje formułę N+1 razy, więc wartość z requestu nie może być dowolna. |
 | Broń | Trafienie bronią przechodzi przez `rollFromFormula`, więc dostaje kości tak samo jak umiejętność. Rzut obrażeń — bez zmian. |
 
 ## Model danych
@@ -61,9 +62,10 @@ sygnatur — wykluczenie rodzajów gwarantuje, że wartość ma zawsze jedno zna
 
 - nowy target `ModTargetEdgeDice = "edge_dice"` (stała współdzielona z `modifierConfig.js`),
 - przy `Kind == "dice"` clamp do `[-MaxSetback, MaxEdge]`,
-- zwraca `ModTargetNone, 0` gdy pole nie obsługuje kości: `rollMode == "dice_pool"`,
-  `successType == "raw"`; warunek `tens` + nie-`d100` sprawdzany w rollerze (zna formułę) i też
-  daje rzut bez kości.
+- sygnatura poszerzona z `rollMode string` do `roll *models.RollConfig` (kompilator Go wskaże
+  każde wywołanie), żeby jedno miejsce widziało tryb, `successType` i formułę,
+- zwraca `ModTargetNone, 0` gdy pole nie obsługuje kości (`rollMode == "dice_pool"`,
+  `successType == "raw"`, `tens` + formuła ≠ pojedyncze `d100`) albo gdy po clampie zostaje 0.
 
 Serwer nie ufa wartości: `Kind != "dice"` zeruje kości, `Kind == "dice"` zeruje liczbowy modyfikator.
 
@@ -102,10 +104,13 @@ kości faktycznie zastosowano. Poziomy sukcesu (`applySuccessLevels`) liczone z 
   rzeczywistej liczby przycisków nad zerem (`MaxEdge × BUTTON_HEIGHT`), nie ze stałej.
   Klasy CSS własne (`.edge-dice-*`), kolorystyka jak CoC: zielony / złoty / czerwony.
   Tooltip przycisku: „+N kości przewagi” / „−N kości utrudnienia” (portal tooltip wg konwencji).
-- `useRollPrompt` rozgałęzia się po `Kind`: `number` → `RollModifierOverlay`, `dice` →
-  `EdgeDiceOverlay`. Pole nieobsługujące kości (lustrzany predykat w `modifierConfig.js`) → rzut
-  od razu.
-- Obie karty (`CharacterSheet`, `CharacterDetails`) korzystają z hooka — bez osobnej logiki.
+- Nowy komponent `RollPrompt` wybiera okno po `Kind`: `number` → `RollModifierOverlay`, `dice` →
+  `EdgeDiceOverlay`. Obie karty (`CharacterSheet`, `CharacterDetails`) renderują `RollPrompt`
+  zamiast powtarzać wybór.
+- Pozycja kliknięcia: `useRollPrompt` wystawia `trackClick`, podpięty jako `onClickCapture` na
+  korzeniu karty (handler React, nie listener na `document`). Kliknięcie myszą daje
+  `clientX/Y`; aktywacja klawiaturą (`event.detail === 0`) — środek klikniętego elementu.
+  `promptRoll` zapamiętuje tę pozycję obok `pending` (osobny stan `pendingPos`, `pending` bez zmian).
 
 ### Log
 
@@ -114,12 +119,14 @@ wszystkie `AllRolls` z wyróżnionym wybranym (jak CoC `SkillRoll`).
 
 ### i18n
 
-Klucze en/pl z liczbą mnogą: `custom.edgeDice` / `custom.setbackDice` + etykiety kreatora.
+Klucze en/pl z liczbą mnogą w formacie i18next v25 (`_one`/`_other`, w pl także `_few`/`_many`):
+`customRoll.edgeDice` / `customRoll.setbackDice` + etykiety kreatora `creator.modifier.*`.
 
 ### Tutorial kreatora
 
-Nowa grupa „Kości” w karcie modyfikatora → nowy krok albo wariant tekstu w `tours/creator*.js`
-(pilnuje `creatorTour.coverage.test.jsx`).
+Karta modyfikatora ma już krok (`creatorGeneral.js`, id `modifier`, kotwica
+`.creator__settings-card--modifier`). Kości to rodzaj w tej samej karcie, nie nowa karta — krok
+zostaje, zmienia się tylko tekst `tutorial.creatorGeneral.modifier.body`, żeby wspominał oba rodzaje.
 
 ## Testy
 
@@ -133,8 +140,9 @@ Nowa grupa „Kości” w karcie modyfikatora → nowy krok albo wariant tekstu 
 
 **Frontend**:
 - `EdgeDiceOverlay` — liczba przycisków i pozycja `0` przy 2/2, 0/2, 3/0,
-- `useRollPrompt` — gałąź `dice`, pole bez kości rzuca od razu,
-- `modifierConfig.js` — predykat obsługi kości zgodny z backendem,
+- `useRollPrompt` — `trackClick` i `pendingPos`, istniejące testy bez zmian,
+- `RollPrompt` — wybór okna po `Kind`,
+- `modifierConfig.js` — przyciski kolumny z maksimów, pozycja `0`,
 - `ModifierConfigBuilder` — przełącznik rodzaju zachowuje pola drugiego.
 
 ## Poza zakresem
