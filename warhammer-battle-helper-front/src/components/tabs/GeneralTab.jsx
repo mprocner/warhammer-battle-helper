@@ -16,6 +16,7 @@ import AltRouteIcon from '@mui/icons-material/AltRoute';
 import ImageIcon from '@mui/icons-material/Image';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
+import TabHeader from './TabHeader';
 import { resolveDisplayName } from '../../utils/participants';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getAvatarUrl } from '../Avatar';
@@ -169,9 +170,7 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
 
   return (
     <div className="general-tab">
-      <div className="general-tab__header">
-        <h3 className="general-tab__title">{t('rightPanel.tabs.general')}</h3>
-      </div>
+      <TabHeader title={t('rightPanel.tabs.general')} />
       {/* Game Info Section */}
       <section className="general-tab__section">
         <h4 className="general-tab__section-title">{t('settings.gameInfo')}</h4>

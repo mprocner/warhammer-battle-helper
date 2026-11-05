@@ -385,20 +385,11 @@
   box-shadow: inset 0 0 20px rgba(107, 68, 35, 0.08);
 }
 
-.log-window__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--log-brown-dark);
-}
-
-.log-window__title {
-  margin: 0;
-  font-family: var(--log-font-display);
-  font-size: 0.95rem;
-  color: var(--log-brown-dark);
+/* The log has no container padding, so its header brings its own.
+   Doubled selector so it wins over .tab-header regardless of stylesheet order. */
+.tab-header.log-window__header {
+  margin-bottom: 0;
+  padding: 6px 12px 10px;
 }
 
 .log-window__messages {

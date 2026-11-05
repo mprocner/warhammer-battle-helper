@@ -4,7 +4,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
 import { resolveRollComponent } from './log/resolveRollComponent';
-import TourButton from './tutorial/TourButton';
+import TabHeader from './tabs/TabHeader';
 import './LogWindow.css';
 
 // Jak długo świeży wpis nosi podświetlenie "nowe" (ms).
@@ -122,10 +122,7 @@ const LogWindow = ({
 
     return (
         <div className="log-window">
-            <div className="log-window__header">
-                <h3 className="log-window__title">{t('rightPanel.tabs.chat')}</h3>
-                <TourButton tourId="chat" />
-            </div>
+            <TabHeader title={t('rightPanel.tabs.chat')} tourId="chat" className="log-window__header" />
             <div className="log-window__messages">
                 {trimmedMessages.length === 0 ? (
                     <div className="log-window__empty">

@@ -12,7 +12,7 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { getMusic, uploadMusic, deleteMusic, createPlaylist, updatePlaylist, deletePlaylist, reorderPlaylists, playTrack, pauseTrack, stopTrack, setLoop, createMusicFolder, renameMusicFolder, deleteMusicFolder, moveMusicFile, renameMusicFile } from '../../api/music';
-import TourButton from '../tutorial/TourButton';
+import TabHeader from './TabHeader';
 import {
   DndContext,
   DragOverlay,
@@ -580,10 +580,7 @@ const MusicTab = ({ gameId, token, musicState, audioRef, onGmVolumeChange }) => 
 
   return (
     <div className="music-tab">
-      <div className="music-tab__header">
-        <h3 className="music-tab__title">{t('rightPanel.tabs.music')}</h3>
-        <TourButton tourId="music" />
-      </div>
+      <TabHeader title={t('rightPanel.tabs.music')} tourId="music" />
 
       {error && (
         <div className="music-tab__error">
