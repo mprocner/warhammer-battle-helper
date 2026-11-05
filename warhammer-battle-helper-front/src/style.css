@@ -6276,9 +6276,9 @@ align-items: center;
     overflow-y: auto;
 }
 
-/* The container's gap already spaces the header. */
+/* The container's 8px gap adds to this; together 12px under the header, like the other tabs. */
 .minigame-list > .tab-header {
-    margin-bottom: 0;
+    margin-bottom: 4px;
 }
 
 .minigame-list__item {

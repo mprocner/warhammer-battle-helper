@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 16px;
+  padding: 12px;
   height: 100%;
   overflow-y: auto;
   /* Scrollbar styling - Firefox */
@@ -743,7 +743,7 @@
   color: #f5ebe0;
 }
 
-/* The container's gap already spaces the header. */
+/* The container's 20px gap adds to this; together 12px under the header, like the other tabs. */
 .general-tab > .tab-header {
-  margin-bottom: 0;
+  margin-bottom: -8px;
 }

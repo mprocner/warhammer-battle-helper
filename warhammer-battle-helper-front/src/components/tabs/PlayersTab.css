@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
+  padding: 12px;
   height: 100%;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -27,9 +27,9 @@
   background: #a67c52;
 }
 
-/* The container's gap already spaces the header. */
+/* The container's 16px gap adds to this; together 12px under the header, like the other tabs. */
 .players-tab > .tab-header {
-  margin-bottom: 0;
+  margin-bottom: -4px;
 }
 
 /* Section card */
