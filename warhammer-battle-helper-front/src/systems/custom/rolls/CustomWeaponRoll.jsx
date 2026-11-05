@@ -5,6 +5,7 @@ import { getResultColor } from '../../../components/log/rollUtils';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { formatPoolFormula } from './poolFormula';
 import FormulaBreakdown from './FormulaBreakdown';
+import EdgeDiceSummary from './EdgeDiceSummary';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import { successLevelDisplay } from './successLevelDisplay';
 import '../../../components/LogWindow.css';
@@ -83,6 +84,7 @@ function CustomWeaponRoll({ data, timestamp }) {
           {showsModifierSeparately && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {formulaText && <FormulaBreakdown text={formulaText} />}
+        <EdgeDiceSummary diceMod={data.diceMod} allRolls={data.allRolls} roll={data.roll} />
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {successDisplay?.label || outcomeLabel}

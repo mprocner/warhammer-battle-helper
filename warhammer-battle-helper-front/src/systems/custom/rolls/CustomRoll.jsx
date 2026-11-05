@@ -6,6 +6,7 @@ import { usePortalTooltip } from '../../../components/common/PortalTooltip';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
 import FormulaBreakdown from './FormulaBreakdown';
+import EdgeDiceSummary from './EdgeDiceSummary';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
 import { successLevelDisplay } from './successLevelDisplay';
 import '../../../components/LogWindow.css';
@@ -120,6 +121,7 @@ function CustomRoll({ data, timestamp }) {
           </div>
         )}
         {formulaText ? <FormulaBreakdown text={formulaText} /> : null}
+        <EdgeDiceSummary diceMod={data.diceMod} allRolls={data.allRolls} roll={data.roll} />
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
             {successDisplay?.label || outcomeLabel}

@@ -7834,6 +7834,37 @@ align-items: center;
   transform: translateX(1px);
 }
 
+.custom-edge-dice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--log-brown-dark, #5a4a3a);
+}
+
+.custom-edge-dice__label--edge {
+  color: #3a6647;
+  font-weight: 600;
+}
+
+.custom-edge-dice__label--setback {
+  color: #8b2424;
+  font-weight: 600;
+}
+
+.custom-edge-dice__roll {
+  font-size: 14px;
+  opacity: 0.65;
+}
+
+.custom-edge-dice__roll--kept {
+  font-weight: 700;
+  text-decoration: underline;
+  opacity: 1;
+}
+
 /* --- CharacterSheet full popup --- */
 
 /* FEATURE-212: no max-width here — the cap is the template's configured sheetWidth,
