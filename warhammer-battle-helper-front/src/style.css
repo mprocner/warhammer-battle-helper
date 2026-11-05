@@ -7747,6 +7747,93 @@ align-items: center;
     filter: brightness(1.08);
 }
 
+/* Edge/setback dice column (PLAYRPG-294) — same look as the CoC dice column. */
+.edge-dice-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9000;
+}
+
+.edge-dice-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+  border: 2px solid #7a5c42;
+  border-radius: 5px;
+  padding: 4px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.75),
+    0 0 16px rgba(201, 151, 91, 0.35);
+  animation: edgeDicePopIn 0.13s ease-out;
+  z-index: 9001;
+}
+
+@keyframes edgeDicePopIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.edge-dice-btn {
+  min-width: 56px;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.13s;
+  letter-spacing: 0.04em;
+}
+
+.edge-dice-btn--edge {
+  background: linear-gradient(135deg, #4a7c59 0%, #3a6647 100%);
+  border-color: #6db88a;
+  color: #e8f5e9;
+}
+
+.edge-dice-btn--edge:hover {
+  background: linear-gradient(135deg, #6db88a 0%, #5aa070 100%);
+  border-color: #8fd9af;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(109, 184, 138, 0.45);
+}
+
+.edge-dice-btn--neutral {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #e8b87a;
+  color: #fff9f0;
+}
+
+.edge-dice-btn--neutral:hover {
+  background: linear-gradient(135deg, #e0ad6a 0%, #c9975b 100%);
+  border-color: #f4d8a0;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(201, 151, 91, 0.45);
+}
+
+.edge-dice-btn--setback {
+  background: linear-gradient(135deg, #8b2424 0%, #6b1818 100%);
+  border-color: #c92a2a;
+  color: #ffe5e5;
+}
+
+.edge-dice-btn--setback:hover {
+  background: linear-gradient(135deg, #c92a2a 0%, #a82020 100%);
+  border-color: #e53e3e;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(201, 42, 42, 0.45);
+}
+
+.edge-dice-btn:active {
+  transform: translateX(1px);
+}
+
 /* --- CharacterSheet full popup --- */
 
 /* FEATURE-212: no max-width here — the cap is the template's configured sheetWidth,

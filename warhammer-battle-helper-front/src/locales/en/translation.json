@@ -595,7 +595,11 @@
     "regular_success": "Success!",
     "failure": "Failure!",
     "fumble": "Critical failure!",
-    "poolSuccesses": "{{count}} success(es)"
+    "poolSuccesses": "{{count}} success(es)",
+    "edgeDice_one": "+{{count}} edge die",
+    "edgeDice_other": "+{{count}} edge dice",
+    "setbackDice_one": "−{{count}} setback die",
+    "setbackDice_other": "−{{count}} setback dice"
   },
   "combat": {
     "roll": "Roll",

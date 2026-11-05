@@ -595,7 +595,15 @@
     "regular_success": "Sukces!",
     "failure": "Porażka!",
     "fumble": "Krytyczna porażka!",
-    "poolSuccesses": "{{count}} sukces(ów)"
+    "poolSuccesses": "{{count}} sukces(ów)",
+    "edgeDice_one": "+{{count}} kość przewagi",
+    "edgeDice_few": "+{{count}} kości przewagi",
+    "edgeDice_many": "+{{count}} kości przewagi",
+    "edgeDice_other": "+{{count}} kości przewagi",
+    "setbackDice_one": "−{{count}} kość utrudnienia",
+    "setbackDice_few": "−{{count}} kości utrudnienia",
+    "setbackDice_many": "−{{count}} kości utrudnienia",
+    "setbackDice_other": "−{{count}} kości utrudnienia"
   },
   "combat": {
     "roll": "Rzuć",

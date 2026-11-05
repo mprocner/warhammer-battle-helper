@@ -59,4 +59,34 @@ describe('useRollPrompt', () => {
 
     expect(onRoll).toHaveBeenCalledWith(weapon, 5);
   });
+
+  it('remembers where a mouse click happened', () => {
+    const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
+
+    act(() => result.current.trackClick({ detail: 1, clientX: 40, clientY: 90 }));
+    act(() => result.current.promptRoll(request));
+
+    expect(result.current.pendingPos).toEqual({ x: 40, y: 90 });
+  });
+
+  // Keyboard activation (Enter/Space) has detail 0 and clientX/Y 0, so the button's centre stands in.
+  it('uses the element centre for a keyboard activation', () => {
+    const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
+    const target = { getBoundingClientRect: () => ({ left: 10, top: 20, width: 30, height: 40 }) };
+
+    act(() => result.current.trackClick({ detail: 0, clientX: 0, clientY: 0, target }));
+    act(() => result.current.promptRoll(request));
+
+    expect(result.current.pendingPos).toEqual({ x: 25, y: 40 });
+  });
+
+  it('clears the position when the roll is confirmed', () => {
+    const { result } = renderHook(() => useRollPrompt(enabledTemplate, jest.fn()));
+
+    act(() => result.current.trackClick({ detail: 1, clientX: 40, clientY: 90 }));
+    act(() => result.current.promptRoll(request));
+    act(() => result.current.confirmRoll(1));
+
+    expect(result.current.pendingPos).toBeNull();
+  });
 });
