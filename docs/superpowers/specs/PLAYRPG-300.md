@@ -20,6 +20,7 @@ dwa warianty. Po przełączeniu zakładki nagłówek ma wyglądać identycznie.
 | Ogólne | Złoty 1rem bez linii → standard. |
 | Odstęp w kontenerach z `gap` | Muzyka, Gracze (16px), Ogólne (20px), Minigry (8px) mają `gap`. Tam `.music-tab > .tab-header` (itd.) ma `margin-bottom` = 12px − gap (−4 / −4 / −8 / +4px), więc pod nagłówkiem jest 12px jak wszędzie. Gap między sekcjami bez zmian. |
 | Kaskada | Nadpisania `.tab-header` w CSS zakładek mają specyficzność ≥ 0,2,0 (`.x > .tab-header`, `.tab-header.log-window__header`), bo kolejność arkuszy nie jest gwarantowana. |
+| Etykiety przycisków | Wszędzie krótka forma: ikona `+` + rzeczownik. Sceny `scenes.createSceneShort` „Scena”, Pliki `files.createFolderShort` „Folder” (pełne klucze zostają dla tytułów modali), Notatki `notes.addNote` → „Notatka” (używany tylko w nagłówku). |
 | Handouty — układ | Dwa przyciski MG i ikona pomocy w jednym rzędzie z tytułem, bez zawijania. Pełne etykiety (~419px) nie mieszczą się w 322px, więc nagłówek używa krótkich: `handouts.addHandoutShort` = „Handout”, `handouts.folders.createFolder` = „Folder” (klucz używany tylko tu). `handouts.addHandout` zostaje dla przycisku w sekcji folderu. Odstęp przycisków 4px, `.tab-header__actions` 6px — zmierzone: mieści się bez zapasu (322/322px). |
 | Padding kontenerów | Muzyka, Gracze, Ogólne: 16px → 12px jak reszta — nagłówek wszędzie w tym samym miejscu i tej samej szerokości. |
 

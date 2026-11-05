@@ -790,7 +790,7 @@
   },
   "notes": {
     "title": "Notatki",
-    "addNote": "Dodaj notatkę",
+    "addNote": "Notatka",
     "filterPlaceholder": "Filtruj po tytule...",
     "noNotes": "Brak notatek",
     "noNotesHint": "Dodaj swoją pierwszą notatkę powyżej",
@@ -1346,6 +1346,7 @@
   "scenes": {
     "title": "Sceny",
     "createScene": "Nowa Scena",
+    "createSceneShort": "Scena",
     "noScenes": "Brak scen",
     "assignPlayers": "Przypisz graczy",
     "addScene": "Dodaj scenę",
@@ -1453,6 +1454,7 @@
   "files": {
     "title": "Pliki",
     "createFolder": "Nowy Folder",
+    "createFolderShort": "Folder",
     "noFiles": "Brak plików",
     "noFilesHint": "Wgraj obrazy, aby zbudować swoją bibliotekę plików",
     "loadError": "Nie udało się załadować plików",

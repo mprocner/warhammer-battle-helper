@@ -571,7 +571,7 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
             onClick={() => setIsCreateFolderOpen(true)}
           >
             <AddIcon fontSize="small" />
-            {t('files.createFolder')}
+            {t('files.createFolderShort')}
           </button>
         </TabHeader>
 

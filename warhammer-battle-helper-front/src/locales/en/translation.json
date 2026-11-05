@@ -790,7 +790,7 @@
   },
   "notes": {
     "title": "Notes",
-    "addNote": "Add Note",
+    "addNote": "Note",
     "filterPlaceholder": "Filter by title...",
     "noNotes": "No notes yet",
     "noNotesHint": "Add your first note above",
@@ -1346,6 +1346,7 @@
   "scenes": {
     "title": "Scenes",
     "createScene": "New Scene",
+    "createSceneShort": "Scene",
     "noScenes": "No scenes yet",
     "assignPlayers": "Assign Players",
     "addScene": "Add Scene",
@@ -1453,6 +1454,7 @@
   "files": {
     "title": "Files",
     "createFolder": "New Folder",
+    "createFolderShort": "Folder",
     "noFiles": "No files yet",
     "noFilesHint": "Upload images to build your file library",
     "loadError": "Failed to load files",

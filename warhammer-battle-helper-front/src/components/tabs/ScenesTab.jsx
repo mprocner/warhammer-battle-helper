@@ -295,7 +295,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
           onClick={() => setIsCreateOpen(true)}
         >
           <AddIcon fontSize="small" />
-          {t('scenes.createScene')}
+          {t('scenes.createSceneShort')}
         </button>
       </TabHeader>
 
