@@ -2,9 +2,14 @@ import {
   readModifierConfig,
   clampModifier,
   formatModifier,
+  edgeDiceButtons,
+  clampEdgeDiceMax,
   MOD_TARGET_ROLL,
   MOD_TARGET_THRESHOLD,
   MOD_TARGET_DICE_COUNT,
+  MOD_KIND_NUMBER,
+  MOD_KIND_DICE,
+  DICE_MODE_FORMULA,
 } from './modifierConfig';
 
 describe('readModifierConfig', () => {
@@ -76,5 +81,37 @@ describe('formatModifier', () => {
     expect(formatModifier(20)).toBe('+20');
     expect(formatModifier(-20)).toBe('-20');
     expect(formatModifier(0)).toBe('0');
+  });
+});
+
+describe('edge dice config', () => {
+  it('reads an unset kind as number', () => {
+    const cfg = readModifierConfig({ settings: { modifier: { enabled: true } } });
+    expect(cfg.kind).toBe(MOD_KIND_NUMBER);
+    expect(cfg.diceMode).toBe(DICE_MODE_FORMULA);
+  });
+
+  it('keeps the dice kind and its maxima', () => {
+    const cfg = readModifierConfig({ settings: { modifier: { enabled: true, kind: 'dice', maxEdge: 2, maxSetback: 1 } } });
+    expect(cfg.kind).toBe(MOD_KIND_DICE);
+    expect(cfg.maxEdge).toBe(2);
+    expect(cfg.maxSetback).toBe(1);
+  });
+
+  it.each([
+    [{ maxEdge: 2, maxSetback: 2 }, [2, 1, 0, -1, -2]],
+    [{ maxEdge: 0, maxSetback: 2 }, [0, -1, -2]],
+    [{ maxEdge: 3, maxSetback: 0 }, [3, 2, 1, 0]],
+    [{ maxEdge: 9, maxSetback: -4 }, [5, 4, 3, 2, 1, 0]],
+  ])('lists the column for %j', (cfg, expected) => {
+    expect(edgeDiceButtons(cfg).map(b => b.diceMod)).toEqual(expected);
+  });
+
+  it('types the buttons by sign', () => {
+    expect(edgeDiceButtons({ maxEdge: 1, maxSetback: 1 }).map(b => b.type)).toEqual(['edge', 'neutral', 'setback']);
+  });
+
+  it.each([['3', 3], ['', 0], ['-2', 0], ['12', 5], [4, 4]])('clamps max %p to %p', (input, expected) => {
+    expect(clampEdgeDiceMax(input)).toBe(expected);
   });
 });
