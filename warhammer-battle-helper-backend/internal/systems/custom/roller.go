@@ -13,7 +13,7 @@ import (
 // rollFromFormula evaluates a visual formula ([]FormulaBlock) against the
 // character's stats and returns a RollResult.
 func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, skillKey, linkedAttr string, baseFromAttr bool, cfg *models.RollConfig, modifier int) (*gsys.RollResult, error) {
-	modTarget, modValue := resolveModifier(template.Settings.Modifier, cfg.RollMode, modifier)
+	modTarget, modValue := resolveModifier(template.Settings.Modifier, cfg, modifier)
 	linkedLabel := attrLabel(template, linkedAttr)
 
 	if cfg.RollMode == "dice_pool" {

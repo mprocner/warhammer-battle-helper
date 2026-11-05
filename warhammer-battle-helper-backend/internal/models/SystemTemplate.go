@@ -77,6 +77,11 @@ type TemplateSettings struct {
 type ModifierConfig struct {
 	Enabled bool `bson:"enabled" json:"enabled"`
 
+	// Kind: "number" (the numeric prompt; also when empty — every pre-existing template) | "dice"
+	// (edge/setback dice, PLAYRPG-294). One kind per template is what makes the two mutually
+	// exclusive without a validation rule.
+	Kind string `bson:"kind,omitempty" json:"kind,omitempty"`
+
 	// TraditionalTarget: "roll" (added to the result, default) | "threshold" (added to the
 	// success threshold — the roll-under convention, e.g. WFRP/CoC).
 	TraditionalTarget string `bson:"traditionalTarget,omitempty" json:"traditionalTarget,omitempty"`
@@ -90,6 +95,13 @@ type ModifierConfig struct {
 	Max  int `bson:"max,omitempty" json:"max,omitempty"`
 
 	Presets []ModifierPreset `bson:"presets,omitempty" json:"presets,omitempty"`
+
+	// Dice kind only. DiceMode: "formula" (default — the whole formula rolls once per extra die)
+	// | "tens" (a new d100 tens digit per extra die, units kept). MaxEdge/MaxSetback: how many
+	// edge/setback dice the player may pick; 0 disables that side.
+	DiceMode   string `bson:"diceMode,omitempty" json:"diceMode,omitempty"`
+	MaxEdge    int    `bson:"maxEdge,omitempty" json:"maxEdge,omitempty"`
+	MaxSetback int    `bson:"maxSetback,omitempty" json:"maxSetback,omitempty"`
 }
 
 // ModifierPreset is one quick-pick button in the prompt, e.g. {-30, "Very hard"}. Label is
@@ -426,7 +438,6 @@ type RollConfig struct {
 	Threshold   string `bson:"threshold,omitempty" json:"threshold,omitempty"`
 	CritSuccess bool   `bson:"critSuccess" json:"critSuccess"`
 	CritFail    bool   `bson:"critFail" json:"critFail"`
-	RollAdvType string `bson:"rollAdvType" json:"rollAdvType"` // "standard"|"advantage"|"disadvantage"
 
 	// Dice-pool mode fields (only used when RollMode == "dice_pool").
 	PoolSuccessThreshold int    `bson:"poolSuccessThreshold,omitempty" json:"poolSuccessThreshold,omitempty"`
