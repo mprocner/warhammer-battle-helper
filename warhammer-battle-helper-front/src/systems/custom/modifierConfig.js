@@ -5,7 +5,6 @@ export const MOD_TARGET_ROLL = 'roll';
 export const MOD_TARGET_THRESHOLD = 'threshold';
 export const MOD_TARGET_DICE_COUNT = 'dice_count';
 export const MOD_TARGET_SUCCESS_THRESHOLD = 'success_threshold';
-export const MOD_TARGET_EDGE_DICE = 'edge_dice';
 
 // Modifier kinds and edge-dice modes — the same strings as modifier.go.
 export const MOD_KIND_NUMBER = 'number';

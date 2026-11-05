@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-node-access -- the popup and its buttons are located by BEM class and parent */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '../../i18n';

@@ -21,6 +21,7 @@ describe('EdgeDiceSummary', () => {
   it('marks only the first of tied candidates', () => {
     const { container } = render(<EdgeDiceSummary diceMod={-1} allRolls={[30, 30]} roll={30} />);
     expect(container.querySelectorAll('.custom-edge-dice__roll--kept')).toHaveLength(1);
+    expect(container.querySelectorAll('.custom-edge-dice__roll')[0]).toHaveClass('custom-edge-dice__roll--kept');
   });
 
   it('names setback dice', () => {

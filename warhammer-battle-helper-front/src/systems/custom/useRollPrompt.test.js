@@ -29,6 +29,28 @@ describe('useRollPrompt', () => {
     expect(result.current.pending).toBeNull();
   });
 
+  it('rolls immediately for a dice template with both maxima 0', () => {
+    const onRoll = jest.fn();
+    const tpl = { settings: { modifier: { enabled: true, kind: 'dice', maxEdge: 0, maxSetback: 0 } } };
+    const { result } = renderHook(() => useRollPrompt(tpl, onRoll));
+
+    act(() => result.current.promptRoll(request));
+
+    expect(onRoll).toHaveBeenCalledWith(request, 0);
+    expect(result.current.pending).toBeNull();
+  });
+
+  it('still holds the request for a dice template with maxEdge 1', () => {
+    const onRoll = jest.fn();
+    const tpl = { settings: { modifier: { enabled: true, kind: 'dice', maxEdge: 1, maxSetback: 0 } } };
+    const { result } = renderHook(() => useRollPrompt(tpl, onRoll));
+
+    act(() => result.current.promptRoll(request));
+
+    expect(onRoll).not.toHaveBeenCalled();
+    expect(result.current.pending).toEqual(request);
+  });
+
   it('drops the request on cancel without rolling', () => {
     const onRoll = jest.fn();
     const { result } = renderHook(() => useRollPrompt(enabledTemplate, onRoll));

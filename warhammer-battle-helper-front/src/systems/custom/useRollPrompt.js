@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { readModifierConfig } from './modifierConfig';
+import { readModifierConfig, edgeDiceButtons, MOD_KIND_DICE } from './modifierConfig';
 
 // useRollPrompt trzyma jedyny stan, jakiego potrzebuje pytanie o modyfikator: co rzucamy.
 // Gdy szablon nie ma włączonego modyfikatora, promptRoll wykonuje rzut od razu — dzięki temu
@@ -29,6 +29,11 @@ export function useRollPrompt(template, onRoll) {
 
   const promptRoll = useCallback((request) => {
     if (!modifierConfig) {
+      onRoll(request, 0);
+      return;
+    }
+    // A dice template with both maxima 0 has only the plain 0 button: a one-button column is a wasted click.
+    if (modifierConfig.kind === MOD_KIND_DICE && edgeDiceButtons(modifierConfig).length === 1) {
       onRoll(request, 0);
       return;
     }
