@@ -71,6 +71,7 @@
 }
 
 .right-panel__tab-icon {
+  position: relative;
   font-size: 1.4rem;
   line-height: 1;
 }

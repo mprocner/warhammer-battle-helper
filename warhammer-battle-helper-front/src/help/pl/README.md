@@ -1,6 +1,6 @@
-# RollHammer — przewodnik
+# PlayRPG — przewodnik
 
-RollHammer to wirtualny stół do gier fabularnych: wspólna mapa, karty postaci, rzuty kośćmi,
+PlayRPG to wirtualny stół do gier fabularnych: wspólna mapa, karty postaci, rzuty kośćmi,
 handouty, muzyka i notatki, wszystko na żywo dla całej drużyny.
 
 ## Od czego zacząć {#where-to-start}

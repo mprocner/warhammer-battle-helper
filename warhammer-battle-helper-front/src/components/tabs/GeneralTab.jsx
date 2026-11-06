@@ -24,6 +24,8 @@ import RollStatsPanel from './RollStatsPanel';
 import TemplateBuilder from '../creator/TemplateBuilder';
 import ImageCropModal from '../common/ImageCropModal';
 import { PRESETS } from '../../utils/imageProcessing';
+import { LATEST_VERSION } from '../../changelog/releases';
+import ChangelogDot from '../../changelog/ChangelogDot';
 import './GeneralTab.css';
 
 // Icon per distance metric (Grid3x3 for chebyshev, not GridOn — that one marks snap placement).
@@ -194,6 +196,14 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
           <div className="general-tab__info-row">
             <span className="general-tab__label">{t('settings.players')}:</span>
             <span className="general-tab__value">{gameState?.participants?.filter(p => p.role !== 'gm').length || 0}</span>
+          </div>
+          <div className="general-tab__info-row">
+            <span className="general-tab__label">{t('settings.version')}:</span>
+            {/* New tab: following the link must not drop the player out of the session. */}
+            <a className="general-tab__value general-tab__link" href="/changelog" target="_blank" rel="noopener noreferrer">
+              {t('settings.versionLink', { version: LATEST_VERSION })}
+              <ChangelogDot inline />
+            </a>
           </div>
         </div>
         {canConfigureTokens && (

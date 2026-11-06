@@ -1,6 +1,6 @@
-# RollHammer — user guide
+# PlayRPG — user guide
 
-RollHammer is a virtual tabletop for roleplaying games: a shared map, character sheets, dice
+PlayRPG is a virtual tabletop for roleplaying games: a shared map, character sheets, dice
 rolls, handouts, music and notes, all live for the whole table.
 
 ## Where to start {#where-to-start}

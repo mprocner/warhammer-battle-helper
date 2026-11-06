@@ -71,14 +71,15 @@
   },
   "navigation": {
     "help": "Help",
-    "title": "RollHammer",
+    "title": "PlayRPG",
     "login": "Login",
     "logout": "Logout",
     "register": "Register",
     "settings": "Settings",
     "privacy": "Privacy policy",
     "licenses": "Licenses",
-    "terms": "Terms of service"
+    "terms": "Terms of service",
+    "changelog": "What's new"
   },
   "licenses": {
     "title": "Licenses",
@@ -697,6 +698,8 @@
     "Fel": "Fel"
   },
   "settings": {
+    "version": "Version",
+    "versionLink": "{{version}} — what's new",
     "general": "General Settings",
     "gameInfo": "Game Info",
     "gameName": "Game Name",
@@ -2515,6 +2518,9 @@
     "unshareAllConfirm": "Unlock this slot for all tokens in the game? New tokens stop getting it and edits affect only this token again."
   },
   "landing": {
+    "footer": {
+      "label": "Site links"
+    },
     "hero": {
       "title": "Gather your party. Unroll the map. Roll the dice.",
       "subtitle": "Maps with fog of war, custom character sheets and everything a GM needs to run a session online."

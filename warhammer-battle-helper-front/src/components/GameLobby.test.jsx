@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import i18n from '../i18n';
 import GameLobby from './GameLobby';
 
@@ -33,7 +34,7 @@ const game = { id: 'g1', name: 'Kampania', gameSystem: 'warhammer4e', status: 'a
 
 const mount = (games) => {
   mockGames = games;
-  return render(<GameLobby onJoinGame={() => {}} token="t" userEmail="gm@x.pl" />);
+  return render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><GameLobby onJoinGame={() => {}} token="t" userEmail="gm@x.pl" /></MemoryRouter>);
 };
 
 test('the header creator button opens the template manager', () => {

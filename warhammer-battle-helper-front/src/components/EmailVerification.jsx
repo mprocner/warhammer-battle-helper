@@ -51,7 +51,7 @@ const EmailVerification = () => {
             >
                 <Paper elevation={6} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-                        <img src="/img/logo.png" alt="RollHammer" style={{ height: 180, objectFit: 'contain', marginBottom: 8 }} />
+                        <img src="/img/logo.png" alt="PlayRPG" style={{ height: 180, objectFit: 'contain', marginBottom: 8 }} />
                     </Box>
 
                     {status === 'loading' && (

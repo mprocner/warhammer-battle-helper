@@ -16,6 +16,7 @@ import GeneralTab from '../tabs/GeneralTab';
 import PlayersTab from '../tabs/PlayersTab';
 import NotesTab from '../tabs/NotesTab';
 import MinigameTab from '../tabs/MinigameTab';
+import ChangelogDot from '../../changelog/ChangelogDot';
 import './RightPanel.css';
 
 /**
@@ -238,7 +239,10 @@ const RightPanel = ({
               className={`right-panel__tab-btn ${activeTab === tab.id ? 'right-panel__tab-btn--active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span className="right-panel__tab-icon">{tab.icon}</span>
+              <span className="right-panel__tab-icon">
+                {tab.icon}
+                {tab.id === 'general' && <ChangelogDot />}
+              </span>
               <span className="right-panel__tab-label">{tab.label}</span>
             </button>
           ))}

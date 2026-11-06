@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Box, Button, Card, Container, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, Container, Link, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { LATEST_VERSION } from '../changelog/releases';
+import ChangelogDot from '../changelog/ChangelogDot';
 import { trackEvent } from '../analytics/gtag';
 import AddIcon from '@mui/icons-material/Add';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -138,6 +141,12 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
                 hideTooltip={hideTooltip}
               />
             ))}
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
+            <Link component={RouterLink} to="/changelog" title={t('navigation.changelog')} variant="body2" color="text.secondary">
+              {`v${LATEST_VERSION}`}
+              <ChangelogDot inline />
+            </Link>
           </Box>
         </Box>
       </Container>

@@ -4,6 +4,7 @@ import MapIcon from '@mui/icons-material/Map';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import { Link } from 'react-router-dom';
 import LandingCta from './LandingCta';
 import LandingLightbox from './LandingLightbox';
 
@@ -13,6 +14,13 @@ const FEATURES = [
     { key: 'scene', Icon: MapIcon, image: '/img/landing/scene.webp' },
     { key: 'creator', Icon: DashboardCustomizeIcon, image: '/img/landing/creator.webp' },
     { key: 'gmTools', Icon: AutoStoriesIcon, image: '/img/landing/gm-tools.webp' },
+];
+
+const FOOTER_LINKS = [
+    { key: 'changelog', to: '/changelog' },
+    { key: 'privacy', to: '/privacy' },
+    { key: 'terms', to: '/terms' },
+    { key: 'licenses', to: '/licenses' },
 ];
 
 const LandingPage = ({ user }) => {
@@ -78,6 +86,15 @@ const LandingPage = ({ user }) => {
                 <LandingCta user={user} />
             </section>
 
+            <footer className="landing__footer">
+                <nav className="landing__footer-nav" aria-label={t('landing.footer.label')}>
+                    {FOOTER_LINKS.map(({ key, to }) => (
+                        <Link key={key} to={to} className="landing__footer-link">
+                            {t(`navigation.${key}`)}
+                        </Link>
+                    ))}
+                </nav>
+            </footer>
             <LandingLightbox
                 image={zoomed?.image}
                 alt={zoomed ? t(`landing.features.${zoomed.key}.imageAlt`) : ''}

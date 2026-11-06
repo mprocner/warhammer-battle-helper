@@ -13099,6 +13099,30 @@ button.custom-sheet__row-table-expander:hover {
     font-size: 2rem;
 }
 
+.landing__footer {
+    padding: 20px 16px;
+    background: #3a2f1f;
+}
+
+.landing__footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 24px;
+}
+
+.landing__footer-link {
+    color: #e8dcc4;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.landing__footer-link:hover,
+.landing__footer-link:focus-visible {
+    color: #c9975b;
+    text-decoration: underline;
+}
+
 @media (max-width: 768px) {
     .landing__hero {
         min-height: auto;
@@ -13188,4 +13212,26 @@ button.custom-sheet__row-table-expander:hover {
   background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
+}
+
+/* ========== Changelog "new release" dot (ChangelogDot.jsx) ========== */
+/* Parent must be position: relative (MUI IconButton already is). */
+.changelog-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #c9975b;
+    box-shadow: 0 0 0 2px #7a5c42;
+    pointer-events: none;
+}
+
+/* Doubled selector: the modifier must win over the base regardless of order. */
+.changelog-dot.changelog-dot--inline {
+    position: static;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
 }

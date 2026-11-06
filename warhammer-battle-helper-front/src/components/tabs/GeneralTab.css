@@ -74,6 +74,16 @@
   font-weight: 600;
 }
 
+.general-tab__link {
+  text-decoration: none;
+}
+
+.general-tab__link:hover,
+.general-tab__link:focus-visible {
+  color: #c9975b;
+  text-decoration: underline;
+}
+
 /* Connection Status */
 .general-tab__status {
   padding: 2px 8px;

@@ -20,8 +20,10 @@ import {
     Policy as PolicyIcon,
     Gavel as GavelIcon,
     Description as DescriptionIcon,
-    HelpOutline as HelpOutlineIcon
+    HelpOutline as HelpOutlineIcon,
+    NewReleases as NewReleasesIcon
 } from '@mui/icons-material';
+import ChangelogDot from '../changelog/ChangelogDot';
 
 const Navigation = ({ user, onLogout, inGame }) => {
     const navigate = useNavigate();
@@ -48,7 +50,7 @@ const Navigation = ({ user, onLogout, inGame }) => {
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
                     <Box component="a" href={user ? '/games' : '/'} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 2 }}>
-                        <img src="/img/logo.png" alt="RollHammer" style={{height: 100, objectFit: 'contain' }} />
+                        <img src="/img/logo.png" alt="PlayRPG" style={{height: 100, objectFit: 'contain' }} />
                     </Box>
 
                     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -61,6 +63,14 @@ const Navigation = ({ user, onLogout, inGame }) => {
                             <Typography variant="caption" sx={{ ml: 0.5 }}>
                                 {i18n.language.toUpperCase()}
                             </Typography>
+                        </IconButton>
+                        <IconButton
+                            color="inherit"
+                            onClick={() => navigate('/changelog')}
+                            title={t('navigation.changelog')}
+                        >
+                            <NewReleasesIcon />
+                            <ChangelogDot />
                         </IconButton>
                         {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
                             (user może być null), więc to jedyne trwałe miejsce, z którego

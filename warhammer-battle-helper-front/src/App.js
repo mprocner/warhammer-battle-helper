@@ -14,6 +14,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Licenses from './components/Licenses';
 import HelpPage from './components/help/HelpPage';
+import Changelog from './components/Changelog';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
@@ -187,6 +188,7 @@ function App() {
                         <Route path="/licenses" element={<Licenses />} />
                         <Route path="/help" element={<HelpPage />} />
                         <Route path="/help/:page" element={<HelpPage />} />
+                        <Route path="/changelog" element={<Changelog />} />
 
                         {/* Standalone character sheet window */}
                         <Route

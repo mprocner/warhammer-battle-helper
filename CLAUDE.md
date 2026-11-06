@@ -116,6 +116,11 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
   identycznym w pl i en — na nich wiszą linki z dymków samouczka (`help` w `tours/*.js`).
   Nowa sekcja = ta sama kotwica w obu językach, w tej samej kolejności; zmiana nazwy kotwicy =
   poprawka referencji w samouczkach. Pilnuje tego `src/help/helpPages.test.js`.
+- **Changelog**: zmiana widoczna dla użytkownika dopisuje punkt do nowej wersji na początku
+  `RELEASES` (`warhammer-battle-helper-front/src/changelog/releases.js`, sekcje `added` /
+  `changed` / `fixed`, SemVer: PATCH poprawki, MINOR funkcje) oraz teksty w
+  `src/locales/{en,pl}/changelog.json` — w tym samym commicie. `releases.test.js` pilnuje
+  kolejności wersji i kompletności tłumaczeń.
 
 ### Zdarzenia myszy na scenie
 
