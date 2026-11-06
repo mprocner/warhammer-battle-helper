@@ -253,8 +253,53 @@ func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, av
 	return nil
 }
 
-// AddParticipant adds a participant to a game
-func (r *GameRepository) AddParticipant(gameID string, participant models.GameParticipant) error {
+// AddParticipant adds a participant to a game unless that user is already in it. added is false
+// when nothing was pushed: the user is already a participant, or the game no longer exists (callers
+// have just loaded it, so for them both mean "nothing to do"). The guard sits in the filter, which
+// makes check-and-push atomic: two concurrent joins cannot add the same user twice.
+func (r *GameRepository) AddParticipant(gameID string, participant models.GameParticipant) (added bool, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return false, fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	participant.JoinedAt = time.Now()
+
+	filter := bson.M{
+		"_id":                 objectID,
+		"deletedAt":           bson.M{"$exists": false},
+		"participants.userId": bson.M{"$ne": participant.UserID},
+	}
+	update := bson.M{
+		"$push": bson.M{"participants": participant},
+		"$set":  bson.M{"updatedAt": time.Now()},
+	}
+
+	result, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return false, fmt.Errorf("failed to add participant: %w", err)
+	}
+
+	return result.ModifiedCount > 0, nil
+}
+
+// EnsureIndexes creates the games collection indexes. inviteToken is unique and sparse: most games
+// have no link, and a join looks the game up by the token alone.
+func (r *GameRepository) EnsureIndexes() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := r.Collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "inviteToken", Value: 1}},
+		Options: options.Index().SetUnique(true).SetSparse(true),
+	})
+	return err
+}
+
+// SetInviteToken stores the game's invite token; an empty token removes the field (revoked link).
+func (r *GameRepository) SetInviteToken(gameID string, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -263,24 +308,43 @@ func (r *GameRepository) AddParticipant(gameID string, participant models.GamePa
 		return fmt.Errorf("invalid game ID: %w", err)
 	}
 
-	participant.JoinedAt = time.Now()
-
-	filter := bson.M{"_id": objectID}
-	update := bson.M{
-		"$push": bson.M{"participants": participant},
-		"$set":  bson.M{"updatedAt": time.Now()},
+	// $unset rather than "": the sparse unique index would otherwise see every revoked game sharing
+	// the same empty token.
+	set := bson.M{"updatedAt": time.Now()}
+	update := bson.M{"$set": set}
+	if token == "" {
+		update["$unset"] = bson.M{"inviteToken": ""}
+	} else {
+		set["inviteToken"] = token
 	}
 
+	filter := bson.M{"_id": objectID, "deletedAt": bson.M{"$exists": false}}
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to add participant: %w", err)
+		return fmt.Errorf("failed to set invite token: %w", err)
 	}
-
 	if result.MatchedCount == 0 {
 		return fmt.Errorf("game not found")
 	}
-
 	return nil
+}
+
+// FindByInviteToken returns the live game holding this invite token, or (nil, nil) when none does.
+// Only the fields a join decision needs are loaded.
+func (r *GameRepository) FindByInviteToken(token string) (*models.Game, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var game models.Game
+	filter := bson.M{"inviteToken": token, "deletedAt": bson.M{"$exists": false}}
+	opts := options.FindOne().SetProjection(bson.M{"gameMasterId": 1, "participants": 1})
+	if err := r.Collection.FindOne(ctx, filter, opts).Decode(&game); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to find game by invite token: %w", err)
+	}
+	return &game, nil
 }
 
 // RemoveParticipant removes a participant from the game

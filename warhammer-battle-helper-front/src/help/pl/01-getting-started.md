@@ -16,8 +16,11 @@ W **Ustawieniach** (menu u góry) znajdziesz:
 ## Lista gier {#the-game-list}
 
 Strona główna opisuje aplikację. Po zalogowaniu przejdź do **Pokojów Gier**, gdzie widzisz swoje gry, zarówno te, które prowadzisz, jak i te, w których grasz.
-Do gry innej osoby nie dołączasz sam: mistrz gry dodaje cię po adresie e-mail twojego konta,
-a gra po prostu pojawia się na liście. Gdy lista jest pusta, możesz od razu utworzyć grę
+Do gry innej osoby dołączasz na dwa sposoby: otwierasz link z zaproszeniem od mistrza gry
+albo mistrz gry dodaje cię po adresie e-mail twojego konta. W obu przypadkach gra pojawia się
+na liście. Link otwarty bez zalogowania prowadzi do logowania. Jeśli nie masz konta, załóż je,
+aktywuj z e-maila i zaloguj się w tej samej przeglądarce, a trafisz prosto do gry. Link, który
+nie działa, MG zmienił albo usunął: poproś o nowy. Gdy lista jest pusta, możesz od razu utworzyć grę
 albo zaprojektować własny system.
 
 ## Tworzenie gry (dla mistrza gry) {#creating-a-game-game-masters}

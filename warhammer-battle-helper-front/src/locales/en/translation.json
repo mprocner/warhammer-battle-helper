@@ -391,7 +391,9 @@
       "successMessage": "Player settings updated"
     },
     "paused": "Paused",
-    "completed": "Completed"
+    "completed": "Completed",
+    "inviteLinkInvalid": "This invite link doesn't work any more — the game master may have changed or removed it. Ask them for a new one.",
+    "inviteLinkFailed": "Couldn't join the game from the invite link. Try opening the link again."
   },
   "character": {
     "details": "Character Details",
@@ -895,7 +897,7 @@
       "files": "your uploads — maps, tokens, portraits",
       "music": "background tracks played to everyone at once",
       "notes": "your notes — private by default, but you can share one with the table",
-      "players": "who joined, who is online, and removing someone from the game",
+      "players": "who joined, who is online, inviting by link, and removing someone from the game",
       "minigames": "dice minigames you can start for the table",
       "general": "game settings, language, control scheme, returning to the game list, or logging out"
     },
@@ -1056,6 +1058,10 @@
       }
     },
     "players": {
+      "inviteLink": {
+        "title": "Invite link",
+        "body": "The quickest way in: create a link, copy it and paste it on Discord or wherever your group talks. Whoever opens it joins as a player — if they're not logged in, they log in or register first and land in the game afterwards. \"New link\" replaces it (the old one stops working), \"Remove link\" turns it off."
+      },
       "invite": {
         "title": "Inviting players",
         "body": "Type in their account email to add them straight to the game — nothing is sent, and they join immediately with no confirmation needed on their end."
@@ -1271,7 +1277,18 @@
     "listTitle": "Player list",
     "kick": "Remove",
     "kickConfirm": "Remove {{name}} from the game?",
-    "noPlayers": "No players yet"
+    "noPlayers": "No players yet",
+    "inviteLink": {
+      "title": "Invite link",
+      "description": "Anyone who opens this link joins the game as a player — no e-mail needed. Share it only where you want people to join.",
+      "create": "Create link",
+      "copy": "Copy",
+      "copied": "Link copied — paste it wherever your group talks.",
+      "regenerate": "New link",
+      "revoke": "Remove link",
+      "regenerateConfirm": "Create a new link? The current one stops working — anyone who has not joined yet will need the new one.",
+      "revokeConfirm": "Remove the invite link? It stops working at once. Players who already joined stay in the game."
+    }
   },
   "map": {
     "tokenPositioning": "Token positioning",
@@ -2551,5 +2568,8 @@
       "title": "Ready for your first session?"
     },
     "zoom": "Enlarge: {{name}}"
+  },
+  "invite": {
+    "loginHint": "You've been invited to a game. Log in — or register first if you don't have an account — and you'll join it automatically."
   }
 }

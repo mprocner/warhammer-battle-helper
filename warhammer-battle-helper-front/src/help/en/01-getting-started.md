@@ -15,9 +15,12 @@ Under **Settings** (top menu) you will find:
 
 ## The game list {#the-game-list}
 
-The home page describes the app. After logging in, go to **Game Rooms**, where you see your games, both the ones you run and the ones you play in. You do
-not join someone else's game yourself: the game master adds you by your account email, and
-the game simply appears on your list. When the list is empty, you can create a game or design
+The home page describes the app. After logging in, go to **Game Rooms**, where you see your games, both the ones you run and the ones you play in. You join
+someone else's game in one of two ways: open the game master's invite link, or have the game
+master add you by your account email. Either way the game appears on your list. A link opened
+while logged out takes you to the login screen. No account yet? Register, activate it from the
+email and log in in the same browser, and you land straight in the game. A link that does not
+work has been changed or removed by the GM: ask them for a new one. When the list is empty, you can create a game or design
 your own system right away.
 
 ## Creating a game (game masters) {#creating-a-game-game-masters}

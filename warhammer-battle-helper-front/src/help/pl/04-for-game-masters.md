@@ -2,9 +2,24 @@
 
 ## Gracze {#players}
 
-W zakładce **Gracze** wpisz adres e-mail konta gracza. Gracz zostaje dodany od razu: nic nie
-jest wysyłane i nie musi niczego potwierdzać. Tu też usuwasz gracza z gry. Jego postać zostaje,
-więc możesz ją przekazać komuś innemu.
+Graczy zapraszasz w zakładce **Gracze** na dwa sposoby: linkiem albo po adresie e-mail.
+Tu też usuwasz gracza z gry. Jego postać zostaje, więc możesz ją przekazać komuś innemu.
+
+### Link z zaproszeniem {#invite-link}
+
+Kliknij **Utwórz link**, potem **Kopiuj** i wklej link tam, gdzie rozmawia twoja drużyna, np.
+na Discordzie. Każdy, kto go otworzy, dołącza do gry jako gracz, bez twojego potwierdzenia.
+Kto nie jest zalogowany, najpierw się loguje albo zakłada konto, a potem trafia prosto do gry.
+O nowym graczu dowiesz się od razu, bo pojawi się na liście.
+
+Gra ma jeden link, ważny bez limitu czasu i liczby użyć. **Nowy link** zastępuje go nowym,
+a stary przestaje działać. **Usuń link** wyłącza zaproszenie. Gracze, którzy już dołączyli,
+zostają w grze w obu przypadkach. Udostępniaj link tylko tam, skąd chcesz przyjmować graczy.
+
+### Zaproszenie po e-mailu {#invite-by-email}
+
+Wpisz adres e-mail konta gracza. Gracz zostaje dodany od razu: nic nie jest wysyłane i nie
+musi niczego potwierdzać.
 
 ## Postacie i bohaterowie niezależni {#characters-and-npcs}
 

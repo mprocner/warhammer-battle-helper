@@ -194,7 +194,7 @@ func (s *GameService) EnsureGMParticipant(game *models.Game) {
 		JoinedAt: game.CreatedAt,
 	}
 	log.Printf("[DEBUG] EnsureGMParticipant: adding GM %s to participants for game %s", gmUser.Email, game.ID.Hex())
-	if err := s.gameRepo.AddParticipant(game.ID.Hex(), gm); err != nil {
+	if _, err := s.gameRepo.AddParticipant(game.ID.Hex(), gm); err != nil {
 		log.Printf("[DEBUG] EnsureGMParticipant: failed to persist: %v", err)
 	}
 	game.Participants = append(game.Participants, gm)
@@ -338,36 +338,12 @@ func (s *GameService) InvitePlayer(gameID primitive.ObjectID, gmUserID primitive
 		return fmt.Errorf("user not found")
 	}
 
-	// Check if user is already a participant
-	for _, p := range game.Participants {
-		if p.UserID == invitedUser.ID {
-			return fmt.Errorf("user already in game")
-		}
+	// needsToJoin also covers the GM, who older games do not list in Participants.
+	if !needsToJoin(game, invitedUser.ID) {
+		return errAlreadyInGame
 	}
 
-	participant := models.GameParticipant{
-		UserID:   invitedUser.ID,
-		Username: invitedUser.Email,
-		Email:    invitedUser.Email,
-		Role:     models.RolePlayer,
-	}
-	if err := s.gameRepo.AddParticipant(gameID.Hex(), participant); err != nil {
-		return err
-	}
-
-	broadcastParticipant := models.GameParticipant{
-		UserID:           invitedUser.ID,
-		Username:         invitedUser.Email,
-		Email:            invitedUser.Email,
-		Role:             models.RolePlayer,
-		AccountAvatar:    invitedUser.Avatar,
-		AccountSignature: invitedUser.Signature,
-	}
-	s.hub.BroadcastToGame(gameID.Hex(), websocket.EventParticipantJoined, map[string]interface{}{
-		"participant": broadcastParticipant,
-	})
-
-	return nil
+	return s.addPlayer(gameID.Hex(), invitedUser)
 }
 
 // DeleteGame deletes a game entirely (GM only). Returns the game's lobby image URL

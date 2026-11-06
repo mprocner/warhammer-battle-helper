@@ -90,7 +90,12 @@ export const disable = () => {
 // kiedyś okaże się potrzebna, poprawka to allowlista (przepuść utm_*/gclid,
 // odetnij resztę), a nie rozluźnienie tego obcinania — sekrety też żyją w query
 // stringu i nie ma bezpiecznego sposobu odróżnienia ich na tym poziomie.
-const sanitizedLocation = () => `${window.location.origin}${window.location.pathname}`;
+// The game invite link (PLAYRPG-303) carries its secret in the PATH, /join/<token> — anyone who
+// reads it can join the game. Every path we send collapses that to /join.
+const INVITE_PATH = /^\/join(\/.*)?$/;
+export const sanitizePath = (pathname) => (INVITE_PATH.test(pathname) ? '/join' : pathname);
+
+const sanitizedLocation = () => `${window.location.origin}${sanitizePath(window.location.pathname)}`;
 
 // document.referrer (page_referrer / `dr` na drucie) też potrafi nieść token — ta
 // aplikacja ma prawdziwe linki <a>, które powodują pełne przeładowanie dokumentu
@@ -101,7 +106,7 @@ const sanitizedReferrer = () => {
     if (!document.referrer) return '';
     try {
         const url = new URL(document.referrer);
-        return `${url.origin}${url.pathname}`;
+        return `${url.origin}${sanitizePath(url.pathname)}`;
     } catch (e) {
         return '';
     }
@@ -121,6 +126,7 @@ export const trackEvent = (name, params = {}) => {
     if (!enabled) return;
     gtag('event', name, {
         ...params,
+        ...(typeof params.page_path === 'string' && { page_path: sanitizePath(params.page_path) }),
         page_location: sanitizedLocation(),
         page_referrer: sanitizedReferrer(),
     });

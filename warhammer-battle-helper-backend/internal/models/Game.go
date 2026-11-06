@@ -72,9 +72,13 @@ type Game struct {
 	// the raw struct). Nothing on the frontend reads tokenSlotTemplate; the template is only ever
 	// consumed server-side to seed SceneImage.TokenOverlay, which IS masked per-viewer.
 	TokenSlotTemplate []*ImageTokenSlot `bson:"tokenSlotTemplate,omitempty" json:"-"`
-	CreatedAt         time.Time         `bson:"createdAt" json:"createdAt"`
-	UpdatedAt         time.Time         `bson:"updatedAt" json:"updatedAt"`
-	DeletedAt         *time.Time        `bson:"deletedAt,omitempty" json:"-"`
+	// InviteToken is the secret in the game's invite link (/join/<token>); empty = no active link.
+	// json:"-" for the same reason as TokenSlotTemplate: the raw Game struct is serialized to players
+	// and to the lobby list. The GM reads it only through GET /games/:id/inviteLink.
+	InviteToken string     `bson:"inviteToken,omitempty" json:"-"`
+	CreatedAt   time.Time  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time  `bson:"updatedAt" json:"updatedAt"`
+	DeletedAt   *time.Time `bson:"deletedAt,omitempty" json:"-"`
 }
 
 // MapSettings holds per-game rules for the scene map, configured by the GM in GeneralTab.

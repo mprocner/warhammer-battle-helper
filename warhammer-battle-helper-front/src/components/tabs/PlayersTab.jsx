@@ -6,6 +6,7 @@ import { getAvatarUrl } from '../Avatar';
 import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
 import ConfirmModal from '../common/ConfirmModal';
 import TabHeader from './TabHeader';
+import InviteLinkSection from './InviteLinkSection';
 import './PlayersTab.css';
 
 const PlayersTab = ({ gameId, token, gameState, onlineUserIds, onParticipantUpdated }) => {
@@ -80,9 +81,11 @@ const PlayersTab = ({ gameId, token, gameState, onlineUserIds, onParticipantUpda
     <div className="players-tab">
       <TabHeader title={t('players.title')} tourId="players" />
 
+      <InviteLinkSection gameId={gameId} />
+
       <section className="players-tab__section">
         <h4 className="players-tab__section-title">{t('settings.invitePlayers')}</h4>
-        <div className="players-tab__invite">
+        <div className="players-tab__invite players-tab__invite-email">
           <input
             type="email"
             className="players-tab__invite-input"

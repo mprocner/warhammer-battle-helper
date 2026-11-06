@@ -4,7 +4,11 @@ import { usePageViews } from './usePageViews';
 import { trackEvent, setPageContext } from './gtag';
 import { ConsentProvider, CONSENT_STORAGE_KEY } from './ConsentContext';
 
-jest.mock('./gtag', () => ({ trackEvent: jest.fn(), setPageContext: jest.fn() }));
+jest.mock('./gtag', () => ({
+  trackEvent: jest.fn(),
+  setPageContext: jest.fn(),
+  sanitizePath: jest.requireActual('./gtag').sanitizePath,
+}));
 
 const Tracker = () => {
   usePageViews();
@@ -27,6 +31,18 @@ describe('usePageViews', () => {
       </MemoryRouter>
     ));
     expect(trackEvent).toHaveBeenCalledWith('page_view', { page_path: '/register' });
+  });
+
+  // PLAYRPG-303: the invite link's secret sits in the path, so page_path must not carry it.
+  it('sends /join without the invite token', () => {
+    render(withConsent(
+      <MemoryRouter initialEntries={['/join/sekretnyToken123']}>
+        <Tracker />
+        <Routes><Route path="/join/:token" element={<div />} /></Routes>
+      </MemoryRouter>
+    ));
+    expect(trackEvent).toHaveBeenCalledWith('page_view', { page_path: '/join' });
+    expect(JSON.stringify(trackEvent.mock.calls)).not.toContain('sekretnyToken123');
   });
 
   // gtag('set') musi odświeżyć page_location/page_referrer PRZED wysłaniem eventu —

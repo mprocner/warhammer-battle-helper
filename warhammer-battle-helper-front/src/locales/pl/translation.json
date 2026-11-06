@@ -391,7 +391,9 @@
       "successMessage": "Ustawienia gracza zaktualizowane"
     },
     "paused": "Wstrzymana",
-    "completed": "Zakończona"
+    "completed": "Zakończona",
+    "inviteLinkInvalid": "Ten link z zaproszeniem już nie działa — MG mógł go zmienić albo usunąć. Poproś o nowy.",
+    "inviteLinkFailed": "Nie udało się dołączyć do gry z linku. Spróbuj otworzyć link jeszcze raz."
   },
   "character": {
     "details": "Szczegóły Postaci",
@@ -899,7 +901,7 @@
       "files": "Twoje pliki — mapy, tokeny, portrety",
       "music": "muzyka w tle, odtwarzana wszystkim naraz",
       "notes": "Twoje notatki — domyślnie prywatne, ale możesz się którąś podzielić ze stołem",
-      "players": "kto dołączył, kto jest online, usuwanie kogoś z gry",
+      "players": "kto dołączył, kto jest online, zapraszanie linkiem i usuwanie kogoś z gry",
       "minigames": "minigry w kości, które możesz uruchomić stołowi",
       "general": "ustawienia gry, język, schemat sterowania, powrót do listy gier albo wylogowanie"
     },
@@ -1060,6 +1062,10 @@
       }
     },
     "players": {
+      "inviteLink": {
+        "title": "Link z zaproszeniem",
+        "body": "Najszybsza droga do gry: utwórz link, skopiuj go i wklej na Discordzie albo tam, gdzie rozmawia Twoja drużyna. Kto go otworzy, dołącza jako gracz — jeśli nie jest zalogowany, najpierw loguje się lub zakłada konto, a potem trafia prosto do gry. „Nowy link” go zastępuje (stary przestaje działać), „Usuń link” go wyłącza."
+      },
       "invite": {
         "title": "Zapraszanie graczy",
         "body": "Wpisz adres email osoby, żeby dodać ją od razu do gry — nic nie jest wysyłane, dołącza natychmiast, bez potwierdzania z jej strony."
@@ -1275,7 +1281,18 @@
     "listTitle": "Lista graczy",
     "kick": "Usuń",
     "kickConfirm": "Usunąć {{name}} z gry?",
-    "noPlayers": "Brak graczy"
+    "noPlayers": "Brak graczy",
+    "inviteLink": {
+      "title": "Link z zaproszeniem",
+      "description": "Każdy, kto otworzy ten link, dołącza do gry jako gracz — bez wpisywania e-maila. Udostępniaj go tylko tam, skąd chcesz przyjmować graczy.",
+      "create": "Utwórz link",
+      "copy": "Kopiuj",
+      "copied": "Skopiowano — wklej go tam, gdzie rozmawia Twoja drużyna.",
+      "regenerate": "Nowy link",
+      "revoke": "Usuń link",
+      "regenerateConfirm": "Utworzyć nowy link? Obecny przestanie działać — kto jeszcze nie dołączył, będzie potrzebował nowego.",
+      "revokeConfirm": "Usunąć link z zaproszeniem? Przestanie działać od razu. Gracze, którzy już dołączyli, zostają w grze."
+    }
   },
   "map": {
     "tokenPositioning": "Pozycjonowanie tokenów",
@@ -2559,5 +2576,8 @@
       "title": "Gotowy na pierwszą sesję?"
     },
     "zoom": "Powiększ: {{name}}"
+  },
+  "invite": {
+    "loginHint": "Masz zaproszenie do gry. Zaloguj się — albo najpierw załóż konto, jeśli go nie masz — a dołączysz do niej automatycznie."
   }
 }

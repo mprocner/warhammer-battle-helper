@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation, Trans } from 'react-i18next';
+import PendingInviteHint from '../invite/PendingInviteHint';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import {
@@ -107,6 +108,8 @@ const Register = ({ onRegisterSuccess, addLogMessage }) => {
                             {t('auth.createAccount')}
                         </Typography>
                     </Box>
+
+                    <PendingInviteHint />
 
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
                         <TextField

@@ -2,9 +2,25 @@
 
 ## Players {#players}
 
-In the **Players** tab, type the email of the player's account. The player is added right
-away: nothing is sent and they do not have to confirm anything. This is also where you remove
-a player from the game. Their character stays, so you can hand it to someone else.
+You invite players in the **Players** tab in two ways: with a link or by email. This is also
+where you remove a player from the game. Their character stays, so you can hand it to someone
+else.
+
+### Invite link {#invite-link}
+
+Click **Create link**, then **Copy**, and paste the link wherever your group talks, e.g. on
+Discord. Anyone who opens it joins the game as a player, without you having to approve them.
+Someone who is not logged in logs in or registers first and then lands straight in the game.
+You see the new player right away, because they appear on the list.
+
+A game has one link, with no expiry and no use limit. **New link** replaces it, and the old one
+stops working. **Remove link** turns the invitation off. Either way, players who already joined
+stay in the game. Share the link only where you want people to join.
+
+### Invite by email {#invite-by-email}
+
+Type the email of the player's account. The player is added right away: nothing is sent and
+they do not have to confirm anything.
 
 ## Characters and NPCs {#characters-and-npcs}
 

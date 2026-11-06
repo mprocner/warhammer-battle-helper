@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { trackEvent, setPageContext } from './gtag';
+import { trackEvent, setPageContext, sanitizePath } from './gtag';
 import { useConsent } from './ConsentContext';
 
 // Deliberate limit: the lobby and the game session share the /games route (currentGameId
@@ -23,7 +23,8 @@ export const usePageViews = () => {
         // SPA navigation nie przeładowuje dokumentu, więc gtag('set') z enable()
         // trzyma wartości sprzed nawigacji — trzeba je odświeżyć przed każdym eventem.
         setPageContext();
-        trackEvent('page_view', { page_path: pathname });
+        // sanitizePath: /join/<token> carries the invite secret (PLAYRPG-303).
+        trackEvent('page_view', { page_path: sanitizePath(pathname) });
     }, [pathname, consent]);
 };
 

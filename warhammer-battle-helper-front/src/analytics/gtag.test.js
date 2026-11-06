@@ -145,6 +145,35 @@ describe('gtag transport', () => {
     expect(scriptTags()).toHaveLength(1);
   });
 
+  // PLAYRPG-303: the game invite link carries its secret in the PATH (/join/<token>), so cutting
+  // the query string is not enough — the token segment has to go too.
+  it('never sends the invite token from /join/<token> in page_location or page_referrer', () => {
+    window.history.replaceState(null, '', '/join/sekretnyToken123');
+    Object.defineProperty(document, 'referrer', {
+      value: 'https://playrpg.net/join/innyToken456',
+      configurable: true,
+    });
+    const gtag = loadModule();
+    gtag.enable();
+    gtag.trackEvent('page_view', { page_path: '/join/sekretnyToken123' });
+
+    const eventCall = dataLayerCalls().find((args) => args[0] === 'event' && args[1] === 'page_view');
+    expect(eventCall[2].page_location).toBe(`${window.location.origin}/join`);
+    expect(eventCall[2].page_referrer).toBe('https://playrpg.net/join');
+    // The caller's page_path is sanitized too, not trusted.
+    expect(eventCall[2].page_path).toBe('/join');
+    expect(JSON.stringify(dataLayerCalls())).not.toMatch(/sekretnyToken123|innyToken456/);
+  });
+
+  it('sanitizePath strips only the invite token segment', () => {
+    const { sanitizePath } = loadModule();
+    expect(sanitizePath('/join/abc-_123')).toBe('/join');
+    expect(sanitizePath('/join/abc/extra')).toBe('/join');
+    expect(sanitizePath('/join')).toBe('/join');
+    expect(sanitizePath('/games')).toBe('/games');
+    expect(sanitizePath('/joined/x')).toBe('/joined/x');
+  });
+
   it('caller nie może nadpisać sanitized page_location/page_referrer przez własne params', () => {
     const gtag = loadModule();
     gtag.enable();

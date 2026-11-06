@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import PendingInviteHint from '../invite/PendingInviteHint';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import {
@@ -81,6 +82,8 @@ const Login = ({ onLogin, addLogMessage }) => {
                             {t('navigation.login')}
                         </Typography>
                     </Box>
+
+                    <PendingInviteHint />
 
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
                         <TextField

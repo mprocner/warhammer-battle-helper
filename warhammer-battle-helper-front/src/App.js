@@ -27,6 +27,8 @@ import AnalyticsGate from './analytics/AnalyticsGate';
 import ConsentBanner from './components/consent/ConsentBanner';
 import { usePageViews } from './analytics/usePageViews';
 import { setUserId } from './analytics/gtag';
+import JoinGame from './invite/JoinGame';
+import { useInviteJoin } from './invite/useInviteJoin';
 
 // usePageViews potrzebuje useLocation, a więc kontekstu Routera. App renderuje
 // Router dopiero w swoim JSX, dlatego hook mieszka w osobnym komponencie w środku.
@@ -107,6 +109,14 @@ function App() {
         setCurrentGameId(gameId);
         addLogMessage(`Joining game ${gameId}`, 'info');
     };
+
+    // Invite link (PLAYRPG-303): joins the game behind a parked token as soon as someone is logged
+    // in and opens it the same way the lobby does. A dead link lands as a lobby notice.
+    const consumeInvite = useInviteJoin({
+        user,
+        onJoined: handleJoinGame,
+        onFailed: setLobbyNotice,
+    });
 
     const handleGoToGameList = () => {
         setCurrentGameId(null);
@@ -189,6 +199,7 @@ function App() {
                         <Route path="/help" element={<HelpPage />} />
                         <Route path="/help/:page" element={<HelpPage />} />
                         <Route path="/changelog" element={<Changelog />} />
+                        <Route path="/join/:token" element={<JoinGame user={user} onInviteReady={consumeInvite} />} />
 
                         {/* Standalone character sheet window */}
                         <Route

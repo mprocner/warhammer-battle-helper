@@ -101,6 +101,9 @@ func main() {
 	charRepo := repository.NewCharactersRepository(db.CharactersCollection)
 	userRepo := repository.NewUserRepository(db.UsersCollection)
 	gameRepo := repository.NewGameRepository(db.GamesCollection)
+	if err := gameRepo.EnsureIndexes(); err != nil {
+		fmt.Printf("WARNING: failed to create games indexes: %v\n", err)
+	}
 	templateRepo := repository.NewTemplateRepository(db.SystemTemplatesCollection)
 	templateService := service.NewTemplateService(templateRepo, userRepo)
 	templateHandler := http.TemplateHandler{TemplateService: templateService}
@@ -221,6 +224,8 @@ func main() {
 	// Games
 	auth.GET("/games", gameHandler.GetGames)
 	auth.POST("/games", gameHandler.CreateGame)
+	// Joining by invite link: outside /games/:id because the caller is not a participant yet.
+	auth.POST("/invites/join", gameHandler.JoinByInviteLink)
 
 	// Per-game actions
 	characterHandler := http.CharacterHandler{CharacterRepo: charRepo, GameRepo: gameRepo, Hub: hub, GameService: gameService}
@@ -236,6 +241,9 @@ func main() {
 	game.GET("", gameHandler.GetGame)
 	game.DELETE("", gameHandler.DeleteGame)
 	game.POST("/invite", gameHandler.InvitePlayer)
+	game.GET("/inviteLink", gameHandler.GetInviteLink)
+	game.POST("/inviteLink", gameHandler.RegenerateInviteLink)
+	game.DELETE("/inviteLink", gameHandler.RevokeInviteLink)
 	game.POST("/leave", gameHandler.LeaveGame)
 	game.DELETE("/participants/:userId", gameHandler.KickPlayer)
 	game.PATCH("/participant", gameHandler.UpdateParticipant)

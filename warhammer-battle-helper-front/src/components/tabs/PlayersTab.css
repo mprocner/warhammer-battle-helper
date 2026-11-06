@@ -76,6 +76,9 @@
 }
 
 .players-tab__invite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 6px 12px;
   background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
   color: #6b4423;
@@ -96,6 +99,29 @@
 .players-tab__invite-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.players-tab__invite-btn--danger {
+  color: #b94040;
+}
+
+.players-tab__invite-url {
+  min-width: 0;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.players-tab__invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.players-tab__hint {
+  font-family: 'Crimson Text', serif;
+  font-size: 0.85rem;
+  color: #7a5c42;
+  margin: 0;
 }
 
 .players-tab__invite-msg {

@@ -17,6 +17,24 @@ w lobby (`GameCard.jsx` → `POST /games/:id/syncTemplate`), co pobiera aktualn�
 wyrzucić (`DELETE /participants/:userId`). Wyrzucony dostaje `KICKED_FROM_GAME` i klient od razu
 wychodzi z gry, zamiast próbować się ponownie łączyć.
 
+**Link z zaproszeniem** (PLAYRPG-303). Gra ma najwyżej jeden link `/join/<token>`.
+MG zarządza nim w zakładce Gracze (`InviteLinkSection.jsx`): `GET`/`POST`/`DELETE
+/games/:id/inviteLink` (odczyt / nowy token / usunięcie, tylko MG). Nowy token unieważnia stary,
+usunięcie robi `$unset`. Brak wygaśnięcia i limitu użyć, a dołączenie nie wymaga zgody MG:
+opublikowanie linku jest jego decyzją. Dołączenie to `POST /invites/join {token}` (zwykły JWT,
+poza `/games/:id`, bo wołający nie jest jeszcze uczestnikiem). Zwraca `{gameId, joined}`:
+obcy zostaje dodany jako `RolePlayer`, uczestnik (także MG) tylko otwiera grę. Zaproszenie
+e-mailem i linkiem idą przez ten sam `GameService.addPlayer`: ten sam uczestnik i ten sam
+broadcast `PARTICIPANT_JOINED`.
+
+Front: `/join/:token` (`src/invite/JoinGame.jsx`) odkłada token do `localStorage`
+(`pendingInvite.js`) i od razu przekierowuje: zalogowanego na `/games`, gościa na `/login`
+(z podpowiedzią `PendingInviteHint` także na `/register`). `useInviteJoin` w `App.js` zużywa
+token przy każdym zalogowaniu i otwiera grę przez `handleJoinGame`, jak lobby. Martwy link
+kończy się powiadomieniem w lobby (`game.inviteLinkInvalid`). Ścieżka „nie mam konta”
+(rejestracja → e-mail → logowanie) działa, bo `localStorage` jest wspólny dla kart tej samej
+przeglądarki. Na innym urządzeniu token przepada i trzeba otworzyć link jeszcze raz.
+
 **Ustawienia uczestnika w grze** (`PATCH /participant`, `PlayerSettingsPopup.jsx`): avatar
 (z konta, z postaci albo wgrany), podpis (z konta, z postaci albo własny), rozmiar dymka.
 Nazwę w logu wybiera `DisplayNameResolver`: podpis w grze → podpis konta → e-mail.
@@ -37,6 +55,7 @@ komórki, jednostka odległości, przyciąganie do siatki oraz konfiguracja wygl
 | Panel boczny i zakładki | `src/components/panels/`, `tabDefinitions.jsx` (zakładki `gmOnly`) |
 | Online i ustawienia uczestnika | `src/components/online-users/`, `src/hooks/useOnlineUsers.js` |
 | Backend gry | `internal/http/GameHandler.go`, `internal/service/GameService.go` |
+| Link z zaproszeniem | `internal/service/invite_link.go`, `internal/http/InviteLinkHandler.go`, `src/invite/`, `src/components/tabs/InviteLinkSection.jsx` |
 | Sesje online, statystyki | `internal/service/OnlineSessionService.go`, `internal/http/StatsHandler.go` |
 
 ## Pułapki
@@ -47,3 +66,16 @@ komórki, jednostka odległości, przyciąganie do siatki oraz konfiguracja wygl
 - `FilterVisibleToParticipants` wycina z `VisibleTo` osoby spoza gry. Bez tego nieaktualny
   klient MG mógłby z powrotem dodać gracza, który odszedł.
 - Zakładki `gmOnly` są ukrywane na froncie, ale prawdziwą granicą jest `requireGM` na backendzie.
+- `Game.InviteToken` ma `json:"-"`. Surowa struktura `Game` idzie do graczy (`GET /games/:id`,
+  `GAME_STATE`) i do lobby bez maskowania pól najwyższego poziomu, więc każde inne
+  oznaczenie wypuściłoby token do każdego gracza. MG czyta go tylko przez `GET .../inviteLink`.
+  Pilnuje tego `Game_invite_test.go`.
+- Token siedzi w **ścieżce**, a obcinanie query stringa w `gtag.js` go nie łapie.
+  `sanitizePath` zwija `/join/<cokolwiek>` do `/join` w `page_location`, `page_referrer`
+  i `page_path`. Nowa trasa z sekretem w ścieżce musi trafić do tego samego wzorca.
+- `AddParticipant` ma w filtrze `participants.userId: {$ne}` i zwraca `added`. Sprawdzenie
+  i dopisanie to jedna atomowa operacja, więc podwójny klik ani dwie karty nie dodadzą tej samej
+  osoby dwa razy (StrictMode też odpala efekty podwójnie). `takePendingInvite` czyta i kasuje
+  token w jednym kroku z tego samego powodu.
+- Każda porażka linku (zły format, unieważniony, usunięta gra) to jeden błąd
+  `ErrInviteLinkInvalid` → 404, żeby obcy nie mógł sprawdzać, które tokeny kiedyś istniały.
