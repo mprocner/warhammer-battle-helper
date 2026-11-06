@@ -35,7 +35,7 @@
         "favourites": "Favourite skills and weapons at hand in the character panel."
       },
       "creator": {
-        "fields": "Build your own sheet from sections and 18 field types: attributes, tables, bars, formula fields, skill trees and more.",
+        "fields": "Build your own sheet from sections and many field types:attributes, tables, bars, formula fields, skill trees and more.",
         "dice": "Your own roll rules: dice under the chat, a numeric modifier or edge and setback dice, and success levels per step or named thresholds.",
         "presets": "Preset weapons and rows added to every new character.",
         "token": "Token look for your system: slots and bars shown on the map.",
@@ -60,7 +60,7 @@
         "online": "See who is online."
       },
       "systems": {
-        "builtIn": "Ready sheets for Warhammer Fantasy Roleplay 4e, Call of Cthulhu 7e, Call of Cthulhu: Dark Ages and SRD 5.2.",
+        "builtIn": "Ready-made sheets for Warhammer Fantasy Roleplay 4e, Call of Cthulhu 7e, Call of Cthulhu: Dark Ages and SRD 5.2.",
         "custom": "Any other system you build in the system creator."
       },
       "minigames": {

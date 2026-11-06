@@ -35,7 +35,7 @@
         "favourites": "Ulubione umiejętności i bronie pod ręką w panelu postaci."
       },
       "creator": {
-        "fields": "Własna karta z sekcji i 18 typów pól: atrybuty, tabele, paski, pola z formułą, drzewa umiejętności i więcej.",
+        "fields": "Własna karta z sekcji i wielu typów pól:atrybuty, tabele, paski, pola z formułą, drzewa umiejętności i więcej.",
         "dice": "Własne zasady rzutów: kości pod czatem, modyfikator liczbowy albo kości przewagi i utrudnienia oraz poziomy sukcesu co krok lub nazwane progi.",
         "presets": "Predefiniowane bronie i wiersze dodawane każdej nowej postaci.",
         "token": "Wygląd tokena dla twojego systemu: sloty i paski widoczne na mapie.",
@@ -64,7 +64,7 @@
         "custom": "Każdy inny system zbudowany w kreatorze systemów."
       },
       "minigames": {
-        "dice": "Yahtzee i kościany poker dla drużyny między scenami."
+        "dice": "Yahtzee i Poker Kościany dla drużyny między scenami."
       },
       "tutorials": {
         "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie."

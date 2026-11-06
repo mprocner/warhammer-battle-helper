@@ -43,7 +43,8 @@ const Changelog = () => {
     useEffect(() => {
         markLatestSeen();
         // The SPA renders after the browser's own hash scroll, so /changelog#v1.0.0 needs a nudge.
-        const anchor = window.location.hash && document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+        // Anchors are plain ids like "v1.0.0", so no decoding is needed; decodeURIComponent would throw on a malformed hash such as "#%".
+        const anchor = window.location.hash && document.getElementById(window.location.hash.slice(1));
         anchor?.scrollIntoView?.();
     }, []);
 

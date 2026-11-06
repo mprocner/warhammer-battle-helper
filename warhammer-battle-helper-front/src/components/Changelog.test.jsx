@@ -25,6 +25,16 @@ describe('Changelog', () => {
     expect(localStorage.getItem('changelog.lastSeenVersion')).toBe(LATEST_VERSION);
   });
 
+  it('does not throw on a malformed URL hash', () => {
+    window.history.replaceState(null, '', '/changelog#%');
+    try {
+      render(<Changelog />);
+      expect(screen.getByRole('heading', { level: 1, name: i18n.t('changelog:title') })).toBeInTheDocument();
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+
   it('has an icon for every section any release uses', () => {
     RELEASES.forEach(({ sections }) => {
       sections.forEach(({ id }) => expect(SECTION_ICONS[id]).toBeDefined());

@@ -63,9 +63,6 @@ const Navigation = ({ user, onLogout, inGame }) => {
                                 {i18n.language.toUpperCase()}
                             </Typography>
                         </IconButton>
-                        {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
-                            (user może być null), więc to jedyne trwałe miejsce, z którego
-                            polityka prywatności jest osiągalna po zamknięciu banera zgody. */}
                         <IconButton
                             color="inherit"
                             onClick={() => navigate('/changelog')}
@@ -74,6 +71,9 @@ const Navigation = ({ user, onLogout, inGame }) => {
                             <NewReleasesIcon />
                             <ChangelogDot />
                         </IconButton>
+                        {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
+                            (user może być null), więc to jedyne trwałe miejsce, z którego
+                            polityka prywatności jest osiągalna po zamknięciu banera zgody. */}
                         <IconButton
                             color="inherit"
                             onClick={() => navigate('/privacy')}
