@@ -30,7 +30,7 @@ Zawiera tylko strukturę, bez tekstów. Najnowsza wersja jest pierwsza.
 export const RELEASES = [
   {
     version: '1.0.0',
-    date: '2026-11-XX', // deploy day, ISO
+    date: '2026-11-06', // deploy day, ISO
     sections: [
       { id: 'scene', items: ['map', 'fog', 'drawing', 'tokens'] },
       { id: 'characters', items: [/* ... */] },
@@ -68,8 +68,9 @@ tak samo jak `skills`, `weapons` itd. Dzięki temu `translation.json` (2532 lini
 Klucz wersji to `version` z kropkami zamienionymi na `_`, bo i18next używa kropki jako
 separatora zagnieżdżenia.
 
-Ogólne stringi linków i wiersza wersji (Navigation, stopka, lobby, GeneralTab) trafiają
-do `translation.json` pod `changelog.*`, bo używają ich komponenty spoza strony.
+Stringi linków i wiersza wersji (Navigation, stopka, lobby, GeneralTab) trafiają do
+`translation.json` obok sąsiednich kluczy: `navigation.changelog`, `landing.footer.label`,
+`settings.version`, `settings.versionLink`.
 
 ### Ikony sekcji
 
@@ -85,9 +86,9 @@ sekcja użyta w `RELEASES` ma ikonę.
   `LATEST_VERSION`. Porównuję stringi, bez parsowania semver, bo pytanie brzmi tylko „czy
   widział najnowszą”.
 - Brak klucza oznacza wersję niewidzianą, więc każdy, także gość, raz zobaczy kropkę przy 1.0.0.
-- Hook czyta wartość przy montowaniu. Nie synchronizuje kart przeglądarki. Gracz, który
-  obejrzał changelog w nowej karcie, ma kropkę w grze do następnego montowania komponentu.
-  Świadomie to akceptuję.
+- Hook to `useSyncExternalStore` nasłuchujący własnego zdarzenia `changelog-seen` (ta sama karta)
+  i `storage` (inne karty). Gracz, który otworzy changelog z gry w nowej karcie, po powrocie
+  nie widzi już kropki — wszystkie cztery miejsca gasną jednocześnie.
 
 ## Strona `/changelog`
 
@@ -163,5 +164,4 @@ w tym samym commicie. Dodaję tę regułę do `CLAUDE.md` w sekcji „Kluczowe k
 
 - Edycja changeloga bez deployu (backend, panel admina).
 - Synchronizacja `package.json` `version` z `LATEST_VERSION`.
-- Synchronizacja kropki między kartami (zdarzenie `storage`).
 - Wystawienie user-guide w aplikacji i linki z changeloga do niego.
