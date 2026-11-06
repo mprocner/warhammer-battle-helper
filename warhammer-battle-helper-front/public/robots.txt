@@ -1,4 +1,12 @@
 # https://www.robotstxt.org/robotstxt.html
-# Block all search engines from indexing this site
+# Public pages are indexed; pages behind a login or a one-time token are not.
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /games
+Disallow: /settings
+Disallow: /character-sheet
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /join/
+
+Sitemap: https://playrpg.net/sitemap.xml

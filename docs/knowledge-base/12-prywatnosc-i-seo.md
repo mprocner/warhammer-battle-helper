@@ -112,6 +112,20 @@ Kolejność efektów jest bezpieczna: przy zmianie trasy React wykonuje wszystki
 odmontowywanej strony **przed** efektami nowej, więc reset do „PlayRPG” nigdy nie nadpisze tytułu
 strony, która właśnie weszła (test w `usePageTitle.test.jsx`).
 
+### Indeksowanie
+
+`<meta name="robots" content="index, follow">` w `index.html`. `public/robots.txt` wpuszcza
+wszystko poza trasami za logowaniem albo z jednorazowym tokenem (`/games`, `/settings`,
+`/character-sheet`, `/verify-email`, `/reset-password`, `/join/`) i wskazuje
+`public/sitemap.xml`. Mapa strony zawiera tylko trasy publiczne: `/`, `/login`, `/register`,
+`/privacy`, `/terms`, `/licenses`, `/changelog`, `/help` i każdą stronę przewodnika
+(`/help/<slug>` z `src/help/helpPages.js`). `publicIndex.test.js` pilnuje, że każda strona
+przewodnika jest w mapie, a prywatne trasy w `Disallow`.
+
+`robots.txt`, `sitemap.xml` i `og-image.png` leżą w `build/`, więc nginx kontenera frontu
+(`nginx.conf`, `try_files $uri ...`) serwuje je jako pliki z właściwym typem — nie wpadają
+w fallback SPA. Ten sam fallback oznacza, że brakujący plik dostaje `index.html` z kodem 200.
+
 ## Kluczowe pliki
 
 | Co | Gdzie |
@@ -125,6 +139,7 @@ strony, która właśnie weszła (test w `usePageTitle.test.jsx`).
 | Obrazek podglądu linku | `public/og-image.png`, źródło `scripts/og-image/` |
 | `<html lang>` za językiem UI | `src/i18n.js` |
 | Tytuły stron | `src/hooks/usePageTitle.js`, klucze `pageTitle.*` w `locales/{en,pl}/translation.json` |
+| Indeksowanie | `public/robots.txt`, `public/sitemap.xml`, meta `robots` w `public/index.html` |
 
 ## Pułapki
 
@@ -147,4 +162,7 @@ strony, która właśnie weszła (test w `usePageTitle.test.jsx`).
 - Facebook/Messenger cache'ują podgląd. Po zmianie obrazka trzeba go odświeżyć w Sharing Debuggerze
   Facebooka albo zmienić nazwę pliku (`og-image-v2.png`).
 - Dopóki `nginx.vps.conf.example` trzyma `auth_basic` na `location /`, crawlery dostają 401 i nie
-  zobaczą ani tagów, ani obrazka.
+  zobaczą ani tagów, ani obrazka, ani `robots.txt`.
+- Nowa publiczna trasa albo strona przewodnika = wiersz w `sitemap.xml`; nowa trasa prywatna
+  albo z tokenem w URL = `Disallow` w `robots.txt`. `Disallow` nie usuwa strony z indeksu, jeśli
+  ktoś do niej linkuje — chroni ją dopiero logowanie.
