@@ -13,6 +13,7 @@ import ResetPassword from './components/ResetPassword';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Licenses from './components/Licenses';
+import Changelog from './components/Changelog';
 import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
@@ -184,6 +185,7 @@ function App() {
                         <Route path="/privacy" element={<PrivacyPolicy />} />
                         <Route path="/terms" element={<TermsOfService />} />
                         <Route path="/licenses" element={<Licenses />} />
+                        <Route path="/changelog" element={<Changelog />} />
 
                         {/* Standalone character sheet window */}
                         <Route
