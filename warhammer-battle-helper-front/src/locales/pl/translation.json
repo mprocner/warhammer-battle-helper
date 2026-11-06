@@ -77,7 +77,8 @@
     "settings": "Ustawienia",
     "privacy": "Polityka prywatności",
     "licenses": "Licencje",
-    "terms": "Regulamin"
+    "terms": "Regulamin",
+    "changelog": "Co nowego"
   },
   "licenses": {
     "title": "Licencje",
@@ -700,6 +701,8 @@
     "Fel": "Ogd"
   },
   "settings": {
+    "version": "Wersja",
+    "versionLink": "{{version}} — co nowego",
     "general": "Ustawienia Ogolne",
     "gameInfo": "Informacje o Grze",
     "gameName": "Nazwa Gry",
@@ -2506,6 +2509,9 @@
     "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów w grze? Nowe tokeny przestaną go dostawać, a zmiany będą znów dotyczyć tylko tego tokena."
   },
   "landing": {
+    "footer": {
+      "label": "Linki serwisu"
+    },
     "hero": {
       "title": "Zbierz drużynę. Rozłóż mapę. Rzuć kośćmi.",
       "subtitle": "Mapy z mgłą wojny, własne karty postaci i wszystko, czego MG potrzebuje przy sesji online."
