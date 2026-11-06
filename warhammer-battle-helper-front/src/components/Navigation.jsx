@@ -57,7 +57,7 @@ const Navigation = ({ user, onLogout, inGame }) => {
                         <IconButton
                             color="inherit"
                             onClick={toggleLanguage}
-                            title={`Language: ${i18n.language.toUpperCase()}`}
+                            title={t('navigation.languageTitle', { lang: i18n.language.toUpperCase() })}
                         >
                             <LanguageIcon />
                             <Typography variant="caption" sx={{ ml: 0.5 }}>

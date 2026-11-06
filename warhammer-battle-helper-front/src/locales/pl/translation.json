@@ -45,6 +45,8 @@
     }
   },
   "common": {
+    "rollNamed": "Rzut: {{name}}",
+    "rollCheck": "Test: {{name}}",
     "save": "Zapisz",
     "cancel": "Anuluj",
     "delete": "Usuń",
@@ -70,6 +72,7 @@
     "add": "Dodaj"
   },
   "navigation": {
+    "languageTitle": "Język: {{lang}}",
     "help": "Pomoc",
     "title": "PlayRPG",
     "login": "Zaloguj",
@@ -162,19 +165,97 @@
   },
   "privacy": {
     "title": "Polityka prywatności",
-    "intro": "Ta strona wyjaśnia, co PlayRPG zapisuje na Twoim urządzeniu i co wysyłamy podmiotom trzecim.",
-    "necessaryTitle": "Dane niezbędne do działania serwisu",
-    "necessaryBody": "W pamięci lokalnej przeglądarki zapisujemy Twój token logowania, wybrany język interfejsu i głośność muzyki. Są niezbędne do działania serwisu i nie wymagają Twojej zgody. Nigdy nie udostępniamy ich żadnym podmiotom trzecim.",
-    "analyticsTitle": "Analityka",
-    "analyticsBody": "Jeśli wyrazisz zgodę, ładujemy Google Analytics 4. Zapisuje on na Twoim urządzeniu pliki cookie _ga oraz _ga_<ID> i przesyła Google Twój adres IP, informacje o przeglądarce, otwierane strony oraz zdarzenia wymienione niżej. Google jest odrębnym administratorem tych danych i przetwarza je poza Europejskim Obszarem Gospodarczym, w tym w Stanach Zjednoczonych.",
-    "eventsTitle": "Co mierzymy",
-    "eventsBody": "Odsłony stron, rejestrację konta, potwierdzenie adresu e-mail, logowanie oraz utworzenie gry. Nigdy nie wysyłamy Twojego adresu e-mail ani innych danych identyfikujących Cię bezpośrednio.",
-    "userIdTitle": "Identyfikator konta",
-    "userIdBody": "Gdy jesteś zalogowany, wysyłamy do Google identyfikator Twojego konta — losowy ciąg znaków, nigdy adres e-mail. Pozwala nam rozpoznać, że ta sama osoba wróciła na innym urządzeniu.",
-    "withdrawTitle": "Wycofanie zgody",
-    "withdrawBody": "Zgodę możesz wycofać w każdej chwili na tej stronie Prywatność albo, jeśli jesteś zalogowany/a, w Ustawieniach, w sekcji Prywatność. Przestajemy wtedy wysyłać dane i kasujemy pliki cookie analityki. Odmowa nic Cię nie kosztuje — serwis działa dokładnie tak samo.",
-    "contactTitle": "Kontakt",
-    "contactBody": "Administratorem danych jest {{name}}. Pytania o Twoje dane: {{email}}"
+    "effectiveDate": "Obowiązuje od {{date}}",
+    "intro": "Ta strona wyjaśnia, jakie dane osobowe przetwarza PlayRPG — na naszym serwerze, w Twojej przeglądarce i u podmiotów trzecich — w jakim celu, jak długo i jakie prawa Ci przysługują.",
+    "sections": [
+      {
+        "title": "Administrator danych",
+        "paragraphs": [
+          "Administratorem Twoich danych osobowych jest {{name}}, osoba fizyczna prowadząca serwis PlayRPG (playrpg.net) jako projekt prywatny. We wszystkich sprawach dotyczących Twoich danych możesz pisać na {{email}}.",
+          "Pojęcia pisane wielką literą, takie jak Serwis, Konto, Gra, Mistrz Gry czy Treści, mają znaczenie nadane im w Regulaminie."
+        ]
+      },
+      {
+        "title": "Dane przechowywane na serwerze",
+        "paragraphs": [
+          "Konto: adres e-mail; hasło — wyłącznie jako skrót utworzony algorytmem bcrypt, z którego nie da się odczytać hasła; data założenia i aktywacji Konta; data i wersja zaakceptowanego Regulaminu; jednorazowe tokeny aktywacji Konta i resetu hasła (token resetu wygasa po godzinie); informacja, czy Konto ma uprawnienia administratora.",
+          "Profil i ustawienia: avatar, podpis (nazwa wyświetlana innym uczestnikom) oraz ustawienia interfejsu, np. schemat sterowania sceną.",
+          "Pliki: obrazy, pliki i muzyka przesłane do Twojej biblioteki, wraz z ich nazwami, rozmiarem, typem, folderami i playlistami.",
+          "Gry: Gry, które tworzysz lub do których dołączasz, i Twój udział w nich (rola, data dołączenia, avatar i podpis w danej Grze), zaproszenia do Gier, a także zawartość Gier — sceny, mapy, tokeny, mgła wojny, rysunki, notatki, handouty, karty postaci, wiadomości na czacie i rzuty kośćmi wraz z autorem i czasem.",
+          "Szablony systemów: szablony utworzone w kreatorze systemów oraz lista osób, którym je udostępniasz, z ich adresami e-mail i rolami.",
+          "Statystyki i uprawnienia: wyniki Twoich rzutów kośćmi i czas spędzony w Grach (początek, koniec i długość połączenia), z których liczymy statystyki widoczne w Ustawieniach, oraz informacja, w których systemach gry możesz tworzyć Gry.",
+          "Uczestnicy Gry widzą Twój adres e-mail (na liście graczy oraz jako nazwę, dopóki nie ustawisz podpisu), Twój avatar i podpis oraz Treści, które udostępniasz w Grze, w zakresie wynikającym z ustawień widoczności. Osoby, z którymi współdzielisz szablon systemu, mogą widzieć Twój adres e-mail.",
+          "Nie prosimy o imię i nazwisko ani inne dane poza opisanymi wyżej. Nie umieszczaj w Treściach danych osobowych osób trzecich bez podstawy prawnej (zob. Regulamin, część o Treściach Użytkowników)."
+        ]
+      },
+      {
+        "title": "Dane w Twojej przeglądarce",
+        "paragraphs": [
+          "W pamięci lokalnej przeglądarki zapisujemy Twój token logowania, wybrany język interfejsu, głośność muzyki, Twoją decyzję w sprawie analityki, filtr języka na liście gier oraz informację, które samouczki i którą wersję listy zmian już widziałeś/aś. Są niezbędne do działania Serwisu i nie wymagają Twojej zgody. Nie udostępniamy ich podmiotom trzecim.",
+          "Pliki cookie zapisuje wyłącznie Google Analytics, i to tylko po wyrażeniu zgody (zob. Analityka)."
+        ]
+      },
+      {
+        "title": "Logi serwera",
+        "paragraphs": [
+          "Serwer WWW zapisuje przy każdym żądaniu: Twój adres IP, czas, adres otwieranej strony (bez parametrów), kod i rozmiar odpowiedzi oraz informację o przeglądarce (user agent). Logi te służą bezpieczeństwu Serwisu, wykrywaniu nadużyć i usuwaniu awarii. Przechowujemy je do 14 dni.",
+          "Logi aplikacji zawierają informacje techniczne o żądaniach i błędach, bez adresów IP. Są usuwane po przekroczeniu limitu rozmiaru i przy każdej aktualizacji Serwisu."
+        ]
+      },
+      {
+        "title": "Korespondencja i e-maile",
+        "paragraphs": [
+          "Gdy piszesz do nas e-mailem lub przez formularz kontaktowy, przetwarzamy Twój adres e-mail, imię lub nazwę, jeśli je podasz, oraz treść wiadomości. Wiadomość z formularza trafia do nas e-mailem na {{email}}.",
+          "Wysyłamy Ci tylko e-maile potrzebne do korzystania z Konta: link aktywacyjny i link do resetu hasła, a w razie potrzeby wiadomości opisane w Regulaminie (np. o zmianie Regulaminu lub decyzji dotyczącej Treści). Nie wysyłamy newslettera ani reklam."
+        ]
+      },
+      {
+        "title": "Analityka (Google Analytics 4)",
+        "paragraphs": [
+          "Jeśli wyrazisz zgodę, ładujemy Google Analytics 4. Zapisuje on na Twoim urządzeniu pliki cookie _ga oraz _ga_<ID> i przesyła Google Twój adres IP, informacje o przeglądarce, otwierane strony oraz zdarzenia wymienione niżej. Google jest odrębnym administratorem tych danych i przetwarza je poza Europejskim Obszarem Gospodarczym, w tym w Stanach Zjednoczonych.",
+          "Mierzymy odsłony stron, rejestrację konta, potwierdzenie adresu e-mail, logowanie oraz utworzenie gry. Nigdy nie wysyłamy Twojego adresu e-mail ani innych danych identyfikujących Cię bezpośrednio.",
+          "Gdy jesteś zalogowany/a, wysyłamy do Google identyfikator Twojego konta — losowy ciąg znaków, nigdy adres e-mail. Pozwala nam rozpoznać, że ta sama osoba wróciła na innym urządzeniu.",
+          "Zgodę możesz wycofać w każdej chwili na dole tej strony albo, jeśli jesteś zalogowany/a, w Ustawieniach, w sekcji Prywatność. Przestajemy wtedy wysyłać dane i kasujemy pliki cookie analityki. Odmowa nic Cię nie kosztuje — Serwis działa dokładnie tak samo."
+        ]
+      },
+      {
+        "title": "Cele i podstawy prawne",
+        "paragraphs": [
+          "Świadczenie usługi zgodnie z Regulaminem — założenie i obsługa Konta, przechowywanie i udostępnianie Treści, prowadzenie Gier, statystyki, e-maile aktywacyjne i resetu hasła, reklamacje: art. 6 ust. 1 lit. b RODO (wykonanie umowy).",
+          "Bezpieczeństwo i ciągłość Serwisu — logi serwera, kopie zapasowe, wykrywanie nadużyć — a także odpowiadanie na wiadomości i ustalanie, dochodzenie lub obrona roszczeń: art. 6 ust. 1 lit. f RODO (nasz prawnie uzasadniony interes).",
+          "Analityka: art. 6 ust. 1 lit. a RODO (Twoja zgoda).",
+          "Rozpatrywanie zgłoszeń nielegalnych Treści i odwołań zgodnie z aktem o usługach cyfrowych (DSA) oraz wypełnianie innych obowiązków prawnych: art. 6 ust. 1 lit. c RODO.",
+          "Podanie adresu e-mail i hasła jest dobrowolne, ale niezbędne do założenia Konta. Nie podejmujemy wobec Ciebie decyzji opartych wyłącznie na zautomatyzowanym przetwarzaniu."
+        ]
+      },
+      {
+        "title": "Odbiorcy danych",
+        "paragraphs": [
+          "OVH — dostawca serwera VPS w Unii Europejskiej, na którym działa Serwis i są przechowywane dane opisane wyżej, oraz serwera poczty, przez który wysyłamy i odbieramy e-maile. OVH przetwarza dane w naszym imieniu.",
+          "Google — wyłącznie gdy wyrazisz zgodę na analitykę, jako odrębny administrator (zob. Analityka).",
+          "Inni Użytkownicy — w zakresie opisanym w części Dane przechowywane na serwerze. Organy publiczne — tylko gdy wymaga tego prawo.",
+          "Nie sprzedajemy danych. Poza Google Analytics nie przekazujemy danych poza Europejski Obszar Gospodarczy."
+        ]
+      },
+      {
+        "title": "Okres przechowywania",
+        "paragraphs": [
+          "Dane Konta i Treści przechowujemy do czasu usunięcia Konta. Usunięcie Konta oznacza usunięcie powiązanych z nim danych, z wyjątkiem kopii zapasowych.",
+          "Treść, którą usuniesz (np. plik, notatkę, postać), usuwamy od razu. Gra usunięta przez Mistrza Gry przestaje być dostępna, ale pozostaje w bazie danych do czasu jej trwałego usunięcia, najpóźniej do usunięcia Konta Mistrza Gry.",
+          "Konta, których adres e-mail nie został potwierdzony, nie są obecnie usuwane automatycznie. Możesz w każdej chwili zażądać ich usunięcia.",
+          "Kopie zapasowe bazy danych i plików tworzymy przy każdej aktualizacji Serwisu i usuwamy w ramach rotacji: przechowujemy 7 ostatnich kopii bazy danych i 5 ostatnich kopii plików. Dane usunięte z Serwisu znikają z kopii, gdy z rotacji wypadnie ostatnia kopia, która je zawiera.",
+          "Logi serwera WWW z adresami IP przechowujemy do 14 dni. Korespondencję przechowujemy przez czas potrzebny do jej obsługi, a następnie do upływu terminu przedawnienia związanych z nią roszczeń. Dane analityczne Google przechowuje przez okres ustawiony w Google Analytics."
+        ]
+      },
+      {
+        "title": "Twoje prawa",
+        "paragraphs": [
+          "Masz prawo dostępu do swoich danych i otrzymania ich kopii, ich sprostowania, usunięcia, ograniczenia przetwarzania i przeniesienia, a także prawo sprzeciwu wobec przetwarzania opartego na naszym prawnie uzasadnionym interesie. Zgodę możesz wycofać w każdej chwili; nie wpływa to na zgodność z prawem przetwarzania przed jej wycofaniem.",
+          "Aby skorzystać z tych praw, napisz na {{email}}, najlepiej z adresu e-mail przypisanego do Konta. Odpowiadamy bez zbędnej zwłoki, najpóźniej w ciągu miesiąca. Jeśli żądanie przyjdzie z innego adresu, możemy poprosić o potwierdzenie, że Konto należy do Ciebie.",
+          "Masz też prawo wnieść skargę do organu nadzorczego — Prezesa Urzędu Ochrony Danych Osobowych (ul. Stawki 2, 00-193 Warszawa, uodo.gov.pl)."
+        ]
+      }
+    ]
   },
   "terms": {
     "title": "Regulamin",
@@ -203,7 +284,6 @@
         "title": "Usługa bezpłatna",
         "paragraphs": [
           "Korzystanie z Serwisu jest bezpłatne.",
-          "Usługodawca może umożliwić dobrowolne wsparcie Serwisu. Wsparcie nie jest zapłatą za usługę i nie daje dodatkowych uprawnień w Serwisie.",
           "Serwis jest projektem rozwijanym przez osobę prywatną i udostępnianym w stanie, w jakim się znajduje. Usługodawca dokłada starań, aby Serwis działał nieprzerwanie, ale nie gwarantuje jego ciągłej dostępności ani trwałości przechowywanych Treści. Użytkownik powinien przechowywać kopie ważnych materiałów poza Serwisem.",
           "Usługodawca może czasowo wstrzymać działanie Serwisu, w szczególności w celu konserwacji, aktualizacji lub usunięcia awarii.",
           "Postanowienia ograniczające odpowiedzialność Usługodawcy nie dotyczą szkody wyrządzonej umyślnie ani innych przypadków, w których ograniczenie odpowiedzialności jest niedopuszczalne z mocy prawa."
@@ -707,14 +787,27 @@
     "movement": "Szybkość",
     "fortune": "Szczęście"
   },
-  "logs": {
-    "CHARACTER_ROLLED_CHARACTERISTIC": "{{name}} rzucił {{characteristic}}: {{result}}",
-    "CHARACTER_JOINED_GAME": "{{name}} dołączył do gry",
-    "CHARACTER_LEFT_GAME": "{{name}} opuścił grę",
-    "GAME_STARTED": "Gra rozpoczęta",
-    "GAME_ENDED": "Gra zakończona"
-  },
   "log": {
+    "session": {
+      "synchronized": "Stan gry zsynchronizowany",
+      "playerJoined": "{{name}} dołącza do gry",
+      "playerLeft": "Gracz opuścił grę",
+      "playerLeftNamed": "{{name}} opuszcza grę",
+      "characterAdded": "Postać dodana na pole bitwy",
+      "characterAddedBy": "{{name}} dodaje postać na pole bitwy",
+      "characterRemoved": "Postać usunięta z pola bitwy",
+      "addToGridFailed": "Nie udało się dodać postaci do siatki",
+      "moveFailed": "Nie udało się przesunąć postaci",
+      "cellOccupied": "To pole jest już zajęte",
+      "moveTokensFailed": "Nie udało się przesunąć tokenów",
+      "removeFromGridFailed": "Nie udało się usunąć postaci z siatki",
+      "gridFull": "Brak wolnych pól na siatce",
+      "localRoll": "Rzut k{{sides}}: {{result}}",
+      "localRollMulti": "Rzut {{count}}k{{sides}}: {{results}} (suma {{sum}})",
+      "rollFailed": "Nie udało się rzucić kośćmi",
+      "skillRollsInSessionOnly": "Rzuty na umiejętności są dostępne tylko w sesji gry",
+      "weaponRollsInSessionOnly": "Rzuty bronią są dostępne tylko w sesji gry"
+    },
     "rolledDice": "Rzucono K{{sides}}: {{result}}",
     "rolledMultiDice": "{{count}}K{{sides}}",
     "sum": "Suma",
@@ -794,6 +887,9 @@
     "gameImageUploadFailed": "Nie udało się wgrać obrazka gry."
   },
   "handouts": {
+    "zoomIn": "Powiększ",
+    "zoomOut": "Pomniejsz",
+    "resetView": "Resetuj widok",
     "title": "Handouty",
     "addHandout": "Dodaj Handout",
     "addHandoutShort": "Handout",
@@ -1444,6 +1540,8 @@
     "untitled": "Bez nazwy"
   },
   "scenes": {
+    "defaultName": "Scena 1",
+    "numberedName": "Scena {{number}}",
     "title": "Sceny",
     "createScene": "Nowa Scena",
     "createSceneShort": "Scena",
@@ -2493,15 +2591,19 @@
     "role_player": "Gracz"
   },
   "minigames": {
+    "startFailed": "Nie udało się rozpocząć gry",
     "title": "Mini-Gry",
     "comingSoon": "Więcej gier wkrótce...",
     "inProgress": "W toku",
     "reopenBoard": "Pokaż planszę",
     "yahtzee": {
+      "hold": "Zatrzymaj",
+      "unhold": "Zwolnij",
       "title": "Yahtzee",
       "meta": "2–6 graczy · ~20 min",
       "description": "Klasyczna gra w kości z punktowaniem",
       "rollDice": "Rzuć kości",
+      "chooseCategory": "Wybierz kategorię",
       "yourTurn": "Twoja tura",
       "waitingFor": "Czekam na {{name}}...",
       "rollsLeft_one": "{{count}} rzut pozostał",

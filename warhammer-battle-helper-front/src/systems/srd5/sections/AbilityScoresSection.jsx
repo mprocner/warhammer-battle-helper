@@ -33,7 +33,7 @@ function AbilityScoresSection({ abilities, onAbilityChange, onRollAbility, gameI
           <div key={key} className="srd-ability-score">
             <div className="srd-ability-score__label">{t(labelKey)}</div>
             <Srd5AdvantageOverlay onAdvRoll={(d, t) => onRollAbility && onRollAbility(key, d, t)} disabled={!gameId} showDC>
-              <button className="srd-ability-score__mod-btn" title={`Roll ${t(labelKey)} check`}>
+              <button className="srd-ability-score__mod-btn" title={t('common.rollCheck', { name: t(labelKey) })}>
                 <span className="srd-ability-score__mod">{formatMod(mod)}</span>
               </button>
             </Srd5AdvantageOverlay>

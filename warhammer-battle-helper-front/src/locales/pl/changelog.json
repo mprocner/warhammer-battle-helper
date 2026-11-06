@@ -85,6 +85,12 @@
         "fonts": "Czcionki serwuje sam PlayRPG; otwarcie strony nie wysyła niczego do Google, zanim zgodzisz się na statystyki.",
         "linkPreview": "Linki do PlayRPG wysłane w komunikatorze lub na portalu społecznościowym pokazują podgląd z logo.",
         "pageTitles": "Każda strona ma własny tytuł w karcie przeglądarki, a karta gry pokazuje nazwę gry."
+      },
+      "changed": {
+        "privacy": "Pełniejsza polityka prywatności: jakie dane przechowujemy na serwerze, komu je powierzamy, jak długo je trzymamy, podstawy prawne i Twoje prawa wynikające z RODO."
+      },
+      "fixed": {
+        "language": "Pokój gry mówi jednym językiem: komunikaty w logu, podpowiedzi przycisków, nazwa pierwszej sceny i komunikaty błędów są w wybranym języku interfejsu."
       }
     }
   }

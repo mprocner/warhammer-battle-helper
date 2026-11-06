@@ -154,7 +154,7 @@ function YahtzeeBoardModal({ state, gameId, userId, isGM, onClose }) {
             {!isMyTurn
               ? t('minigames.yahtzee.waitingFor', { name: currentPlayer?.username || '...' })
               : rollsLeft <= 0
-                ? 'Choose a category'
+                ? t('minigames.yahtzee.chooseCategory')
                 : t('minigames.yahtzee.rollDice')
             }
           </button>

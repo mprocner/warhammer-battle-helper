@@ -214,7 +214,7 @@ function Srd5CharacterDetails({
           const mod = abilityMod(score);
           return (
             <Srd5AdvantageOverlay key={key} onAdvRoll={(d, t) => rollAbility(key, d, t)} disabled={!gameId} showDC>
-              <button className="srd-ability-box" title={`Roll ${t(labelKey)} check`}>
+              <button className="srd-ability-box" title={t('common.rollCheck', { name: t(labelKey) })}>
                 <div className="srd-ability-box__label">{t(labelKey)}</div>
                 <div className="srd-ability-box__mod">{formatMod(mod)}</div>
                 <div className="srd-ability-box__score">{score}</div>

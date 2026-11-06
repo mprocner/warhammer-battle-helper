@@ -6,9 +6,18 @@
 # SSL managed by Certbot:
 #   sudo certbot --nginx -d rollhammer.online -d www.rollhammer.online
 
+# Access log without query strings and referrers: the WebSocket URL carries the JWT
+# (?token=...) and the activation/reset links carry their secret tokens the same way.
+# The client IP stays: this log is the one place we keep it (abuse, security). Retention
+# comes from the distribution's logrotate (/etc/logrotate.d/nginx: daily, rotate 14 on
+# Debian/Ubuntu), which the privacy policy quotes as "up to 14 days".
+log_format playrpg '$remote_addr [$time_local] "$request_method $uri $server_protocol" '
+                   '$status $body_bytes_sent "$http_user_agent"';
+
 server {
     server_name rollhammer.online www.rollhammer.online playrpg.net www.playrpg.net;
 
+    access_log /var/log/nginx/access.log playrpg;
     client_max_body_size 50M;
 
     # Frontend (Docker port 3000)
@@ -118,5 +127,6 @@ server {
 server {
     listen 80;
     server_name rollhammer.online www.rollhammer.online playrpg.net www.playrpg.net;
+    access_log /var/log/nginx/access.log playrpg;
     return 301 https://$host$request_uri;
 }

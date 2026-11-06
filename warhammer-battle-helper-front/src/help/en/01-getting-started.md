@@ -13,6 +13,9 @@ Under **Settings** (top menu) you will find:
 - **Statistics** — your rolls across all games: count, average, criticals and fumbles,
 - **Privacy** — consent to analytics (the site works the same without it).
 
+To delete your account or get a copy of your data, write to contact@playrpg.net from your
+account's email address. The privacy policy (playrpg.net/privacy) describes what we store and for how long.
+
 ## The game list {#the-game-list}
 
 The home page describes the app. After logging in, go to **Game Rooms**, where you see your games, both the ones you run and the ones you play in. You join

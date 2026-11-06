@@ -75,6 +75,9 @@ Update:
 - `server_name` — your domain(s)
 - `YOUR_IP` in `/admin/` and `/mongo-admin/` blocks — your home IP (whitelist)
 
+Keep the `log_format playrpg` / `access_log ... playrpg` lines: the privacy policy relies on
+them (see [Logs and retention](#logs-and-retention)).
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/warhammer /etc/nginx/sites-enabled/
 sudo nginx -t
@@ -292,7 +295,35 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod down -v
 
 ---
 
+## Logs and retention
+
+The privacy policy (`/privacy`) promises that logs with client IP addresses live **up to
+14 days**. Three settings make that true — keep them when you touch the config:
+
+| Log | Has client IPs? | Retention | Where it is set |
+|---|---|---|---|
+| nginx on the host (`/var/log/nginx/access.log`) | yes | 14 daily files, then deleted | `/etc/logrotate.d/nginx` (Ubuntu default: `daily`, `rotate 14`) |
+| Backend container (gin) | no — `RequestLogger` drops the IP and the query string | size-based, see below | `internal/http/RequestLogger.go` |
+| All containers (json-file) | no | max 3 × 10 MB per service; deleted when `deploy.sh` recreates the containers | `x-logging` in `docker-compose.prod.yml` |
+
+- The nginx `playrpg` log format leaves out query strings and referrers: the WebSocket URL
+  carries the JWT (`?token=...`), and the activation and reset links carry their tokens too.
+- Check the logrotate rule after installing nginx: `cat /etc/logrotate.d/nginx`. If
+  `rotate` is higher than 14 (or the rotation is not `daily`), set it to `daily` / `rotate 14`,
+  or update the privacy policy.
+- Docker's size rotation cannot promise days, which is why client IPs must never reach the
+  container logs: a new log line with a client IP breaks that promise. Log user IDs, not e-mails.
+- A changed `logging` block only applies to recreated containers: `docker compose ... up -d
+  --force-recreate` (`deploy.sh` does `down` + `up`, so the next deploy picks it up).
+
+---
+
 ## Backups
+
+`scripts/deploy.sh` makes a backup before every deploy and keeps the **last 7** database
+archives (`~/mongo-backups`) and the **last 5** copies of each file volume
+(`~/volume-backups`). The privacy policy describes this as "backups removed in rotation";
+change both together.
 
 ### Database backup (manual)
 

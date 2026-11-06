@@ -6,6 +6,7 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { useTranslation } from 'react-i18next';
 import { createScene, assignPlayerToScene } from '../../api/scenes';
 import { resolveDisplayName } from '../../utils/participants';
+import { sceneDisplayName } from './sceneName';
 import './SceneViewport.css';
 
 const SceneSelector = ({
@@ -96,7 +97,7 @@ const SceneSelector = ({
     setIsCreating(true);
     try {
       const created = await createScene(gameId, {
-        name: `Scene ${scenes.length + 1}`,
+        name: t('scenes.numberedName', { number: scenes.length + 1 }),
         gridWidth: 20,
         gridHeight: 20,
       });
@@ -120,7 +121,7 @@ const SceneSelector = ({
                 className={`scene-selector__tab ${scene.id === activeSceneId ? 'scene-selector__tab--active' : ''}`}
                 onClick={() => onSceneChange(scene.id)}
               >
-                {scene.name}
+                {sceneDisplayName(scene, t)}
                 {scene.sceneMusicId && (
                   <MusicNoteIcon className="scene-selector__music-icon" />
                 )}

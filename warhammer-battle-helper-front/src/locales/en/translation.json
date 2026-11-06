@@ -45,6 +45,8 @@
     }
   },
   "common": {
+    "rollNamed": "Roll {{name}}",
+    "rollCheck": "Roll {{name}} check",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -70,6 +72,7 @@
     "add": "Add"
   },
   "navigation": {
+    "languageTitle": "Language: {{lang}}",
     "help": "Help",
     "title": "PlayRPG",
     "login": "Login",
@@ -162,19 +165,97 @@
   },
   "privacy": {
     "title": "Privacy policy",
-    "intro": "This page explains what data PlayRPG stores on your device and what we send to third parties.",
-    "necessaryTitle": "Data required for the service",
-    "necessaryBody": "We store your login token, your interface language and your music volume in your browser's local storage. These are required for the site to work and do not need your consent. We never share them with any third party.",
-    "analyticsTitle": "Analytics",
-    "analyticsBody": "If you accept, we load Google Analytics 4. It stores the cookies _ga and _ga_<ID> on your device and sends Google your IP address, browser information, the pages you open and the actions listed below. Google acts as a separate controller and processes this data outside the European Economic Area, including in the United States.",
-    "eventsTitle": "What we measure",
-    "eventsBody": "Page views, account registration, e-mail confirmation, logging in and creating a game. We never send your e-mail address or any other data that identifies you directly.",
-    "userIdTitle": "Account identifier",
-    "userIdBody": "While you are logged in we send Google your account identifier — a random string of characters, never your e-mail. It lets us tell whether the same person came back on another device.",
-    "withdrawTitle": "Withdrawing consent",
-    "withdrawBody": "You can withdraw your consent at any time on this Privacy page, or in Settings, under Privacy, if you are logged in. We then stop sending data and delete the analytics cookies. Declining costs you nothing — the site works exactly the same.",
-    "contactTitle": "Contact",
-    "contactBody": "The data controller is {{name}}. Questions about your data: {{email}}"
+    "effectiveDate": "Effective from {{date}}",
+    "intro": "This page explains what personal data PlayRPG processes — on our server, in your browser and at third parties — why, for how long, and what rights you have.",
+    "sections": [
+      {
+        "title": "Data controller",
+        "paragraphs": [
+          "The controller of your personal data is {{name}}, a private individual who runs PlayRPG (playrpg.net) as a private project. For anything concerning your data, write to {{email}}.",
+          "Capitalised terms such as Service, Account, Game, Game Master and Content have the meaning given to them in the Terms of Service."
+        ]
+      },
+      {
+        "title": "Data stored on the server",
+        "paragraphs": [
+          "Account: your e-mail address; your password — only as a hash created with the bcrypt algorithm, from which the password cannot be read; the dates the Account was created and activated; the date and version of the Terms you accepted; one-time tokens for activating the Account and resetting the password (the reset token expires after one hour); whether the Account has administrator rights.",
+          "Profile and settings: your avatar, your signature (the name shown to other participants) and interface settings such as the scene control scheme.",
+          "Files: images, files and music uploaded to your library, with their names, size, type, folders and playlists.",
+          "Games: the Games you create or join and your participation in them (role, date joined, avatar and signature in that Game), Game invitations, and the content of Games — scenes, maps, tokens, fog of war, drawings, notes, handouts, character sheets, chat messages and dice rolls with their author and time.",
+          "System templates: templates created in the system creator and the list of people you share them with, with their e-mail addresses and roles.",
+          "Statistics and permissions: the results of your dice rolls and the time you spend in Games (start, end and length of the connection), from which we compute the statistics shown in Settings, and the game systems in which you may create Games.",
+          "Participants of a Game see your e-mail address (in the player list, and as your name until you set a signature), your avatar and signature, and the Content you share in the Game, as far as the visibility settings allow. People you share a system template with may see your e-mail address.",
+          "We do not ask for your name or any data other than described above. Do not put personal data of third parties in Content without a legal basis (see the Terms, section on User Content)."
+        ]
+      },
+      {
+        "title": "Data in your browser",
+        "paragraphs": [
+          "We store in your browser's local storage your login token, your interface language, your music volume, your analytics choice, the language filter on the game list, and which tutorials and which version of the changelog you have already seen. These are required for the Service to work and do not need your consent. We do not share them with third parties.",
+          "Cookies are set only by Google Analytics, and only after you consent (see Analytics)."
+        ]
+      },
+      {
+        "title": "Server logs",
+        "paragraphs": [
+          "For every request, the web server logs your IP address, the time, the address of the page opened (without parameters), the response code and size, and your browser information (user agent). These logs serve the security of the Service, detecting abuse and fixing failures. We keep them for up to 14 days.",
+          "Application logs contain technical information about requests and errors, without IP addresses. They are deleted once they exceed a size limit and on every update of the Service."
+        ]
+      },
+      {
+        "title": "Correspondence and e-mails",
+        "paragraphs": [
+          "When you write to us by e-mail or through the contact form, we process your e-mail address, your name if you give it, and the content of your message. A message from the form reaches us by e-mail at {{email}}.",
+          "We send you only the e-mails needed to use your Account: the activation link and the password reset link, and where necessary the messages described in the Terms (e.g. about a change to the Terms or a decision concerning Content). We do not send newsletters or advertising."
+        ]
+      },
+      {
+        "title": "Analytics (Google Analytics 4)",
+        "paragraphs": [
+          "If you accept, we load Google Analytics 4. It stores the cookies _ga and _ga_<ID> on your device and sends Google your IP address, browser information, the pages you open and the actions listed below. Google acts as a separate controller and processes this data outside the European Economic Area, including in the United States.",
+          "We measure page views, account registration, e-mail confirmation, logging in and creating a game. We never send your e-mail address or any other data that identifies you directly.",
+          "While you are logged in we send Google your account identifier — a random string of characters, never your e-mail. It lets us tell whether the same person came back on another device.",
+          "You can withdraw your consent at any time at the bottom of this page, or in Settings, under Privacy, if you are logged in. We then stop sending data and delete the analytics cookies. Declining costs you nothing — the Service works exactly the same."
+        ]
+      },
+      {
+        "title": "Purposes and legal bases",
+        "paragraphs": [
+          "Providing the service under the Terms — creating and running your Account, storing and sharing Content, running Games, statistics, activation and password reset e-mails, complaints: Art. 6(1)(b) GDPR (performance of a contract).",
+          "Security and continuity of the Service — server logs, backups, detecting abuse — as well as answering messages and establishing, exercising or defending legal claims: Art. 6(1)(f) GDPR (our legitimate interest).",
+          "Analytics: Art. 6(1)(a) GDPR (your consent).",
+          "Handling notices of illegal Content and appeals under the Digital Services Act (DSA) and complying with other legal obligations: Art. 6(1)(c) GDPR.",
+          "Providing an e-mail address and a password is voluntary but necessary to create an Account. We do not make decisions about you based solely on automated processing."
+        ]
+      },
+      {
+        "title": "Recipients of data",
+        "paragraphs": [
+          "OVH — the provider of the VPS in the European Union on which the Service runs and the data described above is stored, and of the mail server through which we send and receive e-mails. OVH processes data on our behalf.",
+          "Google — only if you consent to analytics, as a separate controller (see Analytics).",
+          "Other Users — as described in the section Data stored on the server. Public authorities — only where the law requires it.",
+          "We do not sell data. Apart from Google Analytics, we do not transfer data outside the European Economic Area."
+        ]
+      },
+      {
+        "title": "Retention",
+        "paragraphs": [
+          "We keep Account data and Content until the Account is deleted. Deleting the Account means deleting the data linked to it, except for backup copies.",
+          "Content you delete (e.g. a file, a note, a character) is deleted immediately. A Game deleted by its Game Master is no longer accessible but stays in the database until it is permanently deleted, at the latest when the Game Master's Account is deleted.",
+          "Accounts whose e-mail address has not been confirmed are not deleted automatically at the moment. You may request their deletion at any time.",
+          "We make backups of the database and files on every update of the Service and remove them in rotation: we keep the last 7 database backups and the last 5 file backups. Data deleted from the Service disappears from backups once the last backup containing it is rotated out.",
+          "We keep web server logs with IP addresses for up to 14 days. We keep correspondence for as long as needed to handle it, and then until any related claims become time-barred. Google keeps analytics data for the period set in Google Analytics."
+        ]
+      },
+      {
+        "title": "Your rights",
+        "paragraphs": [
+          "You have the right to access your data and receive a copy of it, to have it rectified, erased, restricted and ported, and the right to object to processing based on our legitimate interest. You may withdraw your consent at any time; this does not affect the lawfulness of processing before the withdrawal.",
+          "To exercise these rights, write to {{email}}, preferably from the e-mail address linked to your Account. We reply without undue delay and within one month at the latest. If a request comes from another address, we may ask you to confirm that the Account is yours.",
+          "You also have the right to lodge a complaint with the supervisory authority — the President of the Personal Data Protection Office (Prezes Urzędu Ochrony Danych Osobowych, ul. Stawki 2, 00-193 Warsaw, Poland, uodo.gov.pl)."
+        ]
+      }
+    ]
   },
   "terms": {
     "title": "Terms of Service",
@@ -203,7 +284,6 @@
         "title": "Free service",
         "paragraphs": [
           "Using the Service is free of charge.",
-          "The Provider may offer a way to voluntarily support the Service. Support is not payment for the service and grants no additional rights in the Service.",
           "The Service is a project developed by a private individual and provided as is. The Provider makes efforts to keep the Service running without interruption but does not guarantee its continuous availability or the permanence of stored Content. Users should keep copies of important material outside the Service.",
           "The Provider may temporarily suspend the Service, in particular for maintenance, updates or to fix failures.",
           "Provisions limiting the Provider's liability do not apply to damage caused intentionally or to other cases in which limiting liability is not permitted by law."
@@ -703,14 +783,27 @@
     "movement": "Movement",
     "fortune": "Fortune"
   },
-  "logs": {
-    "CHARACTER_ROLLED_CHARACTERISTIC": "{{name}} rolled {{characteristic}}: {{result}}",
-    "CHARACTER_JOINED_GAME": "{{name}} joined the game",
-    "CHARACTER_LEFT_GAME": "{{name}} left the game",
-    "GAME_STARTED": "Game started",
-    "GAME_ENDED": "Game ended"
-  },
   "log": {
+    "session": {
+      "synchronized": "Game state synchronized",
+      "playerJoined": "{{name}} joined the game",
+      "playerLeft": "A player left the game",
+      "playerLeftNamed": "{{name}} left the game",
+      "characterAdded": "Character added to the battlefield",
+      "characterAddedBy": "{{name}} added a character to the battlefield",
+      "characterRemoved": "Character removed from the battlefield",
+      "addToGridFailed": "Failed to add the character to the grid",
+      "moveFailed": "Failed to move the character",
+      "cellOccupied": "Cell already occupied",
+      "moveTokensFailed": "Failed to move the tokens",
+      "removeFromGridFailed": "Failed to remove the character from the grid",
+      "gridFull": "No empty spaces on the grid",
+      "localRoll": "Rolled d{{sides}}: {{result}}",
+      "localRollMulti": "Rolled {{count}}d{{sides}}: {{results}} (sum {{sum}})",
+      "rollFailed": "Failed to roll dice",
+      "skillRollsInSessionOnly": "Skill rolls are only available in game sessions",
+      "weaponRollsInSessionOnly": "Weapon rolls are only available in game sessions"
+    },
     "rolledDice": "Rolled K{{sides}}: {{result}}",
     "rolledMultiDice": "{{count}}D{{sides}}",
     "sum": "Sum",
@@ -790,6 +883,9 @@
     "gameImageUploadFailed": "Could not upload the game image."
   },
   "handouts": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "resetView": "Reset view",
     "title": "Handouts",
     "addHandout": "Add Handout",
     "addHandoutShort": "Handout",
@@ -1440,6 +1536,8 @@
     "untitled": "Untitled"
   },
   "scenes": {
+    "defaultName": "Scene 1",
+    "numberedName": "Scene {{number}}",
     "title": "Scenes",
     "createScene": "New Scene",
     "createSceneShort": "Scene",
@@ -2485,15 +2583,19 @@
     "role_player": "Player"
   },
   "minigames": {
+    "startFailed": "Failed to start the game",
     "title": "Mini-Games",
     "comingSoon": "More games coming soon...",
     "inProgress": "In progress",
     "reopenBoard": "Show board",
     "yahtzee": {
+      "hold": "Hold",
+      "unhold": "Release",
       "title": "Yahtzee",
       "meta": "2–6 players · ~20 min",
       "description": "Classic dice scoring game",
       "rollDice": "Roll Dice",
+      "chooseCategory": "Choose a category",
       "yourTurn": "Your turn",
       "waitingFor": "Waiting for {{name}}...",
       "rollsLeft_one": "{{count}} roll left",

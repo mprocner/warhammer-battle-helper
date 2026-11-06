@@ -13,6 +13,9 @@ W **Ustawieniach** (menu u góry) znajdziesz:
 - **Statystyki** — twoje rzuty ze wszystkich gier: liczba, średnia, krytyki i pechowe rzuty,
 - **Prywatność** — zgoda na analitykę (strona działa tak samo bez niej).
 
+Aby usunąć konto albo dostać kopię swoich danych, napisz na contact@playrpg.net z adresu
+e-mail konta. Co przechowujemy i jak długo, opisuje polityka prywatności (playrpg.net/privacy).
+
 ## Lista gier {#the-game-list}
 
 Strona główna opisuje aplikację. Po zalogowaniu przejdź do **Pokojów Gier**, gdzie widzisz swoje gry, zarówno te, które prowadzisz, jak i te, w których grasz.

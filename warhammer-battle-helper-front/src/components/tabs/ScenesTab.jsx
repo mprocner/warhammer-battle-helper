@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getScenes, createScene, updateScene, deleteScene, assignPlayerToScene, toggleFog } from '../../api/scenes';
 import { getMusic } from '../../api/music';
 import { resolveDisplayName } from '../../utils/participants';
+import { sceneDisplayName } from '../scene/sceneName';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import QueueMusicIcon from '@mui/icons-material/QueueMusic';
 import ModalHeader from '../common/ModalHeader';
@@ -113,7 +114,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
 
   const handleDeleteScene = async (sceneId) => {
     const scene = scenes.find(s => s.id === sceneId);
-    if (!window.confirm(t('scenes.confirmDelete', { name: scene?.name }))) return;
+    if (!window.confirm(t('scenes.confirmDelete', { name: sceneDisplayName(scene, t) }))) return;
 
     try {
       await deleteScene(gameId, sceneId);
@@ -322,7 +323,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
               >
                 <div className="scenes-tab__card-header">
                   <span className="scenes-tab__card-name">
-                    {scene.name}
+                    {sceneDisplayName(scene, t)}
                     {scene.isDefault && <span className="scenes-tab__badge">{t('scenes.default')}</span>}
                   </span>
                   <span className="scenes-tab__card-info">
@@ -354,6 +355,7 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
             <input
               type="text"
               value={draftName}
+              placeholder={sceneDisplayName(selectedScene, t)}
               onChange={(e) => setDraftName(e.target.value)}
               onBlur={() => {
                 const trimmed = draftName.trim();

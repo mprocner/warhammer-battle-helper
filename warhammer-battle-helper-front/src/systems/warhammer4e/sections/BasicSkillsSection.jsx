@@ -81,7 +81,7 @@ function BasicSkillsSection({ character, setCharacter, scheduleAutoSave, onChara
             if (onCharacterUpdate) onCharacterUpdate(updatedCharacter);
         } catch (error) {
             console.error('Error saving character:', error);
-            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+            alert(`${t('character.saveFailed')}: ${error.response?.data?.error || error.message}`);
         }
     };
 

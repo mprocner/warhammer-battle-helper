@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
@@ -12,6 +13,7 @@ const FACE_DOTS = {
 };
 
 function YahtzeeDie({ value, held, isRolling, canHold, onToggleHold }) {
+  const { t } = useTranslation();
   const [displayValue, setDisplayValue] = useState(value || 1);
   const intervalRef = useRef(null);
 
@@ -41,7 +43,7 @@ function YahtzeeDie({ value, held, isRolling, canHold, onToggleHold }) {
     <div
       className={`yahtzee-die ${held ? 'yahtzee-die--held' : ''} ${isRolling ? 'yahtzee-die--rolling' : ''} ${canHold ? 'yahtzee-die--holdable' : ''}`}
       onClick={canHold ? onToggleHold : undefined}
-      title={canHold ? (held ? 'Unhold' : 'Hold') : undefined}
+      title={canHold ? t(held ? 'minigames.yahtzee.unhold' : 'minigames.yahtzee.hold') : undefined}
     >
       <svg viewBox="0 0 100 100" className="yahtzee-die__face">
         {dots.map(([cx, cy], i) => (

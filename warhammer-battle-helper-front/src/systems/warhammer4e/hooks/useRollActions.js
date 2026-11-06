@@ -12,7 +12,7 @@ function useRollActions(gameId, token, characterId, characterName, addLogMessage
     const rollSkill = useCallback(async (skillKey, skillName, modifierValue) => {
         if (!gameId || !token) {
             if (addLogMessage) {
-                addLogMessage('Skill rolls are only available in game sessions', 'warning');
+                addLogMessage(t('log.session.skillRollsInSessionOnly'), 'warning');
             }
             return;
         }

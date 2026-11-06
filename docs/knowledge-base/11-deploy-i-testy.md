@@ -29,3 +29,14 @@ z Certbotem (`nginx.vps.conf.example`). `scripts/autopull.sh` (usługa systemd
   WebSockety. Klienci łączą się ponownie sami.
 - Repo nie ma CI na GitHubie, więc testy trzeba uruchamiać lokalnie przed pushem.
 - Pliki użytkowników leżą w wolumenach Dockera. Backup to baza **i** wolumeny.
+- **Logi i retencja obiecana w polityce prywatności.** Polityka mówi, że logi z adresami IP
+  żyją do 14 dni. Trzyma to tylko nginx na hoście (logrotate: `daily`, `rotate 14`, format
+  `playrpg` bez query stringów w `nginx.vps.conf.example`). Logi kontenerów rotują tylko po
+  rozmiarze (`x-logging` w `docker-compose.prod.yml`: 3 × 10 MB, kasowane przy `down` w
+  `deploy.sh`), więc nie mogą zawierać IP — dlatego backend używa `RequestLogger` zamiast
+  loggera z `gin.Default()` (bez IP i bez query stringa, w którym WebSocket niesie JWT).
+  Nowy `log.Printf` z adresem IP albo e-mailem łamie politykę. Szczegóły: `DEPLOY.md`,
+  „Logs and retention”.
+- **Kopie zapasowe** (`deploy.sh`): 7 ostatnich archiwów bazy i 5 ostatnich kopii każdego
+  wolumenu z plikami. Polityka prywatności opisuje je jako „usuwane w ramach rotacji” — zmiana
+  liczby kopii to też przegląd polityki.

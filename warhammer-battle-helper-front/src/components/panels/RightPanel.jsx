@@ -112,16 +112,16 @@ const RightPanel = ({
       } else if (count > 1) {
         const results = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
         const sum = results.reduce((acc, r) => acc + r, 0);
-        addLogMessage(`Rolled ${count}d${sides}: ${results.join(', ')} (sum ${sum})`, 'success');
+        addLogMessage(t('log.session.localRollMulti', { count, sides, results: results.join(', '), sum }), 'success');
       } else {
         const result = Math.floor(Math.random() * sides) + 1;
-        addLogMessage(`Rolled d${sides}: ${result}`, 'success');
+        addLogMessage(t('log.session.localRoll', { sides, result }), 'success');
       }
     } catch (error) {
       console.error('Error rolling dice:', error);
-      addLogMessage('Failed to roll dice', 'error');
+      addLogMessage(t('log.session.rollFailed'), 'error');
     }
-  }, [gameId, token, addLogMessage, rollVisibility]);
+  }, [gameId, token, addLogMessage, rollVisibility, t]);
 
   // Zakładki i ich kolejność żyją w tabDefinitions — dzieli je z legendą samouczka.
   const tabs = useMemo(

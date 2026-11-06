@@ -39,7 +39,7 @@ function MinigameSetup({ selectedGame, gameId, onlinePlayers, userId, onBack, on
       await startMinigame(gameId, selectedGame, players, maxRounds);
       onStarted();
     } catch (e) {
-      setError(e?.response?.data?.error || 'Failed to start game');
+      setError(e?.response?.data?.error || t('minigames.startFailed'));
     }
     setStarting(false);
   };

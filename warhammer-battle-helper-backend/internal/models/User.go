@@ -42,7 +42,7 @@ type UpdateSettingsRequest struct {
 
 // TermsVersion identifies the terms of service a new account accepts. Keep in sync with
 // TERMS_EFFECTIVE_DATE in warhammer-battle-helper-front/src/legal/legalInfo.js.
-const TermsVersion = "2026-10-15"
+const TermsVersion = "2026-11-06"
 
 type User struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`

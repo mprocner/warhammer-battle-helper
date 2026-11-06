@@ -287,12 +287,12 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
                 setImageZoom(newZoom);
                 setImagePan(prev => clampImagePan(prev.x, prev.y, newZoom));
               }}
-              title="Zoom out"
+              title={t('handouts.zoomOut')}
             >−</button>
             <button
               className={`handout-viewer__zoom-btn handout-viewer__zoom-btn--label ${isZoomed ? 'handout-viewer__zoom-btn--active' : ''}`}
               onClick={resetImageView}
-              title="Reset view"
+              title={t('handouts.resetView')}
             >
               {Math.round(imageZoom * 100)}%
             </button>
@@ -303,7 +303,7 @@ const HandoutViewerModal = ({ isOpen, onClose, handout, index = 0 }) => {
                 setImageZoom(newZoom);
                 setImagePan(prev => clampImagePan(prev.x, prev.y, newZoom));
               }}
-              title="Zoom in"
+              title={t('handouts.zoomIn')}
             >+</button>
           </div>
         </div>

@@ -5,7 +5,7 @@ function CharacterHeader({ avatarSrc, characterId, name, onOpenSheet, t }) {
     return (
         <div className="character-details-header">
             <Avatar key={`${characterId}-${avatarSrc || 'default'}`} src={avatarSrc} />
-            <h2>{name || 'Unknown'}</h2>
+            <h2>{name || t('common.unknown')}</h2>
             <button className="character-sheet-btn" onClick={onOpenSheet}>
                 📜
                 <span className="state-tooltip">

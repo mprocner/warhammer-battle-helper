@@ -345,7 +345,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       // Success - WebSocket will handle the update
     } catch (error) {
       console.error('Error adding character to grid:', error);
-      addLogMessage('Failed to add character to grid', 'error');
+      addLogMessage(t('log.session.addToGridFailed'), 'error');
     }
   };
 
@@ -374,7 +374,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       // Success - WebSocket will handle the update
     } catch (error) {
       console.error('Error moving character:', error);
-      addLogMessage('Failed to move character', 'error');
+      addLogMessage(t('log.session.moveFailed'), 'error');
     }
   };
 
@@ -392,7 +392,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       if (targetIdx === -1 || currentIdx === targetIdx) return;
       const targetChar = zones[targetIdx].character;
       if (targetChar && targetChar.id !== characterId) {
-        addLogMessage('Cell already occupied', 'warning');
+        addLogMessage(t('log.session.cellOccupied'), 'warning');
         return; // token snaps back on next prop sync
       }
       const draggedChar = currentIdx !== -1 ? zones[currentIdx].character : resolveCharacter(characterId);
@@ -413,9 +413,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       await batchMoveTokens(gameId, sid, moves);
     } catch (err) {
       console.error('Failed to batch move tokens:', err);
-      addLogMessage('Failed to move tokens', 'error');
+      addLogMessage(t('log.session.moveTokensFailed'), 'error');
     }
-  }, [gameId, addLogMessage]);
+  }, [gameId, addLogMessage, t]);
 
   // Commit a character resize (and any position shift from N/W handles) to the geometry endpoint.
   const handleResizeCharacter = async (characterId, w, h, col, row) => {
@@ -475,7 +475,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       // Success - WebSocket will handle the update
     } catch (error) {
       console.error('Error removing character from grid:', error);
-      addLogMessage('Failed to remove character from grid', 'error');
+      addLogMessage(t('log.session.removeFromGridFailed'), 'error');
     }
   };
 
@@ -525,11 +525,11 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
       setError(null);
     } catch (e) {
       console.error(e);
-      if (!silent) setError('Nie udało się pobrać postaci.');
+      if (!silent) setError(t('grid.fetchError'));
     } finally {
       if (!silent) setIsLoading(false);
     }
-  }, [gameId, token]);
+  }, [gameId, token, t]);
 
   // Sygnał gotowości dla samouczka (GameTour): dopóki isLoading trzyma true,
   // ten komponent renderuje wyłącznie placeholder "Ładowanie postaci..." (patrz
@@ -899,13 +899,13 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           setFightZones(prev => prev.map((z, idx) => idx === emptyZoneIndex ? { ...z, character: char } : z));
         }
       } else {
-        addLogMessage('No empty spaces on grid', 'warning');
+        addLogMessage(t('log.session.gridFull'), 'warning');
       }
     }
   }, [gameId, token, addLogMessage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isLoading) return <div>Ładowanie postaci...</div>;
-  if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>Odśwież</button></div>;
+  if (isLoading) return <div>{t('grid.loading')}</div>;
+  if (error) return <div style={{color:'red', padding:20}}>{error} <button onClick={fetchCharacters}>{t('grid.refresh')}</button></div>;
 
   // FEATURE-102: token-display layout comes from the game's embedded system template
   // (set for custom games and for hardcoded games created from a named variant).
@@ -978,7 +978,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           <button
             className={`panel-toggle panel-toggle--left ${isHidden ? 'panel-toggle--hidden' : ''}`}
             onClick={onTogglePanel}
-            title={isHidden ? 'Show Panel' : 'Hide Panel'}
+            title={isHidden ? t('leftPanel.showPanel') : t('leftPanel.hidePanel')}
           >
             <span className="panel-toggle__arrow">{isHidden ? '▶' : '◀'}</span>
           </button>

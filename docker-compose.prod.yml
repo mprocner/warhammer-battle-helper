@@ -1,5 +1,16 @@
+# Container logs (docker json-file) rotate by size only: at most 3 files of 10 MB per
+# service, and deploy.sh recreates the containers, which drops them entirely. Client IPs
+# never reach these logs (see RequestLogger in the backend) — only nginx on the host
+# keeps them, under its own 14-day logrotate. See DEPLOY.md, "Logs and retention".
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   frontend:
+    logging: *default-logging
     build:
       context: ./warhammer-battle-helper-front
       dockerfile: Dockerfile.prod
@@ -13,6 +24,7 @@ services:
       - backend
 
   backend:
+    logging: *default-logging
     build:
       context: ./warhammer-battle-helper-backend
       dockerfile: Dockerfile.prod
@@ -45,6 +57,7 @@ services:
       - mongo
 
   admin:
+    logging: *default-logging
     build:
       context: ./warhammer-battle-helper-admin
       dockerfile: Dockerfile.prod
@@ -58,6 +71,7 @@ services:
       - backend
 
   mongo:
+    logging: *default-logging
     image: mongo:7
     restart: unless-stopped
     environment:
@@ -68,6 +82,7 @@ services:
     # Not exposing port externally in production
 
   dozzle:
+    logging: *default-logging
     image: amir20/dozzle:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -78,6 +93,7 @@ services:
     restart: unless-stopped
 
   mongo-express:
+    logging: *default-logging
     image: mongo-express:1
     restart: unless-stopped
     ports:
@@ -97,6 +113,7 @@ services:
   # Access via SSH tunnel: ssh -L 19999:127.0.0.1:19999 ubuntu@playrpg.net
   # See the Monitoring section in README.md
   netdata:
+    logging: *default-logging
     image: netdata/netdata
     hostname: playrpg-vps
     pid: host

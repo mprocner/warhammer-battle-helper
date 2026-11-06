@@ -87,3 +87,10 @@ wyłącznie kluczy angielskich, np. `t('creator.addSection')`. Nazwy systemów s
   (`HelpPage.test.jsx`) mockuje `loadHelpMarkdown` i czyta pliki z dysku.
 - Brak klucza w `pl` nie wywala aplikacji, tylko pokazuje tekst angielski. Łatwo to przeoczyć,
   dlatego dodawaj klucze w obu plikach naraz.
+- **Log gry tłumaczy się w chwili dodania wpisu.** `addLogMessage(t('log.session.…'))` zapisuje
+  gotowy tekst, więc po zmianie języka stare wpisy zostają w poprzednim języku, a nowe idą w
+  nowym. Zdarzenia z historii gry (`leave`, `character_add`) tłumaczy `fetchGameState` przy
+  wczytaniu. Nie przekazuj do logu angielskich literałów — tak powstał mieszany język w pokoju
+  gry (PLAYRPG-309).
+- Serwer nie ma locale. Teksty tworzone przez backend, które widzi gracz (np. nazwa domyślnej
+  sceny), zostawiamy puste i nazywamy po stronie frontu, a nie zapisujemy po angielsku.

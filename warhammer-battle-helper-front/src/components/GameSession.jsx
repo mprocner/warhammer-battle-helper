@@ -146,10 +146,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
           switch (event.type) {
             case 'leave':
-              message = `${event.username} left the game`;
+              message = t('log.session.playerLeftNamed', { name: event.username });
               return { createdAt, message, type: 'info', timestamp };
             case 'character_add':
-              message = `${event.username} added character to battlefield`;
+              message = t('log.session.characterAddedBy', { name: event.username });
               return { createdAt, message, type: 'success', timestamp };
             case 'move':
               return null;
@@ -181,7 +181,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       setLoading(false);
       return false;
     }
-  }, [gameId, token, historyLoaded, syncFromGame, onSessionEnded]);
+  }, [gameId, token, historyLoaded, syncFromGame, onSessionEnded, t]);
 
   const removePing = useCallback((pingId) => {
     setPointerPings(prev => prev.filter(p => p.id !== pingId));
@@ -202,7 +202,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     switch (message.type) {
       case WS_EVENTS.GAME_STATE:
         setGameState(message.payload.game);
-        addLogMessage('Game state synchronized', 'info');
+        addLogMessage(t('log.session.synchronized'), 'info');
         setLoading(false);
         break;
 
@@ -235,7 +235,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
       case WS_EVENTS.PARTICIPANT_JOINED: {
         const newParticipant = message.payload.participant;
-        addLogMessage(`${newParticipant.username} joined the game`, 'success');
+        addLogMessage(t('log.session.playerJoined', { name: newParticipant.username }), 'success');
         setGameState(prev => {
           if (!prev) return prev;
           const already = (prev.participants || []).some(p => p.userId === newParticipant.userId);
@@ -246,7 +246,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.PARTICIPANT_LEFT:
-        addLogMessage(`A player left the game`, 'info');
+        addLogMessage(t('log.session.playerLeft'), 'info');
         setGameState(prev => {
           if (!prev) return prev;
           return {
@@ -275,7 +275,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.CHARACTER_ADDED:
-        addLogMessage(`Character added to the battlefield`, 'success');
+        addLogMessage(t('log.session.characterAdded'), 'success');
         setGameState(prev => {
           if (!prev) return prev;
           return { ...prev, characters: [...(prev.characters || []), message.payload.character] };
@@ -299,7 +299,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.CHARACTER_REMOVED:
-        addLogMessage('Character removed from battlefield', 'info');
+        addLogMessage(t('log.session.characterRemoved'), 'info');
         setGameState(prev => {
           if (!prev) return prev;
           return { ...prev, characters: (prev.characters || []).filter(c => c.id !== message.payload.characterId) };
@@ -872,7 +872,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast, t]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,

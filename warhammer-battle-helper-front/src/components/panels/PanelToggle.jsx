@@ -1,10 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './PanelToggle.css';
 
 /**
  * Reusable toggle button for showing/hiding panels
  */
 const PanelToggle = ({ position, isHidden, onClick }) => {
+  const { t } = useTranslation();
   // Determine arrow direction based on position and hidden state
   const getArrow = () => {
     if (position === 'left') {
@@ -18,7 +20,7 @@ const PanelToggle = ({ position, isHidden, onClick }) => {
     <button
       className={`panel-toggle panel-toggle--${position} ${isHidden ? 'panel-toggle--hidden' : ''}`}
       onClick={onClick}
-      title={isHidden ? 'Show Panel' : 'Hide Panel'}
+      title={isHidden ? t('leftPanel.showPanel') : t('leftPanel.hidePanel')}
     >
       <span className="panel-toggle__arrow">{getArrow()}</span>
     </button>

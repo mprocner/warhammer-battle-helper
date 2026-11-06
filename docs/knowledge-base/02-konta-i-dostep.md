@@ -57,6 +57,17 @@ hoście łączy się z kontenerem przez mapowanie portu Dockera, więc backend w
 sieci Dockera (172.16.0.0/12). Ruch na opublikowany port 8080 prosto z internetu ma publiczny
 adres źródłowy, nie jest zaufany i nie może podmienić IP nagłówkiem.
 
+**Strony prawne.** Regulamin (`/terms`) i polityka prywatności (`/privacy`) mają ten sam
+kształt danych: `terms.sections` / `privacy.sections` w `translation.json`, tablica
+`{ title, paragraphs[] }`, numeracja generowana w komponencie. Tożsamość usługodawcy
+(`PROVIDER_NAME`, `CONTACT_EMAIL`) i daty (`TERMS_EFFECTIVE_DATE`, `PRIVACY_EFFECTIVE_DATE`)
+leżą w `src/legal/legalInfo.js`, nie w tłumaczeniach, żeby obie wersje językowe pokazywały
+to samo. Polityka opisuje dane na serwerze (konto, profil, pliki, gry, szablony, statystyki
+rzutów i czasu online, dostęp do systemów), localStorage, logi, korespondencję, GA4, podstawy
+prawne, odbiorców (OVH, Google), retencję i prawa z RODO. Prawa (usunięcie konta, eksport)
+realizujemy ręcznie po e-mailu na `contact@` — w aplikacji nie ma samoobsługi. Na dole
+`/privacy` jest `PrivacySettings`, żeby zgodę dało się wycofać bez logowania.
+
 ## Kluczowe pliki
 
 | Co | Gdzie |
@@ -88,3 +99,15 @@ adres źródłowy, nie jest zaufany i nie może podmienić IP nagłówkiem.
   osobno.
 - Zgłoszenie treści nie przyjmuje załączników. Zrzut ekranu zgłaszający dosyła mailem, a
   podpowiedź pod polem „Gdzie jest ta treść?” mówi mu, jak to zrobić.
+- **Polityka prywatności obiecuje, że jest kompletna.** Nowe pole z danymi użytkownika
+  w modelu, nowa kolekcja, nowy podmiot zewnętrzny (np. CDN, usługa e-mail) albo nowy klucz
+  w localStorage = aktualizacja `privacy.sections` w en **i** pl oraz `PRIVACY_EFFECTIVE_DATE`.
+  `PrivacyPolicy.test.jsx` pilnuje tylko równej liczby akapitów w obu językach, nie treści.
+- **Usunięcie konta w panelu admina (`AdminRepository.DeleteUser`) kasuje tylko dokument
+  użytkownika** — nie postacie, gry, pliki na dysku, `roll_stats` ani `online_sessions`.
+  Polityka i regulamin obiecują usunięcie powiązanych danych, więc przy żądaniu usunięcia
+  resztę trzeba dziś posprzątać ręcznie.
+- Gra usunięta przez MG to soft delete (`deletedAt`); trwale znika dopiero przez panel admina.
+  Polityka mówi o tym wprost — zmiana mechanizmu to zmiana jej tekstu.
+- `TermsVersion` (Go) i `TERMS_EFFECTIVE_DATE` (JS) zmieniają się razem; nowa wersja
+  regulaminu bez zmiany stałej Go stempluje nowym kontom starą wersję.

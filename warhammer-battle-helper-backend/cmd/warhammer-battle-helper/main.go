@@ -72,7 +72,9 @@ func main() {
 	}
 	defer db.Disconnect()
 
-	r := gin.Default()
+	// gin.Default() minus its logger: ours leaves client IPs and query strings out of the log.
+	r := gin.New()
+	r.Use(http.RequestLogger(), gin.Recovery())
 
 	// Without this gin trusts every peer's X-Forwarded-For, so c.ClientIP() (used by the rate
 	// limiter) would be whatever the client claims. See ConfigureClientIP for the nginx setup.

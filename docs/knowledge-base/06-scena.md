@@ -62,6 +62,12 @@ działają przy każdym zoomie.
 
 ## Pułapki
 
+- **Domyślna scena nie ma nazwy.** `EnsureDefaultScene` tworzy ją z pustym `Name`, bo serwer nie
+  zna języka widza. Front pokazuje wtedy `scenes.defaultName` („Scena 1” / „Scene 1”) —
+  każde miejsce wyświetlające nazwę sceny musi iść przez `sceneDisplayName`
+  (`src/components/scene/sceneName.js`), inaczej pokaże pustą kartę. Szybkie „+ Scena” nazywa
+  nowe sceny po stronie klienta (`scenes.numberedName`), więc ta nazwa zostaje w języku MG.
+
 - Zdarzenia myszy na scenie: przeczytaj sekcję „Zdarzenia myszy na scenie” w `CLAUDE.md`.
   Kolejność `contextmenu` różni się między macOS a Windows, mysz to jeden pointer, a listener
   na `document` w fazie capture wyprzedza każdy handler Reacta.

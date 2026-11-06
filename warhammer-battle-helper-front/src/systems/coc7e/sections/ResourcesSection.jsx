@@ -36,7 +36,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
           </div>
           {gameId && (
             <CoCDiceModOverlay onDiceModRoll={(d) => onRollAttr('sanity', d)} disabled={!gameId}>
-              <button className="coc-roll-btn coc-roll-btn--lg" title="Roll Sanity"><CasinoIcon fontSize="large" /></button>
+              <button className="coc-roll-btn coc-roll-btn--lg" title={t('common.rollNamed', { name: t('coc.sanity') })}><CasinoIcon fontSize="large" /></button>
             </CoCDiceModOverlay>
           )}
         </div>
@@ -49,7 +49,7 @@ function ResourcesSection({ edited, combat, onFieldChange, onRollAttr, gameId })
           </div>
           {gameId && (
             <CoCDiceModOverlay onDiceModRoll={(d) => onRollAttr('luck', d)} disabled={!gameId}>
-              <button className="coc-roll-btn coc-roll-btn--lg" title="Roll Luck"><CasinoIcon fontSize="large" /></button>
+              <button className="coc-roll-btn coc-roll-btn--lg" title={t('common.rollNamed', { name: t('coc.luck') })}><CasinoIcon fontSize="large" /></button>
             </CoCDiceModOverlay>
           )}
         </div>

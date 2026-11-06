@@ -193,7 +193,7 @@ func (s *GameService) EnsureGMParticipant(game *models.Game) {
 		Role:     models.RoleGameMaster,
 		JoinedAt: game.CreatedAt,
 	}
-	log.Printf("[DEBUG] EnsureGMParticipant: adding GM %s to participants for game %s", gmUser.Email, game.ID.Hex())
+	log.Printf("[DEBUG] EnsureGMParticipant: adding GM %s to participants for game %s", gmUser.ID.Hex(), game.ID.Hex())
 	if _, err := s.gameRepo.AddParticipant(game.ID.Hex(), gm); err != nil {
 		log.Printf("[DEBUG] EnsureGMParticipant: failed to persist: %v", err)
 	}
@@ -1225,7 +1225,9 @@ func (s *GameService) MoveHandout(gameID string, handoutID primitive.ObjectID, u
 func (s *GameService) EnsureDefaultScene(game *models.Game) {
 	if len(game.Scenes) == 0 {
 		scene := models.Scene{
-			Name:            "Default",
+			// Left empty on purpose: the server has no locale, so the frontend names an
+			// unnamed scene in the viewer's language (sceneDisplayName in sceneName.js).
+			Name:            "",
 			GridVisible:     true,
 			GridWidth:       20,
 			GridHeight:      20,

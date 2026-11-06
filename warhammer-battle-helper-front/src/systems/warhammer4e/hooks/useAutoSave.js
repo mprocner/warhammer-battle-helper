@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import axiosInstance from '../../../api/axios';
 import { buildPayload } from '../buildPayload';
 import { getCharacterSaveUrl } from '../../shared/characterApi';
@@ -12,6 +13,7 @@ function normalizeCharacter(char) {
 }
 
 function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
+    const { t } = useTranslation();
     const [editedCharacter, setEditedCharacter] = useState(() => ({
         ...character,
         basicSkills: character.basicSkills || {},
@@ -97,11 +99,11 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
             setHasChanges(false);
         } catch (error) {
             console.error('Error saving character:', error);
-            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+            alert(`${t('character.saveFailed')}: ${error.response?.data?.error || error.message}`);
         } finally {
             setIsSaving(false);
         }
-    }, [gameId, onCharacterUpdate]);
+    }, [gameId, onCharacterUpdate, t]);
 
     const handleSave = useCallback(async () => {
         await save(editedCharacterRef.current);
@@ -148,11 +150,11 @@ function useAutoSave(character, onCharacterUpdate, isGM, gameId) {
             }
         } catch (error) {
             console.error('Error saving character:', error);
-            alert('Failed to save character: ' + (error.response?.data?.error || error.message));
+            alert(`${t('character.saveFailed')}: ${error.response?.data?.error || error.message}`);
         } finally {
             setIsSaving(false);
         }
-    }, [gameId, onCharacterUpdate]);
+    }, [gameId, onCharacterUpdate, t]);
 
     return {
         editedCharacter,

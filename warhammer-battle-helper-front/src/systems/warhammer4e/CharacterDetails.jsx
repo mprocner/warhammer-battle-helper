@@ -372,7 +372,7 @@ function WarhammerCharacterDetails({
                 }
             } else {
                 if (addLogMessage) {
-                    addLogMessage('Skill rolls are only available in game sessions', 'warning');
+                    addLogMessage(t('log.session.skillRollsInSessionOnly'), 'warning');
                 }
             }
         } catch (error) {
@@ -407,7 +407,7 @@ function WarhammerCharacterDetails({
                 }
             } else {
                 if (addLogMessage) {
-                    addLogMessage('Weapon rolls are only available in game sessions', 'warning');
+                    addLogMessage(t('log.session.weaponRollsInSessionOnly'), 'warning');
                 }
             }
         } catch (error) {

@@ -308,7 +308,7 @@ function CoCCharacterDetails({
               <button
                 className="char-box char-box-button"
                 disabled={!val}
-                title={`Roll ${label}`}
+                title={t('common.rollNamed', { name: label })}
               >
                 <div className="char-box-label">{label}</div>
                 <div className="char-box-value">{val || '—'}</div>
