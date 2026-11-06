@@ -13189,3 +13189,25 @@ button.custom-sheet__row-table-expander:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
 }
+
+/* ========== Changelog "new release" dot (ChangelogDot.jsx) ========== */
+/* Parent must be position: relative (MUI IconButton already is). */
+.changelog-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #c9975b;
+    box-shadow: 0 0 0 2px #7a5c42;
+    pointer-events: none;
+}
+
+/* Doubled selector: the modifier must win over the base regardless of order. */
+.changelog-dot.changelog-dot--inline {
+    position: static;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+}
