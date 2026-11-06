@@ -1,6 +1,6 @@
 # Przewodnik użytkownika / User guide
 
-Ten katalog to wersja bazy wiedzy, którą można udostępnić użytkownikom RollHammera.
+Ten katalog to wersja bazy wiedzy, którą można udostępnić użytkownikom PlayRPG.
 Powstaje na podstawie `docs/knowledge-base/` i jest od niej zależna: zmieniasz najpierw bazę,
 potem tutaj, w obu językach naraz.
 
