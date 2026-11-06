@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Public routes only. A new public page or help page (src/help/helpPages.js) belongs here;
+     src/publicIndex.test.js fails when a help page is missing. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://playrpg.net/</loc></url>
+  <url><loc>https://playrpg.net/login</loc></url>
+  <url><loc>https://playrpg.net/register</loc></url>
+  <url><loc>https://playrpg.net/privacy</loc></url>
+  <url><loc>https://playrpg.net/terms</loc></url>
+  <url><loc>https://playrpg.net/licenses</loc></url>
+  <url><loc>https://playrpg.net/contact</loc></url>
+  <url><loc>https://playrpg.net/changelog</loc></url>
+  <url><loc>https://playrpg.net/help</loc></url>
+  <url><loc>https://playrpg.net/help/getting-started</loc></url>
+  <url><loc>https://playrpg.net/help/game-screen</loc></url>
+  <url><loc>https://playrpg.net/help/for-players</loc></url>
+  <url><loc>https://playrpg.net/help/for-game-masters</loc></url>
+  <url><loc>https://playrpg.net/help/system-creator</loc></url>
+  <url><loc>https://playrpg.net/help/dice-and-chat</loc></url>
+</urlset>
