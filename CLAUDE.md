@@ -96,6 +96,21 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
 | Tło popupu | `linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)` |
 | Border popupu | `#7a5c42` |
 
+### Funkcja jest gotowa dopiero z dokumentacją
+
+Każda nowa funkcja i każda zmiana widoczna dla użytkownika (także poprawka błędu) to w **tym samym
+commicie** co kod — nie w osobnym PR „na później":
+
+1. **Changelog** — punkt w najnowszej wersji `RELEASES` + teksty en/pl (szczegóły: „Changelog"
+   niżej).
+2. **Baza wiedzy** — plik obszaru w `docs/knowledge-base/`, a dla nowej funkcji także wiersz
+   w `00-inwentaryzacja.md` (szczegóły: „Baza wiedzy idzie razem z kodem" niżej).
+3. **Przewodnik `/help`** — odpowiednie strony w `src/help/pl/` **i** `src/help/en/`.
+
+Dotyczy też merge'a cudzego brancha: brakujące wpisy dopisz przed mergem. Pomijasz tylko zmiany
+czysto techniczne (refaktor, testy) — te ruszają bazę wiedzy wyłącznie, gdy zmieniają opisany
+mechanizm albo pułapkę.
+
 ### Kluczowe konwencje
 - **Komentarze w kodzie ZAWSZE po angielsku** — backend i frontend, bez wyjątków. Dotyczy nowych
   i modyfikowanych komentarzy; istniejących polskich nie tłumaczymy hurtem, tylko przy okazji
