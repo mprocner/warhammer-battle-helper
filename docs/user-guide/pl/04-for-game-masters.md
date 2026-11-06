@@ -45,7 +45,7 @@ w jego konfiguracji.
 
 ## Handouty
 
-**+ Dodaj Handout** wgrywa obrazek, PDF albo plik tekstowy i pyta, kto ma go widzieć:
+Przycisk **Handout** w nagłówku zakładki (albo **Dodaj Handout** w folderze) wgrywa obrazek, PDF albo plik tekstowy i pyta, kto ma go widzieć:
 wszyscy albo wybrani gracze. Nic nie jest udostępniane, dopóki tego nie wybierzesz. Handouty
 układasz w folderach i przeciągasz, żeby zmienić kolejność.
 

@@ -2,7 +2,8 @@
 
 ## Jak to działa
 
-**Lobby** (`/`) pokazuje gry użytkownika i kafelek kreatora szablonów. Tworzenie gry
+Pod `/` jest strona startowa (`LandingPage`). **Lobby** (`/games`) pokazuje gry użytkownika,
+przycisk kreatora w nagłówku i, przy pustej liście, skróty „Utwórz grę” / „Zaprojektuj system”. Tworzenie gry
 (`CreateGameDialog.jsx`) to nazwa i jedna lista wyboru z wyszukiwarką, w której są zarówno
 systemy wbudowane (z `allowedSystems`, patrz [02-konta-i-dostep.md](02-konta-i-dostep.md)),
 jak i szablony dostępne dla użytkownika. Filtr języka zawęża tę listę i jest zapamiętywany

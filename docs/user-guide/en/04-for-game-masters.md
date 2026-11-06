@@ -45,7 +45,7 @@ token in its configuration.
 
 ## Handouts
 
-**+ Add Handout** uploads an image, a PDF or a text file and asks who should see it: everyone or
+The **Handout** button in the tab header (or **Add Handout** inside a folder) uploads an image, a PDF or a text file and asks who should see it: everyone or
 chosen players. Nothing is shared until you choose. Organise handouts in folders and drag them
 to change the order.
 

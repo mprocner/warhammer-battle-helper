@@ -1,6 +1,6 @@
 # Inwentaryzacja funkcji
 
-Źródło: kod na gałęzi z 2026-10-26 (routing `main.go`, `tabDefinitions.jsx`, `sceneModes.js`,
+Źródło: kod z 2026-10-26, uzupełnione 2026-11-06 o zmiany z `main` (routing `main.go`, `tabDefinitions.jsx`, `sceneModes.js`,
 `FIELD_TYPES` w `TemplateBuilder.jsx`, `chat/commands/commandRegistry`, tłumaczenia `en`).
 Pliki w `features/` traktuję tylko jako podpowiedź. Kolumna „Spec” mówi, czy istnieje tam
 jakikolwiek opis; jego aktualność sprawdzam dopiero przy pisaniu danego obszaru.
@@ -21,7 +21,8 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 ## 2. Lobby i gry
 | Funkcja | Kto | Spec |
 |---|---|---|
-| Lista gier, tworzenie gry z wyborem systemu (filtr języka) | K | `MultiGamesSystem.md` |
+| Strona startowa (`/`) | wszyscy | — |
+| Lista gier (`/games`), tworzenie gry z wyborem systemu (filtr języka) | K | `MultiGamesSystem.md` |
 | Zapraszanie, opuszczanie gry, wyrzucanie graczy | MG / G | `FEATURE-76 - players management.md` |
 | Ustawienia uczestnika w grze: avatar i podpis (z konta, z postaci, własny), rozmiar dymka | G | — |
 | Obrazek gry, info o grze, status połączenia (zakładka Ogólne) | MG / G | — |
@@ -50,7 +51,10 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Funkcja | Kto | Spec |
 |---|---|---|
 | Budowanie karty z sekcji i pól (18 typów: sekcja, imię, avatar, obrazek, atrybut, tabela atrybutów, liczba, pole wyliczane z formułą, pasek postępu, tekst krótki/długi, checkbox, lista wyboru, tabela umiejętności, tabela broni, tabela danych, drzewo umiejętności, etykieta) | K | `CREATOR-10 weapons table.md`, `creator-mockups/` |
-| Konfiguracja kości i modyfikatorów rzutów, presety | K | — |
+| Kości pod czatem; modyfikator rzutu: liczba (cel, zakres, szybki wybór) albo kości przewagi i utrudnienia | K | `docs/superpowers/specs/2026-09-08-FEATURE-164-*`, `PLAYRPG-294.md` |
+| Poziomy sukcesu: co krok (PS) albo nazwane progi z kolorami | K | `docs/superpowers/specs/PLAYRPG-289.md` |
+| Predefiniowane bronie i wiersze, dodawane przy tworzeniu postaci; obrażenia z kośćmi wpisywane przez gracza | K | `docs/superpowers/specs/PLAYRPG-288.md` |
+| Podgląd karty szablonu (Moje szablony, wybór systemu) | K | — |
 | Wygląd tokena (sloty, paski) | K | — |
 | Opis, widoczność, udostępnianie członkom, klonowanie szablonu | K | — |
 | Synchronizacja szablonu z grą | MG | — |

@@ -15,16 +15,18 @@ W **Ustawieniach** (menu u góry) znajdziesz:
 
 ## Lista gier
 
-Po zalogowaniu widzisz swoje gry, zarówno te, które prowadzisz, jak i te, w których grasz.
+Strona główna opisuje aplikację. Po zalogowaniu przejdź do **Pokojów Gier**, gdzie widzisz swoje gry, zarówno te, które prowadzisz, jak i te, w których grasz.
 Do gry innej osoby nie dołączasz sam: mistrz gry dodaje cię po adresie e-mail twojego konta,
-a gra po prostu pojawia się na liście.
+a gra po prostu pojawia się na liście. Gdy lista jest pusta, możesz od razu utworzyć grę
+albo zaprojektować własny system.
 
 ## Tworzenie gry (dla mistrza gry)
 
-1. Kliknij **Utwórz Grę**.
+1. Kliknij **Utwórz Nową Grę**.
 2. Podaj nazwę i wybierz system z listy. Na liście są systemy wbudowane i szablony
    stworzone w [Kreatorze systemów](05-system-creator.md), także te udostępnione przez innych.
-   Filtr języka zawęża listę do szablonów w wybranych językach.
+   Filtr języka zawęża listę do szablonów w wybranych językach. Przy szablonie
+   możesz otworzyć podgląd karty, zanim go wybierzesz.
 3. Otwórz grę i zaproś graczy w zakładce **Gracze** (patrz [Dla mistrza gry](04-for-game-masters.md)).
 
 ## Język

@@ -7,7 +7,7 @@ a nie programiści w kodzie.
 
 **Szablon** (`SystemTemplate`) to definicja karty postaci: `Sections` (sekcje z polami
 `FieldDef`), `Settings` (ustawienia całego szablonu), nazwa, opis, język, widoczność i
-członkowie. Kreator otwiera się z lobby (kafelek kreatora) albo z zakładki Ogólne w grze
+członkowie. Kreator otwiera się z lobby (przycisk „Kreator systemów” w nagłówku) albo z zakładki Ogólne w grze
 (konfiguracja wyglądu tokenów).
 
 **Dwie zakładki kreatora:**
@@ -15,7 +15,7 @@ członkowie. Kreator otwiera się z lobby (kafelek kreatora) albo z zakładki Og
   Karta to prawdziwy `CustomSheetBody` w wrapperze `.custom-sheet`, a nie osobny podgląd.
   Ikona oka wyłącza ramki edycji, żeby zobaczyć kartę oczami gracza.
 - **Ogólne** — karty: o szablonie (opis, język), dostęp (publiczny, członkowie), kości pod
-  czatem (`DiceButtons`), modyfikatory rzutów (`ModifierConfig` + presety), wygląd tokena
+  czatem (`DiceButtons`), modyfikator rzutu (`ModifierConfig`), poziomy sukcesu (`SuccessLevelsConfig`), wygląd tokena
   (`TokenDisplay`), szerokość okna karty (`SheetWidth`).
 
 **18 typów pól**, w grupach palety:
@@ -37,9 +37,30 @@ stałe, operatory, nawiasy, kości. Parser to rekurencyjne zejście
 (`internal/systems/custom/formula.go`) i w JS (`src/systems/custom/formula/`). Oba trzymają się
 wspólnych przypadków testowych w `src/systems/custom/formula/formula_cases.json`.
 
-**Tryby rzutu** są ustawiane per pole: `traditional` (wynik kontra próg) i `dice_pool`
-(liczenie sukcesów). Modyfikator jest ustawiany per szablon i ma osobny cel dla każdego trybu:
-`roll` / `threshold` dla tradycyjnego, `dice_count` / `success_threshold` dla puli.
+**Tryby rzutu** są ustawiane per pole: `traditional` (wynik kontra próg, `successType`:
+`below_threshold` | `above_threshold` | `raw`) i `dice_pool` (liczenie sukcesów).
+
+**Modyfikator rzutu** (`Settings.Modifier`, FEATURE-164 + PLAYRPG-294) jest per szablon i ma
+rodzaj `Kind`: `number` (także pusty, czyli każdy starszy szablon) albo `dice`. Rodzaje się
+wykluczają i niosą tę samą liczbę `modifier` w requeście rzutu:
+- `number` — osobny cel dla każdego trybu: `roll` / `threshold` dla tradycyjnego,
+  `dice_count` / `success_threshold` dla puli; do tego `Step`, `Min`, `Max` (oba 0 = bez limitu)
+  i `Presets` (szybki wybór),
+- `dice` — kości przewagi (`+N`) i utrudnienia (`−N`), `MaxEdge` / `MaxSetback` (0–5, serwer
+  i tak tnie do 5), `DiceMode`: `formula` (cała formuła N+1 razy) albo `tens` (nowa cyfra
+  dziesiątek, tylko gdy formuła to samo `d100`). Kierunek „lepszego” wynika z `successType`.
+  `raw` i pule rzucają bez kości, bez błędu.
+
+Na karcie wybór okna robi `RollPrompt`: `RollModifierOverlay` dla liczby, `EdgeDiceOverlay`
+(kolumna przycisków z `0` pod kursorem) dla kości.
+
+**Poziomy sukcesu** (`Settings.SuccessLevels`, PLAYRPG-289) są liczone na backendzie
+w `applySuccessLevels` (`successlevel.go`) po `evalOutcome`, na progu **po** modyfikatorze, tylko
+dla `traditional` z progiem. Tryby: `""` (wyłączone, progi zostają zapisane), `tens`
+(`SL = ⌊próg/krok⌋ − ⌊rzut/krok⌋`, dla `above` odwrotnie, krok domyślnie 10) i `tiers` (dzielniki
+2–100 sprawdzane od największego, stałe wiersze Sukces i Porażka; przy `above` tylko one).
+Wynik (`HasSuccessLevel`, `SuccessLevel`, `TierLabel`, `TierColor`) zapisuje się w zdarzeniu jako
+snapshot, więc historia logu nie zmienia się po edycji szablonu. `Outcome` zostaje binarne.
 
 **Atrybuty i umiejętności** przechowują `base` + `advances`, a `current` wylicza
 `ComputeDerived`. Klucze są stabilnymi id (np. `SkillOption.ID`), nie wynikają z etykiety, więc
@@ -71,7 +92,9 @@ odczycie (`attachTokenConfig`), nie kopiowana.
 | Render karty | `src/systems/custom/CustomSheetBody.jsx`, `src/systems/custom/fields/` |
 | Model | `internal/models/SystemTemplate.go`, `template_roles.go`, `template_about.go` |
 | API | `internal/http/TemplateHandler.go`, `internal/service/TemplateService.go` |
-| Rzuty i formuły | `internal/systems/custom/` (`roller.go`, `formula*.go`, `modifier.go`, `weapon.go`) |
+| Rzuty i formuły | `internal/systems/custom/` (`roller.go`, `formula*.go`, `modifier.go`, `edgedice.go`, `successlevel.go`, `weapon.go`, `damage_expr.go`) |
+| Karty ustawień rzutu | `src/components/creator/ModifierConfigBuilder.jsx`, `EdgeDiceConfigFields.jsx`, `ModifierPresetEditor.jsx`, `SuccessLevelsBuilder.jsx` |
+| Okno przed rzutem, log | `src/systems/custom/RollPrompt.jsx`, `RollModifierOverlay.jsx`, `EdgeDiceOverlay.jsx`, `useRollPrompt.js`, `modifierConfig.js`, `successLevels.js`, `rolls/successLevelDisplay.js` |
 | Samouczek kreatora | `src/components/tutorial/tours/creator*.js` |
 
 ## Pułapki
@@ -85,3 +108,13 @@ odczycie (`attachTokenConfig`), nie kopiowana.
 - Opis szablonu to rich text sanityzowany na serwerze (`internal/sanitize/richhtml.go`).
   Każdy znacznik edytora musi być tam dozwolony, inaczej formatowanie zniknie po zapisie.
 - Kolory etykiet są z zamkniętej palety, bo dowolny kolor (np. biały) znika na kremowym tle.
+- Kolumna kości przewagi pokazuje się także przy polach, na które nie działa (`raw`, pula, tryb
+  `tens` z formułą inną niż `d100`). Front nie zna rozwiązanego `rollConfig`, a serwer po prostu
+  ignoruje wtedy wybór. Przeniesienie tej reguły do JS odrzucono, bo byłby to kolejny niezmiennik
+  Go↔JS bez wspólnego testu.
+- Poziomy sukcesu dzielą przez `floorDiv`, nie przez `/` z Go, bo `/` obcina do zera, a progi
+  mogą być ujemne (FEATURE-162). Nowe obliczenia na progach rób tak samo.
+- `RollConfig.CritSuccess` / `CritFail` istnieją w modelu, ale `evalOutcome` ich nie czyta.
+  Rzuty własnych systemów nie mają dziś krytyków ani pechowych rzutów.
+- Nazwa progu może być pusta (autosave nie może dostać 400, gdy MG czyści pole). Pusta nazwa
+  w logu = zwykła etykieta wyniku z kolorem progu.
