@@ -375,15 +375,22 @@ sudo nginx -t    # shows exact error with line number
 
 | Service       | Container port | Host port          | Description              |
 |---------------|----------------|--------------------|--------------------------|
-| Frontend      | 80             | 3000               | React app (nginx)        |
+| Frontend      | 80             | 127.0.0.1:3000     | React app (nginx)        |
 | Admin panel   | 80             | 127.0.0.1:3001     | React Admin (nginx)      |
-| Backend       | 8080           | 8080               | Go API + WebSocket       |
+| Backend       | 8080           | 127.0.0.1:8080     | Go API + WebSocket       |
 | MongoDB       | 27017          | —                  | Internal only            |
 | Mongo Express | 8081           | 127.0.0.1:8081     | DB UI (internal only)    |
 | Dozzle        | 8080           | 127.0.0.1:9999     | Container logs           |
 | Netdata       | 19999          | **all interfaces** | CPU/RAM charts           |
 
-Admin, Mongo Express and Dozzle ports are bound to `127.0.0.1` — not accessible from outside, only through nginx (with IP whitelist) or SSH tunnel.
+Every Docker-published port is bound to `127.0.0.1` — not accessible from outside, only through
+nginx or an SSH tunnel (`ssh -L 8080:127.0.0.1:8080 ubuntu@playrpg.net`). Never publish one as
+`"8080:8080"`: Docker inserts its NAT rules before ufw's, so `ufw deny` does not close such a port.
+Loopback binding also relies on Docker Engine 28+, which drops packets addressed to 127.0.0.0/8
+arriving from other interfaces; check with `docker version --format '{{.Server.Version}}'`.
+
+The frontend and backend bindings changed from all interfaces to `127.0.0.1` on 2026-11-06. After
+that deploy, `http://<VPS-IP>:3000` and `:8080` must refuse the connection.
 
 Netdata is the exception: it runs with `network_mode: host`, so port 19999 listens on the public IP
 as well and its dashboard has no authentication. It must be closed on the firewall, once, before the

@@ -17,8 +17,10 @@ services:
       args:
         REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
         REACT_APP_GA_MEASUREMENT_ID: ${REACT_APP_GA_MEASUREMENT_ID:-}
+    # Loopback only: the public entrance is the host nginx (TLS, auth_basic, log format).
+    # A port published on all interfaces bypasses ufw, because Docker's NAT rules run first.
     ports:
-      - "3000:80"
+      - "127.0.0.1:3000:80"
     restart: unless-stopped
     depends_on:
       - backend
@@ -28,8 +30,9 @@ services:
     build:
       context: ./warhammer-battle-helper-backend
       dockerfile: Dockerfile.prod
+    # Loopback only, same reason as the frontend.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     restart: unless-stopped
     environment:
       - PORT=8080

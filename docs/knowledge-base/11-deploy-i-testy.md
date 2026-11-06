@@ -40,3 +40,10 @@ z Certbotem (`nginx.vps.conf.example`). `scripts/autopull.sh` (usługa systemd
 - **Kopie zapasowe** (`deploy.sh`): 7 ostatnich archiwów bazy i 5 ostatnich kopii każdego
   wolumenu z plikami. Polityka prywatności opisuje je jako „usuwane w ramach rotacji” — zmiana
   liczby kopii to też przegląd polityki.
+- **Porty kontenerów tylko na `127.0.0.1`.** Jedynym wejściem z internetu jest nginx na hoście
+  (TLS, `auth_basic`, format logów). Port opublikowany jako `"8080:8080"` słucha na publicznym
+  IP i omija nginx, a `ufw deny` go nie zamyka: Docker wstawia swoje reguły NAT przed regułami
+  ufw. Dlatego każdy `ports:` w `docker-compose.prod.yml` ma prefiks `127.0.0.1:` (frontend
+  i backend dopiero od 2026-11-06). Wyjątek to netdata z `network_mode: host`: nie ma NAT
+  Dockera, więc tam działa `ufw deny 19999`. Wiązanie do loopbacka jest szczelne od Docker
+  Engine 28 (wcześniej sąsiad w tej samej sieci L2 mógł dosłać pakiet na `127.0.0.1`).
