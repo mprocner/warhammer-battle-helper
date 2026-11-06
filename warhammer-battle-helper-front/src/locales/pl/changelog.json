@@ -1,0 +1,81 @@
+{
+  "title": "Co nowego",
+  "intro": "Historia wersji RollHammer. Najnowsza wersja jest na górze.",
+  "latest": "Najnowsza",
+  "sections": {
+    "scene": "Scena i mapa",
+    "characters": "Postacie",
+    "creator": "Kreator systemów",
+    "dice": "Kości i czat",
+    "materials": "Handouty, pliki, muzyka i notatki",
+    "games": "Gry i gracze",
+    "systems": "Systemy gry",
+    "minigames": "Minigry",
+    "tutorials": "Pomoc",
+    "accounts": "Konto",
+    "added": "Nowe",
+    "changed": "Zmiany",
+    "fixed": "Poprawki"
+  },
+  "releases": {
+    "1_0_0": {
+      "scene": {
+        "scenes": "Wiele scen w grze; mistrz gry przenosi drużynę z jednej na drugą.",
+        "grid": "Siatka z własnym rozmiarem pola, jednostkami odległości i przyciąganiem.",
+        "tools": "Zaznaczanie, miarka i rysowanie dla wszystkich, a dla mistrza gry mgła wojny.",
+        "tokens": "Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie i duplikowanie.",
+        "overlays": "Zdrowie, sloty stanów i paski bezpośrednio na tokenie oraz tokeny ukryte przed graczami.",
+        "controls": "Ping na mapie, przesuwanie mapy prawym przyciskiem i wybór schematu sterowania."
+      },
+      "characters": {
+        "sheet": "Karta postaci dla każdego systemu, w okienku albo w osobnej karcie przeglądarki.",
+        "manage": "Tworzenie, edycja, klonowanie i usuwanie postaci; mistrz gry decyduje, którzy gracze widzą postać.",
+        "conditions": "Stany takie jak krwawienie czy ogłuszenie oraz oznaczenie postaci jako zabitej.",
+        "rolls": "Rzuty na cechy, umiejętności i bronie prosto z karty, z modyfikatorami.",
+        "favourites": "Ulubione umiejętności i bronie pod ręką w panelu postaci."
+      },
+      "creator": {
+        "fields": "Własna karta z sekcji i 18 typów pól: atrybuty, tabele, paski, pola z formułą, drzewa umiejętności i więcej.",
+        "dice": "Własne zasady rzutów: kości pod czatem, modyfikator liczbowy albo kości przewagi i utrudnienia oraz poziomy sukcesu co krok lub nazwane progi.",
+        "presets": "Predefiniowane bronie i wiersze dodawane każdej nowej postaci.",
+        "token": "Wygląd tokena dla twojego systemu: sloty i paski widoczne na mapie.",
+        "sharing": "Opis szablonu, udostępnianie innym użytkownikom, klonowanie i synchronizacja zmian z trwającą grą.",
+        "preview": "Podgląd karty szablonu, zanim wybierzesz go dla gry."
+      },
+      "dice": {
+        "chat": "Czat z logiem rzutów i komendami /roll (/r), /gmroll (/gmr) oraz /help.",
+        "visibility": "Wybór, kto widzi rzut: wszyscy, mistrz gry i ty, tylko mistrz gry albo jeden gracz.",
+        "myRolls": "Widok tylko twoich rzutów w logu."
+      },
+      "materials": {
+        "handouts": "Handouty w folderach, udostępniane wszystkim albo wybranym graczom.",
+        "files": "Biblioteka obrazków z folderami dla mistrza gry.",
+        "music": "Biblioteka muzyki i playlisty odtwarzane całej drużynie, z zapętleniem i własną głośnością.",
+        "notes": "Prywatne i publiczne notatki z formatowaniem tekstu."
+      },
+      "games": {
+        "lobby": "Lista gier; tworzenie gry w wybranym systemie, z filtrem języka.",
+        "players": "Zapraszanie i wyrzucanie graczy oraz opuszczanie gry.",
+        "participant": "Twój avatar i podpis w każdej grze: z konta, z postaci albo własny.",
+        "online": "Podgląd, kto jest online."
+      },
+      "systems": {
+        "builtIn": "Gotowe karty dla Warhammer Fantasy Roleplay 4e, Call of Cthulhu 7e, Call of Cthulhu: Dark Ages i SRD 5.2.",
+        "custom": "Każdy inny system zbudowany w kreatorze systemów."
+      },
+      "minigames": {
+        "dice": "Yahtzee i kościany poker dla drużyny między scenami."
+      },
+      "tutorials": {
+        "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie."
+      },
+      "accounts": {
+        "register": "Konto z weryfikacją e-mail i resetem zapomnianego hasła.",
+        "profile": "Nazwa użytkownika i avatar z wbudowanym kadrowaniem.",
+        "stats": "Twoje statystyki: rzuty kośćmi i czas online.",
+        "language": "Interfejs po polsku i angielsku.",
+        "legal": "Zgoda na cookies, polityka prywatności, regulamin i licencje."
+      }
+    }
+  }
+}

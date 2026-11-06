@@ -1,0 +1,81 @@
+{
+  "title": "What's new",
+  "intro": "RollHammer release history. The newest version is at the top.",
+  "latest": "Latest",
+  "sections": {
+    "scene": "Scene and map",
+    "characters": "Characters",
+    "creator": "System creator",
+    "dice": "Dice and chat",
+    "materials": "Handouts, files, music and notes",
+    "games": "Games and players",
+    "systems": "Game systems",
+    "minigames": "Minigames",
+    "tutorials": "Help",
+    "accounts": "Account",
+    "added": "New",
+    "changed": "Changed",
+    "fixed": "Fixed"
+  },
+  "releases": {
+    "1_0_0": {
+      "scene": {
+        "scenes": "Several scenes per game; the GM moves the party from one to the next.",
+        "grid": "A grid with your own cell size, distance units and snapping.",
+        "tools": "Select, ruler and drawing for everyone, plus fog of war for the GM.",
+        "tokens": "Character and image tokens: move, box-select, rotate, resize and duplicate.",
+        "overlays": "Health, condition slots and bars right on the token, and tokens hidden from players.",
+        "controls": "Ping the map, pan with the right mouse button and pick the control scheme that suits you."
+      },
+      "characters": {
+        "sheet": "A character sheet for every system, in a popup or in its own browser tab.",
+        "manage": "Create, edit, clone and delete characters; the GM decides which players see each one.",
+        "conditions": "Conditions such as bleeding or stunned, and marking a character as dead.",
+        "rolls": "Roll characteristics, skills and weapons straight from the sheet, with modifiers.",
+        "favourites": "Favourite skills and weapons at hand in the character panel."
+      },
+      "creator": {
+        "fields": "Build your own sheet from sections and 18 field types: attributes, tables, bars, formula fields, skill trees and more.",
+        "dice": "Your own roll rules: dice under the chat, a numeric modifier or edge and setback dice, and success levels per step or named thresholds.",
+        "presets": "Preset weapons and rows added to every new character.",
+        "token": "Token look for your system: slots and bars shown on the map.",
+        "sharing": "Describe a template, share it with other users, clone it and sync changes into a running game.",
+        "preview": "Preview a template's sheet before you pick it for a game."
+      },
+      "dice": {
+        "chat": "Chat with a roll log and the /roll (/r), /gmroll (/gmr) and /help commands.",
+        "visibility": "Choose who sees a roll: everyone, the GM and you, the GM only, or one player.",
+        "myRolls": "Show only your own rolls in the log."
+      },
+      "materials": {
+        "handouts": "Handouts in folders, shared with everyone or with chosen players.",
+        "files": "An image library with folders for the GM.",
+        "music": "A music library and playlists played for the whole party, with looping and your own volume.",
+        "notes": "Private and public notes with text formatting."
+      },
+      "games": {
+        "lobby": "A game list; create a game for the system of your choice, filtered by language.",
+        "players": "Invite players, remove them or leave a game.",
+        "participant": "Your avatar and name in each game: from your account, from your character or your own.",
+        "online": "See who is online."
+      },
+      "systems": {
+        "builtIn": "Ready sheets for Warhammer Fantasy Roleplay 4e, Call of Cthulhu 7e, Call of Cthulhu: Dark Ages and SRD 5.2.",
+        "custom": "Any other system you build in the system creator."
+      },
+      "minigames": {
+        "dice": "Yahtzee and dice poker to play with the party between scenes."
+      },
+      "tutorials": {
+        "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen."
+      },
+      "accounts": {
+        "register": "An account with email verification and a reset for a forgotten password.",
+        "profile": "A username and an avatar with built-in cropping.",
+        "stats": "Your statistics: dice rolls and time spent online.",
+        "language": "The interface in English and Polish.",
+        "legal": "Cookie consent, privacy policy, terms of service and licenses."
+      }
+    }
+  }
+}
