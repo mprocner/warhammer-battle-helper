@@ -10,7 +10,8 @@
 
 ## Architektura projektu
 
-Pełne szczegóły: `docs/architecture.md`
+Pełne szczegóły: `docs/knowledge-base/` (aktualna baza wiedzy, zacznij od `README.md`) oraz
+`docs/architecture.md` (starszy opis, częściowo nieaktualny — różnice w `docs/knowledge-base/01-architektura.md`)
 
 **Stack**: Go + Gin + MongoDB (backend) | React + DnD Kit + i18next (frontend)
 **Katalogi**: `warhammer-battle-helper-backend/` | `warhammer-battle-helper-front/src/`
@@ -102,6 +103,11 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
 - WS broadcasts: hub wysyła do wszystkich w grze → klient robi `fetchGameState()`
 - Plik Game.go zawiera osadzone tablice: Scenes → RevealPaths (fog), DrawingPaths, Images
 - Brak backward compat — stare dane można usunąć
+- **Baza wiedzy idzie razem z kodem.** Zmiana zachowania funkcji (nowa funkcja, zmiana tego, co
+  widzi lub może zrobić użytkownik) = aktualizacja pliku obszaru w `docs/knowledge-base/`, a potem
+  odpowiednich stron w `docs/user-guide/pl/` **i** `docs/user-guide/en/`. Nowa funkcja to też
+  wiersz w `docs/knowledge-base/00-inwentaryzacja.md`. Zmiany czysto techniczne (refaktor, testy)
+  ruszają tylko bazę, i to tylko gdy zmieniają opisany mechanizm albo pułapkę.
 
 ### Zdarzenia myszy na scenie
 
