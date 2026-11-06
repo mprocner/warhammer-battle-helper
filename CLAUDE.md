@@ -108,6 +108,11 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
   odpowiednich stron w `docs/user-guide/pl/` **i** `docs/user-guide/en/`. Nowa funkcja to też
   wiersz w `docs/knowledge-base/00-inwentaryzacja.md`. Zmiany czysto techniczne (refaktor, testy)
   ruszają tylko bazę, i to tylko gdy zmieniają opisany mechanizm albo pułapkę.
+- **Changelog**: zmiana widoczna dla użytkownika dopisuje punkt do nowej wersji na początku
+  `RELEASES` (`warhammer-battle-helper-front/src/changelog/releases.js`, sekcje `added` /
+  `changed` / `fixed`, SemVer: PATCH poprawki, MINOR funkcje) oraz teksty w
+  `src/locales/{en,pl}/changelog.json` — w tym samym commicie. `releases.test.js` pilnuje
+  kolejności wersji i kompletności tłumaczeń.
 
 ### Zdarzenia myszy na scenie
 
