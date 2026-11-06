@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getTour } from '../tours';
-import { resolveTarget, isRevealSatisfied } from './stepResolution';
+import { resolveTarget, isRevealSatisfied, helpRefFor } from './stepResolution';
 
 const readSeen = (key) => {
   if (!key) return false;
@@ -79,7 +79,7 @@ export function useTour({
       if (step.roles && !step.roles.includes(role)) return;
       const hit = resolveTarget(step, queryTarget);
       if (!hit) return;
-      live.push({ ...step, resolvedTarget: hit.selector, targetIndex: hit.index });
+      live.push({ ...step, resolvedTarget: hit.selector, targetIndex: hit.index, helpRef: helpRefFor(step, tour, role) });
     });
 
     if (live.length === 0) return false;

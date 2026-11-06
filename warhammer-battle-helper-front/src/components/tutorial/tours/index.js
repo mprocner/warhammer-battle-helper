@@ -11,6 +11,8 @@ import creatorGeneral from './creatorGeneral';
 import creatorSheet from './creatorSheet';
 import creatorField from './creatorField';
 
+// A tour (or one of its steps) may carry `help`: the user-guide section its tooltip links to,
+// see helpRefFor in engine/stepResolution.js.
 // Jedno miejsce, w którym silnik dowiaduje się o istnieniu samouczka.
 // Dodanie kolejnego to jeden import i jeden wpis — zero zmian w engine/.
 const TOURS = {

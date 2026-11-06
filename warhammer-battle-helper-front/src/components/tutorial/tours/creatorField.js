@@ -9,15 +9,16 @@ const group = (id) => ({
 
 const creatorField = {
   id: 'creatorField',
+  help: 'system-creator#field-types',
   steps: [
     { id: 'head', target: '.creator__props-title', placement: 'bottom', variants: ['byFieldType'] },
     group('display'),
     group('basics'),
     group('values'),
     group('attrRows'),
-    group('formula'),
+    { ...group('formula'), help: 'system-creator#formulas' },
     group('content'),
-    group('roll'),
+    { ...group('roll'), help: 'system-creator#rolls' },
     { id: 'sectionTitle', target: '.creator__section-title-input', placement: 'auto' },
     { id: 'sectionColumns', target: '.creator__layout-options', placement: 'auto' },
     { id: 'sectionActions', target: '.creator__props-danger', placement: 'auto' },

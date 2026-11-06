@@ -1,12 +1,12 @@
 # Dla mistrza gry
 
-## Gracze
+## Gracze {#players}
 
 W zakładce **Gracze** wpisz adres e-mail konta gracza. Gracz zostaje dodany od razu: nic nie
 jest wysyłane i nie musi niczego potwierdzać. Tu też usuwasz gracza z gry. Jego postać zostaje,
 więc możesz ją przekazać komuś innemu.
 
-## Postacie i bohaterowie niezależni
+## Postacie i bohaterowie niezależni {#characters-and-npcs}
 
 - **Lista BN** (bohaterów niezależnych) po lewej jest widoczna tylko dla ciebie.
 - **Zarządzaj widocznością** decyduje, którzy gracze mają dostęp do karty postaci.
@@ -15,7 +15,7 @@ więc możesz ją przekazać komuś innemu.
   tylko osoby z dostępem do karty, a ty widzisz go przyciemnionego. Możesz też oznaczyć
   postać jako **Zabity**.
 
-## Sceny
+## Sceny {#scenes}
 
 W zakładce **Sceny**:
 1. Utwórz scenę: nazwa i rozmiar siatki (do 50×50).
@@ -35,7 +35,7 @@ pułapki. Obrazek przenosisz między warstwami z menu pod prawym przyciskiem.
 linią. Możesz cofnąć ostatni ruch, odkryć wszystko albo wyczyścić mgłę. Dla ciebie mgła jest
 półprzezroczysta (suwak przezroczystości), a dla graczy pełna.
 
-## Tokeny: stany i paski
+## Tokeny: stany i paski {#tokens-states-and-bars}
 
 Token może pokazywać pierścień stanów (np. krwawienie, ogłuszenie) z poziomami, liczniki
 i paski (np. zdrowie). Lewy klik w stan podnosi poziom, a prawy go obniża. Każdy element
@@ -43,32 +43,32 @@ możesz ukryć przed graczami albo ukryć same liczby paska. Układ dla wszystki
 ustawia się w kreatorze systemu (**Wygląd tokena**), a pojedynczy token możesz dostroić
 w jego konfiguracji.
 
-## Handouty
+## Handouty {#handouts}
 
 Przycisk **Handout** w nagłówku zakładki (albo **Dodaj Handout** w folderze) wgrywa obrazek, PDF albo plik tekstowy i pyta, kto ma go widzieć:
 wszyscy albo wybrani gracze. Nic nie jest udostępniane, dopóki tego nie wybierzesz. Handouty
 układasz w folderach i przeciągasz, żeby zmienić kolejność.
 
-## Pliki
+## Pliki {#files}
 
 Zakładka **Pliki** to twoja biblioteka obrazków: mapy, tokeny, portrety. Jest wspólna dla
 wszystkich twoich gier. Pliki układasz w folderach, możesz je przyciąć, zmienić nazwę i
 usunąć. Przed usunięciem aplikacja pokaże, w których grach plik jest używany.
 
-## Muzyka
+## Muzyka {#music}
 
 W zakładce **Muzyka** wgrywasz utwory (MP3, WAV), układasz je w folderach i playlistach
 (np. karczma, walka, podróż). Odtwarzanie słyszą wszyscy jednocześnie, a gracz dołączający
 w trakcie słyszy utwór od właściwego miejsca. Suwak głośności w tej zakładce zmienia
 głośność dla całego stołu. Każdy gracz ma też własny suwak.
 
-## Minigry
+## Minigry {#minigames}
 
 Zakładka **Gry**: wybierz Yahtzee albo kościanego pokera i graczy, którzy są online.
 Plansza pojawia się u wszystkich, wybrani grają na zmianę, a reszta patrzy. Naraz działa jedna
 minigra. Jeśli serwer zostanie zrestartowany, trwająca minigra się kończy.
 
-## Szablon i synchronizacja
+## Szablon i synchronizacja {#template-and-sync}
 
 Gra korzysta z kopii szablonu systemu z chwili jej utworzenia. Po zmianach w kreatorze kliknij
 **Synchronizuj** na karcie gry na liście gier. Wartości pól usuniętych z szablonu przepadną.

@@ -51,3 +51,18 @@ describe('TourTooltip', () => {
     expect(p.skipProps.onClick).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('TourTooltip help link', () => {
+  it('opens the matching help section in a new tab', () => {
+    render(<TourTooltip {...props({ step: { title: 'T', content: 'B', data: { helpHref: '/help/game-screen#map-tools' } } })} />);
+    const link = screen.getByRole('link', { name: 'Read more in the help' });
+    expect(link.getAttribute('href')).toBe('/help/game-screen#map-tools');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
+  });
+
+  it('shows no link when the step has no help section', () => {
+    render(<TourTooltip {...props()} />);
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+});

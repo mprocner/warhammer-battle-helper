@@ -3,7 +3,7 @@
 PlayRPG is a virtual tabletop for roleplaying games: a shared map, character sheets, dice
 rolls, handouts, music and notes, all live for the whole table.
 
-## Where to start
+## Where to start {#where-to-start}
 
 | I am… | Read |
 |---|---|
@@ -14,4 +14,6 @@ rolls, handouts, music and notes, all live for the whole table.
 | curious about rolling from the chat | [Dice and chat](06-dice-and-chat.md) |
 
 **Tip:** almost every tab has a question mark next to its heading. It starts a short tutorial
-that points at the real elements on screen.
+that points at the real elements on screen. The **Read more in the help** link in a tutorial
+bubble opens this guide in a new tab, right at the matching section. The guide is also behind the
+question mark icon in the top menu.

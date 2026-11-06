@@ -3,7 +3,7 @@
 PlayRPG to wirtualny stół do gier fabularnych: wspólna mapa, karty postaci, rzuty kośćmi,
 handouty, muzyka i notatki, wszystko na żywo dla całej drużyny.
 
-## Od czego zacząć
+## Od czego zacząć {#where-to-start}
 
 | Jestem… | Czytaj |
 |---|---|
@@ -14,4 +14,6 @@ handouty, muzyka i notatki, wszystko na żywo dla całej drużyny.
 | ciekawy, jak rzucać kośćmi z czatu | [Kości i czat](06-dice-and-chat.md) |
 
 **Wskazówka:** prawie każda zakładka ma znak zapytania przy nagłówku. Uruchamia on krótki
-samouczek pokazujący elementy na żywym ekranie.
+samouczek pokazujący elementy na żywym ekranie. Link **Więcej w pomocy** w dymku samouczka
+otwiera ten przewodnik w nowej karcie, od razu przy właściwej sekcji. Przewodnik jest też pod
+ikoną znaku zapytania w górnym menu.

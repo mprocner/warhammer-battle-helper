@@ -1,6 +1,6 @@
 # Dla gracza
 
-## Twoja postać
+## Twoja postać {#your-character}
 
 1. Na liście postaci po lewej kliknij **+ Dodaj**. Nowa postać jest widoczna dla ciebie
    i dla mistrza gry.
@@ -11,7 +11,7 @@
 Mistrz gry może też dać ci dostęp do postaci, którą sam stworzył. Wygląd karty zależy od
 systemu wybranego dla gry.
 
-## Rzuty
+## Rzuty {#rolling}
 
 - **Z karty:** kliknij cechę, umiejętność albo broń. Jeśli system ma włączone modyfikatory,
   aplikacja najpierw zapyta o premię lub karę.
@@ -23,7 +23,7 @@ systemu wybranego dla gry.
 
 Wybór widoczności dotyczy też rzutów z karty.
 
-## Na mapie
+## Na mapie {#on-the-map}
 
 - Przesuwasz swoje tokeny narzędziem **Zaznacz / Przesuń**.
 - **Pomiar odległości** pokazuje dystans w jednostkach gry. Pozostali widzą twoją linijkę.
@@ -32,14 +32,14 @@ Wybór widoczności dotyczy też rzutów z karty.
   tokenie swojej postaci.
 - Widzisz tylko scenę, na którą przeniósł cię mistrz gry.
 
-## Handouty i notatki
+## Handouty i notatki {#handouts-and-notes}
 
 - **Handouty** to listy, portrety, mapy i dokumenty od mistrza gry. Widzisz tylko te
   udostępnione tobie albo wszystkim. Kliknięcie otwiera handout w osobnym okienku.
 - **Notatki** są domyślnie prywatne. W edytorze możesz oznaczyć notatkę jako publiczną, żeby
   udostępnić ją drużynie. Widzisz swoje notatki i publiczne notatki innych.
 
-## Twoje ustawienia w grze
+## Twoje ustawienia w grze {#your-in-game-settings}
 
 Kliknij swój avatar na pasku u góry, żeby ustawić:
 - avatar (z konta, z postaci albo wgrany),

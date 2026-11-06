@@ -67,7 +67,8 @@
         "dice": "Yahtzee and dice poker to play with the party between scenes."
       },
       "tutorials": {
-        "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen."
+        "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen.",
+        "help": "Help pages: the full user guide inside the app under Help, linked from the tutorials."
       },
       "accounts": {
         "register": "An account with email verification and a reset for a forgotten password.",

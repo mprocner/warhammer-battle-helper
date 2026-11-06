@@ -15,7 +15,7 @@ export const RELEASES = [
       { id: 'games', items: ['lobby', 'players', 'participant', 'online'] },
       { id: 'systems', items: ['builtIn', 'custom'] },
       { id: 'minigames', items: ['dice'] },
-      { id: 'tutorials', items: ['tours'] },
+      { id: 'tutorials', items: ['tours', 'help'] },
       { id: 'accounts', items: ['register', 'profile', 'stats', 'language', 'legal'] },
     ],
   },

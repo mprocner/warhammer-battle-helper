@@ -8,13 +8,13 @@ Gotową kartę możesz obejrzeć bez otwierania kreatora: podgląd karty jest w 
 oraz na liście systemów przy tworzeniu gry. Wszystko zapisuje się
 automatycznie, nie ma przycisku „Zapisz”.
 
-## Dwie zakładki
+## Dwie zakładki {#two-tabs}
 
 - **Ogólne** — ustawienia całego systemu: nazwa, opis, język, dostęp, kości pod czatem,
   modyfikator rzutu, poziomy sukcesu, wygląd tokena, szerokość karty.
 - **Karta** — budowa karty postaci pole po polu.
 
-## Budowanie karty
+## Budowanie karty {#building-the-sheet}
 
 1. Zacznij od **sekcji**. Sekcja to ramka z nagłówkiem, która dzieli pola na kolumny. Sekcje
    można zagnieżdżać i przeciągać.
@@ -27,7 +27,7 @@ automatycznie, nie ma przycisku „Zapisz”.
 
 Karta w kreatorze ma tę samą szerokość i wygląd co w grze.
 
-## Typy pól
+## Typy pól {#field-types}
 
 | Grupa | Pole | Do czego |
 |---|---|---|
@@ -50,7 +50,7 @@ Karta w kreatorze ma tę samą szerokość i wygląd co w grze.
 | | Tabela danych | Twoje kolumny na wszystko, czego się nie rzuca, np. ekwipunek. Możesz dodać predefiniowane wiersze |
 | | Drzewo umiejętności | Umiejętności w hierarchii, np. umiejętność i specjalizacje |
 
-## Formuły
+## Formuły {#formulas}
 
 Pole Obliczane i obrażenia broni budujesz z bloków: atrybuty, liczby, stałe, operatory
 (`+ − × ÷`), nawiasy i kości. Przykład: obrażenia `d6 + SIŁA + 2` dadzą w logu rozpisanie
@@ -63,7 +63,7 @@ każdej broni. Pole gracza przyjmuje liczbę albo kość, np. `2`, `-1`, `1K4`, 
 **Dodaj przy tworzeniu postaci** od razu trafiają na kartę każdej nowej postaci jako jej
 własne, edytowalne wiersze.
 
-## Rzuty
+## Rzuty {#rolls}
 
 We właściwościach pola (grupa **Rzut**) zaznacz **Można rzucać** i wybierz **Mechanikę rzutu**:
 
@@ -79,7 +79,7 @@ We właściwościach pola (grupa **Rzut**) zaznacz **Można rzucać** i wybierz 
 
 Rzut bronią działa tak samo: próg to wartość umiejętności wybranej w kolumnie umiejętności.
 
-## Modyfikator rzutu
+## Modyfikator rzutu {#roll-modifier}
 
 Karta **Modyfikator rzutu** w zakładce Ogólne. Po włączeniu **Pytaj o modyfikator przed
 rzutem** każdy rzut z karty najpierw otwiera małe okienko. Wyłączone: kliknięcie rzuca od razu.
@@ -88,7 +88,7 @@ rzutem** każdy rzut z karty najpierw otwiera małe okienko. Wyłączone: klikni
 Szablon ma zawsze tylko jeden rodzaj. Przełączenie nie kasuje ustawień drugiego, więc możesz
 do nich wrócić.
 
-### Liczba
+### Liczba {#number}
 
 Gracz wpisuje liczbę (Enter potwierdza, Escape anuluje) albo klika przycisk szybkiego wyboru.
 
@@ -103,7 +103,7 @@ Gracz wpisuje liczbę (Enter potwierdza, Escape anuluje) albo klika przycisk szy
 utrudnia rzut, a dodany **do progu** go ułatwia. Jeśli w Twoim systemie „+20” ma oznaczać
 łatwiejszy test, wybierz **Do progu sukcesu**.
 
-### Kości przewagi i utrudnienia
+### Kości przewagi i utrudnienia {#edge-and-setback-dice}
 
 Zamiast liczby gracz wybiera z kolumny przycisków, ile dodatkowych kości rzucić. Przycisk `0`
 pojawia się pod kursorem, przewaga jest nad nim, a utrudnienie pod nim.
@@ -121,7 +121,7 @@ pojawia się pod kursorem, przewaga jest nad nim, a utrudnienie pod nim.
 
 W logu przy wyniku pojawia się np. „+2 kości przewagi”.
 
-## Poziomy sukcesu
+## Poziomy sukcesu {#success-levels}
 
 Karta **Poziomy sukcesu** w zakładce Ogólne decyduje, jak log ocenia rzut. Dotyczy każdego
 rzutu tradycyjnego z progiem (**Wynik ≤ atrybut** albo **Wynik ≥ atrybut**), także trafienia
@@ -133,7 +133,7 @@ bronią. Nie dotyczy **Surowego wyniku** ani puli kości. Liczy się zawsze pró
 | **Poziomy co krok** | Wynik z liczbą poziomów sukcesu (PS), np. „Sukces! · +1 PS” |
 | **Progi** | Nazwę osiągniętego progu w jego kolorze, np. „Trudny sukces” |
 
-### Poziomy co krok
+### Poziomy co krok {#levels-per-step}
 
 Ustawiasz **Krok** (od 1 do 100, domyślnie 10). Przy kroku 10 poziom to różnica cyfr dziesiątek
 progu i rzutu. Porażka liczy w dół. Przykłady dla progu 45 i rzutu pod próg:
@@ -147,7 +147,7 @@ progu i rzutu. Porażka liczy w dół. Przykłady dla progu 45 i rzutu pod próg
 
 Przy rzucie nad próg kierunek jest odwrócony. Kreator pokazuje żywy przykład dla wybranego kroku.
 
-### Progi
+### Progi {#thresholds}
 
 Próg to ułamek wartości, przy którym rzut osiąga dany poziom. Przy pierwszym wejściu
 w ten tryb dostajesz gotowy zestaw, który możesz zmienić:
@@ -167,7 +167,7 @@ w ten tryb dostajesz gotowy zestaw, który możesz zmienić:
 - Każdy wiersz ma własny **Kolor**, którym log barwi wynik.
 - Progi działają tylko przy rzucie **pod próg**. Rzut nad próg pokazuje sam sukces albo porażkę.
 
-### Dobrze wiedzieć
+### Dobrze wiedzieć {#good-to-know}
 
 - Wyłączenie poziomów zachowuje skonfigurowane progi. Po powrocie do trybu **Progi** wracają.
 - Wpisy już zapisane w logu nie zmieniają się po edycji szablonu, bo ocena zapisuje się
@@ -176,13 +176,13 @@ w ten tryb dostajesz gotowy zestaw, który możesz zmienić:
 - Karta jest dostępna tylko dla własnych systemów. Warianty systemów wbudowanych liczą
   rzuty po swojemu.
 
-## Wygląd tokena
+## Wygląd tokena {#token-display}
 
 W zakładce Ogólne decydujesz, co pokazuje token postaci na mapie: do 8 pozycji na pierścieniu
 (stany z poziomami, liczniki), kwadraty i paski (np. zdrowie z pola Postęp). Każdy
 element może być domyślnie ukryty przed graczami.
 
-## Udostępnianie
+## Udostępnianie {#sharing}
 
 | Rola | Może |
 |---|---|
@@ -196,7 +196,7 @@ członkowie. Opis i język pomagają innym znaleźć szablon przy tworzeniu gry.
 Jeśli w czasie edycji ktoś inny zapisał zmiany albo straciłeś dostęp, kreator przestaje
 zapisywać i pyta, co zrobić.
 
-## Po zmianach w szablonie
+## Po zmianach w szablonie {#after-changing-a-template}
 
 Gry korzystają z kopii szablonu. Żeby gra dostała nową wersję, mistrz gry klika
 **Synchronizuj** na karcie gry na liście gier. Wartości pól usuniętych z szablonu przepadną.

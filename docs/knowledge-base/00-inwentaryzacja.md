@@ -86,6 +86,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Funkcja | Kto | Spec |
 |---|---|---|
 | Interaktywne samouczki: ekran gry, czat, sceny, handouty, pliki, muzyka, notatki, gracze, minigry, kreator | K | — |
+| Strona pomocy `/help` (przewodnik pl/en, publiczna) i linki „Więcej w pomocy” z dymków samouczka | każdy, także bez konta | — |
 
 ## 9. Panel administratora (osobna aplikacja)
 | Funkcja | Kto | Spec |

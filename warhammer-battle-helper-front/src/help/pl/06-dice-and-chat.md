@@ -1,11 +1,11 @@
 # Kości i czat
 
-## Czat
+## Czat {#chat}
 
 Wpisz wiadomość i naciśnij Enter. Limit to 500 znaków. Wszystkie wiadomości i rzuty trafiają
 do wspólnej kroniki, najnowsze na dole.
 
-## Komendy
+## Komendy {#commands}
 
 | Komenda | Co robi |
 |---|---|
@@ -13,7 +13,7 @@ do wspólnej kroniki, najnowsze na dole.
 | `/gmroll <wyrażenie>` lub `/gmr` | Tajny rzut, wynik widzi tylko MG |
 | `/help` | Lista komend i przykładów |
 
-## Wyrażenia
+## Wyrażenia {#expressions}
 
 | Przykład | Znaczenie |
 |---|---|
@@ -30,7 +30,7 @@ do wspólnej kroniki, najnowsze na dole.
 Limity: do 20 kości w jednym składniku i 50 w całym rzucie, kość do 1000 ścian, wyrażenie
 do 100 znaków. Liczenie sukcesów (`>=`) musi być jedynym rzutem w wyrażeniu i nie łączy się z `vs`.
 
-## Kto widzi rzut
+## Kto widzi rzut {#who-sees-a-roll}
 
 | Opcja | Widzą |
 |---|---|
@@ -39,7 +39,7 @@ do 100 znaków. Liczenie sukcesów (`>=`) musi być jedynym rzutem w wyrażeniu 
 | Tylko MG | tylko mistrz gry (ty dostajesz potwierdzenie wysłania) |
 | wybrany gracz | ty i ten gracz |
 
-## Statystyki
+## Statystyki {#statistics}
 
 Twoje rzuty w danej grze są w zakładce **Ogólne**, a ze wszystkich gier w **Ustawieniach**:
 liczba rzutów, średnia, krytyczne sukcesy, pechowe rzuty i rozkład wyników.

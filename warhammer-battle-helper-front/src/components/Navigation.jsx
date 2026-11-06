@@ -20,6 +20,7 @@ import {
     Policy as PolicyIcon,
     Gavel as GavelIcon,
     Description as DescriptionIcon,
+    HelpOutline as HelpOutlineIcon,
     NewReleases as NewReleasesIcon
 } from '@mui/icons-material';
 import ChangelogDot from '../changelog/ChangelogDot';
@@ -74,6 +75,13 @@ const Navigation = ({ user, onLogout, inGame }) => {
                         {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
                             (user może być null), więc to jedyne trwałe miejsce, z którego
                             polityka prywatności jest osiągalna po zamknięciu banera zgody. */}
+                        <IconButton
+                            color="inherit"
+                            onClick={() => navigate('/help')}
+                            title={t('navigation.help')}
+                        >
+                            <HelpOutlineIcon />
+                        </IconButton>
                         <IconButton
                             color="inherit"
                             onClick={() => navigate('/privacy')}

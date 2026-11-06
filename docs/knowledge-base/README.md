@@ -1,7 +1,8 @@
 # Baza wiedzy — Warhammer Battle Helper
 
 Wewnętrzna dokumentacja dla developerów: jak działa aplikacja, gdzie leży kod każdej funkcji
-i na co uważać. Wersja dla użytkowników powstaje z tej bazy i leży w `docs/user-guide/`.
+i na co uważać. Wersja dla użytkowników powstaje z tej bazy i leży w
+`warhammer-battle-helper-front/src/help/` — to treść strony `/help` w aplikacji.
 
 **Źródłem prawdy jest kod.** Te pliki opisują go, gdy zostały napisane (październik 2026).
 Pliki w `features/` to historyczne specyfikacje z pracy nad funkcjami i mogą być nieaktualne.
@@ -22,13 +23,14 @@ Pliki w `features/` to historyczne specyfikacje z pracy nad funkcjami i mogą by
 | [07-czat-i-rzuty.md](07-czat-i-rzuty.md) | Czat, komendy, wyrażenia kości, widoczność rzutów, statystyki |
 | [08-materialy-gry.md](08-materialy-gry.md) | Handouty, pliki, muzyka, notatki |
 | [09-minigry.md](09-minigry.md) | Yahtzee i kościany poker |
-| [10-samouczki-i-i18n.md](10-samouczki-i-i18n.md) | Interaktywne samouczki, tłumaczenia |
+| [10-samouczki-i-i18n.md](10-samouczki-i-i18n.md) | Interaktywne samouczki, strona pomocy `/help`, tłumaczenia |
 | [11-deploy-i-testy.md](11-deploy-i-testy.md) | Uruchamianie, deploy, testy |
 
 ## Jak utrzymywać bazę
 
 1. Zmieniasz zachowanie funkcji? Najpierw popraw plik obszaru tutaj, potem odpowiednie strony
-   w `docs/user-guide/pl/` i `docs/user-guide/en/`.
+   przewodnika w `warhammer-battle-helper-front/src/help/pl/` i `.../en/`. Zachowaj kotwice
+   nagłówków (`{#id}`) — te same w obu językach.
 2. Zmiana czysto techniczna (refaktor, nowy test, poprawka wydajności) dotyka tylko tej bazy,
    i to tylko wtedy, gdy zmienia opisany mechanizm albo pułapkę.
 3. Nowa funkcja to nowy wiersz w `00-inwentaryzacja.md` i sekcja w pliku obszaru.

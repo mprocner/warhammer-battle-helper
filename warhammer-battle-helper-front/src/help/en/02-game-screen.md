@@ -14,7 +14,7 @@ minimised window is parked in the top bar, so nothing gets lost behind the map. 
 open a character sheet in its own browser tab (the scroll icon next to the name), which is
 handy on a second screen.
 
-## Map controls
+## Map controls {#map-controls}
 
 Pick a scheme in the **General** tab:
 
@@ -28,7 +28,7 @@ In both schemes:
 - dragging across empty map selects several tokens at once (hold Shift to add to the selection),
 - the middle mouse button cycles through the tools.
 
-## Map tools
+## Map tools {#map-tools}
 
 | Tool | Who | What for |
 |---|---|---|
@@ -44,7 +44,9 @@ Drawing is not limited to it.
 **Ping.** Hold the left button still on an empty spot of the map for about half a second.
 Everyone sees a marker there.
 
-## Tutorials
+## Tutorials {#tutorials}
 
 The game-screen tutorial starts on your first visit. Replay it with the question mark in the
-panel header. Tabs have their own short tutorials.
+panel header. Tabs have their own short tutorials. A tutorial bubble has a **Read more in the
+help** link that opens the matching section of this guide in a new tab, so the game stays where
+it was.

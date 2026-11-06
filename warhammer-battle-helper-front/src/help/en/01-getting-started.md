@@ -1,6 +1,6 @@
 # Getting started
 
-## Your account
+## Your account {#your-account}
 
 1. Click **Register** and enter your email and a password (at least 8 characters).
 2. Open the activation link from the email. You cannot log in until you do.
@@ -13,14 +13,14 @@ Under **Settings** (top menu) you will find:
 - **Statistics** — your rolls across all games: count, average, criticals and fumbles,
 - **Privacy** — consent to analytics (the site works the same without it).
 
-## The game list
+## The game list {#the-game-list}
 
 The home page describes the app. After logging in, go to **Game Rooms**, where you see your games, both the ones you run and the ones you play in. You do
 not join someone else's game yourself: the game master adds you by your account email, and
 the game simply appears on your list. When the list is empty, you can create a game or design
 your own system right away.
 
-## Creating a game (game masters)
+## Creating a game (game masters) {#creating-a-game-game-masters}
 
 1. Click **Create New Game**.
 2. Enter a name and pick a system from the list. The list holds the built-in systems and the
@@ -30,7 +30,7 @@ your own system right away.
 3. Open the game and invite players in the **Players** tab (see
    [For game masters](04-for-game-masters.md)).
 
-## Language
+## Language {#language}
 
 Change the interface language (English or Polish) in the **General** tab inside a game.
 The app remembers your choice in this browser.

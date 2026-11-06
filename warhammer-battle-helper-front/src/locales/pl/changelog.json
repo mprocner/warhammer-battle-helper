@@ -67,7 +67,8 @@
         "dice": "Yahtzee i Poker Kościany dla drużyny między scenami."
       },
       "tutorials": {
-        "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie."
+        "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie.",
+        "help": "Strony pomocy: pełny przewodnik w aplikacji pod Pomoc, z linkami z samouczków."
       },
       "accounts": {
         "register": "Konto z weryfikacją e-mail i resetem zapomnianego hasła.",

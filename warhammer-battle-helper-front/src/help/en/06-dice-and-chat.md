@@ -1,11 +1,11 @@
 # Dice and chat
 
-## Chat
+## Chat {#chat}
 
 Type a message and press Enter. The limit is 500 characters. All messages and rolls land in the
 shared chronicle, newest at the bottom.
 
-## Commands
+## Commands {#commands}
 
 | Command | What it does |
 |---|---|
@@ -13,7 +13,7 @@ shared chronicle, newest at the bottom.
 | `/gmroll <expression>` or `/gmr` | Secret roll, only the GM sees the result |
 | `/help` | List of commands and examples |
 
-## Expressions
+## Expressions {#expressions}
 
 | Example | Meaning |
 |---|---|
@@ -31,7 +31,7 @@ Limits: up to 20 dice in one part and 50 in the whole roll, dice up to 1000 side
 up to 100 characters. Counting successes (`>=`) must be the only dice in the roll and cannot be
 combined with `vs`.
 
-## Who sees a roll
+## Who sees a roll {#who-sees-a-roll}
 
 | Option | Seen by |
 |---|---|
@@ -40,7 +40,7 @@ combined with `vs`.
 | GM Only | only the game master (you get a confirmation that it was sent) |
 | a chosen player | you and that player |
 
-## Statistics
+## Statistics {#statistics}
 
 Your rolls in a game are in the **General** tab, and across all games in **Settings**: number of
 rolls, average, critical successes, fumbles and the distribution of results.

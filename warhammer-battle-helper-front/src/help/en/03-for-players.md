@@ -1,6 +1,6 @@
 # For players
 
-## Your character
+## Your character {#your-character}
 
 1. In the character list on the left, click **+ Add Character**. The new character is
    visible to you and to the game master.
@@ -11,7 +11,7 @@
 The game master can also give you access to a character they created. What the sheet looks
 like depends on the system chosen for the game.
 
-## Rolling
+## Rolling {#rolling}
 
 - **From the sheet:** click an attribute, a skill or a weapon. If the system has modifiers
   turned on, the app first asks for a bonus or penalty.
@@ -23,7 +23,7 @@ like depends on the system chosen for the game.
 
 The visibility choice applies to rolls from the sheet too.
 
-## On the map
+## On the map {#on-the-map}
 
 - Move your tokens with **Select / Move**.
 - **Measure distance** shows the distance in game units. Others see your ruler.
@@ -32,14 +32,14 @@ The visibility choice applies to rolls from the sheet too.
   character's token.
 - You only see the scene the game master moved you to.
 
-## Handouts and notes
+## Handouts and notes {#handouts-and-notes}
 
 - **Handouts** are letters, portraits, maps and documents from the game master. You only see
   the ones shared with you or with everyone. Clicking one opens it in its own window.
 - **Notes** are private by default. In the editor you can mark a note public to share it with
   the table. You see your own notes and other people's public ones.
 
-## Your in-game settings
+## Your in-game settings {#your-in-game-settings}
 
 Click your avatar in the top bar to set:
 - your avatar (from your account, from your character, or uploaded),

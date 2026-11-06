@@ -48,3 +48,13 @@ const REVEAL_SATISFIED = {
 
 export const isRevealSatisfied = (step, panels) =>
   step.reveal ? REVEAL_SATISFIED[step.reveal](panels) : true;
+
+// A tour points at the user guide with `help` - on the tour as the default for all its steps, or on
+// a step to send it to a more specific section. The value is a help reference ('<page>#<section>',
+// see help/helpPages.js) or an object keyed by role when GM and players need different pages.
+// Returns null when nothing applies, and the tooltip then shows no help link.
+export const helpRefFor = (step, tour, role) => {
+  const ref = step.help ?? tour?.help ?? null;
+  if (ref && typeof ref === 'object') return ref[role] ?? null;
+  return ref;
+};

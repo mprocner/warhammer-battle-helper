@@ -24,6 +24,21 @@
   margin: 0;
 }
 
+.tour-tooltip__help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #7a5c42;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tour-tooltip__help-link:hover {
+  color: #3a2f1f;
+}
+
 .tour-tooltip__footer {
   display: flex;
   justify-content: space-between;

@@ -10,6 +10,7 @@
 // .music-tab__volume-control występuje raz, przy głośności MG (MusicTab.jsx).
 const music = {
   id: 'music',
+  help: 'for-game-masters#music',
   steps: [
     { id: 'library', target: '.music-tab__section-header--clickable', placement: 'left' },
     { id: 'nowPlaying', target: '.music-tab__now-playing', placement: 'left' },

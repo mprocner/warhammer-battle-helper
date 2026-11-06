@@ -70,6 +70,7 @@
     "add": "Add"
   },
   "navigation": {
+    "help": "Help",
     "title": "PlayRPG",
     "login": "Login",
     "logout": "Logout",
@@ -862,7 +863,23 @@
       }
     }
   },
+  "help": {
+    "title": "Help",
+    "navLabel": "Help pages",
+    "loading": "Loading…",
+    "loadError": "This help page could not be loaded. Check your connection and refresh the page.",
+    "pages": {
+      "home": "Overview",
+      "getting-started": "Getting started",
+      "game-screen": "The game screen",
+      "for-players": "For players",
+      "for-game-masters": "For game masters",
+      "system-creator": "System Creator",
+      "dice-and-chat": "Dice and chat"
+    }
+  },
   "tutorial": {
+    "moreInHelp": "Read more in the help",
     "button": "Show the tutorial",
     "next": "Next",
     "back": "Back",
