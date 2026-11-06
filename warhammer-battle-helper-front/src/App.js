@@ -13,9 +13,11 @@ import ResetPassword from './components/ResetPassword';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Licenses from './components/Licenses';
+import Contact from './components/Contact';
 import HelpPage from './components/help/HelpPage';
 import Changelog from './components/Changelog';
 import Navigation from './components/Navigation';
+import SiteFooter from './components/common/SiteFooter';
 import ProtectedRoute from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
@@ -131,6 +133,11 @@ function App() {
         setLobbyNotice(reason);
     }, []);
 
+    // The footer (and the full-height page column that pins it down) is for regular pages; the
+    // game room and the standalone character sheet use the whole viewport. Same rule as the
+    // header: Navigation hides itself in game, and is skipped on /character-sheet.
+    const showSiteChrome = !currentGameId && window.location.pathname !== '/character-sheet';
+
     // Show loading spinner while checking auth status
     if (loading) {
         return (
@@ -158,7 +165,7 @@ function App() {
                 <Router>
                     <ConsentBanner />
                     <PageViewTracker />
-                    <div className="App">
+                    <div className={showSiteChrome ? 'App App--page' : 'App'}>
                         {window.location.pathname !== '/character-sheet' && (
                             <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
                         )}
@@ -196,6 +203,7 @@ function App() {
                         <Route path="/privacy" element={<PrivacyPolicy />} />
                         <Route path="/terms" element={<TermsOfService />} />
                         <Route path="/licenses" element={<Licenses />} />
+                        <Route path="/contact" element={<Contact user={user} />} />
                         <Route path="/help" element={<HelpPage />} />
                         <Route path="/help/:page" element={<HelpPage />} />
                         <Route path="/changelog" element={<Changelog />} />
@@ -235,6 +243,7 @@ function App() {
                             }
                         />
                         </Routes>
+                        {showSiteChrome && <SiteFooter />}
                     </div>
                 </Router>
             </ConsentProvider>

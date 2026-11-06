@@ -13,6 +13,8 @@ type EmailService struct {
 	password string
 	from     string
 	appURL   string
+	// sendMail is the SMTP transport; nil means smtp.SendMail. Tests swap in a fake.
+	sendMail func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
 }
 
 func NewEmailService() *EmailService {
@@ -78,10 +80,7 @@ func (s *EmailService) SendActivationEmail(to, token string) error {
 		to, s.from, subject, body,
 	))
 
-	addr := fmt.Sprintf("%s:%s", s.host, s.port)
-	auth := smtp.PlainAuth("", s.username, s.password, s.host)
-
-	return smtp.SendMail(addr, auth, s.from, []string{to}, msg)
+	return s.send([]string{to}, msg)
 }
 
 func (s *EmailService) SendPasswordResetEmail(to, token string) error {
@@ -117,8 +116,16 @@ func (s *EmailService) SendPasswordResetEmail(to, token string) error {
 		to, s.from, subject, body,
 	))
 
+	return s.send([]string{to}, msg)
+}
+
+// send hands a fully built message to the SMTP transport.
+func (s *EmailService) send(to []string, msg []byte) error {
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
 	auth := smtp.PlainAuth("", s.username, s.password, s.host)
-
-	return smtp.SendMail(addr, auth, s.from, []string{to}, msg)
+	sendMail := s.sendMail
+	if sendMail == nil {
+		sendMail = smtp.SendMail
+	}
+	return sendMail(addr, auth, s.from, to, msg)
 }

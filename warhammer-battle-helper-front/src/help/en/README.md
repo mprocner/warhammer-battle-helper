@@ -16,4 +16,5 @@ rolls, handouts, music and notes, all live for the whole table.
 **Tip:** almost every tab has a question mark next to its heading. It starts a short tutorial
 that points at the real elements on screen. The **Read more in the help** link in a tutorial
 bubble opens this guide in a new tab, right at the matching section. The guide is also behind the
-question mark icon in the top menu.
+question mark icon in the top menu and in the footer of every page, next to the terms, the
+privacy policy, the licenses, the contact page and the changelog.

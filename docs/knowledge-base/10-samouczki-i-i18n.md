@@ -33,6 +33,21 @@ Render robi `markdown-to-jsx` (bez surowego HTML), a linki `NN-plik.md#kotwica` 
 zamieniają się na trasy `/help/...`, więc te same pliki dobrze czytają się też na GitHubie.
 Język strony = język interfejsu; wszystko poza polskim pokazuje wersję angielską.
 
+### Nawigacja do stron serwisu (PLAYRPG-305)
+Regulamin, prywatność, licencje, kontakt, co nowego i pomoc mają być osiągalne z każdego głównego
+ekranu. Lista linków to `SITE_LINKS` w `src/components/common/SiteFooter.jsx`, jedno źródło dla
+trzech miejsc:
+- **stopka** — `App.js` renderuje `SiteFooter` pod każdą trasą poza grą i `/character-sheet`
+  (ten sam warunek co nagłówek). Klasa `App--page` robi z `.App` kolumnę na całą wysokość okna,
+  więc na krótkich stronach stopka trzyma się dołu. Strona startowa nie ma już własnej stopki,
+- **nagłówek prawego panelu w grze** — obok `?` samouczka są ikony przewodnika i co nowego
+  (z kropką `ChangelogDot`). Grupa ma klasę `.panel-header__actions`, która jest kotwicą kroku
+  `panelHeader` samouczka `gameScreen`,
+- **zakładka Ogólne** — sekcja „Linki serwisu” z całym `SITE_LINKS`.
+
+W grze linki otwierają się w nowej karcie, bo przejście w tej samej karcie odmontowałoby
+`GameSession` i zerwało WebSocket.
+
 Nagłówki `##`/`###` mają jawne kotwice `{#id}` — angielski slug, ten sam w pl i en. Slug
 liczony z tekstu nagłówka byłby inny w każdym języku i link z samouczka działałby tylko w
 jednym z nich.
@@ -55,6 +70,7 @@ wyłącznie kluczy angielskich, np. `t('creator.addSection')`. Nazwy systemów s
 | Strona pomocy | `src/components/help/HelpPage.jsx`, `src/help/helpPages.js` (rejestr stron, linki, kotwice, ładowanie) |
 | Treść pomocy | `src/help/pl/*.md`, `src/help/en/*.md`, tytuły menu w `help.pages.*` |
 | Konfiguracja i18n | `src/i18n.js` |
+| Stopka i linki serwisu | `src/components/common/SiteFooter.jsx` (`SITE_LINKS`), `App.js`, `panels/RightPanel.jsx`, `tabs/GeneralTab.jsx` |
 
 ## Pułapki
 

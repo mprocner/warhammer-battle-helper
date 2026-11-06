@@ -47,6 +47,8 @@ Everyone sees a marker there.
 ## Tutorials {#tutorials}
 
 The game-screen tutorial starts on your first visit. Replay it with the question mark in the
-panel header. Tabs have their own short tutorials. A tutorial bubble has a **Read more in the
+panel header. Next to it, the book opens this guide and the star opens the changelog
+(**What's new**), both in a new tab. Contact, the terms, the privacy policy and the licenses are
+in the **General** tab, under **Site links**. Tabs have their own short tutorials. A tutorial bubble has a **Read more in the
 help** link that opens the matching section of this guide in a new tab, so the game stays where
 it was.

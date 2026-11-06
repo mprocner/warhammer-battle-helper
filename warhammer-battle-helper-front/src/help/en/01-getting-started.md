@@ -37,3 +37,25 @@ your own system right away.
 
 Change the interface language (English or Polish) in the **General** tab inside a game.
 The app remembers your choice in this browser.
+
+## Contact and reports {#contact-and-reports}
+
+The **Contact** page (linked in the footer of every page, and in the **General** tab inside a
+game) has a single form. Choose what your message is about:
+- **Bug or feedback** — describe what you did, what you expected and what happened,
+- **Report content** — content in a game that you believe is illegal or breaks the terms of
+  service,
+- **Other** — anything else.
+
+You do not need an account. When you are logged in, the form fills in your account email.
+Without an email we cannot reply, but the message still arrives.
+
+A content report needs where the content is (for example the game name and a description of the
+scene, handout or file), a justification, your name and surname or company name, your email and a
+statement that you report in good faith. For a report about child sexual abuse, name and email
+are optional. Screenshots cannot be attached in the form: mention that you have one and send it
+by email to the address shown on the page. We review reports without delay and let you know what
+we decided.
+
+The form accepts a few messages every few minutes from one address. If something goes wrong,
+write directly to the email address shown on the Contact page.

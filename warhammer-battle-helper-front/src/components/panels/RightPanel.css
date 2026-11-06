@@ -111,11 +111,18 @@
   background: #c9975b;
 }
 
-.panel-header__help {
+/* Guide, changelog and tutorial buttons, pinned to the right so the title stays centred. */
+.panel-header__actions {
   position: absolute;
   top: 50%;
   right: 16px;
   transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+}
+
+.panel-header__help {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;

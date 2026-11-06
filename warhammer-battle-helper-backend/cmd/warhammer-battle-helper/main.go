@@ -16,6 +16,7 @@ import (
 	nethttp "net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -72,6 +73,12 @@ func main() {
 	defer db.Disconnect()
 
 	r := gin.Default()
+
+	// Without this gin trusts every peer's X-Forwarded-For, so c.ClientIP() (used by the rate
+	// limiter) would be whatever the client claims. See ConfigureClientIP for the nginx setup.
+	if err := http.ConfigureClientIP(r, http.ParseTrustedProxies(os.Getenv("TRUSTED_PROXIES"))); err != nil {
+		panic(fmt.Sprintf("Invalid TRUSTED_PROXIES: %v", err))
+	}
 
 	// Build allowed origins from environment + defaults
 	allowedOrigins := []string{"http://localhost:3000", "http://localhost:3001", "https://*.ngrok-free.dev", "https://*.loca.lt"}
@@ -161,6 +168,16 @@ func main() {
 	r.GET("/verify-email", authHandler.VerifyEmail)
 	r.POST("/forgot-password", authHandler.ForgotPassword)
 	r.POST("/reset-password", authHandler.ResetPassword)
+
+	// Contact form (public; the account is attached when a JWT is present). The limiter is
+	// in-memory and per IP: 5 messages per 10 minutes is plenty for a person, little for a bot.
+	contactRecipient := os.Getenv("CONTACT_EMAIL")
+	if contactRecipient == "" {
+		contactRecipient = "contact@playrpg.net"
+	}
+	contactHandler := http.ContactHandler{Sender: emailService, Recipient: contactRecipient}
+	contactLimiter := http.NewIPRateLimiter(5, 10*time.Minute)
+	r.POST("/contact", http.RateLimitMiddleware(contactLimiter), http.JWTOptionalMiddleware(), contactHandler.Submit)
 
 	// Static file serving (no auth)
 	avatarHandler := http.AvatarHandler{Storage: avatarStorage}

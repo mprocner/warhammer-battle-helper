@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import ChatInput from '../log/ChatInput';
@@ -218,15 +220,39 @@ const RightPanel = ({
       {/* Panel Header */}
       <header className="panel-header">
         <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
-        <button
-          type="button"
-          className="panel-header__help"
-          onClick={onStartTutorial}
-          title={t('tutorial.button')}
-          aria-label={t('tutorial.button')}
-        >
-          <HelpOutlineIcon fontSize="small" />
-        </button>
+        {/* Guide and changelog open in a new tab: leaving this page would drop the session. */}
+        <div className="panel-header__actions">
+          <a
+            className="panel-header__help"
+            href="/help"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t('navigation.help')}
+            aria-label={t('navigation.help')}
+          >
+            <MenuBookIcon fontSize="small" />
+          </a>
+          <a
+            className="panel-header__help"
+            href="/changelog"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t('navigation.changelog')}
+            aria-label={t('navigation.changelog')}
+          >
+            <NewReleasesIcon fontSize="small" />
+            <ChangelogDot />
+          </a>
+          <button
+            type="button"
+            className="panel-header__help"
+            onClick={onStartTutorial}
+            title={t('tutorial.button')}
+            aria-label={t('tutorial.button')}
+          >
+            <HelpOutlineIcon fontSize="small" />
+          </button>
+        </div>
       </header>
 
       {/* Tabs Wrapper */}

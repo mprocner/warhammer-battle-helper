@@ -79,7 +79,11 @@
     "privacy": "Polityka prywatności",
     "licenses": "Licencje",
     "terms": "Regulamin",
-    "changelog": "Co nowego"
+    "changelog": "Co nowego",
+    "contact": "Kontakt"
+  },
+  "footer": {
+    "label": "Linki serwisu"
   },
   "licenses": {
     "title": "Licencje",
@@ -251,6 +255,37 @@
         ]
       }
     ]
+  },
+  "contact": {
+    "title": "Kontakt",
+    "intro": "Zgłoś błąd, podziel się opinią, zgłoś treść albo po prostu napisz. Możesz też wysłać e-mail bezpośrednio:",
+    "typeLabel": "Czego dotyczy wiadomość?",
+    "types": {
+      "bug": "Błąd lub opinia",
+      "content": "Zgłoszenie treści",
+      "other": "Inne"
+    },
+    "contentIntro": "Tym formularzem zgłosisz treść, którą uważasz za nielegalną lub sprzeczną z Regulaminem. Konto nie jest potrzebne. Zgłoszenia rozpatrujemy niezwłocznie i informujemy o podjętej decyzji.",
+    "childAbuse": "Zgłoszenie dotyczy wykorzystywania seksualnego dzieci (imię i e-mail są wtedy nieobowiązkowe)",
+    "name": "Imię",
+    "nameRequired": "Imię i nazwisko lub nazwa",
+    "email": "E-mail",
+    "emailHint": "Nieobowiązkowy — bez niego nie odpiszemy.",
+    "subject": "Temat",
+    "message": "Wiadomość",
+    "bugHint": "Co zrobiłeś, czego się spodziewałeś i co się stało? Podaj przeglądarkę i grę, jeśli to ma znaczenie.",
+    "contentLocation": "Gdzie jest ta treść?",
+    "contentLocationHint": "Np. nazwa Gry i opis: scena, materiał, postać, nazwa pliku. Zrzutu ekranu nie da się tu dołączyć — napisz, że go masz, i wyślij go na {{email}}.",
+    "justification": "Dlaczego uważasz ją za nielegalną lub sprzeczną z Regulaminem?",
+    "additionalInfo": "Dodatkowe informacje",
+    "goodFaith": "Oświadczam, że zgłoszenie składam w dobrej wierze, a zawarte w nim informacje są prawdziwe.",
+    "submit": "Wyślij",
+    "sending": "Wysyłanie…",
+    "sent": "Dziękujemy — wiadomość została wysłana.",
+    "sentContent": "Dziękujemy — zgłoszenie zostało wysłane. Rozpatrzymy je niezwłocznie i poinformujemy Cię o decyzji.",
+    "sendAnother": "Wyślij kolejną wiadomość",
+    "error": "Nie udało się wysłać wiadomości. Spróbuj później albo napisz na",
+    "tooMany": "Za dużo wiadomości z Twojego adresu. Odczekaj kilka minut albo napisz na"
   },
   "userSettings": {
     "title": "Ustawienia konta",
@@ -939,6 +974,10 @@
           "gm": "Zaznaczanie i przesuwanie, miarka, mgła wojny i rysowanie. Mgła to obszar, którego gracze jeszcze nie widzą — odsłaniasz go w miarę eksploracji.",
           "player": "Zaznaczanie i przesuwanie tokenów, miarka do celu i rysowanie po mapie, żeby reszta stołu zobaczyła, o co Ci chodzi."
         }
+      },
+      "panelHeader": {
+        "title": "Przewodnik, nowości i samouczek",
+        "body": "Książka otwiera przewodnik, a gwiazdka pokazuje nowości w PlayRPG — obie w nowej karcie, więc gra zostaje otwarta. Znak zapytania uruchamia ten samouczek ponownie. Kontakt, regulamin i polityka prywatności są podlinkowane w zakładce Ogólne."
       },
       "onlineUsers": {
         "title": "Kto jest przy stole",
@@ -2026,7 +2065,11 @@
       "sheetWidthNote": "Okno nigdy nie otworzy się szersze niż przeglądarka gracza, a gracz może je rozciągnąć."
     },
     "successLevels": {
-      "mode": { "off": "Wyłączone", "tens": "Poziomy co krok", "tiers": "Progi" },
+      "mode": {
+        "off": "Wyłączone",
+        "tens": "Poziomy co krok",
+        "tiers": "Progi"
+      },
       "offHint": "Rzuty pokazują tylko sukces albo porażkę.",
       "step": "Krok",
       "tensHint": "Jeden poziom za każdy krok różnicy między cyframi dziesiątek progu i rzutu. Porażka liczy w dół.",
@@ -2040,7 +2083,12 @@
       "remove": "Usuń próg",
       "add": "Dodaj próg",
       "failureRow": "brak",
-      "default": { "extreme": "Ekstremalny sukces", "hard": "Trudny sukces", "success": "Sukces", "failure": "Porażka" }
+      "default": {
+        "extreme": "Ekstremalny sukces",
+        "hard": "Trudny sukces",
+        "success": "Sukces",
+        "failure": "Porażka"
+      }
     },
     "modifier": {
       "enable": "Pytaj o modyfikator przed rzutem",
@@ -2543,9 +2591,6 @@
     "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów w grze? Nowe tokeny przestaną go dostawać, a zmiany będą znów dotyczyć tylko tego tokena."
   },
   "landing": {
-    "footer": {
-      "label": "Linki serwisu"
-    },
     "hero": {
       "title": "Zbierz drużynę. Rozłóż mapę. Rzuć kośćmi.",
       "subtitle": "Mapy z mgłą wojny, własne karty postaci i wszystko, czego MG potrzebuje przy sesji online."

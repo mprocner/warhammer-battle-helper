@@ -69,14 +69,16 @@
       },
       "tutorials": {
         "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen.",
-        "help": "Help pages: the full user guide inside the app under Help, linked from the tutorials."
+        "help": "Help pages: the full user guide inside the app under Help, linked from the tutorials.",
+        "links": "A footer on every page with the terms, privacy policy, licenses, contact, what's new and help. In a game, the guide and what's new sit next to the tutorial question mark, and the General tab lists all of these links."
       },
       "accounts": {
         "register": "An account with email verification and a reset for a forgotten password.",
         "profile": "A username and an avatar with built-in cropping.",
         "stats": "Your statistics: dice rolls and time spent online.",
         "language": "The interface in English and Polish.",
-        "legal": "Cookie consent, privacy policy, terms of service and licenses."
+        "legal": "Cookie consent, privacy policy, terms of service and licenses.",
+        "contact": "A Contact page with a form: report a bug or send feedback, report illegal or rule-breaking content (no account needed) and other messages."
       }
     }
   }

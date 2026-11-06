@@ -72,9 +72,9 @@ const Navigation = ({ user, onLogout, inGame }) => {
                             <NewReleasesIcon />
                             <ChangelogDot />
                         </IconButton>
-                        {/* I2: Navigation renderuje się też dla anonimowych odwiedzających
-                            (user może być null), więc to jedyne trwałe miejsce, z którego
-                            polityka prywatności jest osiągalna po zamknięciu banera zgody. */}
+                        {/* I2: Navigation renders for anonymous visitors too (user may be
+                            null), so together with SiteFooter it keeps the privacy policy
+                            reachable after the consent banner is closed. */}
                         <IconButton
                             color="inherit"
                             onClick={() => navigate('/help')}

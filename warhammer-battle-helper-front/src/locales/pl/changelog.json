@@ -69,14 +69,16 @@
       },
       "tutorials": {
         "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie.",
-        "help": "Strony pomocy: pełny przewodnik w aplikacji pod Pomoc, z linkami z samouczków."
+        "help": "Strony pomocy: pełny przewodnik w aplikacji pod Pomoc, z linkami z samouczków.",
+        "links": "Stopka na każdej stronie z regulaminem, polityką prywatności, licencjami, kontaktem, listą zmian i pomocą. W grze przewodnik i lista zmian są obok znaku zapytania samouczka, a zakładka Ogólne zbiera wszystkie te linki."
       },
       "accounts": {
         "register": "Konto z weryfikacją e-mail i resetem zapomnianego hasła.",
         "profile": "Nazwa użytkownika i avatar z wbudowanym kadrowaniem.",
         "stats": "Twoje statystyki: rzuty kośćmi i czas online.",
         "language": "Interfejs po polsku i angielsku.",
-        "legal": "Zgoda na cookies, polityka prywatności, regulamin i licencje."
+        "legal": "Zgoda na cookies, polityka prywatności, regulamin i licencje.",
+        "contact": "Strona Kontakt z formularzem: zgłoszenie błędu lub opinii, zgłoszenie treści naruszającej prawo lub Regulamin (także bez konta) i inne wiadomości."
       }
     }
   }

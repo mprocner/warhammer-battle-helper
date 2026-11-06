@@ -79,7 +79,11 @@
     "privacy": "Privacy policy",
     "licenses": "Licenses",
     "terms": "Terms of service",
-    "changelog": "What's new"
+    "changelog": "What's new",
+    "contact": "Contact"
+  },
+  "footer": {
+    "label": "Site links"
   },
   "licenses": {
     "title": "Licenses",
@@ -251,6 +255,37 @@
         ]
       }
     ]
+  },
+  "contact": {
+    "title": "Contact",
+    "intro": "Report a bug, send feedback, report content or just write to us. You can also e-mail us directly:",
+    "typeLabel": "What is it about?",
+    "types": {
+      "bug": "Bug or feedback",
+      "content": "Report content",
+      "other": "Other"
+    },
+    "contentIntro": "Use this form to report content you believe is illegal or breaks the terms of service. You do not need an account. We review reports without delay and let you know what we decided.",
+    "childAbuse": "The report concerns child sexual abuse (your name and e-mail are then optional)",
+    "name": "Name",
+    "nameRequired": "Name and surname or company name",
+    "email": "E-mail",
+    "emailHint": "Optional — without it we cannot reply.",
+    "subject": "Subject",
+    "message": "Message",
+    "bugHint": "What did you do, what did you expect and what happened? Name the browser and the game if it matters.",
+    "contentLocation": "Where is the content?",
+    "contentLocationHint": "E.g. the game name and a description: scene, handout, character, file name. Screenshots cannot be attached here — mention that you have one and send it to {{email}}.",
+    "justification": "Why do you think it is illegal or against the terms?",
+    "additionalInfo": "Additional information",
+    "goodFaith": "I declare that this report is made in good faith and that the information in it is true.",
+    "submit": "Send",
+    "sending": "Sending…",
+    "sent": "Thank you — your message has been sent.",
+    "sentContent": "Thank you — your report has been sent. We will review it without delay and let you know what we decided.",
+    "sendAnother": "Send another message",
+    "error": "The message could not be sent. Please try again later or write to",
+    "tooMany": "Too many messages from your address. Please wait a few minutes or write to"
   },
   "userSettings": {
     "title": "Account Settings",
@@ -935,6 +970,10 @@
           "gm": "Select and move, measure distance, paint fog of war and draw. Fog is what your players cannot see yet — you uncover it as they explore.",
           "player": "Select and move your tokens, measure distance to a target and draw on the map so the rest of the table sees what you mean."
         }
+      },
+      "panelHeader": {
+        "title": "Guide, news and tutorial",
+        "body": "The book opens the user guide and the star shows what is new in PlayRPG, both in a new tab so the game stays open. The question mark replays this tutorial. Contact, the terms and the privacy policy are linked in the General tab."
       },
       "onlineUsers": {
         "title": "Who is here",
@@ -2018,7 +2057,11 @@
       "sheetWidthNote": "The window never opens wider than the player's browser, and players can resize it."
     },
     "successLevels": {
-      "mode": { "off": "Off", "tens": "Levels per step", "tiers": "Thresholds" },
+      "mode": {
+        "off": "Off",
+        "tens": "Levels per step",
+        "tiers": "Thresholds"
+      },
       "offHint": "Rolls show only success or failure.",
       "step": "Step",
       "tensHint": "One level for every step between the tens digits of the target and of the roll. A failure counts down.",
@@ -2032,7 +2075,12 @@
       "remove": "Remove threshold",
       "add": "Add threshold",
       "failureRow": "none",
-      "default": { "extreme": "Extreme success", "hard": "Hard success", "success": "Success", "failure": "Failure" }
+      "default": {
+        "extreme": "Extreme success",
+        "hard": "Hard success",
+        "success": "Success",
+        "failure": "Failure"
+      }
     },
     "modifier": {
       "enable": "Ask for a modifier before rolling",
@@ -2535,9 +2583,6 @@
     "unshareAllConfirm": "Unlock this slot for all tokens in the game? New tokens stop getting it and edits affect only this token again."
   },
   "landing": {
-    "footer": {
-      "label": "Site links"
-    },
     "hero": {
       "title": "Gather your party. Unroll the map. Roll the dice.",
       "subtitle": "Maps with fog of war, custom character sheets and everything a GM needs to run a session online."

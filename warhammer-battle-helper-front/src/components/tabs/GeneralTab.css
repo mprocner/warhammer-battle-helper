@@ -84,6 +84,17 @@
   text-decoration: underline;
 }
 
+/* Site links (terms, privacy, contact, changelog, help) */
+.general-tab__site-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.general-tab__site-link {
+  color: #3a2f1f;
+}
+
 /* Connection Status */
 .general-tab__status {
   padding: 2px 8px;

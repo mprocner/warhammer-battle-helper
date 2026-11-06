@@ -46,6 +46,8 @@ ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 ## Samouczki {#tutorials}
 
 Przy pierwszym wejściu do gry uruchamia się samouczek ekranu. Możesz go powtórzyć znakiem
-zapytania w nagłówku panelu. Zakładki mają własne, krótkie samouczki. Dymek samouczka ma link
+zapytania w nagłówku panelu. Obok są dwie ikony: książka otwiera ten przewodnik, a gwiazdka
+listę zmian (**Co nowego**), obie w nowej karcie. Kontakt, regulamin, politykę prywatności
+i licencje znajdziesz w zakładce **Ogólne**, w sekcji **Linki serwisu**. Zakładki mają własne, krótkie samouczki. Dymek samouczka ma link
 **Więcej w pomocy**, który otwiera w nowej karcie odpowiednią sekcję tego przewodnika — gra
 zostaje otwarta tam, gdzie była.

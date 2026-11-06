@@ -79,7 +79,7 @@ describe('game screen tour', () => {
   it('walks the game screen left to right, ending at the right panel', () => {
     expect(steps().map(s => s.id)).toEqual([
       'characterCard', 'characterList', 'sceneSelector', 'windowBar', 'sceneControls',
-      'layerSelector', 'drawingToolbar', 'onlineUsers', 'tabsNav', 'diceControls',
+      'layerSelector', 'drawingToolbar', 'panelHeader', 'onlineUsers', 'tabsNav', 'diceControls',
     ]);
   });
 
@@ -93,9 +93,9 @@ describe('game screen tour', () => {
     expect(gmOnly.map(s => s.id)).toEqual(['sceneSelector', 'layerSelector']);
   });
 
-  it('gives the GM ten steps and the player eight', () => {
-    expect(steps().filter(s => s.roles.includes('gm'))).toHaveLength(10);
-    expect(steps().filter(s => s.roles.includes('player'))).toHaveLength(8);
+  it('gives the GM eleven steps and the player nine', () => {
+    expect(steps().filter(s => s.roles.includes('gm'))).toHaveLength(11);
+    expect(steps().filter(s => s.roles.includes('player'))).toHaveLength(9);
   });
 
   it('varies the scene control text by control scheme and the tool text by role', () => {

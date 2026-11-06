@@ -6,7 +6,8 @@
 Panel admina działa na porcie 3001.
 
 **Produkcja** (szczegóły w `DEPLOY.md`): VPS, `docker-compose.prod.yml` z `.env.prod`
-(`REACT_APP_API_URL`, `MONGO_*`, `ALLOWED_ORIGINS`, `ADMIN_BASENAME`), przed nim nginx
+(`REACT_APP_API_URL`, `MONGO_*`, `ALLOWED_ORIGINS`, `ADMIN_BASENAME`, `SMTP_*`,
+`CONTACT_EMAIL` — skrzynka formularza kontaktowego, `TRUSTED_PROXIES` — opcjonalnie), przed nim nginx
 z Certbotem (`nginx.vps.conf.example`). `scripts/autopull.sh` (usługa systemd
 `autopull.service`) co 5 minut sprawdza gałąź i przy nowych commitach uruchamia
 `scripts/deploy.sh`.

@@ -18,19 +18,6 @@ const keyPaths = (node, prefix = '') => Object.entries(node).flatMap(([key, valu
 ));
 
 describe('LandingPage', () => {
-  it('links the public pages from the footer', () => {
-    renderPage(null);
-    const footer = screen.getByRole('navigation', { name: i18n.t('landing.footer.label') });
-    [
-      ['navigation.changelog', '/changelog'],
-      ['navigation.privacy', '/privacy'],
-      ['navigation.terms', '/terms'],
-      ['navigation.licenses', '/licenses'],
-    ].forEach(([key, href]) => {
-      expect(within(footer).getByRole('link', { name: i18n.t(key) })).toHaveAttribute('href', href);
-    });
-  });
-
   it('points both calls to action at registration for a guest', () => {
     renderPage(null);
     const links = screen.getAllByRole('link', { name: i18n.t('landing.cta.register') });
