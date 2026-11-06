@@ -49,7 +49,7 @@ const Navigation = ({ user, onLogout, inGame }) => {
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
                     <Box component="a" href={user ? '/games' : '/'} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 2 }}>
-                        <img src="/img/logo.png" alt="RollHammer" style={{height: 100, objectFit: 'contain' }} />
+                        <img src="/img/logo.png" alt="PlayRPG" style={{height: 100, objectFit: 'contain' }} />
                     </Box>
 
                     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>

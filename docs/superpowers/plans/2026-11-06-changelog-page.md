@@ -138,7 +138,7 @@ export const releaseKey = (version) => version.replaceAll('.', '_');
 ```json
 {
   "title": "What's new",
-  "intro": "RollHammer release history. The newest version is at the top.",
+  "intro": "PlayRPG release history. The newest version is at the top.",
   "latest": "Latest",
   "sections": {
     "scene": "Scene and map",
@@ -224,7 +224,7 @@ export const releaseKey = (version) => version.replaceAll('.', '_');
 ```json
 {
   "title": "Co nowego",
-  "intro": "Historia wersji RollHammer. Najnowsza wersja jest na górze.",
+  "intro": "Historia wersji PlayRPG. Najnowsza wersja jest na górze.",
   "latest": "Najnowsza",
   "sections": {
     "scene": "Scena i mapa",

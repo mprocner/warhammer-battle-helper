@@ -4,7 +4,7 @@ Data: 2026-11-06
 
 ## Cel
 
-Publiczna strona `/changelog` z historią wersji RollHammer, dostępna bez logowania. Pierwsze
+Publiczna strona `/changelog` z historią wersji PlayRPG, dostępna bez logowania. Pierwsze
 wydanie `1.0.0` opisuje wszystko, co aplikacja ma dziś. Kolejne wersje dopisujemy razem
 z poprawkami i nowymi funkcjami, w tym samym commicie co zmiana.
 
@@ -56,7 +56,7 @@ tak samo jak `skills`, `weapons` itd. Dzięki temu `translation.json` (2532 lini
 ```json
 {
   "title": "What's new",
-  "intro": "RollHammer release history.",
+  "intro": "PlayRPG release history.",
   "latest": "Latest",
   "sections": { "scene": "Scene and map", "added": "New", "changed": "Changed", "fixed": "Fixed" },
   "releases": {
@@ -105,7 +105,7 @@ sekcja użyta w `RELEASES` ma ikonę.
 ```
 ┌──────────────────────────────────────────┐
 │ Co nowego                                │
-│ Historia zmian RollHammer.               │
+│ Historia zmian PlayRPG.               │
 │                                          │
 │ 1.0.0 · 6 listopada 2026   [Najnowsza]   │
 │ ──────────────────────────────────────── │
