@@ -30,11 +30,11 @@ const GRID_INPUT_CLASSES = {
 // touching the remembered `expanded` state, so the tick returns the row to how it was.
 function RowTablePlayerRow({
   row, columns, skillOptions, gridTemplate, leading, trailing, editing, expanded, onToggleExpand,
-  onStartEdit, onFinishEdit, onCell, onRequestRemove, labels, showTooltip, hideTooltip,
+  onStartEdit, onFinishEdit, onCell, onRequestRemove, showAffordances, labels, showTooltip, hideTooltip,
 }) {
   const details = detailColumns(columns);
   const nameKey = nameColumnKey(columns);
-  const ctx = { isPreset: false, editing };
+  const ctx = { editing };
   const cell = (colKey, value) => onCell && onCell(row.id, colKey, value);
 
   // Enter closes the edit the same way the tick does — there is no buffer to flush.
@@ -95,6 +95,16 @@ function RowTablePlayerRow({
               </button>
             )}
             <button className="custom-sheet__row-table-remove" onClick={() => onRequestRemove(row)} title={labels.remove}>
+              <DeleteIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+            </button>
+          </>
+        )}
+        {!onCell && showAffordances && (
+          <>
+            <button className="custom-sheet__row-table-edit" disabled title={labels.edit}>
+              <EditIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
+            </button>
+            <button className="custom-sheet__row-table-remove" disabled title={labels.remove}>
               <DeleteIcon style={{ fontSize: AFFORDANCE_ICON_SIZE }} />
             </button>
           </>

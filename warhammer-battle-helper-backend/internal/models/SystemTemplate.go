@@ -64,6 +64,10 @@ type TemplateSettings struct {
 	// cannot erase a meaningful value the way it could for FieldDef.Default, whose 0 is real.
 	// Nothing in Go reads it: the client is the only consumer.
 	SheetWidth int `bson:"sheetWidth,omitempty" json:"sheetWidth,omitempty"`
+
+	// SuccessLevels configures how traditional rolls report their degree of success (PLAYRPG-289).
+	// nil means off, which is how every pre-existing template starts — no migration needed.
+	SuccessLevels *SuccessLevelsConfig `bson:"successLevels,omitempty" json:"successLevels,omitempty"`
 }
 
 // ModifierConfig is the template-wide setup of the roll-modifier prompt shown before a roll on
@@ -72,6 +76,11 @@ type TemplateSettings struct {
 // mixing both modes never applies a rule that makes no sense for one of them.
 type ModifierConfig struct {
 	Enabled bool `bson:"enabled" json:"enabled"`
+
+	// Kind: "number" (the numeric prompt; also when empty — every pre-existing template) | "dice"
+	// (edge/setback dice, PLAYRPG-294). One kind per template is what makes the two mutually
+	// exclusive without a validation rule.
+	Kind string `bson:"kind,omitempty" json:"kind,omitempty"`
 
 	// TraditionalTarget: "roll" (added to the result, default) | "threshold" (added to the
 	// success threshold — the roll-under convention, e.g. WFRP/CoC).
@@ -86,6 +95,13 @@ type ModifierConfig struct {
 	Max  int `bson:"max,omitempty" json:"max,omitempty"`
 
 	Presets []ModifierPreset `bson:"presets,omitempty" json:"presets,omitempty"`
+
+	// Dice kind only. DiceMode: "formula" (default — the whole formula rolls once per extra die)
+	// | "tens" (a new d100 tens digit per extra die, units kept). MaxEdge/MaxSetback: how many
+	// edge/setback dice the player may pick; 0 disables that side.
+	DiceMode   string `bson:"diceMode,omitempty" json:"diceMode,omitempty"`
+	MaxEdge    int    `bson:"maxEdge,omitempty" json:"maxEdge,omitempty"`
+	MaxSetback int    `bson:"maxSetback,omitempty" json:"maxSetback,omitempty"`
 }
 
 // ModifierPreset is one quick-pick button in the prompt, e.g. {-30, "Very hard"}. Label is
@@ -329,15 +345,13 @@ type FieldDef struct {
 	// weapons_table only: GM defines the columns; the player fills in weapon rows on the sheet.
 	Columns       []WeaponColumn `bson:"columns,omitempty" json:"columns,omitempty"`
 	DamageFormula []FormulaBlock `bson:"damageFormula,omitempty" json:"damageFormula,omitempty"`
-	// PresetWeapons are GM-authored weapons attached to the template (weapons_table only).
-	// An AlwaysOn preset is shown read-only on every character sheet and is never copied
-	// into the character's stats — it is rendered and rolled straight from the template,
-	// so a GM edit propagates to all players. A non-AlwaysOn preset is a catalog entry the
-	// player can copy into an editable weapon row of their own.
+	// PresetWeapons are GM-authored weapons attached to the template (weapons_table only). Every
+	// preset is a catalog entry the player can copy into a weapon row of their own; an AddOnCreate
+	// preset is also copied into every new character's rows by SeedDefaults (PLAYRPG-288). Once
+	// copied, the row is the player's: a later GM edit of the preset does not reach it.
 	PresetWeapons []PresetWeapon `bson:"presetWeapons,omitempty" json:"presetWeapons,omitempty"`
 	// PresetRows are GM-authored rows of a data_table field — the data_table counterpart of
-	// PresetWeapons, with the same AlwaysOn semantics (rendered from the template, never copied
-	// into stats) and the same catalog semantics for the rest. data_table reuses Columns.
+	// PresetWeapons, with the same catalog and AddOnCreate semantics. data_table reuses Columns.
 	PresetRows []PresetRow `bson:"presetRows,omitempty" json:"presetRows,omitempty"`
 
 	// Formula is the expression of a "computed" field. The front end evaluates it at render time
@@ -353,22 +367,21 @@ type FieldDef struct {
 }
 
 // PresetWeapon is a GM-authored weapon template attached to a weapons_table field.
-// Cells and Damage mirror WeaponRow exactly (column key → value, damage block id → number),
-// so a preset is just a "row template": copying it to a player row is a plain value copy,
-// and rolling an AlwaysOn preset reuses the same WeaponRow-based roll path.
+// Cells and Damage mirror WeaponRow exactly (column key → value, damage block id → entered text),
+// so a preset is just a "row template": copying it to a player row is a plain value copy.
 type PresetWeapon struct {
-	ID       string             `bson:"id" json:"id"`
-	Cells    map[string]string  `bson:"cells,omitempty" json:"cells,omitempty"`
-	Damage   map[string]float64 `bson:"damage,omitempty" json:"damage,omitempty"`
-	AlwaysOn bool               `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
+	ID          string            `bson:"id" json:"id"`
+	Cells       map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	Damage      map[string]string `bson:"damage,omitempty" json:"damage,omitempty"`
+	AddOnCreate bool              `bson:"addOnCreate,omitempty" json:"addOnCreate,omitempty"`
 }
 
 // PresetRow is a GM-authored row of a data_table field. A separate type from PresetWeapon because
 // a data row has no damage: sharing the type would carry a field that is always empty.
 type PresetRow struct {
-	ID       string            `bson:"id" json:"id"`
-	Cells    map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
-	AlwaysOn bool              `bson:"alwaysOn,omitempty" json:"alwaysOn,omitempty"`
+	ID          string            `bson:"id" json:"id"`
+	Cells       map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	AddOnCreate bool              `bson:"addOnCreate,omitempty" json:"addOnCreate,omitempty"`
 }
 
 // WeaponColumn defines one GM-authored column of a weapons_table or data_table field.
@@ -425,7 +438,6 @@ type RollConfig struct {
 	Threshold   string `bson:"threshold,omitempty" json:"threshold,omitempty"`
 	CritSuccess bool   `bson:"critSuccess" json:"critSuccess"`
 	CritFail    bool   `bson:"critFail" json:"critFail"`
-	RollAdvType string `bson:"rollAdvType" json:"rollAdvType"` // "standard"|"advantage"|"disadvantage"
 
 	// Dice-pool mode fields (only used when RollMode == "dice_pool").
 	PoolSuccessThreshold int    `bson:"poolSuccessThreshold,omitempty" json:"poolSuccessThreshold,omitempty"`
@@ -505,7 +517,8 @@ func IsTemplateValidationError(err error) bool {
 		errors.Is(err, ErrDuplicateCharAvatar) ||
 		errors.Is(err, ErrInvalidTemplateLanguage) ||
 		errors.Is(err, ErrTemplateDescriptionTooLong) ||
-		errors.Is(err, ErrTemplateAboutOnVariant)
+		errors.Is(err, ErrTemplateAboutOnVariant) ||
+		errors.Is(err, ErrInvalidSuccessLevels)
 }
 
 // CountFieldsOfType counts leaf fields of the given type at any depth. Nested sections

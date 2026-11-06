@@ -340,7 +340,11 @@
     "characters": "Postacie",
     "gameRooms": "Pokoje Gier",
     "createNewGame": "Utwórz Nową Grę",
-    "noActiveGames": "Brak aktywnych gier. Utwórz jedną, aby rozpocząć swoją przygodę!",
+    "openCreator": "Kreator systemów",
+    "emptyLobbyTitle": "Nie masz jeszcze żadnej gry",
+    "emptyLobbyDesc": "Utwórz własną albo poproś Mistrza Gry o zaproszenie na Twój e-mail.",
+    "emptyLobbyCreate": "Utwórz grę",
+    "emptyLobbyDesign": "Zaprojektuj system",
     "accessRevoked": "Nie masz już dostępu do tej gry.",
     "kickedFromGame": "Mistrz Gry usunął Cię z tej gry.",
     "connectionLost": "Utracono połączenie. Ponawianie…",
@@ -586,11 +590,20 @@
     "STEALTH": "Skradanie"
   },
   "customRoll": {
+    "slAbbr": "PS",
     "critical_success": "Krytyczny sukces!",
     "regular_success": "Sukces!",
     "failure": "Porażka!",
     "fumble": "Krytyczna porażka!",
-    "poolSuccesses": "{{count}} sukces(ów)"
+    "poolSuccesses": "{{count}} sukces(ów)",
+    "edgeDice_one": "+{{count}} kość przewagi",
+    "edgeDice_few": "+{{count}} kości przewagi",
+    "edgeDice_many": "+{{count}} kości przewagi",
+    "edgeDice_other": "+{{count}} kości przewagi",
+    "setbackDice_one": "−{{count}} kość utrudnienia",
+    "setbackDice_few": "−{{count}} kości utrudnienia",
+    "setbackDice_many": "−{{count}} kości utrudnienia",
+    "setbackDice_other": "−{{count}} kości utrudnienia"
   },
   "combat": {
     "roll": "Rzuć",
@@ -726,6 +739,7 @@
   "handouts": {
     "title": "Handouty",
     "addHandout": "Dodaj Handout",
+    "addHandoutShort": "Handout",
     "createHandout": "Utwórz Handout",
     "editHandout": "Edytuj Handout",
     "noHandouts": "Brak handoutów",
@@ -767,7 +781,7 @@
     "unsupportedType": "Ten typ pliku nie może być podglądany",
     "loadContentError": "Nie udało się załadować treści",
     "folders": {
-      "createFolder": "Nowy Folder",
+      "createFolder": "Folder",
       "namePlaceholder": "Nazwa folderu...",
       "rename": "Zmień nazwę folderu",
       "delete": "Usuń folder",
@@ -784,7 +798,7 @@
   },
   "notes": {
     "title": "Notatki",
-    "addNote": "Dodaj notatkę",
+    "addNote": "Notatka",
     "filterPlaceholder": "Filtruj po tytule...",
     "noNotes": "Brak notatek",
     "noNotesHint": "Dodaj swoją pierwszą notatkę powyżej",
@@ -1079,7 +1093,11 @@
       },
       "modifier": {
         "title": "Modyfikator rzutu",
-        "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator, np. premię albo karę wynikającą z sytuacji."
+        "body": "Gdy włączone, każdy rzut z tej karty najpierw pyta gracza o modyfikator: liczbę, np. premię albo karę wynikającą z sytuacji, albo kości przewagi i utrudnienia, które rzucają ponownie i zostawiają najlepszy lub najgorszy wynik."
+      },
+      "successLevels": {
+        "title": "Poziomy sukcesu",
+        "body": "Wybierz, jak log ocenia rzut: liczbą poziomów ze znakiem co krok albo nazwanymi progami, np. połową czy piątą częścią progu, każdy w swoim kolorze."
       },
       "token": {
         "title": "Wyświetlanie tokenów",
@@ -1194,7 +1212,7 @@
           "skill_table": "Umiejętności na liście z opcjonalną wartością startową, opcjonalnie powiązane z atrybutem, oraz to, czy gracze mogą dodawać własne. Kolejność ustawisz, przeciągając uchwyt.",
           "skill_tree": "Drzewo umiejętności — dodawaj podrzędne, aby tworzyć specjalizacje — oraz to, czy gracze mogą dodawać własne.",
           "weapons_table": "Kolumny (jedna może wskazywać umiejętność ataku), formuła obrażeń i predefiniowane bronie od MG. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt.",
-          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, zawsze na karcie albo jako lista do wyboru. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt."
+          "data_table": "Kolumny — także długi tekst pokazywany w rozwijanym wierszu — oraz predefiniowane wiersze, dodawane każdej nowej postaci albo jako lista do wyboru. Kolumny i predefiniowane pozycje ułożysz, przeciągając uchwyt."
         }
       },
       "roll": {
@@ -1336,6 +1354,7 @@
   "scenes": {
     "title": "Sceny",
     "createScene": "Nowa Scena",
+    "createSceneShort": "Scena",
     "noScenes": "Brak scen",
     "assignPlayers": "Przypisz graczy",
     "addScene": "Dodaj scenę",
@@ -1443,6 +1462,7 @@
   "files": {
     "title": "Pliki",
     "createFolder": "Nowy Folder",
+    "createFolderShort": "Folder",
     "noFiles": "Brak plików",
     "noFilesHint": "Wgraj obrazy, aby zbudować swoją bibliotekę plików",
     "loadError": "Nie udało się załadować plików",
@@ -1568,10 +1588,14 @@
     "hard": "Trudny",
     "extreme": "Ekstremalny",
     "damage": "Obrażenia",
-    "bonusDice": "+{{count}} kość bonusowa",
-    "bonusDice_plural": "+{{count}} kości bonusowe",
-    "penaltyDice": "-{{count}} kość karna",
-    "penaltyDice_plural": "-{{count}} kości karne",
+    "bonusDice_one": "+{{count}} kość bonusowa",
+    "bonusDice_few": "+{{count}} kości bonusowe",
+    "bonusDice_many": "+{{count}} kości bonusowych",
+    "bonusDice_other": "+{{count}} kości bonusowej",
+    "penaltyDice_one": "-{{count}} kość karna",
+    "penaltyDice_few": "-{{count}} kości karne",
+    "penaltyDice_many": "-{{count}} kości karnych",
+    "penaltyDice_other": "-{{count}} kości karnej",
     "allRolls": "Rzuty",
     "sanityRoll": "Test Poczytalności",
     "sanLoss": "Utrata POP",
@@ -1737,7 +1761,6 @@
     "saveRow": "Gotowe",
     "removeRow": "Usuń wiersz",
     "removeRowConfirm": "Usunąć wiersz „{{name}}”?",
-    "rowPresetLocked": "Wiersz MG — zawsze na karcie, tylko do odczytu",
     "expandRow": "Pokaż szczegóły",
     "collapseRow": "Ukryj szczegóły",
     "attrTableEmpty": "Brak zdefiniowanych atrybutów",
@@ -1764,8 +1787,10 @@
     "removeWeapon": "Usuń broń",
     "removeWeaponConfirm": "Usunąć broń „{{name}}”?",
     "weaponDamageIncomplete": "Uzupełnij wszystkie wartości obrażeń przed rzutem",
+    "weaponDamageInvalid": "Popraw wartości obrażeń przed rzutem",
+    "damageExprHint": "Liczba lub kość, np. 2, -1, 1K4, 1K6+1",
+    "damageExprInvalid": "Niepoprawne wyrażenie",
     "weaponSkillMissing": "Wybierz umiejętność przed rzutem",
-    "weaponPresetLocked": "Broń MG — zawsze na karcie, tylko do odczytu",
     "editWeapon": "Edytuj broń",
     "saveWeapon": "Gotowe",
     "addSkill": "Dodaj umiejętność",
@@ -1793,6 +1818,7 @@
       "showAllLanguages": "Pokaż wszystkie języki",
       "clearFilter": "Wyczyść"
     },
+    "previewSheet": "Podgląd karty postaci",
     "saveConflict": {
       "message": "{{email}} zapisał(a) ten szablon o {{time}}.",
       "messageUnknown": "Ktoś inny zapisał ten szablon o {{time}}.",
@@ -1802,11 +1828,9 @@
     "saveForbidden": "Nie masz już uprawnień do edycji tego szablonu. Niezapisane zmiany przepadną po zamknięciu.",
     "saveGone": "Ten szablon został usunięty albo nie masz już do niego dostępu. Niezapisane zmiany przepadną po zamknięciu.",
     "dataTablePresetsTitle": "Predefiniowane wiersze",
-    "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Wiersze „zawsze na karcie” pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
+    "dataTablePresetsHint": "Zdefiniuj wiersze udostępniane przez MG. Gracze dodają je z listy; wiersze oznaczone „dodaj przy tworzeniu postaci” są od razu na karcie każdej nowej postaci jako jej własne, edytowalne wiersze. Pole gracza (▢) zostaw puste, żeby każdy gracz wpisał je sam.",
     "dataTablePresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować wiersze.",
     "dataTablePresetAdd": "Dodaj wiersz",
-    "tileTitle": "Kreator systemów",
-    "tileDesc": "Zaprojektuj własny system RPG",
     "noSystemPrompt": "Nie ma Twojego systemu?",
     "designYours": "Zaprojektuj go w Kreatorze",
     "myTemplates": "Moje szablony",
@@ -1915,9 +1939,9 @@
     "weaponSkillColumnMoved": "Kolumna umiejętności przeniesiona z „{{column}}”",
     "tableAddColumn": "Dodaj kolumnę",
     "weaponPresetsTitle": "Predefiniowane bronie",
-    "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Bronie „zawsze na karcie\" pojawiają się u każdej postaci tylko do odczytu; pozostałe tworzą listę, z której gracze mogą dodawać.",
+    "weaponPresetsHint": "Zdefiniuj bronie udostępniane przez MG. Gracze dodają je z listy; bronie oznaczone „dodaj przy tworzeniu postaci” są od razu na karcie każdej nowej postaci jako jej własne, edytowalne wiersze.",
     "weaponPresetsNoColumns": "Dodaj najpierw co najmniej jedną kolumnę powyżej, aby zdefiniować bronie.",
-    "tablePresetAlwaysOn": "Zawsze na karcie",
+    "tablePresetAddOnCreate": "Dodaj przy tworzeniu postaci",
     "tablePresetReorder": "Przesuń pozycję {{n}}",
     "presetReorderSortedHint": "Karta sortuje tę tabelę alfabetycznie — ustawiona tu kolejność obowiązuje na liście, z której gracze dodają, oraz w tabeli po wyłączeniu sortowania.",
     "weaponPresetAdd": "Dodaj broń",
@@ -1926,7 +1950,7 @@
     "weaponThresholdNoSkillColumn": "Brak kolumny z umiejętnościami — rzut na trafienie nie ma żadnego progu i wypisze gołą liczbę, a blok „umiej.” w formule doda 0",
     "weaponNoSkillColumnRaw": "Brak kolumny z umiejętnościami — blok „umiej.” w formule doda 0",
     "damageFormula": "Formuła obrażeń",
-    "damageFormulaHint": "Liczby (liczba kości, ścianki, stałe) stają się polami, które gracz wypełnia dla każdej broni; atrybuty są pobierane z postaci.",
+    "damageFormulaHint": "Kości ogólne (ścianki) i pole gracza (▢) stają się polami, które gracz wypełnia dla każdej broni; kości stałe i stałe zostają takie, jak je ustawisz; atrybuty są pobierane z postaci. Pole gracza przyjmuje też kość, np. 1K4.",
     "components": "Komponenty",
     "canvasEmpty": "Kliknij komponent po lewej, aby dodać go do arkusza",
     "unnamed": "bez nazwy",
@@ -1956,11 +1980,30 @@
       "memberErrorLastOwner": "Szablon musi mieć co najmniej jednego właściciela. Najpierw nadaj tę rolę komuś innemu.",
       "sharePublicNote": "Ten szablon jest publiczny, więc i tak mogą go używać wszyscy. Role poniżej nadal decydują, kto może go edytować.",
       "modifierTitle": "Modyfikator rzutu",
-      "modifierHint": "Pytaj o modyfikator przed każdym rzutem na tej karcie",
+      "modifierHint": "Pytaj o modyfikator albo dodatkowe kości przed każdym rzutem na tej karcie",
+      "successLevelsTitle": "Poziomy sukcesu",
+      "successLevelsHint": "Jak log pokazuje, jak dobrze poszedł rzut",
       "sheetWidthTitle": "Okno karty postaci",
       "sheetWidthHint": "Jak szeroko karta otwiera się graczom",
       "sheetWidthValue": "{{width}} px",
       "sheetWidthNote": "Okno nigdy nie otworzy się szersze niż przeglądarka gracza, a gracz może je rozciągnąć."
+    },
+    "successLevels": {
+      "mode": { "off": "Wyłączone", "tens": "Poziomy co krok", "tiers": "Progi" },
+      "offHint": "Rzuty pokazują tylko sukces albo porażkę.",
+      "step": "Krok",
+      "tensHint": "Jeden poziom za każdy krok różnicy między cyframi dziesiątek progu i rzutu. Porażka liczy w dół.",
+      "tensExample": "Próg {{target}}, rzut {{roll}} → {{level}} {{abbr}}",
+      "tiersHint": "Najtrudniejszy próg sprawdzany jest pierwszy. Progi dotyczą pól z rzutem pod próg; rzut nad próg pokazuje tylko sukces albo porażkę.",
+      "divisor": "Ułamek progu",
+      "divisorError": "Każdy ułamek musi być inny, od 1/2 do 1/100.",
+      "label": "Nazwa",
+      "labelPlaceholder": "Nazwa progu",
+      "color": "Kolor",
+      "remove": "Usuń próg",
+      "add": "Dodaj próg",
+      "failureRow": "brak",
+      "default": { "extreme": "Ekstremalny sukces", "hard": "Trudny sukces", "success": "Sukces", "failure": "Porażka" }
     },
     "modifier": {
       "enable": "Pytaj o modyfikator przed rzutem",
@@ -1978,6 +2021,17 @@
       "step": "Krok",
       "min": "Min",
       "max": "Maks",
+      "kind": "Rodzaj modyfikatora",
+      "kindNumber": "Liczba",
+      "kindDice": "Kości przewagi i utrudnienia",
+      "diceMode": "Jak rzucają dodatkowe kości",
+      "diceModeFormula": "Cała formuła",
+      "diceModeTens": "Kość dziesiątek (tylko d100)",
+      "hintDiceFormula": "Każda dodatkowa kość rzuca całą formułę pola jeszcze raz. Przewaga zostawia najlepszy wynik, utrudnienie najgorszy.",
+      "hintDiceTens": "Każda dodatkowa kość rzuca tylko nową cyfrę dziesiątek, jedności zostają. Działa dla pól, których formuła to samo d100 — pozostałe pola rzucają bez dodatkowych kości.",
+      "maxEdge": "Maks. kości przewagi",
+      "maxSetback": "Maks. kości utrudnienia",
+      "diceHint": "Najlepszy i najgorszy wynik zależą od reguły sukcesu pola: przy rzucie poniżej progu lepszy jest niższy, przy rzucie powyżej — wyższy. Pola z surowym wynikiem i pule kości rzucają bez dodatkowych kości.",
       "limitsHint": "Min i maks równe 0 znaczą brak ograniczeń.",
       "presetsTitle": "Szybki wybór",
       "presetsEmpty": "Brak szybkiego wyboru — w okienku zostaje samo pole liczbowe.",
@@ -2160,7 +2214,7 @@
       "linkedAttrTitle": "Wartość atrybutu przypisanego do tej umiejętności",
       "addConst": "+ Dodaj",
       "constInputBtn": "+ Pole gracza",
-      "constInputTitle": "Płaska liczba, którą gracz wpisuje per broń na karcie postaci",
+      "constInputTitle": "Liczba lub kość, którą gracz wpisuje per broń na karcie postaci, np. 2, -1, 1K4, 1K6+1",
       "skillAbbr": "umiej.",
       "linkedAttrAbbr": "attr.pow.",
       "subsectionAttrTokens": "Tokeny atrybutu",
@@ -2450,5 +2504,37 @@
     "unshareAll": "Odblokuj dla wszystkich tokenów w grze",
     "shareAllConfirm": "Ustawić ten slot dla wszystkich tokenów w grze, na każdej scenie? Wartości zostaną zresetowane, nowe tokeny też dostaną ten slot, a jego edycja będzie zmieniać wszystkie tokeny.",
     "unshareAllConfirm": "Odblokować ten slot dla wszystkich tokenów w grze? Nowe tokeny przestaną go dostawać, a zmiany będą znów dotyczyć tylko tego tokena."
+  },
+  "landing": {
+    "hero": {
+      "title": "Zbierz drużynę. Rozłóż mapę. Rzuć kośćmi.",
+      "subtitle": "Mapy z mgłą wojny, własne karty postaci i wszystko, czego MG potrzebuje przy sesji online."
+    },
+    "cta": {
+      "register": "Załóż darmowe konto",
+      "games": "Przejdź do gier",
+      "features": "Zobacz funkcje"
+    },
+    "features": {
+      "scene": {
+        "title": "Scena, która żyje",
+        "body": "Mgła wojny odkrywana pędzlem, rysowanie po mapie, tokeny z HP i stanami — wszyscy widzą każdą zmianę na żywo.",
+        "imageAlt": "Scena gry z mgłą wojny i tokenami"
+      },
+      "creator": {
+        "title": "Zbuduj własny system",
+        "body": "Kreator kart daje Ci pola, formuły i sekcje. Gracz widzi dokładnie to, co zaprojektujesz.",
+        "imageAlt": "Kreator szablonu karty postaci"
+      },
+      "gmTools": {
+        "title": "MG ma wszystko pod ręką",
+        "body": "Handouty, muzyka, pliki, ukryte rzuty i chat z komendami kości.",
+        "imageAlt": "Narzędzia MG: handouty, muzyka i chat"
+      }
+    },
+    "ctaBand": {
+      "title": "Gotowy na pierwszą sesję?"
+    },
+    "zoom": "Powiększ: {{name}}"
   }
 }

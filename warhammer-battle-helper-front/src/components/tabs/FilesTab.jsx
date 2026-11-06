@@ -19,7 +19,8 @@ import DroppableFolderItem from './files/DroppableFolderItem';
 import DroppableBackButton from './files/DroppableBackButton';
 import { resolveFileUrl } from '../../utils/fileUrl';
 import { processImage, PRESETS } from '../../utils/imageProcessing';
-import TourButton from '../tutorial/TourButton';
+import AddIcon from '@mui/icons-material/Add';
+import TabHeader from './TabHeader';
 import './FilesTab.css';
 
 const getImageDimensions = (url) => new Promise((resolve) => {
@@ -564,19 +565,15 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
       onDragEnd={handleDragEnd}
     >
       <div className="files-tab">
-        {/* Header */}
-        <div className="files-tab__header">
-          <h3 className="files-tab__title">{t('files.title')}</h3>
-          <div className="files-tab__actions">
-            <button
-              className="files-tab__btn"
-              onClick={() => setIsCreateFolderOpen(true)}
-            >
-              + {t('files.createFolder')}
-            </button>
-            <TourButton tourId="files" />
-          </div>
-        </div>
+        <TabHeader title={t('files.title')} tourId="files">
+          <button
+            className="tab-header__btn files-tab__create-folder-btn"
+            onClick={() => setIsCreateFolderOpen(true)}
+          >
+            <AddIcon fontSize="small" />
+            {t('files.createFolderShort')}
+          </button>
+        </TabHeader>
 
         {/* Error message */}
         {error && (

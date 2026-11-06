@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import TourButton from '../../tutorial/TourButton';
+import AddIcon from '@mui/icons-material/Add';
+import TabHeader from '../TabHeader';
 
 function HandoutTabHeader({ isGM, onOpenCreate, onFolderCreated }) {
   const { t } = useTranslation();
@@ -18,25 +19,23 @@ function HandoutTabHeader({ isGM, onOpenCreate, onFolderCreated }) {
 
   return (
     <>
-      <div className="handouts-tab__header">
-        <h3 className="handouts-tab__title">{t('handouts.title')}</h3>
-        <div className="handouts-tab__header-group">
-          {isGM && (
-            <div className="handouts-tab__header-actions">
-              <button className="handouts-tab__add-btn" onClick={onOpenCreate}>
-                + {t('handouts.addHandout')}
-              </button>
-              <button
-                className="handouts-tab__add-btn"
-                onClick={() => setIsCreatingFolder((v) => !v)}
-              >
-                + {t('handouts.folders.createFolder')}
-              </button>
-            </div>
-          )}
-          <TourButton tourId="handouts" />
-        </div>
-      </div>
+      <TabHeader title={t('handouts.title')} tourId="handouts">
+        {isGM && (
+          <div className="handouts-tab__header-actions">
+            <button className="tab-header__btn handouts-tab__add-btn" onClick={onOpenCreate}>
+              <AddIcon fontSize="small" />
+              {t('handouts.addHandoutShort')}
+            </button>
+            <button
+              className="tab-header__btn handouts-tab__add-btn"
+              onClick={() => setIsCreatingFolder((v) => !v)}
+            >
+              <AddIcon fontSize="small" />
+              {t('handouts.folders.createFolder')}
+            </button>
+          </div>
+        )}
+      </TabHeader>
 
       {isGM && isCreatingFolder && (
         <form className="handouts-tab__folder-form" onSubmit={handleSubmit}>

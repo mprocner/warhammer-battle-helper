@@ -24,7 +24,7 @@ import NoteEditorModal from './notes/NoteEditorModal';
 import ConfirmModal from '../common/ConfirmModal';
 import { getNotes, createNote, updateNote, deleteNote, reorderNotes } from '../../api/notes';
 import { useWindowManager } from '../../contexts/WindowManagerContext';
-import TourButton from '../tutorial/TourButton';
+import TabHeader from './TabHeader';
 import './NotesTab.css';
 
 const NotesTab = ({ gameId, token, gameState, isConnected }) => {
@@ -249,16 +249,12 @@ const NotesTab = ({ gameId, token, gameState, isConnected }) => {
   return (
     <div className="notes-tab">
       {/* Header */}
-      <div className="notes-tab__header">
-        <h3 className="notes-tab__title">{t('notes.title')}</h3>
-        <div className="notes-tab__actions">
-          <button className="notes-tab__add-btn" onClick={handleCreate}>
-            <AddIcon fontSize="small" />
-            {t('notes.addNote')}
-          </button>
-          <TourButton tourId="notes" />
-        </div>
-      </div>
+      <TabHeader title={t('notes.title')} tourId="notes">
+        <button className="tab-header__btn notes-tab__add-btn" onClick={handleCreate}>
+          <AddIcon fontSize="small" />
+          {t('notes.addNote')}
+        </button>
+      </TabHeader>
 
       {/* Filter */}
       {notes.length > 0 && (

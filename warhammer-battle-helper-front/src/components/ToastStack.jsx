@@ -52,7 +52,8 @@ function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem }) {
   const system  = getSystem(gameSystem);
   const RollComponent = resolveRollComponent(system, rollType);
   const isGMOnly    = visibility && visibility !== 'all';
-  const borderColor = OUTCOME_BORDER[outcome] || 'var(--log-brown-muted)';
+  // A tier carries its own GM colour (PLAYRPG-289); everything else keys off the outcome.
+  const borderColor = data.tierColor || OUTCOME_BORDER[outcome] || 'var(--log-brown-muted)';
 
   const handleBodyClick = () => {
     onNavigateToLog?.();

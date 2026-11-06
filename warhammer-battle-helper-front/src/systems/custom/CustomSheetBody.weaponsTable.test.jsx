@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
-import '../../i18n';
+import i18n from '../../i18n';
 import CustomSheetBody from './CustomSheetBody';
+import { addOnCreateValues } from './addOnCreate';
 
 // Test the creator's affordance policy for weapons_table. This is the width-parity guarantee:
 // the creator must reserve the same column widths as the game, so a layout the GM judges to be
@@ -10,9 +11,8 @@ import CustomSheetBody from './CustomSheetBody';
 // column; without `showAffordances` the column would silently disappear and every other column
 // would shift one star-width away from its label. This test guards against reverting
 // showStar to `!!onToggleFavorite` alone.
-// Module-scoped (not inside the describe below) so the GM-row fixture is also reachable from the
-// "read first, edit on the pencil" describe further down — a GM weapon there needs the exact same
-// always-on preset shape.
+// Module-scoped (not inside the describe below) so the preset fixture is also reachable from the
+// "read first, edit on the pencil" describe further down.
 const weaponsSections = () => ([{
   id: 'sec1',
   columns: 1,
@@ -27,7 +27,7 @@ const weaponsSections = () => ([{
           id: 'preset_sword',
           cells: { name: 'Miecz' },
           damage: {},
-          alwaysOn: true,
+          addOnCreate: true,
         },
       ],
     },
@@ -36,7 +36,7 @@ const weaponsSections = () => ([{
 
 describe('CustomSheetBody weapons_table — creator affordance policy', () => {
   it('renders the star statically in the creator when showAffordances is true and onToggleFavorite is absent', () => {
-    const { container } = render(<CustomSheetBody sections={weaponsSections()} showAffordances />);
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} showAffordances />);
     // Static star should be present for layout parity
     expect(container.querySelector('.custom-sheet__star-btn--static')).not.toBeNull();
     // Interactive button should NOT be present
@@ -111,10 +111,13 @@ describe('CustomSheetBody weapons_table — read first, edit on the pencil', () 
     expect(container.querySelector('.custom-sheet__row-table-cell-input')).toBeNull();
   });
 
-  // A GM weapon is not the player's to change, so it has no way in at all.
-  it('gives a GM weapon no pencil', () => {
+  // An addOnCreate preset is copied into a new character by the backend; the sheet never renders
+  // the template's preset itself, it only offers it in the add-from-list picker.
+  it('does not render an addOnCreate preset as a row but offers it in the picker', () => {
     const { container } = render(<CustomSheetBody sections={weaponsSections()} onChange={sheetHandlers} />);
-    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-row')).toBeNull();
+    const picker = container.querySelector('.custom-sheet__row-table-preset-picker');
+    expect(Array.from(picker.options).map(o => o.textContent)).toContain('Miecz');
   });
 });
 
@@ -174,7 +177,7 @@ describe('CustomSheetBody weapons_table — die sits in its own cell, not in the
 });
 
 // GAP 1: The damage formula is read-only at rest because of the rule in WeaponsTable.jsx
-// renderDamage: `isPreset || !editing`. This test pins the guarantee that player-fillable damage
+// renderDamage: `!editing`. This test pins the guarantee that player-fillable damage
 // blocks cannot be typed into while the row is at rest.
 const damageFormulaWithPlayerInput = () => ([{
   id: 'sec1',
@@ -310,5 +313,66 @@ describe('CustomSheetBody weapons_table — two columns', () => {
     ] } };
     const { container } = render(<CustomSheetBody sections={sections} values={values} onChange={sheetHandlers} />);
     expect(container.querySelectorAll('.custom-sheet__row-table-cols > .custom-sheet__row-table')).toHaveLength(2);
+  });
+});
+
+const diceAndExprSections = () => ([{
+  id: 'sec1',
+  columns: 1,
+  fields: [
+    {
+      key: 'wpn_table',
+      type: 'weapons_table',
+      label: 'Bronie',
+      columns: [{ key: 'name', label: 'Nazwa', type: 'text' }],
+      damageFormula: [
+        { id: 'd1', type: 'dice', value: 'd4' },
+        { id: 'o1', type: 'op', value: '+' },
+        { id: 'm1', type: 'const_input' },
+      ],
+    },
+  ],
+}]);
+
+describe('CustomSheetBody weapons_table — player damage expression field', () => {
+  const renderEditing = (m1) => {
+    const utils = render(
+      <CustomSheetBody
+        sections={diceAndExprSections()}
+        values={{ weapons: { wpn_table: [{ id: 'w1', cells: { name: 'Knife' }, damage: { m1 } }] } }}
+        onChange={sheetHandlers}
+      />
+    );
+    fireEvent.click(utils.container.querySelector('.custom-sheet__row-table-edit'));
+    return utils;
+  };
+
+  test('the player field is a text input that accepts dice', () => {
+    renderEditing('1K4');
+    const input = screen.getByDisplayValue('1K4');
+    expect(input).toHaveAttribute('type', 'text');
+    expect(input).not.toHaveClass('custom-sheet__weapon-dmg-input--missing');
+  });
+
+  test('an invalid player field is marked and explains itself on hover', () => {
+    renderEditing('1K');
+    const input = screen.getByDisplayValue('1K');
+    expect(input).toHaveClass('custom-sheet__weapon-dmg-input--missing');
+    fireEvent.mouseEnter(input);
+    expect(screen.getByText(i18n.t('customSheet.damageExprInvalid'))).toBeInTheDocument();
+  });
+});
+
+describe('CustomSheetBody weapons_table — seeded rows in the creator', () => {
+  it('shows disabled edit and remove buttons on a seeded row with showAffordances', () => {
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} showAffordances />);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeDisabled();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeDisabled();
+  });
+
+  it('shows none without showAffordances', () => {
+    const { container } = render(<CustomSheetBody sections={weaponsSections()} values={addOnCreateValues(weaponsSections())} />);
+    expect(container.querySelector('.custom-sheet__row-table-edit')).toBeNull();
+    expect(container.querySelector('.custom-sheet__row-table-remove')).toBeNull();
   });
 });

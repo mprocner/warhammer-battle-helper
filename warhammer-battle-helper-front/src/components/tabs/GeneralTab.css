@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 16px;
+  padding: 12px;
   height: 100%;
   overflow-y: auto;
   /* Scrollbar styling - Firefox */
@@ -743,17 +743,7 @@
   color: #f5ebe0;
 }
 
-.general-tab__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.general-tab__title {
-  margin: 0;
-  font-family: 'Cinzel', serif;
-  font-size: 1rem;
-  color: #c9975b;
+/* The container's 20px gap adds to this; together 12px under the header, like the other tabs. */
+.general-tab > .tab-header {
+  margin-bottom: -8px;
 }

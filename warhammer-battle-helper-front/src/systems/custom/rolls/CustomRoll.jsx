@@ -6,7 +6,9 @@ import { usePortalTooltip } from '../../../components/common/PortalTooltip';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { flattenPoolDice, formatPoolFormula } from './poolFormula';
 import FormulaBreakdown from './FormulaBreakdown';
+import EdgeDiceSummary from './EdgeDiceSummary';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
+import { successLevelDisplay } from './successLevelDisplay';
 import '../../../components/LogWindow.css';
 
 const OUTCOME_MAP = {
@@ -31,14 +33,17 @@ function CustomRoll({ data, timestamp }) {
   const isSuccess     = outcome?.isSuccess     || false;
   const symbol        = String(data.roll);
 
-  const resultColor = isRaw ? 'var(--log-brown-muted)' : getResultColor(isCritSuccess, isCritFailure, isSuccess);
-
-  const skillLabel = data.skillName || data.skillKey || '';
-  const diceLabel  = data.diceType ? `D${data.diceType}` : '';
-
   const outcomeLabel = isRaw
     ? data.outcome
     : t(`customRoll.${data.outcome}`, { defaultValue: data.outcome });
+
+  const successDisplay = isRaw ? null : successLevelDisplay(data, outcomeLabel, t);
+  const resultColor = isRaw
+    ? 'var(--log-brown-muted)'
+    : (successDisplay?.color || getResultColor(isCritSuccess, isCritFailure, isSuccess));
+
+  const skillLabel = data.skillName || data.skillKey || '';
+  const diceLabel  = data.diceType ? `D${data.diceType}` : '';
 
   const modifierText = data.modifier && data.modifier !== 0
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
@@ -71,6 +76,7 @@ function CustomRoll({ data, timestamp }) {
         isCritFailure={isCritFailure}
         isSuccess={isSuccess}
         isNeutral={isRaw}
+        overrideColor={successDisplay?.color || undefined}
         symbol={symbol}
       />
       <div className="log-list-item__content">
@@ -115,9 +121,10 @@ function CustomRoll({ data, timestamp }) {
           </div>
         )}
         {formulaText ? <FormulaBreakdown text={formulaText} /> : null}
+        <EdgeDiceSummary diceMod={data.diceMod} allRolls={data.allRolls} roll={data.roll} />
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
-            {outcomeLabel}
+            {successDisplay?.label || outcomeLabel}
           </div>
         )}
       </div>

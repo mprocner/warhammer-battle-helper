@@ -12,10 +12,17 @@ const ConfirmModal = ({ isOpen, message, onConfirm, onCancel, confirmLabel, isLo
   // MUI Dialog it's launched from) and its z-index actually wins.
   return createPortal(
     <div className="confirm-modal-overlay" onClick={onCancel}>
-      <div className="confirm-modal" onClick={e => e.stopPropagation()}>
+      {/* Escape cancels here and stops, so a dialog the modal was opened from does not read the
+          same keydown as its own close. */}
+      <div
+        className="confirm-modal"
+        onClick={e => e.stopPropagation()}
+        onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); onCancel(); } }}
+      >
         <p className="confirm-modal__message">{message}</p>
         <div className="confirm-modal__actions">
-          <button type="button" onClick={onCancel} disabled={isLoading}>
+          {/* Focused on open: keydowns start inside the modal, and Enter picks the safe choice. */}
+          <button type="button" onClick={onCancel} disabled={isLoading} autoFocus>
             {t('common.cancel')}
           </button>
           <button

@@ -24,6 +24,7 @@ function WeaponsTable({
   showStar,
   showRoll,
   rollAffordance,
+  showAffordances,
   editingPath,
   setEditingPath,
   showTooltip,
@@ -61,11 +62,10 @@ function WeaponsTable({
     );
   };
 
-  // Damage is read-only on a GM row and on a player row at rest: its number inputs are part of the
-  // weapon's definition, not of play.
-  const renderDamage = (row, { isPreset, editing }) => (
+  // Damage is read-only on a row at rest: its inputs are part of the weapon's definition, not of play.
+  const renderDamage = (row, { editing }) => (
     <div className="custom-sheet__weapon-damage">
-      {renderDamageFormula(dmgBlocks, row, field.key, isPreset ? null : onChange, isPreset || !editing, t)}
+      {renderDamageFormula(dmgBlocks, row, field.key, onChange, !editing, t, { show: showTooltip, hide: hideTooltip })}
     </div>
   );
 
@@ -99,7 +99,6 @@ function WeaponsTable({
           edit:        t('customSheet.editWeapon'),
           save:        t('customSheet.saveWeapon'),
           remove:      t('customSheet.removeWeapon'),
-          locked:      t('customSheet.weaponPresetLocked'),
           rowFallback: field.label || t('customSheet.weapon'),
           removeConfirm: name => t('customSheet.removeWeaponConfirm', { name }),
         }}
@@ -109,6 +108,7 @@ function WeaponsTable({
         onRemove={onChange ? rowId => onChange.weaponRemove(field.key, rowId) : null}
         twoColumns={!!field.twoColumns}
         sortKey={sortColumnKey(field)}
+        showAffordances={showAffordances}
         editingPath={editingPath}
         setEditingPath={setEditingPath}
         showTooltip={showTooltip}

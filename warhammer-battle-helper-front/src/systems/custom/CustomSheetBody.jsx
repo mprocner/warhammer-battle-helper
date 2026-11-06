@@ -512,6 +512,7 @@ function CustomSheetBody({
             field={field}
             rows={tables[field.key] || []}
             onChange={onChange}
+            showAffordances={showAffordances}
             editingPath={editingPath}
             setEditingPath={setEditingPath}
             showTooltip={showTooltip}
@@ -542,6 +543,7 @@ function CustomSheetBody({
             showStar={showStar}
             showRoll={showRoll}
             rollAffordance={rollAffordance}
+            showAffordances={showAffordances}
             editingPath={editingPath}
             setEditingPath={setEditingPath}
             showTooltip={showTooltip}

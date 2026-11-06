@@ -14,6 +14,12 @@ type RollResult struct {
 	Target        int    `json:"target"`
 	Outcome       string `json:"outcome"`      // "critical_success"|"extreme_success"|"hard_success"|"regular_success"|"failure"|"fumble"
 	SuccessLevel  int    `json:"successLevel"` // SL for Warhammer; 0 for CoC (degree encoded in Outcome)
+	// Custom-system degree of success (PLAYRPG-289), snapshotted at roll time so the log keeps
+	// what the template said then. HasSuccessLevel exists because SuccessLevel has no omitempty:
+	// a bare 0 cannot tell "level 0" from "not scored".
+	HasSuccessLevel bool   `json:"hasSuccessLevel,omitempty"`
+	TierLabel       string `json:"tierLabel,omitempty"`
+	TierColor       string `json:"tierColor,omitempty"`
 
 	// Optional skill-specific
 	SkillKey  string `json:"skillKey,omitempty"`

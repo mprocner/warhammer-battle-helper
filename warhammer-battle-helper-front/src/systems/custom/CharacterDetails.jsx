@@ -11,7 +11,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import { weaponRowLabel, weaponRowIssue, weaponIssueTitle } from './weaponLayout';
 import { walkFields, walkValueFields } from '../../utils/templateSections';
-import RollModifierOverlay from './RollModifierOverlay';
+import RollPrompt from './RollPrompt';
 import { useRollPrompt } from './useRollPrompt';
 import { postRoll } from './postRoll';
 import { resolveSkillValues } from './skillLayout';
@@ -63,7 +63,7 @@ function CustomCharacterDetails({
     }
   }, [handleRoll, handleRollWeapon]);
 
-  const { modifierConfig, pending, promptRoll, cancelRoll, confirmRoll } = useRollPrompt(template, dispatchRoll);
+  const { modifierConfig, pending, pendingPos, promptRoll, cancelRoll, confirmRoll, trackClick } = useRollPrompt(template, dispatchRoll);
 
   const handleProgressDelta = useCallback(async (fieldKey, delta) => {
     const s = character?.stats || {};
@@ -246,9 +246,8 @@ function CustomCharacterDetails({
     }).filter(Boolean);
   }, [stats, template]);
 
-  // Favourite weapons are stored as a flat list of weapon ids covering both player-added rows
-  // (in stats.weapons) and GM presets (in the template). We resolve each id to its owning
-  // weapons_table field so a roll can carry the {fieldKey, rowId} the backend expects.
+  // Favourite weapons are a flat list of weapon row ids (stats.weapons). We resolve each id to its
+  // owning weapons_table field so a roll can carry the {fieldKey, rowId} the backend expects.
   const favoriteWeaponsData = useMemo(() => {
     const favSet = new Set(stats.favoriteWeapons || []);
     if (!favSet.size) return [];
@@ -270,13 +269,12 @@ function CustomCharacterDetails({
         });
       };
       (playerWeapons[f.key] || []).forEach(collect);
-      (f.presetWeapons || []).forEach(collect);
     }
     return out;
   }, [stats, template, t]);
 
   return (
-    <div className="character-details custom-character-details">
+    <div className="character-details custom-character-details" onClickCapture={trackClick}>
       <CharacterHeader
         avatarSrc={character?.avatar}
         characterId={character?.id}
@@ -341,15 +339,8 @@ function CustomCharacterDetails({
         </div>
       )}
 
-      {/* Pytanie o modyfikator — renderuje się tylko wtedy, gdy szablon go włącza. */}
-      {pending && modifierConfig && (
-        <RollModifierOverlay
-          label={pending.label}
-          config={modifierConfig}
-          onConfirm={confirmRoll}
-          onCancel={cancelRoll}
-        />
-      )}
+      {/* Pre-roll prompt — renders only when the template enables a modifier. */}
+      <RollPrompt pending={pending} pos={pendingPos} config={modifierConfig} onConfirm={confirmRoll} onCancel={cancelRoll} />
 
     </div>
   );

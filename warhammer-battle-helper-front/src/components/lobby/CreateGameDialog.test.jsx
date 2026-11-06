@@ -16,7 +16,8 @@ jest.mock('axios', () => {
 const systemInput = () => screen.getByRole('combobox', { name: i18n.t('game.gameSystem') });
 
 const templates = [
-  { id: 'm1', name: 'Moja Kampania', myRole: 'owner', updatedAt: '2026-10-01T10:00:00Z', language: 'pl', description: '<p>Opis <strong>kampanii</strong></p>' },
+  { id: 'm1', name: 'Moja Kampania', myRole: 'owner', updatedAt: '2026-10-01T10:00:00Z', language: 'pl', description: '<p>Opis <strong>kampanii</strong></p>',
+    sections: [{ id: 'sec1', title: 'Atrybuty', columns: 2, fields: [{ key: 'fld_str', type: 'number', label: 'Siła' }] }] },
   { id: 's1', name: 'Łowcy Czarownic', myRole: 'viewer', ownerEmails: ['alice@example.com'], language: 'en' },
   { id: 'p1', name: 'Mroczne Ziemie', isPublic: true },
 ];
@@ -302,5 +303,69 @@ describe('CreateGameDialog description', () => {
     expect(card).toHaveTextContent('kampanii');
     fireEvent.click(within(card).getByRole('button', { name: i18n.t('creator.about.more') }));
     expect(screen.getByRole('dialog', { name: /Moja Kampania/ })).toBeInTheDocument();
+  });
+});
+
+describe('CreateGameDialog sheet preview', () => {
+  it('only custom templates get the eye', async () => {
+    await renderDialog();
+    const list = openSystems();
+    const builtIn = within(list).getByText(i18n.t('gameSystems.warhammer4e')).closest('li');
+    expect(within(builtIn).queryByTestId('VisibilityOutlinedIcon')).not.toBeInTheDocument();
+    const custom = within(list).getByText('Mroczne Ziemie').closest('li');
+    expect(within(custom).getByTestId('VisibilityOutlinedIcon')).toBeInTheDocument();
+  });
+
+  it('the eye opens the sheet without selecting the template', async () => {
+    await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    const eye = within(row).getByTestId('VisibilityOutlinedIcon').closest('button');
+    fireEvent.mouseDown(eye);
+    fireEvent.click(eye);
+    const popup = document.querySelector('.character-sheet-popup');
+    expect(popup).toHaveTextContent('Siła');
+    expect(popup.querySelector('.modal-header__title')).toHaveTextContent('Moja Kampania');
+    expect(screen.getByRole('combobox', { name: i18n.t('game.gameSystem'), hidden: true })).toHaveValue('');
+  });
+
+  it('the selected-template card offers the preview', async () => {
+    await renderDialog();
+    fireEvent.click(within(openSystems()).getByText('Moja Kampania'));
+    const card = document.querySelector('.create-game__selected-about');
+    fireEvent.click(within(card).getByRole('button', { name: i18n.t('creator.previewSheet') }));
+    expect(document.querySelector('.character-sheet-popup')).toHaveTextContent('Siła');
+  });
+
+  it('closing the dialog closes the preview', async () => {
+    const { rerender } = await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    rerender(dialog({ open: false }));
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
+    // Reopening must not bring the old preview back (state survives while the dialog stays mounted).
+    rerender(dialog({ open: true }));
+    await act(async () => {});
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
+  });
+
+  it('opening the creator closes the preview so it does not cover the manager', async () => {
+    const onOpenCreator = jest.fn();
+    await renderDialog({ onOpenCreator });
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('creator.designYours') }));
+    expect(onOpenCreator).toHaveBeenCalled();
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
+  });
+
+  it('a previewed template that leaves the list closes the preview', async () => {
+    const { rerender } = await renderDialog();
+    const row = within(openSystems()).getByText('Moja Kampania').closest('li');
+    fireEvent.click(within(row).getByTestId('VisibilityOutlinedIcon').closest('button'));
+    expect(document.querySelector('.character-sheet-popup')).not.toBeNull();
+    rerender(dialog({ templates: templates.filter(tp => tp.name !== 'Moja Kampania') }));
+    expect(document.querySelector('.character-sheet-popup')).toBeNull();
   });
 });

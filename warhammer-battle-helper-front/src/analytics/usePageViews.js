@@ -3,9 +3,9 @@ import { useLocation } from 'react-router-dom';
 import { trackEvent, setPageContext } from './gtag';
 import { useConsent } from './ConsentContext';
 
-// Świadome ograniczenie: lobby i sesja gry nie są routami (currentGameId to stan
-// w App.js), więc pageview'y pokażą tylko ekrany logowania, rejestracji, ustawień
-// i „/". Lejek opiera się na eventach, nie na pageview'ach.
+// Deliberate limit: the lobby and the game session share the /games route (currentGameId
+// is state in App.js), so page views separate the landing ("/"), login, registration,
+// settings and /games, but not lobby vs session. The funnel relies on events, not page views.
 //
 // I3: efekt musi zależeć też od consent, nie tylko od pathname. Pierwsze wejście
 // nowego odwiedzającego odpala ten efekt, gdy consent jest jeszcze null — trackEvent

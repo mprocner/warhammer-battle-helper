@@ -31,7 +31,7 @@ func TestResolveModifier(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			target, value := resolveModifier(tc.cfg, tc.rollMode, tc.requested)
+			target, value := resolveModifier(tc.cfg, &models.RollConfig{RollMode: tc.rollMode}, tc.requested)
 			if target != tc.wantTarget || value != tc.wantValue {
 				t.Errorf("resolveModifier() = (%q, %d), want (%q, %d)", target, value, tc.wantTarget, tc.wantValue)
 			}
@@ -69,7 +69,55 @@ func TestClampModifier(t *testing.T) {
 // hand-crafted request smuggles a modifier into a card whose template forbids one.
 func TestResolveModifier_DisabledIgnoresClamp(t *testing.T) {
 	cfg := &models.ModifierConfig{Enabled: false, Min: -10, Max: 10}
-	if _, value := resolveModifier(cfg, "traditional", 5); value != 0 {
+	if _, value := resolveModifier(cfg, &models.RollConfig{RollMode: "traditional"}, 5); value != 0 {
 		t.Errorf("value = %d, want 0", value)
+	}
+}
+
+func TestResolveModifier_EdgeDice(t *testing.T) {
+	dice := func(mode string, maxEdge, maxSetback int) *models.ModifierConfig {
+		return &models.ModifierConfig{Enabled: true, Kind: ModKindDice, DiceMode: mode, MaxEdge: maxEdge, MaxSetback: maxSetback}
+	}
+	d100 := []models.FormulaBlock{diceBlock("d100")}
+	d20 := []models.FormulaBlock{diceBlock("d20")}
+	below := func(f []models.FormulaBlock) *models.RollConfig {
+		return &models.RollConfig{Formula: f, SuccessType: "below_threshold"}
+	}
+
+	tests := []struct {
+		name       string
+		cfg        *models.ModifierConfig
+		roll       *models.RollConfig
+		requested  int
+		wantTarget string
+		wantValue  int
+	}{
+		{"edge within max", dice(DiceModeFormula, 2, 2), below(d20), 1, ModTargetEdgeDice, 1},
+		{"setback within max", dice(DiceModeFormula, 2, 2), below(d20), -2, ModTargetEdgeDice, -2},
+		{"edge clamped to max", dice(DiceModeFormula, 1, 2), below(d20), 3, ModTargetEdgeDice, 1},
+		{"setback clamped to max", dice(DiceModeFormula, 2, 1), below(d20), -3, ModTargetEdgeDice, -1},
+		{"disabled side clamps to nothing", dice(DiceModeFormula, 0, 2), below(d20), 2, ModTargetNone, 0},
+		{"zero request is no dice", dice(DiceModeFormula, 2, 2), below(d20), 0, ModTargetNone, 0},
+		{"server cap beats a huge config", dice(DiceModeFormula, 99, 99), below(d20), 50, ModTargetEdgeDice, maxEdgeDice},
+		{"negative max reads as zero", dice(DiceModeFormula, -3, 2), below(d20), 1, ModTargetNone, 0},
+		{"raw field rolls plain", dice(DiceModeFormula, 2, 2), &models.RollConfig{Formula: d20, SuccessType: "raw"}, 1, ModTargetNone, 0},
+		{"dice pool rolls plain", dice(DiceModeFormula, 2, 2), &models.RollConfig{Formula: d20, RollMode: "dice_pool"}, 1, ModTargetNone, 0},
+		{"tens on d100", dice(DiceModeTens, 2, 2), below(d100), 1, ModTargetEdgeDice, 1},
+		{"tens on d20 rolls plain", dice(DiceModeTens, 2, 2), below(d20), 1, ModTargetNone, 0},
+		{"tens on d100+5 rolls plain", dice(DiceModeTens, 2, 2), below([]models.FormulaBlock{diceBlock("d100"), opBlock("+"), numBlock(5)}), 1, ModTargetNone, 0},
+		// Kind decides the meaning of the number: a dice template never applies it as a numeric
+		// modifier, and a number template never turns it into dice.
+		{"number kind ignores dice fields", &models.ModifierConfig{Enabled: true, Kind: ModKindNumber, MaxEdge: 2}, below(d20), 1, ModTargetRoll, 1},
+		{"empty kind is number", &models.ModifierConfig{Enabled: true, MaxEdge: 2}, below(d20), 1, ModTargetRoll, 1},
+		{"disabled dice config zeroes", &models.ModifierConfig{Enabled: false, Kind: ModKindDice, MaxEdge: 2}, below(d20), 1, ModTargetNone, 0},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			target, value := resolveModifier(tc.cfg, tc.roll, tc.requested)
+			if target != tc.wantTarget || value != tc.wantValue {
+				t.Errorf("resolveModifier() = (%q, %d), want (%q, %d)", target, value, tc.wantTarget, tc.wantValue)
+			}
+		})
 	}
 }

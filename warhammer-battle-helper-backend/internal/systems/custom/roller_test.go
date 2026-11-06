@@ -1625,6 +1625,27 @@ func TestSeedDefaults_LabelFieldIsNeverSeeded(t *testing.T) {
 	}
 }
 
+func TestSeedDefaults_AddOnCreatePresetsBecomeRows(t *testing.T) {
+	s := seedBlank(t, seedTemplate(
+		models.FieldDef{Key: "weapons", Type: "weapons_table", PresetWeapons: []models.PresetWeapon{
+			{ID: "preset_fists", Cells: map[string]string{"name": "Fists"}, Damage: map[string]string{"d1": "3"}, AddOnCreate: true},
+			{ID: "preset_sword", Cells: map[string]string{"name": "Sword"}},
+		}},
+		models.FieldDef{Key: "gear", Type: "data_table", PresetRows: []models.PresetRow{
+			{ID: "preset_rope", Cells: map[string]string{"name": "Rope"}, AddOnCreate: true},
+		}},
+	))
+
+	w := s.Weapons["weapons"]
+	if len(w) != 1 || w[0].ID != "preset_fists" || w[0].Cells["name"] != "Fists" || w[0].Damage["d1"] != "3" {
+		t.Errorf("Weapons = %+v, want only the add-on-create preset, id kept", w)
+	}
+	r := s.Tables["gear"]
+	if len(r) != 1 || r[0].ID != "preset_rope" || r[0].Cells["name"] != "Rope" {
+		t.Errorf("Tables = %+v, want the add-on-create row, id kept", r)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // FEATURE-217 — display flags and the development marker
 // ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@ import { usePopOut, useCharacterSheetHeaderButtons } from '../shared/useCharacte
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getCharacterSaveUrl } from '../shared/characterApi';
 import CustomSheetBody from './CustomSheetBody';
-import RollModifierOverlay from './RollModifierOverlay';
+import RollPrompt from './RollPrompt';
 import { useRollPrompt } from './useRollPrompt';
 import { postRoll } from './postRoll';
 import { clampSheetWidth } from '../../utils/sheetWidth';
@@ -338,7 +338,7 @@ function CustomCharacterSheet({
   });
   const updateWeaponCell = (fieldKey, rowId, colKey, value) => mapRow('weapons', fieldKey, rowId, setCell(colKey, value));
   const updateWeaponDamage = (fieldKey, rowId, blockId, value) =>
-    mapRow('weapons', fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: Number(value) || 0 } }));
+    mapRow('weapons', fieldKey, rowId, r => ({ ...r, damage: { ...r.damage, [blockId]: value } }));
 
   // data_table
   const addTableRow = (fieldKey) => addRow('tables', fieldKey, { id: genRowId('r'), cells: {} });
@@ -347,10 +347,8 @@ function CustomCharacterSheet({
   const removeTableRow = (fieldKey, rowId) => removeRow('tables', fieldKey, rowId);
   const updateTableCell = (fieldKey, rowId, colKey, value) => mapRow('tables', fieldKey, rowId, setCell(colKey, value));
 
-  // Weapon favorites are tracked by weapon id in favoriteWeapons — for player rows and GM
-  // presets alike — so CharacterDetails can resolve and roll either kind the same way. (Preset
-  // weapons live in the template, not in stats, so a per-player id list is the only place to
-  // mark them; player rows reuse the same list for consistency.)
+  // Weapon favorites are tracked by row id in favoriteWeapons, so CharacterDetails can resolve and
+  // roll them.
   const toggleWeaponFavorite = (weaponId) => {
     setEdited(prev => {
       const favs = prev.favoriteWeapons || [];
@@ -384,7 +382,7 @@ function CustomCharacterSheet({
     }
   }, [handleRoll, handleRollWeapon]);
 
-  const { modifierConfig, pending, promptRoll, cancelRoll, confirmRoll } = useRollPrompt(template, dispatchRoll);
+  const { modifierConfig, pending, pendingPos, promptRoll, cancelRoll, confirmRoll, trackClick } = useRollPrompt(template, dispatchRoll);
 
   const handlePopOut = usePopOut(character?.id, gameId, rollVisibility);
   const headerButtons = useCharacterSheetHeaderButtons({
@@ -438,16 +436,9 @@ function CustomCharacterSheet({
   />;
 
   const sheetContent = (
-    <div className="custom-sheet" style={{ maxWidth: sheetWidth }}>
-      {/* Pytanie o modyfikator — renderuje się tylko wtedy, gdy szablon go włącza. */}
-      {pending && modifierConfig && (
-        <RollModifierOverlay
-          label={pending.label}
-          config={modifierConfig}
-          onConfirm={confirmRoll}
-          onCancel={cancelRoll}
-        />
-      )}
+    <div className="custom-sheet" style={{ maxWidth: sheetWidth }} onClickCapture={trackClick}>
+      {/* Pre-roll prompt — renders only when the template enables a modifier. */}
+      <RollPrompt pending={pending} pos={pendingPos} config={modifierConfig} onConfirm={confirmRoll} onCancel={cancelRoll} />
 
       {!template ? (
         <div className="custom-sheet__no-template">{t('creator.noTemplate')}</div>
@@ -468,7 +459,7 @@ function CustomCharacterSheet({
 
   return (
     <DraggablePopup
-      title={template ? `${template.name} — ${charName || character?.name}` : (character?.name || '')}
+      title={charName || character?.name || ''}
       onClose={onClose}
       headerButtons={headerButtons}
       initialWidth={sheetWidth}

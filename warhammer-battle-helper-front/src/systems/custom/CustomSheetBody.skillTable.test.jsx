@@ -512,3 +512,29 @@ describe('CustomSheetBody skill_table — attribute suffix follows the field set
     expect(name.textContent).toBe('Skradanie (Zr)');
   });
 });
+
+describe('CustomSheetBody skill_table — full name on hover (PLAYRPG-290)', () => {
+  // jsdom has no layout, so scrollWidth/clientWidth are 0; stub them to fake an ellipsis.
+  const stubWidths = (el, scroll, client) => {
+    Object.defineProperty(el, 'scrollWidth', { configurable: true, value: scroll });
+    Object.defineProperty(el, 'clientWidth', { configurable: true, value: client });
+  };
+
+  it('shows the full name in a tooltip when the ellipsis cut it', () => {
+    const { container } = render(<CustomSheetBody sections={tableSections()} />);
+    const name = container.querySelector('.custom-sheet__skill-name');
+    stubWidths(name, 200, 80);
+
+    fireEvent.mouseEnter(name);
+    expect(document.body.querySelector('.portal-tooltip')).toHaveTextContent('Skradanie');
+  });
+
+  it('shows no tooltip for a name that fits', () => {
+    const { container } = render(<CustomSheetBody sections={tableSections()} />);
+    const name = container.querySelector('.custom-sheet__skill-name');
+    stubWidths(name, 80, 80);
+
+    fireEvent.mouseEnter(name);
+    expect(document.body.querySelector('.portal-tooltip')).toBeNull();
+  });
+});

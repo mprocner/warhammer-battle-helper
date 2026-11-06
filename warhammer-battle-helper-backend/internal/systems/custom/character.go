@@ -37,9 +37,8 @@ type Stats struct {
 	DevelopmentSkills []string `bson:"developmentSkills,omitempty" json:"developmentSkills,omitempty"`
 	// Weapons holds the player-added rows of each weapons_table field, keyed by field key.
 	Weapons map[string][]WeaponRow `bson:"weapons,omitempty" json:"weapons,omitempty"`
-	// FavoriteWeapons holds the ids of GM preset weapons (PresetWeapon.ID) the player has
-	// starred. Preset weapons live only in the template, so this per-player preference cannot
-	// be stored on the weapon itself — unlike player-added rows, which carry WeaponRow.Favorite.
+	// FavoriteWeapons holds the ids of the weapon rows the player has starred. Every weapon is a
+	// row in Weapons since PLAYRPG-288, so ids always resolve against Weapons.
 	FavoriteWeapons []string `bson:"favoriteWeapons,omitempty" json:"favoriteWeapons,omitempty"`
 	// Tables holds the player-added rows of each data_table field, keyed by field key.
 	Tables map[string][]TableRow `bson:"tables,omitempty" json:"tables,omitempty"`
@@ -48,14 +47,14 @@ type Stats struct {
 	Images map[string]string `bson:"images,omitempty" json:"images,omitempty"`
 }
 
-// WeaponRow is one player-added weapon in a weapons_table field.
-// Cells maps a WeaponColumn key to the entered value; Damage maps a DamageFormula
-// block id to the number the player filled in (dice count, faces, or constant).
+// WeaponRow is one weapon in a weapons_table field — player-added, copied from the catalog, or
+// seeded at creation from an AddOnCreate preset (then its ID is the preset's ID).
+// Cells maps a WeaponColumn key to the entered value; Damage maps a DamageFormula block id to
+// the text the player filled in: a die's faces ("6") or a ▢ expression ("1K4", "-1").
 type WeaponRow struct {
-	ID       string             `bson:"id" json:"id"`
-	Cells    map[string]string  `bson:"cells,omitempty" json:"cells,omitempty"`
-	Damage   map[string]float64 `bson:"damage,omitempty" json:"damage,omitempty"`
-	Favorite bool               `bson:"favorite,omitempty" json:"favorite,omitempty"`
+	ID     string            `bson:"id" json:"id"`
+	Cells  map[string]string `bson:"cells,omitempty" json:"cells,omitempty"`
+	Damage map[string]string `bson:"damage,omitempty" json:"damage,omitempty"`
 }
 
 // TableRow is one player-added row in a data_table field. Cells maps a column key to the entered

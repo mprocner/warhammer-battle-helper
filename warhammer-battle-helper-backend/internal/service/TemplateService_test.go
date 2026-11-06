@@ -263,6 +263,24 @@ func TestAboutFields(t *testing.T) {
 		}
 	})
 
+	mt.Run("update with invalid success levels is rejected before writing", func(mt *mtest.T) {
+		// Only the load response is queued: a write attempt would fail with a different error.
+		mt.AddMockResponses(found(templateDoc(id, "T", false, member(owner, models.RoleOwner))))
+		req := models.UpdateTemplateRequest{
+			Version:  &v,
+			Settings: &models.TemplateSettings{SuccessLevels: &models.SuccessLevelsConfig{Mode: "bogus"}},
+		}
+		_, err := newSvc(mt).Update(id.Hex(), owner, req)
+		if !models.IsTemplateValidationError(err) {
+			t.Errorf("err = %v, want a template validation error", err)
+		}
+		for _, ev := range mt.GetAllStartedEvents() {
+			if ev.CommandName == "update" || ev.CommandName == "findAndModify" {
+				t.Errorf("unexpected write command %q", ev.CommandName)
+			}
+		}
+	})
+
 	mt.Run("update on a variant with a language is rejected", func(mt *mtest.T) {
 		doc := append(templateDoc(id, "T", false, member(owner, models.RoleOwner)), bson.E{Key: "baseSystem", Value: "warhammer4e"})
 		mt.AddMockResponses(found(doc))

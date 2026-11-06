@@ -46,7 +46,7 @@ const Navigation = ({ user, onLogout, inGame }) => {
         <AppBar position="static" elevation={0}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <Box component="a" href="/" sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 2 }}>
+                    <Box component="a" href={user ? '/games' : '/'} sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 2 }}>
                         <img src="/img/logo.png" alt="RollHammer" style={{height: 100, objectFit: 'contain' }} />
                     </Box>
 

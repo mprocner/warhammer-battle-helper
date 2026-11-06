@@ -43,10 +43,9 @@ const EmailVerification = () => {
         <Container component="main" maxWidth="xs">
             <Box
                 sx={{
-                    minHeight: '100vh',
+                    py: { xs: 3, sm: 5 },
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'center',
                     alignItems: 'center'
                 }}
             >

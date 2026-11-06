@@ -340,7 +340,11 @@
     "characters": "Characters",
     "gameRooms": "Game Rooms",
     "createNewGame": "Create New Game",
-    "noActiveGames": "No active games. Create one to start your adventure!",
+    "openCreator": "System Creator",
+    "emptyLobbyTitle": "You have no games yet",
+    "emptyLobbyDesc": "Create your own, or ask a Game Master to invite your e-mail address.",
+    "emptyLobbyCreate": "Create a game",
+    "emptyLobbyDesign": "Design a system",
     "accessRevoked": "You no longer have access to this game.",
     "kickedFromGame": "The Game Master removed you from this game.",
     "connectionLost": "Connection lost. Reconnecting…",
@@ -586,11 +590,16 @@
     "STEALTH": "Stealth"
   },
   "customRoll": {
+    "slAbbr": "SL",
     "critical_success": "Critical success!",
     "regular_success": "Success!",
     "failure": "Failure!",
     "fumble": "Critical failure!",
-    "poolSuccesses": "{{count}} success(es)"
+    "poolSuccesses": "{{count}} success(es)",
+    "edgeDice_one": "+{{count}} edge die",
+    "edgeDice_other": "+{{count}} edge dice",
+    "setbackDice_one": "−{{count}} setback die",
+    "setbackDice_other": "−{{count}} setback dice"
   },
   "combat": {
     "roll": "Roll",
@@ -726,6 +735,7 @@
   "handouts": {
     "title": "Handouts",
     "addHandout": "Add Handout",
+    "addHandoutShort": "Handout",
     "createHandout": "Create Handout",
     "editHandout": "Edit Handout",
     "noHandouts": "No handouts yet",
@@ -767,7 +777,7 @@
     "unsupportedType": "This file type cannot be previewed",
     "loadContentError": "Failed to load content",
     "folders": {
-      "createFolder": "New Folder",
+      "createFolder": "Folder",
       "namePlaceholder": "Folder name...",
       "rename": "Rename folder",
       "delete": "Delete folder",
@@ -784,7 +794,7 @@
   },
   "notes": {
     "title": "Notes",
-    "addNote": "Add Note",
+    "addNote": "Note",
     "filterPlaceholder": "Filter by title...",
     "noNotes": "No notes yet",
     "noNotesHint": "Add your first note above",
@@ -1079,7 +1089,11 @@
       },
       "modifier": {
         "title": "Roll modifier",
-        "body": "When on, every roll from this sheet first asks the player for a modifier, such as a bonus or a penalty from the situation."
+        "body": "When on, every roll from this sheet first asks the player for a modifier: either a number, such as a bonus or a penalty from the situation, or edge and setback dice that roll again and keep the best or the worst result."
+      },
+      "successLevels": {
+        "title": "Success levels",
+        "body": "Choose how the log grades a roll: a signed number of levels per step, or named thresholds such as half or a fifth of the target, each in its own colour."
       },
       "token": {
         "title": "Token display",
@@ -1194,7 +1208,7 @@
           "skill_table": "The skills on the list with an optional starting value, optionally linked to an attribute, and whether players may add their own. Drag the grip to set their order.",
           "skill_tree": "The tree of skills — add children to build specialisations — and whether players may add their own.",
           "weapons_table": "The columns (one may supply the attack skill), the damage formula and the preset weapons the GM provides. Drag the grip to reorder columns and presets.",
-          "data_table": "The columns — including long text shown in an expandable row — and preset rows, always on the sheet or offered as a list. Drag the grip to reorder columns and presets."
+          "data_table": "The columns — including long text shown in an expandable row — and preset rows, added to every new character or offered as a list. Drag the grip to reorder columns and presets."
         }
       },
       "roll": {
@@ -1336,6 +1350,7 @@
   "scenes": {
     "title": "Scenes",
     "createScene": "New Scene",
+    "createSceneShort": "Scene",
     "noScenes": "No scenes yet",
     "assignPlayers": "Assign Players",
     "addScene": "Add Scene",
@@ -1443,6 +1458,7 @@
   "files": {
     "title": "Files",
     "createFolder": "New Folder",
+    "createFolderShort": "Folder",
     "noFiles": "No files yet",
     "noFilesHint": "Upload images to build your file library",
     "loadError": "Failed to load files",
@@ -1568,10 +1584,10 @@
     "hard": "Hard",
     "extreme": "Extreme",
     "damage": "Damage",
-    "bonusDice": "+{{count}} bonus die",
-    "bonusDice_plural": "+{{count}} bonus dice",
-    "penaltyDice": "-{{count}} penalty die",
-    "penaltyDice_plural": "-{{count}} penalty dice",
+    "bonusDice_one": "+{{count}} bonus die",
+    "bonusDice_other": "+{{count}} bonus dice",
+    "penaltyDice_one": "-{{count}} penalty die",
+    "penaltyDice_other": "-{{count}} penalty dice",
     "allRolls": "Rolls",
     "sanityRoll": "Sanity Roll",
     "sanLoss": "SAN Loss",
@@ -1737,7 +1753,6 @@
     "saveRow": "Done",
     "removeRow": "Remove row",
     "removeRowConfirm": "Remove row \"{{name}}\"?",
-    "rowPresetLocked": "GM row — always on the sheet, read-only",
     "expandRow": "Show details",
     "collapseRow": "Hide details",
     "attrTableEmpty": "No attributes defined",
@@ -1764,8 +1779,10 @@
     "removeWeapon": "Remove weapon",
     "removeWeaponConfirm": "Remove weapon \"{{name}}\"?",
     "weaponDamageIncomplete": "Fill in all damage values before rolling",
+    "weaponDamageInvalid": "Fix the damage values before rolling",
+    "damageExprHint": "Number or dice, e.g. 2, -1, 1d4, 1d6+1",
+    "damageExprInvalid": "Invalid expression",
     "weaponSkillMissing": "Pick a skill before rolling",
-    "weaponPresetLocked": "GM weapon — always on the sheet, read-only",
     "editWeapon": "Edit weapon",
     "saveWeapon": "Done",
     "addSkill": "Add skill",
@@ -1793,6 +1810,7 @@
       "showAllLanguages": "Show all languages",
       "clearFilter": "Clear"
     },
+    "previewSheet": "Preview character sheet",
     "saveConflict": {
       "message": "{{email}} saved this template at {{time}}.",
       "messageUnknown": "Someone else saved this template at {{time}}.",
@@ -1802,11 +1820,9 @@
     "saveForbidden": "You no longer have edit access to this template. Unsaved changes will be lost when you close it.",
     "saveGone": "This template was deleted or you no longer have access to it. Unsaved changes will be lost when you close it.",
     "dataTablePresetsTitle": "Preset rows",
-    "dataTablePresetsHint": "Define rows the GM provides. \"Always on the sheet\" rows appear read-only on every character; the rest form a list players can add from.",
+    "dataTablePresetsHint": "Define rows the GM provides. Players add them from a list; rows marked \"add when a character is created\" are already on every new character's sheet, as the player's own editable rows. Leave a player field (▢) empty to let each player fill it in.",
     "dataTablePresetsNoColumns": "Add at least one column above before defining preset rows.",
     "dataTablePresetAdd": "Add preset row",
-    "tileTitle": "System Creator",
-    "tileDesc": "Design your own RPG system",
     "noSystemPrompt": "Don't see your system?",
     "designYours": "Design it in the Creator",
     "myTemplates": "My Templates",
@@ -1915,9 +1931,9 @@
     "weaponSkillColumnMoved": "Skill column moved from \"{{column}}\"",
     "tableAddColumn": "Add column",
     "weaponPresetsTitle": "Preset weapons",
-    "weaponPresetsHint": "Define weapons the GM provides. \"Always on the sheet\" weapons appear read-only on every character; the rest form a list players can add from.",
+    "weaponPresetsHint": "Define weapons the GM provides. Players add them from a list; weapons marked \"add when a character is created\" are already on every new character's sheet, as the player's own editable rows.",
     "weaponPresetsNoColumns": "Add at least one column above before defining preset weapons.",
-    "tablePresetAlwaysOn": "Always on the sheet",
+    "tablePresetAddOnCreate": "Add when a character is created",
     "tablePresetReorder": "Move preset {{n}}",
     "presetReorderSortedHint": "The sheet sorts this table alphabetically — the order set here applies to the list players add from, and to the table once sorting is turned off.",
     "weaponPresetAdd": "Add preset weapon",
@@ -1926,7 +1942,7 @@
     "weaponThresholdNoSkillColumn": "No skill column — the attack roll has no threshold at all and prints a bare number, and a \"skill\" block in the formula adds 0",
     "weaponNoSkillColumnRaw": "No skill column — a \"skill\" block in the formula adds 0",
     "damageFormula": "Damage formula",
-    "damageFormulaHint": "Numbers (dice count, faces, constants) become inputs the player fills per weapon; attributes are read from the character.",
+    "damageFormulaHint": "Generic dice (faces) and the player field (▢) become inputs the player fills per weapon; fixed dice and constants stay as you set them; attributes are read from the character. The player field also takes dice, e.g. 1d4.",
     "components": "Components",
     "canvasEmpty": "Click a component on the left to add it to your sheet",
     "unnamed": "unnamed",
@@ -1956,11 +1972,30 @@
       "memberErrorLastOwner": "A template needs at least one owner. Make someone else an owner first.",
       "sharePublicNote": "This template is public, so everyone can already use it. The roles below still decide who may edit it.",
       "modifierTitle": "Roll modifier",
-      "modifierHint": "Ask for a modifier before each roll on this card",
+      "modifierHint": "Ask for a modifier or extra dice before each roll on this card",
+      "successLevelsTitle": "Success levels",
+      "successLevelsHint": "How the log reports how well a roll went",
       "sheetWidthTitle": "Character sheet window",
       "sheetWidthHint": "How wide the sheet opens for players",
       "sheetWidthValue": "{{width}} px",
       "sheetWidthNote": "The window never opens wider than the player's browser, and players can resize it."
+    },
+    "successLevels": {
+      "mode": { "off": "Off", "tens": "Levels per step", "tiers": "Thresholds" },
+      "offHint": "Rolls show only success or failure.",
+      "step": "Step",
+      "tensHint": "One level for every step between the tens digits of the target and of the roll. A failure counts down.",
+      "tensExample": "Target {{target}}, roll {{roll}} → {{level}} {{abbr}}",
+      "tiersHint": "The hardest threshold is checked first. Thresholds apply to roll-under fields; a roll-over field shows only success or failure.",
+      "divisor": "Fraction of the target",
+      "divisorError": "Each fraction must be different, from 1/2 to 1/100.",
+      "label": "Name",
+      "labelPlaceholder": "Threshold name",
+      "color": "Colour",
+      "remove": "Remove threshold",
+      "add": "Add threshold",
+      "failureRow": "none",
+      "default": { "extreme": "Extreme success", "hard": "Hard success", "success": "Success", "failure": "Failure" }
     },
     "modifier": {
       "enable": "Ask for a modifier before rolling",
@@ -1978,6 +2013,17 @@
       "step": "Step",
       "min": "Min",
       "max": "Max",
+      "kind": "Modifier type",
+      "kindNumber": "Number",
+      "kindDice": "Edge and setback dice",
+      "diceMode": "How extra dice roll",
+      "diceModeFormula": "Whole formula",
+      "diceModeTens": "Tens die (d100 only)",
+      "hintDiceFormula": "Each extra die rolls the field's whole formula once more. Edge keeps the best result, setback the worst.",
+      "hintDiceTens": "Each extra die rolls only a new tens digit; the units stay. Works on fields whose formula is a single d100 — other fields roll without extra dice.",
+      "maxEdge": "Max edge dice",
+      "maxSetback": "Max setback dice",
+      "diceHint": "Best and worst follow each field's success rule: rolling under the threshold, lower is better; rolling over it, higher is. Fields with a raw result and dice pools roll without extra dice.",
       "limitsHint": "Min and max both at 0 means no limits.",
       "presetsTitle": "Quick picks",
       "presetsEmpty": "No quick picks — the prompt shows just the number field.",
@@ -2160,7 +2206,7 @@
       "linkedAttrTitle": "Value of the attribute assigned to this skill",
       "addConst": "+ Add",
       "constInputBtn": "+ Player number",
-      "constInputTitle": "Flat number the player fills in per weapon on the character sheet",
+      "constInputTitle": "Number or dice the player enters per weapon on the character sheet, e.g. 2, -1, 1d4, 1d6+1",
       "skillAbbr": "skill",
       "linkedAttrAbbr": "l.attr",
       "subsectionAttrTokens": "Attribute tokens",
@@ -2450,5 +2496,37 @@
     "unshareAll": "Unlock for all tokens in the game",
     "shareAllConfirm": "Set this slot for all tokens in the game, on every scene? Their live values reset, new tokens will get this slot too, and editing it will then change every token.",
     "unshareAllConfirm": "Unlock this slot for all tokens in the game? New tokens stop getting it and edits affect only this token again."
+  },
+  "landing": {
+    "hero": {
+      "title": "Gather your party. Unroll the map. Roll the dice.",
+      "subtitle": "Maps with fog of war, custom character sheets and everything a GM needs to run a session online."
+    },
+    "cta": {
+      "register": "Create a free account",
+      "games": "Go to your games",
+      "features": "See features"
+    },
+    "features": {
+      "scene": {
+        "title": "A scene that comes alive",
+        "body": "Reveal the fog of war with a brush, draw on the map, track tokens with HP and conditions — everyone sees every change live.",
+        "imageAlt": "Game scene with fog of war and tokens"
+      },
+      "creator": {
+        "title": "Build your own system",
+        "body": "The sheet creator gives you fields, formulas and sections. Players see exactly what you design.",
+        "imageAlt": "Character sheet template creator"
+      },
+      "gmTools": {
+        "title": "Everything a GM needs at hand",
+        "body": "Handouts, music, files, hidden rolls and a chat with dice commands.",
+        "imageAlt": "GM tools: handouts, music and chat"
+      }
+    },
+    "ctaBand": {
+      "title": "Ready for your first session?"
+    },
+    "zoom": "Enlarge: {{name}}"
   }
 }

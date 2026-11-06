@@ -2158,7 +2158,7 @@ align-items: center;
 .resize-handle.resize-e,
 .resize-handle.resize-w {
     height: 100%;
-    width: 8px;
+    width: 7px; /* 3px ramki + 4px poza oknem - nie zachodzi na scrollbar przy krawędzi */
     cursor: ew-resize;
     top: 0;
 }
@@ -2172,11 +2172,11 @@ align-items: center;
 }
 
 .resize-handle.resize-e {
-    right: 0;
+    right: -7px;
 }
 
 .resize-handle.resize-w {
-    left: 0;
+    left: -7px;
 }
 
 .resize-handle.resize-ne,
@@ -6276,24 +6276,9 @@ align-items: center;
     overflow-y: auto;
 }
 
-.minigame-list__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 0 0 8px 0;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #c9975b;
-}
-
-.minigame-list__title {
-    font-family: 'Cinzel', serif;
-    font-size: 14px;
-    font-weight: 600;
-    color: #6b4423;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0;
+/* The container's 8px gap adds to this; together 12px under the header, like the other tabs. */
+.minigame-list > .tab-header {
+    margin-bottom: 4px;
 }
 
 .minigame-list__item {
@@ -7760,6 +7745,124 @@ align-items: center;
 
 .custom-roll-overlay__btn--roll:hover {
     filter: brightness(1.08);
+}
+
+/* Edge/setback dice column (PLAYRPG-294) — same look as the CoC dice column. */
+.edge-dice-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9000;
+}
+
+.edge-dice-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(135deg, #3a2920 0%, #2a2218 100%);
+  border: 2px solid #7a5c42;
+  border-radius: 5px;
+  padding: 4px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.75),
+    0 0 16px rgba(201, 151, 91, 0.35);
+  animation: edgeDicePopIn 0.13s ease-out;
+  z-index: 9001;
+}
+
+@keyframes edgeDicePopIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.edge-dice-btn {
+  min-width: 56px;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.13s;
+  letter-spacing: 0.04em;
+}
+
+.edge-dice-btn--edge {
+  background: linear-gradient(135deg, #4a7c59 0%, #3a6647 100%);
+  border-color: #6db88a;
+  color: #e8f5e9;
+}
+
+.edge-dice-btn--edge:hover {
+  background: linear-gradient(135deg, #6db88a 0%, #5aa070 100%);
+  border-color: #8fd9af;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(109, 184, 138, 0.45);
+}
+
+.edge-dice-btn--neutral {
+  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
+  border-color: #e8b87a;
+  color: #fff9f0;
+}
+
+.edge-dice-btn--neutral:hover {
+  background: linear-gradient(135deg, #e0ad6a 0%, #c9975b 100%);
+  border-color: #f4d8a0;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(201, 151, 91, 0.45);
+}
+
+.edge-dice-btn--setback {
+  background: linear-gradient(135deg, #8b2424 0%, #6b1818 100%);
+  border-color: #c92a2a;
+  color: #ffe5e5;
+}
+
+.edge-dice-btn--setback:hover {
+  background: linear-gradient(135deg, #c92a2a 0%, #a82020 100%);
+  border-color: #e53e3e;
+  transform: translateX(3px);
+  box-shadow: 0 3px 10px rgba(201, 42, 42, 0.45);
+}
+
+.edge-dice-btn:active {
+  transform: translateX(1px);
+}
+
+.custom-edge-dice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--log-brown-dark, #5a4a3a);
+}
+
+.custom-edge-dice__label--edge {
+  color: #3a6647;
+  font-weight: 600;
+}
+
+.custom-edge-dice__label--setback {
+  color: #8b2424;
+  font-weight: 600;
+}
+
+.custom-edge-dice__roll {
+  font-size: 14px;
+  opacity: 0.65;
+}
+
+.custom-edge-dice__roll--kept {
+  font-weight: 700;
+  text-decoration: underline;
+  opacity: 1;
 }
 
 /* --- CharacterSheet full popup --- */
@@ -9287,33 +9390,31 @@ align-items: center;
     color: #c0392b;
 }
 
-/* A GM preset row is read-only, and .custom-sheet__row-table-row--preset is the only DOM hook that
-   says so — every other cell in the row is muted through it (see
-   .custom-sheet__row-table-row .custom-sheet__row-table-cell-static above), but renderDamageFormula's
-   readOnly flag only sets the input's readonly attribute: the fill, border and --missing state
-   still read as "fill me in." This selector matches an input carrying --missing too (an extra
-   class on the element doesn't stop a selector that doesn't mention it from matching), and at
+/* The ▢ takes an expression ("1K6+1"), wider than the faces of a die. */
+.custom-sheet__weapon-dmg-input.custom-sheet__weapon-dmg-input--expr {
+    width: 64px;
+}
+
+/* First line of the ▢ tooltip when the entry is invalid. */
+.custom-sheet__weapon-dmg-hint-error {
+    display: block;
+    font-weight: 700;
+    color: #c0392b;
+}
+
+/* A player's weapon row at rest keeps a `readonly` damage input (renderDamageFormula renders it
+   unconditionally; editing only flips readOnly). Left alone, its fill, border and --missing state
+   still read as "fill me in", so a row at rest mutes it the way the static cells are muted: no
+   fill, no border, second-plane text. The selector matches an input carrying --missing too, and at
    two classes (0,2,0) it outranks --missing's one (0,1,0), so it wins the background and
-   border-color regardless of source order — which it must, because an always-on preset whose GM
-   left a damage block empty would otherwise show the red "incomplete" border on a field the
-   player has no way to complete, next to a roll button disabled for the same reason. Muted the
-   same way the static cells are: no fill, no border, second-plane text. The placeholder still
-   needs its own rule below — --missing's ::placeholder color is a separate declaration this
-   selector doesn't reach.
-   .custom-sheet__row-table-row--reading is the same defect on the second row kind this applies to:
-   a player's own weapon at rest. Its pencil-gated inputs carry the readonly attribute exactly
-   like the preset's, so they need the identical mute — the row still has its OWN damage input
-   element in the DOM (renderDamageFormula renders unconditionally; editing only flips readOnly),
-   it is just the wrong-looking one until this rule fires. Same two-class specificity, so it beats
-   --missing on its own merits without needing to race it in source order. */
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input,
+   border-color regardless of source order. The placeholder still needs its own rule below —
+   --missing's ::placeholder color is a separate declaration this selector doesn't reach. */
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input {
     background: transparent;
     border-color: transparent;
     color: #6b5a45;
 }
 
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input--missing::placeholder,
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input--missing::placeholder {
     color: #6b5a45;
 }
@@ -9322,9 +9423,8 @@ align-items: center;
    .custom-sheet__weapon-dmg-input:focus's border-color: #c9975b, so whichever comes later in the
    source wins — the mute does, since it is declared after. Muted or not, these inputs remain real
    tab stops (readonly, not disabled), so a keyboard user still needs to see where focus landed.
-   This rule adds the pseudo-class to both selectors, which raises it to (0,3,0) — it wins by
+   This rule adds the pseudo-class to this selector, which raises it to (0,3,0) — it wins by
    specificity, not source order, so it cannot be re-broken by reordering the block above. */
-.custom-sheet__row-table-row--preset .custom-sheet__weapon-dmg-input:focus,
 .custom-sheet__row-table-row--reading .custom-sheet__weapon-dmg-input:focus {
     border-color: #7a5c42;
 }
@@ -9357,16 +9457,13 @@ align-items: center;
     min-width: 0;
 }
 
-/* Every control in the actions cell — delete, the padlock, edit, save — is an MUI icon at
-   AFFORDANCE_ICON_SIZE in a box of identical padding, so all four occupy exactly the same width
-   without any of them declaring one. They used to be three different kinds of thing — an icon, a
-   text glyph and an emoji — and the glyph's wider padding made the delete control visibly broader
-   than the padlock beside it. A declared width would have hidden that rather than fixed it: the
-   contents have to match, not just the boxes. One rule for the shared geometry: each control used
-   to re-declare it dozens of lines apart, so changing one could silently break the alignment this
-   comment promises. Only color and :hover are left per control below. */
+/* Every control in the actions cell — delete, edit, save — is an MUI icon at AFFORDANCE_ICON_SIZE
+   in a box of identical padding, so all three occupy exactly the same width without any of them
+   declaring one. A declared width would hide a mismatch rather than fix it: the contents have to
+   match, not just the boxes. One rule for the shared geometry: each control used to re-declare it
+   dozens of lines apart, so changing one could silently break the alignment this comment
+   promises. Only color and :hover are left per control below. */
 .custom-sheet__row-table-remove,
-.custom-sheet__row-table-lock,
 .custom-sheet__row-table-edit,
 .custom-sheet__row-table-save {
     border: none;
@@ -9410,15 +9507,6 @@ align-items: center;
     border-color: #7a5c42;
 }
 
-/* Geometry shared with the other actions-cell controls — see the comment on
-   .custom-sheet__row-table-remove. The padlock is inert, so it keeps the default cursor and sits at
-   reduced opacity: it reports a state rather than offering an action. */
-.custom-sheet__row-table-lock {
-    color: #7a5c42;
-    opacity: 0.7;
-    cursor: default;
-}
-
 /* Anchored under the row class for the same reason the skill lists anchor theirs: one stylesheet
    holds three field skins and the anchor is what keeps them apart. */
 .custom-sheet__row-table-row .custom-sheet__row-table-cell-static {
@@ -9433,13 +9521,6 @@ align-items: center;
 
 .custom-sheet__row-table-row .custom-sheet__row-table-cell-static--name {
     font-weight: 700;
-}
-
-/* Muted only for the GM's own preset rows. The base static cell is now what a player's row renders at
-   rest too, so the colour has to mean "not yours to change" rather than "not an input".
-   --preset is the only hook that tells the two apart; it also mutes the preset's damage inputs. */
-.custom-sheet__row-table-row--preset .custom-sheet__row-table-cell-static {
-    color: #6b5a45;
 }
 
 /* Geometry shared with the other actions-cell controls — see the comment on
@@ -9545,10 +9626,6 @@ button.custom-sheet__row-table-expander:hover {
     color: #3a2f1f;
     white-space: pre-wrap;
     word-break: break-word;
-}
-
-.custom-sheet__row-table-row--preset .custom-sheet__row-table-detail-text {
-    color: #6b5a45;
 }
 
 .custom-sheet__row-table-row .custom-sheet__row-table-detail-input {
@@ -12647,4 +12724,468 @@ button.custom-sheet__row-table-expander:hover {
 
 .mcb__limit input:focus {
     border-color: #c9975b;
+}
+
+.slb__root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.slb__modes {
+    display: flex;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.slb__mode {
+    padding: 5px 12px;
+    background: #fff9f0;
+    border: none;
+    border-right: 1px solid #c4a882;
+    color: #7a5c42;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.slb__mode:last-child {
+    border-right: none;
+}
+
+.slb__mode.slb__mode--active {
+    background: #c9975b;
+    color: #fff9f0;
+}
+
+.slb__hint,
+.slb__example {
+    font-size: 0.78rem;
+    color: rgba(58, 47, 31, 0.6);
+    line-height: 1.35;
+}
+
+.slb__example {
+    color: #3a2f1f;
+}
+
+.slb__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slb__field-label {
+    font-size: 0.78rem;
+    color: #7a5c42;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.slb__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.slb__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.slb__fraction {
+    color: #7a5c42;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.slb__fraction.slb__fraction--fixed {
+    min-width: 72px;
+}
+
+.slb__step,
+.slb__divisor,
+.slb__label {
+    background: #fff9f0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    color: #3a2f1f;
+    font-family: 'Crimson Text', serif;
+    outline: none;
+}
+
+.slb__step {
+    width: 80px;
+}
+
+.slb__divisor {
+    width: 56px;
+}
+
+.slb__label {
+    flex: 1;
+    min-width: 0;
+}
+
+.slb__step:focus,
+.slb__divisor:focus,
+.slb__label:focus {
+    border-color: #7a5c42;
+}
+
+.slb__divisor.slb__divisor--invalid {
+    border-color: #c94444;
+}
+
+.slb__step.slb__step--invalid {
+    border-color: #c94444;
+}
+
+.slb__color {
+    width: 32px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid #c4a882;
+    border-radius: 3px;
+    background: none;
+    cursor: pointer;
+}
+
+.slb__remove,
+.slb__remove-spacer {
+    width: 26px;
+    flex-shrink: 0;
+}
+
+.slb__remove {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #7a5c42;
+    cursor: pointer;
+}
+
+.slb__remove:hover {
+    color: #c94444;
+}
+
+.slb__error {
+    font-size: 0.78rem;
+    color: #c94444;
+}
+
+.slb__add {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px dashed #c4a882;
+    border-radius: 3px;
+    padding: 4px 10px;
+    color: #7a5c42;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.slb__add:hover:not(:disabled) {
+    border-color: #c9975b;
+    color: #3a2f1f;
+}
+
+.slb__add:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ===== Landing page (PLAYRPG-284) ===== */
+.landing {
+    color: #3a2f1f;
+    font-family: 'Crimson Text', Georgia, serif;
+}
+
+.landing__hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: 64px 16px;
+    text-align: center;
+    color: #f4e8d8;
+    /* Base colour stays when the screenshot is missing, so the text remains readable. */
+    background:
+        linear-gradient(180deg, rgba(30, 22, 14, 0.55) 0%, rgba(30, 22, 14, 0.9) 100%),
+        var(--landing-hero-image, none) center / cover no-repeat,
+        #3a2f1f;
+}
+
+.landing__hero-content {
+    max-width: 760px;
+}
+
+.landing__hero-title {
+    margin: 0 0 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.landing__hero-subtitle {
+    margin: 0 0 32px;
+    font-size: 1.35rem;
+    line-height: 1.45;
+    color: #e8d5b7;
+}
+
+.landing__hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+}
+
+.landing__cta {
+    display: inline-block;
+    padding: 12px 28px;
+    border-radius: 4px;
+    background: #8b2f2f;
+    color: #ffffff;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.landing__cta:hover {
+    background: #a93434;
+}
+
+.landing__cta-secondary {
+    padding: 11px 27px;
+    border: 1px solid #c9975b;
+    border-radius: 4px;
+    background: transparent;
+    color: #c9975b;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.landing__cta-secondary:hover {
+    background: rgba(201, 151, 91, 0.12);
+}
+
+.landing__features {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    padding: 72px 16px;
+    background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
+}
+
+.landing__feature {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.landing__feature-text {
+    flex: 1 1 0;
+}
+
+.landing__feature-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 1.75rem;
+    color: #3a2f1f;
+}
+
+.landing__feature-icon {
+    color: #c9975b;
+}
+
+.landing__feature-body {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: #5a4a3a;
+}
+
+.landing__feature-media {
+    position: relative;
+    flex: 1.8 1 0;
+    aspect-ratio: 16 / 10;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #7a5c42;
+    border-radius: 6px;
+    background: #e8dcc4;
+    box-shadow: 0 8px 24px rgba(58, 47, 31, 0.25);
+    cursor: zoom-in;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.landing__feature-media:hover {
+    box-shadow: 0 12px 32px rgba(58, 47, 31, 0.4);
+    transform: translateY(-2px);
+}
+
+.landing__feature-zoom {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 6px;
+    border-radius: 50%;
+    background: rgba(30, 22, 14, 0.7);
+    color: #f4e8d8;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.landing__feature-media:hover .landing__feature-zoom,
+.landing__feature-media:focus-visible .landing__feature-zoom {
+    opacity: 1;
+}
+
+.landing__feature-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.landing__lightbox-image {
+    display: block;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    border-radius: 6px;
+    cursor: zoom-out;
+}
+
+/* Declared after the base .landing__feature rule, otherwise it loses the cascade. */
+.landing__feature--reversed {
+    flex-direction: row-reverse;
+}
+
+.landing__cta-band {
+    padding: 56px 16px;
+    text-align: center;
+    background: #7a5c42;
+    color: #f4e8d8;
+}
+
+.landing__cta-band-title {
+    margin: 0 0 24px;
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+}
+
+@media (max-width: 768px) {
+    .landing__hero {
+        min-height: auto;
+        padding: 48px 16px;
+    }
+
+    .landing__hero-title {
+        font-size: 2rem;
+    }
+
+    .landing__hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    /* Doubled selector beats .landing__feature--reversed regardless of order. */
+    .landing__feature,
+    .landing__feature.landing__feature--reversed {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .landing__feature-text,
+    .landing__feature-media {
+        flex: none;
+        width: 100%;
+    }
+
+    /* Image above text on mobile. */
+    .landing__feature-media {
+        order: -1;
+    }
+}
+
+/* ========== Right-panel tab header (TabHeader.jsx) ========== */
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #c9975b;
+  flex-shrink: 0;
+}
+
+.tab-header__title {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b4423;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  /* Height of .tab-header__btn, so headers without a button are as tall as those with one */
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.tab-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tab-header__btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
+  border: 2px solid #c9975b;
+  border-radius: 4px;
+  color: #6b4423;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(107, 68, 35, 0.15);
+}
+
+.tab-header__btn:hover {
+  border-color: #7a5c42;
+  background: linear-gradient(135deg, #fff 0%, #f9f3e8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(107, 68, 35, 0.25);
 }

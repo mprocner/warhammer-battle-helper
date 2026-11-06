@@ -3,7 +3,7 @@ const files = {
   id: 'files',
   steps: [
     { id: 'list', target: ['.files-tab__empty', '.files-tab__list'], placement: 'left', variants: ['byTarget'] },
-    { id: 'createFolder', target: '.files-tab__actions', placement: 'left' },
+    { id: 'createFolder', target: '.files-tab__create-folder-btn', placement: 'left' },
     { id: 'breadcrumb', target: '.files-tab__breadcrumb', placement: 'left' },
   ],
 };

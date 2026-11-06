@@ -44,6 +44,7 @@ import { renderDamageFormula, weaponSkillColumn } from '../../systems/custom/wea
 import { sortColumnKey } from '../../systems/custom/rowTableLayout';
 import { collectSkillOptions, isSkillBaseDerived } from '../../systems/custom/skillLayout';
 import CustomSheetBody from '../../systems/custom/CustomSheetBody';
+import { addOnCreateValues } from '../../systems/custom/addOnCreate';
 import { SHORT_CARD_TYPES } from '../../systems/custom/shortCard';
 import OptionsEditor from './OptionsEditor';
 import TableColumnsEditor from './TableColumnsEditor';
@@ -60,6 +61,7 @@ import useSortableItem from '../common/sortable/useSortableItem';
 import DragGrip from '../common/sortable/DragGrip';
 import DiceConfigBuilder from './DiceConfigBuilder';
 import ModifierConfigBuilder from './ModifierConfigBuilder';
+import SuccessLevelsBuilder from './SuccessLevelsBuilder';
 import TokenDisplayBuilder from './TokenDisplayBuilder';
 import { TutorialProvider } from '../tutorial/TutorialContext';
 import CreatorTour, { CreatorTourButton, CreatorFieldTourButton, CREATOR_TAB_TOURS } from './CreatorTour';
@@ -468,7 +470,6 @@ function defaultRollConfig() {
     rollMode: 'traditional',
     formula: [],
     successType: 'below_threshold',
-    rollAdvType: 'standard',
     poolSuccessThreshold: 6,
     poolSuccessCondition: 'gte',
   };
@@ -963,8 +964,8 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                     <div className="custom-sheet__weapon-damage">
                       {renderDamageFormula(field.damageFormula, preset, field.key, {
                         weaponDamage: (_fk, _rowId, blockId, val) =>
-                          patch({ damage: { ...(preset.damage || {}), [blockId]: Number(val) || 0 } }),
-                      }, false, t)}
+                          patch({ damage: { ...(preset.damage || {}), [blockId]: val } }),
+                      }, false, t, { show: showTooltip, hide: hideTooltip })}
                     </div>
                   </div>
                 ) : null}
@@ -1327,6 +1328,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
   const [activeTab,   setActiveTab]   = useState('general');
   const [tourRunning, setTourRunning] = useState(false);
   const [duplicateKeys, setDuplicateKeys] = useState(new Set());
+  // What a new character starts with: the creator shows the GM's addOnCreate presets as rows.
+  const previewValues = useMemo(() => addOnCreateValues(sections), [sections]);
   // Which one-per-template types are already placed; drives the palette, the inline picker
   // and the missing-name warning.
   const usedSingletons = useMemo(() => usedSingletonTypes(sections), [sections]);
@@ -1546,6 +1549,15 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     }
     onClose?.();
   }, [saveTemplate, onClose]);
+
+  // The fullScreen dialog has no backdrop to click, so Escape is the only way MUI calls onClose.
+  // It closes the topmost popup the creator owns and never the creator itself (PLAYRPG-285) —
+  // leaving is the close button's job. Popups with their own Escape (ConfirmModal, nested MUI
+  // dialogs) stop the keydown before it gets here; the confirm check covers focus that left it.
+  const handleDialogEscape = useCallback(() => {
+    if (pendingRemovePath !== null) setPendingRemovePath(null);
+    else if (editingPath !== null) setEditingPath(null);
+  }, [pendingRemovePath, editingPath]);
 
   // After leaving the template the user may no longer save it, so a pending debounced save is
   // dropped rather than flushed.
@@ -1828,9 +1840,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
     <TutorialProvider>
     {/* The joyride tooltip is portalled to body, outside the dialog's DOM, so the focus trap is
         released while a tour runs rather than left to decide whether the tour's focus is inside.
-        Escape is the tour's own "close": MUI would read the same keydown as onClose('escapeKeyDown')
-        and close the whole creator, so the dialog ignores Escape while a tour runs. */}
-    <Dialog open fullScreen onClose={handleClose} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
+        Escape is the tour's own "close", so the dialog ignores Escape while a tour runs. */}
+    <Dialog open fullScreen onClose={handleDialogEscape} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
       PaperProps={{ sx: { background: 'linear-gradient(160deg, #f4e8d8 0%, #ede0ce 100%)' } }}>
 
       {/* Top bar */}
@@ -1963,6 +1974,20 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                 />
               </div>
             </div>
+            {!isVariant && (
+            <div className="creator__settings-card creator__settings-card--success-levels">
+              <div className="creator__settings-card-header">
+                <span className="creator__settings-card-title">{t('creator.general.successLevelsTitle')}</span>
+                <span className="creator__settings-card-hint">{t('creator.general.successLevelsHint')}</span>
+              </div>
+              <div className="creator__settings-card-body">
+                <SuccessLevelsBuilder
+                  value={settings.successLevels}
+                  onChange={successLevels => updateSettings({ successLevels })}
+                />
+              </div>
+            </div>
+            )}
             <div className="creator__settings-card creator__settings-card--token">
               <div className="creator__settings-card-header">
                 <span className="creator__settings-card-title">{t('creator.tokenDisplay.cardTitle')}</span>
@@ -2084,6 +2109,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               <div className="custom-sheet" ref={sheetWrapperRef} style={{ maxWidth: clampSheetWidth(settings.sheetWidth) }}>
                 <CustomSheetBody
                   sections={sections}
+                  values={previewValues}
                   renderChrome={cleanPreview ? null : buildChrome}
                   showAffordances
                 />
@@ -2094,7 +2120,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                   exactly what the dragged node would look like once it lands. */}
               {ghostRect && draggedGhostSections && (
                 <div className="creator__drop-ghost" style={ghostRect}>
-                  <CustomSheetBody sections={draggedGhostSections} />
+                  <CustomSheetBody sections={draggedGhostSections} values={addOnCreateValues(draggedGhostSections)} />
                 </div>
               )}
               {!cleanPreview && (
@@ -2145,7 +2171,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         <DragOverlay dropAnimation={null}>
           {dragState && draggedGhostSections && (
             <div className="creator__drag-overlay" style={{ width: dragState.draggedRect?.width }}>
-              <CustomSheetBody sections={draggedGhostSections} />
+              <CustomSheetBody sections={draggedGhostSections} values={addOnCreateValues(draggedGhostSections)} />
             </div>
           )}
         </DragOverlay>

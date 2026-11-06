@@ -5,7 +5,9 @@ import { getResultColor } from '../../../components/log/rollUtils';
 import TruncatedLabel from '../../../components/log/TruncatedLabel';
 import { formatPoolFormula } from './poolFormula';
 import FormulaBreakdown from './FormulaBreakdown';
+import EdgeDiceSummary from './EdgeDiceSummary';
 import { MOD_TARGET_ROLL } from '../modifierConfig';
+import { successLevelDisplay } from './successLevelDisplay';
 import '../../../components/LogWindow.css';
 
 const OUTCOME_MAP = {
@@ -27,12 +29,16 @@ function CustomWeaponRoll({ data, timestamp }) {
   const isCritFailure = outcome?.isCritFailure || false;
   const isSuccess     = outcome?.isSuccess     || false;
 
-  const resultColor = isRaw ? 'var(--log-brown-muted)' : getResultColor(isCritSuccess, isCritFailure, isSuccess);
-
-  const weaponLabel = data.weaponName || t('log.weapon');
   const outcomeLabel = isRaw
     ? data.outcome
     : t(`customRoll.${data.outcome}`, { defaultValue: data.outcome });
+
+  const successDisplay = isRaw ? null : successLevelDisplay(data, outcomeLabel, t);
+  const resultColor = isRaw
+    ? 'var(--log-brown-muted)'
+    : (successDisplay?.color || getResultColor(isCritSuccess, isCritFailure, isSuccess));
+
+  const weaponLabel = data.weaponName || t('log.weapon');
   const modifierText = data.modifier && data.modifier !== 0
     ? ` (${data.modifier > 0 ? '+' : ''}${data.modifier})`
     : '';
@@ -60,6 +66,7 @@ function CustomWeaponRoll({ data, timestamp }) {
         isCritFailure={isCritFailure}
         isSuccess={isSuccess}
         isNeutral={isRaw}
+        overrideColor={successDisplay?.color || undefined}
         symbol={String(data.roll)}
       />
       <div className="log-list-item__content">
@@ -77,9 +84,10 @@ function CustomWeaponRoll({ data, timestamp }) {
           {showsModifierSeparately && modifierText && <span className="log-modifier">{modifierText}</span>}
         </div>
         {formulaText && <FormulaBreakdown text={formulaText} />}
+        <EdgeDiceSummary diceMod={data.diceMod} allRolls={data.allRolls} roll={data.roll} />
         {!isRaw && (
           <div className="log-list-item__result" style={{ color: resultColor }}>
-            {outcomeLabel}
+            {successDisplay?.label || outcomeLabel}
           </div>
         )}
         {isSuccess && data.damageRoll != null && (

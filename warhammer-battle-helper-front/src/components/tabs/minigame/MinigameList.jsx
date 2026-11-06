@@ -3,7 +3,7 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import StyleIcon from '@mui/icons-material/Style';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import TourButton from '../../tutorial/TourButton';
+import TabHeader from '../TabHeader';
 
 function MinigameList({ minigameState, onReopenBoard, onSelectGame, t }) {
   const yahtzeeActive = minigameState && !minigameState.ended && minigameState.gameType === 'yahtzee';
@@ -11,10 +11,7 @@ function MinigameList({ minigameState, onReopenBoard, onSelectGame, t }) {
 
   return (
     <div className="minigame-list">
-      <div className="minigame-list__header">
-        <h3 className="minigame-list__title">{t('minigames.title')}</h3>
-        <TourButton tourId="minigames" />
-      </div>
+      <TabHeader title={t('minigames.title')} tourId="minigames" />
 
       <button
         className={`minigame-list__item ${yahtzeeActive ? 'minigame-list__item--active' : ''} ${dicePokerActive ? 'minigame-list__item--disabled' : ''}`}

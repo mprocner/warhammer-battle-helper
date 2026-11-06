@@ -67,7 +67,9 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 // Numbers[key]. Each skill_table option with a Default lands in Skills["<fieldKey>.<id>"].Base
 // (PLAYRPG-277), unless the table derives its base from the attribute (skillBaseDerived), in
 // which case nothing reads a stored base. A nil Default means "no default", which is not the
-// same as a default of 0; every other field type is left untouched.
+// same as a default of 0. AddOnCreate presets of weapons_table and data_table fields are copied
+// into Weapons / Tables as rows that keep the preset's ID (PLAYRPG-288) — the id is what makes
+// migrate-weapon-presets idempotent. Every other field type is left untouched.
 //
 // This hangs off *Plugin rather than the systems.GameSystem interface for the same reason as
 // RollWithTemplate: only the custom system has a template to read.
@@ -103,6 +105,19 @@ func (p *Plugin) SeedDefaults(raw bson.Raw, tmpl *models.SystemTemplate) (bson.R
 				for _, opt := range field.Skills {
 					if opt.Default != nil {
 						s.Skills[field.Key+"."+opt.ID] = AttrValue{Base: *opt.Default}
+					}
+				}
+			case "weapons_table":
+				// No map copies needed: s is marshalled below, so the row never aliases the preset.
+				for _, preset := range field.PresetWeapons {
+					if preset.AddOnCreate {
+						s.Weapons[field.Key] = append(s.Weapons[field.Key], WeaponRow{ID: preset.ID, Cells: preset.Cells, Damage: preset.Damage})
+					}
+				}
+			case "data_table":
+				for _, preset := range field.PresetRows {
+					if preset.AddOnCreate {
+						s.Tables[field.Key] = append(s.Tables[field.Key], TableRow{ID: preset.ID, Cells: preset.Cells})
 					}
 				}
 			}

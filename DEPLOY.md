@@ -187,6 +187,31 @@ active creators to reload (or deploy when nobody is editing).
 
 Then open the creator on a shared template and check that its access card lists the previous recipients as Viewers.
 
+### PLAYRPG-288 — damage text values and add-on-create presets
+
+Weapon damage values move from numbers to text, and "always on the sheet" presets become rows of
+each character. Until the migration runs, characters and games with entered weapon damage fail
+to load. Same procedure as above:
+
+1. Stop `autopull.service` if enabled.
+2. Deploy: `cd /opt/warhammer-battle-helper && bash scripts/deploy.sh`
+3. Immediately run:
+
+```bash
+cd /opt/warhammer-battle-helper
+docker run --rm --network warhammer-battle-helper_default \
+  -v "$PWD/warhammer-battle-helper-backend":/src -w /src \
+  -e MONGO_URI='mongodb://<user>:<password>@mongo:27017/?authSource=admin' \
+  -e MONGO_DB=<db-name> \
+  golang:1.24-alpine go run ./cmd/migrate-weapon-presets/
+```
+
+It prints three counts; a second run prints zeros, and it is safe to re-run if it fails midway.
+Browser tabs left open on the old frontend save damage as numbers and get a 400, so ask active
+players and creators to reload.
+
+Then open a game that had an "always on" weapon and check that it is now an editable row.
+
 ---
 
 ## Automated deployment

@@ -101,10 +101,6 @@
   border: none;
 }
 
-.right-panel__tab-content .log-window__header {
-  border-radius: 0;
-}
-
 /* Scrollbar for vertical tabs */
 .right-panel__tabs-nav::-webkit-scrollbar-track {
   background: #dccba8;
