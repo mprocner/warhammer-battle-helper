@@ -9,13 +9,13 @@ sheet without opening the creator: the sheet preview is in "My Templates" and in
 when creating a game. Everything saves automatically;
 there is no Save button.
 
-## Two tabs
+## Two tabs {#two-tabs}
 
 - **General** — settings of the whole system: name, description, language, access, dice buttons,
   roll modifier, success levels, token display, sheet width.
 - **Sheet** — building the character sheet field by field.
 
-## Building the sheet
+## Building the sheet {#building-the-sheet}
 
 1. Start with a **section**. A section is a box with a heading that splits fields into columns.
    Sections can be nested and dragged.
@@ -28,7 +28,7 @@ there is no Save button.
 
 The sheet in the creator has the same width and look as in the game.
 
-## Field types
+## Field types {#field-types}
 
 | Group | Field | What for |
 |---|---|---|
@@ -51,7 +51,7 @@ The sheet in the creator has the same width and look as in the game.
 | | Data table | Your own columns for anything that is not rolled, e.g. equipment. You can add preset rows |
 | | Skill tree | Skills in a hierarchy, e.g. a skill and its specialisations |
 
-## Formulas
+## Formulas {#formulas}
 
 Computed fields and weapon damage are built from blocks: attributes, numbers, constants,
 operators (`+ − × ÷`), brackets and dice. Example: damage `d6 + STR + 2` shows in the log as
@@ -63,7 +63,7 @@ each weapon. The player field takes a number or dice, e.g. `2`, `-1`, `1d4`, `1d
 **Preset weapons and rows** are entries players add from a list. Those marked **Add when a
 character is created** are already on every new character's sheet as the player's own editable rows.
 
-## Rolls
+## Rolls {#rolls}
 
 In a field's properties (the **Roll** group), tick **Rollable** and pick the **Roll mechanics**:
 
@@ -79,7 +79,7 @@ In a field's properties (the **Roll** group), tick **Rollable** and pick the **R
 
 A weapon roll works the same way: the target is the value of the skill picked in the skill column.
 
-## Roll modifier
+## Roll modifier {#roll-modifier}
 
 The **Roll modifier** card in the General tab. With **Ask for a modifier before rolling** on,
 every roll from the sheet first opens a small prompt. When it is off, clicking rolls straight away.
@@ -87,7 +87,7 @@ every roll from the sheet first opens a small prompt. When it is off, clicking r
 The **Modifier type** is one of two: **Number** or **Edge and setback dice**. A template always has
 just one type. Switching does not erase the other type's settings, so you can come back to them.
 
-### Number
+### Number {#number}
 
 The player types a number (Enter confirms, Escape cancels) or clicks a quick pick.
 
@@ -102,7 +102,7 @@ The player types a number (Enter confirms, Escape cancels) or clicks a quick pic
 makes the roll harder, while one added **to the threshold** makes it easier. If "+20" should mean an
 easier test in your system, choose **To the success threshold**.
 
-### Edge and setback dice
+### Edge and setback dice {#edge-and-setback-dice}
 
 Instead of a number, the player picks how many extra dice to roll from a column of buttons. The `0`
 button appears under the cursor, with edge above it and setback below.
@@ -120,7 +120,7 @@ button appears under the cursor, with edge above it and setback below.
 
 The log shows something like "+2 edge dice" next to the result.
 
-## Success levels
+## Success levels {#success-levels}
 
 The **Success levels** card in the General tab decides how the log grades a roll. It applies to
 every traditional roll with a target (**Result ≤ attribute** or **Result ≥ attribute**), weapon
@@ -133,7 +133,7 @@ attacks included. It does not apply to **Raw result** or dice pools. The target 
 | **Levels per step** | The result with a number of success levels (SL), e.g. "Success! · +1 SL" |
 | **Thresholds** | The name of the threshold reached, in its colour, e.g. "Hard success" |
 
-### Levels per step
+### Levels per step {#levels-per-step}
 
 Set the **Step** (1 to 100, default 10). With a step of 10, the level is the difference between
 the tens digits of the target and of the roll. A failure counts down. Examples for a target of 45
@@ -148,7 +148,7 @@ on a roll-under field:
 
 On a roll-over field the direction is reversed. The creator shows a live example for your step.
 
-### Thresholds
+### Thresholds {#thresholds}
 
 A threshold is a fraction of the target that a roll must reach for that level. The first time
 you open this mode you get a ready set you can change:
@@ -168,7 +168,7 @@ you open this mode you get a ready set you can change:
 - Every row has its own **Colour**, which the log uses for the result.
 - Thresholds only apply to **roll-under** fields. A roll-over field shows just success or failure.
 
-### Good to know
+### Good to know {#good-to-know}
 
 - Turning success levels off keeps your thresholds. They come back when you switch to
   **Thresholds** again.
@@ -178,13 +178,13 @@ you open this mode you get a ready set you can change:
 - The card is available only for your own systems. Variants of built-in systems grade rolls their
   own way.
 
-## Token display
+## Token display {#token-display}
 
 In the General tab you decide what a character's token shows on the map: up to 8 ring positions
 (states with levels, counters), squares and bars (e.g. health from a Progress field). Every
 element can be hidden from players by default.
 
-## Sharing
+## Sharing {#sharing}
 
 | Role | Can |
 |---|---|
@@ -198,7 +198,7 @@ description and language help others find the template when creating a game.
 If someone else saved changes while you were editing, or you lost access, the creator stops
 saving and asks what to do.
 
-## After changing a template
+## After changing a template {#after-changing-a-template}
 
 Games use a copy of the template. To give a game the new version, the game master clicks
 **Sync** on the game's card in the game list. Values of fields removed from the template will be

@@ -3,6 +3,7 @@
 // .notes-tab__filter-row renderuje się dopiero przy notes.length > 0 (NotesTab.jsx).
 const notes = {
   id: 'notes',
+  help: 'for-players#handouts-and-notes',
   steps: [
     { id: 'list', target: ['.notes-tab__empty', '.notes-tab__list'], placement: 'left', variants: ['byTarget'] },
     { id: 'add', target: '.notes-tab__add-btn', placement: 'left' },

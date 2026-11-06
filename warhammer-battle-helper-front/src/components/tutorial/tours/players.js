@@ -2,6 +2,7 @@
 // a .players-tab__empty gdy nikt jeszcze nie dołączył.
 const players = {
   id: 'players',
+  help: 'for-game-masters#players',
   steps: [
     { id: 'invite', target: '.players-tab__invite', placement: 'left' },
     { id: 'list', target: ['.players-tab__empty', '.players-tab__list'], placement: 'left', variants: ['byTarget'] },

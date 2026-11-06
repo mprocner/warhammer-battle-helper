@@ -1,4 +1,4 @@
-import { resolveTarget, titleKeyFor, bodyKeyFor, bodyKeysFor, isRevealSatisfied } from './stepResolution';
+import { resolveTarget, titleKeyFor, bodyKeyFor, bodyKeysFor, isRevealSatisfied, helpRefFor } from './stepResolution';
 
 const present = (...selectors) => (sel) => (selectors.includes(sel) ? {} : null);
 
@@ -116,5 +116,28 @@ describe('field-type variants', () => {
 
   it('returns a single key for a step without fallback', () => {
     expect(bodyKeysFor({ id: 'upload' }, 'files', {})).toEqual(['tutorial.files.upload.body']);
+  });
+});
+
+describe('helpRefFor', () => {
+  const tour = { id: 't', help: 'game-screen' };
+
+  it('falls back to the tour help when the step has none', () => {
+    expect(helpRefFor({ id: 'a' }, tour, 'gm')).toBe('game-screen');
+  });
+
+  it('prefers the step help', () => {
+    expect(helpRefFor({ id: 'a', help: 'game-screen#map-tools' }, tour, 'gm')).toBe('game-screen#map-tools');
+  });
+
+  it('picks the entry for the role from a per-role help', () => {
+    const step = { id: 'a', help: { gm: 'for-game-masters#handouts', player: 'for-players#handouts-and-notes' } };
+    expect(helpRefFor(step, tour, 'player')).toBe('for-players#handouts-and-notes');
+    expect(helpRefFor(step, tour, 'gm')).toBe('for-game-masters#handouts');
+    expect(helpRefFor(step, tour, null)).toBeNull();
+  });
+
+  it('returns null when neither the step nor the tour has help', () => {
+    expect(helpRefFor({ id: 'a' }, { id: 't' }, 'gm')).toBeNull();
   });
 });

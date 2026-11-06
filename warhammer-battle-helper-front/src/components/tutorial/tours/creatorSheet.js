@@ -4,6 +4,7 @@
 // anchors: a pill is invisible until hovered.
 const creatorSheet = {
   id: 'creatorSheet',
+  help: 'system-creator#building-the-sheet',
   steps: [
     { id: 'palette', target: '.creator__palette', placement: 'right' },
     { id: 'canvas', target: ['.creator__canvas-empty', '.creator__sheet-stack'], placement: 'auto', variants: ['byTarget'] },

@@ -70,6 +70,7 @@
     "add": "Dodaj"
   },
   "navigation": {
+    "help": "Pomoc",
     "title": "RollHammer",
     "login": "Zaloguj",
     "logout": "Wyloguj",
@@ -863,7 +864,23 @@
       }
     }
   },
+  "help": {
+    "title": "Pomoc",
+    "navLabel": "Strony pomocy",
+    "loading": "Wczytywanie…",
+    "loadError": "Nie udało się wczytać tej strony pomocy. Sprawdź połączenie i odśwież stronę.",
+    "pages": {
+      "home": "Przegląd",
+      "getting-started": "Pierwsze kroki",
+      "game-screen": "Ekran gry",
+      "for-players": "Dla gracza",
+      "for-game-masters": "Dla mistrza gry",
+      "system-creator": "Kreator systemów",
+      "dice-and-chat": "Kości i czat"
+    }
+  },
   "tutorial": {
+    "moreInHelp": "Więcej w pomocy",
     "button": "Pokaż samouczek",
     "next": "Dalej",
     "back": "Wstecz",

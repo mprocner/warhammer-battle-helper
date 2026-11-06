@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { MenuBook as MenuBookIcon } from '@mui/icons-material';
 import './GameTour.css';
 
 // Kształt propsów narzuca react-joyride (tooltipComponent). Renderujemy własny
@@ -20,6 +21,18 @@ const TourTooltip = ({
     <div className="tour-tooltip" {...tooltipProps}>
       {step.title && <h3 className="tour-tooltip__title">{step.title}</h3>}
       <div className="tour-tooltip__body">{step.content}</div>
+      {/* A new tab, so following the link never ends the tour or leaves the game. */}
+      {step.data?.helpHref && (
+        <a
+          className="tour-tooltip__help-link"
+          href={step.data.helpHref}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <MenuBookIcon fontSize="inherit" />
+          {t('tutorial.moreInHelp')}
+        </a>
+      )}
       <div className="tour-tooltip__footer">
         <span className="tour-tooltip__progress">
           {t('tutorial.progress', { current: index + 1, total: size })}

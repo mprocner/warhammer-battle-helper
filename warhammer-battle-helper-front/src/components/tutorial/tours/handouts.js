@@ -5,6 +5,7 @@
 // więc krok o tworzeniu wypada graczowi sam, bez deklaracji roles.
 const handouts = {
   id: 'handouts',
+  help: { gm: 'for-game-masters#handouts', player: 'for-players#handouts-and-notes' },
   steps: [
     { id: 'list', target: ['.handouts-tab__empty', '.handouts-tab__list'], placement: 'left', variants: ['byTarget', 'byRole'] },
     { id: 'create', target: '.handouts-tab__header-actions', placement: 'left' },

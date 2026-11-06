@@ -1,12 +1,12 @@
 # For game masters
 
-## Players
+## Players {#players}
 
 In the **Players** tab, type the email of the player's account. The player is added right
 away: nothing is sent and they do not have to confirm anything. This is also where you remove
 a player from the game. Their character stays, so you can hand it to someone else.
 
-## Characters and NPCs
+## Characters and NPCs {#characters-and-npcs}
 
 - The **NPC List** on the left is visible only to you.
 - **Manage Visibility** decides which players can open a character's sheet.
@@ -15,7 +15,7 @@ a player from the game. Their character stays, so you can hand it to someone els
   is seen only by people with access to the sheet, and you see it dimmed. You can also mark a
   character as **Killed**.
 
-## Scenes
+## Scenes {#scenes}
 
 In the **Scenes** tab:
 1. Create a scene: a name and a grid size (up to 50×50).
@@ -35,7 +35,7 @@ hidden traps. Move an image between layers from its right-click menu.
 a line. You can undo the last stroke, reveal everything or clear the fog. To you the fog is
 see-through (there is an opacity slider), to players it is solid.
 
-## Tokens: states and bars
+## Tokens: states and bars {#tokens-states-and-bars}
 
 A token can show a ring of states (for example bleeding, stunned) with levels, counters and
 bars (for example health). Left-click a state to raise its level, right-click to lower it.
@@ -43,32 +43,32 @@ Every element can be hidden from players, and a bar can hide just its numbers. T
 all characters is set in the System Creator (**Token display**), and you can fine-tune a single
 token in its configuration.
 
-## Handouts
+## Handouts {#handouts}
 
 The **Handout** button in the tab header (or **Add Handout** inside a folder) uploads an image, a PDF or a text file and asks who should see it: everyone or
 chosen players. Nothing is shared until you choose. Organise handouts in folders and drag them
 to change the order.
 
-## Files
+## Files {#files}
 
 The **Files** tab is your image library: maps, tokens, portraits. It is shared across all your
 games. Organise files in folders, crop, rename and delete them. Before deleting, the app shows
 which games use the file.
 
-## Music
+## Music {#music}
 
 In the **Music** tab you upload tracks (MP3, WAV) and organise them in folders and playlists
 (tavern, battle, travel…). Everyone hears playback at the same moment, and a player who joins
 mid-track hears it from the right spot. The volume slider in this tab changes the volume for
 the whole table. Each player also has their own slider.
 
-## Minigames
+## Minigames {#minigames}
 
 The **Games** tab: pick Yahtzee or dice poker and the players who are online. The board pops up
 for everyone, the chosen players take turns and the rest watch. One minigame runs at a time.
 If the server restarts, a running minigame ends.
 
-## Template and sync
+## Template and sync {#template-and-sync}
 
 A game uses the copy of the system template from the moment it was created. After changing the
 template in the creator, click **Sync** on the game's card in the game list. Values of fields

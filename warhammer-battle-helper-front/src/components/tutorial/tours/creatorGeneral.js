@@ -3,16 +3,17 @@
 // drop out by themselves - the tabs step anchors on a nav modifier set only when both tabs exist.
 const creatorGeneral = {
   id: 'creatorGeneral',
+  help: 'system-creator#two-tabs',
   steps: [
     { id: 'name', target: '.creator__name-input', placement: 'bottom' },
     { id: 'tabs', target: '.creator__tab-nav--two-tabs', placement: 'bottom' },
-    { id: 'visibility', target: '.creator__settings-card--visibility', placement: 'auto' },
+    { id: 'visibility', target: '.creator__settings-card--visibility', placement: 'auto', help: 'system-creator#sharing' },
     { id: 'about', target: '.creator__settings-card--about', placement: 'auto' },
     { id: 'sheetWidth', target: '.creator__settings-card--sheet-width', placement: 'auto' },
-    { id: 'dice', target: '.creator__settings-card--dice', placement: 'auto' },
-    { id: 'modifier', target: '.creator__settings-card--modifier', placement: 'auto' },
-    { id: 'successLevels', target: '.creator__settings-card--success-levels', placement: 'auto' },
-    { id: 'token', target: '.creator__settings-card--token', placement: 'auto' },
+    { id: 'dice', target: '.creator__settings-card--dice', placement: 'auto', help: 'system-creator#rolls' },
+    { id: 'modifier', target: '.creator__settings-card--modifier', placement: 'auto', help: 'system-creator#roll-modifier' },
+    { id: 'successLevels', target: '.creator__settings-card--success-levels', placement: 'auto', help: 'system-creator#success-levels' },
+    { id: 'token', target: '.creator__settings-card--token', placement: 'auto', help: 'system-creator#token-display' },
     { id: 'help', target: '.creator__tour-btn', placement: 'bottom' },
   ],
 };

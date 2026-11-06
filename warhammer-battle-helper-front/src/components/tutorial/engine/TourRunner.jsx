@@ -3,6 +3,7 @@ import { Joyride, ACTIONS, EVENTS, STATUS } from 'react-joyride';
 import { useTranslation } from 'react-i18next';
 import { titleKeyFor } from './stepResolution';
 import TourTooltip from './TourTooltip';
+import { helpHref } from '../../../help/helpPages';
 import { useSpotlightClip } from './spotlightClip';
 
 // react-joyride 3.x keeps look and behaviour in `options` (2.x had separate
@@ -46,6 +47,8 @@ const TourRunner = ({ tourId, steps, stepIndex, running, goTo, finish, contentFo
       placement: step.placement,
       title: t(titleKeyFor(step, tourId)),
       content: contentFor(step),
+      // Joyride hands `data` to the tooltip untouched - the link to the matching help section.
+      data: { helpHref: step.helpRef ? helpHref(step.helpRef) : null },
     })),
     // i18n.language: a language switch mid-tour must rebuild the texts; `t` alone does not
     // guarantee a recompute.

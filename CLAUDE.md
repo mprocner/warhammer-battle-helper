@@ -70,6 +70,9 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
   jako `disabled` przez prop bramkujący (`showAffordances`), nie
   pomijaj. Kontrolka, której kreator nie pokazuje,
   to kontrolka, o której szerokość wiersza kłamie.
+- **Samouczek linkuje do pomocy.** Samouczek (i opcjonalnie pojedynczy krok) ma pole `help` —
+  referencję `'<strona>#<kotwica>'` albo obiekt `{ gm, player }`. Dymek pokazuje wtedy link
+  „Więcej w pomocy” otwierany w nowej karcie. Nowy samouczek bez `help` wywala test.
 - **Kreator ma tutorial** (`src/components/tutorial/tours/creator*.js` + klucze `tutorial.creator*`
   w en/pl). Przy każdej zmianie w kreatorze — nowy typ pola, nowa grupa w panelu właściwości, nowa
   karta w zakładce Ogólne, zmiana klasy będącej kotwicą kroku, zmiana znaczenia sekcji — sprawdź,
@@ -105,9 +108,14 @@ Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na 
 - Brak backward compat — stare dane można usunąć
 - **Baza wiedzy idzie razem z kodem.** Zmiana zachowania funkcji (nowa funkcja, zmiana tego, co
   widzi lub może zrobić użytkownik) = aktualizacja pliku obszaru w `docs/knowledge-base/`, a potem
-  odpowiednich stron w `docs/user-guide/pl/` **i** `docs/user-guide/en/`. Nowa funkcja to też
+  odpowiednich stron przewodnika w `warhammer-battle-helper-front/src/help/pl/` **i** `.../en/`
+  (to treść strony `/help` w aplikacji). Nowa funkcja to też
   wiersz w `docs/knowledge-base/00-inwentaryzacja.md`. Zmiany czysto techniczne (refaktor, testy)
   ruszają tylko bazę, i to tylko gdy zmieniają opisany mechanizm albo pułapkę.
+- **Przewodnik ma stałe kotwice.** Każdy nagłówek `##`/`###` kończy się `{#id}` (angielski slug),
+  identycznym w pl i en — na nich wiszą linki z dymków samouczka (`help` w `tours/*.js`).
+  Nowa sekcja = ta sama kotwica w obu językach, w tej samej kolejności; zmiana nazwy kotwicy =
+  poprawka referencji w samouczkach. Pilnuje tego `src/help/helpPages.test.js`.
 
 ### Zdarzenia myszy na scenie
 

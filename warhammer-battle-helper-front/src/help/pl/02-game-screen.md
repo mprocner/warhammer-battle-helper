@@ -14,7 +14,7 @@ Zminimalizowane okno trafia na pasek u góry, więc nic nie ginie za mapą. Kart
 też otworzyć w osobnej karcie przeglądarki (ikona zwoju przy imieniu), co przydaje się na
 drugim monitorze.
 
-## Sterowanie mapą
+## Sterowanie mapą {#map-controls}
 
 Schemat wybierasz w zakładce **Ogólne**:
 
@@ -28,7 +28,7 @@ W obu schematach:
 - przeciągnięcie po pustej mapie zaznacza kilka tokenów naraz (z Shiftem dodaje do zaznaczenia),
 - środkowy przycisk myszy przełącza kolejne narzędzia.
 
-## Narzędzia mapy
+## Narzędzia mapy {#map-tools}
 
 | Narzędzie | Kto | Do czego |
 |---|---|---|
@@ -43,7 +43,9 @@ lub usuwanie obrazków działa tylko na warstwie wybranej w selektorze warstw. R
 **Ping.** Przytrzymaj lewy przycisk w miejscu na pustej mapie przez około pół sekundy, nie
 ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 
-## Samouczki
+## Samouczki {#tutorials}
 
 Przy pierwszym wejściu do gry uruchamia się samouczek ekranu. Możesz go powtórzyć znakiem
-zapytania w nagłówku panelu. Zakładki mają własne, krótkie samouczki.
+zapytania w nagłówku panelu. Zakładki mają własne, krótkie samouczki. Dymek samouczka ma link
+**Więcej w pomocy**, który otwiera w nowej karcie odpowiednią sekcję tego przewodnika — gra
+zostaje otwarta tam, gdzie była.
