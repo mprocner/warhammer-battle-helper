@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Container, Box, Paper, Typography, Chip, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import MapIcon from '@mui/icons-material/Map';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
@@ -11,6 +12,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SchoolIcon from '@mui/icons-material/School';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PublicIcon from '@mui/icons-material/Public';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import BuildIcon from '@mui/icons-material/Build';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -28,6 +30,7 @@ export const SECTION_ICONS = {
     minigames: SportsEsportsIcon,
     tutorials: SchoolIcon,
     accounts: AccountCircleIcon,
+    site: PublicIcon,
     added: AutoAwesomeIcon,
     changed: BuildIcon,
     fixed: BugReportIcon,
@@ -39,6 +42,7 @@ const formatDate = (iso, language) =>
 
 const Changelog = () => {
     const { t, i18n } = useTranslation('changelog');
+    usePageTitle(t('title'));
 
     useEffect(() => {
         markLatestSeen();

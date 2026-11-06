@@ -1,5 +1,24 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// Fonts are bundled and served from our own origin. Loading them from fonts.googleapis.com
+// would send every visitor's IP address to Google before they answer the consent banner.
+// Only the weights and styles the UI uses are imported; each file covers latin + latin-ext
+// (Polish diacritics) through unicode-range, so the browser fetches just the subsets it needs.
+import '@fontsource/cinzel/400.css';
+import '@fontsource/cinzel/600.css';
+import '@fontsource/cinzel/700.css';
+import '@fontsource/cinzel/900.css';
+import '@fontsource/crimson-text/400.css';
+import '@fontsource/crimson-text/400-italic.css';
+import '@fontsource/crimson-text/600.css';
+import '@fontsource/crimson-text/600-italic.css';
+import '@fontsource/crimson-text/700.css';
+import '@fontsource/crimson-text/700-italic.css';
+import '@fontsource/im-fell-dw-pica/400.css';
+import '@fontsource/im-fell-dw-pica/400-italic.css';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';

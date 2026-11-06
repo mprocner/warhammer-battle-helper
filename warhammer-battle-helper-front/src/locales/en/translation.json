@@ -85,6 +85,22 @@
   "footer": {
     "label": "Site links"
   },
+  "pageTitle": {
+    "landing": "Virtual tabletop for RPGs",
+    "login": "Log in",
+    "register": "Create an account",
+    "forgotPassword": "Forgot password",
+    "resetPassword": "Set a new password",
+    "verifyEmail": "Email verification",
+    "games": "Your games",
+    "settings": "Settings",
+    "privacy": "Privacy policy",
+    "terms": "Terms of service",
+    "licenses": "Licenses",
+    "contact": "Contact",
+    "help": "Help",
+    "characterSheet": "Character sheet"
+  },
   "licenses": {
     "title": "Licenses",
     "intro": "Third-party material used in this app and the licences it is used under.",

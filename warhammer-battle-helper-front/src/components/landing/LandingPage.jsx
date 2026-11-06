@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../../hooks/usePageTitle';
 import MapIcon from '@mui/icons-material/Map';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
@@ -17,6 +18,7 @@ const FEATURES = [
 
 const LandingPage = ({ user }) => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.landing'));
     const featuresRef = useRef(null);
     const [zoomedKey, setZoomedKey] = useState(null);
     const zoomed = FEATURES.find(feature => feature.key === zoomedKey);

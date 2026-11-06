@@ -1,6 +1,8 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "PlayRPG",
+  "name": "PlayRPG",
+  "description": "Wirtualny stół do gier fabularnych online: mapy z mgłą wojny, własne karty postaci, kości i czat.",
+  "lang": "pl",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +22,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#e8dcc4",
+  "background_color": "#e8dcc4"
 }

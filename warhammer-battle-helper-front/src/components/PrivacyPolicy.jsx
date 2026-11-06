@@ -1,6 +1,7 @@
 import React from 'react';
 import { Container, Box, Paper, Typography, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import PrivacySettings from './settings/PrivacySettings';
 import { PROVIDER_NAME, CONTACT_EMAIL } from '../legal/legalInfo';
 
@@ -15,6 +16,7 @@ const SECTIONS = [
 
 const PrivacyPolicy = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.privacy'));
 
     return (
         <Container component="main" maxWidth="md">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Box, Paper, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../../hooks/usePageTitle';
 import SettingsSidebar from './SettingsSidebar';
 import ChangePasswordForm from './ChangePasswordForm';
 import AccountSettingsForm from './AccountSettingsForm';
@@ -16,6 +17,7 @@ const SECTION_COMPONENTS = {
 
 const SettingsPage = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.settings'));
     const [activeSection, setActiveSection] = useState('account');
 
     return (

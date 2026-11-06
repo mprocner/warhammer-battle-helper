@@ -17,6 +17,7 @@ export const RELEASES = [
       { id: 'minigames', items: ['dice'] },
       { id: 'tutorials', items: ['tours', 'help', 'links'] },
       { id: 'accounts', items: ['register', 'profile', 'stats', 'language', 'legal', 'contact'] },
+      { id: 'site', items: ['fonts', 'linkPreview', 'pageTitles'] },
     ],
   },
 ];

@@ -10,4 +10,9 @@ describe('Licenses', () => {
     expect(screen.getByRole('link', { name: i18n.t('licenses.ccLink') }))
       .toHaveAttribute('href', 'https://creativecommons.org/licenses/by/4.0/legalcode');
   });
+
+  it('names the browser tab in the interface language', () => {
+    render(<Licenses />);
+    expect(document.title).toBe(`${i18n.t('pageTitle.licenses')} · PlayRPG`);
+  });
 });

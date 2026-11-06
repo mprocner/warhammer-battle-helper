@@ -21,6 +21,7 @@ import {
 import { Send as SendIcon } from '@mui/icons-material';
 import { getApiUrl, getApiHeaders } from '../api/apiUrl';
 import { CONTACT_EMAIL } from '../legal/legalInfo';
+import usePageTitle from '../hooks/usePageTitle';
 
 export const CONTACT_TYPES = ['bug', 'content', 'other'];
 
@@ -60,6 +61,7 @@ const initialType = (searchParams) => {
 // never sent to analytics.
 const Contact = ({ user }) => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.contact'));
     const [searchParams] = useSearchParams();
     const [type, setType] = useState(() => initialType(searchParams));
     const [email, setEmail] = useState(user?.email || '');

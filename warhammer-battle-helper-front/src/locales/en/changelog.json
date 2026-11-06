@@ -13,6 +13,7 @@
     "minigames": "Minigames",
     "tutorials": "Help",
     "accounts": "Account",
+    "site": "Website",
     "added": "New",
     "changed": "Changed",
     "fixed": "Fixed"
@@ -79,6 +80,11 @@
         "language": "The interface in English and Polish.",
         "legal": "Cookie consent, privacy policy, terms of service and licenses.",
         "contact": "A Contact page with a form: report a bug or send feedback, report illegal or rule-breaking content (no account needed) and other messages."
+      },
+      "site": {
+        "fonts": "Fonts are served by PlayRPG itself; opening the site sends nothing to Google before you agree to statistics.",
+        "linkPreview": "Links to PlayRPG shared in messengers and on social media show a preview card with the logo.",
+        "pageTitles": "Every page names its browser tab, and a game tab shows the game's name."
       }
     }
   }

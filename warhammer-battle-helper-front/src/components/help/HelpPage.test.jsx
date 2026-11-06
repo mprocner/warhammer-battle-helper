@@ -85,4 +85,16 @@ describe('HelpPage', () => {
     renderAt('/help/nope');
     expect(await screen.findByRole('heading', { level: 1, name: /user guide/ })).toBeInTheDocument();
   });
+
+  it('names the browser tab after the open guide page', async () => {
+    renderAt('/help/getting-started');
+    await screen.findByRole('heading', { level: 1, name: 'Getting started' });
+    expect(document.title).toBe('Getting started · Help · PlayRPG');
+  });
+
+  it('names the overview just "Help"', async () => {
+    renderAt('/help');
+    await screen.findByRole('heading', { level: 1, name: /user guide/ });
+    expect(document.title).toBe('Help · PlayRPG');
+  });
 });

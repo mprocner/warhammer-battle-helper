@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import PendingInviteHint from '../invite/PendingInviteHint';
+import usePageTitle from '../hooks/usePageTitle';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import {
@@ -19,6 +20,7 @@ import { Login as LoginIcon } from '@mui/icons-material';
 
 const Login = ({ onLogin, addLogMessage }) => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.login'));
     const [formData, setFormData] = useState({
         email: '',
         password: ''

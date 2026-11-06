@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../../hooks/usePageTitle';
 import Markdown from 'markdown-to-jsx';
 import { MenuBook as MenuBookIcon } from '@mui/icons-material';
 import {
@@ -66,6 +67,8 @@ const HelpPage = () => {
   const [state, setState] = useState({ key: null, markdown: '', error: false });
   const key = `${language}/${page}`;
   const known = isHelpPage(page);
+  // "Getting started · Help · PlayRPG"; the overview page is just "Help · PlayRPG".
+  usePageTitle(known && page !== 'home' ? `${t(`help.pages.${page}`)} · ${t('pageTitle.help')}` : t('pageTitle.help'));
 
   useEffect(() => {
     if (!known) return undefined;

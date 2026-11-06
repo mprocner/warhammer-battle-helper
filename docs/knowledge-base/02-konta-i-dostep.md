@@ -70,7 +70,7 @@ adres źródłowy, nie jest zaufany i nie może podmienić IP nagłówkiem.
 | Front: kontakt | `src/components/Contact.jsx` |
 | Front: logowanie, rejestracja, reset | `src/components/Login.jsx`, `Register.jsx`, `ForgotPassword.jsx`, `ResetPassword.jsx`, `EmailVerification.jsx` |
 | Front: ustawienia | `src/components/settings/` |
-| Zgoda na cookies, strony prawne | `src/components/consent/`, `PrivacyPolicy.jsx`, `TermsOfService.jsx`, `Licenses.jsx` |
+| Zgoda na cookies, strony prawne | `src/components/consent/`, `PrivacyPolicy.jsx`, `TermsOfService.jsx`, `Licenses.jsx` — mechanizm zgody i GA: [12-prywatnosc-i-seo.md](12-prywatnosc-i-seo.md) |
 | Panel admina | `warhammer-battle-helper-admin/src/` (users, games, stats, systems) |
 
 ## Pułapki

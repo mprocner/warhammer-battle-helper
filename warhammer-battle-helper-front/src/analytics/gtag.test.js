@@ -268,4 +268,26 @@ describe('clearGaCookies (przez disable())', () => {
 
     cookieSetSpy.mockRestore();
   });
+
+  // Production case: on the apex host gtag's cookie_domain 'auto' writes _ga and
+  // _ga_<ID without "G-"> with domain=.playrpg.net. A host-only delete (no domain attribute)
+  // does not match a domain cookie, so the .playrpg.net variant is the one that matters.
+  it('on playrpg.net deletes _ga and the _ga_<ID> session cookie with domain=.playrpg.net', () => {
+    setHostname('playrpg.net');
+    document.cookie = '_ga=GA1.1.123; path=/';
+    document.cookie = '_ga_TEST123=GS1.1.456; path=/';
+
+    const cookieSetSpy = jest.spyOn(document, 'cookie', 'set');
+    const gtag = loadModule();
+    gtag.enable();
+    gtag.disable();
+
+    const assignments = cookieSetSpy.mock.calls.map((call) => call[0]);
+    ['_ga', '_ga_TEST123'].forEach((name) => {
+      expect(assignments).toContain(`${name}=; Max-Age=0; path=/; domain=.playrpg.net`);
+      expect(assignments).toContain(`${name}=; Max-Age=0; path=/`);
+    });
+
+    cookieSetSpy.mockRestore();
+  });
 });

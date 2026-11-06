@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation, Trans } from 'react-i18next';
 import PendingInviteHint from '../invite/PendingInviteHint';
+import usePageTitle from '../hooks/usePageTitle';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import {
@@ -21,6 +22,7 @@ import { PersonAdd as PersonAddIcon } from '@mui/icons-material';
 
 const Register = ({ onRegisterSuccess, addLogMessage }) => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.register'));
     const [formData, setFormData] = useState({
         email: '',
         password: '',

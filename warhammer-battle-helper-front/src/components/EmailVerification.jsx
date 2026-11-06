@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { trackEvent } from '../analytics/gtag';
 import axios from 'axios';
@@ -16,6 +17,7 @@ import { CheckCircle as CheckCircleIcon, Error as ErrorIcon } from '@mui/icons-m
 
 const EmailVerification = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.verifyEmail'));
     const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
     const called = useRef(false);
 

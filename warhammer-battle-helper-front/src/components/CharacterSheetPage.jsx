@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import axiosInstance from '../api/axios';
 import { getSystem, normalizeCharacter } from '../systems/registry';
 import useWebSocket from '../hooks/useWebSocket';
@@ -27,6 +28,8 @@ function CharacterSheetPage() {
     const [game, setGame] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // A standalone sheet window is easiest to find among tabs by the character's name.
+    usePageTitle(character?.name || t('pageTitle.characterSheet'));
 
     useEffect(() => {
         if (!characterId || !gameId) {

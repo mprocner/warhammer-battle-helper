@@ -1,12 +1,14 @@
 import React from 'react';
 import { Container, Box, Paper, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import { PROVIDER_NAME, CONTACT_EMAIL, TERMS_EFFECTIVE_DATE } from '../legal/legalInfo';
 
 // Section and paragraph numbers are generated here, not written in the text, so inserting a
 // section never leaves stale numbering behind.
 const TermsOfService = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.terms'));
     const sections = t('terms.sections', {
         returnObjects: true,
         name: PROVIDER_NAME,

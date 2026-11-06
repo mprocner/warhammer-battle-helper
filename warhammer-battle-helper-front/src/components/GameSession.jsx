@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Box, Button, Typography, Alert, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import ConfirmModal from './common/ConfirmModal';
 import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
@@ -39,6 +40,8 @@ const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED
 const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }) => {
   const { t } = useTranslation();
   const [gameState, setGameState] = useState(null);
+  // The tab shows the game's name once it has loaded; the lobby title covers the fetch.
+  usePageTitle(gameState?.name || t('pageTitle.games'));
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);

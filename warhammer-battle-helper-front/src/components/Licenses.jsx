@@ -1,6 +1,7 @@
 import React from 'react';
 import { Container, Box, Paper, Typography, Link } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 
 // CC-BY-4.0 attribution required by the SRD licence. Reproduced verbatim from the official
 // SRD 5.2.1 "Legal Information" page, so it deliberately bypasses i18n: a translated notice is no
@@ -12,6 +13,7 @@ const CC_BY_URL = 'https://creativecommons.org/licenses/by/4.0/legalcode';
 
 const Licenses = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.licenses'));
 
     return (
         <Container component="main" maxWidth="md">

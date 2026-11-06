@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
@@ -17,6 +18,7 @@ import { LockReset as LockResetIcon } from '@mui/icons-material';
 
 const ForgotPassword = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.forgotPassword'));
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);

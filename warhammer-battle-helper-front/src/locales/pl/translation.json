@@ -85,6 +85,22 @@
   "footer": {
     "label": "Linki serwisu"
   },
+  "pageTitle": {
+    "landing": "Wirtualny stół do gier RPG",
+    "login": "Logowanie",
+    "register": "Rejestracja",
+    "forgotPassword": "Przypomnienie hasła",
+    "resetPassword": "Nowe hasło",
+    "verifyEmail": "Weryfikacja e-maila",
+    "games": "Twoje gry",
+    "settings": "Ustawienia",
+    "privacy": "Polityka prywatności",
+    "terms": "Regulamin",
+    "licenses": "Licencje",
+    "contact": "Kontakt",
+    "help": "Pomoc",
+    "characterSheet": "Karta postaci"
+  },
   "licenses": {
     "title": "Licencje",
     "intro": "Materiały zewnętrzne użyte w aplikacji oraz licencje, na podstawie których z nich korzystamy.",

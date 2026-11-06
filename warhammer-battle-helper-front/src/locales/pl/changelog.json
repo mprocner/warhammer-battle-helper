@@ -13,6 +13,7 @@
     "minigames": "Minigry",
     "tutorials": "Pomoc",
     "accounts": "Konto",
+    "site": "Strona",
     "added": "Nowe",
     "changed": "Zmiany",
     "fixed": "Poprawki"
@@ -79,6 +80,11 @@
         "language": "Interfejs po polsku i angielsku.",
         "legal": "Zgoda na cookies, polityka prywatności, regulamin i licencje.",
         "contact": "Strona Kontakt z formularzem: zgłoszenie błędu lub opinii, zgłoszenie treści naruszającej prawo lub Regulamin (także bez konta) i inne wiadomości."
+      },
+      "site": {
+        "fonts": "Czcionki serwuje sam PlayRPG; otwarcie strony nie wysyła niczego do Google, zanim zgodzisz się na statystyki.",
+        "linkPreview": "Linki do PlayRPG wysłane w komunikatorze lub na portalu społecznościowym pokazują podgląd z logo.",
+        "pageTitles": "Każda strona ma własny tytuł w karcie przeglądarki, a karta gry pokazuje nazwę gry."
       }
     }
   }

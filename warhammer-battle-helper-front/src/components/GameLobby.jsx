@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import { Alert, Box, Button, Card, Container, Link, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { LATEST_VERSION } from '../changelog/releases';
@@ -21,6 +22,7 @@ import ConfirmDialog from './lobby/ConfirmDialog';
 // mounted underneath, so closing one always reveals the step the user came from.
 const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) => {
   const { t } = useTranslation();
+  usePageTitle(t('pageTitle.games'));
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
 
   const {

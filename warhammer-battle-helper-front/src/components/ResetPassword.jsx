@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import usePageTitle from '../hooks/usePageTitle';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import {
     Container,
@@ -17,6 +18,7 @@ import { CheckCircle as CheckCircleIcon, LockReset as LockResetIcon } from '@mui
 
 const ResetPassword = () => {
     const { t } = useTranslation();
+    usePageTitle(t('pageTitle.resetPassword'));
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);

@@ -15,6 +15,14 @@ import plArmour from './locales/pl/armour.json';
 import enChangelog from './locales/en/changelog.json';
 import plChangelog from './locales/pl/changelog.json';
 
+// index.html ships lang="pl" (the primary audience, and what crawlers see without JavaScript).
+// Once the app knows the reader's language, <html lang> follows it, so screen readers pronounce
+// the interface correctly and the browser does not offer to translate an English page from Polish.
+// Registered before init(), so the language detected at startup is applied too.
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = i18n.resolvedLanguage || lng;
+});
+
 i18n
   // Detect user language
   .use(LanguageDetector)
