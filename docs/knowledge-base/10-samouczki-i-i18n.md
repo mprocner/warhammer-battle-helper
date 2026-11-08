@@ -45,6 +45,14 @@ trzech miejsc:
   `panelHeader` samouczka `gameScreen`,
 - **zakładka Ogólne** — sekcja „Linki serwisu” z całym `SITE_LINKS`.
 
+Górny pasek (`Navigation.jsx`, PLAYRPG-337) **nie** powiela `SITE_LINKS`: ma tylko język,
+„Co nowego” i „Pomoc” jako przyciski z tekstem oraz przycisk z e-mailem (ten sam styl, bez wielkich liter), który otwiera menu konta
+(Ustawienia, Wyloguj). Wcześniej stały tam same ikony z natywnym `title` (tarcza, młotek, kartka
+dla stron prawnych) i nikt nie wiedział, co robią — tooltip pomaga dopiero po najechaniu, a na
+dotyku wcale. Strony prawne zostały tylko w stopce. Poniżej `md` (900 px) podpisy znikają, a wszystko
+poza logo, językiem i „Zaloguj” trafia do jednego menu „⋮” (z `ChangelogDot`). Pułapka:
+nie dokładaj do paska nowej ikony bez podpisu — zasada to widoczny tekst, nie podpowiedź.
+
 W grze linki otwierają się w nowej karcie, bo przejście w tej samej karcie odmontowałoby
 `GameSession` i zerwało WebSocket.
 

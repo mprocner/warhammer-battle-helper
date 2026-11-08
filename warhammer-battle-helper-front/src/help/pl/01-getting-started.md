@@ -7,7 +7,8 @@
 3. Nie pamiętasz hasła? Na ekranie logowania wybierz przypomnienie. Link do zmiany hasła jest
    ważny godzinę.
 
-W **Ustawieniach** (menu u góry) znajdziesz:
+W **Ustawieniach** (kliknij swój adres e-mail w prawym górnym rogu; tam jest też **Wyloguj**)
+znajdziesz:
 - **Konto** — avatar i podpis, czyli nazwę, pod którą widzą cię inni w grach,
 - **Zmiana hasła**,
 - **Statystyki** — twoje rzuty ze wszystkich gier: liczba, średnia, krytyki i pechowe rzuty,

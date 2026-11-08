@@ -16,5 +16,5 @@ handouty, muzyka i notatki, wszystko na żywo dla całej drużyny.
 **Wskazówka:** prawie każda zakładka ma znak zapytania przy nagłówku. Uruchamia on krótki
 samouczek pokazujący elementy na żywym ekranie. Link **Więcej w pomocy** w dymku samouczka
 otwiera ten przewodnik w nowej karcie, od razu przy właściwej sekcji. Przewodnik jest też pod
-ikoną znaku zapytania w górnym menu i w stopce każdej strony, obok regulaminu, polityki
-prywatności, licencji, kontaktu i listy zmian.
+przyciskiem **Pomoc** w górnym pasku i w stopce każdej strony, obok regulaminu, polityki
+prywatności, licencji, kontaktu i listy zmian. Na telefonie górne linki są pod przyciskiem menu (⋮).

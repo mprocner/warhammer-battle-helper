@@ -87,7 +87,8 @@
         "pageTitles": "Każda strona ma własny tytuł w karcie przeglądarki, a karta gry pokazuje nazwę gry."
       },
       "changed": {
-        "privacy": "Pełniejsza polityka prywatności: jakie dane przechowujemy na serwerze, komu je powierzamy, jak długo je trzymamy, podstawy prawne i Twoje prawa wynikające z RODO."
+        "privacy": "Pełniejsza polityka prywatności: jakie dane przechowujemy na serwerze, komu je powierzamy, jak długo je trzymamy, podstawy prawne i Twoje prawa wynikające z RODO.",
+        "navigation": "Górny pasek ma podpisane przyciski. Ustawienia i Wyloguj są w menu pod Twoim adresem e-mail, strony prawne w stopce, a na telefonie wszystkie linki są pod jednym przyciskiem menu."
       },
       "fixed": {
         "language": "Pokój gry mówi jednym językiem: komunikaty w logu, podpowiedzi przycisków, nazwa pierwszej sceny i komunikaty błędów są w wybranym języku interfejsu."

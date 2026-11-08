@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,7 +9,11 @@ import {
     Box,
     Container,
     IconButton,
-    Chip
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    Divider
 } from '@mui/material';
 import {
     Login as LoginIcon,
@@ -17,19 +21,38 @@ import {
     Logout as LogoutIcon,
     Language as LanguageIcon,
     Settings as SettingsIcon,
-    Policy as PolicyIcon,
-    Gavel as GavelIcon,
-    Description as DescriptionIcon,
     HelpOutline as HelpOutlineIcon,
-    NewReleases as NewReleasesIcon
+    NewReleases as NewReleasesIcon,
+    AccountCircle as AccountCircleIcon,
+    ExpandMore as ExpandMoreIcon,
+    MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 import ChangelogDot from '../changelog/ChangelogDot';
+
+// Every control carries a visible label on wide screens: icons alone left users guessing.
+// Legal pages and contact live in SiteFooter only; on phones the labelled links fold
+// into one overflow menu, since a touch screen has no hover to reveal a hint.
+const WIDE = { xs: 'none', md: 'flex' };
+const NARROW = { xs: 'flex', md: 'none' };
 
 const Navigation = ({ user, onLogout, inGame }) => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
+    const [accountAnchor, setAccountAnchor] = useState(null);
+    const [moreAnchor, setMoreAnchor] = useState(null);
+
+    const closeMenus = () => {
+        setAccountAnchor(null);
+        setMoreAnchor(null);
+    };
+
+    const go = (path) => {
+        closeMenus();
+        navigate(path);
+    };
 
     const handleLogout = () => {
+        closeMenus();
         localStorage.removeItem('token');
         onLogout();
         navigate('/login');
@@ -45,6 +68,19 @@ const Navigation = ({ user, onLogout, inGame }) => {
         return null;
     }
 
+    const languageLabel = t('navigation.languageTitle', { lang: i18n.language.toUpperCase() });
+
+    const accountItems = [
+        <MenuItem key="settings" onClick={() => go('/settings')}>
+            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('navigation.settings')}</ListItemText>
+        </MenuItem>,
+        <MenuItem key="logout" onClick={handleLogout}>
+            <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('navigation.logout')}</ListItemText>
+        </MenuItem>,
+    ];
+
     return (
         <AppBar position="static" elevation={0}>
             <Container maxWidth="xl">
@@ -57,74 +93,56 @@ const Navigation = ({ user, onLogout, inGame }) => {
                         <IconButton
                             color="inherit"
                             onClick={toggleLanguage}
-                            title={t('navigation.languageTitle', { lang: i18n.language.toUpperCase() })}
+                            title={languageLabel}
+                            aria-label={languageLabel}
                         >
                             <LanguageIcon />
                             <Typography variant="caption" sx={{ ml: 0.5 }}>
                                 {i18n.language.toUpperCase()}
                             </Typography>
                         </IconButton>
-                        <IconButton
+                        <Button
                             color="inherit"
+                            startIcon={<NewReleasesIcon />}
                             onClick={() => navigate('/changelog')}
-                            title={t('navigation.changelog')}
+                            sx={{ display: WIDE }}
                         >
-                            <NewReleasesIcon />
+                            {t('navigation.changelog')}
                             <ChangelogDot />
-                        </IconButton>
+                        </Button>
                         {/* I2: Navigation renders for anonymous visitors too (user may be
-                            null), so together with SiteFooter it keeps the privacy policy
-                            reachable after the consent banner is closed. */}
-                        <IconButton
+                            null), so help stays reachable before logging in. */}
+                        <Button
                             color="inherit"
+                            startIcon={<HelpOutlineIcon />}
                             onClick={() => navigate('/help')}
-                            title={t('navigation.help')}
+                            sx={{ display: WIDE }}
                         >
-                            <HelpOutlineIcon />
-                        </IconButton>
-                        <IconButton
-                            color="inherit"
-                            onClick={() => navigate('/privacy')}
-                            title={t('navigation.privacy')}
-                        >
-                            <PolicyIcon />
-                        </IconButton>
-                        <IconButton
-                            color="inherit"
-                            onClick={() => navigate('/licenses')}
-                            title={t('navigation.licenses')}
-                        >
-                            <GavelIcon />
-                        </IconButton>
-                        <IconButton
-                            color="inherit"
-                            onClick={() => navigate('/terms')}
-                            title={t('navigation.terms')}
-                        >
-                            <DescriptionIcon />
-                        </IconButton>
+                            {t('navigation.help')}
+                        </Button>
                         {user ? (
                             <>
-                                <Chip
-                                    label={user.email}
-                                    color="secondary"
-                                    size="small"
-                                    sx={{ display: { xs: 'none', sm: 'flex' } }}
-                                />
-                                <IconButton
-                                    color="inherit"
-                                    onClick={() => navigate('/settings')}
-                                    title={t('navigation.settings')}
-                                >
-                                    <SettingsIcon />
-                                </IconButton>
+                                {/* Same frame as the links beside it; the address keeps its own case. */}
                                 <Button
                                     color="inherit"
-                                    startIcon={<LogoutIcon />}
-                                    onClick={handleLogout}
+                                    startIcon={<AccountCircleIcon />}
+                                    endIcon={<ExpandMoreIcon />}
+                                    onClick={(e) => setAccountAnchor(e.currentTarget)}
+                                    aria-haspopup="menu"
+                                    aria-expanded={Boolean(accountAnchor)}
+                                    sx={{ display: WIDE, textTransform: 'none' }}
                                 >
-                                    {t('navigation.logout')}
+                                    {user.email}
                                 </Button>
+                                <Menu
+                                    anchorEl={accountAnchor}
+                                    open={Boolean(accountAnchor)}
+                                    onClose={closeMenus}
+                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                >
+                                    {accountItems}
+                                </Menu>
                             </>
                         ) : (
                             <>
@@ -140,19 +158,48 @@ const Navigation = ({ user, onLogout, inGame }) => {
                                     color="inherit"
                                     startIcon={<PersonAddIcon />}
                                     onClick={() => navigate('/register')}
-                                    sx={{ display: { xs: 'none', sm: 'flex' } }}
+                                    sx={{ display: WIDE }}
                                 >
                                     {t('navigation.register')}
                                 </Button>
-                                <IconButton
-                                    color="inherit"
-                                    onClick={() => navigate('/register')}
-                                    sx={{ display: { xs: 'flex', sm: 'none' } }}
-                                >
-                                    <PersonAddIcon />
-                                </IconButton>
                             </>
                         )}
+                        <IconButton
+                            color="inherit"
+                            onClick={(e) => setMoreAnchor(e.currentTarget)}
+                            title={t('navigation.menu')}
+                            aria-label={t('navigation.menu')}
+                            aria-haspopup="menu"
+                            aria-expanded={Boolean(moreAnchor)}
+                            sx={{ display: NARROW }}
+                        >
+                            <MoreVertIcon />
+                            <ChangelogDot />
+                        </IconButton>
+                        <Menu
+                            anchorEl={moreAnchor}
+                            open={Boolean(moreAnchor)}
+                            onClose={closeMenus}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        >
+                            <MenuItem onClick={() => go('/changelog')}>
+                                <ListItemIcon><NewReleasesIcon fontSize="small" /></ListItemIcon>
+                                <ListItemText>{t('navigation.changelog')}</ListItemText>
+                                <ChangelogDot inline />
+                            </MenuItem>
+                            <MenuItem onClick={() => go('/help')}>
+                                <ListItemIcon><HelpOutlineIcon fontSize="small" /></ListItemIcon>
+                                <ListItemText>{t('navigation.help')}</ListItemText>
+                            </MenuItem>
+                            <Divider />
+                            {user ? accountItems : (
+                                <MenuItem onClick={() => go('/register')}>
+                                    <ListItemIcon><PersonAddIcon fontSize="small" /></ListItemIcon>
+                                    <ListItemText>{t('navigation.register')}</ListItemText>
+                                </MenuItem>
+                            )}
+                        </Menu>
                     </Box>
                 </Toolbar>
             </Container>

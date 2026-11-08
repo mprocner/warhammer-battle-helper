@@ -18,7 +18,7 @@ export const RELEASES = [
       { id: 'tutorials', items: ['tours', 'help', 'links'] },
       { id: 'accounts', items: ['register', 'profile', 'stats', 'language', 'legal', 'contact'] },
       { id: 'site', items: ['fonts', 'linkPreview', 'pageTitles'] },
-      { id: 'changed', items: ['privacy'] },
+      { id: 'changed', items: ['privacy', 'navigation'] },
       { id: 'fixed', items: ['language'] },
     ],
   },

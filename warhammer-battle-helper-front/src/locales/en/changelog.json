@@ -87,7 +87,8 @@
         "pageTitles": "Every page names its browser tab, and a game tab shows the game's name."
       },
       "changed": {
-        "privacy": "A fuller privacy policy: what data we store on the server, who processes it for us, how long we keep it, the legal bases and your rights under the GDPR."
+        "privacy": "A fuller privacy policy: what data we store on the server, who processes it for us, how long we keep it, the legal bases and your rights under the GDPR.",
+        "navigation": "The top bar labels its buttons. Settings and Logout sit in the menu under your email button, legal pages are in the footer, and on a phone every link is under one menu button."
       },
       "fixed": {
         "language": "The game room speaks one language: log messages, button hints, the first scene name and error messages follow the chosen interface language."

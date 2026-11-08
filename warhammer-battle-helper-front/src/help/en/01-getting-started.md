@@ -7,7 +7,8 @@
 3. Forgot your password? Use the reminder on the login screen. The reset link is valid for
    one hour.
 
-Under **Settings** (top menu) you will find:
+Under **Settings** (click your email in the top right corner; **Logout** is there too) you will
+find:
 - **Account** — your avatar and signature, the name others see in games,
 - **Change Password**,
 - **Statistics** — your rolls across all games: count, average, criticals and fumbles,

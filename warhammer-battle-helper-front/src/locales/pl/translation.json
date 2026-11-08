@@ -83,7 +83,8 @@
     "licenses": "Licencje",
     "terms": "Regulamin",
     "changelog": "Co nowego",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "menu": "Menu"
   },
   "footer": {
     "label": "Linki serwisu"
