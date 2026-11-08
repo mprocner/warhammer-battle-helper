@@ -71,7 +71,7 @@
       "tutorials": {
         "tours": "Interaktywne samouczki: znak zapytania przy nagłówku zakładki oprowadza po ekranie.",
         "help": "Strony pomocy: pełny przewodnik w aplikacji pod Pomoc, z linkami z samouczków.",
-        "links": "Stopka na każdej stronie z regulaminem, polityką prywatności, licencjami, kontaktem, listą zmian i pomocą. W grze przewodnik i lista zmian są obok znaku zapytania samouczka, a zakładka Ogólne zbiera wszystkie te linki."
+        "links": "Stopka na każdej stronie z regulaminem, polityką prywatności, licencjami, kontaktem, listą zmian i pomocą. W grze przewodnik i lista zmian są obok znaku zapytania samouczka, a na dole zakładki Ogólne są wszystkie te linki."
       },
       "accounts": {
         "register": "Konto z weryfikacją e-mail i resetem zapomnianego hasła.",

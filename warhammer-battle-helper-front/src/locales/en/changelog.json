@@ -71,7 +71,7 @@
       "tutorials": {
         "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen.",
         "help": "Help pages: the full user guide inside the app under Help, linked from the tutorials.",
-        "links": "A footer on every page with the terms, privacy policy, licenses, contact, what's new and help. In a game, the guide and what's new sit next to the tutorial question mark, and the General tab lists all of these links."
+        "links": "A footer on every page with the terms, privacy policy, licenses, contact, what's new and help. In a game, the guide and what's new sit next to the tutorial question mark, and the bottom of the General tab lists all of these links."
       },
       "accounts": {
         "register": "An account with email verification and a reset for a forgotten password.",

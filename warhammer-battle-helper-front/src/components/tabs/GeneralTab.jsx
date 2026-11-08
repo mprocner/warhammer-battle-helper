@@ -215,19 +215,6 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
         )}
       </section>
 
-      {/* The site footer is hidden in the game room, so its links live here. New tab, like the
-          version link above: leaving this page would drop the session. */}
-      <section className="general-tab__section">
-        <h4 className="general-tab__section-title">{t('footer.label')}</h4>
-        <nav className="general-tab__site-links" aria-label={t('footer.label')}>
-          {SITE_LINKS.map(({ key, to }) => (
-            <a key={key} className="general-tab__link general-tab__site-link" href={to} target="_blank" rel="noopener noreferrer">
-              {t(`navigation.${key}`)}
-            </a>
-          ))}
-        </nav>
-      </section>
-
       {/* Map Settings — GM only. Shared session rules for the scene map. */}
       {isGM && (
         <section className="general-tab__section">
@@ -445,6 +432,19 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
       <div className="general-tab__logo">
         <img src="/img/logo.png" alt="Warhammer Battle Helper" className="general-tab__logo-img" />
       </div>
+
+      {/* The site footer is hidden in the game room, so its links live here, last like a footer. New tab, like the
+          version link above: leaving this page would drop the session. */}
+      <section className="general-tab__section">
+        <h4 className="general-tab__section-title">{t('footer.label')}</h4>
+        <nav className="general-tab__site-links" aria-label={t('footer.label')}>
+          {SITE_LINKS.map(({ key, to }) => (
+            <a key={key} className="general-tab__link general-tab__site-link" href={to} target="_blank" rel="noopener noreferrer">
+              {t(`navigation.${key}`)}
+            </a>
+          ))}
+        </nav>
+      </section>
 
       {pickedFile && (
         <ImageCropModal

@@ -45,7 +45,8 @@ trzech miejsc:
   `panelHeader` samouczka `gameScreen`. Trzy ikony nie mają natywnego `title` (pojawia się po
   ~1 s), tylko portal tooltip `usePortalTooltip({ placement: 'left' })` — po lewej, bo nagłówek
   leży przy górnej krawędzi i wariant `above` wyszedłby poza ekran,
-- **zakładka Ogólne** — sekcja „Linki serwisu” z całym `SITE_LINKS`.
+- **zakładka Ogólne** — sekcja „Linki serwisu” z całym `SITE_LINKS`, ostatnia w zakładce (pod
+  logo, jak stopka): to rzadko używane linki, więc nie mogą wypychać w dół ustawień gry.
 
 Górny pasek (`Navigation.jsx`, PLAYRPG-337) **nie** powiela `SITE_LINKS`: ma tylko język,
 „Co nowego” i „Pomoc” jako przyciski z tekstem oraz przycisk z e-mailem (ten sam styl, bez wielkich liter), który otwiera menu konta
