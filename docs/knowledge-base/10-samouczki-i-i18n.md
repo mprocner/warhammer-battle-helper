@@ -42,7 +42,9 @@ trzech miejsc:
   więc na krótkich stronach stopka trzyma się dołu. Strona startowa nie ma już własnej stopki,
 - **nagłówek prawego panelu w grze** — obok `?` samouczka są ikony przewodnika i co nowego
   (z kropką `ChangelogDot`). Grupa ma klasę `.panel-header__actions`, która jest kotwicą kroku
-  `panelHeader` samouczka `gameScreen`,
+  `panelHeader` samouczka `gameScreen`. Trzy ikony nie mają natywnego `title` (pojawia się po
+  ~1 s), tylko portal tooltip `usePortalTooltip({ placement: 'left' })` — po lewej, bo nagłówek
+  leży przy górnej krawędzi i wariant `above` wyszedłby poza ekran,
 - **zakładka Ogólne** — sekcja „Linki serwisu” z całym `SITE_LINKS`.
 
 Górny pasek (`Navigation.jsx`, PLAYRPG-337) **nie** powiela `SITE_LINKS`: ma tylko język,

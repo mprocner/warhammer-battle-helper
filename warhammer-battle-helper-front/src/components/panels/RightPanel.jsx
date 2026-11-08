@@ -19,6 +19,7 @@ import PlayersTab from '../tabs/PlayersTab';
 import NotesTab from '../tabs/NotesTab';
 import MinigameTab from '../tabs/MinigameTab';
 import ChangelogDot from '../../changelog/ChangelogDot';
+import { usePortalTooltip } from '../common/PortalTooltip';
 import './RightPanel.css';
 
 /**
@@ -55,6 +56,8 @@ const RightPanel = ({
   onStartTutorial,
 }) => {
   const { t } = useTranslation();
+  // Native title hints wait ~1s; header icons need their meaning shown on hover right away.
+  const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip({ placement: 'left' });
   const [internalActiveTab, setInternalActiveTab] = useState('chat');
   const activeTab = externalActiveTab ?? internalActiveTab;
   const [onlyMyRolls, setOnlyMyRolls] = useState(false);
@@ -227,7 +230,8 @@ const RightPanel = ({
             href="/help"
             target="_blank"
             rel="noopener noreferrer"
-            title={t('navigation.help')}
+            onMouseEnter={e => showTooltip(t('navigation.help'), e.currentTarget)}
+            onMouseLeave={hideTooltip}
             aria-label={t('navigation.help')}
           >
             <MenuBookIcon fontSize="small" />
@@ -237,7 +241,8 @@ const RightPanel = ({
             href="/changelog"
             target="_blank"
             rel="noopener noreferrer"
-            title={t('navigation.changelog')}
+            onMouseEnter={e => showTooltip(t('navigation.changelog'), e.currentTarget)}
+            onMouseLeave={hideTooltip}
             aria-label={t('navigation.changelog')}
           >
             <NewReleasesIcon fontSize="small" />
@@ -247,12 +252,14 @@ const RightPanel = ({
             type="button"
             className="panel-header__help"
             onClick={onStartTutorial}
-            title={t('tutorial.button')}
+            onMouseEnter={e => showTooltip(t('tutorial.button'), e.currentTarget)}
+            onMouseLeave={hideTooltip}
             aria-label={t('tutorial.button')}
           >
             <HelpOutlineIcon fontSize="small" />
           </button>
         </div>
+        {tooltipNode}
       </header>
 
       {/* Tabs Wrapper */}
