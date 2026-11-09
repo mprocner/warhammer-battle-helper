@@ -417,8 +417,10 @@ type Scene struct {
 	SceneMusicType  string               `bson:"sceneMusicType,omitempty" json:"sceneMusicType,omitempty"`
 	SceneMusicName  string               `bson:"sceneMusicName,omitempty" json:"sceneMusicName,omitempty"`
 	SceneMusicLoop  bool                 `bson:"sceneMusicLoop" json:"sceneMusicLoop"`
-	CreatedAt       time.Time            `bson:"createdAt" json:"createdAt"`
-	UpdatedAt       time.Time            `bson:"updatedAt" json:"updatedAt"`
+	// Combat is this scene's initiative tracker (nil = no combat). json:"-" — see models.Combat.
+	Combat    *Combat   `bson:"combat,omitempty" json:"-"`
+	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
 // HandoutFolder represents a folder for organizing handouts
