@@ -30,7 +30,7 @@ albo zaprojektować własny system.
 Gdy prowadzisz jedne gry, a w innych grasz, nad listą pojawiają się przyciski **Wszystkie**,
 **Prowadzę** i **Gram**. Przy więcej niż ośmiu grach dochodzi wyszukiwarka: wpisz fragment nazwy
 gry albo systemu, wielkość liter i polskie znaki nie mają znaczenia. Wybór zostaje w adresie
-strony, więc po wyjściu z gry i po odświeżeniu lista jest dalej zawężona. **Wyczyść filtry**
+strony, więc po wyjściu z gry i po odświeżeniu lista jest dalej zawężona. Gdy nic nie pasuje, **Wyczyść filtry**
 pokazuje znowu wszystko.
 
 ## Tworzenie gry (dla mistrza gry) {#creating-a-game-game-masters}

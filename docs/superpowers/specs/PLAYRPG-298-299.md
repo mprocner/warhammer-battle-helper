@@ -38,7 +38,7 @@ ekranu nowym użytkownikom.
     (przyjmuje już efektywne wartości — ignorowanie ukrytych parametrów robi hook)
   - stała `SEARCH_THRESHOLD = 8`
 - `hooks/useLobbyFilter.js` (nowy) — czyta/zapisuje `role` i `q` z `useSearchParams`, liczy
-  widoczność, zwraca `{ role, query, setRole, setQuery, clear, showRoles, showSearch, visibleGames, isFiltering }`.
+  widoczność, zwraca `{ role, query, setRole, setQuery, clear, showRoles, showSearch, visibleGames }`.
 - `components/lobby/LobbyFilterBar.jsx` (nowy) — chipy (MUI `Chip`, wybrany `filled`, reszta
   `outlined`) po lewej, `TextField` z `SearchIcon` i przyciskiem czyszczenia (`ClearIcon`) po prawej;
   `flexWrap`, na wąskim ekranie się zawija. Nie renderuje się, gdy `!showRoles && !showSearch`.
@@ -53,8 +53,8 @@ bez), `clearFilters`.
 
 ## Dokumentacja
 
-- Changelog: nowa wersja MINOR na początku `RELEASES`, punkt w `added`, teksty
-  `changelog.json` en/pl.
+- Changelog: punkt trafia do sekcji `games` wersji 1.0.0, bo 1.0.0 nie jest jeszcze
+  wdrożone (decyzja z planu) — to nie jest nowa wersja MINOR. Teksty w `changelog.json` en/pl.
 - Baza wiedzy: `docs/knowledge-base/03-gry-i-uczestnicy.md` (akapit o lobby) + wiersz
   w `00-inwentaryzacja.md`.
 - Przewodnik: sekcja `## … {#the-game-list}` w `src/help/{pl,en}/01-getting-started.md`.

@@ -32,9 +32,9 @@ jest.mock('./creator/TemplateBuilder', () => function MockTemplateBuilder() { re
 
 const game = { id: 'g1', name: 'Kampania', gameSystem: 'warhammer4e', status: 'active', participants: [] };
 
-const mount = (games) => {
+const mount = (games, url = '/games') => {
   mockGames = games;
-  return render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><GameLobby onJoinGame={() => {}} token="t" userEmail="gm@x.pl" /></MemoryRouter>);
+  return render(<MemoryRouter initialEntries={[url]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><GameLobby onJoinGame={() => {}} token="t" userEmail="gm@x.pl" /></MemoryRouter>);
 };
 
 test('the header creator button opens the template manager', () => {
@@ -58,4 +58,26 @@ test('the empty lobby explains the invite path and offers both actions', () => {
 test('a lobby with games shows no empty state', () => {
   mount([game]);
   expect(screen.queryByText(i18n.t('game.emptyLobbyTitle'))).not.toBeInTheDocument();
+});
+
+describe('lobby filter wiring', () => {
+  const mk = (id, name, gm) => ({ ...game, id, name, gameMasterEmail: gm });
+
+  test('?role=player shows only the games the user plays in', () => {
+    mount([mk('a', 'RunByMe', 'gm@x.pl'), mk('b', 'PlayedByMe', 'other@x.pl')], '/games?role=player');
+    expect(screen.getByText('PlayedByMe')).toBeInTheDocument();
+    expect(screen.queryByText('RunByMe')).not.toBeInTheDocument();
+  });
+
+  test('a filter that leaves nothing shows the no-results card, and clearing restores the cards', () => {
+    const games = Array.from({ length: 9 }, (_, i) => mk(`g${i}`, `Campaign${i}`, 'gm@x.pl'));
+    mount(games, '/games?q=zzzz');
+    expect(screen.getByText(i18n.t('game.noMatchingGamesQuery', { query: 'zzzz' }))).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('game.emptyLobbyTitle'))).not.toBeInTheDocument();
+    expect(screen.queryByText('Campaign0')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: i18n.t('game.clearFilters') }));
+    games.forEach(g => expect(screen.getByText(g.name)).toBeInTheDocument());
+    expect(screen.queryByText(i18n.t('game.clearFilters'))).not.toBeInTheDocument();
+  });
 });

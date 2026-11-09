@@ -21,7 +21,7 @@ function LobbyFilterBar({ role, query, showRoles, showSearch, onRoleChange, onQu
 
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-      {showRoles ? (
+      {showRoles && (
         <Box role="group" aria-label={t('game.filterRolesLabel')} sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           {ROLE_CHIPS.map(chip => {
             const selected = role === chip.value;
@@ -34,11 +34,11 @@ function LobbyFilterBar({ role, query, showRoles, showSearch, onRoleChange, onQu
             );
           })}
         </Box>
-      ) : <Box />}
+      )}
       {showSearch && (
         <TextField size="small" value={query} onChange={e => onQueryChange(e.target.value)}
           placeholder={t('game.searchGames')}
-          sx={{ minWidth: 240, flex: { xs: '1 1 100%', sm: '0 1 320px' } }}
+          sx={{ ml: 'auto', minWidth: 240, flex: { xs: '1 1 100%', sm: '0 1 320px' } }}
           slotProps={{
             htmlInput: { 'aria-label': t('game.searchGames') },
             input: {

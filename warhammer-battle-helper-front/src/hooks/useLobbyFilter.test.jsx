@@ -24,14 +24,12 @@ describe('useLobbyFilter', () => {
     expect(result.current.filter.role).toBe('gm');
     expect(result.current.filter.query).toBe('G1');
     expect(result.current.filter.visibleGames.map(g => g.name)).toEqual([]); // G1 is not mine
-    expect(result.current.filter.isFiltering).toBe(true);
   });
 
   it('treats an unknown role as all', () => {
     const { result } = setup(many(10), '/games?role=boss');
     expect(result.current.filter.role).toBeNull();
     expect(result.current.filter.visibleGames).toHaveLength(10);
-    expect(result.current.filter.isFiltering).toBe(false);
   });
 
   it('ignores role when the chips are hidden', () => {
@@ -68,9 +66,8 @@ describe('useLobbyFilter', () => {
     expect(result.current.navigationType).toBe('REPLACE');
   });
 
-  it('does not count a whitespace-only query as filtering', () => {
+  it('keeps all games visible for a whitespace-only query', () => {
     const { result } = setup(many(10), '/games?q=%20%20');
-    expect(result.current.filter.isFiltering).toBe(false);
     expect(result.current.filter.visibleGames).toHaveLength(10);
   });
 

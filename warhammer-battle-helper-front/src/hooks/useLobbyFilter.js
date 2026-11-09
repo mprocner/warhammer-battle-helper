@@ -38,8 +38,5 @@ export default function useLobbyFilter(games, userEmail) {
     [games, role, query, userEmail, t],
   );
 
-  return {
-    role, query, setRole, setQuery, clear, showRoles, showSearch, visibleGames,
-    isFiltering: role !== null || query.trim() !== '',
-  };
+  return { role, query, setRole, setQuery, clear, showRoles, showSearch, visibleGames };
 }

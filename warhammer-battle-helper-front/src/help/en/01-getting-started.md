@@ -30,8 +30,8 @@ your own system right away.
 If you run some games and play in others, **All**, **Running** and **Playing** buttons appear
 above the list. With more than eight games you also get a search box: type part of a game or
 system name, letter case and accents do not matter. Your choice stays in the page address, so
-the list is still narrowed after you leave a game or reload. **Clear filters** shows everything
-again.
+the list is still narrowed after you leave a game or reload. When nothing matches, **Clear filters**
+shows everything again.
 
 ## Creating a game (game masters) {#creating-a-game-game-masters}
 
