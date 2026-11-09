@@ -27,6 +27,12 @@ aktywuj z e-maila i zaloguj się w tej samej przeglądarce, a trafisz prosto do 
 nie działa, MG zmienił albo usunął: poproś o nowy. Gdy lista jest pusta, możesz od razu utworzyć grę
 albo zaprojektować własny system.
 
+Gdy prowadzisz jedne gry, a w innych grasz, nad listą pojawiają się przyciski **Wszystkie**,
+**Prowadzę** i **Gram**. Przy więcej niż ośmiu grach dochodzi wyszukiwarka: wpisz fragment nazwy
+gry albo systemu, wielkość liter i polskie znaki nie mają znaczenia. Wybór zostaje w adresie
+strony, więc po wyjściu z gry i po odświeżeniu lista jest dalej zawężona. **Wyczyść filtry**
+pokazuje znowu wszystko.
+
 ## Tworzenie gry (dla mistrza gry) {#creating-a-game-game-masters}
 
 1. Kliknij **Utwórz Nową Grę**.

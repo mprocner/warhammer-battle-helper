@@ -13,6 +13,8 @@ import { useTemplates } from '../hooks/useTemplates';
 import { usePortalTooltip } from './common/PortalTooltip';
 import TemplateBuilder from './creator/TemplateBuilder';
 import GameCard from './lobby/GameCard';
+import LobbyFilterBar, { NoMatchingGames } from './lobby/LobbyFilterBar';
+import useLobbyFilter from '../hooks/useLobbyFilter';
 import CreateGameDialog from './lobby/CreateGameDialog';
 import TemplateManagerDialog from './lobby/TemplateManagerDialog';
 import ConfirmDialog from './lobby/ConfirmDialog';
@@ -32,6 +34,7 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
   const {
     templates, fetchTemplates, createTemplate, deleteTemplate, cloneTemplate, leaveTemplate, replaceTemplate,
   } = useTemplates(token);
+  const filter = useLobbyFilter(games, userEmail);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -106,6 +109,15 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
           {notice && <Alert severity="warning" sx={{ mb: 3 }} onClose={onDismissNotice}>{t(`game.${notice}`)}</Alert>}
           {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
 
+          <LobbyFilterBar
+            role={filter.role}
+            query={filter.query}
+            showRoles={filter.showRoles}
+            showSearch={filter.showSearch}
+            onRoleChange={filter.setRole}
+            onQueryChange={filter.setQuery}
+          />
+
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(235px, 1fr))', gap: 2.5, alignItems: 'stretch' }}>
             {games.length === 0 && (
               <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 6, px: 3, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
@@ -128,7 +140,11 @@ const GameLobby = ({ onJoinGame, token, userEmail, notice, onDismissNotice }) =>
               </Card>
             )}
 
-            {games.map(game => (
+            {games.length > 0 && filter.visibleGames.length === 0 && (
+              <NoMatchingGames query={filter.query} onClear={filter.clear} />
+            )}
+
+            {filter.visibleGames.map(game => (
               <GameCard
                 key={game.id}
                 game={game}

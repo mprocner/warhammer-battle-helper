@@ -56,6 +56,7 @@
       },
       "games": {
         "lobby": "A game list; create a game for the system of your choice, filtered by language.",
+        "lobbyFilter": "With many games, search the list by game or system name; if you both run and play games, show only one kind with a click.",
         "players": "Invite players, remove them or leave a game.",
         "inviteLink": "Invite link: the GM copies one link and pastes it on Discord; whoever opens it joins the game, even if they still have to register first.",
         "participant": "Your avatar and name in each game: from your account, from your character or your own.",

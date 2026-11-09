@@ -26,6 +26,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Podgląd linku (Open Graph / Twitter Card), meta tagi, manifest | wszyscy | — |
 | Tytuły stron w karcie przeglądarki (w grze: nazwa gry) | wszyscy | — |
 | Lista gier (`/games`), tworzenie gry z wyborem systemu (filtr języka) | K | `MultiGamesSystem.md` |
+| Filtr ról (Prowadzę / Gram) i wyszukiwarka na liście gier | K | PLAYRPG-298, PLAYRPG-299 |
 | Zapraszanie, opuszczanie gry, wyrzucanie graczy | MG / G | `FEATURE-76 - players management.md` |
 | Link z zaproszeniem do gry (`/join/<token>`): utwórz, kopiuj, nowy, usuń; wejście z logowaniem / rejestracją | MG / K | PLAYRPG-303 |
 | Ustawienia uczestnika w grze: avatar i podpis (z konta, z postaci, własny), rozmiar dymka | G | — |
