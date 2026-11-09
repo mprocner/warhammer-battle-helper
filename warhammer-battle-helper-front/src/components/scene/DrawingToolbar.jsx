@@ -63,6 +63,7 @@ const DrawingToolbar = ({
   isGM,
   canUndo,
   canUndoFog,
+  trailing,
 }) => {
   const { t } = useTranslation();
   const isActive = editingLayer === 'drawing' || editingLayer === 'fog';
@@ -88,6 +89,13 @@ const DrawingToolbar = ({
             <span className="drawing-toolbar__tooltip">{t(labelKey)}</span>
           </button>
         ))}
+        {/* Toggles that are not modes (the combat tracker) sit after a separator. */}
+        {trailing && (
+          <>
+            <span className="drawing-toolbar__separator" aria-hidden="true" />
+            {trailing}
+          </>
+        )}
       </div>
 
       {/* Measure-tool options — AoE circle toggle. */}

@@ -1,0 +1,42 @@
+/* ── Tracker button (scene tool bar) ─────────────────────────────── */
+.combat-toolbar-button {
+  position: relative;
+}
+
+.combat-toolbar-button--hidden {
+  border-style: dashed;
+}
+
+.combat-toolbar-button--live {
+  box-shadow: 0 0 0 3px #c9975b, 0 0 10px 2px rgba(232, 181, 106, 0.8);
+}
+
+.combat-toolbar-button--myTurn {
+  box-shadow: 0 0 0 3px #4f8a3c, 0 0 12px 3px rgba(110, 180, 90, 0.9);
+  animation: combat-turn-pulse 1.4s infinite;
+}
+
+@keyframes combat-turn-pulse {
+  50% { box-shadow: 0 0 0 3px #4f8a3c, 0 0 2px 0 rgba(110, 180, 90, 0.4); }
+}
+
+.combat-toolbar-button__badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  line-height: 1.4;
+  background: #3a2f1f;
+  color: #f4e8d8;
+  padding: 0 5px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.combat-toolbar-button__badge--icon {
+  display: flex;
+  padding: 2px;
+  border-radius: 50%;
+  background: #7a5c42;
+}

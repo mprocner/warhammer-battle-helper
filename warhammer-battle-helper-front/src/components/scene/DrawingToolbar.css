@@ -319,3 +319,13 @@
 .drawing-toolbar__aoe-toggle--on:hover {
   background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
 }
+
+.drawing-toolbar__separator {
+  align-self: center;
+  width: 2px;
+  height: 32px;
+  margin: 0 4px;
+  border-radius: 1px;
+  background: #b98a52;
+  opacity: 0.6;
+}
