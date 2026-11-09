@@ -15,7 +15,7 @@ const many = (n) => Array.from({ length: n }, (_, i) => (i % 2 ? theirs(`G${i}`)
 // Renders the hook under a router at `url` and exposes the current location next to the result.
 const setup = (games, url = '/games') => renderHook(
   () => ({ filter: useLobbyFilter(games, ME), location: useLocation() }),
-  { wrapper: ({ children }) => <MemoryRouter initialEntries={[url]}>{children}</MemoryRouter> },
+  { wrapper: ({ children }) => <MemoryRouter initialEntries={[url]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{children}</MemoryRouter> },
 );
 
 describe('useLobbyFilter', () => {
