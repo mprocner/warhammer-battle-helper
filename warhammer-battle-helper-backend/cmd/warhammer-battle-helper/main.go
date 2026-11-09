@@ -154,6 +154,7 @@ func main() {
 
 	noteRepo := repository.NewNoteRepository(db.GamesCollection)
 	noteService := service.NewNoteService(noteRepo, hub)
+	combatService := service.NewCombatService(gameRepo, charRepo, hub)
 
 	yahtzeeService := service.NewYahtzeeService(gameRepo, hub)
 	dicePokerService := service.NewDicePokerService(gameRepo, hub)
@@ -252,6 +253,7 @@ func main() {
 	fogHandler := http.FogHandler{FogService: fogService}
 	drawingHandler := http.DrawingHandler{DrawingService: drawingService}
 	noteHandler := http.NoteHandler{NoteService: noteService}
+	combatHandler := http.CombatHandler{CombatService: combatService}
 	minigameHandler := http.MinigameHandler{YahtzeeService: yahtzeeService, DicePokerService: dicePokerService}
 	diceRollHandler := http.DiceRollHandler{DiceRollService: diceRollService}
 
@@ -326,6 +328,21 @@ func main() {
 	game.DELETE("/scenes/:sceneId/fog/paths", fogHandler.ClearFogPaths)
 	game.DELETE("/scenes/:sceneId/fog/path/last", fogHandler.UndoLastFogPath)
 	game.POST("/scenes/:sceneId/fog/reveal-all", fogHandler.RevealAllFog)
+
+	// Combat (initiative tracker), one per scene
+	game.GET("/combats", combatHandler.ListCombatScenes)
+	game.GET("/scenes/:sceneId/combat", combatHandler.GetCombat)
+	game.POST("/scenes/:sceneId/combat", combatHandler.StartCombat)
+	game.PATCH("/scenes/:sceneId/combat", combatHandler.UpdateCombat)
+	game.DELETE("/scenes/:sceneId/combat", combatHandler.EndCombat)
+	game.POST("/scenes/:sceneId/combat/entries", combatHandler.AddEntries)
+	game.PATCH("/scenes/:sceneId/combat/entries/:entryId", combatHandler.UpdateEntry)
+	game.DELETE("/scenes/:sceneId/combat/entries/:entryId", combatHandler.RemoveEntry)
+	game.PUT("/scenes/:sceneId/combat/order", combatHandler.Reorder)
+	game.POST("/scenes/:sceneId/combat/activate", combatHandler.Activate)
+	game.POST("/scenes/:sceneId/combat/next", combatHandler.Next)
+	game.POST("/scenes/:sceneId/combat/end-turn", combatHandler.EndTurn)
+	game.POST("/scenes/:sceneId/combat/end-round", combatHandler.EndRound)
 
 	// Drawing
 	game.POST("/scenes/:sceneId/drawing/path", drawingHandler.AddDrawingPath)

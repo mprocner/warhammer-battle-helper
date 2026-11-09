@@ -72,6 +72,9 @@ const (
 	EventFogCleared     = "FOG_CLEARED"
 	EventFogRevealedAll = "FOG_REVEALED_ALL"
 
+	// Combat (initiative tracker). Payload {sceneId}; clients refetch their own masked view.
+	EventSceneCombatUpdated = "SCENE_COMBAT_UPDATED"
+
 	// Drawing
 	EventDrawingPathAdded   = "DRAWING_PATH_ADDED"
 	EventDrawingPathRemoved = "DRAWING_PATH_REMOVED"

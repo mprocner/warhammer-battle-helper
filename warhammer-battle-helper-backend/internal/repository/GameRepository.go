@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"battle-helper/internal/combat"
 	"battle-helper/internal/models"
 	"context"
 	"fmt"
@@ -1918,4 +1919,38 @@ func (r *GameRepository) SetCustomTemplate(gameID string, tmpl *models.SystemTem
 		bson.M{"$set": bson.M{"customSystemTemplate": tmpl, "updatedAt": time.Now()}},
 	)
 	return err
+}
+
+// SaveSceneCombat writes a scene's combat only if the stored version is still expectedVersion
+// (0 = no combat stored). c == nil removes the combat. A mismatch returns combat.ErrConflict: some
+// other request wrote in between and this one, built on stale state, must not land.
+func (r *GameRepository) SaveSceneCombat(gameID string, sceneID primitive.ObjectID, expectedVersion int, c *models.Combat) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+	elem := bson.M{"_id": sceneID}
+	if expectedVersion == 0 {
+		elem["combat"] = nil // matches a missing or null field
+	} else {
+		elem["combat.version"] = expectedVersion
+	}
+	filter := bson.M{"_id": objectID, "scenes": bson.M{"$elemMatch": elem}}
+
+	now := time.Now()
+	update := bson.M{"$set": bson.M{"scenes.$.combat": c, "updatedAt": now}}
+	if c == nil {
+		update = bson.M{"$unset": bson.M{"scenes.$.combat": ""}, "$set": bson.M{"updatedAt": now}}
+	}
+	res, err := r.Collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("failed to save combat: %w", err)
+	}
+	if res.MatchedCount == 0 {
+		return combat.ErrConflict
+	}
+	return nil
 }
