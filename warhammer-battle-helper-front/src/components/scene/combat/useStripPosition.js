@@ -35,7 +35,9 @@ function storePosition(gameId, pos) {
 // zooming or panning the map never moves it. null = default (top centre, from CSS).
 export default function useStripPosition(gameId, boundsRef) {
   const [position, setPosition] = useState(() => readStoredPosition(gameId));
-  const stripRef = useRef(null);
+  // Callback ref + state: the strip node mounts late (CombatStrip renders null until combat is fetched),
+  // and the re-clamp effect must re-run when it appears.
+  const [stripEl, setStripEl] = useState(null);
   const dragCleanupRef = useRef(null);
 
   // Remove drag listeners if the strip unmounts mid-drag.
@@ -47,19 +49,18 @@ export default function useStripPosition(gameId, boundsRef) {
     if (!position) return undefined;
     const reclamp = () => {
       const area = boundsRef.current;
-      const strip = stripRef.current;
-      if (!area || !strip) return;
-      const next = clampPosition(position, area.getBoundingClientRect(), strip.getBoundingClientRect());
+      if (!area || !stripEl) return;
+      const next = clampPosition(position, area.getBoundingClientRect(), stripEl.getBoundingClientRect());
       if (next.x !== position.x || next.y !== position.y) setPosition(next);
     };
     reclamp();
     window.addEventListener('resize', reclamp);
     return () => window.removeEventListener('resize', reclamp);
-  }, [position, boundsRef]);
+  }, [position, boundsRef, stripEl]);
 
   const onGripPointerDown = useCallback((e) => {
     if (e.button !== 0) return;
-    const strip = stripRef.current;
+    const strip = stripEl;
     const area = boundsRef.current;
     if (!strip || !area) return;
     e.preventDefault();
@@ -86,12 +87,12 @@ export default function useStripPosition(gameId, boundsRef) {
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
     document.addEventListener('pointercancel', up);
-  }, [gameId, boundsRef]);
+  }, [gameId, boundsRef, stripEl]);
 
   const reset = useCallback(() => {
     setPosition(null);
     storePosition(gameId, null);
   }, [gameId]);
 
-  return { position, onGripPointerDown, reset, stripRef };
+  return { position, onGripPointerDown, reset, stripRef: setStripEl };
 }
