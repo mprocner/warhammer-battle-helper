@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, renderHook } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom';
 import useLobbyFilter from './useLobbyFilter';
 
 // One stable `t`, like the real hook returns; a fresh function per render would bust the memo.
@@ -12,9 +12,9 @@ const mine = (name) => ({ id: name, name, gameMasterEmail: ME, gameSystem: 'warh
 const theirs = (name) => ({ id: name, name, gameMasterEmail: 'gm@x.pl', gameSystem: 'warhammer4e' });
 const many = (n) => Array.from({ length: n }, (_, i) => (i % 2 ? theirs(`G${i}`) : mine(`G${i}`)));
 
-// Renders the hook under a router at `url` and exposes the current location next to the result.
+// Renders the hook under a router at `url` and exposes the current location and navigation type next to the result.
 const setup = (games, url = '/games') => renderHook(
-  () => ({ filter: useLobbyFilter(games, ME), location: useLocation() }),
+  () => ({ filter: useLobbyFilter(games, ME), location: useLocation(), navigationType: useNavigationType() }),
   { wrapper: ({ children }) => <MemoryRouter initialEntries={[url]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{children}</MemoryRouter> },
 );
 
@@ -58,6 +58,20 @@ describe('useLobbyFilter', () => {
     expect(result.current.location.search).toBe('?q=G');
     act(() => result.current.filter.setQuery(''));
     expect(result.current.location.search).toBe('');
+  });
+
+  it('replaces the history entry instead of pushing', () => {
+    const { result } = setup(many(10));
+    act(() => result.current.filter.setQuery('G'));
+    expect(result.current.navigationType).toBe('REPLACE');
+    act(() => result.current.filter.setRole('gm'));
+    expect(result.current.navigationType).toBe('REPLACE');
+  });
+
+  it('does not count a whitespace-only query as filtering', () => {
+    const { result } = setup(many(10), '/games?q=%20%20');
+    expect(result.current.filter.isFiltering).toBe(false);
+    expect(result.current.filter.visibleGames).toHaveLength(10);
   });
 
   it('clear removes both params', () => {
