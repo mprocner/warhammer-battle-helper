@@ -6,6 +6,8 @@ import TokenRotateHandle from './TokenRotateHandle';
 import { useTokenRotate } from './useTokenRotate';
 import { canManipulateToken, isLoneSelection } from '../../utils/tokenManipulation';
 import { useZoom } from './ZoomContext';
+import { useCombat } from '../../contexts/CombatContext';
+import { activeSource } from './combat/combatSelectors';
 import { CELL_SIZE } from '../../constants/scene';
 
 // A character token on the unified tokens layer: absolute-positioned, with its own drag/resize
@@ -22,6 +24,8 @@ function MapCharacterToken({
   multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
+  const combatSrc = activeSource(useCombat().combat);
+  const combatActive = !!combatSrc && combatSrc.kind === 'character' && combatSrc.sourceId === placementId;
   // See SceneImage: the lone selected token is the one with an expanded ring and chrome.
   const selected = isLoneSelection(multiSelected, multiSelectActive);
   const [pos, setPos] = useState({ col, row });
@@ -275,7 +279,7 @@ function MapCharacterToken({
   return (
     <div
       ref={containerRef}
-      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}${multiSelected ? ' map-char-token--multi-selected' : ''}`}
+      className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}${multiSelected ? ' map-char-token--multi-selected' : ''}${combatActive ? ' map-char-token--combat-active' : ''}`}
       style={{ position: 'absolute', ...px, cursor: dragEnabledNow ? (isDragging ? 'grabbing' : 'grab') : 'default', pointerEvents: 'auto' }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}

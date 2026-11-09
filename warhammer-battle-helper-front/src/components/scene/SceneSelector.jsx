@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
+import { useCombat } from '../../contexts/CombatContext';
 import { useTranslation } from 'react-i18next';
 import { createScene, assignPlayerToScene } from '../../api/scenes';
 import { resolveDisplayName } from '../../utils/participants';
@@ -21,6 +23,7 @@ const SceneSelector = ({
   onToggleCollapse,
 }) => {
   const { t } = useTranslation();
+  const { combatSceneIds } = useCombat();
   const [openPopoverSceneId, setOpenPopoverSceneId] = useState(null);
   const [popoverAnchor, setPopoverAnchor] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -124,6 +127,9 @@ const SceneSelector = ({
                 {sceneDisplayName(scene, t)}
                 {scene.sceneMusicId && (
                   <MusicNoteIcon className="scene-selector__music-icon" />
+                )}
+                {combatSceneIds.includes(scene.id) && (
+                  <SportsKabaddiIcon className="scene-selector__combat-icon" aria-label={t('combat.sceneIndicator')} />
                 )}
                 {assignedCount > 0 && (
                   <span className="scene-selector__badge scene-selector__badge--filled">

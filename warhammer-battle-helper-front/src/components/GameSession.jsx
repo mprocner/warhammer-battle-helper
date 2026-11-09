@@ -7,6 +7,9 @@ import DragAndDropContext from './DndContext';
 import RightPanel from './panels/RightPanel';
 import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
+import useSceneCombat from '../hooks/useSceneCombat';
+import { CombatProvider } from '../contexts/CombatContext';
+import CombatWindow from './scene/combat/CombatWindow';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
 import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
@@ -72,6 +75,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
   const { toasts, pushToast, dismissToast, pauseAll, resumeAll } = useToastQueue();
   const isGMRef = useRef(false);
+  // Latest combat handlers for the WS switch, which is memoised with a deliberately short deps list.
+  const combatRef = useRef(null);
   const userIdRef = useRef(null);
 
   const { userId } = useCurrentUser(token);
@@ -299,6 +304,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.CHARACTER_REMOVED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         addLogMessage(t('log.session.characterRemoved'), 'info');
         setGameState(prev => {
           if (!prev) return prev;
@@ -308,6 +314,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.CHARACTER_UPDATED: {
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         const updatedChar = message.payload.character;
         setGameState(prev => {
           if (!prev) return prev;
@@ -464,6 +471,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.SCENE_DELETED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         setGameState(prev => {
           if (!prev) return prev;
           return { ...prev, scenes: (prev.scenes || []).filter(s => s.id !== message.payload.sceneId) };
@@ -547,6 +555,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.SCENE_CHARACTER_UPDATED: {
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         // Token visibility toggled. Refetch instead of mutating locally: the rule
         // "hidden && no card" lives only in FilterSceneCharacterTokensForUser, so only a
         // refetch drops the token for a player without the card, keeps it for a card-holder,
@@ -599,6 +608,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.SCENE_CHARACTER_REMOVED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId: scRId, characterId: scRCharId } = message.payload;
@@ -633,6 +643,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.SCENE_IMAGE_UPDATED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId: siuSceneId, imageId, update } = message.payload;
@@ -653,6 +664,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.SCENE_IMAGE_DELETED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId: sidSceneId, imageId: delImageId } = message.payload;
@@ -668,6 +680,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.SCENE_IMAGE_TOKEN_UPDATED:
+        combatRef.current?.onSourcesChanged(); // tracker entries are resolved and pruned server-side
         setGameState(prev => {
           if (!prev) return prev;
           const { sceneId: sitSceneId, imageId: sitImageId, tokenOverlay } = message.payload;
@@ -868,6 +881,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         setMinigameState({ ended: true, gameType: message.payload.gameType, players: message.payload.players });
         break;
 
+      case WS_EVENTS.SCENE_COMBAT_UPDATED:
+        combatRef.current?.onCombatEvent(message.payload.sceneId);
+        break;
       default:
         console.warn('Unknown message type:', message.type);
     }
@@ -923,6 +939,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       return assignedScene || scenes.find(s => s.isDefault) || scenes[0];
     }
   }, [gameState?.scenes, isGM, gmViewingSceneId, userId]);
+
+  const combatState = useSceneCombat(gameId, displayScene?.id, isGM);
+  combatRef.current = combatState;
 
   const handleFogPathComplete = useCallback(async (path) => {
     if (!displayScene) return;
@@ -1051,70 +1070,73 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         />
 
         <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-          <DragAndDropContext
-            sceneSelector={(
-              <div className="top-bars">
-                <WindowBar collapsed={topBarsCollapsed} />
-                {isGM && (
-                  <SceneSelector
-                    scenes={gameState?.scenes || []}
-                    activeSceneId={displayScene?.id}
-                    onSceneChange={setGmViewingSceneId}
-                    participants={gameState?.participants || []}
-                    gameId={gameId}
-                    onSceneCreated={setGmViewingSceneId}
-                    onAssignAll={handleSceneAssignAll}
-                    collapsed={topBarsCollapsed}
-                    onToggleCollapse={() => setTopBarsCollapsed(v => !v)}
-                  />
-                )}
-              </div>
-            )}
-            addLogMessage={addLogMessage}
-            gameId={gameId}
-            token={token}
-            gameSystem={gameState?.gameSystem}
-            characterUpdateTrigger={characterUpdateTrigger}
-            characterDataTrigger={characterDataTrigger}
-            isHidden={leftPanelHidden}
-            onTogglePanel={() => setLeftPanelHidden(!leftPanelHidden)}
-            currentScene={displayScene}
-            isGM={isGM}
-            userId={userId}
-            participants={gameState?.participants || []}
-            editingLayer={editingLayer}
-            onEditingLayerChange={setEditingLayer}
-            // Players have no layer bar, and Select needs the tokens layer armed to touch a
-            // character token at all — so their armed layer is fixed.
-            imageEditLayer={isGM ? imageEditLayer : 'tokens'}
-            onImageEditLayerChange={setImageEditLayer}
-            fogCoverMode={fogCoverMode}
-            onFogCoverModeChange={setFogCoverMode}
-            sendMessage={sendMessage}
-            pointerPings={pointerPings}
-            onRemovePing={removePing}
-            mapRulers={mapRulers}
-            onFogPathComplete={handleFogPathComplete}
-            activeTool={activeTool}
-            onActiveToolChange={setActiveTool}
-            brushSize={brushSize}
-            onBrushSizeChange={setBrushSize}
-            fogGmOpacity={fogGmOpacity}
-            onFogGmOpacityChange={setFogGmOpacity}
-            drawingColor={drawingColor}
-            onDrawingColorChange={setDrawingColor}
-            drawingFontSize={drawingFontSize}
-            onDrawingFontSizeChange={setDrawingFontSize}
-            onDrawingPathComplete={handleDrawingPathComplete}
-            onDeleteDrawingPath={handleDeleteDrawingPath}
-            currentSceneId={displayScene?.id}
-            rollVisibility={rollVisibility}
-            game={gameState}
-            onlineUserIds={onlineUserIds}
-            onParticipantUpdated={fetchGameState}
-            controlScheme={controlScheme}
-            onCharactersLoaded={handleCharactersLoaded}
-          />
+          <CombatProvider gameId={gameId} scene={displayScene} isGM={isGM} combatState={combatState}>
+            <DragAndDropContext
+              sceneSelector={(
+                <div className="top-bars">
+                  <WindowBar collapsed={topBarsCollapsed} />
+                  {isGM && (
+                    <SceneSelector
+                      scenes={gameState?.scenes || []}
+                      activeSceneId={displayScene?.id}
+                      onSceneChange={setGmViewingSceneId}
+                      participants={gameState?.participants || []}
+                      gameId={gameId}
+                      onSceneCreated={setGmViewingSceneId}
+                      onAssignAll={handleSceneAssignAll}
+                      collapsed={topBarsCollapsed}
+                      onToggleCollapse={() => setTopBarsCollapsed(v => !v)}
+                    />
+                  )}
+                </div>
+              )}
+              addLogMessage={addLogMessage}
+              gameId={gameId}
+              token={token}
+              gameSystem={gameState?.gameSystem}
+              characterUpdateTrigger={characterUpdateTrigger}
+              characterDataTrigger={characterDataTrigger}
+              isHidden={leftPanelHidden}
+              onTogglePanel={() => setLeftPanelHidden(!leftPanelHidden)}
+              currentScene={displayScene}
+              isGM={isGM}
+              userId={userId}
+              participants={gameState?.participants || []}
+              editingLayer={editingLayer}
+              onEditingLayerChange={setEditingLayer}
+              // Players have no layer bar, and Select needs the tokens layer armed to touch a
+              // character token at all — so their armed layer is fixed.
+              imageEditLayer={isGM ? imageEditLayer : 'tokens'}
+              onImageEditLayerChange={setImageEditLayer}
+              fogCoverMode={fogCoverMode}
+              onFogCoverModeChange={setFogCoverMode}
+              sendMessage={sendMessage}
+              pointerPings={pointerPings}
+              onRemovePing={removePing}
+              mapRulers={mapRulers}
+              onFogPathComplete={handleFogPathComplete}
+              activeTool={activeTool}
+              onActiveToolChange={setActiveTool}
+              brushSize={brushSize}
+              onBrushSizeChange={setBrushSize}
+              fogGmOpacity={fogGmOpacity}
+              onFogGmOpacityChange={setFogGmOpacity}
+              drawingColor={drawingColor}
+              onDrawingColorChange={setDrawingColor}
+              drawingFontSize={drawingFontSize}
+              onDrawingFontSizeChange={setDrawingFontSize}
+              onDrawingPathComplete={handleDrawingPathComplete}
+              onDeleteDrawingPath={handleDeleteDrawingPath}
+              currentSceneId={displayScene?.id}
+              rollVisibility={rollVisibility}
+              game={gameState}
+              onlineUserIds={onlineUserIds}
+              onParticipantUpdated={fetchGameState}
+              controlScheme={controlScheme}
+              onCharactersLoaded={handleCharactersLoaded}
+            />
+            <CombatWindow />
+          </CombatProvider>
         </Box>
 
         <RightPanel

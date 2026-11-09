@@ -11,12 +11,26 @@ import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
 import TokenResizeHandles from './TokenResizeHandles';
 import TokenRotateHandle from './TokenRotateHandle';
 import { useTokenRotate } from './useTokenRotate';
+import { useCombat } from '../../contexts/CombatContext';
+import { addCombatEntries, removeCombatEntry } from '../../api/combat';
+import { entryForSource, activeSource } from './combat/combatSelectors';
 import { canManipulateToken, isLoneSelection } from '../../utils/tokenManipulation';
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
 const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart }) => {
   const { t } = useTranslation();
+  const combatCtx = useCombat();
+  const combatEntry = entryForSource(combatCtx.combat, 'image', image.id);
+  const combatActive = (() => { const a = activeSource(combatCtx.combat); return !!a && a.kind === 'image' && a.sourceId === image.id; })();
+  const combatAction = isGM && image.layer === 'tokens' && combatCtx.sceneId === sceneId
+    ? {
+      label: t(combatEntry ? 'combat.menu.remove' : 'combat.menu.add'),
+      onSelect: () => combatCtx.run(() => (combatEntry
+        ? removeCombatEntry(gameId, sceneId, combatEntry.id)
+        : addCombatEntries(gameId, sceneId, [{ kind: 'image', sourceId: image.id }]))),
+    }
+    : undefined;
   // The one-element selection is what used to be "the active image": its ring expands and it
   // shows manipulation chrome. Derived, never a separate prop — that split is what BUG-195 fixed.
   const selected = isLoneSelection(multiSelected, multiSelectActive);
@@ -439,7 +453,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
         <div
           ref={containerRef}
           data-scene-layer={image.layer}
-          className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}`}
+          className={`scene-image ${isGM ? 'scene-image--editable' : ''} ${isDragging ? 'scene-image--dragging' : ''} ${image.layer === 'gm' ? 'scene-image--gm' : ''} ${isToken ? 'scene-image--token' : ''} ${image.locked ? 'scene-image--locked' : ''} ${isLayerInert ? 'scene-image--inert' : ''} ${image.hidden ? 'scene-image--hidden' : ''} ${multiSelected ? 'scene-image--multi-selected' : ''}${combatActive ? ' scene-image--combat-active' : ''}`}
           style={{
             position: 'absolute',
             left: pos.x + groupDx,
@@ -565,6 +579,7 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
           onResetRotation={handleResetRotation}
           onLockToggle={handleLockToggle}
           onDuplicate={handleDuplicate}
+          combatAction={combatAction}
           onClose={() => setContextMenu(null)}
         />
       )}

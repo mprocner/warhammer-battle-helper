@@ -332,3 +332,20 @@
   background: #fff9f0;
   color: #3a2f1f;
 }
+
+/* ── Map highlight of the acting token, scene tab indicator ─────── */
+.map-char-token--combat-active .map-char-token__avatar,
+.scene-image.scene-image--combat-active {
+  box-shadow: 0 0 0 3px #c9975b, 0 0 12px 4px rgba(232, 181, 106, 0.85);
+  border-radius: 50%;
+}
+
+.scene-image.scene-image--combat-active {
+  border-radius: 4px;
+}
+
+.scene-selector__combat-icon {
+  font-size: 14px !important;
+  margin-left: 4px;
+  vertical-align: middle;
+}

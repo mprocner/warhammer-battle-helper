@@ -17,6 +17,9 @@ import useMapRuler from '../../hooks/useMapRuler';
 import useGroupDrag from '../../hooks/useGroupDrag';
 import { getCanvasSize, MIN_ZOOM, MAX_ZOOM, GRID_BORDER, GRID_PADDING, CELL_SIZE, OFFSCENE_MARGIN_CELLS } from '../../constants/scene';
 import { characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetween, selectTokensInRect, buildRulerSnapTargets } from '../../utils/tokenGeometry';
+import { useCombat } from '../../contexts/CombatContext';
+import { addCombatEntries, removeCombatEntry } from '../../api/combat';
+import { combatEntriesForSelection, combatEntriesInSelection } from './combat/combatSelectors';
 import './SceneViewport.css';
 
 // Deterministic colour per measuring player, so remote rulers are distinguishable.
@@ -556,6 +559,20 @@ const SceneViewport = ({
     [pointerPings, displayedScene?.id]
   );
 
+  const combatCtx = useCombat();
+  // GM-only, like the rest of the group menu. All selected tokens already in combat → offer removal.
+  const combatMenuHandlers = useMemo(() => {
+    if (!isGM || !displayedScene) return {};
+    const sources = combatEntriesForSelection(selectedTokens, displayedScene);
+    const existing = combatEntriesInSelection(combatCtx.combat, selectedTokens, displayedScene);
+    if (sources.length > 0 && existing.length === sources.length) {
+      return {
+        onRemoveFromCombat: () => existing.forEach(e => combatCtx.run(() => removeCombatEntry(gameId, displayedScene.id, e.id))),
+      };
+    }
+    return { onAddToCombat: () => combatCtx.run(() => addCombatEntries(gameId, displayedScene.id, sources)) };
+  }, [isGM, displayedScene, selectedTokens, combatCtx, gameId]);
+
   // Group-drag controller: one delta (in cells) for the whole multi-selection. Characters are
   // sourced from displayedScene.characters (SceneCharacter: characterId/positionX/positionY) — the
   // same shape marqueeCandidates/rulerSnapTargets use above — NOT placedCharacters, whose fightZones
@@ -731,7 +748,10 @@ const SceneViewport = ({
                   // authorization check (RemoveCharacterFromScene takes no userID), so this frontend
                   // gate is the only thing stopping a player from shift-clicking their own tokens and
                   // reaching it. Select is no longer GM-only, so the mode check alone doesn't suffice.
-                  if (isGM && editingLayer === 'select' && selectedTokens.length > 1) {
+                  // A lone selected CHARACTER token opens it too: character tokens have no menu of
+                  // their own, and this is where "Add to combat" lives.
+                  const loneChar = selectedTokens.length === 1 && selectedTokens[0].kind === 'char';
+                  if (isGM && editingLayer === 'select' && (selectedTokens.length > 1 || loneChar)) {
                     e.preventDefault();
                     setMultiMenu({ x: e.clientX, y: e.clientY });
                   }
@@ -900,6 +920,7 @@ const SceneViewport = ({
                     x={multiMenu.x} y={multiMenu.y} selection={selectedTokens}
                     onDelete={onGroupDelete} onSetLock={onGroupSetLock}
                     onSetLayer={onGroupSetLayer} onResetRotation={onGroupResetRotation}
+                    {...combatMenuHandlers}
                     onClose={() => setMultiMenu(null)}
                   />
                 )}

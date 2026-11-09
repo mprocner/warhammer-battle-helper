@@ -7,6 +7,8 @@ import CharacterVisibilityModal from './CharacterVisibilityModal';
 import SceneViewport from './scene/SceneViewport';
 import DrawingToolbar from './scene/DrawingToolbar';
 import LayerSelector from './scene/LayerSelector';
+import CombatToolbarButton from './scene/combat/CombatToolbarButton';
+import CombatStrip from './scene/combat/CombatStrip';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath, deleteSceneImage, updateSceneImage, batchMoveTokens } from '../api/scenes';
@@ -45,6 +47,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const gridHeight = currentScene?.gridHeight || DEFAULT_GRID_HEIGHT;
   const sceneId = currentScene?.id || null;
   const sceneIdRef = useRef(sceneId);
+  const fightGridWrapperRef = useRef(null);
   useEffect(() => { sceneIdRef.current = sceneId; }, [sceneId]);
 
   const fightZonesRef = useRef(generateFightZones(gridWidth, gridHeight));
@@ -984,8 +987,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           </button>
         </div>
 
-        <div className="fight-grid-wrapper" style={{ position: 'relative' }}>
+        <div className="fight-grid-wrapper" ref={fightGridWrapperRef} style={{ position: 'relative' }}>
           {sceneSelector}
+          {currentScene && <CombatStrip boundsRef={fightGridWrapperRef} />}
           <OnlineUsersBar
             game={game}
             participants={participants}
@@ -1011,6 +1015,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                 isGM={isGM}
               />
               <DrawingToolbar
+                trailing={<CombatToolbarButton />}
                 editingLayer={editingLayer}
                 onEditingLayerChange={onEditingLayerChange}
                 fogCoverMode={fogCoverMode}

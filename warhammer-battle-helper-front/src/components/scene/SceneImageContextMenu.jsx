@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 
-const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onResetRotation, onLockToggle, onDuplicate, onDelete, onClose }) => {
+const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onResizeToGrid, onResetRotation, onLockToggle, onDuplicate, onDelete, combatAction, onClose }) => {
   const { t } = useTranslation();
   const [zIndex, setZIndex] = useState(image.zIndex || 0);
   const [dupCount, setDupCount] = useState(1);
@@ -65,6 +66,15 @@ const SceneImageContextMenu = ({ x, y, image, onZIndexChange, onLayerChange, onR
       </div>
 
       <div className="scene-context-menu__divider" />
+
+      {combatAction && (
+        <>
+          <button className="scene-context-menu__item" onMouseDown={(e) => { if (e.button === 0) { e.preventDefault(); combatAction.onSelect(); onClose(); } }}>
+            <SportsKabaddiIcon style={{ fontSize: 14, verticalAlign: 'middle' }} /> {combatAction.label}
+          </button>
+          <div className="scene-context-menu__divider" />
+        </>
+      )}
 
       {/* Layer selection */}
       <div className="scene-context-menu__label">{t('scenes.layer')}</div>

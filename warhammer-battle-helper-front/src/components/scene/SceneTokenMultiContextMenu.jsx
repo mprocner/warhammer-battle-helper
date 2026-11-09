@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 
 // Group context menu. Action set = intersection valid for the whole selection:
 //  images-only → full set (lock/unlock, move-to-layer, reset rotation, remove); any selection with
 //  characters (chars-only or mixed) → reset rotation + remove only. Lock/unlock and move-to-layer
 //  stay image-only concepts; reset rotation applies to both token kinds since FEATURE-152.
-const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSetLayer, onResetRotation, onClose }) => {
+const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSetLayer, onResetRotation, onAddToCombat, onRemoveFromCombat, onClose }) => {
   const { t } = useTranslation();
   const ref = useRef(null);
   useEffect(() => {
@@ -46,6 +47,18 @@ const SceneTokenMultiContextMenu = ({ x, y, selection, onDelete, onSetLock, onSe
           {layers.map(l => (
             <button key={l.key} className="scene-context-menu__item" onMouseDown={act(() => onSetLayer(l.key))}>{l.label}</button>
           ))}
+          <div className="scene-context-menu__divider" />
+        </>
+      )}
+      {(onAddToCombat || onRemoveFromCombat) && (
+        <>
+          <button
+            className="scene-context-menu__item"
+            onMouseDown={act(() => (onRemoveFromCombat || onAddToCombat)())}
+          >
+            <SportsKabaddiIcon style={{ fontSize: 14, verticalAlign: 'middle' }} />{' '}
+            {onRemoveFromCombat ? t('combat.menu.remove') : t('combat.menu.add')}
+          </button>
           <div className="scene-context-menu__divider" />
         </>
       )}
