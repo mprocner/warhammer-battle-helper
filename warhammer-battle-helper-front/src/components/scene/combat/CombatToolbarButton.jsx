@@ -25,22 +25,25 @@ export default function CombatToolbarButton() {
   };
 
   return (
-    <button
-      type="button"
-      className={`drawing-toolbar__tab combat-toolbar-button combat-toolbar-button--${state}`}
-      onClick={handleClick}
-      aria-label={t(`combat.toolbar.${state}`)}
-    >
-      <SportsKabaddiIcon style={{ fontSize: 22 }} />
-      {state === 'hidden' && (
-        <span className="combat-toolbar-button__badge combat-toolbar-button__badge--icon">
-          <VisibilityOffIcon style={{ fontSize: 11 }} />
-        </span>
-      )}
-      {(state === 'live' || state === 'myTurn') && (
-        <span className="combat-toolbar-button__badge">{t('combat.roundShort', { round: combat.round })}</span>
-      )}
-      <span className="drawing-toolbar__tooltip">{t(`combat.toolbar.${state}`)}</span>
-    </button>
+    <>
+      <span className="drawing-toolbar__separator" aria-hidden="true" />
+      <button
+        type="button"
+        className={`drawing-toolbar__tab combat-toolbar-button combat-toolbar-button--${state}`}
+        onClick={handleClick}
+        aria-label={t(`combat.toolbar.${state}`)}
+      >
+        <SportsKabaddiIcon style={{ fontSize: 22 }} />
+        {state === 'hidden' && (
+          <span className="combat-toolbar-button__badge combat-toolbar-button__badge--icon">
+            <VisibilityOffIcon style={{ fontSize: 11 }} />
+          </span>
+        )}
+        {(state === 'live' || state === 'myTurn') && (
+          <span className="combat-toolbar-button__badge">{t('combat.roundShort', { round: combat.round })}</span>
+        )}
+        <span className="drawing-toolbar__tooltip">{t(`combat.toolbar.${state}`)}</span>
+      </button>
+    </>
   );
 }

@@ -16,8 +16,15 @@ const mountWith = (value) => {
 };
 
 test('a player with no combat gets no button', () => {
-  mountWith({ isGM: false, combat: null });
+  const { container } = render(<CombatContext.Provider value={{ ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', isGM: false, combat: null }}><CombatToolbarButton /></CombatContext.Provider>);
   expect(screen.queryByRole('button')).toBeNull();
+  expect(container.querySelector('.drawing-toolbar__separator')).toBeNull();
+});
+
+test('a GM without combat renders exactly one separator before the button', () => {
+  const { container } = render(<CombatContext.Provider value={{ ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', isGM: true, combat: null, run: fn => fn(), setWindowOpen: jest.fn(), setStripCollapsed: jest.fn() }}><CombatToolbarButton /></CombatContext.Provider>);
+  expect(container.querySelectorAll('.drawing-toolbar__separator')).toHaveLength(1);
+  expect(screen.getByRole('button')).toBeInTheDocument();
 });
 
 test('GM without combat starts a hidden combat and opens the window', () => {

@@ -89,13 +89,8 @@ const DrawingToolbar = ({
             <span className="drawing-toolbar__tooltip">{t(labelKey)}</span>
           </button>
         ))}
-        {/* Toggles that are not modes (the combat tracker) sit after a separator. */}
-        {trailing && (
-          <>
-            <span className="drawing-toolbar__separator" aria-hidden="true" />
-            {trailing}
-          </>
-        )}
+        {/* Non-mode toggles (the combat tracker) render at the end and draw their own separator. */}
+        {trailing}
       </div>
 
       {/* Measure-tool options — AoE circle toggle. */}
