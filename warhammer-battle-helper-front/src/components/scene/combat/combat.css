@@ -40,3 +40,149 @@
   border-radius: 50%;
   background: #7a5c42;
 }
+
+/* ── Turn order strip (over the map, screen space) ───────────────── */
+.combat-strip {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(246, 236, 220, 0.97);
+  border: 2px solid #7a5c42;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  color: #3a2f1f;
+}
+
+.combat-strip--hidden {
+  border-style: dashed;
+}
+
+.combat-strip__grip {
+  display: flex;
+  border: none;
+  background: none;
+  color: #c4a882;
+  cursor: grab;
+  padding: 0;
+  touch-action: none;
+}
+
+.combat-strip__round {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: #7a5c42;
+  white-space: nowrap;
+}
+
+.combat-strip__hidden-badge {
+  font-size: 10px;
+  background: #3a2f1f;
+  color: #f4e8d8;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+.combat-strip__list {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combat-strip__item {
+  position: relative;
+  display: flex;
+}
+
+.combat-strip__item--active .combat-portrait {
+  box-shadow: 0 0 0 3px #c9975b, 0 0 8px 2px #e8b56a;
+}
+
+.combat-strip__item--acted {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.combat-strip__hidden-icon {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  font-size: 12px !important;
+  background: #3a2f1f;
+  color: #f4e8d8;
+  border-radius: 50%;
+  padding: 1px;
+}
+
+.combat-strip__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  border: 1px solid #7a5c42;
+  background: #fff9f0;
+  color: #7a5c42;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.combat-strip__btn--primary {
+  background: #7a5c42;
+  color: #fff;
+}
+
+.combat-strip__btn--end-turn {
+  background: #4f8a3c;
+  border-color: #3d6d2e;
+  color: #fff;
+}
+
+/* ── Portrait (strip + window) ───────────────────────────────────── */
+.combat-portrait__wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.combat-portrait {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #7a5c42;
+  object-fit: cover;
+  background: #fff9f0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7a5c42;
+  font-family: 'Cinzel', serif;
+  box-sizing: border-box;
+}
+
+.combat-portrait--small {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.combat-portrait--manual {
+  border-style: dashed;
+}
+
+.combat-portrait__killed {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  color: #b3261e;
+  font-size: 26px !important;
+  pointer-events: none;
+}
