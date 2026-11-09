@@ -762,7 +762,48 @@
     "rollFailed": "Failed to roll characteristic",
     "rollFor": "Roll for",
     "target": "Target",
-    "saveFortuneFailed": "Failed to save fortune change"
+    "saveFortuneFailed": "Failed to save fortune change",
+    "round": "Round {{round}}",
+    "roundShort": "R{{round}}",
+    "hiddenBadge": "hidden",
+    "next": "Next turn",
+    "endTurn": "End turn",
+    "endRound": "End round",
+    "manage": "Manage combat",
+    "sceneIndicator": "Combat in progress",
+    "toolbar": {
+      "idle": "Start combat",
+      "hidden": "Combat hidden from players",
+      "live": "Show or collapse the turn order",
+      "myTurn": "Your turn!"
+    },
+    "strip": {
+      "move": "Drag to move, double-click to reset"
+    },
+    "menu": {
+      "add": "Add to combat",
+      "remove": "Remove from combat"
+    },
+    "window": {
+      "title": "Combat · Round {{round}}",
+      "empty": "No one in combat yet. Add tokens below or right-click a token on the map.",
+      "drag": "Drag to reorder",
+      "initiative": "Initiative",
+      "acted": "Acted this round",
+      "entryHide": "Hide from players",
+      "entryShow": "Show to players",
+      "remove": "Remove from combat",
+      "rename": "Rename",
+      "add": "Add",
+      "addFromScene": "On this scene",
+      "noCandidates": "Every token on this scene is already in combat.",
+      "manualName": "Name",
+      "addManual": "Add entry",
+      "showToPlayers": "Show to players",
+      "hideFromPlayers": "Hide from players",
+      "endCombat": "End combat",
+      "endCombatConfirm": "End combat? The turn order and round counter will be cleared."
+    }
   },
   "conditions": {
     "label": "Conditions",

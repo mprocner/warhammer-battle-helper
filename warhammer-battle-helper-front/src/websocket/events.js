@@ -60,6 +60,9 @@ export const WS_EVENTS = {
   SCENE_IMAGE_TOKEN_UPDATED: 'SCENE_IMAGE_TOKEN_UPDATED',
   SCENE_TOKENS_MOVED:        'SCENE_TOKENS_MOVED',
 
+  // Combat (initiative tracker) — payload { sceneId }; refetch the masked view
+  SCENE_COMBAT_UPDATED: 'SCENE_COMBAT_UPDATED',
+
   // Fog of war
   FOG_TOGGLED:      'FOG_TOGGLED',
   FOG_PATH_ADDED:   'FOG_PATH_ADDED',

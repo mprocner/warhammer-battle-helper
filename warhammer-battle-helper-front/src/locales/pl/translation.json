@@ -766,7 +766,48 @@
     "rollFailed": "Nie udało się rzucić cechą",
     "rollFor": "Rzut dla",
     "target": "Cel",
-    "saveFortuneFailed": "Nie udało się zapisać zmiany fortuny"
+    "saveFortuneFailed": "Nie udało się zapisać zmiany fortuny",
+    "round": "Runda {{round}}",
+    "roundShort": "R{{round}}",
+    "hiddenBadge": "ukryta",
+    "next": "Następna tura",
+    "endTurn": "Zakończ turę",
+    "endRound": "Koniec rundy",
+    "manage": "Zarządzaj walką",
+    "sceneIndicator": "Trwa walka",
+    "toolbar": {
+      "idle": "Rozpocznij walkę",
+      "hidden": "Walka ukryta przed graczami",
+      "live": "Pokaż lub zwiń kolejkę",
+      "myTurn": "Twoja tura!"
+    },
+    "strip": {
+      "move": "Przeciągnij, aby przesunąć; dwuklik przywraca"
+    },
+    "menu": {
+      "add": "Dodaj do walki",
+      "remove": "Usuń z walki"
+    },
+    "window": {
+      "title": "Walka · Runda {{round}}",
+      "empty": "Nikogo jeszcze nie ma w walce. Dodaj tokeny poniżej albo kliknij token na mapie prawym przyciskiem.",
+      "drag": "Przeciągnij, aby zmienić kolejność",
+      "initiative": "Inicjatywa",
+      "acted": "Działał w tej rundzie",
+      "entryHide": "Ukryj przed graczami",
+      "entryShow": "Pokaż graczom",
+      "remove": "Usuń z walki",
+      "rename": "Zmień nazwę",
+      "add": "Dodaj",
+      "addFromScene": "Na tej scenie",
+      "noCandidates": "Wszystkie tokeny z tej sceny już są w walce.",
+      "manualName": "Nazwa",
+      "addManual": "Dodaj wpis",
+      "showToPlayers": "Pokaż graczom",
+      "hideFromPlayers": "Ukryj przed graczami",
+      "endCombat": "Zakończ walkę",
+      "endCombatConfirm": "Zakończyć walkę? Kolejka i licznik rund zostaną wyczyszczone."
+    }
   },
   "conditions": {
     "label": "Stany",
