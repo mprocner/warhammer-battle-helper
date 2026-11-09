@@ -564,8 +564,9 @@ const SceneViewport = ({
   const combatMenuHandlers = useMemo(() => {
     if (!isGM || !displayedScene) return {};
     const sources = combatEntriesForSelection(selectedTokens, displayedScene);
+    if (sources.length === 0) return {};
     const existing = combatEntriesInSelection(combatCtx.combat, selectedTokens, displayedScene);
-    if (sources.length > 0 && existing.length === sources.length) {
+    if (existing.length === sources.length) {
       return {
         onRemoveFromCombat: () => existing.forEach(e => combatCtx.run(() => removeCombatEntry(gameId, displayedScene.id, e.id))),
       };

@@ -57,6 +57,11 @@ func TestBuildEntryFromSource(t *testing.T) {
 	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "image", SourceID: primitive.NewObjectID().Hex()}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("image from another scene: %v", err)
 	}
+	bg := models.SceneImage{ID: primitive.NewObjectID(), FileName: "map.jpg", Layer: "background"}
+	scene.Images = append(scene.Images, bg)
+	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "image", SourceID: bg.ID.Hex()}); !errors.Is(err, ErrCombatInvalid) {
+		t.Fatalf("image outside the tokens layer: %v", err)
+	}
 	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "manual", Name: "   "}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("blank manual name: %v", err)
 	}

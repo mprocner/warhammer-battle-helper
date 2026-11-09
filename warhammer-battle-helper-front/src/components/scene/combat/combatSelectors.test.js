@@ -53,6 +53,11 @@ test('selection maps character ids to every placement of that character', () => 
   expect(combatEntriesInSelection(combat, [{ kind: 'char', id: 'c1' }, { kind: 'image', id: 'i2' }], scene).map(e => e.id)).toEqual(['e1']);
 });
 
+test('combatEntriesForSelection ignores images outside the tokens layer', () => {
+  const sel = [{ kind: 'image', id: 'i3' }, { kind: 'image', id: 'missing' }, { kind: 'image', id: 'i2' }];
+  expect(combatEntriesForSelection(sel, scene)).toEqual([{ kind: 'image', sourceId: 'i2' }]);
+});
+
 test('combatCandidates lists scene tokens not yet in combat', () => {
   expect(combatCandidates(scene, combat)).toEqual([
     { kind: 'character', sourceId: 'p2', name: 'Mage', avatar: '/m.png' },

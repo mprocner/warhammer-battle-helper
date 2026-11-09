@@ -32,7 +32,10 @@ export const combatEntriesForSelection = (selection, scene) => {
   const out = [];
   selection.forEach(s => {
     if (s.kind === 'image') {
-      out.push({ kind: 'image', sourceId: s.id });
+      // Only tokens-layer images can join combat (backend enforces the same rule).
+      if ((scene?.images || []).some(i => i.id === s.id && i.layer === 'tokens')) {
+        out.push({ kind: 'image', sourceId: s.id });
+      }
       return;
     }
     (scene?.characters || [])

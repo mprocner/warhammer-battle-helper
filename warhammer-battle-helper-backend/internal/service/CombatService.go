@@ -207,6 +207,9 @@ func buildEntry(scene *models.Scene, req models.CombatSourceRequest) (models.Com
 		}
 		for _, img := range scene.Images {
 			if img.ID == id {
+				if img.Layer != "tokens" {
+					return e, ErrCombatInvalid
+				}
 				e.SourceID, e.Hidden = id, e.Hidden || img.Hidden
 				e.Name = strings.TrimSuffix(img.FileName, filepath.Ext(img.FileName))
 				if req.Name != "" {
