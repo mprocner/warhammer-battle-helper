@@ -1,19 +1,16 @@
 import { findMatch } from './systemOptions';
 import { systemLabel } from './gameLabels';
 
-// Below this many games the whole list fits on screen, so a search box is only clutter.
-export const SEARCH_THRESHOLD = 8;
-
 export const gameRole = (game, userEmail) => (game.gameMasterEmail === userEmail ? 'gm' : 'player');
 
-// Each control appears only when it can narrow the list: role chips need games in both roles,
-// search needs more games than fit at a glance. Counted on the whole list, so switching a chip
-// never hides the search box (and the text typed into it).
+// Role chips appear only when they can narrow the list (games in both roles), otherwise one chip
+// would always show nothing. Search is always there once there is a game: a box that shows up
+// only past some count surprises people and drops the typed text when the list shrinks.
 export function lobbyFilterVisibility(games, userEmail) {
   const roles = new Set(games.map(g => gameRole(g, userEmail)));
   return {
     showRoles: roles.size === 2,
-    showSearch: games.length > SEARCH_THRESHOLD,
+    showSearch: games.length > 0,
   };
 }
 

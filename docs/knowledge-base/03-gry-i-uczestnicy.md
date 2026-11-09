@@ -11,13 +11,13 @@ w przeglądarce. Gdy wyszukiwanie nic nie znajduje tylko przez filtr, dialog mó
 
 **Filtr i wyszukiwarka w lobby** (PLAYRPG-298/299). Nad siatką gier pasek `LobbyFilterBar.jsx`:
 chipy „Wszystkie / Prowadzę / Gram” pojawiają się tylko u kogoś, kto ma gry w obu rolach (rola
-= `gameMasterEmail === userEmail`), wyszukiwarka dopiero powyżej 8 gier (`SEARCH_THRESHOLD`,
-liczone łącznie, nie po filtrze). Szukanie obejmuje nazwę gry i etykietę systemu z karty
+= `gameMasterEmail === userEmail`), wyszukiwarka zawsze, gdy jest choć jedna gra. Próg (np. 8 gier)
+odrzuciliśmy: pole pojawiające się znienacka było nieintuicyjne i znikało z wpisaną frazą. Szukanie obejmuje nazwę gry i etykietę systemu z karty
 (`systemLabel`), przez `findMatch` z `systemOptions.js` (bez wielkości liter i polskich znaków).
 Wszystko we froncie (`lobbyFilter.js`), backend bez zmian. Stan siedzi w URL (`?role=gm&q=…`,
 `useLobbyFilter`, `replace: true`), bo gra otwiera się dziś pod tym samym `/games` i lobby się
-odmontowuje — URL przeżywa wejście do gry i F5. **Pułapka:** parametr ukrytej kontrolki jest
-ignorowany (stare `?role=player` u kogoś, kto przestał grać, nie chowa gier). Fraza nie trafia
+odmontowuje — URL przeżywa wejście do gry i F5. **Pułapka:** `role` przy ukrytych chipach jest
+ignorowane (stare `?role=player` u kogoś, kto przestał grać, nie chowa gier). Fraza nie trafia
 do GA, bo `gtag.js` obcina query string.
 
 **Szablon w grze to kopia.** Gra własnego systemu osadza kopię szablonu

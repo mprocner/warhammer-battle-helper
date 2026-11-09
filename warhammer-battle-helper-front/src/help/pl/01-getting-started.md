@@ -28,8 +28,8 @@ nie działa, MG zmienił albo usunął: poproś o nowy. Gdy lista jest pusta, mo
 albo zaprojektować własny system.
 
 Gdy prowadzisz jedne gry, a w innych grasz, nad listą pojawiają się przyciski **Wszystkie**,
-**Prowadzę** i **Gram**. Przy więcej niż ośmiu grach dochodzi wyszukiwarka: wpisz fragment nazwy
-gry albo systemu, wielkość liter i polskie znaki nie mają znaczenia. Wybór zostaje w adresie
+**Prowadzę** i **Gram**. Wyszukiwarka nad listą znajduje grę po fragmencie nazwy gry
+albo systemu, wielkość liter i polskie znaki nie mają znaczenia. Wybór zostaje w adresie
 strony, więc po wyjściu z gry i po odświeżeniu lista jest dalej zawężona. Gdy nic nie pasuje, **Wyczyść filtry**
 pokazuje znowu wszystko.
 

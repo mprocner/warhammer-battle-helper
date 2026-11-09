@@ -15,8 +15,8 @@ ekranu nowym użytkownikom.
 | Gdzie filtrujemy | Tylko frontend. Lista gier przychodzi cała jednym fetchem przy wejściu; backend bez zmian. |
 | Rola gry | `game.gameMasterEmail === userEmail` → „Prowadzę” (`gm`), inaczej „Gram” (`player`). Ta sama reguła co `isGM` w `GameCard`. |
 | Widoczność chipów | Tylko gdy użytkownik ma ≥ 1 grę w każdej roli. Kto tylko prowadzi albo tylko gra, chipów nie widzi. |
-| Widoczność wyszukiwarki | Gdy `games.length > 8`, liczone łącznie, niezależnie od chipa (inaczej pole znikałoby przy przełączaniu chipów razem z wpisaną frazą). |
-| Ukryty filtr nie działa | Gdy chipy są ukryte, `role` jest ignorowane; gdy pole jest ukryte, `q` jest ignorowane. Gra nigdy nie chowa się za niewidoczną kontrolką. |
+| Widoczność wyszukiwarki | Zawsze, gdy jest ≥ 1 gra (zmiana po implementacji: próg 8 gier był nieintuicyjny — pole pojawiało się znienacka i znikało z wpisaną frazą). |
+| Ukryty filtr nie działa | Gdy chipy są ukryte, `role` jest ignorowane. Gra nigdy nie chowa się za niewidoczną kontrolką. |
 | Po czym szukamy | Nazwa gry **lub** etykieta systemu, ta sama, którą pokazuje karta (`systemLabel`: nazwa szablonu dla `custom`, inaczej `t('gameSystems.<id>')`). |
 | Dopasowanie | `findMatch` z `components/lobby/systemOptions.js`: bez rozróżniania wielkości liter, bez polskich znaków (NFD + `ł→l`). Fraza przycięta (`trim`); pusta = brak filtra. |
 | Łączenie | Chip i fraza działają razem (AND). |
@@ -36,7 +36,6 @@ ekranu nowym użytkownikom.
   - `lobbyFilterVisibility(games, userEmail)` → `{ showRoles, showSearch }`
   - `filterLobbyGames(games, { role, query, userEmail, t })` → przefiltrowana tablica
     (przyjmuje już efektywne wartości — ignorowanie ukrytych parametrów robi hook)
-  - stała `SEARCH_THRESHOLD = 8`
 - `hooks/useLobbyFilter.js` (nowy) — czyta/zapisuje `role` i `q` z `useSearchParams`, liczy
   widoczność, zwraca `{ role, query, setRole, setQuery, clear, showRoles, showSearch, visibleGames }`.
 - `components/lobby/LobbyFilterBar.jsx` (nowy) — chipy (MUI `Chip`, wybrany `filled`, reszta
@@ -62,9 +61,9 @@ bez), `clearFilters`.
 
 ## Testy
 
-- `lobbyFilter.test.js` — role; progi widoczności (8 vs 9 gier; jedna rola vs obie); dopasowanie
+- `lobbyFilter.test.js` — role; widoczność (wyszukiwarka od 1 gry; chipy: jedna rola vs obie); dopasowanie
   po nazwie i po etykiecie systemu (wbudowany i szablon); polskie znaki („lodz” → „Łódź”);
   pusta / spacjowa fraza; AND chipa i frazy.
 - `LobbyFilterBar` / lobby w `MemoryRouter` (`import '../../i18n'`): chipy ukryte przy jednej roli;
-  pole ukryte przy ≤ 8 grach; klik chipa ustawia `?role=`; ukryte `role` z URL ignorowane;
+  pole ukryte przy zerze gier; klik chipa ustawia `?role=`; ukryte `role` z URL ignorowane;
   „Wyczyść filtry” usuwa oba parametry.

@@ -39,11 +39,10 @@ describe('useLobbyFilter', () => {
     expect(result.current.filter.visibleGames).toHaveLength(2);
   });
 
-  it('ignores the query when the search box is hidden', () => {
-    const { result } = setup([mine('A'), theirs('B')], '/games?q=zzz');
-    expect(result.current.filter.showSearch).toBe(false);
-    expect(result.current.filter.query).toBe('');
-    expect(result.current.filter.visibleGames).toHaveLength(2);
+  it('shows search and applies the query with only a couple of games', () => {
+    const { result } = setup([mine('A'), theirs('B')], '/games?q=b');
+    expect(result.current.filter.showSearch).toBe(true);
+    expect(result.current.filter.visibleGames.map(g => g.name)).toEqual(['B']);
   });
 
   it('writes role and query to the URL and drops defaults', () => {

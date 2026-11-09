@@ -1,4 +1,4 @@
-import { SEARCH_THRESHOLD, filterLobbyGames, gameRole, lobbyFilterVisibility } from './lobbyFilter';
+import { filterLobbyGames, gameRole, lobbyFilterVisibility } from './lobbyFilter';
 
 const ME = 'me@x.pl';
 // Mirrors i18next for the two built-in labels the tests use; unknown keys fall back.
@@ -23,10 +23,8 @@ describe('lobbyFilterVisibility', () => {
     expect(lobbyFilterVisibility([game({ name: 'A' })], ME).showRoles).toBe(false);
     expect(lobbyFilterVisibility([mine({ name: 'A' }), game({ name: 'B' })], ME).showRoles).toBe(true);
   });
-  it('shows search only above the threshold', () => {
-    expect(SEARCH_THRESHOLD).toBe(8);
-    expect(lobbyFilterVisibility(many(8), ME).showSearch).toBe(false);
-    expect(lobbyFilterVisibility(many(9), ME).showSearch).toBe(true);
+  it('shows search as soon as there is a game', () => {
+    expect(lobbyFilterVisibility(many(1), ME).showSearch).toBe(true);
   });
   it('shows nothing for an empty list', () => {
     expect(lobbyFilterVisibility([], ME)).toEqual({ showRoles: false, showSearch: false });

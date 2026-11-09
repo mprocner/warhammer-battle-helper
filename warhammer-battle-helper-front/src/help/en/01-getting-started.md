@@ -28,7 +28,7 @@ work has been changed or removed by the GM: ask them for a new one. When the lis
 your own system right away.
 
 If you run some games and play in others, **All**, **Running** and **Playing** buttons appear
-above the list. With more than eight games you also get a search box: type part of a game or
+above the list. The search box above the list finds a game by part of its name or its
 system name, letter case and accents do not matter. Your choice stays in the page address, so
 the list is still narrowed after you leave a game or reload. When nothing matches, **Clear filters**
 shows everything again.
