@@ -9,6 +9,7 @@ import HourglassBottomIcon from '@mui/icons-material/HourglassBottom';
 import CheckIcon from '@mui/icons-material/Check';
 import { resolveAvatar, resolveDisplayName } from '../../utils/participants';
 import { getAvatarUrl } from '../Avatar';
+import { systemLabel } from './gameLabels';
 
 // Shared style of the small round player avatars in the tile party row.
 const avatarSx = {
@@ -16,11 +17,6 @@ const avatarSx = {
   border: '2px solid #f4e8d8', boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
   '&:first-of-type': { ml: 0 },
 };
-
-// A custom game shows its template's name; hardcoded systems show their i18n display name.
-const systemLabel = (game, t) => game.gameSystem === 'custom' && game.customSystemTemplate
-  ? game.customSystemTemplate.name
-  : t(`gameSystems.${game.gameSystem}`, { defaultValue: game.gameSystem });
 
 // One tarot-card tile in the lobby grid: image zone, status seal, plaque, enter bar.
 function GameCard({ game, isGM, loading, syncing, onJoin, onDelete, onLeave, onSync, showTooltip, hideTooltip }) {
