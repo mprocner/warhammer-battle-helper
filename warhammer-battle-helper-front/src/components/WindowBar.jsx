@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 import CloseIcon from '@mui/icons-material/Close';
 import { useWindowManager } from '../contexts/WindowManagerContext';
 import './WindowBar.css';
@@ -12,6 +13,7 @@ const KIND_ICONS = {
   handout: ArticleOutlinedIcon,
   note: StickyNote2OutlinedIcon,
   characterSheet: PersonOutlineIcon,
+  combat: SportsKabaddiIcon,
 };
 
 function KindIcon({ kind }) {
