@@ -1,4 +1,5 @@
-import { clampPosition, readStoredPosition } from './useStripPosition';
+import { renderHook, act } from '@testing-library/react';
+import useStripPosition, { clampPosition, readStoredPosition } from './useStripPosition';
 
 test('clampPosition keeps the strip inside the map', () => {
   const bounds = { width: 500, height: 300 };
@@ -24,5 +25,57 @@ describe('readStoredPosition', () => {
   test('survives a throwing storage (private mode)', () => {
     jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
     expect(readStoredPosition('g1')).toBeNull();
+  });
+});
+
+describe('useStripPosition', () => {
+  const rect = (width, height) => ({ left: 0, top: 0, width, height, right: width, bottom: height });
+  const fire = (type, x = 0, y = 0) =>
+    act(() => { document.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y })); });
+
+  function setup() {
+    const bounds = document.createElement('div');
+    bounds.getBoundingClientRect = () => rect(500, 300);
+    const strip = document.createElement('div');
+    strip.getBoundingClientRect = () => rect(200, 50);
+    const boundsRef = { current: bounds };
+    const utils = renderHook(() => {
+      const api = useStripPosition('g1', boundsRef);
+      api.stripRef.current = strip;
+      return api;
+    });
+    return utils;
+  }
+  const grip = { button: 0, clientX: 0, clientY: 0, preventDefault: () => {} };
+
+  afterEach(() => { jest.restoreAllMocks(); window.localStorage.clear(); });
+
+  test('pointercancel ends the drag and stores the last position', () => {
+    const { result } = setup();
+    act(() => result.current.onGripPointerDown(grip));
+    fire('pointermove', 40, 30);
+    fire('pointercancel');
+    expect(JSON.parse(window.localStorage.getItem('combatStripPos:g1'))).toEqual({ x: 40, y: 30 });
+    fire('pointermove', 90, 90);
+    expect(result.current.position).toEqual({ x: 40, y: 30 });
+  });
+
+  test('unmounting mid-drag removes the listeners', () => {
+    const { result, unmount } = setup();
+    act(() => result.current.onGripPointerDown(grip));
+    fire('pointermove', 40, 30);
+    unmount();
+    const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+    fire('pointermove', 90, 90);
+    fire('pointerup');
+    expect(err).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('combatStripPos:g1')).toBeNull();
+  });
+
+  test('a stored position outside the bounds is clamped after mount, without writing storage', () => {
+    window.localStorage.setItem('combatStripPos:g1', JSON.stringify({ x: 1900, y: 1000 }));
+    const { result } = setup();
+    expect(result.current.position).toEqual({ x: 300, y: 250 });
+    expect(JSON.parse(window.localStorage.getItem('combatStripPos:g1'))).toEqual({ x: 1900, y: 1000 });
   });
 });

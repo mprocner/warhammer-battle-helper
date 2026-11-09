@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 
 const storageKey = (gameId) => `combatStripPos:${gameId}`;
 
@@ -36,6 +36,26 @@ function storePosition(gameId, pos) {
 export default function useStripPosition(gameId, boundsRef) {
   const [position, setPosition] = useState(() => readStoredPosition(gameId));
   const stripRef = useRef(null);
+  const dragCleanupRef = useRef(null);
+
+  // Remove drag listeners if the strip unmounts mid-drag.
+  useEffect(() => () => dragCleanupRef.current?.(), []);
+
+  // A stored position may come from a bigger viewport: re-clamp after mount and on resize.
+  // Automatic clamping never writes to storage.
+  useLayoutEffect(() => {
+    if (!position) return undefined;
+    const reclamp = () => {
+      const area = boundsRef.current;
+      const strip = stripRef.current;
+      if (!area || !strip) return;
+      const next = clampPosition(position, area.getBoundingClientRect(), strip.getBoundingClientRect());
+      if (next.x !== position.x || next.y !== position.y) setPosition(next);
+    };
+    reclamp();
+    window.addEventListener('resize', reclamp);
+    return () => window.removeEventListener('resize', reclamp);
+  }, [position, boundsRef]);
 
   const onGripPointerDown = useCallback((e) => {
     if (e.button !== 0) return;
@@ -51,13 +71,21 @@ export default function useStripPosition(gameId, boundsRef) {
       last = clampPosition({ x: ev.clientX - b.left - offset.x, y: ev.clientY - b.top - offset.y }, b, s);
       setPosition(last);
     };
-    const up = () => {
+    const cleanup = () => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
+      document.removeEventListener('pointercancel', up);
+      dragCleanupRef.current = null;
+    };
+    const up = () => {
+      cleanup();
       if (last) storePosition(gameId, last);
     };
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = cleanup;
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', up);
   }, [gameId, boundsRef]);
 
   const reset = useCallback(() => {
