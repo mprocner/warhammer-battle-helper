@@ -44,6 +44,26 @@ Drawing is not limited to it.
 **Ping.** Hold the left button still on an empty spot of the map for about half a second.
 Everyone sees a marker there.
 
+## Turn order {#turn-order}
+
+**GM.** The button with two fighters in the tool bar (after the divider) starts combat on the
+current scene. Combat starts hidden: add participants, enter initiative and click
+**Show to players**. Add participants from the Combat window (the "On this scene" list, a manual
+entry) or with a right click on a token: an image has **Add to combat** in its menu; select a
+character token first, then right-click it.
+
+- Order follows initiative (highest first); drag a row to break a tie.
+- Click a participant to make them active — turns do not have to go in order.
+- **Next turn** marks the active participant as done and moves to the next one who has not acted.
+  **End round** clears the marks and advances the round counter.
+- The eye next to a participant hides them from players (ambush). Players never see initiative values.
+- Every scene has its own combat; a scene with combat in progress shows an icon next to its name.
+- **End combat** clears the turn order.
+
+**Player.** During combat the turn order shows above the map. When your character's turn comes,
+the combat button pulses green and **End turn** appears on the bar. Drag the bar by its handle or
+collapse it with the combat button.
+
 ## Tutorials {#tutorials}
 
 The game-screen tutorial starts on your first visit. Replay it with the question mark in the

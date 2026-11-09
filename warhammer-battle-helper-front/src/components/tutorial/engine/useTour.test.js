@@ -91,7 +91,7 @@ describe('useTour', () => {
     const { view } = setup({ queryTarget });
     expect(view.result.current.steps.map(s => s.id)).not.toContain('layerSelector');
     expect(view.result.current.steps.map(s => s.id)).not.toContain('drawingToolbar');
-    expect(view.result.current.steps).toHaveLength(9);
+    expect(view.result.current.steps).toHaveLength(10);
   });
 
   it('stays put when no anchor at all is on screen', () => {
@@ -119,10 +119,10 @@ describe('useTour', () => {
 
   it('holds the step back until the panel actually opened', () => {
     const { view } = setup({ panels: { ...OPEN, rightHidden: true } });
-    act(() => view.result.current.goTo(9)); // tabsNav, needs the right panel
+    act(() => view.result.current.goTo(10)); // tabsNav, needs the right panel
     expect(view.result.current.stepIndex).toBe(0);
     view.rerender({ panels: OPEN });
-    expect(view.result.current.stepIndex).toBe(9);
+    expect(view.result.current.stepIndex).toBe(10);
   });
 
   it('holds a step back until the left panel opens', () => {
@@ -202,7 +202,7 @@ describe('useTour', () => {
     view.rerender({ panels: OPEN, screenReady: true, queryTarget: allTargets() });
     expect(view.result.current.running).toBe(true);
     expect(view.result.current.stepIndex).toBe(0);
-    expect(view.result.current.steps).toHaveLength(11); // the full list for 'gm', not cut down to 2
+    expect(view.result.current.steps).toHaveLength(12); // the full list for 'gm', not cut down to 2
   });
 
   it('lets manual start() from the "?" button run even while the screen is not ready yet', () => {

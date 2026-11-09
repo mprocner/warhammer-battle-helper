@@ -1134,6 +1134,10 @@
           "player": "Select and move your tokens, measure distance to a target and draw on the map so the rest of the table sees what you mean."
         }
       },
+      "combatButton": {
+        "title": "Turn order",
+        "body": "Start combat on this scene. It stays hidden until you show it to the players; add tokens with a right click or from the Combat window."
+      },
       "panelHeader": {
         "title": "Guide, news and tutorial",
         "body": "The book opens the user guide and the star shows what is new in PlayRPG, both in a new tab so the game stays open. The question mark replays this tutorial. Contact, the terms and the privacy policy are linked in the General tab."

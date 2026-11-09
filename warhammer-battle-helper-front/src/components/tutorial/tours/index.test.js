@@ -79,7 +79,7 @@ describe('game screen tour', () => {
   it('walks the game screen left to right, ending at the right panel', () => {
     expect(steps().map(s => s.id)).toEqual([
       'characterCard', 'characterList', 'sceneSelector', 'windowBar', 'sceneControls',
-      'layerSelector', 'drawingToolbar', 'panelHeader', 'onlineUsers', 'tabsNav', 'diceControls',
+      'layerSelector', 'drawingToolbar', 'combatButton', 'panelHeader', 'onlineUsers', 'tabsNav', 'diceControls',
     ]);
   });
 
@@ -90,11 +90,11 @@ describe('game screen tour', () => {
 
   it('marks the GM-only steps of the game screen tour', () => {
     const gmOnly = steps().filter(s => s.roles && !s.roles.includes('player'));
-    expect(gmOnly.map(s => s.id)).toEqual(['sceneSelector', 'layerSelector']);
+    expect(gmOnly.map(s => s.id)).toEqual(['sceneSelector', 'layerSelector', 'combatButton']);
   });
 
-  it('gives the GM eleven steps and the player nine', () => {
-    expect(steps().filter(s => s.roles.includes('gm'))).toHaveLength(11);
+  it('gives the GM twelve steps and the player nine', () => {
+    expect(steps().filter(s => s.roles.includes('gm'))).toHaveLength(12);
     expect(steps().filter(s => s.roles.includes('player'))).toHaveLength(9);
   });
 

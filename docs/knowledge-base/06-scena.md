@@ -46,6 +46,12 @@ a hub przekazuje je dalej, nic nie zapisując.
 **Współrzędne** mgły i rysunków są zapisywane w przestrzeni sceny, nie w pikselach ekranu, więc
 działają przy każdym zoomie.
 
+**Kolejka tur (PLAYRPG-1).** Każda scena może mieć walkę (`Scene.Combat`, `json:"-"`). Wpisy:
+rozstawienie postaci (`GameCharacter.ID`), obrazek (`SceneImage.ID`) albo wpis ręczny. Tura to
+flaga `Acted` + jedno `ActiveID`; MG może aktywować kogokolwiek. Odczyt wyłącznie przez
+`GET /games/:id/scenes/:sceneId/combat` — `BuildCombatView` maskuje per widz (gracz: bez ukrytych,
+bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `CombatService.mutate`.
+
 ## Kluczowe pliki
 
 | Co | Gdzie |
@@ -77,3 +83,12 @@ działają przy każdym zoomie.
 - Przypisanie gracza do sceny usuwa go z innych scen w pętli, bez transakcji. Błąd w połowie
   może zostawić gracza na dwóch scenach.
 - Warstwy canvasowe (`FogLayer`, `DrawingLayer`) i `SceneViewport` nie mają testów renderujących.
+- `Scene.Combat` ma `json:"-"`, bo surowy `Game` idzie do graczy i do lobby. Test
+  `TestSceneCombatNeverSerialized` pilnuje, żeby nikt tego nie zdjął.
+- Każdy zapis walki jest warunkowy po `Combat.Version` (409 przy wyścigu). `end-turn`/`next` niosą
+  „kogo dotyczą”, więc podwójne kliknięcie nie przeskoczy uczestnika.
+- Wpisy po usuniętych tokenach nie są czyszczone przy usuwaniu — `combat.Prune` odfiltrowuje je przy
+  każdym odczycie i zapisie. Nowa ścieżka usuwania tokenu nie musi wiedzieć o walce, ale klient musi
+  refetchować walkę na jej evencie (`onSourcesChanged` w `GameSession`).
+- Zmiany walki ukrytej przed graczami idą eventem tylko do MG — sam event zdradzałby jej istnienie.
+- Do walki trafiają tylko obrazki z warstwy `tokens` — `buildEntry` odrzuca inne.

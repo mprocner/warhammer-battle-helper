@@ -43,6 +43,26 @@ lub usuwanie obrazków działa tylko na warstwie wybranej w selektorze warstw. R
 **Ping.** Przytrzymaj lewy przycisk w miejscu na pustej mapie przez około pół sekundy, nie
 ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 
+## Kolejka tur {#turn-order}
+
+**MG.** Przycisk z dwiema walczącymi postaciami w pasku narzędzi (za kreską) rozpoczyna walkę na
+bieżącej scenie. Walka startuje ukryta: dodaj uczestników, wpisz inicjatywę i kliknij
+**Pokaż graczom**. Uczestników dodasz z okna „Walka” (lista „Na tej scenie”, wpis ręczny) albo
+prawym przyciskiem na tokenie: obrazek ma pozycję **Dodaj do walki** w swoim menu, a token postaci
+najpierw zaznacz, potem kliknij prawym.
+
+- Kolejność wynika z inicjatywy (malejąco); przeciągnij wiersz, żeby rozstrzygnąć remis.
+- Kliknięcie uczestnika czyni go aktywnym — tura nie musi iść po kolei.
+- **Następna tura** oznacza aktywnego jako „działał” i przechodzi do następnego, który jeszcze nie
+  działał. **Koniec rundy** zeruje znaczniki i zwiększa licznik rund.
+- Oko przy uczestniku ukrywa go przed graczami (zasadzka). Gracze nie widzą wartości inicjatywy.
+- Każda scena ma własną walkę; przy nazwie sceny z trwającą walką widzisz ikonę.
+- **Zakończ walkę** czyści kolejkę.
+
+**Gracz.** Gdy trwa walka, nad mapą widzisz kolejkę. Gdy przychodzi tura twojej postaci, przycisk
+walki pulsuje na zielono, a na pasku pojawia się **Zakończ turę**. Pasek możesz przeciągnąć za
+uchwyt albo zwinąć przyciskiem walki.
+
 ## Samouczki {#tutorials}
 
 Przy pierwszym wejściu do gry uruchamia się samouczek ekranu. Możesz go powtórzyć znakiem

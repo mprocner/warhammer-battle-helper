@@ -1138,6 +1138,10 @@
           "player": "Zaznaczanie i przesuwanie tokenów, miarka do celu i rysowanie po mapie, żeby reszta stołu zobaczyła, o co Ci chodzi."
         }
       },
+      "combatButton": {
+        "title": "Kolejka tur",
+        "body": "Rozpocznij walkę na tej scenie. Zostaje ukryta, dopóki nie pokażesz jej graczom; tokeny dodasz prawym przyciskiem albo w oknie „Walka”."
+      },
       "panelHeader": {
         "title": "Przewodnik, nowości i samouczek",
         "body": "Książka otwiera przewodnik, a gwiazdka pokazuje nowości w PlayRPG — obie w nowej karcie, więc gra zostaje otwarta. Znak zapytania uruchamia ten samouczek ponownie. Kontakt, regulamin i polityka prywatności są podlinkowane w zakładce Ogólne."

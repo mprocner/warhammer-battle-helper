@@ -26,7 +26,8 @@
         "tools": "Select, ruler and drawing for everyone, plus fog of war for the GM.",
         "tokens": "Character and image tokens: move, box-select, rotate, resize and duplicate.",
         "overlays": "Health, condition slots and bars right on the token, and tokens hidden from players.",
-        "controls": "Ping the map, pan with the right mouse button and pick the control scheme that suits you."
+        "controls": "Ping the map, pan with the right mouse button and pick the control scheme that suits you.",
+        "combat": "Turn order tracker per scene: initiative, rounds, hidden participants and an end-turn button for players."
       },
       "characters": {
         "sheet": "A character sheet for every system, in a popup or in its own browser tab.",
