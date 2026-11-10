@@ -6,52 +6,6 @@
   --panel-right-width: 420px;
   --vertical-tabs-width: 70px;
   --panel-transition: 0.3s ease;
-  /* Primary browns */
-  --log-brown-dark: #6b4423;
-  --log-brown-medium: #7a5c42;
-  --log-brown-light: #c9975b;
-  --log-brown-text: #3a2f1f;
-  --log-brown-muted: #8a7d6a;
-  --log-brown-accent: #d4a574;
-
-  /* Success/Greens */
-  --log-green-dark: #4a5a3a;
-  --log-green-medium: #5a7a4a;
-  --log-green-light: #7a9a6a;
-  --log-success: #4a7c59;
-
-  /* Error/Reds */
-  --log-red-dark: #8b2424;
-  --log-red-medium: #a93434;
-  --log-red-light: #c94444;
-  --log-crit-failure: #4a0f0f;
-
-  /* Gold/Critical Success */
-  --log-gold-dark: #8b6914;
-  --log-gold-medium: #b8941f;
-  --log-gold-light: #d4af37;
-
-  /* Purple/Critical Failure */
-  --log-purple-dark: #3a1a5c;
-  --log-purple-medium: #6b3fa0;
-  --log-purple-light: #9b6fd0;
-  --log-purple: var(--log-purple-medium);
-
-  /* Blue/Hard Success (CoC tiered success) */
-  --log-blue: #4a7fa5;
-
-  /* Backgrounds */
-  --log-bg-parchment: #f9f3e8;
-  --log-bg-parchment-dark: #ece3d4;
-  --log-bg-item: rgba(255, 255, 255, 0.4);
-  --log-bg-item-hover: rgba(255, 255, 255, 0.8);
-
-  /* Info/Neutral */
-  --log-info: #7a8a9a;
-
-  /* Fonts */
-  --log-font-display: "Cinzel", serif;
-  --log-font-body: "Crimson Text", serif;
 }
 
 /* ================== WAX SEAL TOKEN ================== */
@@ -66,55 +20,55 @@
   font-weight: 700;
   font-size: 18px;
   flex-shrink: 0;
-  color: #fff;
+  color: var(--c-text-on-dark);
 }
 
 .wax-seal-token--crit-success {
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), transparent 60%),
+  background: radial-gradient(circle at 35% 30%, rgb(var(--c-highlight-rgb) / 0.5), transparent 60%),
               radial-gradient(circle at 50% 50%, var(--log-gold-light), var(--log-gold-medium));
   border: 3px solid var(--log-gold-dark);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
-              inset 0 -2px 4px rgba(0,0,0,0.2),
-              inset 0 2px 4px rgba(255,255,255,0.4),
-              0 0 15px rgba(212, 175, 55, 0.5);
+  box-shadow: 0 3px 6px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 -2px 4px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 2px 4px rgb(var(--c-highlight-rgb) / calc(0.4 * var(--shadow-k))),
+              0 0 15px rgb(var(--c-gold-rgb) / calc(0.5 * var(--shadow-k)));
 }
 
 .wax-seal-token--crit-failure {
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3), transparent 60%),
+  background: radial-gradient(circle at 35% 30%, rgb(var(--c-highlight-rgb) / 0.3), transparent 60%),
               radial-gradient(circle at 50% 50%, var(--log-purple-medium), var(--log-purple-dark));
   border: 3px solid var(--log-purple-dark);
-  color: #e8d0ff;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.3),
-              inset 0 -2px 4px rgba(0,0,0,0.3),
-              inset 0 2px 4px rgba(255,255,255,0.2),
-              0 0 10px rgba(107, 63, 160, 0.4);
+  color: var(--c-text-magic-light);
+  box-shadow: 0 3px 6px rgb(var(--c-shadow-rgb) / calc(0.3 * var(--shadow-k))),
+              inset 0 -2px 4px rgb(var(--c-shadow-rgb) / calc(0.3 * var(--shadow-k))),
+              inset 0 2px 4px rgb(var(--c-highlight-rgb) / calc(0.2 * var(--shadow-k))),
+              0 0 10px rgb(var(--c-magic-rgb) / calc(0.4 * var(--shadow-k)));
 }
 
 .wax-seal-token--success {
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
+  background: radial-gradient(circle at 35% 30%, rgb(var(--c-highlight-rgb) / 0.4), transparent 60%),
               radial-gradient(circle at 50% 50%, var(--log-green-light), var(--log-green-medium));
   border: 3px solid var(--log-green-dark);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
-              inset 0 -2px 4px rgba(0,0,0,0.2),
-              inset 0 2px 4px rgba(255,255,255,0.4);
+  box-shadow: 0 3px 6px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 -2px 4px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 2px 4px rgb(var(--c-highlight-rgb) / calc(0.4 * var(--shadow-k)));
 }
 
 .wax-seal-token--failure {
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
+  background: radial-gradient(circle at 35% 30%, rgb(var(--c-highlight-rgb) / 0.4), transparent 60%),
               radial-gradient(circle at 50% 50%, var(--log-red-light), var(--log-red-medium));
   border: 3px solid var(--log-red-dark);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
-              inset 0 -2px 4px rgba(0,0,0,0.2),
-              inset 0 2px 4px rgba(255,255,255,0.4);
+  box-shadow: 0 3px 6px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 -2px 4px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 2px 4px rgb(var(--c-highlight-rgb) / calc(0.4 * var(--shadow-k)));
 }
 
 .wax-seal-token--neutral {
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.4), transparent 60%),
-              radial-gradient(circle at 50% 50%, #8a7d6a, #6a5d4a);
-  border: 3px solid #5a4d3a;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.2),
-              inset 0 -2px 4px rgba(0,0,0,0.2),
-              inset 0 2px 4px rgba(255,255,255,0.4);
+  background: radial-gradient(circle at 35% 30%, rgb(var(--c-highlight-rgb) / 0.4), transparent 60%),
+              radial-gradient(circle at 50% 50%, var(--c-neutral-bg), var(--c-leather-bg));
+  border: 3px solid var(--c-border-strong);
+  box-shadow: 0 3px 6px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 -2px 4px rgb(var(--c-shadow-rgb) / calc(0.2 * var(--shadow-k))),
+              inset 0 2px 4px rgb(var(--c-highlight-rgb) / calc(0.4 * var(--shadow-k)));
 }
 
 .wax-seal-token--small-text {
@@ -193,7 +147,7 @@
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: calc(0.5px * var(--tracking-k));
 }
 
 .log-list-item__damage {
@@ -232,11 +186,11 @@
 }
 
 .log-fight-result__winner--attacker {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(184, 148, 31, 0.1));
+  background: linear-gradient(135deg, rgb(var(--c-gold-rgb) / 0.2), rgb(var(--c-gold-rgb) / 0.1));
 }
 
 .log-fight-result__winner--defender {
-  background: linear-gradient(135deg, rgba(122, 154, 106, 0.2), rgba(90, 122, 74, 0.1));
+  background: linear-gradient(135deg, rgb(var(--c-success-rgb) / 0.2), rgb(var(--c-success-rgb) / 0.1));
 }
 
 .log-fight-result__winner-name {
@@ -264,10 +218,10 @@
 .log-simple-message {
   border-left: 4px solid;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, var(--log-bg-item-hover) 0%, rgba(253, 248, 236, 0.8) 100%);
+  background: linear-gradient(135deg, var(--log-bg-item-hover) 0%, rgb(var(--c-light-rgb) / 0.8) 100%);
   border-radius: 0;
   padding: 10px 12px;
-  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.12);
+  box-shadow: 0 2px 6px rgb(var(--c-leather-dark-rgb) / calc(0.12 * var(--shadow-k)));
   border: 1px solid var(--log-brown-accent);
   border-left-width: 4px;
 }
@@ -291,15 +245,15 @@
 /* ================== CURRENT USER'S OWN ENTRIES ================== */
 /* Gold background tint fading to the right; the left bar is the author colour (see below). */
 .log-list-item--mine {
-  background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, var(--log-bg-item) 40%);
+  background: linear-gradient(to right, rgb(var(--c-gold-rgb) / 0.1) 0%, var(--log-bg-item) 40%);
 }
 
 .log-list-item--mine:hover {
-  background: linear-gradient(to right, rgba(212, 175, 55, 0.18) 0%, var(--log-bg-item-hover) 40%);
+  background: linear-gradient(to right, rgb(var(--c-gold-rgb) / 0.18) 0%, var(--log-bg-item-hover) 40%);
 }
 
 .log-simple-message--mine {
-  background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, rgba(255, 255, 255, 0.70) 40%);
+  background: linear-gradient(to right, rgb(var(--c-gold-rgb) / 0.1) 0%, rgb(var(--c-highlight-rgb) / 0.7) 40%);
 }
 
 /* ================== AUTHOR COLOUR (PLAYRPG-340) ================== */
@@ -319,21 +273,17 @@
 /* Bursztynowy "żar" — jedyny ciepły kolor nie zajęty semantycznie
    (złoto = "moje", zielony = sukces, czerwony = porażka, fiolet = krytyk).
    Poświata leży na box-shadow, więc nie koliduje z lewym borderem ("moje"/typ). */
-:root {
-  --log-new-glow: #c07028;
-  --log-new-glow-rgb: 192, 112, 40;
-}
 
 @keyframes log-new-highlight-fade {
   /* 0%–15% (0–4,5 s): pełna poświata — natychmiast + przytrzymanie.
      15%–100%: liniowy zanik do zera przez resztę 30 s. */
   0%, 15% {
     box-shadow: 0 0 0 2px var(--log-new-glow),
-                0 0 10px 2px rgba(var(--log-new-glow-rgb), 0.45);
+                0 0 10px 2px rgb(var(--log-new-glow-rgb) / calc(0.45 * var(--shadow-k)));
   }
   100% {
-    box-shadow: 0 0 0 2px rgba(var(--log-new-glow-rgb), 0),
-                0 0 0 0 rgba(var(--log-new-glow-rgb), 0);
+    box-shadow: 0 0 0 2px rgb(var(--log-new-glow-rgb) / 0),
+                0 0 0 0 rgb(var(--log-new-glow-rgb) / 0);
   }
 }
 
@@ -389,7 +339,7 @@
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, var(--log-bg-parchment) 0%, var(--log-bg-parchment-dark) 100%);
-  box-shadow: inset 0 0 20px rgba(107, 68, 35, 0.08);
+  box-shadow: inset 0 0 20px rgb(var(--c-leather-dark-rgb) / calc(0.08 * var(--shadow-k)));
 }
 
 /* The log has no container padding, so its header brings the 12px the other tabs' containers give.
@@ -404,7 +354,7 @@
   overflow: auto;
   /* Scrollbar styling - Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #c9975b #e8dcc4;
+  scrollbar-color: var(--c-border-accent) var(--c-border-faint);
 }
 
 /* Scrollbar styling - WebKit (Chrome, Safari, Edge) */
@@ -413,17 +363,17 @@
 }
 
 .log-window__messages::-webkit-scrollbar-track {
-  background: #e8dcc4;
-  border-radius: 4px;
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-md);
 }
 
 .log-window__messages::-webkit-scrollbar-thumb {
-  background: #c9975b;
-  border-radius: 4px;
+  background: var(--c-accent-bg);
+  border-radius: var(--radius-md);
 }
 
 .log-window__messages::-webkit-scrollbar-thumb:hover {
-  background: #a67c52;
+  background: var(--c-accent-bg-dark);
 }
 
 .log-window__empty {
@@ -471,12 +421,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .dice-controls__button:hover {
-  border-color: #a67c52;
-  background: rgba(201, 151, 91, 0.1);
+  border-color: var(--c-border-accent);
+  background: rgb(var(--c-accent-rgb) / 0.1);
 }
 
 .dice-controls__button:disabled {
@@ -488,14 +438,14 @@
   flex-grow: 1;
   border: 1px solid var(--log-brown-light);
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--log-brown-text);
 }
 
 .dice-controls__input:hover,
 .dice-controls__input:focus {
-  border-color: #a67c52;
+  border-color: var(--c-border-accent);
   outline: none;
 }
 
@@ -517,7 +467,7 @@
   width: 30px;
   height: 30px;
   border: 1px solid var(--log-brown-light);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--log-brown-dark);
   font-size: 18px;
@@ -526,8 +476,8 @@
 }
 
 .dice-controls__dice-toggle:hover {
-  border-color: #a67c52;
-  background: rgba(201, 151, 91, 0.1);
+  border-color: var(--c-border-accent);
+  background: rgb(var(--c-accent-rgb) / 0.1);
 }
 
 .dice-controls__count-badge {
@@ -535,8 +485,8 @@
   top: -6px;
   right: -6px;
   background: var(--log-brown-accent);
-  color: #2a1f14;
-  border-radius: 8px;
+  color: var(--c-text);
+  border-radius: var(--radius-xl);
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
@@ -560,8 +510,8 @@
   padding: 8px;
   background: linear-gradient(135deg, var(--log-bg-parchment) 0%, var(--log-bg-parchment-dark) 100%);
   border: 1px solid var(--log-brown-light);
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgb(var(--c-shadow-rgb) / calc(0.3 * var(--shadow-k)));
 }
 
 .dice-controls__custom-popup-input {
@@ -569,9 +519,9 @@
   flex: 1;
   min-width: 38px;
   padding: 4px 4px;
-  background: #fff;
+  background: var(--c-surface-white);
   border: 1px solid var(--log-brown-light);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   color: var(--log-brown-text);
   font-family: var(--log-font-body);
   font-size: 13px;
@@ -580,7 +530,7 @@
 
 .dice-controls__custom-popup-input:hover,
 .dice-controls__custom-popup-input:focus {
-  border-color: #a67c52;
+  border-color: var(--c-border-accent);
   outline: none;
 }
 
@@ -602,12 +552,12 @@
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .dice-controls__custom-popup-roll:hover {
-  border-color: #a67c52;
-  background: rgba(201, 151, 91, 0.1);
+  border-color: var(--c-border-accent);
+  background: rgb(var(--c-accent-rgb) / 0.1);
 }
 
 .dice-controls__custom-popup-roll:disabled {
@@ -627,13 +577,13 @@
   color: var(--log-brown-medium);
   font-size: 16px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   transition: all 0.2s;
 }
 
 .dice-controls__custom-popup-close:hover {
   color: var(--log-brown-text);
-  background: rgba(201, 151, 91, 0.15);
+  background: rgb(var(--c-accent-rgb) / 0.15);
 }
 
 .dice-controls__my-rolls-toggle {
@@ -641,7 +591,7 @@
   padding: 6px 10px;
   background: transparent;
   border: 1px solid var(--log-brown-light);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   color: var(--log-brown-text);
   font-family: var(--log-font-body);
   font-size: 13px;
@@ -650,15 +600,15 @@
 }
 
 .dice-controls__my-rolls-toggle:hover {
-  border-color: #a67c52;
-  background: rgba(201, 151, 91, 0.1);
+  border-color: var(--c-border-accent);
+  background: rgb(var(--c-accent-rgb) / 0.1);
 }
 
 .dice-controls__my-rolls-toggle--active,
 .dice-controls__my-rolls-toggle--active:hover {
   background: var(--log-brown-accent);
   border-color: var(--log-brown-accent);
-  color: #2a1f14;
+  color: var(--c-text);
 }
 
 .dice-controls__my-rolls-toggle--active:hover {
@@ -671,7 +621,7 @@
   padding: 6px 12px;
   background: transparent;
   border: 1px solid var(--log-brown-light);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   color: var(--log-brown-text);
   font-family: var(--log-font-body);
   font-size: 13px;
@@ -681,12 +631,12 @@
 
 .dice-controls__visibility-select:hover,
 .dice-controls__visibility-select:focus {
-  border-color: #a67c52;
+  border-color: var(--c-border-accent);
   outline: none;
 }
 
 .dice-controls__visibility-select option {
-  background: #2a1f14;
+  background: var(--c-dark-bg);
   color: var(--log-brown-accent);
 }
 
@@ -707,7 +657,7 @@
 /* ================== MODIFIER TEXT ================== */
 .log-modifier {
   font-size: 13px;
-  color: #8a7355;
+  color: var(--c-text-muted);
 }
 
 /* ================== ROLL VALUE DISPLAY ================== */
@@ -723,9 +673,9 @@
 /* ================== FORMULA BREAKDOWN ================== */
 .log-formula-breakdown {
   font-size: 13px;
-  color: #8a7355;
+  color: var(--c-text-muted);
   font-family: var(--log-font-display);
-  letter-spacing: 0.01em;
+  letter-spacing: calc(0.01em * var(--tracking-k));
   margin-top: 2px;
 }
 
@@ -745,24 +695,24 @@
   min-width: 26px;
   height: 26px;
   padding: 0 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   font-weight: 700;
-  background: rgba(58, 47, 31, 0.08);
-  color: #8a7355;
-  border: 1px solid rgba(122, 92, 66, 0.2);
+  background: rgb(var(--c-text-rgb) / 0.08);
+  color: var(--c-text-muted);
+  border: 1px solid rgb(var(--c-leather-rgb) / 0.2);
 }
 
 .custom-pool-die--success {
-  background: rgba(201, 151, 91, 0.2);
-  color: #7a4e1a;
-  border-color: #c9975b;
+  background: rgb(var(--c-accent-rgb) / 0.2);
+  color: var(--c-heading);
+  border-color: var(--c-border-accent);
 }
 
 .custom-pool-success-count {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #7a5c42;
+  color: var(--c-label);
   margin-left: 3px;
   font-family: var(--log-font-display);
 }
@@ -845,7 +795,7 @@
 }
 
 .expression-roll__die--success .wax-seal-token {
-  box-shadow: 0 0 0 2px #c9975b;
+  box-shadow: 0 0 0 2px rgb(var(--c-accent-rgb));
 }
 
 .expression-roll__check {

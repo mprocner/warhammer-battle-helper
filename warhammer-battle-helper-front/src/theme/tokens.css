@@ -101,4 +101,54 @@
 
   /* Depth: alpha multiplier of blurred shadows (focus rings are not affected) */
   --shadow-k: 1;
+
+  /* Roll log and roll outcomes (also read from JS: ToastStack, log/rollUtils) */
+  /* Primary browns */
+  --log-brown-dark: #6b4423;
+  --log-brown-medium: #7a5c42;
+  --log-brown-light: #c9975b;
+  --log-brown-text: #3a2f1f;
+  --log-brown-muted: #8a7d6a;
+  --log-brown-accent: #d4a574;
+
+  /* Success/Greens */
+  --log-green-dark: #4a5a3a;
+  --log-green-medium: #5a7a4a;
+  --log-green-light: #7a9a6a;
+  --log-success: #4a7c59;
+
+  /* Error/Reds */
+  --log-red-dark: #8b2424;
+  --log-red-medium: #a93434;
+  --log-red-light: #c94444;
+
+  /* Gold/Critical Success */
+  --log-gold-dark: #8b6914;
+  --log-gold-medium: #b8941f;
+  --log-gold-light: #d4af37;
+
+  /* Purple/Critical Failure */
+  --log-purple-dark: #3a1a5c;
+  --log-purple-medium: #6b3fa0;
+  --log-purple: var(--log-purple-medium);
+
+  /* Blue/Hard Success (CoC tiered success) */
+  --log-blue: #4a7fa5;
+
+  /* Backgrounds */
+  --log-bg-parchment: #f9f3e8;
+  --log-bg-parchment-dark: #ece3d4;
+  --log-bg-item: rgba(255, 255, 255, 0.4);
+  --log-bg-item-hover: rgba(255, 255, 255, 0.8);
+
+  /* Info/Neutral */
+  --log-info: #7a8a9a;
+
+  /* Fonts */
+  --log-font-display: var(--font-display);
+  --log-font-body: var(--font-body);
+
+  /* New-message glow: the one warm colour not taken by an outcome */
+  --log-new-glow: #c07028;
+  --log-new-glow-rgb: 192 112 40;
 }

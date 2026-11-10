@@ -38,7 +38,10 @@ out += ['',
         '',
         '  /* Depth: alpha multiplier of blurred shadows (focus rings are not affected) */',
         '  --shadow-k: 1;',
-        '}', '']
+        '',
+        '  /* Roll log and roll outcomes (also read from JS: ToastStack, log/rollUtils) */']
+out += open(os.path.join(os.path.dirname(__file__), 'log_outcomes.css.part')).read().rstrip('\n').split('\n')
+out += ['}', '']
 path = os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'theme', 'tokens.css')
 os.makedirs(os.path.dirname(path), exist_ok=True)
 open(path, 'w').write('\n'.join(out))
