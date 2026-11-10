@@ -10,27 +10,41 @@ jest.mock('../../api/settings', () => ({
   updateSettings: jest.fn(),
 }));
 
+const diceSwitch = () => screen.getByRole('switch', { name: /3D|kości|rzutów/i });
+const themeSwitch = () => screen.getByRole('switch', { name: /parchment|pergamin/i });
+
 describe('GameSettings', () => {
   beforeEach(() => {
     window.matchMedia = jest.fn().mockReturnValue({ matches: false });
     updateSettings.mockResolvedValue({});
   });
 
-  it('shows the saved choice and saves a change', async () => {
+  it('shows the saved dice choice and saves a change', async () => {
     getSettings.mockResolvedValue({ diceAnimation: false });
     render(<GameSettings />);
-    const toggle = screen.getByRole('switch');
-    await waitFor(() => expect(toggle).not.toBeDisabled());
-    expect(toggle).not.toBeChecked();
+    await waitFor(() => expect(diceSwitch()).not.toBeDisabled());
+    expect(diceSwitch()).not.toBeChecked();
 
-    fireEvent.click(toggle);
-    expect(toggle).toBeChecked();
+    fireEvent.click(diceSwitch());
+    expect(diceSwitch()).toBeChecked();
     expect(updateSettings).toHaveBeenCalledWith({ diceAnimation: true });
   });
 
-  it('cannot be flipped before the saved choice has loaded', () => {
+  it('cannot be flipped before the saved choices have loaded', () => {
     getSettings.mockReturnValue(new Promise(() => {}));
     render(<GameSettings />);
-    expect(screen.getByRole('switch')).toBeDisabled();
+    expect(diceSwitch()).toBeDisabled();
+    expect(themeSwitch()).toBeDisabled();
+  });
+
+  it('follows the game theme until the player opts out', async () => {
+    getSettings.mockResolvedValue({});
+    render(<GameSettings />);
+    await waitFor(() => expect(themeSwitch()).not.toBeDisabled());
+    expect(themeSwitch()).not.toBeChecked();
+
+    fireEvent.click(themeSwitch());
+    expect(themeSwitch()).toBeChecked();
+    expect(updateSettings).toHaveBeenCalledWith({ ignoreGameTheme: true });
   });
 });

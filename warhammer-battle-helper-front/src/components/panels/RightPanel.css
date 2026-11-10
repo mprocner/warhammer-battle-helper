@@ -8,7 +8,7 @@
 .right-panel {
   width: var(--panel-right-width);
   min-width: var(--panel-right-width);
-  background: linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%);
+  background: var(--frame-ornament), linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%);
   border-left: 4px solid var(--c-border-strong);
   display: flex;
   flex-direction: column;

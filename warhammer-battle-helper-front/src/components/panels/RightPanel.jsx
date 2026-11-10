@@ -51,6 +51,8 @@ const RightPanel = ({
   onControlSchemeChange,
   diceAnimation,
   onDiceAnimationChange,
+  ignoreGameTheme,
+  onIgnoreGameThemeChange,
   minigameState = null,
   onReopenMinigameBoard,
   activeTab: externalActiveTab,
@@ -213,6 +215,8 @@ const RightPanel = ({
             onControlSchemeChange={onControlSchemeChange}
             diceAnimation={diceAnimation}
             onDiceAnimationChange={onDiceAnimationChange}
+            ignoreGameTheme={ignoreGameTheme}
+            onIgnoreGameThemeChange={onIgnoreGameThemeChange}
             gameId={gameId}
             token={token}
             isGM={isGM}

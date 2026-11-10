@@ -62,3 +62,10 @@ in each game.
 
 In the **General** tab you set your own music volume (it only changes the sound on your end),
 the language and the control scheme. **Back to Game List** and **Leave Game** are there too.
+
+### Game look {#game-look}
+
+The GM picks the colours, fonts and window frames of the game (the theme: Parchment, Sci-fi or
+1920s). If the theme does not suit you, for example it is hard for you to read, turn on
+**Always use the Parchment theme** in the **General** tab. It only changes what you see, in all
+your games, and the same switch is in your account settings under **Game**.

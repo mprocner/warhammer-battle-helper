@@ -16,12 +16,14 @@ import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import ImageIcon from '@mui/icons-material/Image';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PaletteIcon from '@mui/icons-material/Palette';
 import ControlSchemeSelector from '../scene/ControlSchemeSelector';
 import TabHeader from './TabHeader';
 import { resolveDisplayName } from '../../utils/participants';
 import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { getAvatarUrl } from '../Avatar';
 import RollStatsPanel from './RollStatsPanel';
+import ThemePicker from './ThemePicker';
 import TemplateBuilder from '../creator/TemplateBuilder';
 import ImageCropModal from '../common/ImageCropModal';
 import { PRESETS } from '../../utils/imageProcessing';
@@ -39,7 +41,7 @@ const DISTANCE_UNITS = ['ft', 'm', 'km', 'mi', 'in', 'cm', 'un', 'hex', 'sq', 'c
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, diceAnimation, onDiceAnimationChange, gameId, token, isGM = false }) => {
+const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, diceAnimation, onDiceAnimationChange, ignoreGameTheme, onIgnoreGameThemeChange, gameId, token, isGM = false }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [statsOpen, setStatsOpen] = useState(true);
@@ -146,6 +148,17 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
         body: JSON.stringify(patch),
       });
     } catch { /* ignore — WS broadcast refreshes state */ }
+  };
+
+  // Same flow as the map settings: no local state, GAME_APPEARANCE_UPDATED refetches everyone.
+  const updateAppearance = async (theme) => {
+    try {
+      await fetch(`${getApiUrl()}/games/${gameId}/appearance`, {
+        method: 'PATCH',
+        headers: getApiHeaders({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+        body: JSON.stringify({ theme }),
+      });
+    } catch { /* ignore — the picker keeps showing the saved theme */ }
   };
 
   // Text/number inputs commit on blur (not per keystroke) — draft state synced from server value.
@@ -350,6 +363,15 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
         </section>
       )}
 
+      {/* Appearance — GM only: the theme everyone at the table sees */}
+      {isGM && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('settings.appearance.title')}</h4>
+          <ThemePicker value={gameState?.appearance?.theme} onChange={updateAppearance} />
+          <p className="general-tab__switch-hint">{t('settings.appearance.hint')}</p>
+        </section>
+      )}
+
       {/* Music Volume Section */}
       {playerVolume !== undefined && onPlayerVolumeChange && (
         <section className="general-tab__section">
@@ -415,6 +437,29 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
             </span>
           </button>
           <p className="general-tab__switch-hint">{t('settings.diceAnimation.hint')}</p>
+        </section>
+      )}
+
+      {/* Theme opt-out — per account, the same switch as on /settings */}
+      {onIgnoreGameThemeChange && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('settings.ignoreGameTheme.title')}</h4>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!ignoreGameTheme}
+            className="general-tab__switch-btn"
+            onClick={() => onIgnoreGameThemeChange(!ignoreGameTheme)}
+          >
+            <span className="general-tab__switch-label">
+              <PaletteIcon fontSize="small" />
+              {t('settings.ignoreGameTheme.label')}
+            </span>
+            <span className={`general-tab__switch-state${ignoreGameTheme ? '' : ' general-tab__switch-state--off'}`}>
+              {ignoreGameTheme ? t('settings.ignoreGameTheme.on') : t('settings.ignoreGameTheme.off')}
+            </span>
+          </button>
+          <p className="general-tab__switch-hint">{t('settings.ignoreGameTheme.hint')}</p>
         </section>
       )}
 

@@ -89,3 +89,11 @@ If the server restarts, a running minigame ends.
 A game uses the copy of the system template from the moment it was created. After changing the
 template in the creator, click **Sync** on the game's card in the game list. Values of fields
 removed from the template will be lost.
+
+## Game theme {#game-theme}
+
+In the **General** tab, under **Appearance**, you pick the game's theme: **Parchment** (the
+default), **Sci-fi** or **1920s**. The theme changes the colours, fonts and window frames of
+the whole game view, character sheets included, and everyone at the table sees it at once. The
+game list and the start page stay in Parchment. A player who does not like the theme can switch
+back to Parchment for themselves.

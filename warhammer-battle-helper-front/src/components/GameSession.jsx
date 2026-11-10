@@ -13,6 +13,9 @@ import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
 import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
 import { useDiceAnimationSetting } from '../hooks/useDiceAnimationSetting';
+import { useAccountBooleanSetting } from '../hooks/useAccountBooleanSetting';
+import { resolveTheme } from '../theme/themes';
+import { useApplyTheme } from '../theme/useApplyTheme';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { useDrawingTools } from '../hooks/useDrawingTools';
@@ -69,6 +72,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const [controlScheme, setControlScheme] = useControlScheme();
   const [fogGmOpacity, setFogGmOpacity] = useFogGmOpacity();
   const [diceAnimation, setDiceAnimation, diceAnimationLoaded] = useDiceAnimationSetting();
+  const [ignoreGameTheme, setIgnoreGameTheme] = useAccountBooleanSetting('ignoreGameTheme');
+  // The theme lives on <html> while this view is mounted (portals included), see useApplyTheme.
+  useApplyTheme(resolveTheme(gameState?.appearance?.theme, ignoreGameTheme));
   // One controller per session; the scene's DiceOverlay attaches its canvas to it.
   const [diceController] = useState(() => createDiceController());
   const [minigameState, setMinigameState] = useState(null);
@@ -247,6 +253,11 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
 
       case WS_EVENTS.GAME_IMAGE_UPDATED:
         setGameState(prev => prev ? { ...prev, imageUrl: message.payload.imageUrl || '' } : prev);
+        break;
+
+      case WS_EVENTS.GAME_APPEARANCE_UPDATED:
+        // GM picked another theme — refetch so every client switches together.
+        fetchGameState();
         break;
 
       case WS_EVENTS.GAME_MAP_SETTINGS_UPDATED:
@@ -1193,6 +1204,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           onControlSchemeChange={setControlScheme}
           diceAnimation={diceAnimation}
           onDiceAnimationChange={setDiceAnimation}
+          ignoreGameTheme={!!ignoreGameTheme}
+          onIgnoreGameThemeChange={setIgnoreGameTheme}
           minigameState={minigameState}
           onReopenMinigameBoard={() => setMinigameState(prev => prev)}
           activeTab={activeTab}

@@ -5,6 +5,9 @@ import { createTheme } from '@mui/material/styles';
 // so MUI components follow the game theme. The palette itself stays hex: MUI derives
 // channels and contrast from it in JS, which a var() string would break. cssVariables
 // publishes the palette as --mui-palette-* on :root, where a theme block can override it.
+// Faint paper grain on every MUI paper surface.
+const PAPER_NOISE = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3CfeColorMatrix values=\'0 0 0 0 0.96, 0 0 0 0 0.91, 0 0 0 0 0.82, 0 0 0 0.03 0\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")';
+
 const theme = createTheme({
     cssVariables: true,
     palette: {
@@ -149,12 +152,21 @@ const theme = createTheme({
         MuiPaper: {
             styleOverrides: {
                 root: {
-                    backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3CfeColorMatrix values=\'0 0 0 0 0.96, 0 0 0 0 0.91, 0 0 0 0 0.82, 0 0 0 0.03 0\'/%3E%3C/filter%3E%3Crect width=\'100\' height=\'100\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")',
+                    backgroundImage: PAPER_NOISE,
                     border: '3px solid var(--c-border-strong)',
                     boxShadow: '0 8px 24px rgb(var(--c-leather-dark-rgb) / calc(0.15 * var(--shadow-k)))',
                 },
                 elevation3: {
                     boxShadow: '0 12px 32px rgb(var(--c-leather-dark-rgb) / calc(0.2 * var(--shadow-k)))',
+                },
+            },
+        },
+        MuiDialog: {
+            styleOverrides: {
+                // Dialogs are framed surfaces: the theme's corner ornaments go over the paper
+                // noise (tokens.css, --frame-ornament). Menus and popovers stay plain.
+                paper: {
+                    backgroundImage: `var(--frame-ornament), ${PAPER_NOISE}`,
                 },
             },
         },

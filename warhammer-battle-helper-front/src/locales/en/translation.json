@@ -961,6 +961,18 @@
       "on": "On",
       "off": "Off",
       "hint": "Shows fresh rolls as 3D dice on the scene, with sound. Applies to your account on every device."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "hint": "The look of the game for everyone at the table: colours, fonts and frames. Players can switch back to Parchment for themselves.",
+      "choose": "Game theme"
+    },
+    "ignoreGameTheme": {
+      "title": "Theme",
+      "label": "Always use the Parchment theme",
+      "on": "On",
+      "off": "Off",
+      "hint": "Ignores the theme the GM picked, in every game. Applies to your account on every device."
     }
   },
   "handouts": {
@@ -2818,5 +2830,12 @@
   },
   "invite": {
     "loginHint": "You've been invited to a game. Log in — or register first if you don't have an account — and you'll join it automatically."
+  },
+  "theme": {
+    "names": {
+      "default": "Parchment",
+      "scifi": "Sci-fi",
+      "twenties": "1920s"
+    }
   }
 }

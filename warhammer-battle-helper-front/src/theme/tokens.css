@@ -107,6 +107,14 @@
   /* Surface decoration: page texture layered over the body gradient */
   --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='paper'%3E%3CfeTurbulence baseFrequency='0.04' numOctaves='5' seed='2' /%3E%3CfeColorMatrix values='0 0 0 0 0.96, 0 0 0 0 0.91, 0 0 0 0 0.82, 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23paper)'/%3E%3C/svg%3E");
 
+  /* Frame ornaments: extra background layers (corner SVGs) drawn over the big framed
+   * surfaces — floating windows (.character-sheet-popup), right panel, modals, MUI dialogs.
+   * Background layers, not ::before/::after: they change no geometry, keep border-radius and
+   * never catch clicks. A value is a comma list of `url(...) <position> / <size> no-repeat`;
+   * the surface rule composes it as `background: var(--frame-ornament), <its own background>`.
+   * A modifier that redeclares `background` there must compose it again or it drops it. */
+  --frame-ornament: none;
+
   /* Depth: alpha multiplier of blurred shadows (focus rings are not affected) */
   --shadow-k: 1;
 

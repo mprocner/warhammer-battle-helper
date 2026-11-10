@@ -63,6 +63,7 @@
         "inviteLink": "Link z zaproszeniem: MG kopiuje jeden link i wkleja go na Discordzie, a kto go otworzy, dołącza do gry, nawet jeśli musi najpierw założyć konto.",
         "participant": "Twój avatar i podpis w każdej grze: z konta, z postaci albo własny.",
         "colors": "Każdy gracz ma w grze własny kolor: na avatarze, miarce, pingach, rysunkach i wpisach w logu. Dowolny kolor wybierzesz w ustawieniach gracza.",
+        "themes": "Motywy gry: MG wybiera wygląd stołu — Pergamin, Sci-fi albo Lata 20. — z kolorami, czcionkami i ramkami okien. Gracz może u siebie zostać przy Pergaminie.",
         "online": "Podgląd, kto jest online."
       },
       "systems": {

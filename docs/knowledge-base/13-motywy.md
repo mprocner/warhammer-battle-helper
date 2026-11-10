@@ -1,8 +1,8 @@
 # Motywy wyglądu i tokeny
 
-Spec: PLAYRPG-270. Stan: tokeny i motyw `default` (PLAYRPG-346), zapis motywu gry
-i opt-out gracza w backendzie (PLAYRPG-347). Przełączanie w UI, ramki z ozdobnikami
-i motywy `scifi` / `twenties` — PLAYRPG-348…350.
+Spec: PLAYRPG-270. Tokeny i motyw `default` (PLAYRPG-346), zapis motywu gry i opt-out gracza
+w backendzie (PLAYRPG-347), przełączanie, wybór w UI i ramki (PLAYRPG-348), motywy `scifi`
+i `twenties` (PLAYRPG-349, 350). W UI motyw `default` nazywa się **Pergamin**.
 
 ## Jak to działa
 
@@ -41,6 +41,39 @@ Pozostałe tokeny:
 - **Wyniki rzutów** — paleta `--log-*` (złoto krytyka, zieleń sukcesu, czerwień porażki,
   fiolet fumble, „żar” nowej wiadomości). Czytana też z JS: `ToastStack`, `log/rollUtils`.
 
+### Przełączanie motywu
+
+- **MG** wybiera motyw w zakładce Ogólne → **Wygląd** (`ThemePicker`, tylko MG). Zapis:
+  `PATCH /games/:id/appearance` → `Game.Appearance.Theme` → broadcast
+  `GAME_APPEARANCE_UPDATED` → każdy klient robi `fetchGameState()`. Bez stanu lokalnego, jak
+  ustawienia mapy. Kafelki rysują podgląd **dosłownymi** kolorami z `THEMES[].swatch` — mają
+  pokazać inny motyw niż aktywny, więc nie mogą być tokenami.
+- **Gracz** (każdy, także MG) może się wypisać: `UserSettings.IgnoreGameTheme`, przełącznik
+  w Ogólne i w `/settings` → Gra (`useAccountBooleanSetting('ignoreGameTheme')`).
+- `GameSession` liczy `resolveTheme(gameState.appearance.theme, ignoreGameTheme)` (nieznane id,
+  puste albo opt-out → `default`) i woła `useApplyTheme`.
+- `useApplyTheme` ustawia `<html data-theme="…">` w `useLayoutEffect` i zdejmuje go przy
+  odmontowaniu. **Na `<html>`, nie na korzeniu `GameSession`**: ~27 komponentów i dialogi MUI
+  renderują przez `createPortal` do `document.body` — są rodzeństwem `#root`, nie dzieckiem
+  widoku gry, więc klasa na jego `div` ich nie obejmie. Wewnątrz `<html>` są zawsze. `default`
+  to goły `:root` — bez atrybutu. Lobby, landing, `/settings`, `/help` są zawsze w `default`,
+  bo `GameSession` jest wtedy odmontowany.
+- Rejestr: `src/theme/themes.js` (`THEMES`: id, swatch, `displayFont`, `loadFonts`). Id muszą
+  się zgadzać z `models.GameThemes` w backendzie (test rejestru pilnuje listy).
+- Czcionki motywów ładuje `loadFonts()` (dynamiczny `import()` paczek `@fontsource`) przy
+  wejściu w grę z tym motywem i przy otwarciu `ThemePicker` — strona startowa ich nie pobiera.
+
+### Ozdobniki ramek
+
+`--frame-ornament` (default `none`) to dodatkowe warstwy tła z SVG w narożnikach. Powierzchnie
+składają je w tej samej deklaracji co własne tło: `background: var(--frame-ornament), <tło>`.
+Dziś: `.character-sheet-popup` (wspólny `DraggablePopup` — karty postaci, tracker walki i inne
+pływające okna), `.right-panel`, `.note-editor`, `.handout-viewer`, `.confirm-modal` i
+`MuiDialog.paper` w `theme.js`. Tooltipy, menu, przyciski — bez ozdobników.
+
+Dlaczego warstwy tła: w CSS jest ~27 pseudo-elementów (np. `body::before`), nowe by się z nimi
+gryzły; `border-image` wyłącza `border-radius`. Tło nie zmienia geometrii i nie łapie kliknięć.
+
 ### MUI
 
 `src/theme.js` ma `cssVariables: true`. Paleta zostaje w hex — MUI liczy z niej w JS kanały
@@ -56,6 +89,10 @@ i `typography` używają naszych tokenów bezpośrednio.
 - **Kolorów treści**: palety pasków HP (`BAR_COLORS`, `PRESET_COLORS`), domyślne kolory
   pasków zapisywane w danych, paleta etykiet kreatora (`LABEL_COLORS`), kolory rysunków,
   uczestników, rich textu, kości 3D. Codemod by je zepsuł — przegląd był ręczny.
+- **Warstw canvas na mapie** (`DrawingLayer`, `FogLayer`, `MapRulerOverlay`): zaznaczenie,
+  obrysy mgły i miarka leżą na obrazie mapy, nie na pergaminie — dobrane pod kontrast z dowolną
+  mapą, która od motywu się nie zmienia. Dlatego nie czytają tokenów i nie przerysowują się
+  przy zmianie motywu (decyzja PLAYRPG-348; spec zakładał odwrotnie).
 - **Samouczka** (`TourRunner`) — `react-joyride` wpisuje `stroke` spotlightu w atrybut SVG,
   gdzie `var()` nie działa.
 
@@ -76,6 +113,9 @@ migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
 - `src/theme/tokens.css` — motyw default (jedyne miejsce z surowymi wartościami)
 - `src/theme/noRawStyleValues.test.js` — strażnik
 - `src/theme.js` — MUI w trybie `cssVariables`
+- `src/theme/themes.js` — rejestr motywów; `src/theme/useApplyTheme.js` — `data-theme` na `<html>`
+- `src/components/tabs/ThemePicker.jsx` — wybór MG; przełącznik opt-out w `GeneralTab`
+  i `settings/GameSettings.jsx`
 - backend: `internal/models/appearance.go` (lista id motywów, `Game.Appearance`),
   `PATCH /games/:id/appearance` (tylko MG, event `GAME_APPEARANCE_UPDATED`),
   `UserSettings.IgnoreGameTheme` (opt-out gracza)
@@ -88,6 +128,9 @@ migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
   2026-11-11: „bez zauważalnej zmiany”, nie co do piksela). Rzadkie odcienie (~290) zlały się
   z sąsiednimi; gradienty dostały różne tokeny na przystankach, chyba że zmieniłoby to barwę —
   wtedy gradient jest płaski.
+- **Modyfikator powierzchni z ramką, który deklaruje `background`,** zgubi ozdobnik, jeśli nie
+  złoży go znowu (`var(--frame-ornament), …`). Ten sam problem z `background-attachment: local`
+  w przewijanym kontenerze — narożniki przewinęłyby się z treścią.
 - **Backend zna tylko id motywów.** Nowy motyw = id w `models.GameThemes` + blok CSS na froncie.
 - **`#rrggbbaa` i `rgba()` na kolorze tła** zamieniają się w trójkę RGB, a nie w token rodziny —
   motyw musi nadpisać też `--c-*-rgb`, nie tylko kolory pełne.

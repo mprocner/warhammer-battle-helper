@@ -15,7 +15,7 @@
 }
 
 .confirm-modal {
-  background: linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%);
+  background: var(--frame-ornament), linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%);
   border: 2px solid var(--c-border-accent);
   border-radius: var(--radius-xl);
   padding: 24px;

@@ -228,7 +228,7 @@
 /* Note Editor Modal */
 .note-editor {
   position: fixed;
-  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
+  background: var(--frame-ornament), linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
   border: 3px solid var(--c-border-strong);
   border-radius: var(--radius-xl);
   color: var(--c-text);

@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getSettings, updateSettings } from '../api/settings';
+import { useAccountBooleanSetting } from './useAccountBooleanSetting';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -15,23 +14,7 @@ const prefersReducedMotion = () =>
  * @returns {[boolean, (on: boolean) => void, boolean]} [enabled, setEnabled, loaded]
  */
 export function useDiceAnimationSetting() {
-  const [saved, setSaved] = useState(undefined);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    getSettings()
-      .then(s => { if (alive && typeof s?.diceAnimation === 'boolean') setSaved(s.diceAnimation); })
-      .catch(() => {})
-      .finally(() => { if (alive) setLoaded(true); });
-    return () => { alive = false; };
-  }, []);
-
-  const setEnabled = useCallback((on) => {
-    setSaved(on);
-    updateSettings({ diceAnimation: on }).catch(() => {});
-  }, []);
-
+  const [saved, setEnabled, loaded] = useAccountBooleanSetting('diceAnimation');
   const enabled = saved ?? !prefersReducedMotion();
   return [enabled, setEnabled, loaded];
 }

@@ -965,6 +965,18 @@
       "on": "Wł.",
       "off": "Wył.",
       "hint": "Pokazuje świeże rzuty jako kości 3D na scenie, z dźwiękiem. Dotyczy twojego konta na każdym urządzeniu."
+    },
+    "appearance": {
+      "title": "Wygląd",
+      "hint": "Wygląd gry dla całego stołu: kolory, czcionki i ramki. Gracze mogą u siebie wrócić do Pergaminu.",
+      "choose": "Motyw gry"
+    },
+    "ignoreGameTheme": {
+      "title": "Motyw",
+      "label": "Zawsze motyw Pergamin",
+      "on": "Wł.",
+      "off": "Wył.",
+      "hint": "Pomija motyw wybrany przez MG, we wszystkich grach. Dotyczy twojego konta na każdym urządzeniu."
     }
   },
   "handouts": {
@@ -2826,5 +2838,12 @@
   },
   "invite": {
     "loginHint": "Masz zaproszenie do gry. Zaloguj się — albo najpierw załóż konto, jeśli go nie masz — a dołączysz do niej automatycznie."
+  },
+  "theme": {
+    "names": {
+      "default": "Pergamin",
+      "scifi": "Sci-fi",
+      "twenties": "Lata 20."
+    }
   }
 }

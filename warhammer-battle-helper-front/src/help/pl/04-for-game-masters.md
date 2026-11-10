@@ -87,3 +87,10 @@ minigra. Jeśli serwer zostanie zrestartowany, trwająca minigra się kończy.
 
 Gra korzysta z kopii szablonu systemu z chwili jej utworzenia. Po zmianach w kreatorze kliknij
 **Synchronizuj** na karcie gry na liście gier. Wartości pól usuniętych z szablonu przepadną.
+
+## Motyw gry {#game-theme}
+
+W zakładce **Ogólne**, w sekcji **Wygląd**, wybierasz motyw gry: **Pergamin** (domyślny),
+**Sci-fi** albo **Lata 20.**. Motyw zmienia kolory, czcionki i ramki okien całego widoku gry,
+także kart postaci, i od razu widzą go wszyscy przy stole. Lista gier i strona startowa
+zostają w Pergaminie. Gracz, któremu motyw nie odpowiada, może u siebie wrócić do Pergaminu.
