@@ -113,7 +113,7 @@ func TestSaveProfByKey(t *testing.T) {
 func TestRollWithAdvantage(t *testing.T) {
 	t.Run("normal rolls a single d20", func(t *testing.T) {
 		p := newTestPlugin(9) // d20 = 10
-		roll, all := p.rollWithAdvantage(0)
+		roll, all, _ := p.rollWithAdvantage(0)
 		if roll != 10 || !reflect.DeepEqual(all, []int{10}) {
 			t.Errorf("got roll=%d all=%v, want 10/[10]", roll, all)
 		}
@@ -121,7 +121,7 @@ func TestRollWithAdvantage(t *testing.T) {
 
 	t.Run("advantage takes the higher of two", func(t *testing.T) {
 		p := newTestPlugin(4, 14) // 5, 15
-		roll, all := p.rollWithAdvantage(1)
+		roll, all, _ := p.rollWithAdvantage(1)
 		if roll != 15 || !reflect.DeepEqual(all, []int{5, 15}) {
 			t.Errorf("got roll=%d all=%v, want 15/[5 15]", roll, all)
 		}
@@ -129,7 +129,7 @@ func TestRollWithAdvantage(t *testing.T) {
 
 	t.Run("disadvantage takes the lower of two", func(t *testing.T) {
 		p := newTestPlugin(14, 4) // 15, 5
-		roll, all := p.rollWithAdvantage(-1)
+		roll, all, _ := p.rollWithAdvantage(-1)
 		if roll != 5 || !reflect.DeepEqual(all, []int{15, 5}) {
 			t.Errorf("got roll=%d all=%v, want 5/[15 5]", roll, all)
 		}
@@ -137,7 +137,7 @@ func TestRollWithAdvantage(t *testing.T) {
 
 	t.Run("advantage on a tie returns first", func(t *testing.T) {
 		p := newTestPlugin(9, 9) // 10, 10
-		roll, all := p.rollWithAdvantage(1)
+		roll, all, _ := p.rollWithAdvantage(1)
 		if roll != 10 || !reflect.DeepEqual(all, []int{10, 10}) {
 			t.Errorf("got roll=%d all=%v, want 10/[10 10]", roll, all)
 		}
@@ -397,7 +397,7 @@ func TestRollWeapon_SpellcastingAbility(t *testing.T) {
 func TestRollDamage(t *testing.T) {
 	t.Run("empty formula", func(t *testing.T) {
 		p := newTestPlugin()
-		total, breakdown := p.rollDamage("", 0, false)
+		total, breakdown, _ := p.rollDamage("", 0, false)
 		if total != 0 || breakdown != "" {
 			t.Errorf("got (%d,%q), want (0,\"\")", total, breakdown)
 		}
@@ -405,7 +405,7 @@ func TestRollDamage(t *testing.T) {
 
 	t.Run("single die plus ability mod", func(t *testing.T) {
 		p := newTestPlugin(5) // Intn(8)=5 -> 6
-		total, _ := p.rollDamage("1d8", 3, false)
+		total, _, _ := p.rollDamage("1d8", 3, false)
 		if total != 9 {
 			t.Errorf("rollDamage(1d8, +3) = %d, want 9", total)
 		}
@@ -414,7 +414,7 @@ func TestRollDamage(t *testing.T) {
 	t.Run("dice plus flat plus ability", func(t *testing.T) {
 		// 2d6: 4 + 6 = 10; flat +3; ability +2 -> 15.
 		p := newTestPlugin(3, 5)
-		total, _ := p.rollDamage("2d6+3", 2, false)
+		total, _, _ := p.rollDamage("2d6+3", 2, false)
 		if total != 15 {
 			t.Errorf("rollDamage(2d6+3, +2) = %d, want 15", total)
 		}
@@ -423,7 +423,7 @@ func TestRollDamage(t *testing.T) {
 	t.Run("critical doubles the dice but not the modifier", func(t *testing.T) {
 		// 1d8 crit -> 2 dice: 6 + 8 = 14; ability +3 (added once) -> 17.
 		p := newTestPlugin(5, 7)
-		total, _ := p.rollDamage("1d8", 3, true)
+		total, _, _ := p.rollDamage("1d8", 3, true)
 		if total != 17 {
 			t.Errorf("rollDamage(1d8, +3, crit) = %d, want 17", total)
 		}
@@ -431,7 +431,7 @@ func TestRollDamage(t *testing.T) {
 
 	t.Run("negative ability modifier", func(t *testing.T) {
 		p := newTestPlugin(3) // Intn(6)=3 -> 4
-		total, _ := p.rollDamage("1d6", -1, false)
+		total, _, _ := p.rollDamage("1d6", -1, false)
 		if total != 3 {
 			t.Errorf("rollDamage(1d6, -1) = %d, want 3", total)
 		}

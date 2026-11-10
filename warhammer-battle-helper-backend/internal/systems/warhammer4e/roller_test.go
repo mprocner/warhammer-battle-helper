@@ -492,14 +492,14 @@ func TestRollWeapon_UnknownSkillError(t *testing.T) {
 func TestRollDamage(t *testing.T) {
 	t.Run("empty formula", func(t *testing.T) {
 		p := newTestPlugin(0)
-		if got := p.rollDamage("", 0); got != 0 {
+		if got, _ := p.rollDamage("", 0); got != 0 {
 			t.Errorf("rollDamage(\"\") = %d, want 0", got)
 		}
 	})
 
 	t.Run("flat bonus", func(t *testing.T) {
 		p := newTestPlugin(0)
-		if got := p.rollDamage("+4", 0); got != 4 {
+		if got, _ := p.rollDamage("+4", 0); got != 4 {
 			t.Errorf("rollDamage(+4) = %d, want 4", got)
 		}
 	})
@@ -507,7 +507,7 @@ func TestRollDamage(t *testing.T) {
 	t.Run("dice plus SL substitution", func(t *testing.T) {
 		// 1d10 die forced to 6 (Intn(10)=5), SL=3 -> 6 + 3 = 9.
 		p := newTestPlugin(5)
-		if got := p.rollDamage("1d10+sl", 3); got != 9 {
+		if got, _ := p.rollDamage("1d10+sl", 3); got != 9 {
 			t.Errorf("rollDamage(1d10+sl, 3) = %d, want 9", got)
 		}
 	})
@@ -515,7 +515,7 @@ func TestRollDamage(t *testing.T) {
 	t.Run("multiple dice", func(t *testing.T) {
 		// 2d6: dice forced to 3 and 4 (Intn->2, Intn->3) -> 7.
 		p := newTestPlugin(2, 3)
-		if got := p.rollDamage("2d6", 0); got != 7 {
+		if got, _ := p.rollDamage("2d6", 0); got != 7 {
 			t.Errorf("rollDamage(2d6) = %d, want 7", got)
 		}
 	})

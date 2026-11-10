@@ -45,7 +45,7 @@ func TestDamageExprCases(t *testing.T) {
 				return
 			}
 			// newTestPlugin() with no values panics on any roll — a dice-free case must not roll.
-			got, _, _, _, err := newTestPlugin().evalFormula(blocks, &Stats{}, "", "", "", false)
+			got, _, _, _, _, err := newTestPlugin().evalFormula(blocks, &Stats{}, "", "", "", false)
 			if err != nil {
 				t.Fatalf("evalFormula(%q) error: %v", c.Input, err)
 			}

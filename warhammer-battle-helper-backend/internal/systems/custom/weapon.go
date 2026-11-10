@@ -62,10 +62,14 @@ func (p *Plugin) RollWeaponWithTemplate(raw bson.Raw, template *models.SystemTem
 
 	// Damage only on a successful attack (CoC-style output).
 	if isSuccessOutcome(atk.Outcome) && len(damageBlocks) > 0 {
-		dmg, _, dLabel, dValue, derr := p.evalFormula(damageBlocks, stats, skillKey, linkedAttr, attrLabel(template, linkedAttr), baseFromAttr)
+		dmg, _, dLabel, dValue, dDice, derr := p.evalFormula(damageBlocks, stats, skillKey, linkedAttr, attrLabel(template, linkedAttr), baseFromAttr)
 		if derr != nil {
 			// Stats-dependent failures (division by zero, too many dice) surface to the caller.
 			return nil, fmt.Errorf("custom: damage formula eval: %w", derr)
+		}
+		for _, d := range dDice {
+			d.Group = gsys.DiceGroupDamage
+			atk.Dice = append(atk.Dice, d)
 		}
 		atk.DamageRoll = dmg
 		if dLabel == dValue {

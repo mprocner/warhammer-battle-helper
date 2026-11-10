@@ -49,6 +49,26 @@ Wpisy systemowe zostają przy kolorze typu (info/success/…). Własne wpisy (`-
 złoty tint tła, ale pasek mają w swoim kolorze. Toast rzutu: lewa krawędź to dalej wynik,
 górna to kolor rzucającego.
 
+**Lista kości `dice`** (PLAYRPG-341, pod animację 3D z epiku PLAYRPG-339). Każdy rzut, czyli
+`RollResult` z karty, wyrażenie z czatu i przycisk kości, niesie w payloadzie i w zdarzeniu
+płaską listę `dice: [{sides, value, dropped?, group?}]`, czyli wszystkie fizycznie rzucone kości.
+Typ i helpery są w `internal/systems/dice.go`:
+
+| Przypadek | Zapis w `dice` |
+|---|---|
+| d100 (Warhammer, CoC, przycisk K100, `1d100` w czacie, kość d100 w custom) | kość dziesiątek `{sides: 100, value: 0–90}` + jedności `{sides: 10, value: 0–9}`; 00 + 0 = 100 |
+| Kości bonusowe/karne CoC, kości przewagi custom w trybie dziesiątek | jedna kość dziesiątek na kandydata, wspólna kość jedności, niewybrane dziesiątki `dropped` |
+| Przewaga/utrudnienie srd5, kości przewagi custom w trybie formuły | wszystkie kości wszystkich kandydatów, przegrane `dropped` |
+| `kh`/`kl` w czacie | odrzucone kości `dropped` |
+| Obrażenia broni (wszystkie systemy, też MO w CoC) | `group: "damage"` |
+| Pula (custom, `>=` w czacie) | wszystkie kości, żadna nie jest `dropped` — sukcesy liczy log |
+
+Niezmiennik: `dice` pokazuje dokładnie te ścianki, które weszły do wyniku z logu. Tam, gdzie wynik
+to suma kości plus stałe (d100, d20, obrażenia, `2d6+3`), suma kości niebędących `dropped`
+w grupie (`systems.DiceTotal`) równa się wynikowi bez stałych. Testy `dice_test.go` w każdym
+systemie to sprawdzają. Formuła custom może kość mnożyć (`(STR+2)*d6`), wtedy suma się nie
+zgadza, ale ścianki dalej tak.
+
 **Statystyki rzutów** (`RollStat`): każdy rzut zapisuje kość, wynik i typ. Są dostępne dla gry
 (`/games/:id/roll-stats`, `RollStatsPanel`) i łącznie w ustawieniach konta (`DiceStats.jsx`):
 liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
@@ -61,6 +81,7 @@ liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
 | Komendy | `src/chat/commands/commandRegistry.js`, `parseChatInput.js`, `useChatCommands.js`, `useChatHistory.js` |
 | Parser kości | `internal/dice/` |
 | Rzuty, publikacja | `internal/service/DiceRollService.go`, `roll_publisher.go`, `GameService.executeRoll` |
+| Lista kości `dice` | `internal/systems/dice.go` (`RolledDie`, `Faces`, `PercentileDice`, `DiceTotal`) |
 | Wiadomości | `internal/service/chat_message.go` |
 | Statystyki | `internal/http/StatsHandler.go`, `src/components/stats/` |
 
@@ -77,5 +98,14 @@ liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
 - Zmieniając limit długości wiadomości, zmień go w obu miejscach.
 - Rzut do wybranego gracza celowo pomija MG. Jeśli to ma się zmienić, zmieniasz `RollPublisher`
   i filtr historii w `GameHandler` jednocześnie.
+- `dice` budujesz **tam, gdzie wołasz `rng.Intn`**, nigdy z tekstu `DamageBreakdown` ani
+  z `AllRolls`. Nowy rzut bez `dice` po prostu się nie zanimuje, a kości z odtworzonego tekstu
+  mogą pokazać inny wynik niż log. d100 zawsze przez `Faces`/`PercentileDice`: zwykła kość
+  `{sides: 100, value: 47}` byłaby dla animacji nieczytelna.
+- `dropped` ma wartość zerową „liczona”. Miejsce, które zapomni ustawić flagę, pokaże kość jako
+  liczoną, nie zgubi jej po cichu. Dlatego pole nie nazywa się `kept` (inaczej niż `dice.Die`
+  w czacie, gdzie `Kept` zostaje).
+- Ujemny bonus do obrażeń w CoC (np. `-1d4`) też trafia do `dice` jako rzucona kość, a w wyniku
+  się odejmuje, więc tam suma kości obrażeń nie równa się `DamageRoll`.
 - Notacja kości to nie tekst do tłumaczenia: przykłady w `commandRegistry.js` są literałami,
   a tłumaczone są tylko opisy.

@@ -20,13 +20,19 @@ type formulaEnv struct {
 	linkedLabel  string // breakdown label for attr_linked; "" falls back to the key
 	baseFromAttr bool
 	roll         func(sides int) int
+	rolled       []gsys.RolledDie // every die roll() produced, in order, for the 3D dice replay
 }
 
 func (p *Plugin) formulaEnv(stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool) *formulaEnv {
-	return &formulaEnv{
+	env := &formulaEnv{
 		stats: stats, skillKey: skillKey, linkedAttr: linkedAttr, linkedLabel: linkedLabel, baseFromAttr: baseFromAttr,
-		roll: func(sides int) int { return p.rng.Intn(sides) + 1 },
 	}
+	env.roll = func(sides int) int {
+		r := p.rng.Intn(sides) + 1
+		env.rolled = append(env.rolled, gsys.Faces(sides, r, "")...)
+		return r
+	}
+	return env
 }
 
 func blockLabel(b models.FormulaBlock) string {

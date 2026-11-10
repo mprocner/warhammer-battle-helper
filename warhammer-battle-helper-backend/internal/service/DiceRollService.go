@@ -6,6 +6,7 @@ import (
 
 	"battle-helper/internal/dice"
 	"battle-helper/internal/models"
+	"battle-helper/internal/systems"
 	"battle-helper/internal/websocket"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -108,6 +109,7 @@ func (s *DiceRollService) RollExpression(gameID, input string, actor RollActor, 
 // the dice package, because the domain must not know about JSON or Mongo documents.
 func outcomeToPayload(o dice.Outcome) map[string]interface{} {
 	terms := make([]map[string]interface{}, 0, len(o.Terms))
+	var allDice []systems.RolledDie // flat, for the 3D dice replay; terms keep the per-term view
 	for _, t := range o.Terms {
 		term := map[string]interface{}{"sign": t.Sign, "subtotal": t.Subtotal}
 		if t.Spec == nil {
@@ -126,6 +128,10 @@ func outcomeToPayload(o dice.Outcome) map[string]interface{} {
 		rolled := make([]map[string]interface{}, len(t.Dice))
 		for i, d := range t.Dice {
 			rolled[i] = map[string]interface{}{"value": d.Value, "kept": d.Kept, "success": d.Success}
+			for _, f := range systems.Faces(t.Spec.Sides, d.Value, "") {
+				f.Dropped = !d.Kept
+				allDice = append(allDice, f)
+			}
 		}
 		term["dice"] = rolled
 		terms = append(terms, term)
@@ -137,6 +143,7 @@ func outcomeToPayload(o dice.Outcome) map[string]interface{} {
 		"mode":       string(o.Mode),
 		"terms":      terms,
 		"total":      o.Total,
+		"dice":       allDice,
 	}
 	if o.Check != nil {
 		payload["check"] = map[string]interface{}{"target": o.Check.Target, "success": o.Check.Success}

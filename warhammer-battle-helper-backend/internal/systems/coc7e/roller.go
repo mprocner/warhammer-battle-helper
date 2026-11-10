@@ -98,8 +98,9 @@ func (p *Plugin) rollD100() int { return p.rng.Intn(100) + 1 }
 
 // rollWithDiceMod rolls a D100 applying CoC 7e bonus/penalty dice mechanics.
 // diceMod > 0 = bonus dice (pick lowest), diceMod < 0 = penalty dice (pick highest).
-// Returns the final roll and all candidate values.
-func (p *Plugin) rollWithDiceMod(diceMod int) (int, []int) {
+// Returns the final roll, all candidate values and the dice behind them (one tens die per
+// candidate, the shared units die, the unpicked tens dropped).
+func (p *Plugin) rollWithDiceMod(diceMod int) (int, []int, []gsys.RolledDie) {
 	main := p.rollD100()
 	units := main % 10
 	alts := []int{main}
@@ -119,7 +120,14 @@ func (p *Plugin) rollWithDiceMod(diceMod int) (int, []int) {
 	} else {
 		final = main
 	}
-	return final, alts
+	kept := 0
+	for i, a := range alts {
+		if a == final {
+			kept = i
+			break
+		}
+	}
+	return final, alts, gsys.PercentileDice(alts, kept, "")
 }
 
 func abs(x int) int {
@@ -348,7 +356,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 	}
 
 	target := skillPct + modifier
-	roll, allRolls := p.rollWithDiceMod(diceMod)
+	roll, allRolls, dice := p.rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
 	return &gsys.RollResult{
@@ -362,6 +370,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 		Modifier:  modifier,
 		DiceMod:   diceMod,
 		AllRolls:  allRolls,
+		Dice:      dice,
 	}, nil
 }
 
@@ -390,10 +399,10 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	}
 
 	target := skillPct + modifier
-	roll, allRolls := p.rollWithDiceMod(diceMod)
+	roll, allRolls, dice := p.rollWithDiceMod(diceMod)
 	outcome := outcomeCoC(roll, target)
 
-	damageRoll, damageBreakdown := p.rollDamage(damage, stats.Combat.DamageBonus)
+	damageRoll, damageBreakdown, damageDice := p.rollDamage(damage, stats.Combat.DamageBonus)
 
 	return &gsys.RollResult{
 		DiceType:        100,
@@ -408,14 +417,16 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 		Modifier:        modifier,
 		DiceMod:         diceMod,
 		AllRolls:        allRolls,
+		Dice:            append(dice, damageDice...),
 	}, nil
 }
 
 // rollDamage parses a CoC damage formula like "1d3+db", "1K3+MO", "1d10", "2d6+1".
-// Returns the total damage and a human-readable breakdown, e.g. "1K3(2) + MO(1) = 3".
-func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
+// Returns the total damage, a human-readable breakdown, e.g. "1K3(2) + MO(1) = 3", and the
+// dice rolled, damage bonus dice included.
+func (p *Plugin) rollDamage(formula, damageBonus string) (int, string, []gsys.RolledDie) {
 	if formula == "" {
-		return 0, ""
+		return 0, "", nil
 	}
 	formula = strings.ToLower(strings.TrimSpace(formula))
 	formula = strings.ReplaceAll(formula, "k", "d")   // Polish K notation (1K3 → 1d3)
@@ -423,6 +434,7 @@ func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
 	formula = strings.ReplaceAll(formula, " ", "")    // strip spaces
 
 	var breakParts []string
+	var dice []gsys.RolledDie
 	total := 0
 
 	for _, seg := range strings.Split(formula, "+") {
@@ -430,7 +442,8 @@ func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
 			continue
 		}
 		if seg == "db" {
-			dbVal := p.rollDamageBonus(damageBonus)
+			dbVal, dbDice := p.rollDamageBonus(damageBonus)
+			dice = append(dice, dbDice...)
 			breakParts = append(breakParts, formatDamageBonusPart(damageBonus, dbVal))
 			total += dbVal
 		} else if strings.Contains(seg, "d") {
@@ -441,7 +454,9 @@ func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
 			if _, err := fmt.Sscanf(seg, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				partTotal := 0
 				for i := 0; i < num; i++ {
-					partTotal += p.rng.Intn(sides) + 1
+					r := p.rng.Intn(sides) + 1
+					partTotal += r
+					dice = append(dice, gsys.Faces(sides, r, gsys.DiceGroupDamage)...)
 				}
 				breakParts = append(breakParts, fmt.Sprintf("%dK%d(%d)", num, sides, partTotal))
 				total += partTotal
@@ -457,15 +472,16 @@ func (p *Plugin) rollDamage(formula, damageBonus string) (int, string) {
 	}
 
 	if len(breakParts) == 0 {
-		return 0, ""
+		return 0, "", nil
 	}
-	return total, strings.Join(breakParts, " + ") + " = " + strconv.Itoa(total)
+	return total, strings.Join(breakParts, " + ") + " = " + strconv.Itoa(total), dice
 }
 
 // rollDamageBonus evaluates the character's damage bonus string (e.g. "+1d4", "-1", "0").
-func (p *Plugin) rollDamageBonus(db string) int {
+// A negative bonus still rolls its dice; they are returned as rolled and subtracted here.
+func (p *Plugin) rollDamageBonus(db string) (int, []gsys.RolledDie) {
 	if db == "" || db == "0" || db == "None" {
-		return 0
+		return 0, nil
 	}
 	db = strings.TrimSpace(db)
 	// Handle leading sign
@@ -476,7 +492,8 @@ func (p *Plugin) rollDamageBonus(db string) int {
 	} else if strings.HasPrefix(db, "+") {
 		db = db[1:]
 	}
-	return sign * p.evalDiceFormula(strings.ToLower(db))
+	v, dice := p.evalDiceFormula(strings.ToLower(db))
+	return sign * v, dice
 }
 
 // formatDamageBonusPart returns a human-readable label for the damage bonus component,
@@ -502,8 +519,9 @@ func formatDamageBonusPart(db string, result int) string {
 	return strconv.Itoa(result)
 }
 
-func (p *Plugin) evalDiceFormula(formula string) int {
+func (p *Plugin) evalDiceFormula(formula string) (int, []gsys.RolledDie) {
 	total := 0
+	var dice []gsys.RolledDie
 	parts := strings.Split(formula, "+")
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
@@ -515,7 +533,9 @@ func (p *Plugin) evalDiceFormula(formula string) int {
 			var num, sides int
 			if _, err := fmt.Sscanf(part, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				for i := 0; i < num; i++ {
-					total += p.rng.Intn(sides) + 1
+					r := p.rng.Intn(sides) + 1
+					total += r
+					dice = append(dice, gsys.Faces(sides, r, gsys.DiceGroupDamage)...)
 				}
 			}
 		} else {
@@ -524,7 +544,7 @@ func (p *Plugin) evalDiceFormula(formula string) int {
 			total += v
 		}
 	}
-	return total
+	return total, dice
 }
 
 // GetDisplayName returns "" — CoC does not embed the name inside stats.

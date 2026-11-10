@@ -1,12 +1,17 @@
 package custom
 
-import "strconv"
+import (
+	gsys "battle-helper/internal/systems"
+	"strconv"
+)
 
 // edgeRoll is one evaluated traditional roll plus, for edge/setback dice, every candidate.
+// dice holds every die thrown, the losing candidates' dice marked Dropped.
 type edgeRoll struct {
 	result, diceType   int
 	labelStr, valueStr string
 	all                []int
+	dice               []gsys.RolledDie
 }
 
 // lowerIsBetter reads which way edge dice push from the field's own success rule, so the GM
@@ -42,26 +47,36 @@ func (p *Plugin) rollEdgeTens(diceMod int, lowerBetter bool) edgeRoll {
 		}
 		all = append(all, alt)
 	}
-	kept := all[pickIndex(all, diceMod, lowerBetter)]
-	return edgeRoll{result: kept, diceType: 100, labelStr: "d100", valueStr: strconv.Itoa(kept), all: all}
+	keptIdx := pickIndex(all, diceMod, lowerBetter)
+	kept := all[keptIdx]
+	return edgeRoll{result: kept, diceType: 100, labelStr: "d100", valueStr: strconv.Itoa(kept), all: all, dice: gsys.PercentileDice(all, keptIdx, "")}
 }
 
 // rollEdgeFormula evaluates the whole formula once plus once per extra die and keeps one. The
 // kept roll's own label and values become the breakdown, so the log never mixes two rolls.
-func rollEdgeFormula(diceMod int, lowerBetter bool, eval func() (int, int, string, string, error)) (edgeRoll, error) {
+func rollEdgeFormula(diceMod int, lowerBetter bool, eval func() (edgeRoll, error)) (edgeRoll, error) {
 	n := 1 + absInt(diceMod)
 	cands := make([]edgeRoll, 0, n)
 	all := make([]int, 0, n)
 	for i := 0; i < n; i++ {
-		r, dt, l, v, err := eval()
+		c, err := eval()
 		if err != nil {
 			return edgeRoll{}, err
 		}
-		cands = append(cands, edgeRoll{result: r, diceType: dt, labelStr: l, valueStr: v})
-		all = append(all, r)
+		cands = append(cands, c)
+		all = append(all, c.result)
 	}
-	kept := cands[pickIndex(all, diceMod, lowerBetter)]
+	keptIdx := pickIndex(all, diceMod, lowerBetter)
+	var dice []gsys.RolledDie
+	for i, c := range cands {
+		for _, d := range c.dice {
+			d.Dropped = i != keptIdx
+			dice = append(dice, d)
+		}
+	}
+	kept := cands[keptIdx]
 	kept.all = all
+	kept.dice = dice
 	return kept, nil
 }
 

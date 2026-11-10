@@ -182,7 +182,7 @@ func TestRollWithDiceMod(t *testing.T) {
 	t.Run("no dice mod returns main roll only", func(t *testing.T) {
 		// main = Intn(100)+1 = 55; no extra dice consumed.
 		p := newTestPlugin(54)
-		roll, all := p.rollWithDiceMod(0)
+		roll, all, _ := p.rollWithDiceMod(0)
 		if roll != 55 {
 			t.Errorf("roll = %d, want 55", roll)
 		}
@@ -194,7 +194,7 @@ func TestRollWithDiceMod(t *testing.T) {
 	t.Run("bonus die picks lowest", func(t *testing.T) {
 		// main 55 (units 5); extra tens 2 -> alt 25. min(55,25)=25.
 		p := newTestPlugin(54, 2)
-		roll, all := p.rollWithDiceMod(1)
+		roll, all, _ := p.rollWithDiceMod(1)
 		if roll != 25 {
 			t.Errorf("roll = %d, want 25 (lowest)", roll)
 		}
@@ -206,7 +206,7 @@ func TestRollWithDiceMod(t *testing.T) {
 	t.Run("penalty die picks highest", func(t *testing.T) {
 		// main 55 (units 5); extra tens 8 -> alt 85. max(55,85)=85.
 		p := newTestPlugin(54, 8)
-		roll, all := p.rollWithDiceMod(-1)
+		roll, all, _ := p.rollWithDiceMod(-1)
 		if roll != 85 {
 			t.Errorf("roll = %d, want 85 (highest)", roll)
 		}
@@ -218,7 +218,7 @@ func TestRollWithDiceMod(t *testing.T) {
 	t.Run("zero tens with zero units becomes 100", func(t *testing.T) {
 		// main 30 (units 0); extra tens 0 -> alt 0 -> 100. penalty max(30,100)=100.
 		p := newTestPlugin(29, 0)
-		roll, all := p.rollWithDiceMod(-1)
+		roll, all, _ := p.rollWithDiceMod(-1)
 		if roll != 100 {
 			t.Errorf("roll = %d, want 100 (00+0 normalises to 100)", roll)
 		}
@@ -230,7 +230,7 @@ func TestRollWithDiceMod(t *testing.T) {
 	t.Run("two bonus dice consider all candidates", func(t *testing.T) {
 		// main 50 (units 0); extras 3->30, 7->70. min(50,30,70)=30.
 		p := newTestPlugin(49, 3, 7)
-		roll, all := p.rollWithDiceMod(2)
+		roll, all, _ := p.rollWithDiceMod(2)
 		if roll != 30 {
 			t.Errorf("roll = %d, want 30 (lowest of three)", roll)
 		}
@@ -404,7 +404,7 @@ func TestRollWeapon_DamageWithBonus(t *testing.T) {
 func TestRollDamage(t *testing.T) {
 	t.Run("empty formula", func(t *testing.T) {
 		p := newTestPlugin()
-		total, breakdown := p.rollDamage("", "0")
+		total, breakdown, _ := p.rollDamage("", "0")
 		if total != 0 || breakdown != "" {
 			t.Errorf("rollDamage(\"\") = (%d,%q), want (0,\"\")", total, breakdown)
 		}
@@ -412,7 +412,7 @@ func TestRollDamage(t *testing.T) {
 
 	t.Run("single die", func(t *testing.T) {
 		p := newTestPlugin(3) // Intn(6)=3 -> 4
-		total, _ := p.rollDamage("1d6", "0")
+		total, _, _ := p.rollDamage("1d6", "0")
 		if total != 4 {
 			t.Errorf("rollDamage(1d6) = %d, want 4", total)
 		}
@@ -420,7 +420,7 @@ func TestRollDamage(t *testing.T) {
 
 	t.Run("dice plus flat bonus", func(t *testing.T) {
 		p := newTestPlugin(3, 5) // 2d6 -> 4 + 6 = 10
-		total, _ := p.rollDamage("2d6+2", "0")
+		total, _, _ := p.rollDamage("2d6+2", "0")
 		if total != 12 {
 			t.Errorf("rollDamage(2d6+2) = %d, want 12", total)
 		}
@@ -428,7 +428,7 @@ func TestRollDamage(t *testing.T) {
 
 	t.Run("Polish K notation parses as dice", func(t *testing.T) {
 		p := newTestPlugin(2) // Intn(3)=2 -> 3
-		total, _ := p.rollDamage("1K3", "0")
+		total, _, _ := p.rollDamage("1K3", "0")
 		if total != 3 {
 			t.Errorf("rollDamage(1K3) = %d, want 3", total)
 		}
@@ -437,7 +437,7 @@ func TestRollDamage(t *testing.T) {
 	t.Run("db segment uses character damage bonus", func(t *testing.T) {
 		// 1d4 main: Intn(4)=1 -> 2; db "+1d6": Intn(6)=4 -> 5. total 7.
 		p := newTestPlugin(1, 4)
-		total, _ := p.rollDamage("1d4+db", "+1d6")
+		total, _, _ := p.rollDamage("1d4+db", "+1d6")
 		if total != 7 {
 			t.Errorf("rollDamage(1d4+db, +1d6) = %d, want 7", total)
 		}
@@ -448,7 +448,7 @@ func TestRollDamageBonus(t *testing.T) {
 	t.Run("none-like values are zero", func(t *testing.T) {
 		p := newTestPlugin()
 		for _, db := range []string{"", "0", "None"} {
-			if got := p.rollDamageBonus(db); got != 0 {
+			if got, _ := p.rollDamageBonus(db); got != 0 {
 				t.Errorf("rollDamageBonus(%q) = %d, want 0", db, got)
 			}
 		}
@@ -456,14 +456,14 @@ func TestRollDamageBonus(t *testing.T) {
 
 	t.Run("negative flat bonus", func(t *testing.T) {
 		p := newTestPlugin()
-		if got := p.rollDamageBonus("-1"); got != -1 {
+		if got, _ := p.rollDamageBonus("-1"); got != -1 {
 			t.Errorf("rollDamageBonus(-1) = %d, want -1", got)
 		}
 	})
 
 	t.Run("positive dice bonus", func(t *testing.T) {
 		p := newTestPlugin(3) // 1d4 -> Intn(4)=3 -> 4
-		if got := p.rollDamageBonus("+1d4"); got != 4 {
+		if got, _ := p.rollDamageBonus("+1d4"); got != 4 {
 			t.Errorf("rollDamageBonus(+1d4) = %d, want 4", got)
 		}
 	})

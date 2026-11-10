@@ -2,10 +2,12 @@ package service
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"battle-helper/internal/dice"
 	"battle-helper/internal/models"
+	"battle-helper/internal/systems"
 	"battle-helper/internal/websocket"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -216,5 +218,31 @@ func TestRollExpression_GameNotFound(t *testing.T) {
 	}
 	if len(f.events.events) != 0 {
 		t.Errorf("nothing may be stored for a missing game")
+	}
+}
+
+// The flat dice list feeds the 3D dice replay: kh/kl rejects are dropped, d100 splits.
+func TestRollExpression_DiceForReplay(t *testing.T) {
+	f := newDiceRollFixture(2, 5, 1, 6, 100)
+
+	payload, err := f.svc.RollExpression(f.gameID, "4d6kh3 + 1d100", f.actor, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []systems.RolledDie{
+		{Sides: 6, Value: 2},
+		{Sides: 6, Value: 5},
+		{Sides: 6, Value: 1, Dropped: true},
+		{Sides: 6, Value: 6},
+		{Sides: 100, Value: 0},
+		{Sides: 10, Value: 0},
+	}
+	got := payload["dice"].([]systems.RolledDie)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("dice = %+v, want %+v", got, want)
+	}
+	if total := systems.DiceTotal(got, ""); total != payload["total"] {
+		t.Errorf("dice total %d, payload total %v", total, payload["total"])
 	}
 }

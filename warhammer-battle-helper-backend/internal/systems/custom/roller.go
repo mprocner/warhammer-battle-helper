@@ -20,8 +20,9 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		return p.rollFromFormulaDicePool(stats, template, skillKey, linkedAttr, linkedLabel, baseFromAttr, cfg, modTarget, modValue)
 	}
 
-	eval := func() (int, int, string, string, error) {
-		return p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
+	eval := func() (edgeRoll, error) {
+		r, dt, l, v, dice, err := p.evalFormula(cfg.Formula, stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
+		return edgeRoll{result: r, diceType: dt, labelStr: l, valueStr: v, dice: dice}, err
 	}
 	var roll edgeRoll
 	var err error
@@ -31,7 +32,7 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 	case modTarget == ModTargetEdgeDice:
 		roll, err = rollEdgeFormula(modValue, lowerIsBetter(cfg.SuccessType), eval)
 	default:
-		roll.result, roll.diceType, roll.labelStr, roll.valueStr, err = eval()
+		roll, err = eval()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("custom: formula eval: %w", err)
@@ -116,6 +117,7 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 		DiceMod:          diceMod,
 		AllRolls:         roll.all,
 		FormulaBreakdown: breakdown,
+		Dice:             roll.dice,
 	}
 	applySuccessLevels(template.Settings.SuccessLevels, cfg.SuccessType, finalRoll, threshold, res)
 	return res, nil
@@ -127,18 +129,19 @@ func (p *Plugin) rollFromFormula(stats *Stats, template *models.SystemTemplate, 
 //   - diceType: faces of the first die rolled (for display)
 //   - labelStr: formula notation string, e.g. "(STR+2)*d6"
 //   - valueStr: resolved values string, e.g. "(8+2)*4"
-func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool) (result, diceType int, labelStr, valueStr string, err error) {
+//   - dice: every die rolled, in order
+func (p *Plugin) evalFormula(blocks []models.FormulaBlock, stats *Stats, skillKey, linkedAttr, linkedLabel string, baseFromAttr bool) (result, diceType int, labelStr, valueStr string, dice []gsys.RolledDie, err error) {
 	root, err := parseFormula(blocks)
 	if err != nil {
-		return 0, 0, "", "", err
+		return 0, 0, "", "", nil, err
 	}
 	env := p.formulaEnv(stats, skillKey, linkedAttr, linkedLabel, baseFromAttr)
 	w := &tradWalk{env: env}
 	out, err := w.eval(root)
 	if err != nil {
-		return 0, 0, "", "", err
+		return 0, 0, "", "", nil, err
 	}
-	return out.val, w.diceType, env.label(root), out.shown, nil
+	return out.val, w.diceType, env.label(root), out.shown, env.rolled, nil
 }
 
 // rollFromFormulaDicePool handles dice-pool mode: rolls dice individually and counts successes.
@@ -165,8 +168,10 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 	}
 
 	successes := 0
+	var dice []gsys.RolledDie
 	for _, part := range parts {
 		for _, r := range part.Rolls {
+			dice = append(dice, gsys.Faces(part.Sides, r, "")...)
 			if condition == "eq" {
 				if r == threshold {
 					successes++
@@ -199,6 +204,7 @@ func (p *Plugin) rollFromFormulaDicePool(stats *Stats, template *models.SystemTe
 		PoolFormula:          parts,
 		PoolSuccesses:        successes,
 		PoolSuccessCondition: condition,
+		Dice:                 dice,
 	}, nil
 }
 

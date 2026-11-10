@@ -215,7 +215,7 @@ func TestResolveSkillLabel(t *testing.T) {
 
 func TestEvalFormula_SingleDie(t *testing.T) {
 	p := newTestPlugin(3) // d6 -> 4
-	res, diceType, label, val, err := p.evalFormula([]models.FormulaBlock{diceBlock("d6")}, sampleStats(), "", "", "", false)
+	res, diceType, label, val, _, err := p.evalFormula([]models.FormulaBlock{diceBlock("d6")}, sampleStats(), "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -227,7 +227,7 @@ func TestEvalFormula_SingleDie(t *testing.T) {
 func TestEvalFormula_DiePlusConst(t *testing.T) {
 	p := newTestPlugin(3) // d6 -> 4
 	blocks := []models.FormulaBlock{diceBlock("d6"), opBlock("+"), numBlock(2)}
-	res, _, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
+	res, _, label, val, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestEvalFormula_DicePool(t *testing.T) {
 	// "2 d d6": const 2 becomes the count; pool rolls two d6.
 	p := newTestPlugin(3, 5) // 4, 6
 	blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), diceBlock("d6")}
-	res, diceType, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
+	res, diceType, label, val, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -263,7 +263,7 @@ func TestEvalFormula_Operators(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := newTestPlugin() // no dice -> no rng needed
 			blocks := []models.FormulaBlock{numBlock(6), opBlock(tt.op), numBlock(2)}
-			res, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
+			res, _, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
 			if err != nil {
 				t.Fatalf("evalFormula() error: %v", err)
 			}
@@ -278,14 +278,14 @@ func TestEvalFormula_Errors(t *testing.T) {
 	p := newTestPlugin()
 
 	t.Run("empty formula", func(t *testing.T) {
-		if _, _, _, _, err := p.evalFormula(nil, sampleStats(), "", "", "", false); err == nil {
+		if _, _, _, _, _, err := p.evalFormula(nil, sampleStats(), "", "", "", false); err == nil {
 			t.Error("expected error for empty formula, got nil")
 		}
 	})
 
 	t.Run("division by zero", func(t *testing.T) {
 		blocks := []models.FormulaBlock{numBlock(6), opBlock("/"), numBlock(0)}
-		if _, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false); err == nil {
+		if _, _, _, _, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false); err == nil {
 			t.Error("expected division-by-zero error, got nil")
 		}
 	})
@@ -297,7 +297,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("attr block reads attribute value", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "attr", Key: "str", Label: "STR"}}
-		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "", "", false)
+		res, _, label, _, _, _ := p.evalFormula(blocks, stats, "", "", "", false)
 		if res != 8 || label != "STR" {
 			t.Errorf("got res=%d label=%q, want 8/STR", res, label)
 		}
@@ -305,7 +305,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("skill block reads skill value", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "skill"}}
-		res, _, _, _, _ := p.evalFormula(blocks, stats, "atk", "", "", false)
+		res, _, _, _, _, _ := p.evalFormula(blocks, stats, "atk", "", "", false)
 		if res != 10 {
 			t.Errorf("skill block res = %d, want 10", res)
 		}
@@ -313,7 +313,7 @@ func TestEvalFormula_AttributeAndSkillBlocks(t *testing.T) {
 
 	t.Run("attr_linked reads the linked attribute", func(t *testing.T) {
 		blocks := []models.FormulaBlock{{Type: "attr_linked"}}
-		res, _, label, _, _ := p.evalFormula(blocks, stats, "", "dex", "", false)
+		res, _, label, _, _, _ := p.evalFormula(blocks, stats, "", "dex", "", false)
 		if res != 5 || label != "dex" {
 			t.Errorf("got res=%d label=%q, want 5/dex", res, label)
 		}
@@ -325,7 +325,7 @@ func TestEvalFormula_DiceAttr(t *testing.T) {
 	stats := sampleStats()
 	p := newTestPlugin(6) // Intn(8)=6 -> 7
 	blocks := []models.FormulaBlock{{Type: "dice_attr", Key: "str", Label: "STR"}}
-	res, diceType, _, _, err := p.evalFormula(blocks, stats, "", "", "", false)
+	res, diceType, _, _, _, err := p.evalFormula(blocks, stats, "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -1019,7 +1019,7 @@ func TestEvalFormula_DiceSkillAttr(t *testing.T) {
 		// sides = attr(str 8) + skill(atk 10) = 18; Intn(18)=7 -> 8.
 		p := newTestPlugin(7)
 		blocks := []models.FormulaBlock{{Type: "dice_skill_attr"}}
-		res, diceType, _, _, err := p.evalFormula(blocks, stats, "atk", "str", "", false)
+		res, diceType, _, _, _, err := p.evalFormula(blocks, stats, "atk", "str", "", false)
 		if err != nil {
 			t.Fatalf("evalFormula() error: %v", err)
 		}
@@ -1032,7 +1032,7 @@ func TestEvalFormula_DiceSkillAttr(t *testing.T) {
 		// count 2, sides 18: two dice 8 and 10 -> total 18.
 		p := newTestPlugin(7, 9)
 		blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_skill_attr"}}
-		res, _, _, val, err := p.evalFormula(blocks, stats, "atk", "str", "", false)
+		res, _, _, val, _, err := p.evalFormula(blocks, stats, "atk", "str", "", false)
 		if err != nil {
 			t.Fatalf("evalFormula() error: %v", err)
 		}
@@ -1047,7 +1047,7 @@ func TestEvalFormula_DiceAttrPool(t *testing.T) {
 	// count 2, sides=str(8): two d8 -> 4 and 6 = 10.
 	p := newTestPlugin(3, 5)
 	blocks := []models.FormulaBlock{numBlock(2), opBlock("d"), {Type: "dice_attr", Key: "str", Label: "STR"}}
-	res, diceType, _, val, err := p.evalFormula(blocks, stats, "", "", "", false)
+	res, diceType, _, val, _, err := p.evalFormula(blocks, stats, "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -1060,7 +1060,7 @@ func TestEvalFormula_AttrLinkedEmpty(t *testing.T) {
 	// With no linked attribute, attr_linked contributes 0 and labels as "0".
 	p := newTestPlugin()
 	blocks := []models.FormulaBlock{{Type: "attr_linked"}}
-	res, _, label, _, _ := p.evalFormula(blocks, sampleStats(), "", "", "", false)
+	res, _, label, _, _, _ := p.evalFormula(blocks, sampleStats(), "", "", "", false)
 	if res != 0 || label != "0" {
 		t.Errorf("got res=%d label=%q, want 0/0", res, label)
 	}
@@ -1888,7 +1888,7 @@ func TestRollFromFormula_ThresholdUndecidedWithoutAttributeOrAdvances(t *testing
 // get the same number the sheet shows.
 func TestEvalFormula_SkillBlockUsesDerivedBase(t *testing.T) {
 	p := newTestPlugin()
-	res, _, _, valueStr, err := p.evalFormula(
+	res, _, _, valueStr, _, err := p.evalFormula(
 		[]models.FormulaBlock{{Type: "skill"}}, baseFromAttrStats(), "skills.opt_stealth", "agi", "", true,
 	)
 	if err != nil {
@@ -1906,7 +1906,7 @@ func TestEvalFormula_SkillBlockUsesDerivedBase(t *testing.T) {
 // otherwise be counted once and dropped from the skill half.
 func TestEvalFormula_DiceSkillAttrUsesDerivedBase(t *testing.T) {
 	p := newTestPlugin(0) // d(40+45) -> 1
-	_, diceType, _, _, err := p.evalFormula(
+	_, diceType, _, _, _, err := p.evalFormula(
 		[]models.FormulaBlock{{Type: "dice_skill_attr"}}, baseFromAttrStats(), "skills.opt_stealth", "agi", "", true,
 	)
 	if err != nil {
@@ -2008,7 +2008,7 @@ func TestEvalFormula_Precedence(t *testing.T) {
 	// d6 -> 4: 10 + 4*5 = 30. The old left-to-right fold gave (10+4)*5 = 70.
 	p := newTestPlugin(3)
 	blocks := []models.FormulaBlock{numBlock(10), opBlock("+"), diceBlock("d6"), opBlock("*"), numBlock(5)}
-	res, _, label, val, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
+	res, _, label, val, _, err := p.evalFormula(blocks, sampleStats(), "", "", "", false)
 	if err != nil {
 		t.Fatalf("evalFormula() error: %v", err)
 	}
@@ -2021,7 +2021,7 @@ func TestEvalFormula_NumberBlock(t *testing.T) {
 	stats := sampleStats()
 	stats.Numbers = map[string]int{"load": 7}
 	blocks := []models.FormulaBlock{{Type: "attr", Key: "str", Label: "STR"}, opBlock("+"), {Type: "number", Key: "load", Label: "Load"}}
-	res, _, label, _, err := newTestPlugin().evalFormula(blocks, stats, "", "", "", false)
+	res, _, label, _, _, err := newTestPlugin().evalFormula(blocks, stats, "", "", "", false)
 	if err != nil || res != 15 || label != "STR+Load" {
 		t.Errorf("got %d %q err=%v, want 15 \"STR+Load\"", res, label, err)
 	}
@@ -2029,7 +2029,7 @@ func TestEvalFormula_NumberBlock(t *testing.T) {
 
 func TestEvalFormula_RejectsMalformedFormula(t *testing.T) {
 	blocks := []models.FormulaBlock{numBlock(2), numBlock(3)}
-	if _, _, _, _, err := newTestPlugin().evalFormula(blocks, sampleStats(), "", "", "", false); err == nil {
+	if _, _, _, _, _, err := newTestPlugin().evalFormula(blocks, sampleStats(), "", "", "", false); err == nil {
 		t.Error("expected trailing_blocks error, got nil — the old loop silently added 2+3")
 	}
 }

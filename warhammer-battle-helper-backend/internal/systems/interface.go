@@ -59,6 +59,10 @@ type RollResult struct {
 	PoolFormula          []PoolFormulaPart `json:"poolFormula,omitempty"`
 	PoolSuccesses        int               `json:"poolSuccesses,omitempty"`
 	PoolSuccessCondition string            `json:"poolSuccessCondition,omitempty"` // "gte" | "eq"
+
+	// Every die physically rolled, damage included, for the 3D dice replay. Counted dice
+	// must add up to Roll (or the pool's own rolls) and DamageRoll; see RolledDie.
+	Dice []RolledDie `json:"dice,omitempty"`
 }
 
 // PoolFormulaPart is one term of a dice-pool formula: either a text fragment

@@ -779,6 +779,11 @@ func (s *GameService) RollDice(gameID string, sides int, count int, userID primi
 			"rollerUserId": userID.Hex(),
 		}
 	}
+	var faces []systems.RolledDie
+	for _, r := range results {
+		faces = append(faces, systems.Faces(sides, r, "")...)
+	}
+	eventData["dice"] = faces
 
 	event := models.GameEvent{
 		Type:         models.EventTypeDiceRoll,

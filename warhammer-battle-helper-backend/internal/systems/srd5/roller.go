@@ -54,25 +54,20 @@ func (p *Plugin) rollD20() int { return p.rng.Intn(20) + 1 }
 // diceMod=1 → advantage (roll 2d20, take highest)
 // diceMod=-1 → disadvantage (roll 2d20, take lowest)
 // diceMod=0 → normal (roll 1d20)
-// Returns the final roll and all rolls made.
-func (p *Plugin) rollWithAdvantage(diceMod int) (int, []int) {
+// Returns the final roll, all rolls made and their dice (the unused d20 dropped).
+func (p *Plugin) rollWithAdvantage(diceMod int) (int, []int, []gsys.RolledDie) {
 	r1 := p.rollD20()
 	if diceMod == 0 {
-		return r1, []int{r1}
+		return r1, []int{r1}, gsys.Faces(20, r1, "")
 	}
 	r2 := p.rollD20()
-	if diceMod > 0 {
-		// advantage: take higher
-		if r2 > r1 {
-			return r2, []int{r1, r2}
-		}
-		return r1, []int{r1, r2}
+	// On a tie the first die stays kept, matching which one the comparisons below return.
+	secondWins := (diceMod > 0 && r2 > r1) || (diceMod < 0 && r2 < r1)
+	dice := []gsys.RolledDie{{Sides: 20, Value: r1, Dropped: secondWins}, {Sides: 20, Value: r2, Dropped: !secondWins}}
+	if secondWins {
+		return r2, []int{r1, r2}, dice
 	}
-	// disadvantage: take lower
-	if r2 < r1 {
-		return r2, []int{r1, r2}
-	}
-	return r1, []int{r1, r2}
+	return r1, []int{r1, r2}, dice
 }
 
 // skillKeyToBonus resolves an SRD 5.2 skillKey to the total bonus from stats.
@@ -153,7 +148,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 		return nil, err
 	}
 
-	d20, allRolls := p.rollWithAdvantage(diceMod)
+	d20, allRolls, dice := p.rollWithAdvantage(diceMod)
 	total := d20 + bonus + modifier
 
 	var outcome string
@@ -186,6 +181,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, diceMod 
 		IsAdvantage:    diceMod > 0,
 		IsDisadvantage: diceMod < 0,
 		IsCriticalHit:  d20 == 20,
+		Dice:           dice,
 	}, nil
 }
 
@@ -223,7 +219,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 		attackBonus += pb
 	}
 
-	d20, allRolls := p.rollWithAdvantage(diceMod)
+	d20, allRolls, dice := p.rollWithAdvantage(diceMod)
 	attackTotal := d20 + attackBonus
 
 	isCrit := d20 == 20
@@ -250,12 +246,9 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 	// Roll damage on hit
 	var damageRoll int
 	var damageBreakdown string
+	var damageDice []gsys.RolledDie
 	if isHit && damage != "" {
-		if isCrit {
-			damageRoll, damageBreakdown = p.rollDamage(damage, abilityBonus, true)
-		} else {
-			damageRoll, damageBreakdown = p.rollDamage(damage, abilityBonus, false)
-		}
+		damageRoll, damageBreakdown, damageDice = p.rollDamage(damage, abilityBonus, isCrit)
 	}
 
 	return &gsys.RollResult{
@@ -276,19 +269,21 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkill, damage string
 		IsAdvantage:     diceMod > 0,
 		IsDisadvantage:  diceMod < 0,
 		IsCriticalHit:   isCrit,
+		Dice:            append(dice, damageDice...),
 	}, nil
 }
 
 // rollDamage rolls a damage formula like "1d8", "2d6", "1d4+2".
 // abilityMod is added to the total. On critical hit, all dice are doubled.
-func (p *Plugin) rollDamage(formula string, abilityMod int, isCrit bool) (int, string) {
+func (p *Plugin) rollDamage(formula string, abilityMod int, isCrit bool) (int, string, []gsys.RolledDie) {
 	formula = strings.TrimSpace(strings.ToLower(formula))
 	if formula == "" {
-		return 0, ""
+		return 0, "", nil
 	}
 
 	total := 0
 	var parts []string
+	var dice []gsys.RolledDie
 
 	for _, seg := range strings.Split(formula, "+") {
 		seg = strings.TrimSpace(seg)
@@ -310,6 +305,7 @@ func (p *Plugin) rollDamage(formula string, abilityMod int, isCrit bool) (int, s
 				for i := 0; i < rolls; i++ {
 					r := p.rng.Intn(sides) + 1
 					partTotal += r
+					dice = append(dice, gsys.Faces(sides, r, gsys.DiceGroupDamage)...)
 					diceResults = append(diceResults, strconv.Itoa(r))
 				}
 				total += partTotal
@@ -332,7 +328,7 @@ func (p *Plugin) rollDamage(formula string, abilityMod int, isCrit bool) (int, s
 	}
 
 	if len(parts) == 0 {
-		return 0, ""
+		return 0, "", nil
 	}
-	return total, strings.Join(parts, " + ") + " = " + strconv.Itoa(total)
+	return total, strings.Join(parts, " + ") + " = " + strconv.Itoa(total), dice
 }

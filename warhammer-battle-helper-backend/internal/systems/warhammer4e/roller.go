@@ -200,6 +200,7 @@ func (p *Plugin) RollSkill(raw bson.Raw, skillKey string, modifier int, _ int, _
 		SkillKey:     skillKey,
 		SkillName:    skillName,
 		Modifier:     modifier,
+		Dice:         gsys.Faces(100, roll, ""),
 	}, nil
 }
 
@@ -234,7 +235,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 	sl := (target / 10) - (roll / 10)
 
 	// Parse and roll damage dice (e.g. "+4", "1d6+3", "2d10")
-	damageRoll := p.rollDamage(damage, sl)
+	damageRoll, damageDice := p.rollDamage(damage, sl)
 
 	return &gsys.RollResult{
 		DiceType:     100,
@@ -247,6 +248,7 @@ func (p *Plugin) RollWeapon(raw bson.Raw, weaponName, weaponSkillKey, damage str
 		Damage:       damage,
 		DamageRoll:   damageRoll,
 		Modifier:     modifier,
+		Dice:         append(gsys.Faces(100, roll, ""), damageDice...),
 	}, nil
 }
 
@@ -310,12 +312,12 @@ func (p *Plugin) ComputeDerived(raw bson.Raw) (bson.Raw, error) {
 	return newRaw, nil
 }
 
-// rollDamage parses a WFRP damage string and returns the total rolled value.
-// Damage formulas can be "+SL", "1d10+SL", "1d6+3" etc.
+// rollDamage parses a WFRP damage string and returns the total rolled value and the dice
+// behind it. Damage formulas can be "+SL", "1d10+SL", "1d6+3" etc.
 // SL is passed in so we can substitute it.
-func (p *Plugin) rollDamage(formula string, sl int) int {
+func (p *Plugin) rollDamage(formula string, sl int) (int, []gsys.RolledDie) {
 	if formula == "" {
-		return 0
+		return 0, nil
 	}
 	formula = strings.ToLower(strings.TrimSpace(formula))
 
@@ -324,6 +326,7 @@ func (p *Plugin) rollDamage(formula string, sl int) int {
 	formula = strings.ReplaceAll(formula, "sl", fmt.Sprintf("%d", sl))
 
 	total := 0
+	var dice []gsys.RolledDie
 	parts := strings.Split(formula, "+")
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
@@ -332,7 +335,9 @@ func (p *Plugin) rollDamage(formula string, sl int) int {
 			var num, sides int
 			if _, err := fmt.Sscanf(part, "%dd%d", &num, &sides); err == nil && sides > 0 {
 				for i := 0; i < num; i++ {
-					total += p.rng.Intn(sides) + 1
+					r := p.rng.Intn(sides) + 1
+					total += r
+					dice = append(dice, gsys.Faces(sides, r, gsys.DiceGroupDamage)...)
 				}
 			}
 		} else {
@@ -341,7 +346,7 @@ func (p *Plugin) rollDamage(formula string, sl int) int {
 			total += v
 		}
 	}
-	return total
+	return total, dice
 }
 
 // GetDisplayName extracts the character name from stats.basicInfo.name.
