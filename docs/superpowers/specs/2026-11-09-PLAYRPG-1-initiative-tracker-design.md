@@ -212,9 +212,10 @@ Katalog: `src/components/scene/combat/`.
 
 ## Odstępstwa w implementacji
 
-1. Zapis warunkowy po `Combat.Version` obejmuje każdy zapis (409 przy wyścigu); `next` i `end-turn` dodatkowo sprawdzają, kto jest aktywny.
+1. Zapis warunkowy po `Combat.Version` obejmuje każdy zapis; przegrany wyścig wersji serwer powtarza do 3 razy, 409 dopiero po wyczerpaniu prób. `next` i `end-turn` dodatkowo sprawdzają, kto jest aktywny (ten konflikt nie jest powtarzany).
 2. Leniwe sprzątanie `combat.Prune` przy odczycie i zapisie zamiast hooków w ścieżkach usuwania; klient refetchuje walkę na eventach usunięcia.
 3. Wskaźnik walki przy scenie pochodzi z `GET /games/:id/combats` (tylko MG).
 4. „Dodaj do walki” dla postaci działa przez prawy klik na zaznaczonym tokenie (menu grupowe) oraz listę „Na tej scenie” w oknie.
 5. Zabity uczestnik to czerwony krzyżyk, bo MUI nie ma czaszki.
 6. Do walki trafiają tylko obrazki z warstwy tokenów — pilnuje tego front i backend.
+7. Changelog: punkt dopisany do niewydanej jeszcze wersji 1.0.0 zamiast nowej wersji MINOR (AC28).

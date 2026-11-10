@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import '../../../i18n';
 import CombatWindow from './CombatWindow';
 import { CombatContext, EMPTY_COMBAT } from '../../../contexts/CombatContext';
@@ -87,4 +87,35 @@ test('adding a scene token and a manual entry', () => {
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Reinforcements' } });
   fireEvent.click(screen.getByText('Add entry'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'manual', name: 'Reinforcements', initiative: 0 }]);
+});
+
+test('Escape cancels a rename even when the input blurs as it unmounts', () => {
+  mountWindow();
+  fireEvent.click(screen.getAllByLabelText('Rename')[0]);
+  const input = screen.getByDisplayValue('Trap');
+  fireEvent.change(input, { target: { value: 'Pit' } });
+  // The browser blurs the focused input while React removes it, i.e. before the Escape update has
+  // re-rendered: batching both in one act reproduces that order (blur sees the typed name).
+  // eslint-disable-next-line testing-library/no-unnecessary-act -- the act IS the point: it delays the re-render
+  act(() => {
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.blur(input);
+  });
+  expect(api.updateCombatEntry).not.toHaveBeenCalled();
+  expect(screen.getByText('Trap')).toBeTruthy();
+});
+
+test('leaving the input commits a rename', () => {
+  mountWindow();
+  fireEvent.click(screen.getAllByLabelText('Rename')[0]);
+  const input = screen.getByDisplayValue('Trap');
+  fireEvent.change(input, { target: { value: 'Pit' } });
+  fireEvent.blur(input);
+  expect(api.updateCombatEntry).toHaveBeenCalledWith('g', 's', 'e2', { name: 'Pit' });
+});
+
+test('turn buttons are disabled with no entries', () => {
+  mountWindow({ combat: { ...combat, activeId: '', entries: [] } });
+  expect(screen.getByRole('button', { name: 'Next turn' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'End round' })).toBeDisabled();
 });

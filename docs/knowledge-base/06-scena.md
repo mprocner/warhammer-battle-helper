@@ -85,8 +85,15 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
 - Warstwy canvasowe (`FogLayer`, `DrawingLayer`) i `SceneViewport` nie mają testów renderujących.
 - `Scene.Combat` ma `json:"-"`, bo surowy `Game` idzie do graczy i do lobby. Test
   `TestSceneCombatNeverSerialized` pilnuje, żeby nikt tego nie zdjął.
-- Każdy zapis walki jest warunkowy po `Combat.Version` (409 przy wyścigu). `end-turn`/`next` niosą
-  „kogo dotyczą”, więc podwójne kliknięcie nie przeskoczy uczestnika.
+- Każdy zapis walki jest warunkowy po `Combat.Version`. Przegrany wyścig wersji `mutate` powtarza
+  (do 3 prób: wczytaj → uprawnienia → prune → zmiana → zapis); 409 dostaje klient dopiero po
+  wyczerpaniu prób. `ErrConflict` zwrócony przez samą zmianę (nieaktualny aktywny przy `next` /
+  `end-turn`, nieaktualna kolejność) **nie** jest powtarzany — zapis owija `saveError`, żeby te dwa
+  przypadki dało się odróżnić. `end-turn`/`next` niosą „kogo dotyczą”, więc podwójne kliknięcie
+  nie przeskoczy uczestnika.
+- `end-turn` gracza wymaga jego sceny, trackera widocznego dla graczy i nieukrytego wpisu. Brak walki
+  i walka ukryta dają graczowi to samo 403 — 404 zdradzałby, że ukryta walka istnieje. Gracz ma
+  `canEndTurn` tylko na wpisie naprawdę aktywnym, nie na podstawionym „ostatnim widocznym”.
 - Wpisy po usuniętych tokenach nie są czyszczone przy usuwaniu — `combat.Prune` odfiltrowuje je przy
   każdym odczycie i zapisie. Nowa ścieżka usuwania tokenu nie musi wiedzieć o walce, ale klient musi
   refetchować walkę na jej evencie (`onSourcesChanged` w `GameSession`).

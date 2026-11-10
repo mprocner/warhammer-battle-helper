@@ -114,9 +114,43 @@ func requireCombat(c *models.Combat) error {
 	return nil
 }
 
+// combatSaveAttempts bounds how often mutate rebuilds a change after losing a version race.
+const combatSaveAttempts = 3
+
+// saveError marks an error that came from SaveSceneCombat, so a lost version race can be told apart
+// from an ErrConflict the change itself returned (a stale turn or order): only the former is retried.
+type saveError struct{ err error }
+
+func (e *saveError) Error() string { return e.err.Error() }
+func (e *saveError) Unwrap() error { return e.err }
+
+// retrySaveConflict runs attempt until it succeeds, fails for any reason other than a save
+// conflict, or runs out of attempts. The saveError wrapper never leaves it.
+func retrySaveConflict(attempt func() error) error {
+	var err error
+	for i := 0; i < combatSaveAttempts; i++ {
+		err = attempt()
+		var se *saveError
+		if !errors.As(err, &se) {
+			return err
+		}
+		if !errors.Is(se.err, combat.ErrConflict) {
+			return se.err
+		}
+		err = se.err
+	}
+	return err
+}
+
 // mutate is the single write path: load, authorize, prune a copy, apply the change, save only if
-// nobody wrote in between, broadcast. Every operation below is one allow + one change.
+// nobody wrote in between, broadcast. Every operation below is one allow + one change. When another
+// request wins the version race, the whole sequence reruns on fresh state (two GMs' clicks, or one
+// GM removing several tokens, must not silently drop each other).
 func (s *CombatService) mutate(gameID string, sceneID, userID primitive.ObjectID, allow allowFunc, change changeFunc) error {
+	return retrySaveConflict(func() error { return s.mutateOnce(gameID, sceneID, userID, allow, change) })
+}
+
+func (s *CombatService) mutateOnce(gameID string, sceneID, userID primitive.ObjectID, allow allowFunc, change changeFunc) error {
 	ctx, err := s.load(gameID, sceneID, userID)
 	if err != nil {
 		return err
@@ -139,7 +173,7 @@ func (s *CombatService) mutate(gameID string, sceneID, userID primitive.ObjectID
 		after.Version = expected + 1
 	}
 	if err := s.gameRepo.SaveSceneCombat(gameID, sceneID, expected, after); err != nil {
-		return err
+		return &saveError{err: err}
 	}
 	s.broadcast(ctx.game, sceneID, before, after)
 	return nil
@@ -229,20 +263,28 @@ func buildEntry(scene *models.Scene, req models.CombatSourceRequest) (models.Com
 	return e, ErrCombatInvalid
 }
 
-// authorizeEndTurn: the GM, or a player who may edit the entry's character (CanEditCharacter).
-// Image and manual entries belong to the GM.
+// authorizeEndTurn: the GM, or a player who may edit the entry's character (CanEditCharacter) and
+// can see it — on their own scene, in a tracker shown to players, not a hidden entry. Image and
+// manual entries belong to the GM. A player gets ErrCombatForbidden both when there is no combat and
+// when it is hidden, so the answer never reveals that a hidden combat exists.
 func authorizeEndTurn(ctx *combatCtx, c *models.Combat, entryID primitive.ObjectID) error {
-	if err := requireCombat(c); err != nil {
-		return err
+	if ctx.isGM {
+		if err := requireCombat(c); err != nil {
+			return err
+		}
+		if _, ok := combat.Find(c, entryID); !ok {
+			return combat.ErrEntryNotFound
+		}
+		return nil
+	}
+	if PlayerSceneID(ctx.game, ctx.userID) != ctx.scene.ID || c == nil || !c.VisibleToPlayers {
+		return ErrCombatForbidden
 	}
 	e, ok := combat.Find(c, entryID)
 	if !ok {
 		return combat.ErrEntryNotFound
 	}
-	if ctx.isGM {
-		return nil
-	}
-	if e.Kind != models.CombatEntryCharacter {
+	if e.Hidden || e.Kind != models.CombatEntryCharacter {
 		return ErrCombatForbidden
 	}
 	for _, gc := range ctx.scene.Characters {

@@ -76,6 +76,7 @@ func combatKilledFunc(scene *models.Scene, chars map[primitive.ObjectID]*models.
 // BuildCombatView is the only way combat data leaves the server. nil = the viewer sees no combat
 // (none exists, or the whole tracker is hidden from a player). For players it drops hidden entries
 // and initiative values, and while a hidden entry acts it reports the last visible active entry.
+// For players CanEndTurn is set only on the entry that is really active (never the substitute).
 func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.ObjectID]*models.Character, viewerID primitive.ObjectID, isGM bool) *CombatView {
 	if c == nil {
 		return nil
@@ -110,7 +111,9 @@ func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.
 			ev.Name = ch.Name
 			ev.Avatar = characterTokenAvatar(ch)
 			ev.Killed = ch.Killed
-			ev.CanEndTurn = CanEditCharacter(ch, viewerID, isGM)
+			// A player ends only the turn that is really running: while a hidden entry acts, the
+			// substituted active entry below must not offer a stale "End turn".
+			ev.CanEndTurn = isGM || (e.ID == cp.ActiveID && CanEditCharacter(ch, viewerID, false))
 		case models.CombatEntryImage:
 			img := images[e.SourceID]
 			ev.Avatar = img.FileURL

@@ -568,7 +568,12 @@ const SceneViewport = ({
     const existing = combatEntriesInSelection(combatCtx.combat, selectedTokens, displayedScene);
     if (existing.length === sources.length) {
       return {
-        onRemoveFromCombat: () => existing.forEach(e => combatCtx.run(() => removeCombatEntry(gameId, displayedScene.id, e.id))),
+        // One request at a time: parallel removals all race for the same combat version.
+        onRemoveFromCombat: () => combatCtx.run(async () => {
+          for (const e of existing) {
+            await removeCombatEntry(gameId, displayedScene.id, e.id);
+          }
+        }),
       };
     }
     return { onAddToCombat: () => combatCtx.run(() => addCombatEntries(gameId, displayedScene.id, sources)) };

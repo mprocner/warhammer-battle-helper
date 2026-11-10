@@ -20,6 +20,10 @@
   50% { box-shadow: 0 0 0 3px #4f8a3c, 0 0 2px 0 rgba(110, 180, 90, 0.4); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .combat-toolbar-button--myTurn { animation: none; }
+}
+
 .combat-toolbar-button__badge {
   position: absolute;
   top: -6px;
@@ -242,6 +246,9 @@
 .combat-row__name-input {
   flex: 1;
   min-width: 0;
+  border: 1px solid #c4a882;
+  background: #fff9f0;
+  color: #3a2f1f;
 }
 
 .combat-row__value {

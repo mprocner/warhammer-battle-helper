@@ -33,6 +33,8 @@ func combatParams(c *gin.Context) (string, primitive.ObjectID, primitive.ObjectI
 
 func writeCombatError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, service.ErrCombatInvalid), errors.Is(err, combat.ErrBadOrder):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	case errors.Is(err, service.ErrCombatForbidden):
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 	case errors.Is(err, combat.ErrConflict):
@@ -40,7 +42,8 @@ func writeCombatError(c *gin.Context, err error) {
 	case errors.Is(err, service.ErrCombatNotFound), errors.Is(err, service.ErrCombatSceneNotFound), errors.Is(err, combat.ErrEntryNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// Anything else is a server fault (database, lookup); its text stays in the server.
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 	}
 }
 

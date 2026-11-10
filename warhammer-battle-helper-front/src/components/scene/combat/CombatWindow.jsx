@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -29,6 +29,9 @@ function CombatRow({ entry, isActive }) {
   const [value, setValue] = useState(String(entry.initiative ?? 0));
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(entry.name);
+  // Escape must win over the blur the browser fires while the input unmounts: that blur still sees
+  // the typed name, so without this flag it would commit the rename Escape just cancelled.
+  const cancelledRef = useRef(false);
   useEffect(() => setValue(String(entry.initiative ?? 0)), [entry.initiative]);
   useEffect(() => setName(entry.name), [entry.name]);
 
@@ -43,6 +46,11 @@ function CombatRow({ entry, isActive }) {
   };
   const commitName = () => {
     setRenaming(false);
+    if (cancelledRef.current) {
+      cancelledRef.current = false;
+      setName(entry.name);
+      return;
+    }
     const n = name.trim();
     if (!n || n === entry.name) {
       setName(entry.name);
@@ -68,7 +76,7 @@ function CombatRow({ entry, isActive }) {
           maxLength={60}
           onChange={e => setName(e.target.value)}
           onBlur={commitName}
-          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { setName(entry.name); setRenaming(false); } }}
+          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { cancelledRef.current = true; setName(entry.name); setRenaming(false); } }}
           aria-label={t('combat.window.rename')}
         />
       ) : (
@@ -77,7 +85,7 @@ function CombatRow({ entry, isActive }) {
         </button>
       )}
       {entry.kind !== 'character' && !renaming && (
-        <button type="button" className="combat-row__icon" onClick={() => setRenaming(true)} aria-label={t('combat.window.rename')}>
+        <button type="button" className="combat-row__icon" onClick={() => { cancelledRef.current = false; setRenaming(true); }} aria-label={t('combat.window.rename')}>
           <EditIcon style={{ fontSize: 14 }} />
         </button>
       )}
@@ -157,6 +165,7 @@ export default function CombatWindow() {
   if (!isGM || !windowOpen || !combat) return null;
 
   const roundDone = allActed(combat);
+  const noEntries = combat.entries.length === 0;
 
   return (
     <DraggablePopup
@@ -179,6 +188,7 @@ export default function CombatWindow() {
           <button
             type="button"
             className={`combat-strip__btn${roundDone ? '' : ' combat-strip__btn--primary'}`}
+            disabled={noEntries}
             onClick={() => run(() => nextTurn(gameId, sceneId, combat.activeId))}
           >
             {t('combat.next')} <ArrowForwardIcon style={{ fontSize: 12 }} />
@@ -186,6 +196,7 @@ export default function CombatWindow() {
           <button
             type="button"
             className={`combat-strip__btn${roundDone ? ' combat-strip__btn--primary' : ''}`}
+            disabled={noEntries}
             onClick={() => run(() => endRound(gameId, sceneId))}
           >
             {t('combat.endRound')}

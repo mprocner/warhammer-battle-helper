@@ -592,6 +592,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
       }
 
       case WS_EVENTS.SCENE_CHARACTER_TOKEN_VIEW_UPDATED: {
+        combatRef.current?.onSourcesChanged(); // killed/name/avatar of a card-less viewer's tracker entry
         // A card-less viewer's live token refresh. The server sends the already-masked projection
         // (never raw gear), computed once for the whole card-less class. Merged in place, with no
         // refetch: nothing in this event can change WHICH tokens this viewer may see — every change

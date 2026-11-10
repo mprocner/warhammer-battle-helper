@@ -50,6 +50,7 @@ func TestCombatViewGMSeesEverything(t *testing.T) {
 
 func TestCombatViewPlayerMasking(t *testing.T) {
 	f := newViewFixture()
+	f.combat.ActiveID = f.heroE.ID
 	v := BuildCombatView(f.combat, f.scene, f.chars, f.player, false)
 	if len(v.Entries) != 2 {
 		t.Fatalf("hidden entry must be dropped, got %+v", v.Entries)
@@ -62,9 +63,14 @@ func TestCombatViewPlayerMasking(t *testing.T) {
 	if !v.Entries[0].CanEndTurn {
 		t.Fatal("card holder can end the hero's turn")
 	}
-	if v.Entries[1].CanEndTurn {
+	f.combat.ActiveID = f.trap.ID
+	if BuildCombatView(f.combat, f.scene, f.chars, f.player, false).Entries[1].CanEndTurn {
 		t.Fatal("nobody but the GM ends a manual entry's turn")
 	}
+	if BuildCombatView(f.combat, f.scene, f.chars, f.player, false).Entries[0].CanEndTurn {
+		t.Fatal("a player ends only the turn that is actually running")
+	}
+	f.combat.ActiveID = f.heroE.ID
 	if BuildCombatView(f.combat, f.scene, f.chars, f.other, false).Entries[0].CanEndTurn {
 		t.Fatal("a player without the card cannot end the hero's turn")
 	}
@@ -116,5 +122,23 @@ func TestPlayerSceneID(t *testing.T) {
 	}
 	if !PlayerSceneID(&models.Game{}, p).IsZero() {
 		t.Fatal("no scenes = zero")
+	}
+}
+
+// After the hero hands the turn to a hidden entry, players still see the hero as active, but the
+// hero's turn is over: its card holder must not get a stale "End turn".
+func TestCombatViewNoEndTurnWhileHiddenEntryActs(t *testing.T) {
+	f := newViewFixture()
+	f.combat.ActiveID = f.wolfE.ID
+	f.combat.LastVisibleActiveID = f.heroE.ID
+	v := BuildCombatView(f.combat, f.scene, f.chars, f.player, false)
+	if v.ActiveID != f.heroE.ID.Hex() {
+		t.Fatalf("player active = %q, want hero", v.ActiveID)
+	}
+	if v.Entries[0].CanEndTurn {
+		t.Fatal("the substituted active entry must not offer End turn")
+	}
+	if gm := BuildCombatView(f.combat, f.scene, f.chars, primitive.NewObjectID(), true); !gm.Entries[0].CanEndTurn {
+		t.Fatal("the GM keeps End turn on every entry")
 	}
 }
