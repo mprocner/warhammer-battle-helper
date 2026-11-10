@@ -10,10 +10,10 @@
     justify-content: space-between;
     gap: 16px;
     padding: 16px 24px;
-    background: linear-gradient(135deg, #2b2118 0%, #3a2f1f 100%);
-    border-top: 2px solid #7a5c42;
-    color: #e8d5b7;
-    font-family: 'Crimson Text', serif;
+    background: linear-gradient(135deg, var(--c-dark-bg) 0%, var(--c-dark-bg) 100%);
+    border-top: 2px solid var(--c-border-strong);
+    color: var(--c-text-on-dark-muted);
+    font-family: var(--font-body);
 }
 
 .consent-banner__text {
@@ -26,13 +26,13 @@
 }
 
 .consent-banner__title {
-    font-family: 'Cinzel', serif;
-    color: #c9975b;
-    letter-spacing: 0.5px;
+    font-family: var(--font-display); text-transform: var(--display-transform);
+    color: var(--c-text-accent);
+    letter-spacing: calc(0.5px * var(--tracking-k));
 }
 
 .consent-banner__link {
-    color: #c9975b;
+    color: var(--c-text-accent);
     text-decoration: underline;
     width: fit-content;
 }
@@ -45,15 +45,15 @@
 .consent-banner__button {
     min-width: 120px;
     padding: 10px 18px;
-    background: #7a5c42;
-    color: #f4e8d8;
-    border: 1px solid #c4a882;
-    border-radius: 4px;
-    font-family: 'Cinzel', serif;
+    background: var(--c-leather-bg);
+    color: var(--c-text-on-dark);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-display); text-transform: var(--display-transform);
     font-size: 14px;
     cursor: pointer;
 }
 
 .consent-banner__button:hover {
-    background: #8f6d4e;
+    background: var(--c-leather-bg);
 }

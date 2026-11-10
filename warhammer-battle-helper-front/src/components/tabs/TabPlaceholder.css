@@ -17,25 +17,25 @@
 }
 
 .tab-placeholder__title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 1.25rem;
   font-weight: 700;
-  color: #6b4423;
+  color: var(--c-heading);
   margin-bottom: 8px;
 }
 
 .tab-placeholder__message {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 1rem;
-  color: #7a5c42;
+  color: var(--c-label);
   font-style: italic;
   margin-bottom: 16px;
 }
 
 .tab-placeholder__description {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
-  color: #8a7d6a;
+  color: var(--c-text-muted);
   max-width: 250px;
   line-height: 1.5;
 }

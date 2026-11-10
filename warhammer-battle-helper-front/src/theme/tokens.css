@@ -1,0 +1,104 @@
+/* Theme tokens: default theme (PLAYRPG-346).
+ * Every themeable value in the app CSS comes from here; a theme overrides these under
+ * :root[data-theme="<id>"]. Tokens never cover dimensions (padding, sizes, font-size,
+ * line-height, border-width): sheets and tutorial anchors depend on fixed geometry.
+ * Guarded by src/theme/noRawStyleValues.test.js. */
+:root {
+  /* Text */
+  --c-text: #3a2f1f;
+  --c-text-deep: #3d2b1a;
+  --c-heading: #6b4423;
+  --c-label: #7a5c42;
+  --c-text-muted: #8a7d6a;
+  --c-text-accent: #c9975b;
+  --c-text-on-dark: #fff9f0;
+  --c-text-danger: #c0392b;
+  --c-text-success: #4a7c59;
+  --c-text-info: #3864aa;
+  --c-text-magic: #6b3fa0;
+  --c-text-neutral: #666666;
+  --c-text-neutral-light: #aaaaaa;
+  --c-text-on-dark-muted: #f0d8b0;
+  --c-text-danger-dark: #8b2424;
+  --c-text-gold: #8b6914;
+  --c-text-danger-light: #e59a9a;
+  --c-text-magic-light: #e8d0ff;
+
+  /* Surfaces and fills */
+  --c-input-bg: #fff9f0;
+  --c-surface: #f4e8d8;
+  --c-surface-alt: #e8dcc4;
+  --c-surface-raised: #f9f3e8;
+  --c-surface-sunken: #ede0ce;
+  --c-surface-white: #ffffff;
+  --c-accent-bg: #c9975b;
+  --c-accent-bg-light: #d4a574;
+  --c-accent-bg-dark: #a67c52;
+  --c-leather-bg: #7a5c42;
+  --c-leather-bg-dark: #6b4423;
+  --c-dark-bg: #3a2920;
+  --c-danger-bg: #a93434;
+  --c-success-bg: #4a7c59;
+  --c-info-bg: #3864aa;
+  --c-magic-bg: #6b3fa0;
+  --c-neutral-bg: #888888;
+  --c-danger-bg-light: #e07676;
+  --c-danger-bg-dark: #6b1818;
+  --c-success-bg-light: #6db88a;
+  --c-night-bg: #252540;
+  --c-success-bg-pale: #d4ecd4;
+  --c-success-bg-vivid: #4caf50;
+
+  /* Borders and outlines */
+  --c-border-accent: #c9975b;
+  --c-border-strong: #7a5c42;
+  --c-border: #c4a882;
+  --c-border-light: #d4a574;
+  --c-border-dark: #6b4423;
+  --c-border-gold: #d4af37;
+  --c-border-danger: #c94444;
+  --c-border-success: #4a7c59;
+  --c-border-info: #3864aa;
+  --c-border-magic: #6b3fa0;
+  --c-border-neutral: #888888;
+  --c-border-faint: #e8dcc4;
+  --c-border-neutral-dark: #333333;
+  --c-border-neutral-light: #cccccc;
+  --c-border-danger-dark: #8b2424;
+  --c-border-success-light: #8fd9af;
+  --c-border-danger-deep: #4a1a1a;
+
+  /* RGB triplets for transparency: rgb(var(--c-accent-rgb) / 0.3) */
+  --c-accent-rgb: 201 151 91;
+  --c-leather-rgb: 122 92 66;
+  --c-leather-dark-rgb: 107 68 35;
+  --c-text-rgb: 58 47 31;
+  --c-deep-rgb: 61 43 26;
+  --c-gold-rgb: 212 175 55;
+  --c-light-rgb: 255 249 240;
+  --c-highlight-rgb: 255 255 255;
+  --c-shadow-rgb: 0 0 0;
+  --c-danger-rgb: 192 57 43;
+  --c-success-rgb: 56 130 90;
+  --c-info-rgb: 56 100 170;
+  --c-magic-rgb: 107 63 160;
+
+  /* Typography */
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Text', Georgia, serif;
+  --font-ui: 'Roboto', sans-serif;
+  --display-transform: none; /* text-transform of display-font text */
+  --tracking-k: 1;           /* letter-spacing multiplier */
+
+  /* Shape */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-pill: 20px;
+
+  /* Depth: alpha multiplier of blurred shadows (focus rings are not affected) */
+  --shadow-k: 1;
+}

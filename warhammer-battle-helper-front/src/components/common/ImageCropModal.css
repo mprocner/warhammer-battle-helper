@@ -9,15 +9,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 12, 4, 0.6);
+  background: rgb(var(--c-shadow-rgb) / 0.6);
 }
 
 .image-crop-modal {
   width: min(520px, calc(100vw - 32px));
-  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
-  border: 3px solid #7a5c42;
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
+  border: 3px solid var(--c-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgb(var(--c-shadow-rgb) / calc(0.4 * var(--shadow-k)));
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -25,10 +25,10 @@
 }
 
 .image-crop-modal__title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 1.05rem;
   font-weight: 700;
-  color: #6b4423;
+  color: var(--c-heading);
   margin: 0;
 }
 
@@ -38,9 +38,9 @@
   width: 100%;
   height: 320px;
   overflow: auto;
-  background: #2a2218;
-  border: 2px solid #8b6b3d;
-  border-radius: 4px;
+  background: var(--c-dark-bg);
+  border: 2px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
 }
 
 /* Scales the whole ReactCrop element, overlay included. Scaling the image
@@ -68,13 +68,13 @@
 
 .image-crop-modal__zoom-slider {
   width: 100%;
-  accent-color: #c9975b;
+  accent-color: var(--c-text-accent);
 }
 
 .image-crop-modal__error {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
-  color: #8b2f2f;
+  color: var(--c-text-danger-dark);
 }
 
 .image-crop-modal__actions {
@@ -85,17 +85,17 @@
 .image-crop-modal__btn {
   flex: 1;
   padding: 8px 12px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 0.9rem;
-  color: #3a2f1f;
-  background: #fff9f0;
-  border: 2px solid #c4a882;
-  border-radius: 4px;
+  color: var(--c-text);
+  background: var(--c-input-bg);
+  border: 2px solid var(--c-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
 .image-crop-modal__btn:hover:not(:disabled) {
-  border-color: #7a5c42;
+  border-color: var(--c-border-strong);
 }
 
 .image-crop-modal__btn:disabled {
@@ -104,6 +104,6 @@
 }
 
 .image-crop-modal__btn--primary {
-  background: #c9975b;
-  border-color: #7a5c42;
+  background: var(--c-accent-bg);
+  border-color: var(--c-border-strong);
 }

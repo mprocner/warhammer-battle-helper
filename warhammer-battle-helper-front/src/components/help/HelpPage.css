@@ -5,7 +5,7 @@
   max-width: 1200px;
   margin: 32px auto;
   padding: 0 16px;
-  color: #3a2f1f;
+  color: var(--c-text);
 }
 
 .help-page__sidebar {
@@ -15,9 +15,9 @@
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   padding: 16px;
-  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
-  border: 2px solid #7a5c42;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
+  border: 2px solid var(--c-border-strong);
+  border-radius: var(--radius-xl);
 }
 
 .help-page__sidebar-title {
@@ -25,14 +25,14 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 1.1rem;
   font-weight: 700;
-  color: #7a5c42;
+  color: var(--c-label);
 }
 
 .help-page__sidebar-title svg {
-  color: #c9975b;
+  color: var(--c-text-accent);
 }
 
 .help-page__nav,
@@ -45,50 +45,50 @@
 .help-page__nav-link {
   display: block;
   padding: 6px 10px;
-  border-radius: 4px;
-  color: #3a2f1f;
+  border-radius: var(--radius-md);
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .help-page__nav-link:hover {
-  background: #fff9f0;
+  background: var(--c-input-bg);
 }
 
 .help-page__nav-link--active {
   font-weight: 700;
-  color: #7a5c42;
-  background: #fff9f0;
-  border-left: 3px solid #c9975b;
+  color: var(--c-label);
+  background: var(--c-input-bg);
+  border-left: 3px solid var(--c-border-accent);
 }
 
 .help-page__sections {
   margin: 4px 0 8px 14px;
-  border-left: 1px solid #c4a882;
+  border-left: 1px solid var(--c-border);
 }
 
 .help-page__section-link {
   display: block;
   padding: 3px 10px;
   font-size: 0.85rem;
-  color: #7a5c42;
+  color: var(--c-label);
   text-decoration: none;
 }
 
 .help-page__section-link:hover {
-  color: #3a2f1f;
+  color: var(--c-text);
   text-decoration: underline;
 }
 
 .help-page__content {
   min-width: 0;
   padding: 24px 32px;
-  background: linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%);
-  border: 2px solid #7a5c42;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
+  border: 2px solid var(--c-border-strong);
+  border-radius: var(--radius-xl);
 }
 
 .help-page__status {
-  color: #7a5c42;
+  color: var(--c-label);
 }
 
 .help-page__article {
@@ -98,8 +98,8 @@
 .help-page__article h1,
 .help-page__article h2,
 .help-page__article h3 {
-  font-family: 'Cinzel', serif;
-  color: #7a5c42;
+  font-family: var(--font-display); text-transform: var(--display-transform);
+  color: var(--c-label);
   /* Keeps a section heading clear of the top edge when a link scrolls to it. */
   scroll-margin-top: 16px;
 }
@@ -113,7 +113,7 @@
   margin: 32px 0 12px;
   padding-bottom: 4px;
   font-size: 1.35rem;
-  border-bottom: 1px solid #c9975b;
+  border-bottom: 1px solid var(--c-border-accent);
 }
 
 .help-page__article h3 {
@@ -122,23 +122,23 @@
 }
 
 .help-page__article a {
-  color: #8b2f2f;
+  color: var(--c-text-danger-dark);
 }
 
 .help-page__article code {
   padding: 1px 5px;
   font-size: 0.9em;
-  background: #fff9f0;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
 }
 
 .help-page__article pre {
   padding: 12px;
   overflow-x: auto;
-  background: #fff9f0;
-  border: 1px solid #c4a882;
-  border-radius: 4px;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
 }
 
 .help-page__article pre code {
@@ -159,12 +159,12 @@
   padding: 6px 10px;
   text-align: left;
   vertical-align: top;
-  border: 1px solid #c4a882;
+  border: 1px solid var(--c-border);
 }
 
 .help-page__article th {
-  color: #7a5c42;
-  background: #fff9f0;
+  color: var(--c-label);
+  background: var(--c-input-bg);
 }
 
 @media (max-width: 800px) {

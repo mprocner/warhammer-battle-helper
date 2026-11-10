@@ -22,16 +22,16 @@
 }
 
 .combat-toolbar-button--live {
-  box-shadow: 0 0 0 3px #c9975b, 0 0 10px 2px rgba(232, 181, 106, 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--c-accent-rgb)), 0 0 10px 2px rgb(var(--c-accent-rgb) / calc(0.8 * var(--shadow-k)));
 }
 
 .combat-toolbar-button--myTurn {
-  box-shadow: 0 0 0 3px #4f8a3c, 0 0 12px 3px rgba(110, 180, 90, 0.9);
+  box-shadow: 0 0 0 3px rgb(var(--c-success-rgb)), 0 0 12px 3px rgb(var(--c-success-rgb) / calc(0.9 * var(--shadow-k)));
   animation: combat-turn-pulse 1.4s infinite;
 }
 
 @keyframes combat-turn-pulse {
-  50% { box-shadow: 0 0 0 3px #4f8a3c, 0 0 2px 0 rgba(110, 180, 90, 0.4); }
+  50% { box-shadow: 0 0 0 3px rgb(var(--c-success-rgb)), 0 0 2px 0 rgb(var(--c-success-rgb) / calc(0.4 * var(--shadow-k))); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -42,13 +42,13 @@
   position: absolute;
   top: -6px;
   right: -8px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 10px;
   line-height: 1.4;
-  background: #3a2f1f;
-  color: #f4e8d8;
+  background: var(--c-dark-bg);
+  color: var(--c-text-on-dark);
   padding: 0 5px;
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   pointer-events: none;
 }
 
@@ -56,7 +56,7 @@
   display: flex;
   padding: 2px;
   border-radius: 50%;
-  background: #7a5c42;
+  background: var(--c-leather-bg);
 }
 
 /* ── Turn order strip (viewport space, over panels; under managed windows from 1500) ── */
@@ -70,11 +70,11 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: rgba(246, 236, 220, 0.97);
-  border: 2px solid #7a5c42;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  color: #3a2f1f;
+  background: rgb(var(--c-light-rgb) / 0.97);
+  border: 2px solid var(--c-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px rgb(var(--c-shadow-rgb) / calc(0.25 * var(--shadow-k)));
+  color: var(--c-text);
 }
 
 .combat-strip--hidden {
@@ -85,25 +85,25 @@
   display: flex;
   border: none;
   background: none;
-  color: #c4a882;
+  color: var(--c-text-on-dark-muted);
   cursor: grab;
   padding: 0;
   touch-action: none;
 }
 
 .combat-strip__round {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 11px;
-  color: #7a5c42;
+  color: var(--c-label);
   white-space: nowrap;
 }
 
 .combat-strip__hidden-badge {
   font-size: 10px;
-  background: #3a2f1f;
-  color: #f4e8d8;
+  background: var(--c-dark-bg);
+  color: var(--c-text-on-dark);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
 }
 
 .combat-strip__list {
@@ -120,7 +120,7 @@
 }
 
 .combat-strip__item--active .combat-portrait {
-  box-shadow: 0 0 0 3px #c9975b, 0 0 8px 2px #e8b56a;
+  box-shadow: 0 0 0 3px rgb(var(--c-accent-rgb)), 0 0 8px 2px rgb(var(--c-accent-rgb) / var(--shadow-k));
 }
 
 .combat-strip__item--acted {
@@ -133,8 +133,8 @@
   right: -5px;
   bottom: -5px;
   font-size: 12px !important;
-  background: #3a2f1f;
-  color: #f4e8d8;
+  background: var(--c-dark-bg);
+  color: var(--c-text-on-dark);
   border-radius: 50%;
   padding: 1px;
 }
@@ -143,20 +143,20 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 10px;
-  border: 1px solid #7a5c42;
-  background: #fff9f0;
-  color: #7a5c42;
+  border: 1px solid var(--c-border-strong);
+  background: var(--c-input-bg);
+  color: var(--c-label);
   padding: 4px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .combat-strip__btn--primary {
-  background: #7a5c42;
-  color: #fff;
+  background: var(--c-leather-bg);
+  color: var(--c-text-on-dark);
 }
 
 .combat-strip__btn:disabled {
@@ -166,9 +166,9 @@
 
 /* Same spot as "next", different colour: the GM must notice the button now closes the round. */
 .combat-strip__btn--end-round {
-  background: #c9975b;
-  border-color: #7a5c42;
-  color: #fff;
+  background: var(--c-accent-bg);
+  border-color: var(--c-border-strong);
+  color: var(--c-text-on-dark);
 }
 
 .combat-strip__activate {
@@ -181,13 +181,13 @@
 }
 
 .combat-strip__activate:hover .combat-portrait {
-  border-color: #c9975b;
+  border-color: var(--c-border-accent);
 }
 
 .combat-strip__btn--end-turn {
-  background: #4f8a3c;
-  border-color: #3d6d2e;
-  color: #fff;
+  background: var(--c-success-bg-vivid);
+  border-color: var(--c-border-success);
+  color: var(--c-text-on-dark);
 }
 
 /* ── Portrait (strip + window) ───────────────────────────────────── */
@@ -200,14 +200,14 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 2px solid #7a5c42;
+  border: 2px solid var(--c-border-strong);
   object-fit: cover;
-  background: #fff9f0;
+  background: var(--c-input-bg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #7a5c42;
-  font-family: 'Cinzel', serif;
+  color: var(--c-label);
+  font-family: var(--font-display); text-transform: var(--display-transform);
   box-sizing: border-box;
 }
 
@@ -225,7 +225,7 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  color: #b3261e;
+  color: var(--c-text-danger);
   font-size: 26px !important;
   pointer-events: none;
 }
@@ -233,8 +233,8 @@
 /* ── Management window (Window Manager popup, light sheet palette) ─ */
 .combat-window__body {
   padding: 10px 12px;
-  color: #3a2f1f;
-  font-family: 'Crimson Text', Georgia, serif;
+  color: var(--c-text);
+  font-family: var(--font-body);
   font-size: 15px;
 }
 
@@ -243,15 +243,15 @@
   font: inherit;
   font-size: 14px;
   padding: 3px 6px;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
-  background: #fff9f0;
-  color: #3a2f1f;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-input-bg);
+  color: var(--c-text);
   box-sizing: border-box;
 }
 
 .combat-window__body input:focus {
-  border-color: #7a5c42;
+  border-color: var(--c-border-strong);
   outline: none;
 }
 
@@ -267,12 +267,12 @@
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  border-top: 1px solid #eadcc4;
-  background: #fff9f0;
+  border-top: 1px solid var(--c-border-faint);
+  background: var(--c-input-bg);
 }
 
 .combat-row--active {
-  background: #f1d9b0;
+  background: var(--c-surface-alt);
   font-weight: bold;
 }
 
@@ -284,7 +284,7 @@
 .combat-row--dragging {
   position: relative;
   z-index: 1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgb(var(--c-shadow-rgb) / calc(0.25 * var(--shadow-k)));
 }
 
 .combat-row__name {
@@ -316,17 +316,17 @@
   display: flex;
   border: none;
   background: none;
-  color: #7a5c42;
+  color: var(--c-label);
   cursor: pointer;
   padding: 2px;
 }
 
 .combat-row__icon:hover {
-  color: #3a2f1f;
+  color: var(--c-text);
 }
 
 .combat-row__icon--remove:hover {
-  color: #8a2b1f;
+  color: var(--c-text-danger-dark);
 }
 
 /* Footer: the turn controls on top, combat management below. It sits right under the list, above
@@ -337,7 +337,7 @@
   gap: 8px;
   padding: 10px 0 2px;
   margin-top: 8px;
-  border-top: 1px solid #c4a882;
+  border-top: 1px solid var(--c-border);
 }
 
 .combat-window__turn {
@@ -354,19 +354,19 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 12px;
   padding: 5px 10px;
-  border: 1px solid #7a5c42;
-  border-radius: 4px;
-  background: #fff9f0;
-  color: #7a5c42;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--c-input-bg);
+  color: var(--c-label);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .combat-window__btn:hover:not(:disabled) {
-  background: #f4e8d8;
+  background: var(--c-surface);
 }
 
 .combat-window__btn:disabled {
@@ -382,21 +382,21 @@
 }
 
 .combat-window__btn--turn:first-child {
-  border-radius: 4px 0 0 4px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .combat-window__btn--turn:last-child {
   border-left: none;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .combat-window__btn.combat-window__btn--primary {
-  background: #7a5c42;
-  color: #fff9f0;
+  background: var(--c-leather-bg);
+  color: var(--c-text-on-dark);
 }
 
 .combat-window__btn.combat-window__btn--primary:hover:not(:disabled) {
-  background: #6a4e37;
+  background: var(--c-leather-bg);
 }
 
 /* Management row: three quieter, equally tall outlined buttons; widths follow their labels. */
@@ -404,45 +404,45 @@
   flex: 1 1 auto;
   font-size: 11px;
   padding: 6px 8px;
-  border-color: #c4a882;
+  border-color: var(--c-border);
 }
 
 .combat-window__btn--tool:hover:not(:disabled) {
-  border-color: #7a5c42;
+  border-color: var(--c-border-strong);
 }
 
 .combat-window__btn--tool[aria-pressed="true"] {
-  background: #f1d9b0;
-  border-color: #7a5c42;
+  background: var(--c-surface-alt);
+  border-color: var(--c-border-strong);
 }
 
 .combat-window__btn.combat-window__btn--danger {
-  color: #8a2b1f;
-  border-color: #d4a39a;
+  color: var(--c-text-danger-dark);
+  border-color: var(--c-border);
 }
 
 .combat-window__btn.combat-window__btn--danger:hover {
-  border-color: #8a2b1f;
-  background: #fbeae6;
+  border-color: var(--c-border-danger-dark);
+  background: var(--c-surface-raised);
 }
 
 .combat-window__hint {
   margin: 6px 0;
   font-size: 14px;
-  color: #7a5c42;
+  color: var(--c-label);
   font-style: italic;
 }
 
 .combat-window__add {
   margin-top: 10px;
   padding-top: 6px;
-  border-top: 1px dashed #c4a882;
+  border-top: 1px dashed var(--c-border);
 }
 
 .combat-window__add-label {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 11px;
-  color: #7a5c42;
+  color: var(--c-label);
 }
 
 .combat-window__candidates {
@@ -458,10 +458,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid #c4a882;
-  background: #fff9f0;
-  color: #3a2f1f;
-  border-radius: 12px;
+  border: 1px solid var(--c-border);
+  background: var(--c-input-bg);
+  color: var(--c-text);
+  border-radius: var(--radius-2xl);
   padding: 2px 8px 2px 2px;
   cursor: pointer;
   font: inherit;
@@ -482,12 +482,12 @@
 /* ── Map highlight of the acting token, scene tab indicator ─────── */
 .map-char-token.map-char-token--combat-active .map-char-token__avatar,
 .scene-image.scene-image--combat-active {
-  box-shadow: 0 0 0 3px #c9975b, 0 0 12px 4px rgba(232, 181, 106, 0.85);
+  box-shadow: 0 0 0 3px rgb(var(--c-accent-rgb)), 0 0 12px 4px rgb(var(--c-accent-rgb) / calc(0.85 * var(--shadow-k)));
   border-radius: 50%;
 }
 
 .scene-image.scene-image--combat-active {
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .scene-selector__combat-icon {

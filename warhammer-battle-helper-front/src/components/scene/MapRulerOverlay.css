@@ -4,9 +4,9 @@
   position: absolute;
   transform: translate(-50%, -140%);
   padding: 2px 8px;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
+  border-radius: var(--radius-xl);
+  background: rgb(var(--c-shadow-rgb) / 0.75);
+  color: var(--c-text-on-dark);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;

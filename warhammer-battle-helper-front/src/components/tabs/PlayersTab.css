@@ -6,7 +6,7 @@
   height: 100%;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #c9975b #e8dcc4;
+  scrollbar-color: var(--c-border-accent) var(--c-border-faint);
 }
 
 .players-tab::-webkit-scrollbar {
@@ -14,17 +14,17 @@
 }
 
 .players-tab::-webkit-scrollbar-track {
-  background: #e8dcc4;
-  border-radius: 4px;
+  background: var(--c-surface-alt);
+  border-radius: var(--radius-md);
 }
 
 .players-tab::-webkit-scrollbar-thumb {
-  background: #c9975b;
-  border-radius: 4px;
+  background: var(--c-accent-bg);
+  border-radius: var(--radius-md);
 }
 
 .players-tab::-webkit-scrollbar-thumb:hover {
-  background: #a67c52;
+  background: var(--c-accent-bg-dark);
 }
 
 /* The container's 16px gap adds to this; together 12px under the header, like the other tabs. */
@@ -34,24 +34,24 @@
 
 /* Section card */
 .players-tab__section {
-  background: linear-gradient(135deg, #f5ebe0 0%, #ede0ce 100%);
-  border: 2px solid #c9a66b;
-  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-sunken) 100%);
+  border: 2px solid var(--c-border-light);
+  border-radius: var(--radius-xl);
   padding: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgb(var(--c-shadow-rgb) / calc(0.1 * var(--shadow-k)));
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .players-tab__section-title {
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 0.95rem;
   font-weight: 700;
-  color: #6b4423;
+  color: var(--c-heading);
   margin: 0 0 2px 0;
   padding-bottom: 6px;
-  border-bottom: 1px solid #c9a66b;
+  border-bottom: 1px solid var(--c-border-light);
 }
 
 /* Invite form */
@@ -63,16 +63,16 @@
 .players-tab__invite-input {
   flex: 1;
   padding: 6px 10px;
-  border: 2px solid #c9a66b;
-  border-radius: 6px;
-  background: #faf6f0;
-  color: #3d2800;
+  border: 2px solid var(--c-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--c-input-bg);
+  color: var(--c-text-deep);
   font-size: 0.85rem;
   outline: none;
 }
 
 .players-tab__invite-input:focus {
-  border-color: #6b4423;
+  border-color: var(--c-border-dark);
 }
 
 .players-tab__invite-btn {
@@ -80,10 +80,10 @@
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: linear-gradient(135deg, #f4e8d8 0%, #e8d5bc 100%);
-  color: #6b4423;
-  border: 1px solid #8b6b3d;
-  border-radius: 6px;
+  background: linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%);
+  color: var(--c-heading);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius-lg);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -92,8 +92,8 @@
 }
 
 .players-tab__invite-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
-  border-color: #6b4423;
+  background: linear-gradient(135deg, var(--c-surface-sunken) 0%, var(--c-surface-alt) 100%);
+  border-color: var(--c-border-dark);
 }
 
 .players-tab__invite-btn:disabled {
@@ -102,7 +102,7 @@
 }
 
 .players-tab__invite-btn--danger {
-  color: #b94040;
+  color: var(--c-text-danger);
 }
 
 .players-tab__invite-url {
@@ -118,9 +118,9 @@
 }
 
 .players-tab__hint {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 0.85rem;
-  color: #7a5c42;
+  color: var(--c-label);
   margin: 0;
 }
 
@@ -130,18 +130,18 @@
 }
 
 .players-tab__invite-msg--success {
-  color: #2e7d32;
+  color: var(--c-text-success);
 }
 
 .players-tab__invite-msg--error {
-  color: #b94040;
+  color: var(--c-text-danger);
 }
 
 /* Player list */
 .players-tab__empty {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
-  color: #7a5c42;
+  color: var(--c-label);
   text-align: center;
   padding: 8px;
   font-style: italic;
@@ -160,16 +160,16 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgb(var(--c-highlight-rgb) / 0.4);
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   padding: 6px 8px;
   transition: all 0.2s ease;
 }
 
 .players-tab__item:hover {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: #c9a66b;
+  background: rgb(var(--c-highlight-rgb) / 0.6);
+  border-color: var(--c-border-light);
 }
 
 .players-tab__avatar {
@@ -184,7 +184,7 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #c9a66b;
+  border: 2px solid var(--c-border-light);
 }
 
 .players-tab__avatar-initials {
@@ -194,11 +194,11 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #c9a66b;
-  color: #fff;
+  background: var(--c-accent-bg-light);
+  color: var(--c-text-on-dark);
   font-weight: 700;
   font-size: 0.95rem;
-  border: 2px solid #a67c52;
+  border: 2px solid var(--c-border-accent);
 }
 
 .players-tab__online-dot {
@@ -208,12 +208,12 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #888;
-  border: 2px solid #f5ebe0;
+  background: var(--c-neutral-bg);
+  border: 2px solid var(--c-border-faint);
 }
 
 .players-tab__online-dot--online {
-  background: #4caf50;
+  background: var(--c-success-bg-vivid);
 }
 
 .players-tab__info {
@@ -225,10 +225,10 @@
 }
 
 .players-tab__name {
-  font-family: 'Crimson Text', serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
-  color: #4a3728;
+  color: var(--c-text-deep);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -236,7 +236,7 @@
 
 .players-tab__email {
   font-size: 0.75rem;
-  color: #8a6a3a;
+  color: var(--c-label);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -247,16 +247,16 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #b94040;
+  color: var(--c-text-danger);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   transition: background 0.15s, color 0.15s;
 }
 
 .players-tab__kick-btn:hover {
-  background: rgba(185, 64, 64, 0.1);
-  color: #8b2020;
+  background: rgb(var(--c-danger-rgb) / 0.1);
+  color: var(--c-text-danger-dark);
 }

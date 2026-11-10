@@ -12,14 +12,14 @@
   z-index: 3000;
   pointer-events: none;
   padding: 5px 12px;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #fff9f0 0%, #f4e8d8 100%);
-  border: 1px solid #c9975b;
-  color: #3a2f1f;
-  font-family: 'Cinzel', serif;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--c-input-bg) 0%, var(--c-surface) 100%);
+  border: 1px solid var(--c-border-accent);
+  color: var(--c-text);
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.35);
+  box-shadow: 0 2px 8px rgb(var(--c-leather-dark-rgb) / calc(0.35 * var(--shadow-k)));
   animation: mode-switch-label 800ms ease-out forwards;
 }

@@ -8,8 +8,8 @@
 .right-panel {
   width: var(--panel-right-width);
   min-width: var(--panel-right-width);
-  background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
-  border-left: 4px solid #7a5c42;
+  background: linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%);
+  border-left: 4px solid var(--c-border-strong);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -34,20 +34,20 @@
 /* Vertical Tab Navigation */
 .right-panel__tabs-nav {
   width: var(--vertical-tabs-width);
-  background: linear-gradient(180deg, #e8d8bc 0%, #dccba8 100%);
+  background: linear-gradient(180deg, var(--c-surface-alt) 0%, var(--c-surface-alt) 100%);
   display: flex;
   flex-direction: column;
-  border-right: 2px solid #c9975b;
+  border-right: 2px solid var(--c-border-accent);
 }
 
 .right-panel__tab-btn {
   padding: 10px 8px;
   background: transparent;
   border: none;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display);
   font-size: 0.65rem;
   font-weight: 600;
-  color: #6b4423;
+  color: var(--c-heading);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -56,18 +56,18 @@
   gap: 6px;
   border-left: 3px solid transparent;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: calc(0.3px * var(--tracking-k));
 }
 
 .right-panel__tab-btn:hover {
-  background: rgba(201, 151, 91, 0.25);
-  color: #4a2f1a;
+  background: rgb(var(--c-accent-rgb) / 0.25);
+  color: var(--c-text-deep);
 }
 
 .right-panel__tab-btn--active {
-  background: linear-gradient(90deg, rgba(201, 151, 91, 0.35) 0%, transparent 100%);
-  color: #7a4a1a;
-  border-left-color: #c9975b;
+  background: linear-gradient(90deg, rgb(var(--c-accent-rgb) / 0.35) 0%, transparent 100%);
+  color: var(--c-heading);
+  border-left-color: var(--c-border-accent);
 }
 
 .right-panel__tab-icon {
@@ -104,11 +104,11 @@
 
 /* Scrollbar for vertical tabs */
 .right-panel__tabs-nav::-webkit-scrollbar-track {
-  background: #dccba8;
+  background: var(--c-surface-alt);
 }
 
 .right-panel__tabs-nav::-webkit-scrollbar-thumb {
-  background: #c9975b;
+  background: var(--c-accent-bg);
 }
 
 /* Guide, changelog and tutorial buttons, pinned to the right so the title stays centred. */
@@ -127,13 +127,13 @@
   align-items: center;
   justify-content: center;
   padding: 4px;
-  color: #f4e8d8;
+  color: var(--c-text-on-dark);
   background: transparent;
-  border: 1px solid rgba(244, 232, 216, 0.5);
-  border-radius: 4px;
+  border: 1px solid rgb(var(--c-light-rgb) / 0.5);
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 
 .panel-header__help:hover {
-  background: rgba(244, 232, 216, 0.18);
+  background: rgb(var(--c-light-rgb) / 0.18);
 }

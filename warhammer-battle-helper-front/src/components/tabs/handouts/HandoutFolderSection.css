@@ -1,16 +1,16 @@
 /* Handout Folder Section - Accordion style, parchment theme */
 
 .handout-folder-section {
-  border: 1px solid #d4a574;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #fdf8f0 0%, #f9f3e8 100%);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--c-input-bg) 0%, var(--c-surface-raised) 100%);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .handout-folder-section--drag-over {
-  border-color: #d4af37;
+  border-color: var(--c-border-gold);
   border-width: 2px;
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 0 0 2px rgb(var(--c-gold-rgb) / 0.25);
 }
 
 /* Header */
@@ -21,19 +21,19 @@
   padding: 9px 10px;
   cursor: pointer;
   user-select: none;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
 .handout-folder-section__header:hover {
-  background: rgba(201, 151, 91, 0.1);
+  background: rgb(var(--c-accent-rgb) / 0.1);
 }
 
 /* Folder drag grip */
 .handout-folder-section__grip {
   cursor: grab;
   padding: 2px 4px;
-  color: #c9975b;
+  color: var(--c-text-accent);
   font-size: 12px;
   user-select: none;
   flex-shrink: 0;
@@ -42,7 +42,7 @@
 }
 
 .handout-folder-section__header:hover .handout-folder-section__grip {
-  color: #7a5c42;
+  color: var(--c-label);
 }
 
 .handout-folder-section__grip:active {
@@ -50,15 +50,15 @@
 }
 
 .handout-folder-section--folder-dragging {
-  box-shadow: 0 4px 14px rgba(107, 68, 35, 0.3);
-  border-color: #d4af37;
+  box-shadow: 0 4px 14px rgb(var(--c-leather-dark-rgb) / calc(0.3 * var(--shadow-k)));
+  border-color: var(--c-border-gold);
   z-index: 10;
 }
 
 /* Chevron */
 .handout-folder-section__chevron {
   font-size: 10px;
-  color: #c9975b;
+  color: var(--c-text-accent);
   transition: transform 0.2s ease;
   flex-shrink: 0;
   width: 12px;
@@ -73,11 +73,11 @@
 .handout-folder-section__name {
   flex: 1;
   font-size: 12px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display);
   font-weight: 600;
-  color: #5a3e28;
+  color: var(--c-heading);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: calc(0.4px * var(--tracking-k));
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -98,12 +98,12 @@
 }
 
 .handout-folder-section__btn {
-  background: rgba(201, 151, 91, 0.1);
-  border: 1px solid #d4a574;
+  background: rgb(var(--c-accent-rgb) / 0.1);
+  border: 1px solid var(--c-border-light);
   padding: 2px 6px;
   cursor: pointer;
   font-size: 11px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s ease;
   line-height: 1;
   display: inline-flex;
@@ -112,27 +112,27 @@
 }
 
 .handout-folder-section__btn:hover {
-  background: rgba(201, 151, 91, 0.25);
-  border-color: #7a5c42;
+  background: rgb(var(--c-accent-rgb) / 0.25);
+  border-color: var(--c-border-strong);
 }
 
 .handout-folder-section__btn--confirm {
-  color: #3a8a3a;
+  color: var(--c-text-success);
 }
 
 .handout-folder-section__btn--confirm:hover {
-  background: rgba(58, 138, 58, 0.15);
-  border-color: #3a8a3a;
+  background: rgb(var(--c-success-rgb) / 0.15);
+  border-color: var(--c-border-success);
 }
 
 .handout-folder-section__btn--delete {
-  color: #c94040;
+  color: var(--c-text-danger);
   font-size: 0.85rem;
 }
 
 .handout-folder-section__btn--delete:hover {
-  background: #f8d7da;
-  border-color: #c94040;
+  background: var(--c-surface);
+  border-color: var(--c-border-danger);
 }
 
 /* Rename inline form */
@@ -145,18 +145,18 @@
   width: 100%;
   padding: 2px 6px;
   font-size: 12px;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-weight: 600;
-  color: #3a2f1f;
-  background: #fffbf2;
-  border: 1px solid #c9975b;
-  border-radius: 3px;
+  color: var(--c-text);
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border-accent);
+  border-radius: var(--radius-sm);
   outline: none;
 }
 
 .handout-folder-section__rename-input:focus {
-  border-color: #7a5c42;
-  box-shadow: 0 0 0 2px rgba(122, 92, 66, 0.15);
+  border-color: var(--c-border-strong);
+  box-shadow: 0 0 0 2px rgb(var(--c-leather-rgb) / 0.15);
 }
 
 /* Add handout button (always visible, GM only) */
@@ -167,10 +167,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(201, 151, 91, 0.15);
-  border: 1px solid #c9975b;
-  border-radius: 3px;
-  color: #6b4423;
+  background: rgb(var(--c-accent-rgb) / 0.15);
+  border: 1px solid var(--c-border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--c-heading);
   font-size: 15px;
   line-height: 1;
   cursor: pointer;
@@ -179,15 +179,15 @@
 }
 
 .handout-folder-section__add-btn:hover {
-  background: rgba(201, 151, 91, 0.35);
-  border-color: #7a5c42;
-  color: #3a2f1f;
+  background: rgb(var(--c-accent-rgb) / 0.35);
+  border-color: var(--c-border-strong);
+  color: var(--c-text);
 }
 
 /* Content area */
 .handout-folder-section__content {
   padding: 6px 8px 8px;
-  border-top: 1px dashed #d4a574;
+  border-top: 1px dashed var(--c-border-light);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -198,9 +198,9 @@
   text-align: center;
   padding: 14px 8px;
   font-size: 11px;
-  color: #9a7a5a;
+  color: var(--c-text-muted);
   font-style: italic;
-  border: 2px dashed #d4a574;
-  border-radius: 4px;
+  border: 2px dashed var(--c-border-light);
+  border-radius: var(--radius-md);
   border-style: dashed;
 }

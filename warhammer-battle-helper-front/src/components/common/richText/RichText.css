@@ -9,9 +9,9 @@
   align-items: center;
   gap: 4px 0;
   padding: 4px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid #d4a574;
-  border-radius: 4px;
+  background: rgb(var(--c-highlight-rgb) / 0.5);
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--radius-md);
 }
 
 /* Groups wrap as a whole, so a group never splits across two rows. */
@@ -20,7 +20,7 @@
   align-items: center;
   gap: 2px;
   padding: 0 6px;
-  border-right: 1px solid #d4a574;
+  border-right: 1px solid var(--c-border-light);
 }
 
 .rich-toolbar__group:last-child {
@@ -31,8 +31,8 @@
   position: relative;
   background: none;
   border: 1px solid transparent;
-  border-radius: 3px;
-  color: #6b4423;
+  border-radius: var(--radius-sm);
+  color: var(--c-heading);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -42,14 +42,14 @@
 }
 
 .rich-toolbar__btn:hover {
-  background: rgba(201, 151, 91, 0.2);
-  border-color: #c9975b;
+  background: rgb(var(--c-accent-rgb) / 0.2);
+  border-color: var(--c-border-accent);
 }
 
 .rich-toolbar__btn--active {
-  background: rgba(201, 151, 91, 0.3);
-  border-color: #c9975b;
-  color: #3a2f1f;
+  background: rgb(var(--c-accent-rgb) / 0.3);
+  border-color: var(--c-border-accent);
+  color: var(--c-text);
 }
 
 .rich-toolbar:disabled .rich-toolbar__btn,
@@ -71,16 +71,16 @@
   right: 4px;
   bottom: 2px;
   height: 3px;
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
 }
 
 .rich-toolbar__heading,
 .rich-toolbar__size-input {
   height: 26px;
-  background: #fff9f0;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
-  color: #3a2f1f;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
   font-family: inherit;
   font-size: 12px;
 }
@@ -88,7 +88,7 @@
 .rich-toolbar__heading:focus,
 .rich-toolbar__size-input:focus {
   outline: none;
-  border-color: #7a5c42;
+  border-color: var(--c-border-strong);
 }
 
 .rich-toolbar__heading {
@@ -105,7 +105,7 @@
   width: 38px;
   padding: 0 4px;
   text-align: center;
-  border-radius: 3px 0 0 3px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
 .rich-toolbar__size-toggle {
@@ -113,11 +113,11 @@
   padding: 0;
   display: flex;
   align-items: center;
-  background: #fff9f0;
-  border: 1px solid #c4a882;
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
   border-left: none;
-  border-radius: 0 3px 3px 0;
-  color: #6b4423;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--c-heading);
   cursor: pointer;
 }
 
@@ -129,10 +129,10 @@
   margin: 0;
   padding: 8px;
   list-style: none;
-  background: #fff9f0;
-  border: 1px solid #c4a882;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(58, 47, 31, 0.25);
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgb(var(--c-text-rgb) / calc(0.25 * var(--shadow-k)));
 }
 
 .rich-toolbar__size-list {
@@ -145,8 +145,8 @@
   padding: 3px 8px;
   background: none;
   border: none;
-  border-radius: 3px;
-  color: #3a2f1f;
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
   font-family: inherit;
   font-size: 12px;
   text-align: left;
@@ -155,7 +155,7 @@
 
 .rich-toolbar__size-option:hover,
 .rich-toolbar__size-option--active {
-  background: rgba(201, 151, 91, 0.25);
+  background: rgb(var(--c-accent-rgb) / 0.25);
 }
 
 .rich-toolbar__color-popover {
@@ -175,22 +175,22 @@
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
 .rich-toolbar__swatch:hover,
 .rich-toolbar__swatch--active {
-  border-color: #7a5c42;
-  box-shadow: 0 0 0 2px #c9975b;
+  border-color: var(--c-border-strong);
+  box-shadow: 0 0 0 2px rgb(var(--c-accent-rgb));
 }
 
 .rich-toolbar__custom-color {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #7a5c42;
+  color: var(--c-label);
   font-size: 12px;
   cursor: pointer;
 }
@@ -199,8 +199,8 @@
   width: 26px;
   height: 22px;
   padding: 0;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
   background: none;
   cursor: pointer;
 }
@@ -208,17 +208,17 @@
 .rich-toolbar__text-btn {
   padding: 3px 8px;
   background: none;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
-  color: #6b4423;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-heading);
   font-family: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 
 .rich-toolbar__text-btn:hover {
-  background: rgba(201, 151, 91, 0.2);
-  border-color: #c9975b;
+  background: rgb(var(--c-accent-rgb) / 0.2);
+  border-color: var(--c-border-accent);
 }
 
 .rich-toolbar__link-popover {
@@ -230,16 +230,16 @@
 
 .rich-toolbar__link-input {
   padding: 4px 6px;
-  background: #fff;
-  border: 1px solid #c4a882;
-  border-radius: 3px;
-  color: #3a2f1f;
+  background: var(--c-surface-white);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
   font-size: 12px;
 }
 
 .rich-toolbar__link-input:focus {
   outline: none;
-  border-color: #7a5c42;
+  border-color: var(--c-border-strong);
 }
 
 .rich-toolbar__link-actions {
@@ -253,7 +253,7 @@
   outline: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
-  color: #3a2f1f;
+  color: var(--c-text);
   height: 100%;
 }
 
@@ -265,8 +265,8 @@
 .rich-text__content .tiptap h2,
 .rich-text__content .tiptap h3 {
   margin: 12px 0 8px 0;
-  font-family: 'Cinzel', serif;
-  color: #6b4423;
+  font-family: var(--font-display); text-transform: var(--display-transform);
+  color: var(--c-heading);
 }
 
 /* Headings carry their own size and weight; a font-size span inside still wins. */
@@ -287,7 +287,7 @@
 
 .rich-text__content .tiptap mark {
   padding: 0 1px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .rich-text__content .tiptap ul,
@@ -299,19 +299,19 @@
 .rich-text__content .tiptap blockquote {
   margin: 8px 0;
   padding-left: 12px;
-  border-left: 3px solid #c9975b;
-  color: #7a5c42;
+  border-left: 3px solid var(--c-border-accent);
+  color: var(--c-label);
   font-style: italic;
 }
 
 .rich-text__content .tiptap a {
-  color: #8b5e3c;
+  color: var(--c-label);
   text-decoration: underline;
 }
 
 .rich-text__content .tiptap hr {
   border: none;
-  border-top: 1px dashed #c9975b;
+  border-top: 1px dashed var(--c-border-accent);
   margin: 12px 0;
 }
 

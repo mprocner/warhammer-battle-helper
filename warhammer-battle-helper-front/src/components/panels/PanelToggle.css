@@ -5,35 +5,35 @@
   transform: translateY(-50%);
   width: 24px;
   height: 60px;
-  background: linear-gradient(135deg, #c9975b 0%, #a67c52 100%);
-  border: 2px solid #7a5c42;
+  background: linear-gradient(135deg, var(--c-accent-bg) 0%, var(--c-accent-bg-dark) 100%);
+  border: 2px solid var(--c-border-strong);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 0.9rem;
-  color: #f4e8d8;
+  color: var(--c-text-on-dark);
   z-index: 100;
   transition: all 0.3s ease;
 }
 
 .panel-toggle:hover {
-  background: linear-gradient(135deg, #d4a574 0%, #b8894a 100%);
-  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.4);
+  background: linear-gradient(135deg, var(--c-accent-bg-light) 0%, var(--c-accent-bg) 100%);
+  box-shadow: 0 2px 8px rgb(var(--c-leather-dark-rgb) / calc(0.4 * var(--shadow-k)));
 }
 
 /* Right toggle positioning */
 .panel-toggle--right {
   right: 420px;
   border-right: none;
-  border-radius: 6px 0 0 6px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
 .panel-toggle--right.panel-toggle--hidden {
   right: 0;
-  border-right: 2px solid #7a5c42;
-  border-radius: 6px 0 0 6px;
+  border-right: 2px solid var(--c-border-strong);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
 }
 
 .panel-toggle__arrow {

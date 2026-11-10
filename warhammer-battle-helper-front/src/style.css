@@ -1960,39 +1960,6 @@ align-items: center;
   padding:0 4px 6px 4px;
 }
 
-/* ================== GENERIC BIG ACTION BUTTONS ================== */
-.action-button {
-  border:none;
-  border-radius:12px;
-  padding:.75rem 1.5rem;
-  font-size:1rem;
-  font-weight:600;
-  cursor:pointer;
-  transition: background-color .2s, transform .1s, box-shadow .2s;
-  box-shadow:0 4px 10px rgba(0,0,0,.1);
-  color:#fff;
-}
-.action-button:hover { transform: translateY(-2px); }
-.action-button:active {
-  transform: translateY(1px);
-  box-shadow:0 2px 6px rgba(0,0,0,.15);
-}
-.action-button.attack{ background:#ef4444; } .action-button.attack:hover{ background:#dc2626; }
-.action-button.defend{ background:#10b981; } .action-button.defend:hover{ background:#059669; }
-.action-button.heal{ background:#22c55e; } .action-button.heal:hover{ background:#16a34a; }
-.action-button.flee{ background:#f97316; } .action-button.flee:hover{ background:#ea580c; }
-.action-button.talk{ background:#6b7280; } .action-button.talk:hover{ background:#4b5563; }
-.action-button.scout{ background:#3b82f6; } .action-button.scout:hover{ background:#2563eb; }
-.action-button.view{ background:#6366f1; } .action-button.view:hover{ background:#4f46e5; }
-.action-button.edit{ background:#eab308; color:#1f1f1f; } .action-button.edit:hover{ background:#ca8a04; }
-.action-button.delete{ background:#dc2626; } .action-button.delete:hover{ background:#b91c1c; }
-.action-button.cancel{
-  background:transparent; color:#374151; border:2px solid #d1d5db; box-shadow:none;
-}
-.action-button.cancel:hover{ background:#f3f4f6; }
-.action-button.small{ padding:.4rem .9rem; font-size:.875rem; border-radius:8px; }
-.action-button.large{ padding:1rem 2rem; font-size:1.125rem; border-radius:16px; }
-
 /* ================== RESET BUTTON ================== */
 .reset-button {
   margin:20px;
