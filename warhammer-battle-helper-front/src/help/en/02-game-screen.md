@@ -38,7 +38,8 @@ In both schemes:
 | **Drawing** | everyone | Freehand, line, rectangle, circle, arrow, polygon and text, visible to everyone |
 
 **Layers.** The map is stacked from layers: tokens, the GM layer (only the GM sees it) and the
-background. Moving or deleting images only affects the layer picked in the layer selector.
+background. Moving or deleting images only affects the layer picked in the layer selector (icons on
+the right; hover one to see the layer name).
 Drawing is not limited to it.
 
 **Ping.** Hold the left button still on an empty spot of the map for about half a second.

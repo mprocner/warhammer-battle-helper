@@ -16,14 +16,12 @@
   overflow: visible;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  justify-content: center;
+  padding: 6px;
   border: 1px solid #d4a574;
   border-radius: 6px;
   background: linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%);
   color: #6b4423;
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
   cursor: pointer;
   transition: background 0.15s ease-out, border-color 0.15s ease-out;
 }
@@ -38,8 +36,10 @@
   border-color: #7a5c42;
 }
 
-.layer-selector__label {
-  white-space: nowrap;
+/* Doubled class beats the generic :hover (0,2,0) — keeps the active gold, only lightens it,
+   same as .drawing-toolbar__tab--active:hover. */
+.layer-selector__btn.layer-selector__btn--active:hover {
+  background: linear-gradient(135deg, #d4a574 0%, #c9975b 100%);
 }
 
 /* Tooltip — ten sam wzorzec co DrawingToolbar (CSS span, po lewej przycisku). */

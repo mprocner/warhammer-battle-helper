@@ -38,7 +38,8 @@ W obu schematach:
 | **Rysowanie** | wszyscy | Odręcznie, linia, prostokąt, koło, strzałka, wielokąt i tekst, widoczne dla wszystkich |
 
 **Warstwy.** Mapa składa się z warstw: tokeny, warstwa MG (widzi ją tylko MG) i tło. Przesuwanie
-lub usuwanie obrazków działa tylko na warstwie wybranej w selektorze warstw. Rysowania to nie dotyczy.
+lub usuwanie obrazków działa tylko na warstwie wybranej w selektorze warstw (ikony po prawej; nazwa
+warstwy pojawia się po najechaniu). Rysowania to nie dotyczy.
 
 **Ping.** Przytrzymaj lewy przycisk w miejscu na pustej mapie przez około pół sekundy, nie
 ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.

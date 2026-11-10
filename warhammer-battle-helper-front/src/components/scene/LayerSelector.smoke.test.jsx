@@ -20,15 +20,20 @@ describe('LayerSelector', () => {
     render(<LayerSelector imageEditLayer="tokens" onImageEditLayerChange={() => {}} isGM />);
     const active = document.querySelectorAll('.layer-selector__btn--active');
     expect(active).toHaveLength(1);
-    expect(active[0].textContent).toContain('Tokens');
+    expect(active[0].getAttribute('aria-label')).toBe('Tokens');
+  });
+
+  it('shows icons only — the layer name lives in the tooltip', () => {
+    render(<LayerSelector imageEditLayer="background" onImageEditLayerChange={() => {}} isGM />);
+    document.querySelectorAll('.layer-selector__btn').forEach(btn => {
+      expect(btn.textContent).toBe(btn.querySelector('.layer-selector__tooltip').textContent);
+    });
   });
 
   it('calls onImageEditLayerChange when a layer is clicked', () => {
     const onChange = jest.fn();
     render(<LayerSelector imageEditLayer="background" onImageEditLayerChange={onChange} isGM />);
-    // label 'GM' comes from scenes.layerGmShort; getAllByText because the tooltip span
-    // ('GM Layer' from scenes.layerGm) also lives in the same button — take the label node.
-    fireEvent.click(screen.getByText('GM').closest('.layer-selector__btn'));
+    fireEvent.click(screen.getByRole('button', { name: 'GM Layer' }));
     expect(onChange).toHaveBeenCalledWith('gm');
   });
 });
