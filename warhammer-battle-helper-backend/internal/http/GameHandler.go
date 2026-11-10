@@ -752,6 +752,34 @@ func (h *GameHandler) UpdateMapSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Map settings updated"})
 }
 
+// UpdateAppearance sets the per-game theme. GM-only.
+func (h *GameHandler) UpdateAppearance(c *gin.Context) {
+	gameID := c.Param("id")
+	userID := mustUserID(c)
+
+	var req models.UpdateAppearanceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.GameService.UpdateAppearance(gameID, userID, req); err != nil {
+		status := http.StatusInternalServerError
+		switch {
+		case errors.Is(err, service.ErrInvalidGameTheme):
+			status = http.StatusBadRequest
+		case err.Error() == "not authorized":
+			status = http.StatusForbidden
+		case err.Error() == "game not found":
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Appearance updated"})
+}
+
 // GetFeatures lists the game systems the caller may create games in. The create-game
 // dialog fetches it on every open, so an admin's access change shows without a reload.
 func (h *GameHandler) GetFeatures(c *gin.Context) {

@@ -53,6 +53,14 @@ func TestSettingsUpdateFields(t *testing.T) {
 		}
 	})
 
+	t.Run("ignoreGameTheme false is written, not dropped as a zero value", func(t *testing.T) {
+		off := false
+		fields := settingsUpdateFields(models.UpdateSettingsRequest{IgnoreGameTheme: &off})
+		if len(fields) != 1 || fields["settings.ignoreGameTheme"] != false {
+			t.Fatalf("expected settings.ignoreGameTheme=false only, got %v", fields)
+		}
+	})
+
 	t.Run("an empty request has nothing to write", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{})
 		if len(fields) != 0 {

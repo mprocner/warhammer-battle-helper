@@ -276,6 +276,7 @@ func main() {
 	game.POST("/image", gameHandler.UploadGameImage)
 	game.DELETE("/image", gameHandler.DeleteGameImage)
 	game.PATCH("/mapSettings", gameHandler.UpdateMapSettings)
+	game.PATCH("/appearance", gameHandler.UpdateAppearance)
 	game.GET("/roll-stats", statsHandler.GetGameStats)
 	game.GET("/online-stats", statsHandler.GetOnlineStats)
 	game.POST("/message", gameHandler.SendMessage)

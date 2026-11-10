@@ -33,6 +33,9 @@ type UserSettings struct {
 	// DiceAnimation turns the 3D dice and their sound on or off. nil = never chosen: the
 	// client then decides (on, unless the system asks for reduced motion).
 	DiceAnimation *bool `bson:"diceAnimation,omitempty" json:"diceAnimation,omitempty"`
+	// IgnoreGameTheme makes this user always see the default theme, whatever the GM picked
+	// (readability / accessibility opt-out). nil = never chosen = follow the game.
+	IgnoreGameTheme *bool `bson:"ignoreGameTheme,omitempty" json:"ignoreGameTheme,omitempty"`
 }
 
 // UpdateSettingsRequest is the PATCH /settings body. Pointers distinguish "field absent"
@@ -42,6 +45,7 @@ type UpdateSettingsRequest struct {
 	SceneControlScheme *string  `json:"sceneControlScheme"`
 	FogGmOpacity       *float64 `json:"fogGmOpacity" binding:"omitempty,min=0.1,max=1"`
 	DiceAnimation      *bool    `json:"diceAnimation"`
+	IgnoreGameTheme    *bool    `json:"ignoreGameTheme"`
 }
 
 // TermsVersion identifies the terms of service a new account accepts. Keep in sync with

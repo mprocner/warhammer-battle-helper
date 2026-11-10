@@ -99,6 +99,9 @@ func settingsUpdateFields(req models.UpdateSettingsRequest) bson.M {
 	if req.DiceAnimation != nil {
 		fields["settings.diceAnimation"] = *req.DiceAnimation
 	}
+	if req.IgnoreGameTheme != nil {
+		fields["settings.ignoreGameTheme"] = *req.IgnoreGameTheme
+	}
 	return fields
 }
 

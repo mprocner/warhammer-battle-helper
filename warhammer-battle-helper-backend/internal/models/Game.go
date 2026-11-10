@@ -63,6 +63,7 @@ type Game struct {
 	TemplateUpdateAvailable bool        `bson:"-" json:"templateUpdateAvailable,omitempty"`
 	ImageUrl                string      `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"` // lobby tile image, e.g. "/user-files/<name>.jpg"
 	MapSettings             MapSettings `bson:"mapSettings" json:"mapSettings"`               // per-game map rules (snap/free, distance metric)
+	Appearance              Appearance  `bson:"appearance" json:"appearance"`                 // per-game theme, configured by the GM in GeneralTab
 	// TokenSlotTemplate is the game-wide locked-position rule for token ring slots: index = ring
 	// position (0..7), nil = that position is not locked. Every tokens-layer image in every scene
 	// seeds its slots from it. Entries carry config only — ID/Level/Number are per-token and are

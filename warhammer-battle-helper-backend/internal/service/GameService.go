@@ -406,6 +406,28 @@ func (s *GameService) UpdateMapSettings(gameID string, gmID primitive.ObjectID, 
 	return nil
 }
 
+// ErrInvalidGameTheme rejects a theme id that is not in models.GameThemes.
+var ErrInvalidGameTheme = errors.New("unknown theme")
+
+// UpdateAppearance sets the per-game theme. GM-only; every client refetches on the event.
+// Authorisation runs before validation so a non-GM learns nothing about valid ids.
+func (s *GameService) UpdateAppearance(gameID string, gmID primitive.ObjectID, req models.UpdateAppearanceRequest) error {
+	if _, err := s.requireGM(gameID, gmID, "update appearance"); err != nil {
+		return err
+	}
+	if req.Theme == nil || !models.IsValidGameTheme(*req.Theme) {
+		return ErrInvalidGameTheme
+	}
+	if err := s.gameRepo.UpdateAppearance(gameID, *req.Theme); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventGameAppearanceUpdated, map[string]interface{}{
+		"gameId": gameID,
+	})
+	return nil
+}
+
 // removeUserFromGame revokes everything a departing user held: card visibility, participation,
 // scene assignments and live sockets. Shared by LeaveGame and KickPlayer.
 //

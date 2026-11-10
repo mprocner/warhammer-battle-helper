@@ -9,6 +9,9 @@ const (
 	// Map settings (per-game: snap/free placement + distance metric)
 	EventGameMapSettingsUpdated = "GAME_MAP_SETTINGS_UPDATED"
 
+	// Appearance (per-game theme chosen by the GM)
+	EventGameAppearanceUpdated = "GAME_APPEARANCE_UPDATED"
+
 	// Participants
 	EventParticipantJoined  = "PARTICIPANT_JOINED"
 	EventParticipantLeft    = "PARTICIPANT_LEFT"
