@@ -13,7 +13,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Rejestracja, weryfikacja e-mail, logowanie | K | — |
 | Przypomnienie i zmiana hasła | K | `PasswordReminder.md`, `PasswordChange.md` |
 | Profil, nazwa użytkownika, avatar (z kadrowaniem) | K | `FEATURE-55 - username.md` |
-| Ustawienia: konto, statystyki rzutów, prywatność | K | `Options.md` |
+| Ustawienia: konto, statystyki rzutów, gra (kości 3D), prywatność | K | `Options.md` |
 | Statystyki rzutów i czasu online | K | — |
 | Baner zgody (cookies), polityka prywatności, regulamin, licencje | K | — |
 | Kontakt (`/contact`): błąd/opinia, zgłoszenie treści (§ 4 regulaminu), inne — mail przez SMTP | wszyscy | — |
@@ -80,6 +80,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Zakładka | Kto | Spec |
 |---|---|---|
 | Czat i log rzutów (komendy `/roll` `/r`, `/gmroll` `/gmr`, `/help`) | MG / G | `FEATURE-75 - GM roll.md` |
+| Kości 3D na scenie z dźwiękiem, w kolorze rzucającego; wyłącznik w zakładce Ogólne i na `/settings` | K | PLAYRPG-339 / 343 |
 | Sceny | MG | `Scenes.md` |
 | Handouty (foldery, kolejność, udostępnianie) | MG / G | `Handouts.md` |
 | Pliki (biblioteka obrazków, foldery, użycie pliku) | MG | `Files.md` |

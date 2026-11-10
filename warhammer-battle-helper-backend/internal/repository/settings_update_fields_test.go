@@ -45,6 +45,14 @@ func TestSettingsUpdateFields(t *testing.T) {
 		}
 	})
 
+	t.Run("diceAnimation false is written, not dropped as a zero value", func(t *testing.T) {
+		off := false
+		fields := settingsUpdateFields(models.UpdateSettingsRequest{DiceAnimation: &off})
+		if len(fields) != 1 || fields["settings.diceAnimation"] != false {
+			t.Fatalf("expected settings.diceAnimation=false only, got %v", fields)
+		}
+	})
+
 	t.Run("an empty request has nothing to write", func(t *testing.T) {
 		fields := settingsUpdateFields(models.UpdateSettingsRequest{})
 		if len(fields) != 0 {

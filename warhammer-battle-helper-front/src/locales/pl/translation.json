@@ -109,7 +109,9 @@
     "title": "Licencje",
     "intro": "Materiały zewnętrzne użyte w aplikacji oraz licencje, na podstawie których z nich korzystamy.",
     "srdTitle": "System Reference Document",
-    "ccLink": "Licencja Creative Commons Uznanie autorstwa 4.0 Międzynarodowa"
+    "ccLink": "Licencja Creative Commons Uznanie autorstwa 4.0 Międzynarodowa",
+    "diceTitle": "Kości 3D",
+    "diceIntro": "Animacja kości i jej dźwięk korzystają z:"
   },
   "auth": {
     "email": "Adres Email",
@@ -411,6 +413,9 @@
     },
     "statistics": {
       "title": "Statystyki"
+    },
+    "game": {
+      "title": "Gra"
     },
     "privacy": {
       "title": "Prywatność",
@@ -953,7 +958,14 @@
     "gameImageChange": "Zmień obrazek",
     "gameImageDelete": "Usuń obrazek",
     "gameImageHint": "Wyświetlany na kaflu gry w lobby. Widoczny dla wszystkich graczy.",
-    "gameImageUploadFailed": "Nie udało się wgrać obrazka gry."
+    "gameImageUploadFailed": "Nie udało się wgrać obrazka gry.",
+    "diceAnimation": {
+      "title": "Kości",
+      "label": "Animacja i dźwięk rzutów 3D",
+      "on": "Wł.",
+      "off": "Wył.",
+      "hint": "Pokazuje świeże rzuty jako kości 3D na scenie, z dźwiękiem. Dotyczy twojego konta na każdym urządzeniu."
+    }
   },
   "handouts": {
     "zoomIn": "Powiększ",
@@ -1119,7 +1131,7 @@
       "notes": "Twoje notatki — domyślnie prywatne, ale możesz się którąś podzielić ze stołem",
       "players": "kto dołączył, kto jest online, zapraszanie linkiem i usuwanie kogoś z gry",
       "minigames": "minigry w kości, które możesz uruchomić stołowi",
-      "general": "ustawienia gry, język, schemat sterowania, powrót do listy gier albo wylogowanie"
+      "general": "ustawienia gry, język, schemat sterowania, kości 3D, powrót do listy gier albo wylogowanie"
     },
     "gameScreen": {
       "characterCard": {

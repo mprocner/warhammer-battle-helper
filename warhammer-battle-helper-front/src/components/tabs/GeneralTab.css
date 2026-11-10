@@ -180,7 +180,8 @@
 }
 
 /* Language Button */
-.general-tab__language-btn {
+.general-tab__language-btn,
+.general-tab__switch-btn {
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -197,18 +198,42 @@
   transition: all 0.2s ease;
 }
 
-.general-tab__language-btn:hover {
+.general-tab__language-btn:hover,
+.general-tab__switch-btn:hover {
   background: linear-gradient(135deg, #ede0ce 0%, #dcc9a8 100%);
   border-color: #6b4423;
 }
 
-.general-tab__language-toggle {
+.general-tab__language-toggle,
+.general-tab__switch-state {
   background: #6b4423;
   color: #f5ebe0;
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+/* On/off switch row (3D dice): same look as the language button, the badge says the state. */
+.general-tab__switch-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.general-tab__switch-state--off {
+  background: transparent;
+  color: #6b4423;
+  border: 1px solid #8b6b3d;
+}
+
+.general-tab__switch-hint {
+  margin: 6px 0 0;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #8a7d6a;
 }
 
 /* Invite Section */

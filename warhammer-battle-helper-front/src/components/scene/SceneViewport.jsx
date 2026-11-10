@@ -4,6 +4,7 @@ import SceneLayer from './SceneLayer';
 import FogLayer from './FogLayer';
 import DrawingLayer from './DrawingLayer';
 import ZoomContext from './ZoomContext';
+import DiceOverlay from '../dice3d/DiceOverlay';
 import PointerPing from './PointerPing';
 import MapRulerOverlay from './MapRulerOverlay';
 import MapTokensLayer from './MapTokensLayer';
@@ -652,6 +653,9 @@ const SceneViewport = ({
             isCovering=true: opacity 1 instantly (no transition) to hide scene switch.
             isCovering=false: opacity 0 with CSS transition (fade out reveal). */}
         <div className={`scene-viewport__overlay${isCovering ? ' scene-viewport__overlay--covering' : ''}`} />
+
+        {/* 3D dice of fresh rolls (PLAYRPG-343); draws above the map, never takes a pointer event. */}
+        <DiceOverlay />
 
         <div className="scene-viewport__zoom-toolbar" ref={zoomDropdownRef}>
           <button className="scene-viewport__zoom-btn" onClick={handleZoomOut} title={t('scenes.zoomOut')}>-</button>

@@ -109,7 +109,9 @@
     "title": "Licenses",
     "intro": "Third-party material used in this app and the licences it is used under.",
     "srdTitle": "System Reference Document",
-    "ccLink": "Creative Commons Attribution 4.0 International License"
+    "ccLink": "Creative Commons Attribution 4.0 International License",
+    "diceTitle": "3D dice",
+    "diceIntro": "The dice animation and its sound use:"
   },
   "auth": {
     "email": "Email Address",
@@ -411,6 +413,9 @@
     },
     "statistics": {
       "title": "Statistics"
+    },
+    "game": {
+      "title": "Game"
     },
     "privacy": {
       "title": "Privacy",
@@ -949,7 +954,14 @@
     "gameImageChange": "Change image",
     "gameImageDelete": "Remove image",
     "gameImageHint": "Shown on the game tile in the lobby. Visible to all players.",
-    "gameImageUploadFailed": "Could not upload the game image."
+    "gameImageUploadFailed": "Could not upload the game image.",
+    "diceAnimation": {
+      "title": "Dice",
+      "label": "3D dice animation and sound",
+      "on": "On",
+      "off": "Off",
+      "hint": "Shows fresh rolls as 3D dice on the scene, with sound. Applies to your account on every device."
+    }
   },
   "handouts": {
     "zoomIn": "Zoom in",
@@ -1115,7 +1127,7 @@
       "notes": "your notes — private by default, but you can share one with the table",
       "players": "who joined, who is online, inviting by link, and removing someone from the game",
       "minigames": "dice minigames you can start for the table",
-      "general": "game settings, language, control scheme, returning to the game list, or logging out"
+      "general": "game settings, language, control scheme, 3D dice, returning to the game list, or logging out"
     },
     "gameScreen": {
       "characterCard": {

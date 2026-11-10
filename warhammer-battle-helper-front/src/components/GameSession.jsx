@@ -12,6 +12,7 @@ import { CombatProvider } from '../contexts/CombatContext';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
 import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
+import { useDiceAnimationSetting } from '../hooks/useDiceAnimationSetting';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { useDrawingTools } from '../hooks/useDrawingTools';
@@ -34,6 +35,9 @@ import { appendUnique } from '../utils/appendUnique';
 import { stripUserFromCharacters } from '../utils/stripUserFromCharacters';
 import { applyTokenViewPatch } from '../utils/applyTokenViewPatch';
 import { sessionEndReasonForStatus } from '../utils/sessionAccess';
+import { showsRollNotice } from '../utils/rollNotice';
+import { createDiceController } from './dice3d/diceController';
+import DiceAnimationContext from './dice3d/DiceAnimationContext';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
 
@@ -64,6 +68,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const [rollVisibility, setRollVisibility] = useState('all');
   const [controlScheme, setControlScheme] = useControlScheme();
   const [fogGmOpacity, setFogGmOpacity] = useFogGmOpacity();
+  const [diceAnimation, setDiceAnimation, diceAnimationLoaded] = useDiceAnimationSetting();
+  // One controller per session; the scene's DiceOverlay attaches its canvas to it.
+  const [diceController] = useState(() => createDiceController());
   const [minigameState, setMinigameState] = useState(null);
   const [activeTab, setActiveTab] = useState('chat');
   // Licznik startu samouczka: każde podbicie uruchamia tour od nowa (przycisk "?").
@@ -78,6 +85,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   // Latest combat handlers for the WS switch, which is memoised with a deliberately short deps list.
   const combatRef = useRef(null);
   const userIdRef = useRef(null);
+  // Read by the memoised WS handler, which must not re-subscribe on every state change.
+  const diceAnimationRef = useRef(false);
+  const participantsRef = useRef([]);
 
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
@@ -196,11 +206,18 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     // Delegate music events to the dedicated hook
     if (handleMusicMessage(message)) return;
 
-    // Push roll notifications — skip gm_only rolls for non-GM users
+    // Fresh roll notices — toast and 3D dice — share one visibility gate. Only live WS events
+    // reach here: history and GAME_STATE never replay as dice.
     if (TOAST_ROLL_EVENTS.has(message.type)) {
-      const vis = message.payload?.visibility;
-      if (!vis || vis === 'all' || isGMRef.current || vis === userIdRef.current) {
-        pushToast(message.payload);
+      const roll = message.payload;
+      if (showsRollNotice(roll?.visibility, { isGM: isGMRef.current, userId: userIdRef.current })) {
+        pushToast(roll);
+        if (diceAnimationRef.current) {
+          diceController.play({
+            dice: roll?.dice,
+            color: participantColor(participantsRef.current, roll?.rollerUserId || roll?.userId),
+          });
+        }
       }
     }
 
@@ -889,7 +906,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         console.warn('Unknown message type:', message.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast, t]);
+  }, [fetchGameState, addLogMessage, handleOnlineUsersMessage, handleMusicMessage, onSessionEnded, pushToast, diceController, t]);
 
   const { isConnected, error: wsError, sendMessage } = useWebSocket(
     gameId,
@@ -905,6 +922,16 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const isGM = gameState?.gameMasterId === userId;
   isGMRef.current = isGM;
   userIdRef.current = userId;
+  // Switching the dice off sweeps the table and stops the sound at once, mid-roll included.
+  useEffect(() => {
+    if (!diceAnimation) diceController.stop();
+  }, [diceAnimation, diceController]);
+  useEffect(() => () => diceController.dispose(), [diceController]);
+
+  // Until the saved choice has loaded, nothing animates — a user who turned the dice off
+  // must never download the 3D chunk.
+  diceAnimationRef.current = diceAnimation && diceAnimationLoaded;
+  participantsRef.current = gameState?.participants || [];
 
   // Nowy obiekt przy każdej zmianie widoczności paneli — hook samouczka czeka
   // dokładnie na tę zmianę, zanim wpuści krok, którego kotwica siedzi w panelu.
@@ -1043,6 +1070,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   }
 
   return (
+    <DiceAnimationContext.Provider value={diceController}>
     <WindowManagerProvider>
     <TutorialProvider>
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1163,6 +1191,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           onRollVisibilityChange={setRollVisibility}
           controlScheme={controlScheme}
           onControlSchemeChange={setControlScheme}
+          diceAnimation={diceAnimation}
+          onDiceAnimationChange={setDiceAnimation}
           minigameState={minigameState}
           onReopenMinigameBoard={() => setMinigameState(prev => prev)}
           activeTab={activeTab}
@@ -1222,6 +1252,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     </Box>
     </TutorialProvider>
     </WindowManagerProvider>
+    </DiceAnimationContext.Provider>
   );
 };
 

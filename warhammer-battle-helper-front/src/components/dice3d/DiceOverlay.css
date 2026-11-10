@@ -1,0 +1,13 @@
+.dice-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+/* The library appends its canvas without styles; it must not catch clicks either. */
+.dice-overlay canvas {
+  display: block;
+  pointer-events: none;
+}

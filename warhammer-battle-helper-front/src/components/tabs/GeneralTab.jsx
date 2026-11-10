@@ -8,6 +8,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TuneIcon from '@mui/icons-material/Tune';
+import CasinoIcon from '@mui/icons-material/Casino';
 import GridOnIcon from '@mui/icons-material/GridOn';
 import GridOffIcon from '@mui/icons-material/GridOff';
 import StraightenIcon from '@mui/icons-material/Straighten';
@@ -38,7 +39,7 @@ const DISTANCE_UNITS = ['ft', 'm', 'km', 'mi', 'in', 'cm', 'un', 'hex', 'sq', 'c
 /**
  * General settings tab - contains game info, language settings, and actions
  */
-const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, gameId, token, isGM = false }) => {
+const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVolume, onPlayerVolumeChange, musicState, controlScheme, onControlSchemeChange, diceAnimation, onDiceAnimationChange, gameId, token, isGM = false }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [statsOpen, setStatsOpen] = useState(true);
@@ -393,6 +394,29 @@ const GeneralTab = ({ onLogout, onGoToGameList, gameState, isConnected, playerVo
         <h4 className="general-tab__section-title">{t('settings.controlScheme')}</h4>
         <ControlSchemeSelector value={controlScheme || 'modern'} onChange={onControlSchemeChange} />
       </section>
+
+      {/* 3D dice + sound — per account, the same switch as on /settings */}
+      {onDiceAnimationChange && (
+        <section className="general-tab__section">
+          <h4 className="general-tab__section-title">{t('settings.diceAnimation.title')}</h4>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!diceAnimation}
+            className="general-tab__switch-btn"
+            onClick={() => onDiceAnimationChange(!diceAnimation)}
+          >
+            <span className="general-tab__switch-label">
+              <CasinoIcon fontSize="small" />
+              {t('settings.diceAnimation.label')}
+            </span>
+            <span className={`general-tab__switch-state${diceAnimation ? '' : ' general-tab__switch-state--off'}`}>
+              {diceAnimation ? t('settings.diceAnimation.on') : t('settings.diceAnimation.off')}
+            </span>
+          </button>
+          <p className="general-tab__switch-hint">{t('settings.diceAnimation.hint')}</p>
+        </section>
+      )}
 
       {/* Language Section */}
       <section className="general-tab__section">

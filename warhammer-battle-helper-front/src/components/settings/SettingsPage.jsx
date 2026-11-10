@@ -7,11 +7,13 @@ import ChangePasswordForm from './ChangePasswordForm';
 import AccountSettingsForm from './AccountSettingsForm';
 import RollStatisticsSettings from './RollStatisticsSettings';
 import PrivacySettings from './PrivacySettings';
+import GameSettings from './GameSettings';
 
 const SECTION_COMPONENTS = {
     account: <AccountSettingsForm />,
     changePassword: <ChangePasswordForm />,
     statistics: <RollStatisticsSettings />,
+    game: <GameSettings />,
     privacy: <PrivacySettings />,
 };
 

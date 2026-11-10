@@ -30,6 +30,9 @@ type UserFolder struct {
 type UserSettings struct {
 	SceneControlScheme string  `bson:"sceneControlScheme,omitempty" json:"sceneControlScheme,omitempty"`
 	FogGmOpacity       float64 `bson:"fogGmOpacity,omitempty" json:"fogGmOpacity,omitempty"`
+	// DiceAnimation turns the 3D dice and their sound on or off. nil = never chosen: the
+	// client then decides (on, unless the system asks for reduced motion).
+	DiceAnimation *bool `bson:"diceAnimation,omitempty" json:"diceAnimation,omitempty"`
 }
 
 // UpdateSettingsRequest is the PATCH /settings body. Pointers distinguish "field absent"
@@ -38,6 +41,7 @@ type UserSettings struct {
 type UpdateSettingsRequest struct {
 	SceneControlScheme *string  `json:"sceneControlScheme"`
 	FogGmOpacity       *float64 `json:"fogGmOpacity" binding:"omitempty,min=0.1,max=1"`
+	DiceAnimation      *bool    `json:"diceAnimation"`
 }
 
 // TermsVersion identifies the terms of service a new account accepts. Keep in sync with

@@ -69,6 +69,25 @@ w grupie (`systems.DiceTotal`) równa się wynikowi bez stałych. Testy `dice_te
 systemie to sprawdzają. Formuła custom może kość mnożyć (`(STR+2)*d6`), wtedy suma się nie
 zgadza, ale ścianki dalej tak.
 
+**Kości 3D** (PLAYRPG-343). Świeże zdarzenie rzutu z WS (`DICE_ROLLED`, `SKILL_ROLLED`,
+`WEAPON_ROLLED`) przechodzi w `GameSession` przez ten sam filtr co toast (`showsRollNotice`).
+Jeśli przełącznik jest włączony, `diceController.play({ dice, color })` odtwarza `dice` z payloadu
+na nakładce `DiceOverlay` nad sceną. Kolor bierze `participantColor` rzucającego, a kolor cyfr
+dobiera `labelColorFor` (jasne albo ciemne).
+
+| Element | Rola |
+|---|---|
+| `dice3d/dicePlan.js` | czysta logika: grupy rzutu (główny, potem `damage`), notacja z wymuszonym wynikiem, limit 10 kości, kontrast cyfr |
+| `dice3d/diceController.js` | adapter `@3d-dice/dice-box-threejs@0.0.12` (przypięta wersja): leniwy import, kolejka, sprzątanie, Retina, resize, dźwięk |
+| `dice3d/diceSound.js` | odgłosy uderzeń z kolizji fizyki: limit głosów, throttling, cicha blokada autoplay |
+| `dice3d/DiceOverlay.jsx` + `DiceAnimationContext` | canvas nad sceną, `pointer-events: none`; kontroler żyje w `GameSession`, kontekst łączy go z nakładką bez przepychania propsów przez `DndContext` |
+| `hooks/useDiceAnimationSetting.js` | ustawienie konta `diceAnimation` (zobacz [02-konta-i-dostep.md](02-konta-i-dostep.md)) |
+
+Biblioteka trafia do osobnego chunka `dice-3d` (ok. 142 KB gzip) i pobiera się dopiero przy
+pierwszym rzucie z włączoną animacją. Dźwięki to 7 plików `public/sounds/dice/*.m4a`
+z „Casino Audio” Kenneya (CC0), wpis jest na `/licenses`. Dźwięki dołączone do biblioteki nie
+mają podanego źródła ani licencji, dlatego jej loader dźwięków jest wyłączony (`sounds: false`).
+
 **Statystyki rzutów** (`RollStat`): każdy rzut zapisuje kość, wynik i typ. Są dostępne dla gry
 (`/games/:id/roll-stats`, `RollStatsPanel`) i łącznie w ustawieniach konta (`DiceStats.jsx`):
 liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
@@ -98,6 +117,26 @@ liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
 - Zmieniając limit długości wiadomości, zmień go w obu miejscach.
 - Rzut do wybranego gracza celowo pomija MG. Jeśli to ma się zmienić, zmieniasz `RollPublisher`
   i filtr historii w `GameHandler` jednocześnie.
+- **Biblioteka kości 3D ma ostre krawędzie, które łapie `diceController`.** `roll()` albo
+  `clearDice()` w trakcie animacji zostawia Promise bieżącego rzutu nierozwiązany na zawsze
+  (upstream #19), stąd ścisła kolejka i licznik `generation` przy sprzątaniu. Zwracane przez nią
+  wartości bywają złe (d4, upstream #12), choć ścianka na ekranie jest dobra, więc **wyniku nigdy
+  nie czytamy z biblioteki**. Nie ma `destroy` (upstream #11), więc canvas i renderer usuwa
+  `teardown()`. Sama nie ustawia `devicePixelRatio` ani nie reaguje na resize.
+- Symulacja rzutu biegnie **synchronicznie na wątku głównym** (10 kości ok. 83 ms, 50 ok. 422 ms
+  na Macu). Dlatego obowiązuje limit 10 kości na rzut (`MAX_ANIMATED_DICE`): większy rzut, tak
+  jak kość, której biblioteka nie narysuje (np. k7), jest tylko w logu.
+- Dźwięk uderzeń: kontroler podmienia `box.eventCollide` przed pierwszym rzutem. Biblioteka
+  wiąże tę metodę przy każdej nowej kości, więc podmiana działa, ale to zależność od wnętrza
+  wersji 0.0.12. Podbijając wersję, sprawdź ją jako pierwszą. W fazie `simulate` kolizje są
+  ignorowane: to cicha symulacja z góry, nie animacja.
+- Przy ukrytej karcie przeglądarka wstrzymuje `requestAnimationFrame`, więc rzuty przy
+  `document.hidden` są pomijane, a nie odkładane. Zaległości ogranicza też kolejka (najwyżej
+  3 czekające, najstarsze odpadają).
+- `loaded` z `useDiceAnimationSetting`: dopóki zapisany wybór nie przyjdzie z serwera, nic się nie
+  animuje. Inaczej użytkownik, który wyłączył kości, pobrałby chunk 3D przy pierwszym rzucie.
+- Toast i log pokazują wynik ok. 2–3 s przed wylądowaniem kości. To świadoma decyzja
+  z 2026-11-10: nie opóźniamy logu pod animację.
 - `dice` budujesz **tam, gdzie wołasz `rng.Intn`**, nigdy z tekstu `DamageBreakdown` ani
   z `AllRolls`. Nowy rzut bez `dice` po prostu się nie zanimuje, a kości z odtworzonego tekstu
   mogą pokazać inny wynik niż log. d100 zawsze przez `Faces`/`PercentileDice`: zwykła kość

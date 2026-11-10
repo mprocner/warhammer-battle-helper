@@ -11,6 +11,17 @@ export const SRD_ATTRIBUTION = 'This work includes material from the System Refe
 
 const CC_BY_URL = 'https://creativecommons.org/licenses/by/4.0/legalcode';
 
+// 3D dice (PLAYRPG-343). MIT requires the copyright notice to travel with the code; the lines
+// are copied from each package's LICENSE file, so they are not translated.
+const MIT_URL = 'https://opensource.org/license/mit';
+const CC0_URL = 'https://creativecommons.org/publicdomain/zero/1.0/';
+export const DICE_CREDITS = [
+    { name: 'dice-box-threejs', url: 'https://github.com/3d-dice/dice-box-threejs', notice: 'Copyright (c) 2022 3D Dice', licence: 'MIT', licenceUrl: MIT_URL },
+    { name: 'three.js', url: 'https://threejs.org', notice: 'Copyright © 2010-2022 three.js authors', licence: 'MIT', licenceUrl: MIT_URL },
+    { name: 'cannon-es', url: 'https://github.com/pmndrs/cannon-es', notice: 'Copyright (c) 2015 cannon.js Authors', licence: 'MIT', licenceUrl: MIT_URL },
+    { name: 'Casino Audio', url: 'https://kenney.nl/assets/casino-audio', notice: 'Kenney (www.kenney.nl)', licence: 'CC0 1.0', licenceUrl: CC0_URL },
+];
+
 const Licenses = () => {
     const { t } = useTranslation();
     usePageTitle(t('pageTitle.licenses'));
@@ -34,6 +45,19 @@ const Licenses = () => {
                     <Link href={CC_BY_URL} target="_blank" rel="noopener noreferrer" variant="body2">
                         {t('licenses.ccLink')}
                     </Link>
+                    <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>
+                        {t('licenses.diceTitle')}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                        {t('licenses.diceIntro')}
+                    </Typography>
+                    {DICE_CREDITS.map(c => (
+                        <Typography key={c.name} variant="body2" sx={{ mb: 0.5 }}>
+                            <Link href={c.url} target="_blank" rel="noopener noreferrer">{c.name}</Link>
+                            {' — '}{c.notice}{' — '}
+                            <Link href={c.licenceUrl} target="_blank" rel="noopener noreferrer">{c.licence}</Link>
+                        </Typography>
+                    ))}
                 </Paper>
             </Box>
         </Container>

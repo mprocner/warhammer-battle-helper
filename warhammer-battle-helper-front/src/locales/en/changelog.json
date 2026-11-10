@@ -47,7 +47,8 @@
       "dice": {
         "chat": "Chat with a roll log and the /roll (/r), /gmroll (/gmr) and /help commands.",
         "visibility": "Choose who sees a roll: everyone, the GM and you, the GM only, or one player.",
-        "myRolls": "Show only your own rolls in the log."
+        "myRolls": "Show only your own rolls in the log.",
+        "animation": "Rolls land on the scene as 3D dice in the roller's colour, with sound. Turn them off in the game's General tab or in your account settings."
       },
       "materials": {
         "handouts": "Handouts in folders, shared with everyone or with chosen players.",

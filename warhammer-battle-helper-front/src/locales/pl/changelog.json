@@ -47,7 +47,8 @@
       "dice": {
         "chat": "Czat z logiem rzutów i komendami /roll (/r), /gmroll (/gmr) oraz /help.",
         "visibility": "Wybór, kto widzi rzut: wszyscy, mistrz gry i ty, tylko mistrz gry albo jeden gracz.",
-        "myRolls": "Widok tylko twoich rzutów w logu."
+        "myRolls": "Widok tylko twoich rzutów w logu.",
+        "animation": "Rzuty spadają na scenę jako kości 3D w kolorze rzucającego, z dźwiękiem. Wyłączysz je w zakładce Ogólne w grze albo w ustawieniach konta."
       },
       "materials": {
         "handouts": "Handouty w folderach, udostępniane wszystkim albo wybranym graczom.",

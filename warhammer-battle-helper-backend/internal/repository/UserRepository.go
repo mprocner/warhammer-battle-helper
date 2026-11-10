@@ -96,6 +96,9 @@ func settingsUpdateFields(req models.UpdateSettingsRequest) bson.M {
 	if req.FogGmOpacity != nil {
 		fields["settings.fogGmOpacity"] = *req.FogGmOpacity
 	}
+	if req.DiceAnimation != nil {
+		fields["settings.diceAnimation"] = *req.DiceAnimation
+	}
 	return fields
 }
 

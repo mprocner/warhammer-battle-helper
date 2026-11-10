@@ -39,6 +39,22 @@ do 100 znaków. Liczenie sukcesów (`>=`) musi być jedynym rzutem w wyrażeniu 
 | Tylko MG | tylko mistrz gry (ty dostajesz potwierdzenie wysłania) |
 | wybrany gracz | ty i ten gracz |
 
+## Kości 3D {#dice-3d}
+
+Każdy świeży rzut, z karty, z czatu albo przyciskiem kości, spada na scenę jako kości 3D
+w kolorze rzucającego, z odgłosem uderzeń. Kości lądują dokładnie na wyniku z kroniki: wynik
+liczy serwer, a animacja tylko go pokazuje. Nie zasłaniają mapy dla myszy i znikają po chwili.
+
+- Kości widzi tylko ten, kto widzi rzut w kronice. Tajny rzut nie toczy się u nikogo innego.
+- Rzut z więcej niż 10 kośćmi i kości, których nie da się narysować (np. k7), są tylko w kronice.
+- Wejście do gry i odświeżenie strony nie odtwarzają starych rzutów.
+- Pierwszy rzut po wejściu do gry może być cichy: przeglądarka włącza dźwięk dopiero po
+  pierwszym kliknięciu na stronie.
+
+Animację razem z dźwiękiem wyłączysz w zakładce **Ogólne** (sekcja **Kości**) albo
+w **Ustawieniach** konta, w sekcji **Gra**. Wybór dotyczy twojego konta na każdym urządzeniu.
+Jeśli w systemie masz włączone ograniczenie ruchu, kości są domyślnie wyłączone.
+
 ## Statystyki {#statistics}
 
 Twoje rzuty w danej grze są w zakładce **Ogólne**, a ze wszystkich gier w **Ustawieniach**:

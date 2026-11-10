@@ -49,6 +49,8 @@ const RightPanel = ({
   onRollVisibilityChange,
   controlScheme,
   onControlSchemeChange,
+  diceAnimation,
+  onDiceAnimationChange,
   minigameState = null,
   onReopenMinigameBoard,
   activeTab: externalActiveTab,
@@ -209,6 +211,8 @@ const RightPanel = ({
             musicState={musicState}
             controlScheme={controlScheme}
             onControlSchemeChange={onControlSchemeChange}
+            diceAnimation={diceAnimation}
+            onDiceAnimationChange={onDiceAnimationChange}
             gameId={gameId}
             token={token}
             isGM={isGM}

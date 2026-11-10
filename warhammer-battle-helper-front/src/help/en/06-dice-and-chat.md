@@ -40,6 +40,23 @@ combined with `vs`.
 | GM Only | only the game master (you get a confirmation that it was sent) |
 | a chosen player | you and that player |
 
+## 3D dice {#dice-3d}
+
+Every fresh roll, from a sheet, from chat or from a dice button, lands on the scene as 3D dice in
+the roller's colour, with the sound of the dice hitting the table. The dice land exactly on the
+result in the log: the server rolls, the animation only shows it. They never block the mouse on
+the map and disappear after a moment.
+
+- Only people who see the roll in the log see its dice. A secret roll rolls for nobody else.
+- A roll with more than 10 dice, and dice that cannot be drawn (such as a d7), stay in the log only.
+- Joining a game or reloading the page does not replay old rolls.
+- The first roll after you join may be silent: the browser only allows sound after your first
+  click on the page.
+
+Turn the animation and its sound off in the **General** tab (the **Dice** section) or in your
+account **Settings**, under **Game**. The choice applies to your account on every device. If your
+system asks for reduced motion, the dice start switched off.
+
 ## Statistics {#statistics}
 
 Your rolls in a game are in the **General** tab, and across all games in **Settings**: number of

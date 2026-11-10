@@ -26,7 +26,13 @@ podlega tej kontroli. Istniejące gry zostają dostępne niezależnie od zmian.
 Front pyta o listę przez `GET /features` → `allowedSystems`.
 
 **Ustawienia użytkownika** (`/settings`): konto (nazwa, avatar, podpis), zmiana hasła,
-statystyki rzutów, prywatność (zgoda na Google Analytics, o ile instalacja ma je włączone). Tu też trafiają preferencje UI, np. `sceneControlScheme`.
+statystyki rzutów, gra (przełącznik kości 3D), prywatność (zgoda na Google Analytics, o ile instalacja ma je włączone). Tu też trafiają preferencje UI, np. `sceneControlScheme`.
+
+Preferencje UI siedzą w `User.Settings` i zapisuje je `PATCH /settings` częściowym `$set`
+(pola wskaźnikowe w `UpdateSettingsRequest`). `diceAnimation` (PLAYRPG-343) jest `*bool` także
+w `UserSettings`: `nil` znaczy „nigdy nie wybrano” i wtedy front sam decyduje (włączone, chyba
+że system prosi o ograniczenie ruchu). Ten sam klucz zmienia przełącznik w zakładce Ogólne w grze
+i sekcja **Gra** na `/settings` (`useDiceAnimationSetting`).
 
 **Kontakt i zgłoszenia** (`/contact`, PLAYRPG-306). Publiczna strona z jednym formularzem
 i wyborem typu: błąd/opinia, zgłoszenie treści, inne. Zgłoszenie treści ma pola wymagane przez

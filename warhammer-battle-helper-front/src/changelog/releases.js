@@ -10,7 +10,7 @@ export const RELEASES = [
       { id: 'scene', items: ['scenes', 'grid', 'tools', 'tokens', 'overlays', 'controls', 'combat'] },
       { id: 'characters', items: ['sheet', 'manage', 'conditions', 'rolls', 'favourites'] },
       { id: 'creator', items: ['fields', 'dice', 'presets', 'token', 'sharing', 'preview'] },
-      { id: 'dice', items: ['chat', 'visibility', 'myRolls'] },
+      { id: 'dice', items: ['chat', 'visibility', 'myRolls', 'animation'] },
       { id: 'materials', items: ['handouts', 'files', 'music', 'notes'] },
       { id: 'games', items: ['lobby', 'lobbyFilter', 'players', 'inviteLink', 'participant', 'colors', 'online'] },
       { id: 'systems', items: ['builtIn', 'custom'] },
