@@ -25,9 +25,10 @@ const scene = { id: 's', characters: [{ id: 'p1', name: 'Hero' }, { id: 'p2', na
 
 const mountWindow = (over = {}) => {
   const ctx = { ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', scene, isGM: true, windowOpen: true, combat, run: (fn) => fn(), setWindowOpen: jest.fn(), ...over };
+  const { characters = [] } = over;
   render(
     <WindowManagerProvider>
-      <CombatContext.Provider value={ctx}><CombatWindow /></CombatContext.Provider>
+      <CombatContext.Provider value={ctx}><CombatWindow characters={characters} /></CombatContext.Provider>
     </WindowManagerProvider>,
   );
   return ctx;
@@ -66,8 +67,7 @@ test('footer actions', () => {
   expect(api.nextTurn).toHaveBeenCalledWith('g', 's', 'e1');
   fireEvent.click(screen.getByText('End round'));
   expect(api.endRound).toHaveBeenCalledWith('g', 's');
-  // "Show to players" exists twice: the hidden row's aria-label and the footer button's text.
-  fireEvent.click(screen.getByText('Show to players', { selector: '.combat-window__footer button' }));
+  fireEvent.click(screen.getByText('Show', { selector: '.combat-window__footer button' }));
   expect(api.setCombatVisibility).toHaveBeenCalledWith('g', 's', true);
 });
 
@@ -87,6 +87,13 @@ test('adding a scene token and a manual entry', () => {
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Reinforcements' } });
   fireEvent.click(screen.getByText('Add entry'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'manual', name: 'Reinforcements', initiative: 0 }]);
+});
+
+test('adding a character from the character list', () => {
+  mountWindow({ characters: [{ id: 'c1', name: 'Hero' }, { id: 'c9', isNPC: true, name: 'Ogre' }] });
+  fireEvent.click(screen.getByText('Add'));
+  fireEvent.click(screen.getByText('Ogre'));
+  expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'gameCharacter', sourceId: 'c9' }]);
 });
 
 test('Escape cancels a rename even when the input blurs as it unmounts', () => {

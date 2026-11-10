@@ -48,21 +48,30 @@ Everyone sees a marker there.
 
 **GM.** The button with two fighters in the tool bar (after the divider) starts combat on the
 current scene. Combat starts hidden: add participants, enter initiative and click
-**Show to players**. Add participants from the Combat window (the "On this scene" list, a manual
-entry) or with a right click on a token: an image has **Add to combat** in its menu; select a
-character token first, then right-click it.
+**Show** (the eye) in the Combat window. Add participants from the Combat window or with a right click on a token (an
+image has **Add to combat** in its menu; select a character token first, then right-click it). The
+window has three sources:
+
+- **On this scene** — character tokens and tokens-layer images on the map.
+- **From the character list** — every player character and NPC from the left panel, even one that
+  is not on the map. If that character stands on the scene, all its tokens light up.
+- **Manual entry** — just a name and initiative.
 
 - Order follows initiative (highest first); drag a row to break a tie.
 - Click a participant to make them active — turns do not have to go in order.
 - **Next turn** marks the active participant as done and moves to the next one who has not acted.
   **End round** clears the marks and advances the round counter.
+- Run a prepared combat from the strip over the map without opening the window: the arrow is
+  **Next turn**, and once everyone has acted it turns into a gold **End round** button (hover for
+  a description). Clicking a portrait gives that participant the turn.
 - The eye next to a participant hides them from players (ambush). Players never see initiative values.
 - Every scene has its own combat; a scene with combat in progress shows an icon next to its name.
 - **End combat** clears the turn order.
 
 **Player.** During combat the turn order shows above the map. When your character's turn comes,
-the combat button pulses green and **End turn** appears on the bar. Drag the bar by its handle or
-collapse it with the combat button.
+the combat button pulses green and **End turn** appears on the bar. Drag the bar by its handle
+anywhere on the screen, side panels included (double-click the handle to bring it back over the
+map), or collapse it with the combat button.
 
 ## Tutorials {#tutorials}
 

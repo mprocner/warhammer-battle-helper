@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import useStripPosition, { clampPosition, readStoredPosition } from './useStripPosition';
 
-test('clampPosition keeps the strip inside the map', () => {
+test('clampPosition keeps the whole strip inside the bounds', () => {
   const bounds = { width: 500, height: 300 };
   const size = { width: 200, height: 50 };
   expect(clampPosition({ x: -20, y: 10 }, bounds, size)).toEqual({ x: 0, y: 10 });
@@ -38,8 +38,8 @@ describe('useStripPosition', () => {
     bounds.getBoundingClientRect = () => rect(500, 300);
     const strip = document.createElement('div');
     strip.getBoundingClientRect = () => rect(200, 50);
-    const boundsRef = { current: bounds };
-    const utils = renderHook(() => useStripPosition('g1', boundsRef));
+    const mapRef = { current: bounds };
+    const utils = renderHook(() => useStripPosition('g1', mapRef));
     act(() => utils.result.current.stripRef(strip));
     return utils;
   }
@@ -69,10 +69,11 @@ describe('useStripPosition', () => {
     expect(window.localStorage.getItem('combatStripPos:g1')).toBeNull();
   });
 
-  test('a stored position outside the bounds is clamped after mount, without writing storage', () => {
+  // The strip may go anywhere in the browser window (jsdom: 1024×768), not only over the map.
+  test('a stored position outside the window is clamped after mount, without writing storage', () => {
     window.localStorage.setItem('combatStripPos:g1', JSON.stringify({ x: 1900, y: 1000 }));
     const { result } = setup();
-    expect(result.current.position).toEqual({ x: 300, y: 250 });
+    expect(result.current.position).toEqual({ x: 824, y: 718 });
     expect(JSON.parse(window.localStorage.getItem('combatStripPos:g1'))).toEqual({ x: 1900, y: 1000 });
   });
 
@@ -82,12 +83,32 @@ describe('useStripPosition', () => {
     bounds.getBoundingClientRect = () => rect(500, 300);
     const strip = document.createElement('div');
     strip.getBoundingClientRect = () => rect(200, 50);
-    const boundsRef = { current: bounds };
+    const mapRef = { current: bounds };
     // Mimic CombatStrip: no strip node on the first render (combat still loading).
-    const { result } = renderHook(() => useStripPosition('g1', boundsRef));
+    const { result } = renderHook(() => useStripPosition('g1', mapRef));
     expect(result.current.position).toEqual({ x: 1900, y: 1000 });
     act(() => result.current.stripRef(strip));
-    expect(result.current.position).toEqual({ x: 300, y: 250 });
+    expect(result.current.position).toEqual({ x: 824, y: 718 });
     expect(JSON.parse(window.localStorage.getItem('combatStripPos:g1'))).toEqual({ x: 1900, y: 1000 });
+  });
+
+  test('may be dragged past the map onto a side panel', () => {
+    const { result } = setup(); // map area 500×300
+    act(() => result.current.onGripPointerDown(grip));
+    fire('pointermove', 700, 600);
+    fire('pointerup');
+    expect(result.current.position).toEqual({ x: 700, y: 600 });
+  });
+
+  test('default spot is centred over the map, below the scene tab bars', () => {
+    const map = document.createElement('div');
+    map.getBoundingClientRect = () => ({ left: 300, top: 0, width: 600, height: 700, right: 900, bottom: 700 });
+    const bars = document.createElement('div');
+    bars.className = 'top-bars';
+    Object.defineProperty(bars, 'offsetHeight', { value: 74 });
+    map.appendChild(bars);
+    const mapRef = { current: map };
+    const { result } = renderHook(() => useStripPosition('g1', mapRef));
+    expect(result.current.defaultSpot).toEqual({ top: 106, centerX: 600 });
   });
 });

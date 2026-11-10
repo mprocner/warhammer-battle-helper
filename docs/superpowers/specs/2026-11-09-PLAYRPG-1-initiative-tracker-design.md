@@ -219,3 +219,5 @@ Katalog: `src/components/scene/combat/`.
 5. Zabity uczestnik to czerwony krzyżyk, bo MUI nie ma czaszki.
 6. Do walki trafiają tylko obrazki z warstwy tokenów — pilnuje tego front i backend.
 7. Changelog: punkt dopisany do niewydanej jeszcze wersji 1.0.0 zamiast nowej wersji MINOR (AC28).
+8. Poza tokenami ze sceny MG dodaje każdą postać z lewego panelu (gracze i BN) jako wpis `gameCharacter` (`SourceID` = `Character.ID`), także bez tokenu na mapie. Taki wpis znika dopiero po usunięciu postaci z gry; aktywny podświetla wszystkie tokeny tej postaci na scenie.
+9. Pasek kolejki można przeciągnąć w dowolne miejsce okna przeglądarki, także na panele boczne (gracz ma tam zwykle wolne miejsce); domyślnie stoi nad mapą pod zakładkami scen. U MG pasek prowadzi przygotowaną walkę bez okna: `Następna tura`, która po turze wszystkich zmienia się w `Koniec rundy`, i klik w portret = aktywacja.

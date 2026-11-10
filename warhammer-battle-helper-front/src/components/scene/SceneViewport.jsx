@@ -563,7 +563,7 @@ const SceneViewport = ({
   // GM-only, like the rest of the group menu. All selected tokens already in combat → offer removal.
   const combatMenuHandlers = useMemo(() => {
     if (!isGM || !displayedScene) return {};
-    const sources = combatEntriesForSelection(selectedTokens, displayedScene);
+    const sources = combatEntriesForSelection(selectedTokens, displayedScene, combatCtx.combat);
     if (sources.length === 0) return {};
     const existing = combatEntriesInSelection(combatCtx.combat, selectedTokens, displayedScene);
     if (existing.length === sources.length) {

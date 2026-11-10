@@ -219,7 +219,7 @@ func cleanName(name string) (string, error) {
 
 // buildEntry turns a request into an entry, checking the source lives on this scene. A hidden token
 // starts as a hidden entry; after that the two flags are independent.
-func buildEntry(scene *models.Scene, req models.CombatSourceRequest) (models.CombatEntry, error) {
+func buildEntry(scene *models.Scene, chars map[primitive.ObjectID]*models.Character, req models.CombatSourceRequest) (models.CombatEntry, error) {
 	e := models.CombatEntry{ID: primitive.NewObjectID(), Kind: req.Kind, Initiative: req.Initiative, Hidden: req.Hidden}
 	switch req.Kind {
 	case models.CombatEntryCharacter:
@@ -234,6 +234,17 @@ func buildEntry(scene *models.Scene, req models.CombatSourceRequest) (models.Com
 			}
 		}
 		return e, ErrCombatInvalid
+	case models.CombatEntryGameCharacter:
+		// Any character of this game, placed on this scene or not (chars holds only this game's).
+		id, err := parseID(req.SourceID)
+		if err != nil {
+			return e, err
+		}
+		if chars[id] == nil {
+			return e, ErrCombatInvalid
+		}
+		e.SourceID = id
+		return e, nil
 	case models.CombatEntryImage:
 		id, err := parseID(req.SourceID)
 		if err != nil {
@@ -284,15 +295,14 @@ func authorizeEndTurn(ctx *combatCtx, c *models.Combat, entryID primitive.Object
 	if !ok {
 		return combat.ErrEntryNotFound
 	}
-	if e.Hidden || e.Kind != models.CombatEntryCharacter {
+	if e.Hidden {
 		return ErrCombatForbidden
 	}
-	for _, gc := range ctx.scene.Characters {
-		if gc.ID == e.SourceID && CanEditCharacter(ctx.chars[gc.CharacterID], ctx.userID, false) {
-			return nil
-		}
+	charID, ok := combat.EntryCharacterID(*e, combat.PlacementCharacters(ctx.scene))
+	if !ok || !CanEditCharacter(ctx.chars[charID], ctx.userID, false) {
+		return ErrCombatForbidden
 	}
-	return ErrCombatForbidden
+	return nil
 }
 
 func (s *CombatService) Start(gameID string, sceneID, userID primitive.ObjectID) error {
@@ -329,7 +339,7 @@ func (s *CombatService) AddEntries(gameID string, sceneID, userID primitive.Obje
 			c = newCombat()
 		}
 		for _, r := range req.Entries {
-			e, err := buildEntry(ctx.scene, r)
+			e, err := buildEntry(ctx.scene, ctx.chars, r)
 			if err != nil {
 				return nil, err
 			}
@@ -356,7 +366,7 @@ func (s *CombatService) UpdateEntry(gameID string, sceneID, userID primitive.Obj
 			return nil, combat.ErrEntryNotFound
 		}
 		if req.Name != nil {
-			if e.Kind == models.CombatEntryCharacter {
+			if e.Kind == models.CombatEntryCharacter || e.Kind == models.CombatEntryGameCharacter {
 				return nil, ErrCombatInvalid // a character's name comes from its sheet
 			}
 			name, err := cleanName(*req.Name)

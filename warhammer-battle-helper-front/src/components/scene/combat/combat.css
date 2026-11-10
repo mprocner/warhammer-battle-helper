@@ -3,6 +3,20 @@
   position: relative;
 }
 
+/* The rightmost tool: a centred tooltip would spill past the map edge under the right panel, so it
+   grows leftwards from the button's right edge, the arrow still over the button. */
+.combat-toolbar-button .drawing-toolbar__tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.combat-toolbar-button .drawing-toolbar__tooltip::after {
+  left: auto;
+  right: 18px;
+  transform: none;
+}
+
 .combat-toolbar-button--hidden {
   border-style: dashed;
 }
@@ -45,13 +59,13 @@
   background: #7a5c42;
 }
 
-/* ── Turn order strip (over the map, screen space) ───────────────── */
+/* ── Turn order strip (viewport space, over panels; under managed windows from 1500) ── */
 .combat-strip {
-  position: absolute;
+  position: fixed;
   top: 64px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 40;
+  z-index: 1400;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -145,6 +159,31 @@
   color: #fff;
 }
 
+.combat-strip__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Same spot as "next", different colour: the GM must notice the button now closes the round. */
+.combat-strip__btn--end-round {
+  background: #c9975b;
+  border-color: #7a5c42;
+  color: #fff;
+}
+
+.combat-strip__activate {
+  display: flex;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.combat-strip__activate:hover .combat-portrait {
+  border-color: #c9975b;
+}
+
 .combat-strip__btn--end-turn {
   background: #4f8a3c;
   border-color: #3d6d2e;
@@ -193,10 +232,29 @@
 
 /* ── Management window (Window Manager popup, light sheet palette) ─ */
 .combat-window__body {
-  padding: 8px;
+  padding: 10px 12px;
   color: #3a2f1f;
-  font-size: 14px;
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 15px;
 }
+
+/* Form controls do not inherit the font by default (browser Arial / MUI Roboto otherwise). */
+.combat-window__body input {
+  font: inherit;
+  font-size: 14px;
+  padding: 3px 6px;
+  border: 1px solid #c4a882;
+  border-radius: 3px;
+  background: #fff9f0;
+  color: #3a2f1f;
+  box-sizing: border-box;
+}
+
+.combat-window__body input:focus {
+  border-color: #7a5c42;
+  outline: none;
+}
+
 
 .combat-window__list {
   margin: 0;
@@ -231,6 +289,7 @@
 
 .combat-row__name {
   flex: 1;
+  padding: 0;
   min-width: 0;
   text-align: left;
   border: none;
@@ -246,23 +305,11 @@
 .combat-row__name-input {
   flex: 1;
   min-width: 0;
-  border: 1px solid #c4a882;
-  background: #fff9f0;
-  color: #3a2f1f;
 }
 
 .combat-row__value {
-  width: 44px;
+  width: 52px;
   text-align: center;
-  border: 1px solid #c4a882;
-  background: #fff9f0;
-  color: #3a2f1f;
-}
-
-.combat-row__value:focus,
-.combat-row__name-input:focus {
-  border-color: #7a5c42;
-  outline: none;
 }
 
 .combat-row__icon {
@@ -274,28 +321,120 @@
   padding: 2px;
 }
 
+.combat-row__icon:hover {
+  color: #3a2f1f;
+}
+
+.combat-row__icon--remove:hover {
+  color: #8a2b1f;
+}
+
+/* Footer: the turn controls on top, combat management below. It sits right under the list, above
+   the add panel, so opening the panel never pushes the turn buttons away. */
 .combat-window__footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding-top: 8px;
-  margin-top: 6px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0 2px;
+  margin-top: 8px;
   border-top: 1px solid #c4a882;
 }
 
-.combat-strip__btn--danger {
+.combat-window__turn {
+  display: flex;
+}
+
+.combat-window__manage {
+  display: flex;
+  gap: 6px;
+}
+
+.combat-window__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid #7a5c42;
+  border-radius: 4px;
+  background: #fff9f0;
+  color: #7a5c42;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.combat-window__btn:hover:not(:disabled) {
+  background: #f4e8d8;
+}
+
+.combat-window__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Segmented pair: equal halves sharing one border. */
+.combat-window__btn--turn {
+  flex: 1;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+.combat-window__btn--turn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.combat-window__btn--turn:last-child {
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+.combat-window__btn.combat-window__btn--primary {
+  background: #7a5c42;
+  color: #fff9f0;
+}
+
+.combat-window__btn.combat-window__btn--primary:hover:not(:disabled) {
+  background: #6a4e37;
+}
+
+/* Management row: three quieter, equally tall outlined buttons; widths follow their labels. */
+.combat-window__btn--tool {
+  flex: 1 1 auto;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-color: #c4a882;
+}
+
+.combat-window__btn--tool:hover:not(:disabled) {
+  border-color: #7a5c42;
+}
+
+.combat-window__btn--tool[aria-pressed="true"] {
+  background: #f1d9b0;
+  border-color: #7a5c42;
+}
+
+.combat-window__btn.combat-window__btn--danger {
   color: #8a2b1f;
+  border-color: #d4a39a;
+}
+
+.combat-window__btn.combat-window__btn--danger:hover {
   border-color: #8a2b1f;
+  background: #fbeae6;
 }
 
 .combat-window__hint {
   margin: 6px 0;
+  font-size: 14px;
   color: #7a5c42;
   font-style: italic;
 }
 
 .combat-window__add {
-  margin-top: 8px;
+  margin-top: 10px;
   padding-top: 6px;
   border-top: 1px dashed #c4a882;
 }
@@ -325,19 +464,19 @@
   border-radius: 12px;
   padding: 2px 8px 2px 2px;
   cursor: pointer;
+  font: inherit;
+  font-size: 14px;
 }
 
 .combat-window__manual {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   margin-top: 4px;
 }
 
 .combat-window__manual input:first-child {
   flex: 1;
-  border: 1px solid #c4a882;
-  background: #fff9f0;
-  color: #3a2f1f;
+  min-width: 0;
 }
 
 /* ── Map highlight of the acting token, scene tab indicator ─────── */
@@ -355,4 +494,8 @@
   font-size: 14px !important;
   margin-left: 4px;
   vertical-align: middle;
+}
+
+.combat-window__add-label:not(:first-child) {
+  margin-top: 8px;
 }

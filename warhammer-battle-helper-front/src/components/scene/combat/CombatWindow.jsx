@@ -8,21 +8,24 @@ import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ReplayIcon from '@mui/icons-material/Replay';
+import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined';
 import DraggablePopup from '../../common/DraggablePopup';
+import { usePortalTooltip } from '../../common/PortalTooltip';
 import ConfirmModal from '../../common/ConfirmModal';
 import SortableList from '../../common/sortable/SortableList';
 import useSortableItem from '../../common/sortable/useSortableItem';
 import DragGrip from '../../common/sortable/DragGrip';
-import { useCombat } from '../../../contexts/CombatContext';
+import { useCombat, COMBAT_WINDOW_ID } from '../../../contexts/CombatContext';
 import {
   activateCombatEntry, updateCombatEntry, removeCombatEntry, reorderCombat, nextTurn, endRound,
   endCombat, setCombatVisibility, addCombatEntries,
 } from '../../../api/combat';
-import { allActed, combatCandidates } from './combatSelectors';
+import { allActed, combatCandidates, characterCandidates } from './combatSelectors';
 import CombatPortrait from './CombatPortrait';
 import './combat.css';
 
-function CombatRow({ entry, isActive }) {
+function CombatRow({ entry, isActive, tip }) {
   const { t } = useTranslation();
   const { gameId, sceneId, run } = useCombat();
   const { rootProps, gripProps, isDragging } = useSortableItem(entry.id);
@@ -84,8 +87,8 @@ function CombatRow({ entry, isActive }) {
           {entry.name}
         </button>
       )}
-      {entry.kind !== 'character' && !renaming && (
-        <button type="button" className="combat-row__icon" onClick={() => { cancelledRef.current = false; setRenaming(true); }} aria-label={t('combat.window.rename')}>
+      {entry.kind !== 'character' && entry.kind !== 'gameCharacter' && !renaming && (
+        <button type="button" className="combat-row__icon" onClick={() => { cancelledRef.current = false; setRenaming(true); }} aria-label={t('combat.window.rename')} {...tip(t('combat.window.rename'))}>
           <EditIcon style={{ fontSize: 14 }} />
         </button>
       )}
@@ -98,7 +101,14 @@ function CombatRow({ entry, isActive }) {
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
         aria-label={t('combat.window.initiative')}
       />
-      <button type="button" className="combat-row__icon" aria-pressed={entry.acted} onClick={() => patch({ acted: !entry.acted })} aria-label={t('combat.window.acted')}>
+      <button
+        type="button"
+        className="combat-row__icon"
+        aria-pressed={entry.acted}
+        onClick={() => patch({ acted: !entry.acted })}
+        aria-label={t('combat.window.acted')}
+        {...tip(t(entry.acted ? 'combat.window.actedUnmark' : 'combat.window.actedMark'))}
+      >
         {entry.acted ? <CheckCircleIcon style={{ fontSize: 16 }} /> : <RadioButtonUncheckedIcon style={{ fontSize: 16 }} />}
       </button>
       <button
@@ -106,22 +116,48 @@ function CombatRow({ entry, isActive }) {
         className="combat-row__icon"
         onClick={() => patch({ hidden: !entry.hidden })}
         aria-label={t(entry.hidden ? 'combat.window.entryShow' : 'combat.window.entryHide')}
+        {...tip(t(entry.hidden ? 'combat.window.entryHiddenTip' : 'combat.window.entryVisibleTip'))}
       >
         {entry.hidden ? <VisibilityOffIcon style={{ fontSize: 16 }} /> : <VisibilityIcon style={{ fontSize: 16 }} />}
       </button>
-      <button type="button" className="combat-row__icon" onClick={() => run(() => removeCombatEntry(gameId, sceneId, entry.id))} aria-label={t('combat.window.remove')}>
+      <button
+        type="button"
+        className="combat-row__icon combat-row__icon--remove"
+        onClick={() => run(() => removeCombatEntry(gameId, sceneId, entry.id))}
+        aria-label={t('combat.window.remove')}
+        {...tip(t('combat.window.remove'))}
+      >
         <CloseIcon style={{ fontSize: 16 }} />
       </button>
     </li>
   );
 }
 
-function CombatAddPanel() {
+function CandidateList({ candidates }) {
+  const { gameId, sceneId, run } = useCombat();
+  return (
+    <ul className="combat-window__candidates">
+      {candidates.map(c => (
+        <li key={`${c.kind}:${c.sourceId}`}>
+          <button type="button" className="combat-window__candidate" onClick={() => run(() => addCombatEntries(gameId, sceneId, [{ kind: c.kind, sourceId: c.sourceId }]))}>
+            <CombatPortrait entry={c} small />
+            {c.name}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Three ways in: tokens on this scene, any character from the GM's character list (placed or not),
+// and a manual entry.
+function CombatAddPanel({ characters }) {
   const { t } = useTranslation();
   const { gameId, sceneId, scene, combat, run } = useCombat();
   const [name, setName] = useState('');
   const [initiative, setInitiative] = useState('0');
   const candidates = combatCandidates(scene, combat);
+  const listed = characterCandidates(characters, scene, combat);
 
   const addManual = (e) => {
     e.preventDefault();
@@ -136,20 +172,15 @@ function CombatAddPanel() {
     <div className="combat-window__add">
       <div className="combat-window__add-label">{t('combat.window.addFromScene')}</div>
       {candidates.length === 0 && <p className="combat-window__hint">{t('combat.window.noCandidates')}</p>}
-      <ul className="combat-window__candidates">
-        {candidates.map(c => (
-          <li key={`${c.kind}:${c.sourceId}`}>
-            <button type="button" className="combat-window__candidate" onClick={() => run(() => addCombatEntries(gameId, sceneId, [{ kind: c.kind, sourceId: c.sourceId }]))}>
-              <CombatPortrait entry={c} small />
-              {c.name}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <CandidateList candidates={candidates} />
+      <div className="combat-window__add-label">{t('combat.window.addFromList')}</div>
+      {listed.length === 0 && <p className="combat-window__hint">{t('combat.window.noListCandidates')}</p>}
+      <CandidateList candidates={listed} />
+      <div className="combat-window__add-label">{t('combat.window.addManualLabel')}</div>
       <form className="combat-window__manual" onSubmit={addManual}>
         <input value={name} maxLength={60} onChange={e => setName(e.target.value)} aria-label={t('combat.window.manualName')} placeholder={t('combat.window.manualName')} />
         <input type="number" className="combat-row__value" value={initiative} onChange={e => setInitiative(e.target.value)} aria-label={t('combat.window.initiative')} />
-        <button type="submit" className="combat-strip__btn">{t('combat.window.addManual')}</button>
+        <button type="submit" className="combat-window__btn">{t('combat.window.addManual')}</button>
       </form>
     </div>
   );
@@ -157,61 +188,89 @@ function CombatAddPanel() {
 
 // GM's management window. Lives in the Window Manager, so it moves, minimises to the window bar and
 // closes like a character sheet.
-export default function CombatWindow() {
+export default function CombatWindow({ characters = [] }) {
   const { t } = useTranslation();
   const { combat, isGM, windowOpen, setWindowOpen, gameId, sceneId, run } = useCombat();
   const [adding, setAdding] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  // One tooltip for the whole window; rows get hover handlers through tip().
+  const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
   if (!isGM || !windowOpen || !combat) return null;
 
   const roundDone = allActed(combat);
   const noEntries = combat.entries.length === 0;
+  const tip = (text) => ({ onMouseEnter: e => showTooltip(text, e.currentTarget), onMouseLeave: hideTooltip });
 
   return (
     <DraggablePopup
       title={t('combat.window.title', { round: combat.round })}
       onClose={() => setWindowOpen(false)}
-      windowId="combat"
+      windowId={COMBAT_WINDOW_ID}
       windowKind="combat"
-      initialWidth={420}
+      initialWidth={460}
+      initialHeight={480}
       className="combat-window"
     >
       <div className="combat-window__body">
-        {combat.entries.length === 0 && <p className="combat-window__hint">{t('combat.window.empty')}</p>}
+        {noEntries && <p className="combat-window__hint">{t('combat.window.empty')}</p>}
         <SortableList items={combat.entries} onReorder={next => run(() => reorderCombat(gameId, sceneId, next.map(e => e.id)))}>
           <ol className="combat-window__list">
-            {combat.entries.map(e => <CombatRow key={e.id} entry={e} isActive={e.id === combat.activeId} />)}
+            {combat.entries.map(e => <CombatRow key={e.id} entry={e} isActive={e.id === combat.activeId} tip={tip} />)}
           </ol>
         </SortableList>
-        {adding && <CombatAddPanel />}
         <div className="combat-window__footer">
-          <button
-            type="button"
-            className={`combat-strip__btn${roundDone ? '' : ' combat-strip__btn--primary'}`}
-            disabled={noEntries}
-            onClick={() => run(() => nextTurn(gameId, sceneId, combat.activeId))}
-          >
-            {t('combat.next')} <ArrowForwardIcon style={{ fontSize: 12 }} />
-          </button>
-          <button
-            type="button"
-            className={`combat-strip__btn${roundDone ? ' combat-strip__btn--primary' : ''}`}
-            disabled={noEntries}
-            onClick={() => run(() => endRound(gameId, sceneId))}
-          >
-            {t('combat.endRound')}
-          </button>
-          <button type="button" className="combat-strip__btn" aria-pressed={adding} onClick={() => setAdding(v => !v)}>
-            <AddIcon style={{ fontSize: 12 }} />{t('combat.window.add')}
-          </button>
-          <button type="button" className="combat-strip__btn" onClick={() => run(() => setCombatVisibility(gameId, sceneId, !combat.visibleToPlayers))}>
-            {t(combat.visibleToPlayers ? 'combat.window.hideFromPlayers' : 'combat.window.showToPlayers')}
-          </button>
-          <button type="button" className="combat-strip__btn combat-strip__btn--danger" onClick={() => setConfirmEnd(true)}>
-            {t('combat.window.endCombat')}
-          </button>
+          {/* The turn itself: the suggested next step is the filled button. */}
+          <div className="combat-window__turn">
+            <button
+              type="button"
+              className={`combat-window__btn combat-window__btn--turn${roundDone ? '' : ' combat-window__btn--primary'}`}
+              disabled={noEntries}
+              onClick={() => run(() => nextTurn(gameId, sceneId, combat.activeId))}
+            >
+              {t('combat.next')} <ArrowForwardIcon style={{ fontSize: 16 }} />
+            </button>
+            <button
+              type="button"
+              className={`combat-window__btn combat-window__btn--turn${roundDone ? ' combat-window__btn--primary' : ''}`}
+              disabled={noEntries}
+              onClick={() => run(() => endRound(gameId, sceneId))}
+            >
+              <ReplayIcon style={{ fontSize: 16 }} /> {t('combat.endRound')}
+            </button>
+          </div>
+          {/* Managing the combat: quieter, the destructive action kept apart on the right. */}
+          <div className="combat-window__manage">
+            <button
+              type="button"
+              className="combat-window__btn combat-window__btn--tool"
+              aria-pressed={adding}
+              onClick={() => setAdding(v => !v)}
+              {...tip(t('combat.window.addTip'))}
+            >
+              <AddIcon style={{ fontSize: 16 }} /> {t('combat.window.add')}
+            </button>
+            <button
+              type="button"
+              className="combat-window__btn combat-window__btn--tool"
+              onClick={() => run(() => setCombatVisibility(gameId, sceneId, !combat.visibleToPlayers))}
+              {...tip(t(combat.visibleToPlayers ? 'combat.window.hideTip' : 'combat.window.showTip'))}
+            >
+              {combat.visibleToPlayers ? <VisibilityOffIcon style={{ fontSize: 16 }} /> : <VisibilityIcon style={{ fontSize: 16 }} />}
+              {' '}{t(combat.visibleToPlayers ? 'combat.window.hideShort' : 'combat.window.showShort')}
+            </button>
+            <button
+              type="button"
+              className="combat-window__btn combat-window__btn--tool combat-window__btn--danger"
+              onClick={() => setConfirmEnd(true)}
+              {...tip(t('combat.window.endCombatTip'))}
+            >
+              <StopCircleOutlinedIcon style={{ fontSize: 16 }} /> {t('combat.window.endCombat')}
+            </button>
+          </div>
         </div>
+        {(adding || noEntries) && <CombatAddPanel characters={characters} />}
       </div>
+      {tooltipNode}
       <ConfirmModal
         isOpen={confirmEnd}
         message={t('combat.window.endCombatConfirm')}

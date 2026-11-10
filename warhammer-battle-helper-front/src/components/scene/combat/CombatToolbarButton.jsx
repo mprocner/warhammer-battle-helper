@@ -11,14 +11,14 @@ import './combat.css';
 // "active mode" look of the tabs before it — its states use a glow and badges instead.
 export default function CombatToolbarButton() {
   const { t } = useTranslation();
-  const { combat, isGM, gameId, sceneId, run, setWindowOpen, setStripCollapsed } = useCombat();
+  const { combat, isGM, gameId, sceneId, run, openWindow, setStripCollapsed } = useCombat();
   const state = toolbarState({ combat, isGM });
   if (state === 'none' || !sceneId) return null;
 
   const handleClick = () => {
     if (state === 'idle') {
       run(() => startCombat(gameId, sceneId));
-      setWindowOpen(true);
+      openWindow();
       return;
     }
     setStripCollapsed(v => !v);

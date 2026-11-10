@@ -9,6 +9,7 @@ import DrawingToolbar from './scene/DrawingToolbar';
 import LayerSelector from './scene/LayerSelector';
 import CombatToolbarButton from './scene/combat/CombatToolbarButton';
 import CombatStrip from './scene/combat/CombatStrip';
+import CombatWindow from './scene/combat/CombatWindow';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
 import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath, deleteSceneImage, updateSceneImage, batchMoveTokens } from '../api/scenes';
@@ -989,7 +990,9 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
 
         <div className="fight-grid-wrapper" ref={fightGridWrapperRef} style={{ position: 'relative' }}>
           {sceneSelector}
-          {currentScene && <CombatStrip boundsRef={fightGridWrapperRef} />}
+          {currentScene && <CombatStrip mapRef={fightGridWrapperRef} />}
+          {/* Mounted here for the GM's character list (the same list as the left panel). */}
+          <CombatWindow characters={initialCharacters} />
           <OnlineUsersBar
             game={game}
             participants={participants}

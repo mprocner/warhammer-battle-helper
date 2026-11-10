@@ -778,7 +778,10 @@
       "myTurn": "Your turn!"
     },
     "strip": {
-      "move": "Drag to move, double-click to reset"
+      "move": "Drag to move, double-click to reset",
+      "nextTip": "Next turn: the active participant is done, the next one acts",
+      "endRoundTip": "Everyone has acted — end round {{round}} and start round {{next}}",
+      "activateTip": "{{name}} — click to give them the turn"
     },
     "menu": {
       "add": "Add to combat",
@@ -790,17 +793,28 @@
       "drag": "Drag to reorder",
       "initiative": "Initiative",
       "acted": "Acted this round",
+      "actedMark": "Mark as having acted this round",
+      "actedUnmark": "Acted this round — click to undo",
+      "entryVisibleTip": "Visible to players — click to hide",
+      "entryHiddenTip": "Hidden from players — click to show",
       "entryHide": "Hide from players",
       "entryShow": "Show to players",
       "remove": "Remove from combat",
       "rename": "Rename",
       "add": "Add",
       "addFromScene": "On this scene",
-      "noCandidates": "Every token on this scene is already in combat.",
+      "noCandidates": "No tokens on this scene left to add.",
+      "addFromList": "From the character list",
+      "noListCandidates": "Every character from the list is already in combat.",
+      "addManualLabel": "Manual entry",
       "manualName": "Name",
       "addManual": "Add entry",
-      "showToPlayers": "Show to players",
-      "hideFromPlayers": "Hide from players",
+      "showShort": "Show",
+      "hideShort": "Hide",
+      "showTip": "Combat is hidden — show it to players",
+      "hideTip": "Players see the combat — hide it from them",
+      "addTip": "Add participants: scene tokens, the character list or a manual entry",
+      "endCombatTip": "End combat and clear the turn order",
       "endCombat": "End combat",
       "endCombatConfirm": "End combat? The turn order and round counter will be cleared."
     }

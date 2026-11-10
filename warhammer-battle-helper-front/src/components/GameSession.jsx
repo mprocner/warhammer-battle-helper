@@ -9,7 +9,6 @@ import PanelToggle from './panels/PanelToggle';
 import useWebSocket from '../hooks/useWebSocket';
 import useSceneCombat from '../hooks/useSceneCombat';
 import { CombatProvider } from '../contexts/CombatContext';
-import CombatWindow from './scene/combat/CombatWindow';
 import { useOnlineUsers } from '../hooks/useOnlineUsers';
 import { useControlScheme } from '../hooks/useControlScheme';
 import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
@@ -1136,7 +1135,6 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
               controlScheme={controlScheme}
               onCharactersLoaded={handleCharactersLoaded}
             />
-            <CombatWindow />
           </CombatProvider>
         </Box>
 

@@ -47,21 +47,30 @@ ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 
 **MG.** Przycisk z dwiema walczącymi postaciami w pasku narzędzi (za kreską) rozpoczyna walkę na
 bieżącej scenie. Walka startuje ukryta: dodaj uczestników, wpisz inicjatywę i kliknij
-**Pokaż graczom**. Uczestników dodasz z okna „Walka” (lista „Na tej scenie”, wpis ręczny) albo
-prawym przyciskiem na tokenie: obrazek ma pozycję **Dodaj do walki** w swoim menu, a token postaci
-najpierw zaznacz, potem kliknij prawym.
+**Pokaż** (oko) w oknie „Walka”. Uczestników dodasz z okna „Walka” albo prawym przyciskiem na tokenie (obrazek ma
+pozycję **Dodaj do walki** w swoim menu, a token postaci najpierw zaznacz, potem kliknij prawym).
+Okno ma trzy źródła:
+
+- **Na tej scenie** — tokeny postaci i obrazki z warstwy tokenów stojące na mapie.
+- **Z listy postaci** — każda postać graczy i każdy BN z lewego panelu, także taki, którego nie ma
+  na mapie. Jeśli ta postać stoi na scenie, podświetlają się wszystkie jej tokeny.
+- **Wpis ręczny** — sama nazwa i inicjatywa.
 
 - Kolejność wynika z inicjatywy (malejąco); przeciągnij wiersz, żeby rozstrzygnąć remis.
 - Kliknięcie uczestnika czyni go aktywnym — tura nie musi iść po kolei.
 - **Następna tura** oznacza aktywnego jako „działał” i przechodzi do następnego, który jeszcze nie
   działał. **Koniec rundy** zeruje znaczniki i zwiększa licznik rund.
+- Przygotowaną walkę prowadzisz z samego paska nad mapą, bez otwierania okna: strzałka to
+  **Następna tura**, a gdy wszyscy już działali, zamienia się w złoty przycisk **Koniec rundy**
+  (opis po najechaniu). Kliknięcie portretu oddaje turę temu uczestnikowi.
 - Oko przy uczestniku ukrywa go przed graczami (zasadzka). Gracze nie widzą wartości inicjatywy.
 - Każda scena ma własną walkę; przy nazwie sceny z trwającą walką widzisz ikonę.
 - **Zakończ walkę** czyści kolejkę.
 
 **Gracz.** Gdy trwa walka, nad mapą widzisz kolejkę. Gdy przychodzi tura twojej postaci, przycisk
 walki pulsuje na zielono, a na pasku pojawia się **Zakończ turę**. Pasek możesz przeciągnąć za
-uchwyt albo zwinąć przyciskiem walki.
+uchwyt w dowolne miejsce ekranu, także na panel boczny (dwuklik na uchwycie przywraca go nad mapę),
+albo zwinąć przyciskiem walki.
 
 ## Samouczki {#tutorials}
 

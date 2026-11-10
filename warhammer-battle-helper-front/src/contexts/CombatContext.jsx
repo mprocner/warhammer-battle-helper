@@ -1,13 +1,17 @@
 import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
+import { useWindowManager } from './WindowManagerContext';
 
 export const CombatContext = createContext(null);
+
+// Window Manager id of the GM's management window.
+export const COMBAT_WINDOW_ID = 'combat';
 
 const noop = () => {};
 
 // Without a provider (isolated component tests, the template creator) nothing is in combat.
 export const EMPTY_COMBAT = {
   combat: null, combatSceneIds: [], gameId: null, sceneId: null, scene: null, isGM: false,
-  run: noop, windowOpen: false, setWindowOpen: noop, stripCollapsed: false, setStripCollapsed: noop,
+  run: noop, windowOpen: false, setWindowOpen: noop, openWindow: noop, stripCollapsed: false, setStripCollapsed: noop,
 };
 
 export function useCombat() {
@@ -16,6 +20,13 @@ export function useCombat() {
 
 export function CombatProvider({ gameId, scene, isGM, combatState, children }) {
   const [windowOpen, setWindowOpen] = useState(false);
+  const { focusWindow } = useWindowManager();
+  // Open, or bring back from the window bar: a minimised window is still "open", so setting the flag
+  // alone would leave it hidden.
+  const openWindow = useCallback(() => {
+    setWindowOpen(true);
+    focusWindow(COMBAT_WINDOW_ID);
+  }, [focusWindow]);
   const [stripCollapsed, setStripCollapsed] = useState(false);
   const { combat, combatSceneIds, refresh } = combatState;
   const sceneId = scene?.id || null;
@@ -38,8 +49,8 @@ export function CombatProvider({ gameId, scene, isGM, combatState, children }) {
 
   const value = useMemo(() => ({
     combat, combatSceneIds, gameId, sceneId, scene, isGM, run,
-    windowOpen, setWindowOpen, stripCollapsed, setStripCollapsed,
-  }), [combat, combatSceneIds, gameId, sceneId, scene, isGM, run, windowOpen, stripCollapsed]);
+    windowOpen, setWindowOpen, openWindow, stripCollapsed, setStripCollapsed,
+  }), [combat, combatSceneIds, gameId, sceneId, scene, isGM, run, windowOpen, openWindow, stripCollapsed]);
 
   return <CombatContext.Provider value={value}>{children}</CombatContext.Provider>;
 }

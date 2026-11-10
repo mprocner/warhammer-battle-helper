@@ -1,6 +1,7 @@
 import {
   activeEntry, allActed, toolbarState, isInCombat, entryForSource, activeSource,
   combatEntriesForSelection, combatEntriesInSelection, combatCandidates,
+  characterCandidates, isCharacterTokenActive,
 } from './combatSelectors';
 
 const combat = {
@@ -63,4 +64,37 @@ test('combatCandidates lists scene tokens not yet in combat', () => {
     { kind: 'character', sourceId: 'p2', name: 'Mage', avatar: '/m.png' },
     { kind: 'image', sourceId: 'i2', name: 'dire-bear', avatar: '/b.webp' },
   ]);
+});
+
+// Hero (c1) is in combat by its placement p1; Bandit (c3) joined from the character list.
+const withListed = { ...combat, entries: [...combat.entries, { id: 'e4', kind: 'gameCharacter', sourceId: 'c3', name: 'Bandit' }] };
+
+test('characterCandidates offers off-scene list characters in no form of combat, players first', () => {
+  const characters = [
+    { id: 'c4', isNPC: true, basicInfo: { name: 'Ogre', avatar: '/o.png' } },
+    { id: 'c1', name: 'Hero' }, // in combat by its token
+    { id: 'c3', isNPC: true, name: 'Bandit' }, // joined from the list
+    { id: 'c2', name: 'Mage' }, // on the scene: offered as a scene token instead
+    { id: 'c5', name: 'Rogue', avatar: '/r.png' },
+  ];
+  expect(characterCandidates(characters, scene, withListed)).toEqual([
+    { kind: 'gameCharacter', sourceId: 'c5', name: 'Rogue', avatar: '/r.png' },
+    { kind: 'gameCharacter', sourceId: 'c4', name: 'Ogre', avatar: '/o.png' },
+  ]);
+  expect(characterCandidates(undefined, scene, null)).toEqual([]);
+});
+
+test('a character joined from the list covers its tokens on the map', () => {
+  const sceneWithBandit = { ...scene, characters: [...scene.characters, { id: 'p3', characterId: 'c3', name: 'Bandit' }] };
+  expect(combatCandidates(sceneWithBandit, withListed).map(c => c.sourceId)).not.toContain('p3');
+  expect(combatEntriesForSelection([{ kind: 'char', id: 'c3' }], sceneWithBandit, withListed)).toEqual([{ kind: 'gameCharacter', sourceId: 'c3' }]);
+  expect(combatEntriesInSelection(withListed, [{ kind: 'char', id: 'c3' }], sceneWithBandit).map(e => e.id)).toEqual(['e4']);
+});
+
+test('isCharacterTokenActive: own placement entry, or every token of a list entry', () => {
+  expect(isCharacterTokenActive({ ...withListed, activeId: 'e1' }, 'p1', 'c1')).toBe(true);
+  expect(isCharacterTokenActive({ ...withListed, activeId: 'e1' }, 'p9', 'c1')).toBe(false);
+  expect(isCharacterTokenActive({ ...withListed, activeId: 'e4' }, 'p3', 'c3')).toBe(true);
+  expect(isCharacterTokenActive({ ...withListed, activeId: 'e4' }, 'p3', 'c1')).toBe(false);
+  expect(isCharacterTokenActive(null, 'p1', 'c1')).toBe(false);
 });

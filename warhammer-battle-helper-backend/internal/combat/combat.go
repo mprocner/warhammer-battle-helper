@@ -152,14 +152,33 @@ func EndRound(c *models.Combat, killed func(models.CombatEntry) bool) {
 	}
 }
 
-// Prune drops entries whose token is gone: a removed placement, a placement whose character was
-// deleted, or a deleted image. No deletion path knows about combat — every read and write prunes
+// PlacementCharacters maps each scene placement (GameCharacter.ID) to its character.
+func PlacementCharacters(scene *models.Scene) map[primitive.ObjectID]primitive.ObjectID {
+	m := make(map[primitive.ObjectID]primitive.ObjectID, len(scene.Characters))
+	for _, gc := range scene.Characters {
+		m[gc.ID] = gc.CharacterID
+	}
+	return m
+}
+
+// EntryCharacterID is the character behind a character or gameCharacter entry. ok=false for image
+// and manual entries, and for a placement that is no longer on the scene.
+func EntryCharacterID(e models.CombatEntry, placementChar map[primitive.ObjectID]primitive.ObjectID) (primitive.ObjectID, bool) {
+	switch e.Kind {
+	case models.CombatEntryCharacter:
+		id, ok := placementChar[e.SourceID]
+		return id, ok
+	case models.CombatEntryGameCharacter:
+		return e.SourceID, true
+	}
+	return primitive.NilObjectID, false
+}
+
+// Prune drops entries whose token is gone: a removed placement, a deleted character (whether it
+// joined by a placement or from the character list), or a deleted image. No deletion path knows about combat — every read and write prunes
 // instead, so a new way of deleting a token cannot leave a ghost in the tracker.
 func Prune(c *models.Combat, scene *models.Scene, chars map[primitive.ObjectID]*models.Character) {
-	placementChar := make(map[primitive.ObjectID]primitive.ObjectID, len(scene.Characters))
-	for _, gc := range scene.Characters {
-		placementChar[gc.ID] = gc.CharacterID
-	}
+	placementChar := PlacementCharacters(scene)
 	images := make(map[primitive.ObjectID]bool, len(scene.Images))
 	for _, img := range scene.Images {
 		images[img.ID] = true
@@ -168,8 +187,8 @@ func Prune(c *models.Combat, scene *models.Scene, chars map[primitive.ObjectID]*
 	for _, e := range c.Entries {
 		alive := true
 		switch e.Kind {
-		case models.CombatEntryCharacter:
-			charID, ok := placementChar[e.SourceID]
+		case models.CombatEntryCharacter, models.CombatEntryGameCharacter:
+			charID, ok := EntryCharacterID(e, placementChar)
 			alive = ok && chars[charID] != nil
 		case models.CombatEntryImage:
 			alive = images[e.SourceID]

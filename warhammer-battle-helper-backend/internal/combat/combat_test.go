@@ -175,10 +175,13 @@ func TestPruneDropsEntriesWithoutSource(t *testing.T) {
 	removedPlacement := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryCharacter, SourceID: primitive.NewObjectID(), Name: "gonePlacement"}
 	deletedCharacter := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryCharacter, SourceID: orphanPlacement.ID, Name: "goneCharacter"}
 	deletedImage := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryImage, SourceID: primitive.NewObjectID(), Name: "goneImage"}
+	// A list entry needs no placement on the scene, only a living character.
+	keepListed := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryGameCharacter, SourceID: liveChar, Name: "keepListed"}
+	deletedListed := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryGameCharacter, SourceID: goneChar, Name: "goneListed"}
 
-	c := &models.Combat{Entries: []models.CombatEntry{keepChar, removedPlacement, keepImg, deletedCharacter, keepManual, deletedImage}, ActiveID: deletedImage.ID, LastVisibleActiveID: deletedImage.ID}
+	c := &models.Combat{Entries: []models.CombatEntry{keepChar, removedPlacement, keepImg, deletedCharacter, keepManual, deletedImage, keepListed, deletedListed}, ActiveID: deletedImage.ID, LastVisibleActiveID: deletedImage.ID}
 	Prune(c, scene, chars)
-	eq(t, names(c), []string{"keepChar", "keepImg", "keepManual"})
+	eq(t, names(c), []string{"keepChar", "keepImg", "keepManual", "keepListed"})
 	if !c.ActiveID.IsZero() || !c.LastVisibleActiveID.IsZero() {
 		t.Fatal("a pruned active entry leaves nobody active")
 	}

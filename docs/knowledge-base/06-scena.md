@@ -47,7 +47,14 @@ a hub przekazuje je dalej, nic nie zapisując.
 działają przy każdym zoomie.
 
 **Kolejka tur (PLAYRPG-1).** Każda scena może mieć walkę (`Scene.Combat`, `json:"-"`). Wpisy:
-rozstawienie postaci (`GameCharacter.ID`), obrazek (`SceneImage.ID`) albo wpis ręczny. Tura to
+rozstawienie postaci (`character`, `GameCharacter.ID`), postać z listy (`gameCharacter`,
+`Character.ID` — nie musi stać na scenie; aktywna podświetla wszystkie swoje tokeny), obrazek
+(`SceneImage.ID`) albo wpis ręczny. Postać z listy „przykrywa” swoje tokeny: nie są oferowane
+osobno, a menu tokenu operuje na jej wpisie. Okno walki montuje `DndContext`, bo tylko tam jest
+lista postaci (`initialCharacters`). Pasek u MG prowadzi walkę bez okna: jeden przycisk
+`next`/`end-round` (przełącza się na `allActed`), klik w portret = `activate`. Pasek to portal do `body` (`position: fixed`, z-index 1400 — nad
+panelami i ich uchwytami, pod oknami Window Managera od 1500); przeciąganie ogranicza okno
+przeglądarki, a domyślne miejsce liczy `useStripPosition` ze środka mapy pod `.top-bars`. Tura to
 flaga `Acted` + jedno `ActiveID`; MG może aktywować kogokolwiek. Odczyt wyłącznie przez
 `GET /games/:id/scenes/:sceneId/combat` — `BuildCombatView` maskuje per widz (gracz: bez ukrytych,
 bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `CombatService.mutate`.

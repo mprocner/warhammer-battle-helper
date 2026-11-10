@@ -53,18 +53,16 @@ func PlayerSceneID(game *models.Game, userID primitive.ObjectID) primitive.Objec
 // combatKilledFunc reports "dead" from the token's own state: Character.Killed for a character
 // entry, SceneImage.Killed for an image. The tracker has no dead state of its own.
 func combatKilledFunc(scene *models.Scene, chars map[primitive.ObjectID]*models.Character) func(models.CombatEntry) bool {
-	placementChar := map[primitive.ObjectID]primitive.ObjectID{}
-	for _, gc := range scene.Characters {
-		placementChar[gc.ID] = gc.CharacterID
-	}
+	placementChar := combat.PlacementCharacters(scene)
 	imageKilled := map[primitive.ObjectID]bool{}
 	for _, img := range scene.Images {
 		imageKilled[img.ID] = img.Killed
 	}
 	return func(e models.CombatEntry) bool {
 		switch e.Kind {
-		case models.CombatEntryCharacter:
-			ch := chars[placementChar[e.SourceID]]
+		case models.CombatEntryCharacter, models.CombatEntryGameCharacter:
+			id, _ := combat.EntryCharacterID(e, placementChar)
+			ch := chars[id]
 			return ch != nil && ch.Killed
 		case models.CombatEntryImage:
 			return imageKilled[e.SourceID]
@@ -87,10 +85,7 @@ func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.
 		return nil
 	}
 
-	placements := map[primitive.ObjectID]models.GameCharacter{}
-	for _, gc := range scene.Characters {
-		placements[gc.ID] = gc
-	}
+	placementChar := combat.PlacementCharacters(scene)
 	images := map[primitive.ObjectID]models.SceneImage{}
 	for _, img := range scene.Images {
 		images[img.ID] = img
@@ -106,8 +101,10 @@ func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.
 			ev.SourceID = e.SourceID.Hex()
 		}
 		switch e.Kind {
-		case models.CombatEntryCharacter:
-			ch := chars[placements[e.SourceID].CharacterID]
+		case models.CombatEntryCharacter, models.CombatEntryGameCharacter:
+			// Prune above guarantees the character exists.
+			id, _ := combat.EntryCharacterID(e, placementChar)
+			ch := chars[id]
 			ev.Name = ch.Name
 			ev.Avatar = characterTokenAvatar(ch)
 			ev.Killed = ch.Killed

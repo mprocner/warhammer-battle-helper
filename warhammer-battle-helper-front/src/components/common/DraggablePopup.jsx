@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ModalHeader from './ModalHeader';
 import { useManagedWindow, useWindowManager } from '../../contexts/WindowManagerContext';
 
-function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400, initialPosition = 'cascade', windowId = null, windowKind = 'characterSheet', className = '' }) {
+function DraggablePopup({ title, onClose, headerButtons, children, initialWidth = 1400, initialHeight = 800, initialPosition = 'cascade', windowId = null, windowKind = 'characterSheet', className = '' }) {
     const { t } = useTranslation();
     const isManaged = !!windowId;
 
@@ -26,7 +26,7 @@ function DraggablePopup({ title, onClose, headerButtons, children, initialWidth 
     // size is computed first so a centred initial position can be derived from it.
     const [size, setSize] = useState(() => ({
         width: Math.min(initialWidth, window.innerWidth),
-        height: Math.min(800, window.innerHeight)
+        height: Math.min(initialHeight, window.innerHeight)
     }));
     const [position, setPosition] = useState(() => {
         if (initialPosition === 'center') {

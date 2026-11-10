@@ -10,7 +10,7 @@ jest.mock('../../../api/combat', () => ({ startCombat: jest.fn(() => Promise.res
 const live = { round: 2, activeId: 'e1', visibleToPlayers: true, entries: [{ id: 'e1', kind: 'character', name: 'Hero', acted: false, canEndTurn: true }] };
 
 const mountWith = (value) => {
-  const ctx = { ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', run: (fn) => fn(), setWindowOpen: jest.fn(), setStripCollapsed: jest.fn(), ...value };
+  const ctx = { ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', run: (fn) => fn(), openWindow: jest.fn(), setStripCollapsed: jest.fn(), ...value };
   render(<CombatContext.Provider value={ctx}><CombatToolbarButton /></CombatContext.Provider>);
   return ctx;
 };
@@ -22,7 +22,7 @@ test('a player with no combat gets no button', () => {
 });
 
 test('a GM without combat renders exactly one separator before the button', () => {
-  const { container } = render(<CombatContext.Provider value={{ ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', isGM: true, combat: null, run: fn => fn(), setWindowOpen: jest.fn(), setStripCollapsed: jest.fn() }}><CombatToolbarButton /></CombatContext.Provider>);
+  const { container } = render(<CombatContext.Provider value={{ ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', isGM: true, combat: null, run: fn => fn(), openWindow: jest.fn(), setStripCollapsed: jest.fn() }}><CombatToolbarButton /></CombatContext.Provider>);
   expect(container.querySelectorAll('.drawing-toolbar__separator')).toHaveLength(1);
   expect(screen.getByRole('button')).toBeInTheDocument();
 });
@@ -31,7 +31,7 @@ test('GM without combat starts a hidden combat and opens the window', () => {
   const ctx = mountWith({ isGM: true, combat: null });
   fireEvent.click(screen.getByRole('button'));
   expect(startCombat).toHaveBeenCalledWith('g', 's');
-  expect(ctx.setWindowOpen).toHaveBeenCalledWith(true);
+  expect(ctx.openWindow).toHaveBeenCalled();
 });
 
 test('hidden combat shows the hidden state to the GM', () => {

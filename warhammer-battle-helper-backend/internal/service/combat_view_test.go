@@ -76,6 +76,19 @@ func TestCombatViewPlayerMasking(t *testing.T) {
 	}
 }
 
+func TestCombatViewGameCharacterEntry(t *testing.T) {
+	f := newViewFixture()
+	npc := &models.Character{ID: primitive.NewObjectID(), Name: "Bandit", Avatar: "/user-files/bandit.png", Killed: true}
+	f.chars[npc.ID] = npc
+	listed := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryGameCharacter, SourceID: npc.ID, Initiative: 1}
+	f.combat.Entries = append(f.combat.Entries, listed)
+	v := BuildCombatView(f.combat, f.scene, f.chars, primitive.NewObjectID(), true)
+	got := v.Entries[len(v.Entries)-1]
+	if got.Name != "Bandit" || got.Avatar != "/user-files/bandit.png" || !got.Killed || got.SourceID != npc.ID.Hex() {
+		t.Fatalf("list entry resolves name/avatar/killed from the character: %+v", got)
+	}
+}
+
 func TestCombatViewHiddenTrackerIsNilForPlayers(t *testing.T) {
 	f := newViewFixture()
 	f.combat.VisibleToPlayers = false

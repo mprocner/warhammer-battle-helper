@@ -55,7 +55,16 @@ func TestAuthorizeEndTurn(t *testing.T) {
 	if err := authorizeEndTurn(ctx, c, manual.ID); !errors.Is(err, ErrCombatForbidden) {
 		t.Fatalf("manual entry for a player: %v", err)
 	}
+	// A character joined from the list (not placed on this scene) ends its turn the same way.
+	listed := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryGameCharacter, SourceID: hero.ID}
+	c.Entries = append(c.Entries, listed)
+	if err := authorizeEndTurn(ctx, c, listed.ID); err != nil {
+		t.Fatalf("card holder, list entry: %v", err)
+	}
 	ctx.userID = stranger
+	if err := authorizeEndTurn(ctx, c, listed.ID); !errors.Is(err, ErrCombatForbidden) {
+		t.Fatalf("stranger, list entry: %v", err)
+	}
 	if err := authorizeEndTurn(ctx, c, heroE.ID); !errors.Is(err, ErrCombatForbidden) {
 		t.Fatalf("stranger: %v", err)
 	}
@@ -73,28 +82,42 @@ func TestBuildEntryFromSource(t *testing.T) {
 	img := models.SceneImage{ID: primitive.NewObjectID(), FileName: "dire-wolf.png", Layer: "tokens"}
 	scene := &models.Scene{Characters: []models.GameCharacter{placement}, Images: []models.SceneImage{img}}
 
-	e, err := buildEntry(scene, models.CombatSourceRequest{Kind: "character", SourceID: placement.ID.Hex(), Initiative: 12})
+	e, err := buildEntry(scene, nil, models.CombatSourceRequest{Kind: "character", SourceID: placement.ID.Hex(), Initiative: 12})
 	if err != nil || e.SourceID != placement.ID || !e.Hidden || e.Initiative != 12 {
 		t.Fatalf("character: %+v %v (a hidden token starts as a hidden entry)", e, err)
 	}
-	e, err = buildEntry(scene, models.CombatSourceRequest{Kind: "image", SourceID: img.ID.Hex()})
+	e, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "image", SourceID: img.ID.Hex()})
 	if err != nil || e.Name != "dire-wolf" {
 		t.Fatalf("image name defaults to the file name without extension: %+v %v", e, err)
 	}
-	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "image", SourceID: primitive.NewObjectID().Hex()}); !errors.Is(err, ErrCombatInvalid) {
+	if _, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "image", SourceID: primitive.NewObjectID().Hex()}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("image from another scene: %v", err)
 	}
 	bg := models.SceneImage{ID: primitive.NewObjectID(), FileName: "map.jpg", Layer: "background"}
 	scene.Images = append(scene.Images, bg)
-	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "image", SourceID: bg.ID.Hex()}); !errors.Is(err, ErrCombatInvalid) {
+	if _, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "image", SourceID: bg.ID.Hex()}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("image outside the tokens layer: %v", err)
 	}
-	if _, err = buildEntry(scene, models.CombatSourceRequest{Kind: "manual", Name: "   "}); !errors.Is(err, ErrCombatInvalid) {
+	if _, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "manual", Name: "   "}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("blank manual name: %v", err)
 	}
-	e, err = buildEntry(scene, models.CombatSourceRequest{Kind: "manual", Name: " Trap ", Initiative: 3})
+	e, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "manual", Name: " Trap ", Initiative: 3})
 	if err != nil || e.Name != "Trap" || !e.SourceID.IsZero() {
 		t.Fatalf("manual: %+v %v", e, err)
+	}
+}
+
+func TestBuildEntryFromGameCharacter(t *testing.T) {
+	npc := &models.Character{ID: primitive.NewObjectID(), IsNPC: true}
+	chars := map[primitive.ObjectID]*models.Character{npc.ID: npc}
+	scene := &models.Scene{} // not placed on the map: joins from the character list
+
+	e, err := buildEntry(scene, chars, models.CombatSourceRequest{Kind: "gameCharacter", SourceID: npc.ID.Hex(), Initiative: 7})
+	if err != nil || e.SourceID != npc.ID || e.Initiative != 7 || e.Hidden {
+		t.Fatalf("gameCharacter: %+v %v", e, err)
+	}
+	if _, err = buildEntry(scene, chars, models.CombatSourceRequest{Kind: "gameCharacter", SourceID: primitive.NewObjectID().Hex()}); !errors.Is(err, ErrCombatInvalid) {
+		t.Fatalf("character from another game: %v", err)
 	}
 }
 
