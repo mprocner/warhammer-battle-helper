@@ -100,9 +100,9 @@ export default function TokenSlotConfigModal({
 
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth
-      PaperProps={{ sx: { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' } }}
+      PaperProps={{ sx: { background: 'linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%)', border: '1.5px solid var(--c-border-strong)' } }}
       onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#3a2f1f', fontFamily: 'Cinzel, serif' }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--c-text)', fontFamily: 'var(--font-display)' }}>
         {titleLabel}
         <IconButton onClick={onCancel} size="small"><CloseIcon /></IconButton>
       </DialogTitle>
@@ -133,7 +133,7 @@ export default function TokenSlotConfigModal({
           <Box>
             {presetConditions.length > 0 && (
               <>
-                <Typography sx={{ fontSize: '0.8rem', color: '#7a5c42', mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.8rem', color: 'var(--c-label)', mb: 0.5 }}>
                   {t('creator.tokenDisplay.slot.iconPresets')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
@@ -143,7 +143,7 @@ export default function TokenSlotConfigModal({
                     return (
                       <IconButton key={p.key} size="small" onClick={() => pickPreset(p)}
                         title={t(p.labelKey)}
-                        sx={{ border: active ? '2px solid #c9975b' : '1px solid #c4a882', background: active ? 'rgba(201,151,91,0.2)' : '#fff9f0', color: '#3a2f1f' }}>
+                        sx={{ border: active ? '2px solid #c9975b' : '1px solid #c4a882', background: active ? 'rgba(201,151,91,0.2)' : '#fff9f0', color: 'var(--c-text)' }}>
                         {Ico ? <Ico sx={{ fontSize: 18 }} /> : null}
                       </IconButton>
                     );
@@ -151,7 +151,7 @@ export default function TokenSlotConfigModal({
                 </Box>
               </>
             )}
-            <Typography sx={{ fontSize: '0.8rem', color: '#7a5c42', mb: 0.5 }}>
+            <Typography sx={{ fontSize: '0.8rem', color: 'var(--c-label)', mb: 0.5 }}>
               {t('creator.tokenDisplay.slot.iconBrowseAll')}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 140, overflowY: 'auto', mb: 1.5 }}>
@@ -161,7 +161,7 @@ export default function TokenSlotConfigModal({
                 return (
                   <IconButton key={name} size="small" onClick={() => pickCustomIcon(name)}
                     title={name}
-                    sx={{ border: active ? '2px solid #c9975b' : '1px solid #c4a882', background: active ? 'rgba(201,151,91,0.2)' : '#fff9f0', color: '#3a2f1f' }}>
+                    sx={{ border: active ? '2px solid #c9975b' : '1px solid #c4a882', background: active ? 'rgba(201,151,91,0.2)' : '#fff9f0', color: 'var(--c-text)' }}>
                     <Ico sx={{ fontSize: 18 }} />
                   </IconButton>
                 );
@@ -217,7 +217,7 @@ export default function TokenSlotConfigModal({
             {parsedOptions.length > 0 && (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
                 {parsedOptions.map((o, i) => (
-                  <Box key={i} sx={{ px: 1, py: 0.25, border: '1px solid #c4a882', borderRadius: 1, background: '#fff9f0', fontSize: '0.8rem', color: '#3a2f1f' }}>{o}</Box>
+                  <Box key={i} sx={{ px: 1, py: 0.25, border: '1px solid var(--c-border)', borderRadius: 1, background: 'var(--c-input-bg)', fontSize: '0.8rem', color: 'var(--c-text)' }}>{o}</Box>
                 ))}
               </Box>
             )}
@@ -226,16 +226,16 @@ export default function TokenSlotConfigModal({
 
         {allowHidden && type !== 'empty' && (
           <FormControlLabel
-            sx={{ mt: 2, color: '#3a2f1f' }}
+            sx={{ mt: 2, color: 'var(--c-text)' }}
             control={<Switch checked={!hidden} onChange={e => setHidden(!e.target.checked)} />}
             label={t('imageToken.visibleToPlayers')}
           />
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel} sx={{ color: '#7a5c42' }}>{t('common.cancel')}</Button>
+        <Button onClick={onCancel} sx={{ color: 'var(--c-label)' }}>{t('common.cancel')}</Button>
         <Button onClick={handleSave} disabled={!canSave} variant="contained"
-          sx={{ background: '#7a5c42', '&:hover': { background: '#5a4230' } }}>
+          sx={{ background: 'var(--c-leather-bg)', '&:hover': { background: 'var(--c-leather-bg)' } }}>
           {t('common.save')}
         </Button>
       </DialogActions>

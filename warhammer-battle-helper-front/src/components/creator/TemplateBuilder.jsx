@@ -482,7 +482,7 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
 
   return (
     <div className="creator__roll-config">
-      <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'calc(0.05em * var(--tracking-k))' }}>
         {t('creator.rollMechanics')}
       </Typography>
 
@@ -511,8 +511,8 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
       {rollMode === 'traditional' ? (
         <>
           <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-            <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
-            <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+            <InputLabel sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>{t('creator.rollSuccessCondition')}</InputLabel>
+            <Select value={config.successType || 'below_threshold'} label={t('creator.rollSuccessCondition')} onChange={e => up({ successType: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>
               <MenuItem value="below_threshold">{t('creator.rollBelowThreshold')}</MenuItem>
               <MenuItem value="above_threshold">{t('creator.rollAboveThreshold')}</MenuItem>
               <MenuItem value="raw">{t('creator.rollRaw')}</MenuItem>
@@ -532,8 +532,8 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
       ) : (
         <>
           <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-            <InputLabel sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.dicePoolSuccessCondition')}</InputLabel>
-            <Select value={config.poolSuccessCondition || 'gte'} label={t('creator.dicePoolSuccessCondition')} onChange={e => up({ poolSuccessCondition: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>
+            <InputLabel sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>{t('creator.dicePoolSuccessCondition')}</InputLabel>
+            <Select value={config.poolSuccessCondition || 'gte'} label={t('creator.dicePoolSuccessCondition')} onChange={e => up({ poolSuccessCondition: e.target.value })} MenuProps={POPUP_MENU_PROPS} sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>
               <MenuItem value="gte">{t('creator.dicePoolConditionGte')}</MenuItem>
               <MenuItem value="eq">{t('creator.dicePoolConditionEq')}</MenuItem>
             </Select>
@@ -546,7 +546,7 @@ function RollConfigEditor({ config, onChange, numberFields, numericFields, field
             value={config.poolSuccessThreshold ?? 6}
             onChange={e => up({ poolSuccessThreshold: parseInt(e.target.value, 10) || 1 })}
             sx={{ mb: 1 }}
-            InputProps={{ sx: { fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }, inputProps: { min: 1 } }}
+            InputProps={{ sx: { fontFamily: 'var(--font-body)', fontSize: '0.85rem' }, inputProps: { min: 1 } }}
           />
         </>
       )}
@@ -598,7 +598,7 @@ function FlagSwitch({ field, flag, meta, onChange, showTooltip, hideTooltip, t }
     <FormControlLabel
       labelPlacement="start"
       control={<Switch size="small" checked={checked} disabled={disabled} onChange={e => write(e.target.checked)} />}
-      label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t(meta.labelKey)}</Typography>}
+      label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t(meta.labelKey)}</Typography>}
       sx={switchRowSx}
     />
   );
@@ -679,7 +679,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
           helperText={field.type === 'label' ? t('creator.labelInternalNameHint') : undefined}
           value={field.label}
           onChange={e => up({ label: e.target.value })}
-          sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+          sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'var(--font-body)' } }} />
 
         {field.type === 'label' && (
           <>
@@ -688,9 +688,9 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               helperText={t('creator.labelTextHint')}
               value={field.text || ''}
               onChange={e => up({ text: e.target.value })}
-              sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+              sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'var(--font-body)' } }} />
 
-            <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'calc(0.05em * var(--tracking-k))' }}>
               {t('creator.labelColor')}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
@@ -727,14 +727,14 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
           <TextField size="small" fullWidth label={t('creator.fieldAbbr')} value={field.abbr || ''}
             onChange={e => up({ abbr: e.target.value })}
             helperText={t('creator.fieldAbbrHint')}
-            sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }} />
+            sx={{ mb: 1.5 }} InputProps={{ sx: { fontFamily: 'var(--font-body)' } }} />
         )}
 
         {SHORT_CARD_TYPES.includes(field.type) && (
           <FormControlLabel
             labelPlacement="start"
             control={<Switch checked={!!field.showOnShortCard} onChange={e => up({ showOnShortCard: e.target.checked })} size="small" />}
-            label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
+            label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.showOnShortCard')}</Typography>}
             sx={switchRowSx}
           />
         )}
@@ -748,8 +748,8 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               visible cause. Truncate to an integer here so that can never happen. */}
           {(field.type === 'attr' || field.type === 'number') && (
             <div className="creator__props-duo" style={{ marginBottom: 10 }}>
-              <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
-              <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+              <TextField size="small" label="Min" type="number" value={field.min ?? ''} onChange={e => up({ min: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'var(--font-body)' }, inputProps: { step: 1 } }} />
+              <TextField size="small" label="Max" type="number" value={field.max ?? ''} onChange={e => up({ max: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'var(--font-body)' }, inputProps: { step: 1 } }} />
             </div>
           )}
 
@@ -769,7 +769,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
             <div className={field.type === 'attr_table' ? undefined : 'creator__props-duo'} style={{ marginBottom: 10 }}>
               {/* Per-row defaults of an attr_table live in its row editor. */}
               {field.type !== 'attr_table' && (
-                <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }} />
+                <TextField size="small" label={t('creator.fieldDefault')} type="number" value={field.default ?? ''} onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })} InputProps={{ sx: { fontFamily: 'var(--font-body)' }, inputProps: { step: 1 } }} />
               )}
               <TextField
                 size="small"
@@ -788,7 +788,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                   const clamped = field.step == null || field.step < 1 ? 1 : field.step;
                   if (clamped !== field.step) up({ step: clamped });
                 }}
-                InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1, min: 1 } }}
+                InputProps={{ sx: { fontFamily: 'var(--font-body)' }, inputProps: { step: 1, min: 1 } }}
               />
             </div>
           )}
@@ -798,7 +798,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               <FormControlLabel
                 labelPlacement="start"
                 control={<Switch checked={!!field.hasAdvances} onChange={e => up({ hasAdvances: e.target.checked })} size="small" />}
-                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
+                label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
                 sx={switchRowSx}
               />
               {field.hasAdvances && (
@@ -809,7 +809,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                   value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
                   onChange={e => up({ advancesLabel: e.target.value })}
                   sx={{ mt: 1 }}
-                  InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+                  InputProps={{ sx: { fontFamily: 'var(--font-body)' } }}
                 />
               )}
             </>
@@ -820,7 +820,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               <FormControlLabel
                 labelPlacement="start"
                 control={<Switch checked={!!field.hasAdvances} onChange={e => up(clearDependentFlags(field, { hasAdvances: e.target.checked }))} size="small" />}
-                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
+                label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.fieldAdvances')}</Typography>}
                 sx={switchRowSx}
               />
               {field.hasAdvances && (
@@ -831,7 +831,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                   value={field.advancesLabel ?? t('creator.fieldAdvancesDefault')}
                   onChange={e => up({ advancesLabel: e.target.value })}
                   sx={{ mt: 1 }}
-                  InputProps={{ sx: { fontFamily: 'Crimson Text, serif' } }}
+                  InputProps={{ sx: { fontFamily: 'var(--font-body)' } }}
                 />
               )}
             </>
@@ -856,7 +856,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
             type="number"
             value={field.default ?? ''}
             onChange={e => up({ default: e.target.value === '' ? null : Math.trunc(Number(e.target.value)) })}
-            InputProps={{ sx: { fontFamily: 'Crimson Text, serif' }, inputProps: { step: 1 } }}
+            InputProps={{ sx: { fontFamily: 'var(--font-body)' }, inputProps: { step: 1 } }}
             sx={{ mb: 1.5 }}
           />
           <FormulaBuilder
@@ -890,7 +890,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
                   onChange={e => up(clearDependentFlags(field, { assignAttrToSkill: e.target.checked }))}
                 />
               }
-              label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
+              label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.fieldAssignAttr')}</Typography>}
               sx={{ ...switchRowSx, mb: 1 }}
             />
           )}
@@ -929,7 +929,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               />
 
               <Divider sx={{ my: 1.5 }} />
-              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'calc(0.05em * var(--tracking-k))' }}>
                 {t('creator.damageFormula')}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75, fontStyle: 'italic' }}>
@@ -1001,7 +1001,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
             <FormControlLabel
               labelPlacement="start"
               control={<Switch checked={!!field.playerCanAddSkills} onChange={e => up({ playerCanAddSkills: e.target.checked })} size="small" />}
-              label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.playerCanAddSkills')}</Typography>}
+              label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.playerCanAddSkills')}</Typography>}
               sx={switchRowSx}
             />
           )}
@@ -1009,7 +1009,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
           {field.type === 'skill_tree' && field.tree && (
             <>
               <Divider sx={{ my: 1.5 }} />
-              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'calc(0.05em * var(--tracking-k))' }}>
                 {t('creator.treeStructure')}
               </Typography>
               <SkillTreeEditor tree={field.tree} onChange={tree => up({ tree })} numberFields={numberFields} assignAttrToSkill={!!field.assignAttrToSkill} />
@@ -1025,7 +1025,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
               <FormControlLabel
                 labelPlacement="start"
                 control={<Switch checked={!!field.rollable} onChange={e => up({ rollable: e.target.checked, rollConfig: e.target.checked ? (field.rollConfig || defaultRollConfig()) : null })} size="small" />}
-                label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem' }}>{t('creator.rollable')}</Typography>}
+                label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem' }}>{t('creator.rollable')}</Typography>}
                 sx={switchRowSx}
               />
               {field.rollable && field.rollConfig && (
@@ -1036,7 +1036,7 @@ export function PropertyPanel({ field, onChange, onDelete, numberFields, numeric
 
           {field.type === 'weapons_table' && (
             <>
-              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <Typography variant="caption" sx={{ color: 'primary.main', display: 'block', mb: 0.75, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'calc(0.05em * var(--tracking-k))' }}>
                 {t('creator.weaponAttackRoll')}
               </Typography>
               <RollConfigEditor
@@ -1078,11 +1078,11 @@ function SectionPropertyPanel({ section, onChange, onDelete, index, siblingCount
         value={section.title}
         onChange={e => onChange({ title: e.target.value })}
         sx={{ mb: 2 }}
-        InputProps={{ sx: { fontFamily: 'Cinzel, serif', fontSize: '0.95rem' } }}
+        InputProps={{ sx: { fontFamily: 'var(--font-display)', fontSize: '0.95rem' } }}
       />
 
       <div style={{ marginBottom: 16 }}>
-        <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 0.75, fontSize: '0.8rem' }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: 'calc(0.08em * var(--tracking-k))', textTransform: 'uppercase', color: 'text.secondary', display: 'block', mb: 0.75, fontSize: '0.8rem' }}>
           {t('creator.sectionColumns')}
         </Typography>
         <div className="creator__layout-options">
@@ -1842,7 +1842,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
         released while a tour runs rather than left to decide whether the tour's focus is inside.
         Escape is the tour's own "close", so the dialog ignores Escape while a tour runs. */}
     <Dialog open fullScreen onClose={handleDialogEscape} disableEnforceFocus={tourRunning} disableEscapeKeyDown={tourRunning}
-      PaperProps={{ sx: { background: 'linear-gradient(160deg, #f4e8d8 0%, #ede0ce 100%)' } }}>
+      PaperProps={{ sx: { background: 'linear-gradient(160deg, var(--c-surface) 0%, var(--c-surface-sunken) 100%)' } }}>
 
       {/* Top bar */}
       <DialogTitle sx={{ p: 0, borderBottom: '2px solid', borderColor: 'primary.light' }}>
@@ -1854,7 +1854,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
               value={name}
               onChange={e => setNameAndSave(e.target.value)}
               placeholder={t('creator.templateName')}
-              InputProps={{ disableUnderline: false, sx: { fontFamily: 'Cinzel, serif', fontSize: '1.1rem', fontWeight: 700, color: 'primary.main' } }}
+              InputProps={{ disableUnderline: false, sx: { fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 700, color: 'primary.main' } }}
               sx={{ maxWidth: 320 }}
             />
           </Box>
@@ -1880,7 +1880,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             )}
           </nav>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-            <Typography className="creator__status" variant="caption" sx={{ color: 'text.secondary', fontFamily: 'Crimson Text, serif' }}>
+            <Typography className="creator__status" variant="caption" sx={{ color: 'text.secondary', fontFamily: 'var(--font-body)' }}>
               {sectionCount} {t('creator.sections')} · {totalFieldCount} {t('creator.fields')}
             </Typography>
             {!isVariant && activeTab === 'fields' && (
@@ -1896,7 +1896,7 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
             {isSaving
               ? <HourglassEmptyIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               : saveSuccess
-              ? <Chip icon={<CheckIcon />} label={t('common.saved')} size="small" color="success" variant="outlined" sx={{ fontFamily: 'Crimson Text, serif' }} />
+              ? <Chip icon={<CheckIcon />} label={t('common.saved')} size="small" color="success" variant="outlined" sx={{ fontFamily: 'var(--font-body)' }} />
               : null}
             <CreatorTourButton tourId={CREATOR_TAB_TOURS[activeTab]} />
             <IconButton onClick={handleClose} size="small">
@@ -1938,13 +1938,13 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
                     max={SHEET_WIDTH_MAX}
                     step={SHEET_WIDTH_STEP}
                     onChange={(_, value) => updateSettings({ sheetWidth: value })}
-                    sx={{ color: '#c9975b' }}
+                    sx={{ color: 'var(--c-text-accent)' }}
                   />
-                  <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.95rem', color: '#3a2f1f', whiteSpace: 'nowrap', minWidth: 72, textAlign: 'right' }}>
+                  <Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--c-text)', whiteSpace: 'nowrap', minWidth: 72, textAlign: 'right' }}>
                     {t('creator.general.sheetWidthValue', { width: clampSheetWidth(settings.sheetWidth) })}
                   </Typography>
                 </Box>
-                <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
+                <Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'text.secondary', mt: 0.5 }}>
                   {t('creator.general.sheetWidthNote')}
                 </Typography>
               </div>
@@ -2085,8 +2085,8 @@ function TemplateBuilder({ template, token, onClose, onTemplateUpdated }) {
           )}
           {sections.length === 0 ? (
             <div className="creator__canvas-empty">
-              <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: '#7a5c42' }} />
-              <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '1.1rem', fontStyle: 'italic', opacity: 0.5, color: '#3d2b1a' }}>
+              <AccountTreeIcon sx={{ fontSize: 48, opacity: 0.2, mb: 1, color: 'var(--c-label)' }} />
+              <Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', fontStyle: 'italic', opacity: 0.5, color: 'var(--c-text-deep)' }}>
                 {t('creator.canvasStart')}
               </Typography>
               <button className="creator__add-section-btn" style={{ marginTop: 24 }} onClick={e => { e.stopPropagation(); addSection(); }}>

@@ -130,7 +130,7 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
             <table className="skills-table">
                 <thead>
                     <tr>
-                        <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: '#c9975b', verticalAlign: 'middle' }} /></th>
+                        <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: 'var(--c-text-accent)', verticalAlign: 'middle' }} /></th>
                         <th>{t('characterSheet.name')}</th>
                         <th style={{ width: '70px' }}>{t('characterSheet.group')}</th>
                         <th style={{ width: '50px' }}>{t('characterSheet.enc')}</th>
@@ -150,8 +150,8 @@ function WeaponsSection({ character, setCharacter, scheduleAutoSave, onCharacter
                                     title={weapon.isFavourite ? t('characterSheet.removeFromFavorites') : t('characterSheet.addToFavorites')}
                                 >
                                     {weapon.isFavourite
-                                        ? <StarIcon style={{ fontSize: 16, color: '#c9975b' }} />
-                                        : <StarBorderIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                        ? <StarIcon style={{ fontSize: 16, color: 'var(--c-text-accent)' }} />
+                                        : <StarBorderIcon style={{ fontSize: 16, color: 'var(--c-text-accent)' }} />
                                     }
                                 </span>
                             </td>

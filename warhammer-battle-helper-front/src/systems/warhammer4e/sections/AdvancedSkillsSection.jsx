@@ -174,7 +174,7 @@ function AdvancedSkillsSection({ character, setCharacter, scheduleAutoSave, onCh
                 <table className="skills-table">
                     <thead>
                         <tr>
-                            <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: '#c9975b', verticalAlign: 'middle' }} /></th>
+                            <th style={{ width: '30px' }}><StarIcon style={{ fontSize: 14, color: 'var(--c-text-accent)', verticalAlign: 'middle' }} /></th>
                             <th>{t('characterSheet.name')}</th>
                             <th style={{ width: '50px' }}>{t('characterSheet.char')}</th>
                             <th style={{ width: '50px' }}>{t('characterSheet.adv')}</th>
@@ -198,8 +198,8 @@ function AdvancedSkillsSection({ character, setCharacter, scheduleAutoSave, onCh
                                             title={isFavorite ? t('characterSheet.removeFromFavorites') : t('characterSheet.addToFavorites')}
                                         >
                                             {isFavorite
-                                                ? <StarIcon style={{ fontSize: 16, color: '#c9975b' }} />
-                                                : <StarBorderIcon style={{ fontSize: 16, color: '#c9975b' }} />
+                                                ? <StarIcon style={{ fontSize: 16, color: 'var(--c-text-accent)' }} />
+                                                : <StarBorderIcon style={{ fontSize: 16, color: 'var(--c-text-accent)' }} />
                                             }
                                         </span>
                                     </td>

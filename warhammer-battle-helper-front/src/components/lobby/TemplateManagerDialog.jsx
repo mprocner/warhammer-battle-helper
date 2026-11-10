@@ -92,7 +92,7 @@ function TemplateManagerDialog({ open, templates, onClose, onCreateTemplate, onE
             <List dense>
               {templates.map(tpl => (
                 <ListItem key={tpl.id} disablePadding
-                  sx={{ borderRadius: 1, mb: 0.5, border: '1px solid', borderColor: 'primary.light', background: 'rgba(255,255,255,0.4)', pr: 1 }}
+                  sx={{ borderRadius: 1, mb: 0.5, border: '1px solid', borderColor: 'primary.light', background: 'rgb(var(--c-highlight-rgb) / 0.4)', pr: 1 }}
                   secondaryAction={
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <IconButton size="small" onClick={() => setPreviewing(tpl)}

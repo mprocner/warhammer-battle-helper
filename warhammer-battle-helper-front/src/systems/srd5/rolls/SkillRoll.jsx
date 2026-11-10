@@ -117,7 +117,7 @@ function Srd5SkillRoll({ data, timestamp }) {
             <span className="srd-log-roll-breakdown--crit"> — {t('srd.nat20')}</span>
           )}
           {!hasDC && isNat1 && (
-            <span style={{ color: 'var(--color-danger, #c0392b)' }}> — {t('srd.nat1')}</span>
+            <span style={{ color: 'var(--c-text-danger)' }}> — {t('srd.nat1')}</span>
           )}
         </div>
 

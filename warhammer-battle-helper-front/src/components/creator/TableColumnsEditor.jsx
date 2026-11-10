@@ -120,7 +120,7 @@ function TableColumnsEditor({ columns, onChange, columnTypes, allowSkillColumn =
                 {allowSkillColumn && (
                   <FormControlLabel
                     control={<Switch size="small" checked={!!col.optionsFromSkills} onChange={e => update(i, { optionsFromSkills: e.target.checked })} />}
-                    label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.weaponColFromSkills')}</Typography>}
+                    label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>{t('creator.weaponColFromSkills')}</Typography>}
                     sx={{ display: 'block' }}
                   />
                 )}

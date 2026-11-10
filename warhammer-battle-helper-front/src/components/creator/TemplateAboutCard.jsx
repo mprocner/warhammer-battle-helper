@@ -23,11 +23,11 @@ function TemplateAboutCard({ description, language, onChange }) {
           {TEMPLATE_LANGUAGES.map(code => <MenuItem key={code} value={code}>{t(`languages.${code}`)}</MenuItem>)}
         </TextField>
         {!language && (
-          <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
+          <Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'text.secondary', mb: 1 }}>
             {t('creator.about.languageMissing')}
           </Typography>
         )}
-        <Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.9rem', color: '#7a5c42', mb: 0.5 }}>
+        <Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--c-label)', mb: 0.5 }}>
           {t('creator.about.description')}
         </Typography>
         <RichTextEditor className="creator__about-editor" value={description} onChange={html => onChange({ description: html })} />

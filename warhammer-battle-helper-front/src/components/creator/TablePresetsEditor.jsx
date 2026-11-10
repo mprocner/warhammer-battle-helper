@@ -74,7 +74,7 @@ function TablePresetsEditor({ columns, presets, onChange, skillOptions = [], ico
                 addOnCreate={(
                   <FormControlLabel
                     control={<Switch size="small" checked={!!preset.addOnCreate} onChange={e => update(i, { addOnCreate: e.target.checked })} />}
-                    label={<Typography sx={{ fontFamily: 'Crimson Text, serif', fontSize: '0.85rem' }}>{t('creator.tablePresetAddOnCreate')}</Typography>}
+                    label={<Typography sx={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>{t('creator.tablePresetAddOnCreate')}</Typography>}
                   />
                 )}
                 remove={(

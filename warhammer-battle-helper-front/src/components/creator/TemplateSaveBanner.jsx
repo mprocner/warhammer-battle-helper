@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button } from '@mui/material';
 
-const FONT = { fontFamily: 'Crimson Text, serif' };
+const FONT = { fontFamily: 'var(--font-body)' };
 
 // Shown when the creator stopped autosaving: somebody else saved first (conflict) the user
 // lost edit access (forbidden) or the template vanished (gone). Nothing is saved or discarded until the user picks an action.

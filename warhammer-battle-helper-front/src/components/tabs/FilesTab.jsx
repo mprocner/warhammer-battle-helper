@@ -753,19 +753,19 @@ const FilesTab = ({ token, gameId, currentSceneId, imageEditLayer = 'background'
           <div className="files-tab__modal-overlay" onClick={() => setAddToSceneFile(null)}>
             <div className="files-tab__modal" onClick={(e) => e.stopPropagation()}>
               <h4>{t('scenes.addToScene')}</h4>
-              <p style={{ fontSize: 12, color: '#7a5c42', margin: '4px 0 8px' }}>
+              <p style={{ fontSize: 12, color: 'var(--c-label)', margin: '4px 0 8px' }}>
                 {addToSceneFile.name}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#7a5c42' }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-label)' }}>
                   {t('scenes.layer')}
                 </label>
                 <select
                   value={addToSceneLayer}
                   onChange={(e) => setAddToSceneLayer(e.target.value)}
                   style={{
-                    padding: '4px 8px', border: '1px solid #d4a574',
-                    borderRadius: 3, background: '#faf3e8', fontSize: 12
+                    padding: '4px 8px', border: '1px solid var(--c-border-light)',
+                    borderRadius: 3, background: 'var(--c-surface-raised)', fontSize: 12
                   }}
                 >
                   <option value="background">{t('scenes.backgroundLayer')}</option>

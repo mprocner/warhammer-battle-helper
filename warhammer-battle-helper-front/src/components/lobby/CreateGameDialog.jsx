@@ -21,7 +21,7 @@ const templateIdOf = (value) => value.slice(CUSTOM_PREFIX.length);
 
 const subheaderSx = {
   fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: '0.75rem',
-  letterSpacing: '0.12em', textTransform: 'uppercase',
+  letterSpacing: 'calc(0.12em * var(--tracking-k))', textTransform: 'uppercase',
   color: 'primary.main', lineHeight: 2.4, background: 'transparent',
 };
 
@@ -203,7 +203,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
                   </Box>
                   {opt.language && (
                     <Typography component="span" className="create-game__option-lang"
-                      sx={{ fontFamily: BODY_FONT, fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', color: '#7a5c42' }}>
+                      sx={{ fontFamily: BODY_FONT, fontSize: '0.75rem', fontWeight: 600, letterSpacing: 'calc(0.08em * var(--tracking-k))', color: 'var(--c-label)' }}>
                       {opt.language.toUpperCase()}
                     </Typography>
                   )}
@@ -246,7 +246,7 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
 
         {selectedOption?.description && (
           <Box className="create-game__selected-about"
-            sx={{ mt: 1.5, p: 1.5, borderRadius: 1, border: '1px solid', borderColor: 'primary.light', background: 'rgba(255,255,255,0.4)' }}>
+            sx={{ mt: 1.5, p: 1.5, borderRadius: 1, border: '1px solid', borderColor: 'primary.light', background: 'rgb(var(--c-highlight-rgb) / 0.4)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <Typography sx={{ fontFamily: DISPLAY_FONT, fontWeight: 600, color: 'primary.main' }}>{selectedOption.label}</Typography>
               {selectedOption.language && (
@@ -285,12 +285,12 @@ function CreateGameDialog({ open, loading, templates, onClose, onCreate, onOpenC
             startIcon={<TuneIcon sx={{ fontSize: 18 }} />}
             sx={{
               fontFamily: BODY_FONT, textTransform: 'none', fontWeight: 600, fontSize: '0.9rem',
-              letterSpacing: 'normal', color: '#7a5c42', px: 1.75, py: 0.5, minWidth: 0,
-              borderRadius: '6px', border: '1.5px solid rgba(201, 151, 91, 0.55)',
-              backgroundColor: 'rgba(201, 151, 91, 0.12)', boxShadow: 'none',
+              letterSpacing: 'normal', color: 'var(--c-label)', px: 1.75, py: 0.5, minWidth: 0,
+              borderRadius: 'var(--radius-lg)', border: '1.5px solid rgb(var(--c-accent-rgb) / 0.55)',
+              backgroundColor: 'rgb(var(--c-accent-rgb) / 0.12)', boxShadow: 'none',
               transition: 'background-color 0.15s ease, border-color 0.15s ease',
               '& .MuiButton-startIcon': { marginRight: 0.75, marginLeft: -0.25 },
-              '&:hover': { backgroundColor: 'rgba(201, 151, 91, 0.22)', borderColor: '#c9975b', boxShadow: 'none', transform: 'none' },
+              '&:hover': { backgroundColor: 'rgb(var(--c-accent-rgb) / 0.22)', borderColor: 'var(--c-border-accent)', boxShadow: 'none', transform: 'none' },
               '&:active': { transform: 'none', boxShadow: 'none' },
             }}>
             {t('creator.designYours')}

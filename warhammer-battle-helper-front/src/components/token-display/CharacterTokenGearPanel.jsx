@@ -137,37 +137,37 @@ export default function CharacterTokenGearPanel({
     }
   };
 
-  const paperSx = { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' };
-  const headSx = { fontSize: '0.8rem', color: '#7a5c42', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 };
-  const hintSx = { fontSize: '0.875rem', color: '#7a5c42', mb: 1 };
-  const sub = (txt) => <Typography sx={{ fontSize: '0.72rem', color: '#7a5c42', fontWeight: 700, textTransform: 'uppercase', mt: 1, mb: 0.5 }}>{txt}</Typography>;
+  const paperSx = { background: 'linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%)', border: '1.5px solid var(--c-border-strong)' };
+  const headSx = { fontSize: '0.8rem', color: 'var(--c-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 };
+  const hintSx = { fontSize: '0.875rem', color: 'var(--c-label)', mb: 1 };
+  const sub = (txt) => <Typography sx={{ fontSize: '0.72rem', color: 'var(--c-label)', fontWeight: 700, textTransform: 'uppercase', mt: 1, mb: 0.5 }}>{txt}</Typography>;
 
   return (
     <>
       <Dialog open onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: paperSx }}
         onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#3a2f1f', fontFamily: 'Cinzel, serif' }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--c-text)', fontFamily: 'var(--font-display)' }}>
           {t('token.gear.title', { name: character?.basicInfo?.name || character?.name || '' })}
           <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent>
           {/* Blueprint strip */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, py: 0.5, borderBottom: '1px solid #c4a882', mb: 1 }}>
-            <Typography sx={{ fontSize: '0.78rem', color: '#7a5c42' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, py: 0.5, borderBottom: '1px solid var(--c-border)', mb: 1 }}>
+            <Typography sx={{ fontSize: '0.78rem', color: 'var(--c-label)' }}>
               🔗 {t('token.gear.blueprintStrip', { system: systemLabel || gameSystem })}
             </Typography>
             {onEditBlueprint && (
               <Button size="small" endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />} onClick={onEditBlueprint}
                 onMouseEnter={(e) => showTooltip(t('token.gear.editBlueprintHint'), e.currentTarget)} onMouseLeave={hideTooltip}
-                sx={{ color: '#7a5c42', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                sx={{ color: 'var(--c-label)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
                 {t('token.gear.editBlueprint')}
               </Button>
             )}
           </Box>
 
           {tokenHidden && (
-            <Box sx={{ background: 'rgba(181,72,47,0.1)', border: '1px solid #b5482f', borderRadius: '4px', p: 1, mb: 1.5 }}>
-              <Typography sx={{ fontSize: '0.75rem', color: '#8a3320' }}>⚠ {t('token.gear.hiddenTokenWarning')}</Typography>
+            <Box sx={{ background: 'rgb(var(--c-danger-rgb) / 0.1)', border: '1px solid var(--c-border-danger)', borderRadius: 'var(--radius-md)', p: 1, mb: 1.5 }}>
+              <Typography sx={{ fontSize: '0.75rem', color: 'var(--c-text-danger-dark)' }}>⚠ {t('token.gear.hiddenTokenWarning')}</Typography>
             </Box>
           )}
 
@@ -181,12 +181,12 @@ export default function CharacterTokenGearPanel({
             const manual = !bar.field;
             return (
               <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75, pl: 0.5 }}>
-                <DesignServicesIcon sx={{ fontSize: 16, color: '#a89272' }}
+                <DesignServicesIcon sx={{ fontSize: 16, color: 'var(--c-text-muted)' }}
                   onMouseEnter={(e) => showTooltip(t('token.gear.inheritedTooltip'), e.currentTarget)} onMouseLeave={hideTooltip} />
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: '0.82rem', color: '#3a2f1f' }}>{bar.label || t('imageToken.barLabel')}</Typography>
+                  <Typography sx={{ fontSize: '0.82rem', color: 'var(--c-text)' }}>{bar.label || t('imageToken.barLabel')}</Typography>
                   {/* #4: show which character field this bar is bound to. */}
-                  {bar.field && <Typography sx={{ fontSize: '0.68rem', color: '#7a5c42' }}>↳ {bar.field.label || bar.field.key}</Typography>}
+                  {bar.field && <Typography sx={{ fontSize: '0.68rem', color: 'var(--c-label)' }}>↳ {bar.field.label || bar.field.key}</Typography>}
                 </Box>
                 {manual ? (
                   <>
@@ -196,9 +196,9 @@ export default function CharacterTokenGearPanel({
                       onChange={e => setBarValue(bar.id, { max: Number(e.target.value) })} sx={{ width: 74 }} />
                   </>
                 ) : (
-                  <Typography sx={{ fontSize: '0.8rem', color: '#7a5c42' }}>{barCur(bar)} / {barMx(bar)}</Typography>
+                  <Typography sx={{ fontSize: '0.8rem', color: 'var(--c-label)' }}>{barCur(bar)} / {barMx(bar)}</Typography>
                 )}
-                <Box sx={{ width: 14, height: 14, borderRadius: '50%', background: bar.color || '#c9975b', border: '1px solid rgba(0,0,0,0.25)' }} />
+                <Box sx={{ width: 14, height: 14, borderRadius: '50%', background: bar.color || '#c9975b', border: '1px solid rgb(var(--c-shadow-rgb) / 0.25)' }} />
                 <IconButton size="small" disabled={hidden}
                   title={valuesHidden ? t('imageToken.showValues') : t('imageToken.hideValues')}
                   onClick={() => setBarHideValues(bar.id, !valuesHidden)}
@@ -214,14 +214,14 @@ export default function CharacterTokenGearPanel({
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
             {sub(t('token.gear.addedHereSection'))}
-            <Button size="small" startIcon={<AddIcon />} onClick={addBar} sx={{ color: '#7a5c42' }}>{t('token.gear.addBar')}</Button>
+            <Button size="small" startIcon={<AddIcon />} onClick={addBar} sx={{ color: 'var(--c-label)' }}>{t('token.gear.addBar')}</Button>
           </Box>
           {/* Added-bar rows — identical layout to ImageTokenConfigPanel (label / current / max /
               preset colors + custom / eye / delete), full width. */}
           {draft.addedBars.map(bar => {
             const hidden = !!bar.defaultHidden;
             return (
-              <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1, borderLeft: '3px solid #c9975b', pl: 0.5 }}>
+              <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1, borderLeft: '3px solid var(--c-border-accent)', pl: 0.5 }}>
                 <TextField size="small" variant="outlined" label={t('imageToken.barLabel')} value={bar.label}
                   onChange={e => updateAddedBar(bar.id, { label: e.target.value })} sx={{ flex: 1, minWidth: 90 }} />
                 <TextField size="small" variant="outlined" type="number" label={t('imageToken.barCurrent')} value={draft.barValues[bar.id]?.current ?? 0}
@@ -246,12 +246,12 @@ export default function CharacterTokenGearPanel({
                   onClick={() => updateAddedBar(bar.id, { defaultHidden: !hidden })} sx={{ color: hidden ? '#b5482f' : '#5a7a42' }}>
                   {hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                 </IconButton>
-                <IconButton size="small" onClick={() => removeAddedBar(bar.id)} sx={{ color: '#b5482f' }}><DeleteIcon fontSize="small" /></IconButton>
+                <IconButton size="small" onClick={() => removeAddedBar(bar.id)} sx={{ color: 'var(--c-text-danger)' }}><DeleteIcon fontSize="small" /></IconButton>
               </Box>
             );
           })}
 
-          <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
+          <Box sx={{ height: 1, background: 'var(--c-accent-bg-light)', my: 2 }} />
 
           {/* RING SLOTS — single sun, per-position overlay */}
           <Typography sx={{ ...headSx, mb: 0.5 }}>{t('imageToken.statesNumbers')}</Typography>
@@ -260,9 +260,9 @@ export default function CharacterTokenGearPanel({
             <Box sx={{ position: 'relative', width: 240, height: 240, flexShrink: 0 }}>
               <Box sx={{
                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-                width: 54, height: 54, borderRadius: '50%', border: '2.5px solid #c9975b',
-                background: 'linear-gradient(135deg, #7a6a58, #5a4a3a)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.9)', fontWeight: 700,
+                width: 54, height: 54, borderRadius: '50%', border: '2.5px solid var(--c-border-accent)',
+                background: 'linear-gradient(135deg, var(--c-leather-bg), var(--c-dark-bg))', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', color: 'rgb(var(--c-highlight-rgb) / 0.9)', fontWeight: 700,
               }}>T</Box>
 
               {Array.from({ length: 8 }, (_, i) => {
@@ -290,7 +290,7 @@ export default function CharacterTokenGearPanel({
 
                     {configured && (
                       <Box sx={{ position: 'absolute', top: -9, left: -9, width: 18, height: 18, borderRadius: '50%',
-                        background: '#fff9f0', border: '1px solid #c4a882', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: isOverride ? '#c9975b' : '#a89272' }}
                         onMouseEnter={(e) => showTooltip(isOverride ? t('token.gear.overrideTooltip') : t('token.gear.inheritedTooltip'), e.currentTarget)}
                         onMouseLeave={hideTooltip}>
@@ -300,7 +300,7 @@ export default function CharacterTokenGearPanel({
                     {configured && (
                       <Box onClick={(e) => { e.stopPropagation(); patchSlotOverride(posId, { hidden: !hidden }); }}
                         sx={{ position: 'absolute', top: -9, right: -9, width: 18, height: 18, borderRadius: '50%',
-                          background: '#fff9f0', border: '1px solid #c4a882', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: 'pointer', color: hidden ? '#b5482f' : '#5a7a42' }}>
                         {hidden ? <VisibilityOffIcon sx={{ fontSize: 12 }} /> : <VisibilityIcon sx={{ fontSize: 12 }} />}
                       </Box>
@@ -309,7 +309,7 @@ export default function CharacterTokenGearPanel({
                       <Box onClick={(e) => { e.stopPropagation(); clearSlotOverride(posId); }}
                         onMouseEnter={(e) => showTooltip(t('token.gear.restoreFromBlueprint'), e.currentTarget)} onMouseLeave={hideTooltip}
                         sx={{ position: 'absolute', bottom: -9, right: -9, width: 18, height: 18, borderRadius: '50%',
-                          background: '#fff9f0', border: '1px solid #c4a882', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7a5c42' }}>
+                          background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--c-label)' }}>
                         <RestartAltIcon sx={{ fontSize: 12 }} />
                       </Box>
                     )}
@@ -321,8 +321,8 @@ export default function CharacterTokenGearPanel({
 
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={saving} sx={{ color: '#7a5c42' }}>{t('common.cancel')}</Button>
-          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{ background: '#7a5c42', '&:hover': { background: '#5a4230' } }}>
+          <Button onClick={onClose} disabled={saving} sx={{ color: 'var(--c-label)' }}>{t('common.cancel')}</Button>
+          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{ background: 'var(--c-leather-bg)', '&:hover': { background: 'var(--c-leather-bg)' } }}>
             {saving ? t('common.saving') : t('common.save')}
           </Button>
         </DialogActions>

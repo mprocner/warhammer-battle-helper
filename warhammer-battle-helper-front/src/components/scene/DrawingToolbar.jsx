@@ -136,24 +136,24 @@ const DrawingToolbar = ({
               sx={{
                 '& .MuiToggleButton-root': {
                   flex: 1,
-                  border: '1px solid #d4a574',
-                  color: '#6b4423',
-                  fontFamily: 'Cinzel, serif',
+                  border: '1px solid var(--c-border-light)',
+                  color: 'var(--c-heading)',
+                  fontFamily: 'var(--font-display)',
                   fontSize: '11px',
                   padding: '4px 6px',
                   gap: '4px',
-                  background: 'linear-gradient(135deg, #f9f3e8 0%, #f4e8d8 100%)',
+                  background: 'linear-gradient(135deg, var(--c-surface-raised) 0%, var(--c-surface) 100%)',
                   textTransform: 'none',
                   '&.Mui-selected': {
-                    background: 'linear-gradient(135deg, #c9975b 0%, #a67c52 100%)',
-                    color: '#fff',
-                    borderColor: '#7a5c42',
+                    background: 'linear-gradient(135deg, var(--c-accent-bg) 0%, var(--c-accent-bg-dark) 100%)',
+                    color: 'var(--c-text-on-dark)',
+                    borderColor: 'var(--c-border-strong)',
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #d4a574 0%, #c9975b 100%)',
+                      background: 'linear-gradient(135deg, var(--c-accent-bg-light) 0%, var(--c-accent-bg) 100%)',
                     },
                   },
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #ffffff 0%, #fff9f0 100%)',
+                    background: 'linear-gradient(135deg, var(--c-surface-white) 0%, var(--c-input-bg) 100%)',
                   },
                 },
               }}

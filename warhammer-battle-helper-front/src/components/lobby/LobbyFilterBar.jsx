@@ -62,7 +62,7 @@ export function NoMatchingGames({ query, onClear }) {
   const { t } = useTranslation();
   const trimmed = query.trim();
   return (
-    <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 5, px: 3, background: 'rgba(244, 232, 216, 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
+    <Card sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 5, px: 3, background: 'rgb(var(--c-light-rgb) / 0.6)', border: '2px solid', borderColor: 'primary.main' }}>
       <Typography variant="h6" sx={{ fontFamily: DISPLAY_FONT, fontWeight: 700, color: 'primary.dark' }}>
         {trimmed ? t('game.noMatchingGamesQuery', { query: trimmed }) : t('game.noMatchingGamesRole')}
       </Typography>

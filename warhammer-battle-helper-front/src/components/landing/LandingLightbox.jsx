@@ -16,7 +16,7 @@ const LandingLightbox = ({ image, alt, onClose }) => {
             PaperProps={{
                 sx: { position: 'relative', m: 2, background: 'transparent', boxShadow: 'none', overflow: 'visible' },
             }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(20, 14, 8, 0.88)' } } }}
+            slotProps={{ backdrop: { sx: { backgroundColor: 'rgb(var(--c-shadow-rgb) / 0.88)' } } }}
         >
             {image && (
                 <>
@@ -28,9 +28,9 @@ const LandingLightbox = ({ image, alt, onClose }) => {
                             position: 'absolute',
                             top: 8,
                             right: 8,
-                            color: '#f4e8d8',
-                            backgroundColor: 'rgba(30, 22, 14, 0.7)',
-                            '&:hover': { backgroundColor: 'rgba(30, 22, 14, 0.9)' },
+                            color: 'var(--c-text-on-dark)',
+                            backgroundColor: 'rgb(var(--c-shadow-rgb) / 0.7)',
+                            '&:hover': { backgroundColor: 'rgb(var(--c-shadow-rgb) / 0.9)' },
                         }}
                     >
                         <CloseIcon />

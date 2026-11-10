@@ -14,7 +14,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import ConfirmModal from '../common/ConfirmModal';
 
 const ROLES = ['viewer', 'editor', 'owner'];
-const FONT = { fontFamily: 'Crimson Text, serif' };
+const FONT = { fontFamily: 'var(--font-body)' };
 
 // memberErrorKey maps a failed member/visibility response onto an i18n key. Status alone is not
 // enough: 400 means "your own address", "last owner" or gin's email validator (whose text is
@@ -129,9 +129,9 @@ export default function TemplateAccessCard({ template, token, onTemplateUpdated,
           label={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               {isPublic
-                ? <PublicIcon sx={{ fontSize: 18, color: '#c9975b' }} />
-                : <LockIcon sx={{ fontSize: 18, color: '#7a5c42' }} />}
-              <Typography sx={{ ...FONT, fontSize: '0.95rem', color: '#3a2f1f' }}>
+                ? <PublicIcon sx={{ fontSize: 18, color: 'var(--c-text-accent)' }} />
+                : <LockIcon sx={{ fontSize: 18, color: 'var(--c-label)' }} />}
+              <Typography sx={{ ...FONT, fontSize: '0.95rem', color: 'var(--c-text)' }}>
                 {t('creator.general.makePublic')}
               </Typography>
             </Box>
@@ -186,7 +186,7 @@ export default function TemplateAccessCard({ template, token, onTemplateUpdated,
           <ul className="creator__share-list">
             {members.map(m => (
               <li key={m.userId} className="creator__share-item">
-                <PersonIcon sx={{ fontSize: 18, color: '#c9975b' }} />
+                <PersonIcon sx={{ fontSize: 18, color: 'var(--c-text-accent)' }} />
                 <span className="creator__share-email">
                   {m.email}
                   {m.isMe && <span className="creator__share-you"> {t('creator.general.memberYou')}</span>}
@@ -208,7 +208,7 @@ export default function TemplateAccessCard({ template, token, onTemplateUpdated,
                     size="small"
                     aria-label={t('creator.leaveTemplate')}
                     onClick={() => setConfirmLeave(true)}
-                    sx={{ color: '#b57a5a', '&:hover': { color: '#8b3a2a', backgroundColor: 'rgba(180, 60, 40, 0.1)' } }}
+                    sx={{ color: 'var(--c-text-accent)', '&:hover': { color: 'var(--c-text-danger-dark)', backgroundColor: 'rgb(var(--c-danger-rgb) / 0.1)' } }}
                   >
                     <LogoutIcon fontSize="small" />
                   </IconButton>
@@ -217,7 +217,7 @@ export default function TemplateAccessCard({ template, token, onTemplateUpdated,
                     size="small"
                     aria-label={t('creator.general.shareRemove')}
                     onClick={() => membersRequest(`/members/${m.userId}`, 'DELETE')}
-                    sx={{ color: '#b57a5a', '&:hover': { color: '#8b3a2a', backgroundColor: 'rgba(180, 60, 40, 0.1)' } }}
+                    sx={{ color: 'var(--c-text-accent)', '&:hover': { color: 'var(--c-text-danger-dark)', backgroundColor: 'rgb(var(--c-danger-rgb) / 0.1)' } }}
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>

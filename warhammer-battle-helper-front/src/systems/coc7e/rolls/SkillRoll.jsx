@@ -89,7 +89,7 @@ export function createSkillRoll(skillsData) {
 
         {/* Bonus / Penalty dice summary */}
         {data.allRolls?.length > 1 && (
-          <div style={{ fontSize: 13, color: 'var(--log-brown-dark, #5a4a3a)', marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: 'var(--log-brown-dark, var(--c-label))', marginTop: 2 }}>
             {data.diceMod > 0
               ? t('coc.bonusDice', { count: data.diceMod })
               : t('coc.penaltyDice', { count: Math.abs(data.diceMod) })}
@@ -104,7 +104,7 @@ export function createSkillRoll(skillsData) {
         )}
 
         {/* Hard / Extreme thresholds hint */}
-        <div style={{ fontSize: 12, color: 'var(--log-brown-dark, #5a4a3a)', marginTop: 2 }}>
+        <div style={{ fontSize: 12, color: 'var(--log-brown-dark, var(--c-label))', marginTop: 2 }}>
           {t('coc.hard')}: {Math.floor(data.target / 2)}
           {' · '}
           {t('coc.extreme')}: {Math.floor(data.target / 5)}

@@ -142,25 +142,25 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
 
   return (
     <Box>
-      <Typography sx={{ fontSize: '0.85rem', color: '#7a5c42', mb: 1 }}>
+      <Typography sx={{ fontSize: '0.85rem', color: 'var(--c-label)', mb: 1 }}>
         {t('creator.tokenDisplay.intro')}
       </Typography>
 
       {/* ── HP BARS (top, full width, ImageToken-style rows) ── */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42' }}>{t('creator.tokenDisplay.hpBarsTitle')}</Typography>
-        <Button size="small" startIcon={<AddIcon />} onClick={addBar} sx={{ color: '#7a5c42' }}>{t('common.add')}</Button>
+        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--c-label)' }}>{t('creator.tokenDisplay.hpBarsTitle')}</Typography>
+        <Button size="small" startIcon={<AddIcon />} onClick={addBar} sx={{ color: 'var(--c-label)' }}>{t('common.add')}</Button>
       </Box>
       <Box sx={{ mb: 2 }}>
         {config.hpBars.length === 0 && (
-          <Typography sx={{ fontSize: '0.78rem', color: '#a89272', mb: 1 }}>{t('creator.tokenDisplay.hpBarsEmpty')}</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: 'var(--c-text-muted)', mb: 1 }}>{t('creator.tokenDisplay.hpBarsEmpty')}</Typography>
         )}
         {config.hpBars.map(bar => (
           <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
             <TextField size="small" variant="outlined" label={t('imageToken.barLabel')} value={bar.label}
               onChange={e => updateBar(bar.id, { label: e.target.value })} sx={{ flex: 1, minWidth: 100 }} />
             <FormControlLabel
-              sx={{ m: 0, '& .MuiFormControlLabel-label': { fontSize: '0.72rem', color: '#7a5c42' } }}
+              sx={{ m: 0, '& .MuiFormControlLabel-label': { fontSize: '0.72rem', color: 'var(--c-label)' } }}
               control={<Checkbox size="small" checked={!!bar.field} onChange={e => setBarFromCard(bar.id, e.target.checked)} />}
               label={t('creator.tokenDisplay.fromCard')}
             />
@@ -182,22 +182,22 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
               onClick={() => updateBar(bar.id, { defaultHidden: !bar.defaultHidden })} sx={{ color: bar.defaultHidden ? '#b5482f' : '#5a7a42' }}>
               {bar.defaultHidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
             </IconButton>
-            <IconButton size="small" onClick={() => removeBar(bar.id)} sx={{ color: '#b5482f' }}><DeleteIcon fontSize="small" /></IconButton>
+            <IconButton size="small" onClick={() => removeBar(bar.id)} sx={{ color: 'var(--c-text-danger)' }}><DeleteIcon fontSize="small" /></IconButton>
           </Box>
         ))}
       </Box>
 
-      <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
+      <Box sx={{ height: 1, background: 'var(--c-accent-bg-light)', my: 2 }} />
 
       {/* ── RING SLOTS (middle, radial sun like the gear popup) ── */}
-      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>{t('creator.tokenDisplay.slotsTitle')}</Typography>
+      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--c-label)', mb: 0.5 }}>{t('creator.tokenDisplay.slotsTitle')}</Typography>
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
         <Box sx={{ position: 'relative', width: 240, height: 240, flexShrink: 0 }}>
           <Box sx={{
             position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-            width: 54, height: 54, borderRadius: '50%', border: '2.5px solid #c9975b',
-            background: 'linear-gradient(135deg, #7a6a58, #5a4a3a)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.9)',
+            width: 54, height: 54, borderRadius: '50%', border: '2.5px solid var(--c-border-accent)',
+            background: 'linear-gradient(135deg, var(--c-leather-bg), var(--c-dark-bg))', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', color: 'rgb(var(--c-highlight-rgb) / 0.9)',
             fontFamily: 'Georgia, serif', fontWeight: 700,
           }}>T</Box>
 
@@ -225,7 +225,7 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
                   <Box onClick={(e) => { e.stopPropagation(); toggleSlotHidden(i); }}
                     title={slot.defaultHidden ? t('creator.tokenDisplay.hiddenByDefault') : t('creator.tokenDisplay.visibleByDefault')}
                     sx={{ position: 'absolute', top: -9, right: -9, width: 18, height: 18, borderRadius: '50%',
-                      background: '#fff9f0', border: '1px solid #c4a882', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', color: slot.defaultHidden ? '#b5482f' : '#5a7a42' }}>
                     {slot.defaultHidden ? <VisibilityOffIcon sx={{ fontSize: 12 }} /> : <VisibilityIcon sx={{ fontSize: 12 }} />}
                   </Box>
@@ -236,27 +236,27 @@ export default function TokenDisplayBuilder({ value, onChange, baseSystem, secti
         </Box>
       </Box>
 
-      <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
+      <Box sx={{ height: 1, background: 'var(--c-accent-bg-light)', my: 2 }} />
 
       {/* ── SQUARES (bottom, full width) ── */}
-      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: '#7a5c42', mb: 0.5 }}>{t('creator.tokenDisplay.squares.title')}</Typography>
-      <Typography sx={{ fontSize: '0.75rem', color: '#a89272', mb: 1 }}>{t('creator.tokenDisplay.squares.hint')}</Typography>
+      <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--c-label)', mb: 0.5 }}>{t('creator.tokenDisplay.squares.title')}</Typography>
+      <Typography sx={{ fontSize: '0.75rem', color: 'var(--c-text-muted)', mb: 1 }}>{t('creator.tokenDisplay.squares.hint')}</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         {config.squares.map((sq, i) => (
           <Box key={sq.id} sx={{ position: 'relative' }}>
             <Box onClick={() => setEditing({ kind: 'square', index: i })} title={sq.caption}
-              sx={{ width: 48, minHeight: 44, border: '1.5px solid #c9975b', borderRadius: '6px', background: 'rgba(20,12,4,0.85)', color: '#f0d8b0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', p: 0.5 }}>
+              sx={{ width: 48, minHeight: 44, border: '1.5px solid var(--c-border-accent)', borderRadius: 'var(--radius-lg)', background: 'rgb(var(--c-shadow-rgb) / 0.85)', color: 'var(--c-text-on-dark-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', p: 0.5 }}>
               <Box sx={{ fontSize: '0.7rem', fontWeight: 700 }}>{sq.field?.label || sq.numberLabel || (sq.selectOptions?.[0] || '').slice(0, 3) || '—'}</Box>
-              <Box sx={{ fontSize: '0.55rem', color: '#c4a882', textAlign: 'center' }}>{sq.caption}</Box>
+              <Box sx={{ fontSize: '0.55rem', color: 'var(--c-text-on-dark-muted)', textAlign: 'center' }}>{sq.caption}</Box>
             </Box>
             <IconButton size="small" onClick={() => removeSquare(i)}
-              sx={{ position: 'absolute', top: -10, right: -10, width: 18, height: 18, background: '#fff9f0', border: '1px solid #c4a882' }}>
-              <CloseIcon sx={{ fontSize: 12, color: '#883030' }} />
+              sx={{ position: 'absolute', top: -10, right: -10, width: 18, height: 18, background: 'var(--c-input-bg)', border: '1px solid var(--c-border)' }}>
+              <CloseIcon sx={{ fontSize: 12, color: 'var(--c-text-danger-dark)' }} />
             </IconButton>
           </Box>
         ))}
         <Box onClick={() => setEditing({ kind: 'square', index: -1 })} title={t('creator.tokenDisplay.squares.addButton')}
-          sx={{ width: 48, minHeight: 44, border: '1.5px dashed #c4a882', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#c4a882' }}>
+          sx={{ width: 48, minHeight: 44, border: '1.5px dashed var(--c-border)', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--c-text-on-dark-muted)' }}>
           <AddIcon sx={{ fontSize: 20 }} />
         </Box>
       </Box>

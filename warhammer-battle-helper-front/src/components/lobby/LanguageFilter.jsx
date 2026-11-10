@@ -40,8 +40,8 @@ function LanguageFilter({ value, onChange, disabled }) {
         endIcon={<ArrowDropDownIcon />}
         // Gold fill while active: the filter narrows the list, so it must not look like the default.
         sx={{
-          fontFamily: BODY_FONT, textTransform: 'none', color: '#7a5c42', px: 1, minWidth: 0,
-          ...(value.length > 0 && { fontWeight: 600, backgroundColor: 'rgba(201, 151, 91, 0.18)' }),
+          fontFamily: BODY_FONT, textTransform: 'none', color: 'var(--c-label)', px: 1, minWidth: 0,
+          ...(value.length > 0 && { fontWeight: 600, backgroundColor: 'rgb(var(--c-accent-rgb) / 0.18)' }),
         }}>
         {t('creator.about.filterButton', { list: summary })}
       </Button>
@@ -53,7 +53,7 @@ function LanguageFilter({ value, onChange, disabled }) {
           return (
             <MenuItem key={code} role="menuitemcheckbox" aria-checked={checked} onClick={() => toggle(code)}
               sx={{ fontFamily: BODY_FONT }}>
-              <ListItemIcon sx={{ color: '#c9975b' }}>
+              <ListItemIcon sx={{ color: 'var(--c-text-accent)' }}>
                 {checked ? <CheckBoxIcon fontSize="small" /> : <CheckBoxOutlineBlankIcon fontSize="small" />}
               </ListItemIcon>
               {t(`languages.${code}`)}

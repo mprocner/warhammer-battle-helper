@@ -1046,7 +1046,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         <Typography
           variant="h5"
           sx={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'var(--font-display)',
             color: 'text.primary'
           }}
         >

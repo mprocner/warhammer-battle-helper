@@ -14,8 +14,6 @@ import '@fontsource/crimson-text/600.css';
 import '@fontsource/crimson-text/600-italic.css';
 import '@fontsource/crimson-text/700.css';
 import '@fontsource/crimson-text/700-italic.css';
-import '@fontsource/im-fell-dw-pica/400.css';
-import '@fontsource/im-fell-dw-pica/400-italic.css';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';

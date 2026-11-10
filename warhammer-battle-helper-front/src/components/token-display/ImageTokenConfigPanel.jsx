@@ -140,8 +140,8 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
     }
   };
 
-  const paperSx = { background: 'linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)', border: '1.5px solid #7a5c42' };
-  const headSx = { fontSize: '0.8rem', color: '#7a5c42', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 };
+  const paperSx = { background: 'linear-gradient(135deg, var(--c-surface) 0%, var(--c-surface-alt) 100%)', border: '1.5px solid var(--c-border-strong)' };
+  const headSx = { fontSize: '0.8rem', color: 'var(--c-label)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 };
 
   return (
     <>
@@ -149,7 +149,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
           under SceneImage, whose onClick would otherwise deselect the token mid-edit. */}
       <Dialog open onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: paperSx }}
         onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#3a2f1f', fontFamily: 'Cinzel, serif' }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--c-text)', fontFamily: 'var(--font-display)' }}>
           {t('imageToken.configTitle')}
           <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
         </DialogTitle>
@@ -157,12 +157,12 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
           {/* HP bars — on top, matching how they render above the ring on the token. */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, mb: 1 }}>
             <Typography sx={headSx}>{t('imageToken.hpBars')} ({draft.hpBars.length}/{MAX_BARS})</Typography>
-            <Button size="small" startIcon={<AddIcon />} disabled={draft.hpBars.length >= MAX_BARS} onClick={addBar} sx={{ color: '#7a5c42' }}>
+            <Button size="small" startIcon={<AddIcon />} disabled={draft.hpBars.length >= MAX_BARS} onClick={addBar} sx={{ color: 'var(--c-label)' }}>
               {t('common.add')}
             </Button>
           </Box>
           {draft.hpBars.length === 0 && (
-            <Typography sx={{ fontSize: '0.8rem', color: '#9a8468', mb: 1 }}>{t('imageToken.noBars')}</Typography>
+            <Typography sx={{ fontSize: '0.8rem', color: 'var(--c-text-muted)', mb: 1 }}>{t('imageToken.noBars')}</Typography>
           )}
           {draft.hpBars.map(bar => (
             <Box key={bar.id} sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
@@ -194,23 +194,23 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
                 onClick={() => updateBar(bar.id, { hidden: !bar.hidden })} sx={{ color: bar.hidden ? '#b5482f' : '#5a7a42' }}>
                 {bar.hidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
               </IconButton>
-              <IconButton size="small" onClick={() => removeBar(bar.id)} sx={{ color: '#b5482f' }}><DeleteIcon fontSize="small" /></IconButton>
+              <IconButton size="small" onClick={() => removeBar(bar.id)} sx={{ color: 'var(--c-text-danger)' }}><DeleteIcon fontSize="small" /></IconButton>
             </Box>
           ))}
 
-          <Box sx={{ height: 1, background: '#c4a882', my: 2 }} />
+          <Box sx={{ height: 1, background: 'var(--c-accent-bg-light)', my: 2 }} />
 
           {/* States & numbers — radial sun editor */}
           <Typography sx={{ ...headSx, mb: 1 }}>{t('imageToken.statesNumbers')}</Typography>
-          <Typography sx={{ fontSize: '0.78rem', color: '#a89272', mb: 1 }}>{t('imageToken.sunHint')}</Typography>
+          <Typography sx={{ fontSize: '0.78rem', color: 'var(--c-text-muted)', mb: 1 }}>{t('imageToken.sunHint')}</Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
             <Box sx={{ position: 'relative', width: 240, height: 240, flexShrink: 0 }}>
               {/* Sample token */}
               <Box sx={{
                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-                width: 54, height: 54, borderRadius: '50%', border: '2.5px solid #c9975b',
-                background: 'linear-gradient(135deg, #7a6a58, #5a4a3a)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.9)',
+                width: 54, height: 54, borderRadius: '50%', border: '2.5px solid var(--c-border-accent)',
+                background: 'linear-gradient(135deg, var(--c-leather-bg), var(--c-dark-bg))', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', color: 'rgb(var(--c-highlight-rgb) / 0.9)',
                 fontFamily: 'Georgia, serif', fontWeight: 700,
               }}>T</Box>
 
@@ -241,7 +241,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
                         sx={{
                           position: 'absolute', top: -11, right: -11, width: 24, height: 24, borderRadius: '50%',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: '#fff9f0', border: '1px solid #c4a882', cursor: 'pointer',
+                          background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', cursor: 'pointer',
                           color: slot.hidden ? '#b5482f' : '#5a7a42',
                         }}>
                         {slot.hidden
@@ -257,7 +257,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
                         sx={{
                           position: 'absolute', top: -11, left: -11, width: 24, height: 24, borderRadius: '50%',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: '#fff9f0', border: '1px solid #c4a882', cursor: 'pointer',
+                          background: 'var(--c-input-bg)', border: '1px solid var(--c-border)', cursor: 'pointer',
                           color: slot.locked ? '#7a5c42' : '#a89272',
                         }}>
                         {slot.locked
@@ -272,8 +272,8 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} sx={{ color: '#7a5c42' }}>{t('common.cancel')}</Button>
-          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{ background: '#7a5c42', '&:hover': { background: '#5a4230' } }}>
+          <Button onClick={onClose} sx={{ color: 'var(--c-label)' }}>{t('common.cancel')}</Button>
+          <Button onClick={handleSave} disabled={saving} variant="contained" sx={{ background: 'var(--c-leather-bg)', '&:hover': { background: 'var(--c-leather-bg)' } }}>
             {t('common.save')}
           </Button>
         </DialogActions>

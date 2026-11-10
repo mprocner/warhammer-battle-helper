@@ -947,7 +947,7 @@ const SceneViewport = ({
                       left: textInput.pos[0],
                       top: textInput.pos[1],
                       zIndex: 30,
-                      background: 'rgba(0,0,0,0.7)',
+                      background: 'rgb(var(--c-shadow-rgb) / 0.7)',
                       color: drawingColor,
                       border: `1px solid ${drawingColor}`,
                       fontSize: drawingFontSize,
