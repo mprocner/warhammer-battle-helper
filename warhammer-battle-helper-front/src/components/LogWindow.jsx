@@ -5,6 +5,7 @@ import SimpleMessage from './log/SimpleMessage';
 import { getSystem } from '../systems/registry';
 import { resolveRollComponent } from './log/resolveRollComponent';
 import TabHeader from './tabs/TabHeader';
+import { participantColor } from '../utils/participants';
 import './LogWindow.css';
 
 // Jak długo świeży wpis nosi podświetlenie "nowe" (ms).
@@ -17,7 +18,8 @@ const LogWindow = ({
     autoScroll = true,
     gameSystem = 'warhammer4e',
     currentUserId = null,
-    onlyMine = false
+    onlyMine = false,
+    participants = []
 }) => {
     const { t } = useTranslation();
     const system = getSystem(gameSystem);
@@ -91,6 +93,9 @@ const LogWindow = ({
         const authorId = msg.data?.rollerUserId || msg.data?.userId || null;
         const isMine = Boolean(currentUserId && authorId && authorId === currentUserId);
         const isNew = Boolean(msg.id && newIds.has(msg.id));
+        // Author accent is a bar, never text colour: a light player colour is unreadable on cream.
+        const authorColor = authorId ? participantColor(participants, authorId) : null;
+        const authorStyle = authorColor ? { '--author-color': authorColor } : undefined;
 
         if (msg.data && msg.data.rollType) {
             const rollType = msg.data.rollType;
@@ -98,9 +103,9 @@ const LogWindow = ({
 
             const RollComponent = resolveRollComponent(system, rollType);
             if (RollComponent) {
-                const itemClass = `log-list-item${isHidden ? ' log-entry--hidden-roll' : ''}${isMine ? ' log-list-item--mine' : ''}${isNew ? ' log-list-item--new' : ''}`;
+                const itemClass = `log-list-item${authorColor ? ' log-list-item--authored' : ''}${isHidden ? ' log-entry--hidden-roll' : ''}${isMine ? ' log-list-item--mine' : ''}${isNew ? ' log-list-item--new' : ''}`;
                 return (
-                    <li key={key} className={itemClass}>
+                    <li key={key} className={itemClass} style={authorStyle}>
                         {isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}
                         <RollComponent data={msg.data} timestamp={msg.timestamp} />
                     </li>
@@ -117,7 +122,7 @@ const LogWindow = ({
         // Fallback for simple text messages
         const username = msg.data && msg.data.username ? msg.data.username : null;
         const isHidden = Boolean(msg.data && msg.data.visibility && msg.data.visibility !== 'all');
-        return <SimpleMessage key={key} text={msg.text} type={msg.type} timestamp={msg.timestamp} username={username} isMine={isMine} isNew={isNew} isHidden={isHidden} />;
+        return <SimpleMessage key={key} text={msg.text} type={msg.type} timestamp={msg.timestamp} username={username} isMine={isMine} isNew={isNew} isHidden={isHidden} authorColor={authorColor} />;
     };
 
     return (

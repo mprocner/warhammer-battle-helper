@@ -15,6 +15,7 @@ import { useFogGmOpacity } from '../hooks/useFogGmOpacity';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useGameMusic } from '../hooks/useGameMusic';
 import { useDrawingTools } from '../hooks/useDrawingTools';
+import { participantColor } from '../utils/participants';
 import { useFogTools } from '../hooks/useFogTools';
 import { getApiUrl, getApiHeaders } from '../api/axios';
 import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
@@ -81,7 +82,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
   const { audioRef, musicState, playerVolume, onPlayerVolumeChange, onGmVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
-  const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools();
+  const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools(participantColor(gameState?.participants, userId));
   const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode, imageEditLayer, setImageEditLayer } = useFogTools();
 
   // Block browser back button and tab close while in game
@@ -263,14 +264,14 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.PARTICIPANT_UPDATED: {
-        const { userId: updUserId, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature } = message.payload;
+        const { userId: updUserId, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature, color } = message.payload;
         setGameState(prev => {
           if (!prev) return prev;
           return {
             ...prev,
             participants: (prev.participants || []).map(p =>
               p.userId === updUserId
-                ? { ...p, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature }
+                ? { ...p, avatar, avatarType, avatarCharacterId, avatarCharacterUrl, signature, avatarSize, showSignature, color }
                 : p
             ),
           };
@@ -842,8 +843,8 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.POINTER_PING: {
-        const { x, y, sceneId } = message.payload;
-        const ping = { id: `${Date.now()}-${Math.random()}`, x, y, sceneId };
+        const { x, y, sceneId, userId: pingUserId } = message.payload;
+        const ping = { id: `${Date.now()}-${Math.random()}`, x, y, sceneId, userId: pingUserId };
         setPointerPings(prev => [...prev, ping]);
         break;
       }
@@ -1205,6 +1206,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         onPauseAll={pauseAll}
         onResumeAll={resumeAll}
         gameSystem={gameState?.gameSystem}
+        participants={gameState?.participants}
       />
 
       <ConfirmModal

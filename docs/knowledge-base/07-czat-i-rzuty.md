@@ -43,6 +43,12 @@ w `ChatInput.jsx`) i na backendzie.
 
 **Przyciski kości** pod czatem: domyślny zestaw albo `DiceButtons` z szablonu.
 
+**Kolor autora** (PLAYRPG-340). Wpis z autorem (`rollerUserId` albo `userId` w `data`) dostaje
+`--author-color` z `participantColor` i klasę `--authored`: lewy pasek w kolorze autora.
+Wpisy systemowe zostają przy kolorze typu (info/success/…). Własne wpisy (`--mine`) zachowują
+złoty tint tła, ale pasek mają w swoim kolorze. Toast rzutu: lewa krawędź to dalej wynik,
+górna to kolor rzucającego.
+
 **Statystyki rzutów** (`RollStat`): każdy rzut zapisuje kość, wynik i typ. Są dostępne dla gry
 (`/games/:id/roll-stats`, `RollStatsPanel`) i łącznie w ustawieniach konta (`DiceStats.jsx`):
 liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
@@ -60,6 +66,10 @@ liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
 
 ## Pułapki
 
+- Kolor autora to **pasek, nigdy kolor tekstu**. Log ma kremowe tło, a jasny kolor gracza
+  (np. limonka z palety albo prawie biały z pickera) jako tekst byłby nieczytelny.
+- `.log-simple-message--authored` musi stać w `LogWindow.css` **po** modyfikatorach typu
+  (`--info`, `--success`…): ta sama specyficzność, wygrywa kolejność źródła.
 - `Game.Events` rośnie bez limitu wewnątrz dokumentu gry. MongoDB ma limit 16 MB na dokument,
   więc bardzo długa kampania może go kiedyś dobić. Na razie nic tego nie przycina.
 - Rzut `gm_only` nie wraca do rzucającego ani przez WS, ani przez historię. Front pokazuje

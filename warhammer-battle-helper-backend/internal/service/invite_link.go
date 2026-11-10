@@ -68,19 +68,57 @@ func playerParticipant(user *models.User) (stored, broadcast models.GameParticip
 	return stored, broadcast
 }
 
+// joinColorAttempts bounds the retries of joinWithColor. Each lost race means another participant
+// took a palette colour, so after len(palette) losses the palette is exhausted and the next attempt
+// no longer demands a unique colour; the extra slack only covers joins that left again meanwhile.
+var joinColorAttempts = len(models.ParticipantPalette) + 2
+
+// errColorContention is the (practically unreachable) end of joinWithColor's retries.
+var errColorContention = errors.New("could not assign a participant colour, try again")
+
+// joinWithColor pushes participant with the first palette colour no one in the game holds yet
+// (PLAYRPG-340). The colour guard sits in the push filter, so two concurrent joins cannot take the
+// same colour: the loser's push matches nothing, and it re-reads the game and tries the next free
+// colour. It returns the colour that was stored; "" with a nil error means the user is already a
+// participant.
+func (s *GameService) joinWithColor(gameID string, participant models.GameParticipant) (color string, err error) {
+	for attempt := 0; attempt < joinColorAttempts; attempt++ {
+		game, err := s.gameRepo.GetByID(gameID)
+		if err != nil {
+			return "", err
+		}
+		for _, p := range game.Participants {
+			if p.UserID == participant.UserID {
+				return "", nil
+			}
+		}
+		color, free := models.NextParticipantColor(game.Participants)
+		participant.Color = color
+		added, err := s.gameRepo.AddParticipant(gameID, participant, free)
+		if err != nil {
+			return "", err
+		}
+		if added {
+			return color, nil
+		}
+	}
+	return "", errColorContention
+}
+
 // addPlayer adds user to the game as a player and tells everyone in the game. Shared by the email
 // invite and the invite link so both produce the same participant and the same broadcast.
 // Returns errAlreadyInGame when the user is already a participant (the repository guards the push,
 // so a double click or two tabs cannot add the same user twice).
 func (s *GameService) addPlayer(gameID string, user *models.User) error {
 	stored, broadcast := playerParticipant(user)
-	added, err := s.gameRepo.AddParticipant(gameID, stored)
+	color, err := s.joinWithColor(gameID, stored)
 	if err != nil {
 		return err
 	}
-	if !added {
+	if color == "" {
 		return errAlreadyInGame
 	}
+	broadcast.Color = color
 	s.hub.BroadcastToGame(gameID, websocket.EventParticipantJoined, map[string]interface{}{
 		"participant": broadcast,
 	})

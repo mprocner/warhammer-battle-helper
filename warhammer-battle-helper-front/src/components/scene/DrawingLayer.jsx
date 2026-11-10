@@ -99,7 +99,7 @@ const DrawingLayer = ({
   isDrawingMode,
   activeTool = 'freehand',
   brushSize = 3,
-  color = '#ff0000',
+  color,
   fontSize = 16,
   onPathComplete,
   onTextPlacement,

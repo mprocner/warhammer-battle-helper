@@ -9,6 +9,7 @@ import (
 	"battle-helper/internal/websocket"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -68,6 +69,7 @@ func (s *GameService) CreateGame(name, gameSystem string, gameMasterID primitive
 				UserID:   gameMasterID,
 				Username: username,
 				Role:     models.RoleGameMaster,
+				Color:    models.ParticipantPalette[0],
 			},
 		},
 		Characters:     []models.GameCharacter{},
@@ -186,15 +188,18 @@ func (s *GameService) EnsureGMParticipant(game *models.Game) {
 	if err != nil || gmUser == nil {
 		return
 	}
+	color, _ := models.NextParticipantColor(game.Participants)
 	gm := models.GameParticipant{
 		UserID:   game.GameMasterID,
 		Username: gmUser.Email,
 		Email:    gmUser.Email,
 		Role:     models.RoleGameMaster,
 		JoinedAt: game.CreatedAt,
+		Color:    color,
 	}
 	log.Printf("[DEBUG] EnsureGMParticipant: adding GM %s to participants for game %s", gmUser.ID.Hex(), game.ID.Hex())
-	if _, err := s.gameRepo.AddParticipant(game.ID.Hex(), gm); err != nil {
+	// Legacy repair path, never concurrent with a join that matters: a duplicate colour is acceptable.
+	if _, err := s.gameRepo.AddParticipant(game.ID.Hex(), gm, false); err != nil {
 		log.Printf("[DEBUG] EnsureGMParticipant: failed to persist: %v", err)
 	}
 	game.Participants = append(game.Participants, gm)
@@ -859,10 +864,17 @@ func (s *GameService) RollWeapon(gameID string, weaponName string, weaponSkill s
 	return s.executeRoll(gameID, websocket.EventWeaponRolled, rollResult, userID, username, game, character, visibility)
 }
 
-// UpdateParticipant updates avatar, signature, avatarSize and showSignature for the requesting user in a game
-func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool) error {
+// ErrInvalidParticipantColor rejects a participant colour that is not #rrggbb.
+var ErrInvalidParticipantColor = errors.New("color must be a #rrggbb hex value")
+
+// UpdateParticipant updates avatar, signature, avatarSize, showSignature and color for the requesting user in a game
+func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool, color string) error {
 	if len(signature) > 50 {
 		return fmt.Errorf("signature must be at most 50 characters")
+	}
+	color, ok := models.NormalizeParticipantColor(color)
+	if !ok {
+		return ErrInvalidParticipantColor
 	}
 	game, err := s.gameRepo.GetByID(gameID)
 	if err != nil {
@@ -883,7 +895,7 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 	if err != nil {
 		return fmt.Errorf("invalid game ID")
 	}
-	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature); err != nil {
+	if err := s.gameRepo.UpdateParticipant(gameObjID, userID, avatar, avatarType, avatarCharacterId, signature, avatarSize, showSignature, color); err != nil {
 		return err
 	}
 	s.hub.BroadcastToGame(gameID, websocket.EventParticipantUpdated, map[string]interface{}{
@@ -897,6 +909,7 @@ func (s *GameService) UpdateParticipant(gameID string, userID primitive.ObjectID
 		"signature":          signature,
 		"avatarSize":         avatarSize,
 		"showSignature":      showSignature,
+		"color":              color,
 	})
 	return nil
 }

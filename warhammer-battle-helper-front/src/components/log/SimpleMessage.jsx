@@ -32,9 +32,10 @@ const getMessageTypeClass = (type) => {
     }
 };
 
-const SimpleMessage = ({ text, type, timestamp, username, isMine = false, isNew = false, isHidden = false }) => {
+const SimpleMessage = ({ text, type, timestamp, username, isMine = false, isNew = false, isHidden = false, authorColor = null }) => {
     return (
-        <li className={`log-simple-message ${getMessageTypeClass(type)}${isMine ? ' log-simple-message--mine' : ''}${isNew ? ' log-simple-message--new' : ''}${isHidden ? ' log-entry--hidden-roll' : ''}`}>
+        <li className={`log-simple-message ${getMessageTypeClass(type)}${isMine ? ' log-simple-message--mine' : ''}${isNew ? ' log-simple-message--new' : ''}${isHidden ? ' log-entry--hidden-roll' : ''}${authorColor ? ' log-simple-message--authored' : ''}`}
+            style={authorColor ? { '--author-color': authorColor } : undefined}>
             {isHidden && <LockIcon className="log-entry__lock-icon" fontSize="inherit" />}
             <div className="log-simple-message__content">
                 {getMessageIcon(type)}

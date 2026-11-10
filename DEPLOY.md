@@ -215,6 +215,32 @@ players and creators to reload.
 
 Then open a game that had an "always on" weapon and check that it is now an editable row.
 
+### PLAYRPG-340 — participant colours
+
+Every participant gets a colour per game. New games and joins get one automatically; existing
+games need the migration, otherwise their participants render with the neutral fallback brown
+(nothing breaks). Same procedure as above:
+
+1. Stop `autopull.service` if enabled.
+2. Deploy: `cd /opt/warhammer-battle-helper && bash scripts/deploy.sh`
+3. Immediately run:
+
+```bash
+cd /opt/warhammer-battle-helper
+docker run --rm --network warhammer-battle-helper_default \
+  -v "$PWD/warhammer-battle-helper-backend":/src -w /src \
+  -e MONGO_URI='mongodb://<user>:<password>@mongo:27017/?authSource=admin' \
+  -e MONGO_DB=<db-name> \
+  golang:1.24-alpine go run ./cmd/migrate-participant-colors/
+```
+
+It prints two counts; a second run prints zeros, and it is safe to re-run if it fails midway. It
+only fills colours that are still unset, so a colour a player picked meanwhile is kept.
+Browser tabs left open on the old frontend save player settings without a colour and get a 400,
+so ask active players to reload.
+
+Then open an old game and check that the avatar outlines in the top bar have different colours.
+
 ---
 
 ## Automated deployment

@@ -45,7 +45,20 @@ Click your avatar in the top bar to set:
 - your avatar (from your account, from your character, or uploaded),
 - your signature, the name shown next to your log entries (from your account, from your
   character, or your own),
-- the size of your avatar in the bar.
+- the size of your avatar in the bar,
+- your colour.
+
+### Your colour {#your-colour}
+
+Every participant has their own colour. It shows as the outline of your avatar in the bar, on
+your ruler and pings on the map, as a bar next to your log entries and along the top edge of the
+pop-up with your roll. Drawing starts in your colour too; a colour you pick by hand in the
+drawing toolbar stays for the rest of the session.
+
+You get a colour when you join a game: the first one from the palette nobody has yet. In the
+settings you can pick another palette colour or any colour with **Custom colour**. Two people
+may share a colour, and the window tells you who already has it. You set the colour separately
+in each game.
 
 In the **General** tab you set your own music volume (it only changes the sound on your end),
 the language and the control scheme. **Back to Game List** and **Leave Game** are there too.

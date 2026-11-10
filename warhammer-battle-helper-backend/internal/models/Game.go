@@ -116,6 +116,7 @@ type GameParticipant struct {
 	Signature          string             `bson:"signature,omitempty" json:"signature,omitempty"`
 	AvatarSize         string             `bson:"avatarSize,omitempty" json:"avatarSize,omitempty"`
 	ShowSignature      bool               `bson:"showSignature,omitempty" json:"showSignature,omitempty"`
+	Color              string             `bson:"color,omitempty" json:"color,omitempty"` // #rrggbb, see participant_colors.go
 	AccountAvatar      string             `bson:"-" json:"accountAvatar,omitempty"`
 	AccountSignature   string             `bson:"-" json:"accountSignature,omitempty"`
 	NoteOrder          []string           `bson:"noteOrder,omitempty" json:"noteOrder,omitempty"`

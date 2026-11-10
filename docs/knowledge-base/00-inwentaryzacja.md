@@ -30,6 +30,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Zapraszanie, opuszczanie gry, wyrzucanie graczy | MG / G | `FEATURE-76 - players management.md` |
 | Link z zaproszeniem do gry (`/join/<token>`): utwórz, kopiuj, nowy, usuń; wejście z logowaniem / rejestracją | MG / K | PLAYRPG-303 |
 | Ustawienia uczestnika w grze: avatar i podpis (z konta, z postaci, własny), rozmiar dymka | G | — |
+| Kolor uczestnika w grze: domyślny z palety, picker w ustawieniach; ramka dymka, miarki, pingi, rysowanie, log i toast | K | PLAYRPG-340 |
 | Obrazek gry, info o grze, status połączenia (zakładka Ogólne) | MG / G | — |
 | Lista graczy online | K | `FEATURE-53 - UsersOnline.md` |
 

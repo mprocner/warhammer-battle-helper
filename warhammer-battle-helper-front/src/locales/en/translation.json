@@ -529,7 +529,11 @@
       "customPlaceholder": "Enter your signature...",
       "save": "Save",
       "saving": "Saving...",
-      "successMessage": "Player settings updated"
+      "successMessage": "Player settings updated",
+      "color": "Your colour in this game",
+      "colorCustom": "Custom colour",
+      "colorSwatch": "Colour {{color}}",
+      "colorTakenBy": "Also used by: {{names}}"
     },
     "paused": "Paused",
     "completed": "Completed",
@@ -1158,7 +1162,7 @@
       },
       "onlineUsers": {
         "title": "Who is here",
-        "body": "Everyone in the game. A lit avatar means the person is connected right now. Click your own to change your avatar, signature, and avatar size."
+        "body": "Everyone in the game. A lit avatar means the person is connected right now. The outline is the player's colour, the same one you see on their ruler, pings and log entries. Click your own to change your avatar, signature, avatar size and colour."
       },
       "tabsNav": {
         "title": "Right panel tabs",

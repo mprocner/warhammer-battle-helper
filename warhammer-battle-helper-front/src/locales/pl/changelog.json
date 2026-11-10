@@ -61,6 +61,7 @@
         "players": "Zapraszanie i wyrzucanie graczy oraz opuszczanie gry.",
         "inviteLink": "Link z zaproszeniem: MG kopiuje jeden link i wkleja go na Discordzie, a kto go otworzy, dołącza do gry, nawet jeśli musi najpierw założyć konto.",
         "participant": "Twój avatar i podpis w każdej grze: z konta, z postaci albo własny.",
+        "colors": "Każdy gracz ma w grze własny kolor: na avatarze, miarce, pingach, rysunkach i wpisach w logu. Dowolny kolor wybierzesz w ustawieniach gracza.",
         "online": "Podgląd, kto jest online."
       },
       "systems": {

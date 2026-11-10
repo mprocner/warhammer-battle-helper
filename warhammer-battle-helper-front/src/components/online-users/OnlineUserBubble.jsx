@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { getAvatarUrl } from '../Avatar';
-import { resolveDisplayName, resolveAvatar } from '../../utils/participants';
+import { resolveDisplayName, resolveAvatar, FALLBACK_PARTICIPANT_COLOR } from '../../utils/participants';
 import { usePortalTooltip } from '../common/PortalTooltip';
 
 
@@ -31,6 +31,7 @@ const OnlineUserBubble = ({ participant, isOnline, bubbleSize = 'small', showSig
                     className={`online-user-bubble online-user-bubble--${bubbleSize} ${isOnline ? 'online-user-bubble--online' : 'online-user-bubble--offline'}${isCurrentUser ? ' online-user-bubble--current-user' : ''}`}
                     onMouseEnter={e => showTooltip(tooltipText, e.currentTarget)}
                     onMouseLeave={hideTooltip}
+                    style={{ '--participant-color': participant.color || FALLBACK_PARTICIPANT_COLOR }}
                     onClick={isCurrentUser ? onOpenSettings : undefined}
                 >
                     {avatarUrl ? (

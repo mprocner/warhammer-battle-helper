@@ -6,6 +6,8 @@ import { getProfile, updateGameParticipant } from '../../api/profile';
 import AvatarUpload from '../common/AvatarUpload';
 import { getAvatarUrl } from '../Avatar';
 import ModalHeader from '../common/ModalHeader';
+import CheckIcon from '@mui/icons-material/Check';
+import { PARTICIPANT_PALETTE, FALLBACK_PARTICIPANT_COLOR, resolveDisplayName } from '../../utils/participants';
 import './PlayerSettingsPopup.css';
 
 const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticipantUpdated }) => {
@@ -22,6 +24,7 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
   const [characters, setCharacters] = useState(null);
   const [avatarSize, setAvatarSize] = useState('small');
   const [showSignature, setShowSignature] = useState(false);
+  const [color, setColor] = useState(FALLBACK_PARTICIPANT_COLOR);
   const [playerSaving, setPlayerSaving] = useState(false);
   const [playerSaveSuccess, setPlayerSaveSuccess] = useState(false);
   const [playerSaveError, setPlayerSaveError] = useState('');
@@ -41,6 +44,7 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
           setAvatarCharacterUrl(me.avatarCharacterUrl || '');
           setAvatarSize(me.avatarSize || 'small');
           setShowSignature(!!me.showSignature);
+          setColor(me.color || FALLBACK_PARTICIPANT_COLOR);
           const type = me.avatarType || 'upload';
           setAvatarType(type);
           setAvatarCharacterId(me.avatarCharacterId || '');
@@ -103,6 +107,7 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
         signature: resolveSignatureToSave(),
         avatarSize,
         showSignature,
+        color,
       });
       setPlayerSaveSuccess(true);
       if (onParticipantUpdated) onParticipantUpdated();
@@ -120,6 +125,12 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
   const avatarPreviewUrl = characters !== null
     ? (avatarCharacter?.avatar || '')
     : (avatarType === 'character' ? avatarCharacterUrl : '');
+
+  const pickColor = (value) => { setColor(value.toLowerCase()); setPlayerSaveSuccess(false); };
+  // Duplicates are allowed (the player's call), so this is a hint, never a block.
+  const colorTakenBy = (participants || []).filter(p =>
+    p.userId !== userProfile?.user_id && p.color && p.color.toLowerCase() === color
+  ).map(p => resolveDisplayName(p) || p.username);
 
   if (!isOpen) return null;
 
@@ -268,6 +279,35 @@ const PlayerSettingsPopup = ({ isOpen, onClose, gameId, participants, onParticip
               />
             )}
           </div>
+
+          <div className="player-settings-popup__field-label">{t('game.player.color')}</div>
+          <div className="player-settings-popup__colors">
+            {PARTICIPANT_PALETTE.map(c => (
+              <button
+                key={c}
+                type="button"
+                className={`player-settings-popup__swatch${c === color ? ' player-settings-popup__swatch--selected' : ''}`}
+                style={{ background: c }}
+                aria-label={t('game.player.colorSwatch', { color: c })}
+                aria-pressed={c === color}
+                onClick={() => pickColor(c)}
+              >
+                {c === color && <CheckIcon className="player-settings-popup__swatch-check" />}
+              </button>
+            ))}
+            <label className="player-settings-popup__custom-color">
+              <input
+                type="color"
+                value={color}
+                onChange={e => pickColor(e.target.value)}
+                aria-label={t('game.player.colorCustom')}
+              />
+              {t('game.player.colorCustom')}
+            </label>
+          </div>
+          {colorTakenBy.length > 0 && (
+            <p className="player-settings-popup__avatar-hint">{t('game.player.colorTakenBy', { names: colorTakenBy.join(', ') })}</p>
+          )}
 
           <div className="player-settings-popup__field-label">{t('game.player.bubbleSize')}</div>
           <select

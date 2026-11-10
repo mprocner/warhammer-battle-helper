@@ -20,14 +20,8 @@ import { characterToMapToken, imageToMapToken, snapPointToTokens, distanceBetwee
 import { useCombat } from '../../contexts/CombatContext';
 import { addCombatEntries, removeCombatEntry } from '../../api/combat';
 import { combatEntriesForSelection, combatEntriesInSelection } from './combat/combatSelectors';
+import { participantColor } from '../../utils/participants';
 import './SceneViewport.css';
-
-// Deterministic colour per measuring player, so remote rulers are distinguishable.
-const rulerColorFor = (id) => {
-  let hash = 0;
-  for (let i = 0; i < String(id).length; i++) hash = (hash * 31 + String(id).charCodeAt(i)) | 0;
-  return `hsl(${Math.abs(hash) % 360}, 70%, 60%)`;
-};
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 // GM staging margin in px. Module-level (not derived from canvasSize) so handleFit can use the
@@ -41,9 +35,9 @@ const ZOOM_PRESETS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0];
 
 const SceneViewport = ({
   scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'tokens', gridWidth, gridHeight, children,
-  onZoomChange, sendMessage, pointerPings = [], onRemovePing,
+  onZoomChange, sendMessage, pointerPings = [], onRemovePing, participants = [],
   brushSize = 10, fogGmOpacity = 0.5, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
-  drawingColor = '#ff0000', drawingFontSize = 16, onDrawingPathComplete,
+  drawingColor, drawingFontSize = 16, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
   controlScheme = 'modern', onBackgroundClick,
   gameSystem = 'warhammer4e',
@@ -464,10 +458,10 @@ const SceneViewport = ({
     const canvasY = (e.clientY - rect.top) / zoom;
     pingOriginRef.current = { x: e.clientX, y: e.clientY };
     pingTimerRef.current = setTimeout(() => {
-      sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id });
+      sendMessage('POINTER_PING', { x: canvasX, y: canvasY, sceneId: displayedScene.id, userId });
       pingTimerRef.current = null;
     }, PING_HOLD_MS);
-  }, [sendMessage, displayedScene, zoom, editingLayer, imageEditLayer, isGM, rulerStart, clientToCell]);
+  }, [sendMessage, displayedScene, zoom, editingLayer, imageEditLayer, isGM, rulerStart, clientToCell, userId]);
 
   // Tracks the marquee drag: updates the rect on mousemove, computes the intersection on mouseup.
   useEffect(() => {
@@ -621,9 +615,10 @@ const SceneViewport = ({
   // the local one stays on top (you keep your own line and readout when measuring toward fog).
   const selfRulers = [];
   const remoteRulers = [];
+  const ownColor = participantColor(participants, userId);
   if (ruler.ruler) {
     // Manual ruler tool → AoE circle when the toggle is on.
-    selfRulers.push({ key: 'self', from: ruler.ruler.from, to: ruler.ruler.to, distance: ruler.distance, name: null, color: '#ffe08a', aoe: aoeEnabled });
+    selfRulers.push({ key: 'self', from: ruler.ruler.from, to: ruler.ruler.to, distance: ruler.distance, name: null, color: ownColor, aoe: aoeEnabled });
   }
   // Live readout while dragging a token (local to the dragger) — no AoE circle.
   if (dragRuler) {
@@ -633,7 +628,7 @@ const SceneViewport = ({
       to: dragRuler.to,
       distance: distanceBetween({ col: dragRuler.from.col, row: dragRuler.from.row, w: 0, h: 0 }, { col: dragRuler.to.col, row: dragRuler.to.row, w: 0, h: 0 }, measurementMetric),
       name: null,
-      color: '#ffe08a',
+      color: ownColor,
       aoe: false,
     });
   }
@@ -645,7 +640,7 @@ const SceneViewport = ({
       to: r.to,
       distance: distanceBetween({ col: r.from.col, row: r.from.row, w: 0, h: 0 }, { col: r.to.col, row: r.to.row, w: 0, h: 0 }, measurementMetric),
       name: r.name,
-      color: rulerColorFor(r.userId),
+      color: participantColor(participants, r.userId),
       aoe: !!r.aoe, // remote ruler carries its own AoE flag (measurer's toggle)
     });
   });
@@ -858,6 +853,7 @@ const SceneViewport = ({
                     key={ping.id}
                     x={ping.x}
                     y={ping.y}
+                    color={participantColor(participants, ping.userId)}
                     onComplete={() => onRemovePing?.(ping.id)}
                   />
                 ))}

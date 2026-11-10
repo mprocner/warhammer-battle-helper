@@ -61,6 +61,7 @@
         "players": "Invite players, remove them or leave a game.",
         "inviteLink": "Invite link: the GM copies one link and pastes it on Discord; whoever opens it joins the game, even if they still have to register first.",
         "participant": "Your avatar and name in each game: from your account, from your character or your own.",
+        "colors": "Every player has their own colour in each game: on their avatar, rulers, pings, drawings and log entries. Pick any colour in your player settings.",
         "online": "See who is online."
       },
       "systems": {

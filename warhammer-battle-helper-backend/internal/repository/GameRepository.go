@@ -223,8 +223,8 @@ func (r *GameRepository) Delete(id string) error {
 	return nil
 }
 
-// UpdateParticipant updates avatar, signature, avatarSize and showSignature for a specific participant in a game
-func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool) error {
+// UpdateParticipant updates avatar, signature, avatarSize, showSignature and color for a specific participant in a game
+func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, avatar, avatarType, avatarCharacterId, signature, avatarSize string, showSignature bool, color string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -237,6 +237,7 @@ func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, av
 			"participants.$[elem].signature":         signature,
 			"participants.$[elem].avatarSize":        avatarSize,
 			"participants.$[elem].showSignature":     showSignature,
+			"participants.$[elem].color":             color,
 		},
 	}
 	arrayFilters := options.ArrayFilters{
@@ -255,10 +256,11 @@ func (r *GameRepository) UpdateParticipant(gameID, userID primitive.ObjectID, av
 }
 
 // AddParticipant adds a participant to a game unless that user is already in it. added is false
-// when nothing was pushed: the user is already a participant, or the game no longer exists (callers
-// have just loaded it, so for them both mean "nothing to do"). The guard sits in the filter, which
-// makes check-and-push atomic: two concurrent joins cannot add the same user twice.
-func (r *GameRepository) AddParticipant(gameID string, participant models.GameParticipant) (added bool, err error) {
+// when nothing was pushed: the user is already a participant, the game no longer exists (callers
+// have just loaded it, so for them both mean "nothing to do"), or uniqueColor is set and someone
+// already holds participant.Color. The guards sit in the filter, which makes check-and-push atomic:
+// two concurrent joins cannot add the same user twice, nor take the same free colour.
+func (r *GameRepository) AddParticipant(gameID string, participant models.GameParticipant, uniqueColor bool) (added bool, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -273,6 +275,9 @@ func (r *GameRepository) AddParticipant(gameID string, participant models.GamePa
 		"_id":                 objectID,
 		"deletedAt":           bson.M{"$exists": false},
 		"participants.userId": bson.M{"$ne": participant.UserID},
+	}
+	if uniqueColor {
+		filter["participants.color"] = bson.M{"$ne": participant.Color}
 	}
 	update := bson.M{
 		"$push": bson.M{"participants": participant},

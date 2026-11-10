@@ -4440,7 +4440,8 @@ align-items: center;
   height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4a3520 0%, #2e1f0f 100%);
-  border: 2px solid rgba(192, 160, 96, 0.6);
+  /* Participant colour (PLAYRPG-340), set inline; online state is the dot + opacity, not this. */
+  border: 2px solid var(--participant-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4523,8 +4524,7 @@ align-items: center;
 }
 
 .online-user-bubble--current-user:hover {
-  border-color: rgba(201, 151, 91, 0.9);
-  box-shadow: 0 0 8px rgba(201, 151, 91, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 10px 2px var(--participant-color), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .online-user-bubble__edit-overlay {

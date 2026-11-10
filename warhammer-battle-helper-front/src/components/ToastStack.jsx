@@ -6,6 +6,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import { getSystem } from '../systems/registry';
 import { resolveRollComponent } from './log/resolveRollComponent';
 import TruncatedLabel from './log/TruncatedLabel';
+import { participantColor } from '../utils/participants';
 import './ToastStack.css';
 import './LogWindow.css';
 
@@ -45,7 +46,7 @@ function DiceRollFallback({ data }) {
   );
 }
 
-function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem }) {
+function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem, participants }) {
   const { id, data, isExiting } = toast;
   const { rollType, outcome, visibility } = data;
 
@@ -68,7 +69,7 @@ function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem }) {
   return (
     <div
       className={`toast-stack__item${isExiting ? ' toast-stack__item--exiting' : ''}`}
-      style={{ '--toast-border-color': borderColor }}
+      style={{ '--toast-border-color': borderColor, '--author-color': participantColor(participants, data.rollerUserId || data.userId) }}
       onClick={handleBodyClick}
     >
       {/* Reuse the exact same log-list-item tile */}
@@ -89,7 +90,7 @@ function ToastItem({ toast, onDismiss, onNavigateToLog, gameSystem }) {
   );
 }
 
-function ToastStack({ toasts, onDismiss, onNavigateToLog, onPauseAll, onResumeAll, gameSystem }) {
+function ToastStack({ toasts, onDismiss, onNavigateToLog, onPauseAll, onResumeAll, gameSystem, participants = [] }) {
   const [hovered, setHovered] = useState(false);
 
   if (toasts.length === 0) return null;
@@ -110,6 +111,7 @@ function ToastStack({ toasts, onDismiss, onNavigateToLog, onPauseAll, onResumeAl
           onDismiss={onDismiss}
           onNavigateToLog={onNavigateToLog}
           gameSystem={gameSystem}
+          participants={participants}
         />
       ))}
     </div>,

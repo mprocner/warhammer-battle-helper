@@ -30,7 +30,7 @@ const gameScreen = {
     { id: 'drawingToolbar', target: '.drawing-toolbar', roles: BOTH, placement: 'left', variants: ['byRole'], help: 'game-screen#map-tools' },
     { id: 'combatButton', target: '.combat-toolbar-button', roles: ['gm'], placement: 'left', help: 'game-screen#turn-order' },
     { id: 'panelHeader', target: '.panel-header__actions', roles: BOTH, placement: 'bottom', reveal: 'right', help: 'game-screen#tutorials' },
-    { id: 'onlineUsers', target: '.right-panel__online-users', roles: BOTH, placement: 'bottom' },
+    { id: 'onlineUsers', target: '.right-panel__online-users', roles: BOTH, placement: 'bottom', help: 'for-players#your-colour' },
     { id: 'tabsNav', target: '.right-panel__tabs-nav', roles: BOTH, placement: 'left', reveal: 'right' },
     { id: 'diceControls', target: '.dice-controls', roles: BOTH, placement: 'left', reveal: 'right', help: 'dice-and-chat#who-sees-a-roll' },
   ],

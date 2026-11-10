@@ -47,8 +47,21 @@ kończy się powiadomieniem w lobby (`game.inviteLinkInvalid`). Ścieżka „nie
 przeglądarki. Na innym urządzeniu token przepada i trzeba otworzyć link jeszcze raz.
 
 **Ustawienia uczestnika w grze** (`PATCH /participant`, `PlayerSettingsPopup.jsx`): avatar
-(z konta, z postaci albo wgrany), podpis (z konta, z postaci albo własny), rozmiar dymka.
+(z konta, z postaci albo wgrany), podpis (z konta, z postaci albo własny), rozmiar dymka, kolor.
 Nazwę w logu wybiera `DisplayNameResolver`: podpis w grze → podpis konta → e-mail.
+
+**Kolor uczestnika** (PLAYRPG-340). `GameParticipant.Color` (`#rrggbb`) jest per gra, nie per
+konto. Domyślny przydziela backend z palety 12 kolorów (`models/participant_colors.go`,
+`ParticipantPalette`, jedyne źródło): MG dostaje pierwszy przy `CreateGame`, a każdy dołączający
+(`addPlayer` → `joinWithColor`, wspólne dla zaproszenia e-mailem i linkiem) pierwszy wolny.
+Po wyczerpaniu palety przydział zawija się od początku. Gracz zmienia kolor w
+`PlayerSettingsPopup` (paleta jako podpowiedzi + `<input type="color">`). `PATCH /participant`
+waliduje format (`NormalizeParticipantColor`, 400 dla złego) i zapisuje małymi literami, a
+`PARTICIPANT_UPDATED` niesie `color`, więc ramka dymka, miarki, pingi i log zmieniają się u
+wszystkich bez przeładowania. Front liczy kolor helperem `participantColor(participants, userId)`
+(`utils/participants.js`) z neutralnym brązem `#8a7d6a` dla autora spoza gry i dla gry przed
+migracją. Stare gry koloruje `cmd/migrate-participant-colors` (kolejność `JoinedAt`, uzupełnia
+tylko brakujące, ponowne uruchomienie daje zera).
 
 **Online.** Hub śledzi połączenia WS i rozsyła `USERS_ONLINE`. `OnlineSessionService`
 zapisuje czas sesji, z którego powstają statystyki czasu online (w grze i łącznie).
@@ -65,6 +78,7 @@ komórki, jednostka odległości, przyciąganie do siatki oraz konfiguracja wygl
 | Ekran gry | `src/components/GameSession.jsx` |
 | Panel boczny i zakładki | `src/components/panels/`, `tabDefinitions.jsx` (zakładki `gmOnly`) |
 | Online i ustawienia uczestnika | `src/components/online-users/`, `src/hooks/useOnlineUsers.js` |
+| Kolor uczestnika | `internal/models/participant_colors.go`, `joinWithColor` w `invite_link.go`, `cmd/migrate-participant-colors/`, `src/utils/participants.js` |
 | Backend gry | `internal/http/GameHandler.go`, `internal/service/GameService.go` |
 | Link z zaproszeniem | `internal/service/invite_link.go`, `internal/http/InviteLinkHandler.go`, `src/invite/`, `src/components/tabs/InviteLinkSection.jsx` |
 | Sesje online, statystyki | `internal/service/OnlineSessionService.go`, `internal/http/StatsHandler.go` |
@@ -88,5 +102,17 @@ komórki, jednostka odległości, przyciąganie do siatki oraz konfiguracja wygl
   i dopisanie to jedna atomowa operacja, więc podwójny klik ani dwie karty nie dodadzą tej samej
   osoby dwa razy (StrictMode też odpala efekty podwójnie). `takePendingInvite` czyta i kasuje
   token w jednym kroku z tego samego powodu.
+- **Wyścig o kolor.** Dwa równoczesne dołączenia widzą ten sam „pierwszy wolny” kolor.
+  `AddParticipant(..., uniqueColor)` dokłada do filtra `participants.color: {$ne}`, więc push
+  przegranego nic nie trafia. `joinWithColor` czyta wtedy grę jeszcze raz i bierze następny
+  kolor (limit prób = paleta + 2). Gdy paleta jest wyczerpana, kolor i tak jest wspólny, więc
+  guard znika. Zawinięcie liczy tylko uczestników z kolorem: inaczej migracja dałaby dwóm
+  ostatnim osobom ten sam kolor.
+- **Duplikaty z pickera są dozwolone.** Gwarancję unikalności daje tylko przydział domyślny.
+  Popup podpowiada „Ten kolor ma też: …”, ale nie blokuje.
+- **Paleta istnieje dwa razy.** Kopia w `utils/participants.js` służy tylko jako podpowiedzi
+  w pickerze. Rozjazd z Go niczego nie psuje, ale nowy kolor dopisuj w obu miejscach.
+- `PATCH /participant` nadpisuje wszystkie pola naraz, także `color`. Klient, który pominie
+  kolor, dostanie 400. Popup wysyła go zawsze (fallback dla gry przed migracją).
 - Każda porażka linku (zły format, unieważniony, usunięta gra) to jeden błąd
   `ErrInviteLinkInvalid` → 404, żeby obcy nie mógł sprawdzać, które tokeny kiedyś istniały.

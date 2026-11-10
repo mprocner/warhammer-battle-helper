@@ -145,6 +145,7 @@ const RightPanel = ({
             gameSystem={gameState?.gameSystem}
             currentUserId={userId}
             onlyMine={onlyMyRolls}
+            participants={gameState?.participants}
           />
         );
       case 'scenes':

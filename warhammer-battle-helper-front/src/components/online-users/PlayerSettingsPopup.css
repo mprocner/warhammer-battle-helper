@@ -221,6 +221,55 @@
   margin-left: 2px;
 }
 
+.player-settings-popup__colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-settings-popup__swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid #c4a882;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-settings-popup__swatch--selected {
+  border-color: #3a2f1f;
+}
+
+.player-settings-popup__swatch-check.MuiSvgIcon-root {
+  font-size: 16px;
+  color: #fff;
+  filter: drop-shadow(0 0 1px #000);
+}
+
+.player-settings-popup__custom-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  color: #4a3728;
+  cursor: pointer;
+}
+
+.player-settings-popup__custom-color input[type="color"] {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid #c4a882;
+  border-radius: 4px;
+  background: #fff9f0;
+  cursor: pointer;
+}
+
 .player-settings-popup__msg {
   font-size: 0.85rem;
   margin: 4px 0 0;

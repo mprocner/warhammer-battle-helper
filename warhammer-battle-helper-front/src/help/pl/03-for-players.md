@@ -44,7 +44,19 @@ Wybór widoczności dotyczy też rzutów z karty.
 Kliknij swój avatar na pasku u góry, żeby ustawić:
 - avatar (z konta, z postaci albo wgrany),
 - podpis, czyli nazwę widoczną przy twoich wpisach w logu (z konta, z postaci albo własny),
-- rozmiar avatara na pasku.
+- rozmiar avatara na pasku,
+- swój kolor.
+
+### Twój kolor {#your-colour}
+
+Każdy uczestnik gry ma własny kolor. Widać go na obwódce avatara na pasku, na twojej miarce
+i pingach na mapie, na pasku przy twoich wpisach w logu i na górnej krawędzi wyskakującego
+okienka z twoim rzutem. Rysowanie też startuje w twoim kolorze, a kolor zmieniony ręcznie
+w pasku narzędzi rysowania zostaje do końca sesji.
+
+Kolor dostajesz przy dołączeniu do gry: pierwszy z palety, którego nikt jeszcze nie ma.
+W ustawieniach wybierzesz inny z palety albo dowolny przez **Własny kolor**. Ten sam kolor
+mogą mieć dwie osoby, a okno podpowie, kto już go ma. Kolor ustawiasz osobno w każdej grze.
 
 W zakładce **Ogólne** ustawisz swoją głośność muzyki (zmienia tylko dźwięk u ciebie), język
 i schemat sterowania. Tam też jest **Wróć do listy gier** i **Opuść Grę**.

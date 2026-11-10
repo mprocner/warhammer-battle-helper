@@ -15,8 +15,8 @@
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  border: 20px solid #e03030;
-  box-shadow: 0 0 12px rgba(224, 48, 48, 0.6);
+  border: 20px solid var(--ping-color);
+  box-shadow: 0 0 12px var(--ping-color);
   pointer-events: none;
   animation: pointer-ping 1.5s ease-out forwards;
   z-index: 1000000;

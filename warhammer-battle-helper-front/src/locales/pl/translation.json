@@ -529,7 +529,11 @@
       "customPlaceholder": "Wpisz swój podpis...",
       "save": "Zapisz",
       "saving": "Zapisywanie...",
-      "successMessage": "Ustawienia gracza zaktualizowane"
+      "successMessage": "Ustawienia gracza zaktualizowane",
+      "color": "Twój kolor w tej grze",
+      "colorCustom": "Własny kolor",
+      "colorSwatch": "Kolor {{color}}",
+      "colorTakenBy": "Ten kolor ma też: {{names}}"
     },
     "paused": "Wstrzymana",
     "completed": "Zakończona",
@@ -1162,7 +1166,7 @@
       },
       "onlineUsers": {
         "title": "Kto jest przy stole",
-        "body": "Wszyscy uczestnicy gry. Podświetlony awatar znaczy, że ktoś jest teraz połączony. Kliknij swój, żeby zmienić avatar, podpis i jego rozmiar."
+        "body": "Wszyscy uczestnicy gry. Podświetlony awatar znaczy, że ktoś jest teraz połączony. Kolor obwódki to kolor gracza: ten sam zobaczysz na jego miarce, pingach i wpisach w logu. Kliknij swój avatar, żeby zmienić avatar, podpis, jego rozmiar i swój kolor."
       },
       "tabsNav": {
         "title": "Zakładki prawego panelu",

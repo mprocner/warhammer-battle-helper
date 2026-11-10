@@ -503,6 +503,7 @@ func (h *GameHandler) UpdateParticipant(c *gin.Context) {
 		Signature         string `json:"signature"`
 		AvatarSize        string `json:"avatarSize"`
 		ShowSignature     bool   `json:"showSignature"`
+		Color             string `json:"color"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -518,11 +519,11 @@ func (h *GameHandler) UpdateParticipant(c *gin.Context) {
 		return
 	}
 
-	if err := h.GameService.UpdateParticipant(gameID, userID, req.Avatar, req.AvatarType, req.AvatarCharacterId, req.Signature, req.AvatarSize, req.ShowSignature); err != nil {
+	if err := h.GameService.UpdateParticipant(gameID, userID, req.Avatar, req.AvatarType, req.AvatarCharacterId, req.Signature, req.AvatarSize, req.ShowSignature, req.Color); err != nil {
 		switch err.Error() {
 		case "user is not a participant of this game":
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		case "signature must be at most 50 characters":
+		case "signature must be at most 50 characters", service.ErrInvalidParticipantColor.Error():
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

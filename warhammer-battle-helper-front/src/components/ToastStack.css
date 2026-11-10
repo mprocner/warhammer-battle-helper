@@ -19,6 +19,8 @@
   backdrop-filter: blur(4px);
   border-radius: 6px;
   border-left: 4px solid var(--toast-border-color, var(--log-brown-muted));
+  /* Left = roll outcome, top = who rolled (participant colour, PLAYRPG-340). */
+  border-top: 3px solid var(--author-color, transparent);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
   cursor: pointer;
   overflow: hidden;

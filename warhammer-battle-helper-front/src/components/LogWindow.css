@@ -289,11 +289,8 @@
 }
 
 /* ================== CURRENT USER'S OWN ENTRIES ================== */
-/* Gruby złoty pasek z lewej + złoty gradient tła zanikający w prawo. */
+/* Gold background tint fading to the right; the left bar is the author colour (see below). */
 .log-list-item--mine {
-  border-left: 5px solid var(--log-gold-light);
-  /* Mniejszy lewy padding — gruby złoty border już odpycha treść (5px + 8px = 1px + 12px). */
-  padding-left: 8px;
   background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, var(--log-bg-item) 40%);
 }
 
@@ -301,11 +298,21 @@
   background: linear-gradient(to right, rgba(212, 175, 55, 0.18) 0%, var(--log-bg-item-hover) 40%);
 }
 
-/* Wiadomości proste mają już 4px lewy border — zmieniamy jego kolor na złoty + delikatny tint.
-   Reguła po modyfikatorach typu (--info/--success/...), więc wygrywa kolejnością źródła. */
 .log-simple-message--mine {
-  border-left-color: var(--log-gold-light);
   background: linear-gradient(to right, rgba(212, 175, 55, 0.10) 0%, rgba(255, 255, 255, 0.70) 40%);
+}
+
+/* ================== AUTHOR COLOUR (PLAYRPG-340) ================== */
+/* The left bar carries the author's participant colour; "mine" keeps only its gold tint. Declared
+   after the type modifiers so it wins over their border colour at equal specificity. */
+.log-list-item--authored {
+  border-left: 5px solid var(--author-color);
+  /* Thick bar already pushes content: 5px + 8px = 1px + 12px of the base item. */
+  padding-left: 8px;
+}
+
+.log-simple-message--authored {
+  border-left-color: var(--author-color);
 }
 
 /* ================== NEW MESSAGE HIGHLIGHT ================== */

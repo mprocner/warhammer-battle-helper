@@ -43,6 +43,14 @@ wartościami, nigdy surowe dane.
 **Ping** wskaźnikiem i linijka miarki to zdarzenia ulotne: klient wysyła je przez WebSocket,
 a hub przekazuje je dalej, nic nie zapisując.
 
+**Kolor gracza na mapie** (PLAYRPG-340, model w `03-gry-i-uczestnicy.md`). Miarki (własna
+i cudze) i pingi rysują się kolorem uczestnika z `participantColor`. `POINTER_PING` niesie
+`userId` nadawcy (hub przekazuje payload surowo, jak `MAP_RULER`), a `PointerPing` dostaje kolor
+przez `--ping-color`. Rysowanie startuje w kolorze gracza: `useDrawingTools(playerColor)` zwraca
+`pickedColor ?? playerColor`. Kolor z przybyłych później uczestników albo zmieniony w
+ustawieniach podąża więc za graczem, dopóki ten nie wybierze koloru w toolbarze. Od tej chwili
+wygrywa wybór ręczny.
+
 **Współrzędne** mgły i rysunków są zapisywane w przestrzeni sceny, nie w pikselach ekranu, więc
 działają przy każdym zoomie.
 
