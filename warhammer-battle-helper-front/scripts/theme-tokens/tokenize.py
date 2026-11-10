@@ -120,7 +120,10 @@ def nearest_distinct(table, rgb, used):
     value: two gradient stops collapsing into one token would flatten the gradient."""
     L = lab(rgb)
     ranked = sorted(((tok, math.dist(L, l)) for tok, l in table), key=lambda x: x[1])
+    best = ranked[0][1]
     for tok, d in ranked:
+        if d > best + 10:
+            break  # an alternative this far away changes the hue: accept a flat gradient
         prev = used.get(tok)
         if prev is None or math.dist(prev, L) < 8:
             used[tok] = L

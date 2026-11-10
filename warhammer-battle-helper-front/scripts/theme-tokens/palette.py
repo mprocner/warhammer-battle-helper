@@ -52,6 +52,11 @@ FAMILIES = {
         ('--c-night-bg', '#252540'),        # dark navy (minigames)
         ('--c-success-bg-pale', '#d4ecd4'),
         ('--c-success-bg-vivid', '#4caf50'),
+        ('--c-success-bg-dark', '#3a6647'),
+        ('--c-slate-bg', '#6b7d8a'),        # secondary (details) buttons
+        ('--c-slate-bg-dark', '#4a5a66'),
+        ('--c-enemy-bg', '#f4b6b6'),        # enemy tokens
+        ('--c-enemy-bg-light', '#ffe5e5'),
     ],
     'border': [
         ('--c-border-accent', '#c9975b'),   # gold frames

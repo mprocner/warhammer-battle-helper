@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from palette import FAMILIES, RGB  # noqa: E402
 
+BG_TEXTURE = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Cfilter id=\'paper\'%3E%3CfeTurbulence baseFrequency=\'0.04\' numOctaves=\'5\' seed=\'2\' /%3E%3CfeColorMatrix values=\'0 0 0 0 0.96, 0 0 0 0 0.91, 0 0 0 0 0.82, 0 0 0 0.15 0\'/%3E%3C/filter%3E%3Crect width=\'200\' height=\'200\' filter=\'url(%23paper)\'/%3E%3C/svg%3E")'  # parchment noise
 TITLES = {'text': 'Text', 'bg': 'Surfaces and fills', 'border': 'Borders and outlines'}
 out = ['/* Theme tokens: default theme (PLAYRPG-346).',
        ' * Every themeable value in the app CSS comes from here; a theme overrides these under',
@@ -35,6 +36,9 @@ out += ['',
         '  --radius-xl: 8px;',
         '  --radius-2xl: 12px;',
         '  --radius-pill: 20px;',
+        '',
+        '  /* Surface decoration: page texture layered over the body gradient */',
+        '  --bg-texture: %s;' % BG_TEXTURE,
         '',
         '  /* Depth: alpha multiplier of blurred shadows (focus rings are not affected) */',
         '  --shadow-k: 1;',
