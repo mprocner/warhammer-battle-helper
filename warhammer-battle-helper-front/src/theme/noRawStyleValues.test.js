@@ -4,11 +4,12 @@ import path from 'path';
 // Themes (PLAYRPG-270) work by overriding the tokens in src/theme/tokens.css under
 // :root[data-theme="<id>"]. A colour, radius, letter-spacing or font written directly in a
 // stylesheet ignores the theme and stays parchment in every theme, so app CSS may only use
-// tokens. A var() naming a token that does not exist is just as bad: the declaration becomes
+// tokens. Theme definitions in src/theme/ are the only place for raw values. A var() naming a token that does not exist is just as bad: the declaration becomes
 // invalid at computed-value time and silently falls back to transparent / initial.
 
 const SRC = path.join(__dirname, '..');
-const TOKENS_FILE = path.join(__dirname, 'tokens.css');
+// Token definitions: the default theme (tokens.css) and the theme blocks (themes/*.css).
+const isThemeDefinition = file => file.startsWith(__dirname + path.sep);
 
 // Content colours that must not follow the theme. Keep this list short and justified.
 const ALLOWED = [];
@@ -63,7 +64,7 @@ const rel = file => path.relative(SRC, file);
 describe('theme tokens guard', () => {
   it('app stylesheets use theme tokens instead of raw colours, radii, tracking and fonts', () => {
     const problems = cssFiles
-      .filter(file => file !== TOKENS_FILE)
+      .filter(file => !isThemeDefinition(file))
       .flatMap(file => declarations(fs.readFileSync(file, 'utf8'))
         .map(d => ({ ...d, reason: violation(d) }))
         .filter(d => d.reason)

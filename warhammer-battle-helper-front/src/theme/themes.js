@@ -18,9 +18,17 @@ export const THEMES = [
   },
   {
     id: 'scifi',
-    swatch: { bg: '#0f1724', panel: '#16223a', accent: '#38d6e8', text: '#d6e4f0', border: '#2b4a6a' },
-    displayFont: 'sans-serif',
-    loadFonts: null,
+    swatch: { bg: '#0f1724', panel: '#1c3550', accent: '#38d6e8', text: '#d6e4f0', border: '#2bb8c9' },
+    displayFont: "'Exo 2', sans-serif",
+    loadFonts: () => Promise.all([
+      import('@fontsource/exo-2/400.css'),
+      import('@fontsource/exo-2/600.css'),
+      import('@fontsource/exo-2/700.css'),
+      import('@fontsource/inter/400.css'),
+      import('@fontsource/inter/500.css'),
+      import('@fontsource/inter/600.css'),
+      import('@fontsource/inter/700.css'),
+    ]),
   },
   {
     id: 'twenties',

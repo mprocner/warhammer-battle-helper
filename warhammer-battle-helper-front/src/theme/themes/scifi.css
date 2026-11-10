@@ -1,0 +1,170 @@
+/* Sci-fi theme (PLAYRPG-349): a starship console. Dark navy surfaces, light steel text, cyan
+ * accents, cyan glow instead of brown shadows, sharp corners, HUD brackets on framed windows.
+ *
+ * Every token of tokens.css is overridden here: a token left out shows a parchment value on
+ * a navy surface. Roles stay the same as in the default theme, only the values change; note
+ * that --c-text-on-dark sits on buttons and on dark overlays alike, so buttons use a deep teal
+ * (--c-accent-bg) that carries light text, and the bright cyan is kept for accents. */
+:root[data-theme="scifi"] {
+  color-scheme: dark;
+
+  /* Text */
+  --c-text: #d6e4f0;
+  --c-text-deep: #eaf2f8;
+  --c-heading: #7fe3f0;
+  --c-label: #8fb0c8;
+  --c-text-muted: #7890a6;
+  --c-text-accent: #38d6e8;
+  --c-text-on-dark: #e8fbff;
+  --c-text-danger: #ff6b6b;
+  --c-text-success: #4fd18b;
+  --c-text-info: #6aa8ff;
+  --c-text-magic: #c39bff;
+  --c-text-neutral: #9aa7b4;
+  --c-text-neutral-light: #84919d;
+  --c-text-on-dark-muted: #a9c4d6;
+  --c-text-danger-dark: #ff9b9b;
+  --c-text-gold: #e8c46a;
+  --c-text-danger-light: #ff9b9b;
+  --c-text-magic-light: #d9c2ff;
+
+  /* Surfaces and fills */
+  --c-input-bg: #0b1320;
+  --c-surface: #121c2c;
+  --c-surface-alt: #0f1724;
+  --c-surface-raised: #17243a;
+  --c-surface-sunken: #0c1422;
+  --c-surface-white: #1b2a42;
+  --c-accent-bg: #11707e;
+  --c-accent-bg-light: #1a8a99;
+  --c-accent-bg-dark: #0c5560;
+  --c-leather-bg: #1c3550;
+  --c-leather-bg-dark: #142840;
+  --c-dark-bg: #060b14;
+  --c-danger-bg: #a8323a;
+  --c-success-bg: #1f7a52;
+  --c-info-bg: #2a5ea8;
+  --c-magic-bg: #5b3a9e;
+  --c-neutral-bg: #3a4656;
+  --c-danger-bg-light: #c95560;
+  --c-danger-bg-dark: #5a1a20;
+  --c-success-bg-light: #2f9a68;
+  --c-night-bg: #0a1020;
+  --c-success-bg-pale: #12382a;
+  --c-success-bg-vivid: #2fbf71;
+  --c-success-bg-dark: #155c3c;
+  --c-slate-bg: #2c3d52;
+  --c-slate-bg-dark: #1e2c3d;
+  --c-enemy-bg: #4a1c26;
+  --c-enemy-bg-light: #6a2a36;
+
+  /* Borders and outlines */
+  --c-border-accent: #2bb8c9;
+  --c-border-strong: #3d6a8f;
+  --c-border: #24405c;
+  --c-border-light: #2f5578;
+  --c-border-dark: #1a3049;
+  --c-border-gold: #e0b84a;
+  --c-border-danger: #e05561;
+  --c-border-success: #3fb87a;
+  --c-border-info: #4f8de0;
+  --c-border-magic: #9a72e0;
+  --c-border-neutral: #4b5a6b;
+  --c-border-faint: #1c2b40;
+  --c-border-neutral-dark: #0a121c;
+  --c-border-neutral-light: #3b4a5c;
+  --c-border-danger-dark: #b03a44;
+  --c-border-success-light: #4fd18b;
+  --c-border-danger-deep: #3a121a;
+
+  /* RGB triplets. "Light" veils and white highlights lift a navy surface instead of
+   * bleaching it; the brown shadow colour becomes the cyan glow. */
+  --c-accent-rgb: 56 214 232;
+  --c-leather-rgb: 61 106 143;
+  --c-leather-dark-rgb: 30 160 180;
+  --c-text-rgb: 214 228 240;
+  --c-deep-rgb: 3 8 16;
+  --c-gold-rgb: 224 184 74;
+  --c-light-rgb: 23 36 58;
+  --c-highlight-rgb: 40 70 100;
+  --c-shadow-rgb: 0 0 0;
+  --c-danger-rgb: 224 85 97;
+  --c-success-rgb: 63 184 122;
+  --c-info-rgb: 79 141 224;
+  --c-magic-rgb: 154 114 224;
+
+  /* Typography: Exo 2 has Polish glyphs (Orbitron does not) */
+  --font-display: 'Exo 2', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --display-transform: uppercase;
+  --tracking-k: 0.8;
+
+  /* Shape: sharp */
+  --radius-xs: 0;
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 3px;
+  --radius-2xl: 4px;
+  --radius-pill: 4px;
+
+  /* Surface decoration: faint console grid; HUD brackets in the corners of framed windows */
+  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cpath d='M32 0H0V32' fill='none' stroke='%2338d6e8' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
+  --frame-ornament:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cpath d='M1 17V1H17' fill='none' stroke='%2338d6e8' stroke-width='2'/%3E%3C/svg%3E") top 4px left 4px / 18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cpath d='M1 1H17V17' fill='none' stroke='%2338d6e8' stroke-width='2'/%3E%3C/svg%3E") top 4px right 4px / 18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cpath d='M1 1V17H17' fill='none' stroke='%2338d6e8' stroke-width='2'/%3E%3C/svg%3E") bottom 4px left 4px / 18px 18px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Cpath d='M1 17H17V1' fill='none' stroke='%2338d6e8' stroke-width='2'/%3E%3C/svg%3E") bottom 4px right 4px / 18px 18px no-repeat;
+
+  /* Depth: glow, a little softer than the default shadows */
+  --shadow-k: 0.7;
+
+  /* Roll log and outcomes */
+  --log-brown-dark: #7fe3f0;
+  --log-brown-medium: #8fb0c8;
+  --log-brown-light: #38d6e8;
+  --log-brown-text: #d6e4f0;
+  --log-brown-muted: #7890a6;
+  --log-brown-accent: #2bb8c9;
+  --log-green-dark: #1f7a52;
+  --log-green-medium: #3fb87a;
+  --log-green-light: #4fd18b;
+  --log-success: #4fd18b;
+  --log-red-dark: #b03a44;
+  --log-red-medium: #e05561;
+  --log-red-light: #ff6b6b;
+  --log-gold-dark: #c9a23a;
+  --log-gold-medium: #e0b84a;
+  --log-gold-light: #f2d27a;
+  --log-purple-dark: #3a2a6a;
+  --log-purple-medium: #9a72e0;
+  --log-blue: #6aa8ff;
+  --log-bg-parchment: #121c2c;
+  --log-bg-parchment-dark: #0f1724;
+  --log-bg-item: rgb(40 70 100 / 0.35);
+  --log-bg-item-hover: rgb(40 70 100 / 0.6);
+  --log-info: #8fa3b8;
+  --log-new-glow: #ffb347;
+  --log-new-glow-rgb: 255 179 71;
+
+  /* MUI reads its own palette variables (theme.js runs in cssVariables mode) */
+  --mui-palette-primary-main: #2bb8c9;
+  --mui-palette-primary-mainChannel: 43 184 201;
+  --mui-palette-primary-dark: #1a8a99;
+  --mui-palette-primary-light: #7fe3f0;
+  --mui-palette-primary-contrastText: #06121e;
+  --mui-palette-background-default: #0f1724;
+  --mui-palette-background-paper: #121c2c;
+  --mui-palette-text-primary: #d6e4f0;
+  --mui-palette-text-primaryChannel: 214 228 240;
+  --mui-palette-text-secondary: #8fb0c8;
+  --mui-palette-text-secondaryChannel: 143 176 200;
+  --mui-palette-text-disabled: #5a6c7e;
+  --mui-palette-divider: #24405c;
+  --mui-palette-action-active: #8fb0c8;
+  --mui-palette-action-hover: rgb(56 214 232 / 0.08);
+  --mui-palette-action-selected: rgb(56 214 232 / 0.16);
+  --mui-palette-action-disabled: #4a5b6c;
+  --mui-palette-action-disabledBackground: #1c2b40;
+}

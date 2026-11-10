@@ -19,6 +19,8 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 // Theme tokens first: every stylesheet below reads its colours, fonts and radii from them.
 import './theme/tokens.css';
+// Theme blocks only apply under <html data-theme="…">, set while a game view is open.
+import './theme/themes/scifi.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';

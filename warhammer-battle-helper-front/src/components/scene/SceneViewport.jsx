@@ -783,7 +783,7 @@ const SceneViewport = ({
                   style={{
                     position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
                     backgroundImage: (displayedScene?.gridVisible !== false)
-                      ? `linear-gradient(to right, #d4a574 1px, transparent 1px), linear-gradient(to bottom, #d4a574 1px, transparent 1px)`
+                      ? 'linear-gradient(to right, var(--c-border-light) 1px, transparent 1px), linear-gradient(to bottom, var(--c-border-light) 1px, transparent 1px)'
                       : 'none',
                     backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
                     opacity: 0.4,
