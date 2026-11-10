@@ -81,20 +81,26 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
   `tutorial.creatorField.head.body.<typ>` (pilnuje `tourTranslations.test.js`); nowa grupa/karta bez
   kroku wywala `creatorTour.coverage.test.jsx`. Sens i aktualność tekstów — tylko Ty.
 
-### Schemat kolorów — karty postaci (jasne tło)
-Popup `.character-sheet-popup` ma jasne kremowe tło: `linear-gradient(135deg, #f4e8d8, #e8dcc4)`.
-Wszystkie karty postaci (Warhammer, CoC, Custom) używają **ciemnego tekstu na jasnym tle** — nigdy jasnego tekstu (`#e8d5b7`) bezpośrednio w popupie.
+### Kolory, czcionki, kształt — tylko przez tokeny motywu
+Wszystkie kolory, czcionki, zaokrąglenia, rozstrzelenie liter i siła cieni w CSS (i w `sx` /
+`style` dla chrome UI) pochodzą z tokenów w `src/theme/tokens.css` — motyw gry (PLAYRPG-270)
+nadpisuje je w `:root[data-theme="<id>"]`. Wpisany hex zostaje pergaminowy w każdym motywie.
+Strażnik: `src/theme/noRawStyleValues.test.js` (surowe wartości + niezdefiniowane `var()`).
+Szczegóły i pułapki: `docs/knowledge-base/13-motywy.md`.
 
-| Rola | Kolor |
-|---|---|
-| Tło inputów | `#fff9f0` — ciepła biel |
-| Tekst w inputach / główny tekst | `#3a2f1f` — ciemny brąz |
-| Ramki inputów (normal) | `#c4a882` — jasny złoty brąz |
-| Ramki inputów (focus) / border popup | `#7a5c42` — ciemny brąz |
-| Etykiety pól / kategorie | `#7a5c42` — ciemny brąz |
-| Akcenty / sekcje / ikony | `#c9975b` — złoty |
-| Tło popupu | `linear-gradient(135deg, #f4e8d8 0%, #e8dcc4 100%)` |
-| Border popupu | `#7a5c42` |
+- Wybieraj token według **roli i właściwości**: `color` → `--c-text*` / `--c-heading` /
+  `--c-label`, `background` → `--c-surface*` / `--c-input-bg` / `--c-accent-bg*`,
+  `border` → `--c-border*`. Przezroczystość: `rgb(var(--c-accent-rgb) / 0.3)`.
+- Cień rozmyty: alfa × `var(--shadow-k)`; pierścień focus (bez rozmycia) — bez mnożnika.
+- Brak pasującego tokena → dodaj token do `tokens.css` (i do każdego motywu), nie hex.
+- **Motyw nigdy nie zmienia wymiarów** (padding, margin, rozmiary, font-size, line-height,
+  border-width) — karty z kreatora i kotwice samouczka zależą od stałej geometrii.
+- Kolory treści (palety pasków HP, etykiet, rysunków, uczestników) zostają dosłowne.
+
+Karty postaci (Warhammer, CoC, Custom) w motywie default: ciemny tekst (`--c-text`) na jasnym
+tle popupu (`--c-surface` → `--c-surface-alt`), inputy `--c-input-bg` z ramką `--c-border`
+(focus `--c-border-strong`), etykiety `--c-label`, akcenty `--c-text-accent` /
+`--c-border-accent`. Nigdy jasnego tekstu bezpośrednio na tle popupu.
 
 ### Funkcja jest gotowa dopiero z dokumentacją
 

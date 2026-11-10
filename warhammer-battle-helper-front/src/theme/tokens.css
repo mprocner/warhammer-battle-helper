@@ -1,4 +1,4 @@
-/* Theme tokens: default theme (PLAYRPG-346).
+/* Theme tokens: default theme (PLAYRPG-346). Hand-maintained.
  * Every themeable value in the app CSS comes from here; a theme overrides these under
  * :root[data-theme="<id>"]. Tokens never cover dimensions (padding, sizes, font-size,
  * line-height, border-width): sheets and tutorial anchors depend on fixed geometry.

@@ -26,6 +26,7 @@ Pliki w `features/` to historyczne specyfikacje z pracy nad funkcjami i mogą by
 | [10-samouczki-i-i18n.md](10-samouczki-i-i18n.md) | Interaktywne samouczki, strona pomocy `/help`, tłumaczenia |
 | [11-deploy-i-testy.md](11-deploy-i-testy.md) | Uruchamianie, deploy, testy |
 | [12-prywatnosc-i-seo.md](12-prywatnosc-i-seo.md) | Czcionki bez Google, zgoda i Google Analytics, tytuły stron, meta tagi, indeksowanie |
+| [13-motywy.md](13-motywy.md) | Tokeny wyglądu (kolory, czcionki, kształt, cienie), motywy gry, strażnik surowych wartości |
 
 ## Jak utrzymywać bazę
 

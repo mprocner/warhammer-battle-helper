@@ -4,14 +4,16 @@
 
 ### Czcionki z własnego serwera
 
-Wszystkie czcionki (Cinzel, Crimson Text, IM Fell DW Pica, Roboto) są w paczkach
+Wszystkie czcionki (Cinzel, Crimson Text, Roboto) są w paczkach
 `@fontsource/*` i importowane w `src/index.js` — webpack wrzuca pliki `.woff2` do
 `build/static/media`, więc serwuje je nasz nginx. Wcześniej `public/index.html` ładował
 Google Fonts (`fonts.googleapis.com` + `fonts.gstatic.com`), co wysyłało IP każdego
 odwiedzającego do Google **zanim** zobaczył baner zgody. Importujemy tylko używane grubości
-(Cinzel 400/600/700/900, Crimson Text 400/600/700 + kursywy, IM Fell regular + kursywa,
+(Cinzel 400/600/700/900, Crimson Text 400/600/700 + kursywy,
 Roboto 300/400/500). Każdy plik grubości zawiera podzbiory latin i latin-ext (polskie znaki)
-rozdzielone `unicode-range`, więc przeglądarka pobiera tylko to, czego potrzebuje.
+rozdzielone `unicode-range`, więc przeglądarka pobiera tylko to, czego potrzebuje. Kod nie
+nazywa czcionek wprost — używa tokenów `--font-display` / `--font-body` / `--font-ui`
+(zob. [13-motywy.md](13-motywy.md)).
 
 `src/publicIndex.test.js` pilnuje, żeby `public/index.html` nie ładował niczego z obcej
 domeny (`<link>`, `<script>`, `<iframe>`, `<img>`).
