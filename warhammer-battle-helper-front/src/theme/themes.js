@@ -41,6 +41,26 @@ export const THEMES = [
       import('@fontsource/playfair-display/700.css'),
     ]),
   },
+  {
+    id: 'darkfantasy',
+    swatch: { bg: '#151310', panel: '#2e2a25', accent: '#c9a456', text: '#e2d8c3', border: '#7a3b1e' },
+    displayFont: "'Grenze', serif",
+    loadFonts: () => Promise.all([
+      import('@fontsource/grenze/400.css'),
+      import('@fontsource/grenze/600.css'),
+      import('@fontsource/grenze/700.css'),
+      import('@fontsource/grenze/900.css'),
+      import('@fontsource/alegreya/400.css'),
+      import('@fontsource/alegreya/400-italic.css'),
+      import('@fontsource/alegreya/600.css'),
+      import('@fontsource/alegreya/600-italic.css'),
+      import('@fontsource/alegreya/700.css'),
+      import('@fontsource/alegreya/700-italic.css'),
+      import('@fontsource/alegreya-sans/300.css'),
+      import('@fontsource/alegreya-sans/400.css'),
+      import('@fontsource/alegreya-sans/500.css'),
+    ]),
+  },
 ];
 
 const byId = Object.fromEntries(THEMES.map(t => [t.id, t]));

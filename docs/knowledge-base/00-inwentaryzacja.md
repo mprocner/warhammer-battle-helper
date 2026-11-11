@@ -81,7 +81,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 |---|---|---|
 | Czat i log rzutów (komendy `/roll` `/r`, `/gmroll` `/gmr`, `/help`) | MG / G | `FEATURE-75 - GM roll.md` |
 | Kości 3D na scenie z dźwiękiem, w kolorze rzucającego; wyłącznik w zakładce Ogólne i na `/settings` | K | PLAYRPG-339 / 343 |
-| Motyw gry (Pergamin / Sci-fi / Lata 20.): wybór MG w zakładce Ogólne → Wygląd; opt-out gracza w Ogólne i na `/settings` | MG / K | PLAYRPG-270 (346–350) |
+| Motyw gry (Pergamin / Sci-fi / Lata 20. / Dark fantasy): wybór MG w zakładce Ogólne → Wygląd; opt-out gracza w Ogólne i na `/settings` | MG / K | PLAYRPG-270 (346–350) |
 | Sceny | MG | `Scenes.md` |
 | Handouty (foldery, kolejność, udostępnianie) | MG / G | `Handouts.md` |
 | Pliki (biblioteka obrazków, foldery, użycie pliku) | MG | `Files.md` |

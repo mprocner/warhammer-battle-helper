@@ -63,7 +63,7 @@ i schemat sterowania. Tam też jest **Wróć do listy gier** i **Opuść Grę**.
 
 ### Wygląd gry {#game-look}
 
-Kolory, czcionki i ramki okien w grze wybiera MG (motyw: Pergamin, Sci-fi albo Lata 20.).
+Kolory, czcionki i ramki okien w grze wybiera MG (motyw: Pergamin, Sci-fi, Lata 20. albo Dark fantasy).
 Jeśli motyw ci nie odpowiada, np. jest dla ciebie mało czytelny, włącz w zakładce **Ogólne**
 przełącznik **Zawsze motyw Pergamin**. Działa tylko u ciebie, we wszystkich twoich grach,
 a ten sam przełącznik jest w ustawieniach konta, w sekcji **Gra**.

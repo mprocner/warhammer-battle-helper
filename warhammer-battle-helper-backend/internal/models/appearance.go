@@ -3,7 +3,7 @@ package models
 // GameThemes lists the theme ids the GM may pick. The backend stores and validates ids
 // only; colours, fonts and ornaments live entirely in the frontend theme registry, so a
 // new theme is one id here plus its CSS block there.
-var GameThemes = []string{"default", "scifi", "twenties"}
+var GameThemes = []string{"default", "scifi", "twenties", "darkfantasy"}
 
 // IsValidGameTheme reports whether id names a known theme. "" is not valid in a request:
 // it is only the zero value of a game that never had a theme set (read as "default").

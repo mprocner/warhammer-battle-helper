@@ -1,0 +1,179 @@
+/* Dark fantasy theme (PLAYRPG-270): grimdark. The night side of Parchment: soot and iron
+ * surfaces, bone text, tarnished gold accents, rust buttons, heavy shadows, riveted iron
+ * plates in the corners of framed windows. Good for Warhammer and dark fantasy.
+ *
+ * Every token of tokens.css is overridden (see themeCompleteness.test.js). As in sci-fi,
+ * --c-text-on-dark sits on buttons and on dark overlays alike, so buttons use a deep rust
+ * (--c-accent-bg) that carries bone text; tarnished gold stays for accents and headings. */
+:root[data-theme="darkfantasy"] {
+  color-scheme: dark;
+  /* Never fake a bold from a weight the theme does not load */
+  font-synthesis-weight: none;
+  /* Alegreya's default old-style figures make 0 read as the letter o in counters and fields */
+  font-variant-numeric: lining-nums;
+
+  /* Text */
+  --c-text: #e2d8c3;
+  --c-text-deep: #f0e8d6;
+  --c-heading: #d2ad5e;
+  --c-label: #b5a383;
+  --c-text-muted: #948670;
+  --c-text-accent: #d6a64e;
+  --c-text-on-dark: #f3ead8;
+  --c-text-danger: #e8806f;
+  --c-text-success: #9cc98a;
+  --c-text-info: #8ab8d6;
+  --c-text-magic: #c3a5e0;
+  --c-text-neutral: #a89e8d;
+  --c-text-neutral-light: #918878;
+  --c-text-on-dark-muted: #c4b79e;
+  --c-text-danger-dark: #f0a090;
+  --c-text-gold: #e0b862;
+  --c-text-danger-light: #f0a090;
+  --c-text-magic-light: #dcc8f0;
+
+  /* Surfaces and fills */
+  --c-input-bg: #0f0d0b;
+  --c-surface: #1c1916;
+  --c-surface-alt: #151310;
+  --c-surface-raised: #24201c;
+  --c-surface-sunken: #110f0d;
+  --c-surface-white: #2b2621;
+  --c-accent-bg: #7a3b1e;
+  --c-accent-bg-light: #8f4a28;
+  --c-accent-bg-dark: #5a2b15;
+  --c-leather-bg: #2e2a25;
+  --c-leather-bg-dark: #221f1b;
+  --c-dark-bg: #0a0908;
+  --c-danger-bg: #8f2a22;
+  --c-success-bg: #3f6b3a;
+  --c-info-bg: #34566e;
+  --c-magic-bg: #5b3f72;
+  --c-neutral-bg: #4a453d;
+  --c-danger-bg-light: #b04a3e;
+  --c-danger-bg-dark: #551812;
+  --c-success-bg-light: #548a4d;
+  --c-night-bg: #12141c;
+  --c-success-bg-pale: #1f2e1c;
+  --c-success-bg-vivid: #5f9a52;
+  --c-success-bg-dark: #2c4d28;
+  --c-slate-bg: #3a3d42;
+  --c-slate-bg-dark: #2a2c30;
+  --c-enemy-bg: #4a1d18;
+  --c-enemy-bg-light: #62291f;
+
+  /* Borders and outlines */
+  --c-border-accent: #a07a36;
+  --c-border-strong: #8a7a62;
+  --c-border: #3e362d;
+  --c-border-light: #4a4137;
+  --c-border-dark: #2a241e;
+  --c-border-gold: #c9a456;
+  --c-border-danger: #b0433a;
+  --c-border-success: #5f8f55;
+  --c-border-info: #4f7f9f;
+  --c-border-magic: #8a6aaa;
+  --c-border-neutral: #5c554a;
+  --c-border-faint: #2a2520;
+  --c-border-neutral-dark: #0c0b09;
+  --c-border-neutral-light: #4a443b;
+  --c-border-danger-dark: #8f2a22;
+  --c-border-success-light: #9cc98a;
+  --c-border-danger-deep: #3a1210;
+
+  /* RGB triplets. "Light" veils and white highlights lift a soot surface instead of
+   * bleaching it; the brown shadow colour becomes plain black for heavy shadows. */
+  --c-accent-rgb: 214 166 78;
+  --c-leather-rgb: 138 122 98;
+  --c-leather-dark-rgb: 0 0 0;
+  --c-text-rgb: 226 216 195;
+  --c-deep-rgb: 5 4 3;
+  --c-gold-rgb: 201 164 86;
+  --c-light-rgb: 36 32 28;
+  --c-highlight-rgb: 64 57 48;
+  --c-shadow-rgb: 0 0 0;
+  --c-danger-rgb: 176 67 58;
+  --c-success-rgb: 95 143 85;
+  --c-info-rgb: 79 127 159;
+  --c-magic-rgb: 138 106 170;
+
+  /* Typography: all three fonts have Polish glyphs */
+  --font-display: 'Grenze', serif;
+  --font-body: 'Alegreya', serif;
+  --font-ui: 'Alegreya Sans', sans-serif;
+  --display-transform: none;
+  --tracking-k: 0.6;
+
+  /* Shape: worn, slightly rounded */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-pill: 10px;
+
+  /* Surface decoration: cold stone; riveted iron plates in the corners of framed windows */
+  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='s'%3E%3CfeTurbulence baseFrequency='0.035' numOctaves='5' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.8, 0 0 0 0 0.74, 0 0 0 0 0.64, 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23s)'/%3E%3C/svg%3E");
+  --frame-ornament:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M2 22V2H22' fill='none' stroke='%236e6252' stroke-width='3'/%3E%3Ccircle cx='7' cy='7' r='2' fill='%23a08d70'/%3E%3C/svg%3E") top 4px left 4px / 24px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M2 2H22V22' fill='none' stroke='%236e6252' stroke-width='3'/%3E%3Ccircle cx='17' cy='7' r='2' fill='%23a08d70'/%3E%3C/svg%3E") top 4px right 4px / 24px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M2 2V22H22' fill='none' stroke='%236e6252' stroke-width='3'/%3E%3Ccircle cx='7' cy='17' r='2' fill='%23a08d70'/%3E%3C/svg%3E") bottom 4px left 4px / 24px 24px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M2 22H22V2' fill='none' stroke='%236e6252' stroke-width='3'/%3E%3Ccircle cx='17' cy='17' r='2' fill='%23a08d70'/%3E%3C/svg%3E") bottom 4px right 4px / 24px 24px no-repeat;
+
+  /* Depth: heavier than the default shadows */
+  --shadow-k: 1.3;
+
+  /* Roll log and outcomes */
+  --log-brown-dark: #d2ad5e;
+  --log-brown-medium: #b5a383;
+  --log-brown-light: #a07a36;
+  --log-brown-text: #e2d8c3;
+  --log-brown-muted: #948670;
+  --log-brown-accent: #c9a456;
+  --log-green-dark: #2c4d28;
+  --log-green-medium: #5f8f55;
+  --log-green-light: #9cc98a;
+  --log-success: #9cc98a;
+  --log-red-dark: #8f2a22;
+  --log-red-medium: #b0433a;
+  --log-red-light: #e8806f;
+  --log-gold-dark: #a07a36;
+  --log-gold-medium: #c9a456;
+  --log-gold-light: #e0b862;
+  --log-purple-dark: #3d2a50;
+  --log-purple-medium: #8a6aaa;
+  --log-blue: #8ab8d6;
+  --log-bg-parchment: #1c1916;
+  --log-bg-parchment-dark: #151310;
+  --log-bg-item: rgb(64 57 48 / 0.35);
+  --log-bg-item-hover: rgb(64 57 48 / 0.6);
+  --log-info: #9a9488;
+  --log-new-glow: #e0b862;
+  --log-new-glow-rgb: 224 184 98;
+
+  /* MUI palette variables (theme.js runs in cssVariables mode) */
+  --mui-palette-primary-main: #c9a456;
+  --mui-palette-primary-mainChannel: 201 164 86;
+  --mui-palette-primary-dark: #a07a36;
+  --mui-palette-primary-light: #e0b862;
+  --mui-palette-primary-contrastText: #15130f;
+  --mui-palette-background-default: #151310;
+  --mui-palette-background-paper: #1c1916;
+  --mui-palette-text-primary: #e2d8c3;
+  --mui-palette-text-primaryChannel: 226 216 195;
+  --mui-palette-text-secondary: #b5a383;
+  --mui-palette-text-secondaryChannel: 181 163 131;
+  --mui-palette-text-disabled: #6a6052;
+  --mui-palette-divider: #3e362d;
+  --mui-palette-action-active: #b5a383;
+  --mui-palette-action-hover: rgb(214 166 78 / 0.08);
+  --mui-palette-action-selected: rgb(214 166 78 / 0.16);
+  --mui-palette-action-disabled: #5a5246;
+  --mui-palette-action-disabledBackground: #2a2520;
+}
+
+/* Form controls do not inherit font-variant from the page (the UA stylesheet resets `font`). */
+:root[data-theme="darkfantasy"] :is(input, textarea, select, button) {
+  font-variant-numeric: lining-nums;
+}

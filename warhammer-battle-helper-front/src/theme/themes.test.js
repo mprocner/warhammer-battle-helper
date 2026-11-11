@@ -8,7 +8,7 @@ describe('theme registry', () => {
   });
 
   it('lists exactly the ids the backend accepts (models.GameThemes)', () => {
-    expect(THEMES.map(t => t.id)).toEqual(['default', 'scifi', 'twenties']);
+    expect(THEMES.map(t => t.id)).toEqual(['default', 'scifi', 'twenties', 'darkfantasy']);
   });
 
   it('names every theme in both languages', () => {

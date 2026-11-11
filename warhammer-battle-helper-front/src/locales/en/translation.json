@@ -2835,7 +2835,8 @@
     "names": {
       "default": "Parchment",
       "scifi": "Sci-fi",
-      "twenties": "1920s"
+      "twenties": "1920s",
+      "darkfantasy": "Dark fantasy"
     }
   }
 }

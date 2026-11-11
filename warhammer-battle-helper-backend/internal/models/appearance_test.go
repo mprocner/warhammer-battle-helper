@@ -10,6 +10,7 @@ func TestIsValidGameTheme(t *testing.T) {
 		{"default", true},
 		{"scifi", true},
 		{"twenties", true},
+		{"darkfantasy", true},
 		{"", false},      // a PATCH must name a theme; "" is only the stored "never set"
 		{"Scifi", false}, // ids are exact, not case-folded
 		{"cyberpunk", false},

@@ -115,6 +115,7 @@ migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
 | `default` | Pergamin | pergamin, skóra, złoto | Cinzel / Crimson Text |
 | `scifi` | Sci-fi | granat, cyjan, poświata, ostre rogi, nawiasy HUD | Exo 2 (wersaliki, ciaśniej) / Inter |
 | `twenties` | Lata 20. | kość słoniowa, czarny lakier, mosiądz, butelkowa zieleń, płasko, schodkowe narożniki | Limelight (wersaliki, szerzej) / Playfair Display |
+| `darkfantasy` | Dark fantasy | grimdark: sadza i żelazo, kość, sczerniałe złoto, rdzawe przyciski, ciężkie cienie, nitowane narożniki | Grenze (ciaśniej) / Alegreya, UI Alegreya Sans |
 
 Każdy plik motywu (`src/theme/themes/<id>.css`) nadpisuje **każdy** token z `tokens.css`
 i paletę MUI (`--mui-palette-*`). `themeCompleteness.test.js` pilnuje, że żadnego tokena nie
@@ -123,7 +124,7 @@ nic by nie zrobiła). Główne pary tekst/tło mają kontrast ≥ 4.5 (WCAG AA),
 przy tworzeniu motywu.
 
 Czcionki: tylko z `latin-ext` (polskie znaki) i na OFL. Orbitron odrzucony (brak `latin-ext`),
-Poiret One odrzucona (za cienka w małych nagłówkach). Strona „Licencje” nie wymienia czcionek —
+Poiret One odrzucona (za cienka w małych nagłówkach), Grenze Gotisch odrzucona (98 reguł CSS ma `text-transform: uppercase` na sztywno, a fraktura wersalikami jest nieczytelna — „GRACZE” czyta się jak „GRACƷE”). Strona „Licencje” nie wymienia czcionek —
 tak jak wcześniej Cinzel/Crimson/Roboto (OFL nie wymaga atrybucji przy serwowaniu).
 
 ## Kluczowe pliki
