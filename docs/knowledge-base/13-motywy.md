@@ -114,7 +114,7 @@ migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
 |---|---|---|---|
 | `default` | Pergamin | pergamin, skóra, złoto | Cinzel / Crimson Text |
 | `scifi` | Sci-fi | granat, cyjan, poświata, ostre rogi, nawiasy HUD | Exo 2 (wersaliki, ciaśniej) / Inter |
-| `twenties` | Lata 20. | kość słoniowa, czarny lakier, mosiądz, butelkowa zieleń, płasko, schodkowe narożniki | Limelight (wersaliki, szerzej) / Playfair Display |
+| `twenties` | Lata 20. | kość słoniowa, czarny lakier, mosiądz, butelkowa zieleń, płasko, schodkowe narożniki | Josefin Sans (wersaliki, szerzej) / Libre Baskerville |
 | `darkfantasy` | Dark fantasy | grimdark: sadza i żelazo, kość, sczerniałe złoto, rdzawe przyciski, ciężkie cienie, nitowane narożniki | Grenze (ciaśniej) / Alegreya, UI Alegreya Sans |
 
 Każdy plik motywu (`src/theme/themes/<id>.css`) nadpisuje **każdy** token z `tokens.css`
@@ -124,7 +124,7 @@ nic by nie zrobiła). Główne pary tekst/tło mają kontrast ≥ 4.5 (WCAG AA),
 przy tworzeniu motywu.
 
 Czcionki: tylko z `latin-ext` (polskie znaki) i na OFL. Orbitron odrzucony (brak `latin-ext`),
-Poiret One odrzucona (za cienka w małych nagłówkach), Grenze Gotisch odrzucona (98 reguł CSS ma `text-transform: uppercase` na sztywno, a fraktura wersalikami jest nieczytelna — „GRACZE” czyta się jak „GRACƷE”). Strona „Licencje” nie wymienia czcionek —
+Poiret One odrzucona (za cienka w małych nagłówkach), Limelight i Playfair Display wymienione po pierwszym użyciu (cienkie kreski — słabo widoczne, zwłaszcza duże nagłówki), Grenze Gotisch odrzucona (98 reguł CSS ma `text-transform: uppercase` na sztywno, a fraktura wersalikami jest nieczytelna — „GRACZE” czyta się jak „GRACƷE”). Strona „Licencje” nie wymienia czcionek —
 tak jak wcześniej Cinzel/Crimson/Roboto (OFL nie wymaga atrybucji przy serwowaniu).
 
 ## Kluczowe pliki
@@ -154,11 +154,11 @@ tak jak wcześniej Cinzel/Crimson/Roboto (OFL nie wymaga atrybucji przy serwowan
   ciemnych dymkach. Tło przycisku (`--c-accent-bg`) musi więc dawać kontrast z jasnym tekstem:
   dlatego scifi ma przyciski w ciemnym turkusie, a twenties w butelkowej zieleni, a nie
   w jaskrawym cyjanie / mosiądzu.
-- **Playfair Display ma cyfry nautyczne** — „0” wygląda jak „o”. Twenties ustawia
-  `font-variant-numeric: lining-nums`, także osobno na `input/textarea/select/button`, bo pola
+- **Cyfry nautyczne** (Playfair Display, Alegreya) — „0” wygląda jak „o”. Twenties i darkfantasy
+  ustawiają `font-variant-numeric: lining-nums`, także osobno na `input/textarea/select/button`, bo pola
   formularza nie dziedziczą wariantów czcionki (arkusz przeglądarki resetuje `font`).
-- **Limelight ma jedną grubość** — `font-synthesis-weight: none`, inaczej przeglądarka
-  dorabia sztuczne pogrubienie.
+- **Grubości spoza `loadFonts`** — motyw ustawia `font-synthesis-weight: none`, inaczej
+  przeglądarka dorabia sztuczne pogrubienie z najbliższej wczytanej grubości.
 - **Nowa paczka `@fontsource` w dockerze** — kontener frontendu ma własne `node_modules`;
   bez `docker exec <frontend> npm install --legacy-peer-deps` dynamiczny import się nie skompiluje.
 - **Backend zna tylko id motywów.** Nowy motyw = id w `models.GameThemes` + blok CSS na froncie.

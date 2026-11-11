@@ -7,9 +7,9 @@
  * accents and accent text (darkened to #7d5f22 for text). */
 :root[data-theme="twenties"] {
   color-scheme: light;
-  /* Limelight has a single weight; never fake a bold from it */
+  /* Never fake a bold from a weight the theme does not load */
   font-synthesis-weight: none;
-  /* Playfair's default old-style figures make 0 read as the letter o in number fields */
+  /* Old-style figures make 0 read as the letter o in number fields; keep figures lining */
   font-variant-numeric: lining-nums;
 
   /* Text */
@@ -97,11 +97,11 @@
   --c-magic-rgb: 90 61 122;
 
   /* Typography: both fonts have Polish glyphs */
-  --font-display: 'Limelight', serif;
-  --font-body: 'Playfair Display', serif;
-  --font-ui: 'Playfair Display', serif;
+  --font-display: 'Josefin Sans', sans-serif;
+  --font-body: 'Libre Baskerville', serif;
+  --font-ui: 'Libre Baskerville', serif;
   --display-transform: uppercase;
-  --tracking-k: 1.3;
+  --tracking-k: 1.1;
 
   /* Shape: square */
   --radius-xs: 0;
