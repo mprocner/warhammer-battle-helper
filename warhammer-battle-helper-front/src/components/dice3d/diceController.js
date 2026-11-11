@@ -28,13 +28,19 @@ const BOX_CONFIG = {
   theme_surface: 'green-felt', // only picks the (unused) surface sound set; the felt itself is not drawn
   theme_material: 'plastic',
   baseScale: 80,
+  // Heavier than the library's 400 so dice settle sooner. Measured 2026-11-11 (1/5/10 d6):
+  // 400 → 2.4/3.0/2.9 s, 800 → 1.7/2.1/2.2 s; above 800 the gain fades, as the library keeps a
+  // die moving until it has been still for 0.9 s anyway. A weaker throw (strength < 1) did not
+  // help: dice then slide longer instead of bouncing.
+  gravity_multiplier: 800,
   strength: 1,
 };
 
 // How long the dice stay on the table after the last throw, and the beat between the hit
-// roll and its damage roll so the first result is readable before the dice are swept away.
-const HOLD_MS = 1800;
-const BETWEEN_THROWS_MS = 700;
+// roll and its damage roll. Short on purpose: a die is already still for 0.9 s before its
+// roll counts as finished, so the result has been readable for a while when these start.
+const HOLD_MS = 1000;
+const BETWEEN_THROWS_MS = 300;
 // Rolls arriving faster than they play: keep the newest few, drop the oldest.
 const MAX_PENDING = 3;
 

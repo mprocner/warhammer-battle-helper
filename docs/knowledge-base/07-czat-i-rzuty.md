@@ -83,6 +83,13 @@ dobiera `labelColorFor` (jasne albo ciemne).
 | `dice3d/DiceOverlay.jsx` + `DiceAnimationContext` | canvas nad sceną, `pointer-events: none`; kontroler żyje w `GameSession`, kontekst łączy go z nakładką bez przepychania propsów przez `DndContext` |
 | `hooks/useDiceAnimationSetting.js` | ustawienie konta `diceAnimation` (zobacz [02-konta-i-dostep.md](02-konta-i-dostep.md)) |
 
+**Czas animacji** (pomiar 2026-11-11): turlanie trwa ok. 1,7 s (1 kość) do 2,2 s (10 kości),
+potem kości leżą 1 s (`HOLD_MS`), a rzut obrażeń startuje 0,3 s po rzucie trafienia
+(`BETWEEN_THROWS_MS`). Zwykły rzut znika więc po ok. 3 s, atak z obrażeniami po ok. 5 s. Czas
+turlania skraca `gravity_multiplier: 800` (biblioteka domyślnie ma 400). Słabszy rzut
+(`strength` < 1) nie pomagał, a powyżej 800 zysk zanika, bo biblioteka i tak czeka 0,9 s
+bezruchu kości, zanim uzna rzut za skończony.
+
 Biblioteka trafia do osobnego chunka `dice-3d` (ok. 142 KB gzip) i pobiera się dopiero przy
 pierwszym rzucie z włączoną animacją. Dźwięki to 7 plików `public/sounds/dice/*.m4a`
 z „Casino Audio” Kenneya (CC0), wpis jest na `/licenses`. Dźwięki dołączone do biblioteki nie
@@ -135,7 +142,7 @@ liczba rzutów, średnia, krytyki, pechowe rzuty, rozkład.
   3 czekające, najstarsze odpadają).
 - `loaded` z `useDiceAnimationSetting`: dopóki zapisany wybór nie przyjdzie z serwera, nic się nie
   animuje. Inaczej użytkownik, który wyłączył kości, pobrałby chunk 3D przy pierwszym rzucie.
-- Toast i log pokazują wynik ok. 2–3 s przed wylądowaniem kości. To świadoma decyzja
+- Toast i log pokazują wynik ok. 1,5–2 s przed wylądowaniem kości. To świadoma decyzja
   z 2026-11-10: nie opóźniamy logu pod animację.
 - `dice` budujesz **tam, gdzie wołasz `rng.Intn`**, nigdy z tekstu `DamageBreakdown` ani
   z `AllRolls`. Nowy rzut bez `dice` po prostu się nie zanimuje, a kości z odtworzonego tekstu
