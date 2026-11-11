@@ -53,16 +53,14 @@ func PlayerSceneID(game *models.Game, userID primitive.ObjectID) primitive.Objec
 // combatKilledFunc reports "dead" from the token's own state: Character.Killed for a character
 // entry, SceneImage.Killed for an image. The tracker has no dead state of its own.
 func combatKilledFunc(scene *models.Scene, chars map[primitive.ObjectID]*models.Character) func(models.CombatEntry) bool {
-	placementChar := combat.PlacementCharacters(scene)
 	imageKilled := map[primitive.ObjectID]bool{}
 	for _, img := range scene.Images {
 		imageKilled[img.ID] = img.Killed
 	}
 	return func(e models.CombatEntry) bool {
 		switch e.Kind {
-		case models.CombatEntryCharacter, models.CombatEntryGameCharacter:
-			id, _ := combat.EntryCharacterID(e, placementChar)
-			ch := chars[id]
+		case models.CombatEntryGameCharacter:
+			ch := chars[e.SourceID]
 			return ch != nil && ch.Killed
 		case models.CombatEntryImage:
 			return imageKilled[e.SourceID]
@@ -85,7 +83,6 @@ func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.
 		return nil
 	}
 
-	placementChar := combat.PlacementCharacters(scene)
 	images := map[primitive.ObjectID]models.SceneImage{}
 	for _, img := range scene.Images {
 		images[img.ID] = img
@@ -101,10 +98,9 @@ func BuildCombatView(c *models.Combat, scene *models.Scene, chars map[primitive.
 			ev.SourceID = e.SourceID.Hex()
 		}
 		switch e.Kind {
-		case models.CombatEntryCharacter, models.CombatEntryGameCharacter:
+		case models.CombatEntryGameCharacter:
 			// Prune above guarantees the character exists.
-			id, _ := combat.EntryCharacterID(e, placementChar)
-			ch := chars[id]
+			ch := chars[e.SourceID]
 			ev.Name = ch.Name
 			ev.Avatar = characterTokenAvatar(ch)
 			ev.Killed = ch.Killed

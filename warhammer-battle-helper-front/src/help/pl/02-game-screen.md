@@ -52,9 +52,10 @@ bieżącej scenie. Walka startuje ukryta: dodaj uczestników, wpisz inicjatywę 
 pozycję **Dodaj do walki** w swoim menu, a token postaci najpierw zaznacz, potem kliknij prawym).
 Okno ma trzy źródła:
 
-- **Na tej scenie** — tokeny postaci i obrazki z warstwy tokenów stojące na mapie.
-- **Z listy postaci** — każda postać graczy i każdy BN z lewego panelu, także taki, którego nie ma
-  na mapie. Jeśli ta postać stoi na scenie, podświetlają się wszystkie jej tokeny.
+- **Postacie** — każda postać graczy i każdy BN z lewego panelu, na mapie czy nie. Postać to
+  zawsze jeden wpis: gdy jest aktywna, podświetlają się wszystkie jej tokeny na scenie. Wpis nie
+  ukrywa się sam razem z tokenem — ukrytego BN ukryj okiem przy wpisie.
+- **Tokeny** — obrazki z warstwy tokenów stojące na mapie.
 - **Wpis ręczny** — sama nazwa i inicjatywa.
 
 - Kolejność wynika z inicjatywy (malejąco); przeciągnij wiersz, żeby rozstrzygnąć remis.

@@ -8,8 +8,8 @@ import (
 
 // Combat entry kinds.
 const (
-	CombatEntryCharacter = "character" // SourceID = GameCharacter.ID (the scene placement)
-	// SourceID = Character.ID: a game character joined from the character list, placed on the map or not.
+	// SourceID = Character.ID: one entry per character, placed on the map or not; it stands for
+	// every token of that character on the scene. Entries never point at a placement.
 	CombatEntryGameCharacter = "gameCharacter"
 	CombatEntryImage         = "image"  // SourceID = SceneImage.ID
 	CombatEntryManual        = "manual" // no token; Name + Initiative only
@@ -34,7 +34,7 @@ type Combat struct {
 	StartedAt        time.Time     `bson:"startedAt"`
 }
 
-// CombatEntry is one participant. Character name/avatar/killed (character and gameCharacter kinds)
+// CombatEntry is one participant. Character name/avatar/killed (gameCharacter kind)
 // are resolved live from the character document; image entries keep their own Name because SceneImage has none.
 type CombatEntry struct {
 	ID         primitive.ObjectID `bson:"_id"`
@@ -48,7 +48,7 @@ type CombatEntry struct {
 }
 
 type CombatSourceRequest struct {
-	Kind       string `json:"kind" binding:"required,oneof=character gameCharacter image manual"`
+	Kind       string `json:"kind" binding:"required,oneof=gameCharacter image manual"`
 	SourceID   string `json:"sourceId"`
 	Name       string `json:"name"`
 	Initiative int    `json:"initiative"`

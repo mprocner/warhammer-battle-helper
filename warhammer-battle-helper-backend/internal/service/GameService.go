@@ -540,7 +540,8 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 		PlacedBy:    placedBy,
 	}
 
-	if err := s.gameRepo.AddCharacter(gameID, gameChar); err != nil {
+	placed, err := s.gameRepo.AddCharacter(gameID, gameChar)
+	if err != nil {
 		return err
 	}
 
@@ -561,7 +562,7 @@ func (s *GameService) AddCharacterToGrid(gameID, characterID string, x, y int, i
 
 	// Broadcast to all clients
 	s.hub.BroadcastToGame(gameID, websocket.EventCharacterAdded, map[string]interface{}{
-		"character": gameChar,
+		"character": placed,
 	})
 
 	return nil
@@ -1421,13 +1422,14 @@ func (s *GameService) AddCharacterToScene(gameID string, sceneID primitive.Objec
 		PlacedBy:    placedBy,
 	}
 
-	if err := s.gameRepo.AddSceneCharacter(gameID, sceneID, gameChar); err != nil {
+	placed, err := s.gameRepo.AddSceneCharacter(gameID, sceneID, gameChar)
+	if err != nil {
 		return err
 	}
 
 	s.hub.BroadcastToGame(gameID, websocket.EventSceneCharacterAdded, map[string]interface{}{
 		"sceneId":   sceneID.Hex(),
-		"character": gameChar,
+		"character": placed,
 	})
 
 	return nil

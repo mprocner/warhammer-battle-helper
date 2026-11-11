@@ -1,13 +1,13 @@
 import {
   activeEntry, allActed, toolbarState, isInCombat, entryForSource, activeSource,
-  combatEntriesForSelection, combatEntriesInSelection, combatCandidates,
+  combatEntriesForSelection, combatEntriesInSelection, tokenCandidates,
   characterCandidates, isCharacterTokenActive,
 } from './combatSelectors';
 
 const combat = {
   round: 2, activeId: 'e2', visibleToPlayers: true,
   entries: [
-    { id: 'e1', kind: 'character', sourceId: 'p1', name: 'Hero', acted: true },
+    { id: 'e1', kind: 'gameCharacter', sourceId: 'c1', name: 'Hero', acted: true },
     { id: 'e2', kind: 'image', sourceId: 'i1', name: 'Wolf', acted: false, canEndTurn: true },
     { id: 'e3', kind: 'manual', name: 'Trap', acted: false },
   ],
@@ -40,16 +40,17 @@ test('toolbarState', () => {
 });
 
 test('isInCombat / entryForSource', () => {
-  expect(isInCombat(combat, 'character', 'p1')).toBe(true);
-  expect(isInCombat(combat, 'character', 'p2')).toBe(false);
+  expect(isInCombat(combat, 'gameCharacter', 'c1')).toBe(true);
+  expect(isInCombat(combat, 'gameCharacter', 'c2')).toBe(false);
   expect(entryForSource(combat, 'image', 'i1').id).toBe('e2');
   expect(isInCombat(null, 'image', 'i1')).toBe(false);
 });
 
-test('selection maps character ids to every placement of that character', () => {
+test('selection maps a character to one entry, however many tokens it has', () => {
+  const twice = { ...scene, characters: [...scene.characters, { id: 'p4', characterId: 'c2', name: 'Mage' }] };
   const sel = [{ kind: 'char', id: 'c2' }, { kind: 'image', id: 'i2' }];
-  expect(combatEntriesForSelection(sel, scene)).toEqual([
-    { kind: 'character', sourceId: 'p2' }, { kind: 'image', sourceId: 'i2' },
+  expect(combatEntriesForSelection(sel, twice)).toEqual([
+    { kind: 'gameCharacter', sourceId: 'c2' }, { kind: 'image', sourceId: 'i2' },
   ]);
   expect(combatEntriesInSelection(combat, [{ kind: 'char', id: 'c1' }, { kind: 'image', id: 'i2' }], scene).map(e => e.id)).toEqual(['e1']);
 });
@@ -59,42 +60,30 @@ test('combatEntriesForSelection ignores images outside the tokens layer', () => 
   expect(combatEntriesForSelection(sel, scene)).toEqual([{ kind: 'image', sourceId: 'i2' }]);
 });
 
-test('combatCandidates lists scene tokens not yet in combat', () => {
-  expect(combatCandidates(scene, combat)).toEqual([
-    { kind: 'character', sourceId: 'p2', name: 'Mage', avatar: '/m.png' },
+test('tokenCandidates lists tokens-layer images not yet in combat', () => {
+  expect(tokenCandidates(scene, combat)).toEqual([
     { kind: 'image', sourceId: 'i2', name: 'dire-bear', avatar: '/b.webp' },
   ]);
 });
 
-// Hero (c1) is in combat by its placement p1; Bandit (c3) joined from the character list.
-const withListed = { ...combat, entries: [...combat.entries, { id: 'e4', kind: 'gameCharacter', sourceId: 'c3', name: 'Bandit' }] };
-
-test('characterCandidates offers off-scene list characters in no form of combat, players first', () => {
+test('characterCandidates offers every character not in combat, on the scene or not, players first', () => {
   const characters = [
     { id: 'c4', isNPC: true, basicInfo: { name: 'Ogre', avatar: '/o.png' } },
-    { id: 'c1', name: 'Hero' }, // in combat by its token
-    { id: 'c3', isNPC: true, name: 'Bandit' }, // joined from the list
-    { id: 'c2', name: 'Mage' }, // on the scene: offered as a scene token instead
+    { id: 'c1', name: 'Hero' }, // already in combat
+    { id: 'c2', name: 'Mage' }, // has a token on the scene: offered all the same (PLAYRPG-352)
     { id: 'c5', name: 'Rogue', avatar: '/r.png' },
   ];
-  expect(characterCandidates(characters, scene, withListed)).toEqual([
+  expect(characterCandidates(characters, combat)).toEqual([
+    { kind: 'gameCharacter', sourceId: 'c2', name: 'Mage', avatar: undefined },
     { kind: 'gameCharacter', sourceId: 'c5', name: 'Rogue', avatar: '/r.png' },
     { kind: 'gameCharacter', sourceId: 'c4', name: 'Ogre', avatar: '/o.png' },
   ]);
-  expect(characterCandidates(undefined, scene, null)).toEqual([]);
+  expect(characterCandidates(undefined, null)).toEqual([]);
 });
 
-test('a character joined from the list covers its tokens on the map', () => {
-  const sceneWithBandit = { ...scene, characters: [...scene.characters, { id: 'p3', characterId: 'c3', name: 'Bandit' }] };
-  expect(combatCandidates(sceneWithBandit, withListed).map(c => c.sourceId)).not.toContain('p3');
-  expect(combatEntriesForSelection([{ kind: 'char', id: 'c3' }], sceneWithBandit, withListed)).toEqual([{ kind: 'gameCharacter', sourceId: 'c3' }]);
-  expect(combatEntriesInSelection(withListed, [{ kind: 'char', id: 'c3' }], sceneWithBandit).map(e => e.id)).toEqual(['e4']);
-});
-
-test('isCharacterTokenActive: own placement entry, or every token of a list entry', () => {
-  expect(isCharacterTokenActive({ ...withListed, activeId: 'e1' }, 'p1', 'c1')).toBe(true);
-  expect(isCharacterTokenActive({ ...withListed, activeId: 'e1' }, 'p9', 'c1')).toBe(false);
-  expect(isCharacterTokenActive({ ...withListed, activeId: 'e4' }, 'p3', 'c3')).toBe(true);
-  expect(isCharacterTokenActive({ ...withListed, activeId: 'e4' }, 'p3', 'c1')).toBe(false);
-  expect(isCharacterTokenActive(null, 'p1', 'c1')).toBe(false);
+test('isCharacterTokenActive: every token of the active character', () => {
+  expect(isCharacterTokenActive({ ...combat, activeId: 'e1' }, 'c1')).toBe(true);
+  expect(isCharacterTokenActive({ ...combat, activeId: 'e1' }, 'c2')).toBe(false);
+  expect(isCharacterTokenActive(combat, 'c1')).toBe(false); // an image is active
+  expect(isCharacterTokenActive(null, 'c1')).toBe(false);
 });

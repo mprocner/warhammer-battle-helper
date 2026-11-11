@@ -24,7 +24,7 @@ function MapCharacterToken({
   multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
-  const combatActive = isCharacterTokenActive(useCombat().combat, placementId, character?.id);
+  const combatActive = isCharacterTokenActive(useCombat().combat, character?.id);
   // See SceneImage: the lone selected token is the one with an expanded ring and chrome.
   const selected = isLoneSelection(multiSelected, multiSelectActive);
   const [pos, setPos] = useState({ col, row });

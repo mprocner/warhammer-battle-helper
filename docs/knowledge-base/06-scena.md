@@ -55,10 +55,12 @@ wygrywa wybór ręczny.
 działają przy każdym zoomie.
 
 **Kolejka tur (PLAYRPG-1).** Każda scena może mieć walkę (`Scene.Combat`, `json:"-"`). Wpisy:
-rozstawienie postaci (`character`, `GameCharacter.ID`), postać z listy (`gameCharacter`,
-`Character.ID` — nie musi stać na scenie; aktywna podświetla wszystkie swoje tokeny), obrazek
-(`SceneImage.ID`) albo wpis ręczny. Postać z listy „przykrywa” swoje tokeny: nie są oferowane
-osobno, a menu tokenu operuje na jej wpisie. Okno walki montuje `DndContext`, bo tylko tam jest
+postać (`gameCharacter`, `Character.ID` — na scenie czy nie; jeden wpis na postać, aktywna
+podświetla wszystkie swoje tokeny, menu tokenu operuje na jej wpisie), obrazek z warstwy tokenów
+(`SceneImage.ID`) albo wpis ręczny. Wpis nigdy nie wskazuje rozstawienia — dawny kind `character`
+(`GameCharacter.ID`) usunięto w PLAYRPG-352, a `Prune` wyrzuca zapisane wpisy nieznanego rodzaju.
+Wpis postaci nie dziedziczy `Hidden` tokenu (MG ukrywa ręcznie); wpis obrazka startuje ukryty,
+gdy obrazek jest ukryty. Okno walki montuje `DndContext`, bo tylko tam jest
 lista postaci (`initialCharacters`). Pasek u MG prowadzi walkę bez okna: jeden przycisk
 `next`/`end-round` (przełącza się na `allActed`), klik w portret = `activate`. Pasek to portal do `body` (`position: fixed`, z-index 1400 — nad
 panelami i ich uchwytami, pod oknami Window Managera od 1500); przeciąganie ogranicza okno
@@ -114,3 +116,8 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
   refetchować walkę na jej evencie (`onSourcesChanged` w `GameSession`).
 - Zmiany walki ukrytej przed graczami idą eventem tylko do MG — sam event zdradzałby jej istnienie.
 - Do walki trafiają tylko obrazki z warstwy `tokens` — `buildEntry` odrzuca inne.
+- ID rozstawienia (`GameCharacter.ID`) nadaje repozytorium (`AddSceneCharacter`, `AddCharacter`),
+  dlatego zwraca zapisany obiekt i to on idzie w evencie. Broadcast własnej kopii z serwisu
+  wysyłał `"id": "000000000000000000000000"` (`json:"id"` bez `omitempty`), a klient dopisuje
+  placement z eventu bez refetcha — do F5 każda akcja po `placement.id` trafiała w próżnię
+  (PLAYRPG-352).

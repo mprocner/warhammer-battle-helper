@@ -381,14 +381,15 @@ func (r *GameRepository) RemoveParticipant(gameID string, userID primitive.Objec
 	return nil
 }
 
-// AddCharacter adds a character to the game grid
-func (r *GameRepository) AddCharacter(gameID string, character models.GameCharacter) error {
+// AddCharacter adds a character to the game grid and returns the stored placement. Its ID is
+// assigned here, so callers must broadcast the returned value, not their own copy.
+func (r *GameRepository) AddCharacter(gameID string, character models.GameCharacter) (*models.GameCharacter, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(gameID)
 	if err != nil {
-		return fmt.Errorf("invalid game ID: %w", err)
+		return nil, fmt.Errorf("invalid game ID: %w", err)
 	}
 
 	character.ID = primitive.NewObjectID()
@@ -403,14 +404,14 @@ func (r *GameRepository) AddCharacter(gameID string, character models.GameCharac
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to add character: %w", err)
+		return nil, fmt.Errorf("failed to add character: %w", err)
 	}
 
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("game not found")
+		return nil, fmt.Errorf("game not found")
 	}
 
-	return nil
+	return &character, nil
 }
 
 // UpdateCharacterPosition updates a character's position on the grid
@@ -1141,14 +1142,15 @@ func (r *GameRepository) RemovePlayerFromAllScenes(gameID string, playerID primi
 	return nil
 }
 
-// AddSceneCharacter adds a character to a scene
-func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.ObjectID, character models.GameCharacter) error {
+// AddSceneCharacter adds a character to a scene and returns the stored placement. Its ID is
+// assigned here, so callers must broadcast the returned value, not their own copy (PLAYRPG-352).
+func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.ObjectID, character models.GameCharacter) (*models.GameCharacter, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	objectID, err := primitive.ObjectIDFromHex(gameID)
 	if err != nil {
-		return fmt.Errorf("invalid game ID: %w", err)
+		return nil, fmt.Errorf("invalid game ID: %w", err)
 	}
 
 	character.ID = primitive.NewObjectID()
@@ -1166,14 +1168,14 @@ func (r *GameRepository) AddSceneCharacter(gameID string, sceneID primitive.Obje
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to add character to scene: %w", err)
+		return nil, fmt.Errorf("failed to add character to scene: %w", err)
 	}
 
 	if result.MatchedCount == 0 {
-		return fmt.Errorf("game or scene not found")
+		return nil, fmt.Errorf("game or scene not found")
 	}
 
-	return nil
+	return &character, nil
 }
 
 // UpdateSceneCharacterGeometry applies a partial position/size update to a scene token.

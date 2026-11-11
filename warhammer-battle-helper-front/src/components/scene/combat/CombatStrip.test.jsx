@@ -15,8 +15,8 @@ jest.mock('../../../api/combat', () => ({
 const combat = {
   round: 3, activeId: 'e2', visibleToPlayers: true,
   entries: [
-    { id: 'e1', kind: 'character', name: 'Hero', acted: true },
-    { id: 'e2', kind: 'character', name: 'Mage', acted: false, canEndTurn: true },
+    { id: 'e1', kind: 'gameCharacter', name: 'Hero', acted: true },
+    { id: 'e2', kind: 'gameCharacter', name: 'Mage', acted: false, canEndTurn: true },
     { id: 'e3', kind: 'manual', name: 'Trap', acted: false },
   ],
 };

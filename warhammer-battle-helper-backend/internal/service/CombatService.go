@@ -217,25 +217,15 @@ func cleanName(name string) (string, error) {
 	return n, nil
 }
 
-// buildEntry turns a request into an entry, checking the source lives on this scene. A hidden token
-// starts as a hidden entry; after that the two flags are independent.
+// buildEntry turns a request into an entry, checking the source belongs to this game (a character)
+// or this scene (an image). A hidden image token starts as a hidden entry; a character entry never
+// inherits its tokens' Hidden flag. After that the flags are independent.
 func buildEntry(scene *models.Scene, chars map[primitive.ObjectID]*models.Character, req models.CombatSourceRequest) (models.CombatEntry, error) {
 	e := models.CombatEntry{ID: primitive.NewObjectID(), Kind: req.Kind, Initiative: req.Initiative, Hidden: req.Hidden}
 	switch req.Kind {
-	case models.CombatEntryCharacter:
-		id, err := parseID(req.SourceID)
-		if err != nil {
-			return e, err
-		}
-		for _, gc := range scene.Characters {
-			if gc.ID == id {
-				e.SourceID, e.Hidden = id, e.Hidden || gc.Hidden
-				return e, nil
-			}
-		}
-		return e, ErrCombatInvalid
 	case models.CombatEntryGameCharacter:
-		// Any character of this game, placed on this scene or not (chars holds only this game's).
+		// Any character of this game, placed on this scene or not (chars holds only this game's). The
+		// entry does not inherit a token's Hidden flag: the GM hides entries by hand.
 		id, err := parseID(req.SourceID)
 		if err != nil {
 			return e, err
@@ -298,7 +288,7 @@ func authorizeEndTurn(ctx *combatCtx, c *models.Combat, entryID primitive.Object
 	if e.Hidden {
 		return ErrCombatForbidden
 	}
-	charID, ok := combat.EntryCharacterID(*e, combat.PlacementCharacters(ctx.scene))
+	charID, ok := combat.EntryCharacterID(*e)
 	if !ok || !CanEditCharacter(ctx.chars[charID], ctx.userID, false) {
 		return ErrCombatForbidden
 	}
@@ -366,7 +356,7 @@ func (s *CombatService) UpdateEntry(gameID string, sceneID, userID primitive.Obj
 			return nil, combat.ErrEntryNotFound
 		}
 		if req.Name != nil {
-			if e.Kind == models.CombatEntryCharacter || e.Kind == models.CombatEntryGameCharacter {
+			if e.Kind == models.CombatEntryGameCharacter {
 				return nil, ErrCombatInvalid // a character's name comes from its sheet
 			}
 			name, err := cleanName(*req.Name)

@@ -19,13 +19,12 @@ type viewFixture struct {
 func newViewFixture() viewFixture {
 	player, other := primitive.NewObjectID(), primitive.NewObjectID()
 	hero := &models.Character{ID: primitive.NewObjectID(), Name: "Hero", Avatar: "/user-files/hero.png", VisibleTo: []primitive.ObjectID{player}}
-	placement := models.GameCharacter{ID: primitive.NewObjectID(), CharacterID: hero.ID}
 	wolf := models.SceneImage{ID: primitive.NewObjectID(), Layer: "tokens", FileURL: "/user-files/wolf.png", Killed: true}
-	heroE := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryCharacter, SourceID: placement.ID, Initiative: 15}
+	heroE := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryGameCharacter, SourceID: hero.ID, Initiative: 15}
 	wolfE := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryImage, SourceID: wolf.ID, Name: "Wolf", Initiative: 9, Hidden: true}
 	trap := models.CombatEntry{ID: primitive.NewObjectID(), Kind: models.CombatEntryManual, Name: "Trap", Initiative: 3}
 	return viewFixture{
-		scene:  &models.Scene{Characters: []models.GameCharacter{placement}, Images: []models.SceneImage{wolf}},
+		scene:  &models.Scene{Images: []models.SceneImage{wolf}},
 		chars:  map[primitive.ObjectID]*models.Character{hero.ID: hero},
 		combat: &models.Combat{Version: 4, Round: 2, VisibleToPlayers: true, Entries: []models.CombatEntry{heroE, wolfE, trap}},
 		player: player, other: other, heroE: heroE, wolfE: wolfE, trap: trap,

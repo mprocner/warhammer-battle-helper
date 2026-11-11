@@ -74,7 +74,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie, duplikowanie | MG / G | `SCENE - unifikacja renderowania tokenow….md` |
 | Nakładki na tokenach: HP, sloty, paski, widoczność | MG | `FEATURE-102 - token conditions.md` |
 | Ping wskaźnikiem, przesuwanie mapy prawym przyciskiem, schemat sterowania | MG / G | — |
-| Kolejka tur (tracker inicjatywy) per scena: wpisy z tokenów i ręczne, ukrywanie, rundy, „Zakończ turę” gracza | MG / G | `docs/superpowers/specs/2026-11-09-PLAYRPG-1-initiative-tracker-design.md` |
+| Kolejka tur (tracker inicjatywy) per scena: wpisy: postacie (jeden na postać), tokeny-obrazki i ręczne, ukrywanie, rundy, „Zakończ turę” gracza | MG / G | `docs/superpowers/specs/2026-11-09-PLAYRPG-1-initiative-tracker-design.md` |
 
 ## 7. Panel boczny (zakładki)
 | Zakładka | Kto | Spec |

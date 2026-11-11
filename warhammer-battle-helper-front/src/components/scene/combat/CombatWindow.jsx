@@ -21,7 +21,7 @@ import {
   activateCombatEntry, updateCombatEntry, removeCombatEntry, reorderCombat, nextTurn, endRound,
   endCombat, setCombatVisibility, addCombatEntries,
 } from '../../../api/combat';
-import { allActed, combatCandidates, characterCandidates } from './combatSelectors';
+import { allActed, tokenCandidates, characterCandidates } from './combatSelectors';
 import CombatPortrait from './CombatPortrait';
 import './combat.css';
 
@@ -87,7 +87,7 @@ function CombatRow({ entry, isActive, tip }) {
           {entry.name}
         </button>
       )}
-      {entry.kind !== 'character' && entry.kind !== 'gameCharacter' && !renaming && (
+      {entry.kind !== 'gameCharacter' && !renaming && (
         <button type="button" className="combat-row__icon" onClick={() => { cancelledRef.current = false; setRenaming(true); }} aria-label={t('combat.window.rename')} {...tip(t('combat.window.rename'))}>
           <EditIcon style={{ fontSize: 14 }} />
         </button>
@@ -149,15 +149,15 @@ function CandidateList({ candidates }) {
   );
 }
 
-// Three ways in: tokens on this scene, any character from the GM's character list (placed or not),
-// and a manual entry.
+// Three ways in: any character of the game (on this scene or not), a tokens-layer image of this
+// scene, and a manual entry.
 function CombatAddPanel({ characters }) {
   const { t } = useTranslation();
   const { gameId, sceneId, scene, combat, run } = useCombat();
   const [name, setName] = useState('');
   const [initiative, setInitiative] = useState('0');
-  const candidates = combatCandidates(scene, combat);
-  const listed = characterCandidates(characters, scene, combat);
+  const characterOptions = characterCandidates(characters, combat);
+  const tokenOptions = tokenCandidates(scene, combat);
 
   const addManual = (e) => {
     e.preventDefault();
@@ -170,12 +170,12 @@ function CombatAddPanel({ characters }) {
 
   return (
     <div className="combat-window__add">
-      <div className="combat-window__add-label">{t('combat.window.addFromScene')}</div>
-      {candidates.length === 0 && <p className="combat-window__hint">{t('combat.window.noCandidates')}</p>}
-      <CandidateList candidates={candidates} />
-      <div className="combat-window__add-label">{t('combat.window.addFromList')}</div>
-      {listed.length === 0 && <p className="combat-window__hint">{t('combat.window.noListCandidates')}</p>}
-      <CandidateList candidates={listed} />
+      <div className="combat-window__add-label">{t('combat.window.addCharacters')}</div>
+      {characterOptions.length === 0 && <p className="combat-window__hint">{t('combat.window.noCharacterCandidates')}</p>}
+      <CandidateList candidates={characterOptions} />
+      <div className="combat-window__add-label">{t('combat.window.addTokens')}</div>
+      {tokenOptions.length === 0 && <p className="combat-window__hint">{t('combat.window.noTokenCandidates')}</p>}
+      <CandidateList candidates={tokenOptions} />
       <div className="combat-window__add-label">{t('combat.window.addManualLabel')}</div>
       <form className="combat-window__manual" onSubmit={addManual}>
         <input value={name} maxLength={60} onChange={e => setName(e.target.value)} aria-label={t('combat.window.manualName')} placeholder={t('combat.window.manualName')} />

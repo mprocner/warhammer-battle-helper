@@ -7,7 +7,7 @@ import { startCombat } from '../../../api/combat';
 
 jest.mock('../../../api/combat', () => ({ startCombat: jest.fn(() => Promise.resolve()) }));
 
-const live = { round: 2, activeId: 'e1', visibleToPlayers: true, entries: [{ id: 'e1', kind: 'character', name: 'Hero', acted: false, canEndTurn: true }] };
+const live = { round: 2, activeId: 'e1', visibleToPlayers: true, entries: [{ id: 'e1', kind: 'gameCharacter', name: 'Hero', acted: false, canEndTurn: true }] };
 
 const mountWith = (value) => {
   const ctx = { ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', run: (fn) => fn(), openWindow: jest.fn(), setStripCollapsed: jest.fn(), ...value };

@@ -17,11 +17,15 @@ jest.mock('../../../api/combat', () => {
 const combat = {
   round: 2, activeId: 'e1', visibleToPlayers: false,
   entries: [
-    { id: 'e1', kind: 'character', sourceId: 'p1', name: 'Hero', initiative: 15, acted: false },
+    { id: 'e1', kind: 'gameCharacter', sourceId: 'c1', name: 'Hero', initiative: 15, acted: false },
     { id: 'e2', kind: 'manual', name: 'Trap', initiative: 3, acted: true, hidden: true },
   ],
 };
-const scene = { id: 's', characters: [{ id: 'p1', name: 'Hero' }, { id: 'p2', name: 'Mage' }], images: [] };
+const scene = {
+  id: 's',
+  characters: [{ id: 'p1', characterId: 'c1', name: 'Hero' }, { id: 'p2', characterId: 'c2', name: 'Mage' }],
+  images: [{ id: 'i1', layer: 'tokens', fileName: 'wolf.png' }],
+};
 
 const mountWindow = (over = {}) => {
   const ctx = { ...EMPTY_COMBAT, gameId: 'g', sceneId: 's', scene, isGM: true, windowOpen: true, combat, run: (fn) => fn(), setWindowOpen: jest.fn(), ...over };
@@ -82,16 +86,19 @@ test('end combat asks first', () => {
 test('adding a scene token and a manual entry', () => {
   mountWindow();
   fireEvent.click(screen.getByText('Add'));
-  fireEvent.click(screen.getByText('Mage'));
-  expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'character', sourceId: 'p2' }]);
+  fireEvent.click(screen.getByText('wolf'));
+  expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'image', sourceId: 'i1' }]);
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Reinforcements' } });
   fireEvent.click(screen.getByText('Add entry'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'manual', name: 'Reinforcements', initiative: 0 }]);
 });
 
-test('adding a character from the character list', () => {
-  mountWindow({ characters: [{ id: 'c1', name: 'Hero' }, { id: 'c9', isNPC: true, name: 'Ogre' }] });
+test('a character with a token on the scene joins as a character', () => {
+  mountWindow({ characters: [{ id: 'c1', name: 'Hero' }, { id: 'c2', name: 'Mage' }, { id: 'c9', isNPC: true, name: 'Ogre' }] });
   fireEvent.click(screen.getByText('Add'));
+  expect(screen.getAllByText('Hero')).toHaveLength(1); // in combat already: only its row
+  fireEvent.click(screen.getByText('Mage'));
+  expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'gameCharacter', sourceId: 'c2' }]);
   fireEvent.click(screen.getByText('Ogre'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'gameCharacter', sourceId: 'c9' }]);
 });

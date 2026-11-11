@@ -53,9 +53,10 @@ current scene. Combat starts hidden: add participants, enter initiative and clic
 image has **Add to combat** in its menu; select a character token first, then right-click it). The
 window has three sources:
 
-- **On this scene** — character tokens and tokens-layer images on the map.
-- **From the character list** — every player character and NPC from the left panel, even one that
-  is not on the map. If that character stands on the scene, all its tokens light up.
+- **Characters** — every player character and NPC from the left panel, on the map or not. A
+  character is always one entry: when it is active, all its tokens on the scene light up. The entry
+  does not hide along with its token — hide a hidden NPC with the eye next to the entry.
+- **Tokens** — tokens-layer images on the map.
 - **Manual entry** — just a name and initiative.
 
 - Order follows initiative (highest first); drag a row to break a tie.
