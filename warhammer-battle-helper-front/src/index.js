@@ -21,6 +21,7 @@ import '@fontsource/roboto/500.css';
 import './theme/tokens.css';
 // Theme blocks only apply under <html data-theme="…">, set while a game view is open.
 import './theme/themes/scifi.css';
+import './theme/themes/twenties.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';

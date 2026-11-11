@@ -108,6 +108,24 @@ Punkt 2 łapie literówkę w nazwie tokena — taka deklaracja jest nieważna w 
 stylu i po cichu spada do `transparent` / wartości początkowej. Złapał to już raz w trakcie
 migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
 
+### Motywy
+
+| id | Nazwa w UI | Charakter | Czcionki (display / tekst) |
+|---|---|---|---|
+| `default` | Pergamin | pergamin, skóra, złoto | Cinzel / Crimson Text |
+| `scifi` | Sci-fi | granat, cyjan, poświata, ostre rogi, nawiasy HUD | Exo 2 (wersaliki, ciaśniej) / Inter |
+| `twenties` | Lata 20. | kość słoniowa, czarny lakier, mosiądz, butelkowa zieleń, płasko, schodkowe narożniki | Limelight (wersaliki, szerzej) / Playfair Display |
+
+Każdy plik motywu (`src/theme/themes/<id>.css`) nadpisuje **każdy** token z `tokens.css`
+i paletę MUI (`--mui-palette-*`). `themeCompleteness.test.js` pilnuje, że żadnego tokena nie
+brakuje (brak = jasna wyspa w ciemnym motywie) i że nie ma nazw spoza `tokens.css` (literówka
+nic by nie zrobiła). Główne pary tekst/tło mają kontrast ≥ 4.5 (WCAG AA), policzony ręcznie
+przy tworzeniu motywu.
+
+Czcionki: tylko z `latin-ext` (polskie znaki) i na OFL. Orbitron odrzucony (brak `latin-ext`),
+Poiret One odrzucona (za cienka w małych nagłówkach). Strona „Licencje” nie wymienia czcionek —
+tak jak wcześniej Cinzel/Crimson/Roboto (OFL nie wymaga atrybucji przy serwowaniu).
+
 ## Kluczowe pliki
 
 - `src/theme/tokens.css` — motyw default (jedyne miejsce z surowymi wartościami)
@@ -131,6 +149,17 @@ migracji (tokeny dodane do palety, `tokens.css` nie wygenerowany ponownie).
 - **Modyfikator powierzchni z ramką, który deklaruje `background`,** zgubi ozdobnik, jeśli nie
   złoży go znowu (`var(--frame-ornament), …`). Ten sam problem z `background-attachment: local`
   w przewijanym kontenerze — narożniki przewinęłyby się z treścią.
+- **Przyciski motywu niosą `--c-text-on-dark`** — ten sam token leży na przyciskach i na
+  ciemnych dymkach. Tło przycisku (`--c-accent-bg`) musi więc dawać kontrast z jasnym tekstem:
+  dlatego scifi ma przyciski w ciemnym turkusie, a twenties w butelkowej zieleni, a nie
+  w jaskrawym cyjanie / mosiądzu.
+- **Playfair Display ma cyfry nautyczne** — „0” wygląda jak „o”. Twenties ustawia
+  `font-variant-numeric: lining-nums`, także osobno na `input/textarea/select/button`, bo pola
+  formularza nie dziedziczą wariantów czcionki (arkusz przeglądarki resetuje `font`).
+- **Limelight ma jedną grubość** — `font-synthesis-weight: none`, inaczej przeglądarka
+  dorabia sztuczne pogrubienie.
+- **Nowa paczka `@fontsource` w dockerze** — kontener frontendu ma własne `node_modules`;
+  bez `docker exec <frontend> npm install --legacy-peer-deps` dynamiczny import się nie skompiluje.
 - **Backend zna tylko id motywów.** Nowy motyw = id w `models.GameThemes` + blok CSS na froncie.
 - **`#rrggbbaa` i `rgba()` na kolorze tła** zamieniają się w trójkę RGB, a nie w token rodziny —
   motyw musi nadpisać też `--c-*-rgb`, nie tylko kolory pełne.

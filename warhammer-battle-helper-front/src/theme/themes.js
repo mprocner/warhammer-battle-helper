@@ -32,9 +32,14 @@ export const THEMES = [
   },
   {
     id: 'twenties',
-    swatch: { bg: '#f6f0e1', panel: '#ece2cc', accent: '#a8843a', text: '#1d1a16', border: '#1f4d3a' },
-    displayFont: 'serif',
-    loadFonts: null,
+    swatch: { bg: '#f6f0e1', panel: '#1d1a16', accent: '#a8843a', text: '#1d1a16', border: '#a8843a' },
+    displayFont: "'Limelight', serif",
+    loadFonts: () => Promise.all([
+      import('@fontsource/limelight/400.css'),
+      import('@fontsource/playfair-display/400.css'),
+      import('@fontsource/playfair-display/400-italic.css'),
+      import('@fontsource/playfair-display/700.css'),
+    ]),
   },
 ];
 
