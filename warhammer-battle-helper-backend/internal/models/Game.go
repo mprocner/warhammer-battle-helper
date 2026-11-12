@@ -655,6 +655,19 @@ type DuplicateSceneImageRequest struct {
 	Count int `json:"count"`
 }
 
+// PasteSceneImagesRequest copies images from SourceSceneID into the scene in the URL (the same
+// scene or another one of the game), each to its own position. The GM's Ctrl+V.
+type PasteSceneImagesRequest struct {
+	SourceSceneID string                `json:"sourceSceneId"`
+	Items         []PasteSceneImageItem `json:"items"`
+}
+
+type PasteSceneImageItem struct {
+	ImageID string  `json:"imageId"`
+	X       float64 `json:"x"`
+	Y       float64 `json:"y"`
+}
+
 // ApplyImageTokenSlotRequest shares (or unshares) one ring position across every tokens-layer
 // image in every scene of the game. Locked=true applies Slot's config to that position on all
 // tokens (keeping each token's own slot id, resetting the live Level/Number) and marks it locked.

@@ -24,6 +24,7 @@ import { combatEntriesForSelection, combatEntriesInSelection } from './combat/co
 import { participantColor } from '../../utils/participants';
 import './SceneViewport.css';
 import { gridBackgroundProps } from './gridBackground';
+import useSceneClipboard from './useSceneClipboard';
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 // GM staging margin in px. Module-level (not derived from canvasSize) so handleFit can use the
@@ -591,6 +592,22 @@ const SceneViewport = ({
     onMeasureStart: onTokenDragMeasureStart,
     onMeasureMove: onTokenDragMeasureMove,
     onMeasureEnd: onTokenDragMeasureEnd,
+  });
+
+  // GM's Ctrl+C / Ctrl+V of the selected images (registry: scene.copy / scene.paste).
+  useSceneClipboard({
+    enabled: isGM && editingLayer === 'select',
+    gameId,
+    sceneId: displayedScene?.id,
+    images: displayedScene?.images,
+    selectedTokens,
+    viewportRef,
+    clientToScenePx: (clientX, clientY) => {
+      const { col, row } = clientToCell(clientX, clientY);
+      return { x: col * CELL_SIZE, y: row * CELL_SIZE };
+    },
+    snap: tokenPlacementMode === 'snap',
+    onSelect: onMarqueeSelect,
   });
 
   if (!scene) {

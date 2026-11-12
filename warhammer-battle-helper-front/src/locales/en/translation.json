@@ -2873,7 +2873,11 @@
       "addToSelection": "Add to selection (on empty map)",
       "ping": "Ping the map (still, on empty map)",
       "deleteDrawing": "Delete the selected drawing",
-      "cancelFogPolygon": "Cancel the fog polygon"
+      "cancelFogPolygon": "Cancel the fog polygon",
+      "copyImages": "Copy the selected images",
+      "pasteImages": "Paste the images under the cursor (also on another scene)",
+      "deleteSelected": "Delete the selected tokens",
+      "clearSelection": "Clear the selection"
     }
   }
 }

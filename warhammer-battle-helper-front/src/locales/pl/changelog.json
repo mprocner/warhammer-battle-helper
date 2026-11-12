@@ -26,6 +26,7 @@
         "gridColor": "Każda scena może mieć własny kolor siatki, żeby siatka była widoczna na każdej mapie.",
         "tools": "Zaznaczanie, miarka i rysowanie dla wszystkich, a dla mistrza gry mgła wojny.",
         "tokens": "Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie i duplikowanie.",
+        "clipboard": "Ctrl+C / Ctrl+V dla mistrza gry: kopiowanie zaznaczonych obrazów, także kilku naraz, i wklejanie pod kursorem, także na innej scenie.",
         "overlays": "Zdrowie, sloty stanów i paski bezpośrednio na tokenie oraz tokeny ukryte przed graczami.",
         "tokenLabel": "Tokeny obrazkowe mają podpis pod spodem, jak nazwa postaci; mistrz gry ustawia go w konfiguracji tokenu.",
         "controls": "Ping na mapie, przesuwanie mapy prawym przyciskiem i wybór schematu sterowania.",

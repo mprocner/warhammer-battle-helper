@@ -44,6 +44,13 @@ describe('useKeyboardShortcut', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
+  test('a `when` that says no leaves the key to the browser (Ctrl+C with text selected copies text)', () => {
+    const handler = jest.fn();
+    renderHook(() => useKeyboardShortcut('drawing.deleteSelected', handler, { when: () => false }));
+    expect(press(document.body, { key: 'Delete' })).toBe(true); // not prevented
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   test('the latest handler runs without re-subscribing', () => {
     const first = jest.fn();
     const second = jest.fn();

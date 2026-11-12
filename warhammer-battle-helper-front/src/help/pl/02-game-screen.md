@@ -54,8 +54,15 @@ albo gdy otwarte jest okno.
 | Skrót | Kiedy | Co robi |
 |---|---|---|
 | `?` | zawsze | Pokazuje listę skrótów |
+| `Ctrl + C` | zaznaczanie (MG) | Kopiuje zaznaczone obrazy, także kilka naraz; tokeny postaci są pomijane |
+| `Ctrl + V` | zaznaczanie (MG) | Wkleja skopiowane obrazy pod kursorem, także na innej scenie; kopie zostają zaznaczone |
+| `Delete` / `Backspace` | zaznaczanie (MG) | Usuwa zaznaczone tokeny (zablokowane obrazy zostają) |
+| `Esc` | zaznaczanie | Odznacza wszystko |
 | `Delete` / `Backspace` | rysowanie, narzędzie zaznaczania | Usuwa zaznaczony rysunek |
 | `Esc` | mgła wojny, wielokąt (MG) | Anuluje rysowany wielokąt |
+
+Kopia zachowuje warstwę, ukrycie przed graczami, etykietę i pierścień tokenu, ale zaczyna się
+odblokowana i żywa. Gdy kursor nie jest nad mapą, kopia ląduje tuż obok oryginału.
 
 Gesty myszy (środkowy przycisk, przesuwanie mapy, Shift przy zaznaczaniu, ping) opisuje sekcja
 [Sterowanie mapą](02-game-screen.md#map-controls).

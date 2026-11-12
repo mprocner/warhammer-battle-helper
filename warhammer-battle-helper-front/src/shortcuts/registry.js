@@ -14,6 +14,10 @@ export const SHORTCUT_CONTEXTS = ['general', 'scene', 'drawing', 'fog'];
 
 export const SHORTCUTS = [
   { id: 'general.openShortcuts', kind: 'key', combos: [['?']], context: 'general', labelKey: 'shortcuts.items.openShortcuts' },
+  { id: 'scene.copy', kind: 'key', combos: [['Mod', 'C']], context: 'scene', gmOnly: true, labelKey: 'shortcuts.items.copyImages' },
+  { id: 'scene.paste', kind: 'key', combos: [['Mod', 'V']], context: 'scene', gmOnly: true, labelKey: 'shortcuts.items.pasteImages' },
+  { id: 'scene.deleteSelected', kind: 'key', combos: [['Delete'], ['Backspace']], context: 'scene', gmOnly: true, labelKey: 'shortcuts.items.deleteSelected' },
+  { id: 'scene.clearSelection', kind: 'key', combos: [['Escape']], context: 'scene', labelKey: 'shortcuts.items.clearSelection' },
   { id: 'scene.cycleTool', kind: 'mouse', combos: [['MiddleClick']], context: 'scene', labelKey: 'shortcuts.items.cycleTool' },
   { id: 'scene.pan', kind: 'mouse', combos: [['RightDrag']], context: 'scene', labelKey: 'shortcuts.items.pan' },
   { id: 'scene.addToSelection', kind: 'mouse', combos: [['Shift', 'Drag']], context: 'scene', labelKey: 'shortcuts.items.addToSelection' },

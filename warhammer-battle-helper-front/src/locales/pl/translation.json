@@ -2881,7 +2881,11 @@
       "addToSelection": "Dodaj do zaznaczenia (na pustej mapie)",
       "ping": "Ping na mapie (bez ruchu, na pustej mapie)",
       "deleteDrawing": "Usuń zaznaczony rysunek",
-      "cancelFogPolygon": "Anuluj wielokąt mgły"
+      "cancelFogPolygon": "Anuluj wielokąt mgły",
+      "copyImages": "Kopiuj zaznaczone obrazy",
+      "pasteImages": "Wklej obrazy pod kursorem (także na innej scenie)",
+      "deleteSelected": "Usuń zaznaczone tokeny",
+      "clearSelection": "Odznacz wszystko"
     }
   }
 }

@@ -55,8 +55,15 @@ while a dialog is open.
 | Shortcut | When | What it does |
 |---|---|---|
 | `?` | always | Shows the shortcut list |
+| `Ctrl + C` | select tool (GM) | Copies the selected images, several at once too; character tokens are skipped |
+| `Ctrl + V` | select tool (GM) | Pastes the copied images under the cursor, also on another scene; the copies stay selected |
+| `Delete` / `Backspace` | select tool (GM) | Deletes the selected tokens (locked images stay) |
+| `Esc` | select tool | Clears the selection |
 | `Delete` / `Backspace` | drawing, select tool | Deletes the selected drawing |
 | `Esc` | fog of war, polygon (GM) | Cancels the polygon being drawn |
+
+A copy keeps its layer, its hidden-from-players state, its label and its token ring, but starts
+unlocked and alive. With the cursor off the map the copy lands right next to the original.
 
 Mouse gestures (middle button, panning, Shift when selecting, ping) are in
 [Map controls](02-game-screen.md#map-controls).

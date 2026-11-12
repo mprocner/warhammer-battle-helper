@@ -26,6 +26,7 @@
         "gridColor": "Each scene can have its own grid colour, so the grid stays visible on any map.",
         "tools": "Select, ruler and drawing for everyone, plus fog of war for the GM.",
         "tokens": "Character and image tokens: move, box-select, rotate, resize and duplicate.",
+        "clipboard": "Ctrl+C / Ctrl+V for the GM: copy the selected images, several at once, and paste them under the cursor, also on another scene.",
         "overlays": "Health, condition slots and bars right on the token, and tokens hidden from players.",
         "tokenLabel": "Image tokens get a caption under them, like a character's name; the GM sets it in the token's configuration.",
         "controls": "Ping the map, pan with the right mouse button and pick the control scheme that suits you.",

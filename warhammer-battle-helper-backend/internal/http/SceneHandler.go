@@ -499,6 +499,37 @@ func (h *SceneHandler) DuplicateSceneImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Image duplicated"})
 }
 
+// PasteSceneImages copies images from a scene of the game into this one (GM only) and returns
+// the copies, so the client can select them.
+func (h *SceneHandler) PasteSceneImages(c *gin.Context) {
+	gameID := c.Param("id")
+	sceneID, err := primitive.ObjectIDFromHex(c.Param("sceneId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+
+	var req models.PasteSceneImagesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	images, err := h.GameService.PasteSceneImages(gameID, sceneID, userID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"images": images})
+}
+
 // ApplyImageTokenSlot shares or unshares one ring position across every tokens-layer image in
 // every scene of the game (GM only).
 func (h *SceneHandler) ApplyImageTokenSlot(c *gin.Context) {

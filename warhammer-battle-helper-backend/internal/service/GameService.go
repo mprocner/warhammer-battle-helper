@@ -1834,60 +1834,9 @@ func (s *GameService) DuplicateSceneImage(gameID string, sceneID, imageID, userI
 		return fmt.Errorf("image not found")
 	}
 
-	// Workspace is the grid plus the off-scene margin on every side (matches
-	// SceneImageWithinWorkspace) — NOT just the grid. Clamping to the grid alone would drag a copy
-	// of an image staged in the margin onto the grid, which is a reveal: PlayerCanSeeSceneImage
-	// below would then broadcast the copy to every player in full.
-	margin := OffSceneMarginCells * CellSizePx
-	minX, minY := -margin, -margin
-	maxX := float64(scene.GridWidth)*CellSizePx + margin - src.Width
-	maxY := float64(scene.GridHeight)*CellSizePx + margin - src.Height
-	if maxX < minX {
-		maxX = minX
-	}
-	if maxY < minY {
-		maxY = minY
-	}
-	clamp := func(v, lo, hi float64) float64 {
-		if v < lo {
-			return lo
-		}
-		if v > hi {
-			return hi
-		}
-		return v
-	}
-
 	for k := 1; k <= count; k++ {
-		dup := *src
-		dup.ID = primitive.NilObjectID // AddSceneImage assigns a fresh id + timestamps
-		dup.X = clamp(src.X+30*float64(k), minX, maxX)
-		dup.Y = clamp(src.Y+30*float64(k), minY, maxY)
-		dup.Locked = false
-		dup.Killed = false
-		dup.TokenOverlay = cloneImageTokenOverlay(src.TokenOverlay)
-
-		created, err := s.gameRepo.AddSceneImage(gameID, sceneID, dup)
-		if err != nil {
+		if _, err := s.copySceneImageInto(game, scene, *src, src.X+30*float64(k), src.Y+30*float64(k)); err != nil {
 			return err
-		}
-
-		gmID := game.GameMasterID.Hex()
-		s.hub.BroadcastToUsers(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
-			"sceneId": sceneID.Hex(),
-			"image":   created,
-		}, []string{gmID})
-
-		// The clamp above confines every copy to the workspace (grid + margin), not the grid, so a
-		// copy of a staged image stays staged. This gate is what actually keeps it from players —
-		// it also still blocks a duplicate of a Hidden original from reaching them.
-		if PlayerCanSeeSceneImage(*created, scene.GridWidth, scene.GridHeight) {
-			maskedImg := *created
-			maskedImg.TokenOverlay = MaskImageTokenForPlayer(created.TokenOverlay)
-			s.hub.BroadcastToGameExcept(gameID, websocket.EventSceneImageAdded, map[string]interface{}{
-				"sceneId": sceneID.Hex(),
-				"image":   maskedImg,
-			}, gmID)
 		}
 	}
 

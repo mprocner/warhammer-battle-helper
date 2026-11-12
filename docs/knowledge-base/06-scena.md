@@ -55,6 +55,17 @@ z danego umieszczenia (paski ręczne, dodane paski). Każdy element może być u
 a pasek może ukrywać tylko liczby. Gracz bez karty dostaje gotowy `TokenView` z rozwiązanymi
 wartościami, nigdy surowe dane.
 
+**Kopiuj / wklej obrazy** (PLAYRPG-356, tylko MG, narzędzie zaznaczania). Ctrl+C zapamiętuje
+zaznaczone obrazy z dowolnej uzbrojonej warstwy (tokeny postaci są pomijane) jako przesunięcia
+względem obwiedni grupy (`buildClipboard` w `components/scene/sceneClipboard.js`). Schowek siedzi
+w pamięci `useSceneClipboard` i przeżywa zmianę sceny. Ctrl+V stawia środek grupy pod kursorem;
+w trybie snap lewy górny róg trafia na róg komórki, a z kursorem poza mapą kopia ląduje 30 px
+obok oryginału, jak przy duplikacie. Serwer (`POST .../images/paste`, `PasteSceneImages`)
+sprawdza wszystkie pozycje przed pierwszym zapisem i przyjmuje najwyżej 20 obrazów, więc klient
+dzieli większą grupę na paczki. Każda kopia przechodzi przez ten sam rdzeń co duplikat
+(`copySceneImageInto`): przycięcie do obszaru roboczego, reset `Locked`/`Killed`, broadcast
+z maską, a graczom tylko wtedy, gdy kopia jest dla nich widoczna. Ukryty oryginał daje ukrytą kopię.
+
 **Etykieta tokenu obrazkowego** (`SceneImage.Label`, PLAYRPG-354) to podpis pod obrazem na
 warstwie `tokens`, odpowiednik nazwy postaci, i ma tę samą klasę `.token-name`. Siedzi na samym
 obrazie, nie w `TokenOverlay`, więc widać ją także przy wyłączonym albo nieskonfigurowanym
@@ -143,6 +154,12 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
   (natywny `change`) albo odmontowanie pola zapisuje zaległy kolor od razu. Refetch po zapisie,
   który wróci w trakcie dalszego przeciągania, może na moment przywrócić poprzedni kolor —
   następny ruch znów go nadpisuje.
+- Wklejone kopie stają się zaznaczeniem dopiero wtedy, gdy scena je ma. `DndContext` wycina
+  z zaznaczenia id, których scena nie zna, a odpowiedź HTTP i `SCENE_IMAGE_ADDED` przychodzą
+  w dowolnej kolejności. Dlatego `useSceneClipboard` trzyma oczekujące id w **stanie**, nie
+  w refie: gdy eventy przyjdą pierwsze, sprawdzenie musi uruchomić sama odpowiedź.
+- Ctrl+C oddaje klawisz przeglądarce (`when` w `useKeyboardShortcut`), gdy nie ma zaznaczonych
+  obrazów albo zaznaczony jest tekst. Inaczej skrót zabrałby kopiowanie tekstu z logu.
 - Podpis tokenu (`.token-name`) jest jasny, a mapa bywa jasna. Czytelność daje mu ostry kontur 1px
   (8 cieni bez rozmycia), **nie** mnożony przez `--shadow-k`. Motyw twenties ma `--shadow-k: 0`,
   więc cień mnożony przez ten współczynnik całkiem znika i napis zostaje gołą bielą.

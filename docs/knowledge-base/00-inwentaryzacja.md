@@ -75,6 +75,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 | Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie, duplikowanie | MG / G | `SCENE - unifikacja renderowania tokenow….md` |
 | Nakładki na tokenach: HP, sloty, paski, widoczność | MG | `FEATURE-102 - token conditions.md` |
 | Etykieta (podpis) tokenu obrazkowego, ustawiana w jego konfiguracji | MG | PLAYRPG-354 |
+| Kopiuj / wklej obrazy (Ctrl+C / Ctrl+V), także grupę i na inną scenę | MG | PLAYRPG-356 |
 | Ping wskaźnikiem, przesuwanie mapy prawym przyciskiem, schemat sterowania | MG / G | — |
 | Kolejka tur (tracker inicjatywy) per scena: wpisy: postacie (jeden na postać), tokeny-obrazki i ręczne, ukrywanie, rundy, „Zakończ turę” gracza | MG / G | `docs/superpowers/specs/2026-11-09-PLAYRPG-1-initiative-tracker-design.md` |
 

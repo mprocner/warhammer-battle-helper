@@ -306,6 +306,7 @@ func main() {
 	game.PATCH("/scenes/:sceneId/tokens/batch", sceneHandler.BatchMoveSceneTokens)
 	game.DELETE("/scenes/:sceneId/images/:imageId", sceneHandler.DeleteSceneImage)
 	game.POST("/scenes/:sceneId/images/:imageId/duplicate", sceneHandler.DuplicateSceneImage)
+	game.POST("/scenes/:sceneId/images/paste", sceneHandler.PasteSceneImages)
 	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/hp", sceneHandler.PatchSceneImageTokenHP)
 	game.PATCH("/scenes/:sceneId/images/:imageId/tokenOverlay/slot", sceneHandler.PatchSceneImageTokenSlot)
 	game.PUT("/scenes/:sceneId/tokenSlotConfig", sceneHandler.ApplyImageTokenSlot)

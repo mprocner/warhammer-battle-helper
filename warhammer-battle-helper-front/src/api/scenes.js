@@ -54,6 +54,13 @@ export const duplicateSceneImage = async (gameId, sceneId, imageId, count) => {
   return response.data;
 };
 
+// Copies images from sourceSceneId into sceneId, each to its own position (GM only, at most 20 per
+// call). payload = { sourceSceneId, items: [{ imageId, x, y }] }. Resolves to the created images.
+export const pasteSceneImages = async (gameId, sceneId, payload) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/images/paste`, payload);
+  return response.data.images;
+};
+
 // Steps or sets one HP bar on an image-token (GM only). data = { barId, delta } or { barId, value }.
 export const patchSceneImageTokenHP = async (gameId, sceneId, imageId, data) => {
   const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/images/${imageId}/tokenOverlay/hp`, data);

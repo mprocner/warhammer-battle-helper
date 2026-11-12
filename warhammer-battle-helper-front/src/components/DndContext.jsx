@@ -23,6 +23,7 @@ import { buildPlacedCharacters } from '../utils/placedCharacters';
 import { nextSelection } from '../utils/tokenSelection';
 import { useWindowManager } from '../contexts/WindowManagerContext';
 import useDragRuler from '../hooks/useDragRuler';
+import useKeyboardShortcut from '../shortcuts/useKeyboardShortcut';
 
 const DEFAULT_GRID_WIDTH = 20;
 const DEFAULT_GRID_HEIGHT = 20;
@@ -124,37 +125,24 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     });
   }, [currentScene?.images, currentScene?.characters, selectedTokens.length]);
 
-  // Escape clears the multi-selection while in Select mode.
-  useEffect(() => {
-    if (editingLayer !== 'select') return;
-    const onKey = (e) => { if (e.key === 'Escape') setSelectedTokens([]); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [editingLayer]);
+  // Escape clears the selection while in Select mode (registry: scene.clearSelection).
+  useKeyboardShortcut('scene.clearSelection', () => setSelectedTokens([]), { enabled: editingLayer === 'select' });
 
-  // Delete / Backspace removes all selected tokens (images deleted, characters removed from grid).
-  // Skips locked images. Ignored while typing.
+  // Delete / Backspace removes all selected tokens (images deleted, characters removed from grid),
+  // skipping locked images (registry: scene.deleteSelected; the hook ignores typing in fields).
   // GM only: Select is no longer a GM-only mode, so the mode check alone no longer gates this.
-  useEffect(() => {
-    if (!isGM || editingLayer !== 'select' || !selectedTokens.length) return;
-    const handleKeyDown = (e) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      const el = e.target;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
-      const images = currentScene?.images || [];
-      selectedTokens.forEach(t => {
-        if (t.kind === 'image') {
-          const img = images.find(i => i.id === t.id);
-          if (img && !img.locked) deleteSceneImage(gameId, currentSceneId, t.id).catch(err => console.error(err));
-        } else {
-          handleRemoveCharacter(t.id);
-        }
-      });
-      setSelectedTokens([]);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isGM, editingLayer, selectedTokens, currentScene?.images, gameId, currentSceneId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useKeyboardShortcut('scene.deleteSelected', () => {
+    const images = currentScene?.images || [];
+    selectedTokens.forEach(t => {
+      if (t.kind === 'image') {
+        const img = images.find(i => i.id === t.id);
+        if (img && !img.locked) deleteSceneImage(gameId, currentSceneId, t.id).catch(err => console.error(err));
+      } else {
+        handleRemoveCharacter(t.id);
+      }
+    });
+    setSelectedTokens([]);
+  }, { enabled: isGM && editingLayer === 'select' && selectedTokens.length > 0 });
 
   // Group actions — loop existing per-token endpoints (infrequent one-shot clicks).
   const groupImages = useCallback(
