@@ -492,10 +492,9 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         break;
 
       case WS_EVENTS.SCENE_UPDATED:
-        setGameState(prev => {
-          if (!prev) return prev;
-          return { ...prev, scenes: (prev.scenes || []).map(s => s.id === message.payload.scene.id ? message.payload.scene : s) };
-        });
+        // The payload is only { sceneId }: a scene sent to everyone would skip the per-viewer filters,
+        // and swapping it in brought hidden tokens back for players (PLAYRPG-351). Refetch instead.
+        fetchGameState();
         break;
 
       case WS_EVENTS.SCENE_DELETED:
@@ -529,6 +528,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
             }),
           };
         });
+        // The moved player is about to see a scene they were not looking at, straight from local
+        // state. Refetch so they enter it with the server-filtered view, not whatever that state
+        // picked up while they were elsewhere. The local patch above stays: the scene switch is instant.
+        if (assigned && playerId === userIdRef.current) fetchGameState();
         break;
       }
 

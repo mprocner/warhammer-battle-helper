@@ -34,6 +34,14 @@ umieszczeń. **Widoczność tokenu** (`Hidden`) jest niezależna od widoczności
 karty zawsze widzi token, a gracz bez karty nie dostaje ukrytego tokenu wcale
 (`FilterSceneCharacterTokensForUser`). MG widzi ukryte tokeny przyciemnione.
 
+Pułapka (PLAYRPG-351): każdy event WS, który niesie całą scenę albo listę rozstawień, omija filtry
+widza — działają tylko w `GET /games/:id` i w migawce WS. `SCENE_UPDATED` (nazwa, siatka, muzyka
+sceny) wysyłał surową scenę i klient podmieniał ją w całości. Gracze dostawali z powrotem ukryte
+tokeny, wyszarzone, bo `scene-image--hidden` nie sprawdza `isGM`, a do tego nieodsłonięte obrazki
+i niemaskowane paski. Teraz event niesie samo `{sceneId}`, a klient robi `fetchGameState()`.
+Przeniesiony gracz (`PLAYER_SCENE_CHANGED` z jego `playerId`) też robi refetch, żeby wejść na
+nową scenę z przefiltrowanymi danymi.
+
 **Wyposażenie tokenu** (`TokenGear`, FEATURE-102): 8 slotów na pierścieniu, kwadraty i paski HP.
 Układ pochodzi z `TokenDisplayConfig` szablonu, a wartości z postaci (stany, statystyki) albo
 z danego umieszczenia (paski ręczne, dodane paski). Każdy element może być ukryty dla graczy,

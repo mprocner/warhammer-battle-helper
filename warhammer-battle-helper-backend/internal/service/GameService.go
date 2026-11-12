@@ -1332,13 +1332,12 @@ func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, use
 		return err
 	}
 
-	updatedScene, err := s.gameRepo.GetScene(gameID, sceneID)
-	if err != nil {
-		return err
-	}
-
+	// Id only, never the scene: this goes to every client, and a raw scene would skip the per-viewer
+	// filters GET /games/:id applies — hidden and off-scene images, hidden placements, unmasked
+	// overlays. The client swapped the scene for the payload, so hidden tokens came back for every
+	// player until F5 (PLAYRPG-351). Clients refetch and get their own filtered view.
 	s.hub.BroadcastToGame(gameID, websocket.EventSceneUpdated, map[string]interface{}{
-		"scene": updatedScene,
+		"sceneId": sceneID.Hex(),
 	})
 
 	return nil
