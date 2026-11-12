@@ -50,11 +50,15 @@ ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 bieżącej scenie. Walka startuje ukryta: dodaj uczestników, wpisz inicjatywę i kliknij
 **Pokaż** (oko) w oknie „Walka”. Uczestników dodasz z okna „Walka” albo prawym przyciskiem na tokenie (obrazek ma
 pozycję **Dodaj do walki** w swoim menu, a token postaci najpierw zaznacz, potem kliknij prawym).
-Okno ma trzy źródła:
 
-- **Postacie** — każda postać graczy i każdy BN z lewego panelu, na mapie czy nie. Postać to
-  zawsze jeden wpis: gdy jest aktywna, podświetlają się wszystkie jej tokeny na scenie. Wpis nie
-  ukrywa się sam razem z tokenem — ukrytego BN ukryj okiem przy wpisie.
+W oknie „Walka”, w części **Dodaj uczestników** pod kolejką, kandydaci są zawsze widoczni,
+pogrupowani i posortowani alfabetycznie; grupa znika, gdy wszyscy
+z niej już walczą. Kliknięcie dodaje jedną pozycję, **Wszyscy** przy nagłówku — całą grupę:
+
+- **Postacie** — postacie graczy z lewego panelu, na mapie czy nie. Postać to zawsze jeden wpis:
+  gdy jest aktywna, podświetlają się wszystkie jej tokeny na scenie.
+- **BN** — bohaterowie niezależni z lewego panelu, tak samo jeden wpis na postać. Wpis nie ukrywa
+  się sam razem z tokenem — ukrytego BN ukryj okiem przy wpisie.
 - **Tokeny** — obrazki z warstwy tokenów stojące na mapie.
 - **Wpis ręczny** — sama nazwa i inicjatywa.
 

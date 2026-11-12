@@ -21,7 +21,7 @@ import {
   activateCombatEntry, updateCombatEntry, removeCombatEntry, reorderCombat, nextTurn, endRound,
   endCombat, setCombatVisibility, addCombatEntries,
 } from '../../../api/combat';
-import { allActed, tokenCandidates, characterCandidates } from './combatSelectors';
+import { allActed, addGroups } from './combatSelectors';
 import CombatPortrait from './CombatPortrait';
 import './combat.css';
 
@@ -133,31 +133,52 @@ function CombatRow({ entry, isActive, tip }) {
   );
 }
 
-function CandidateList({ candidates }) {
+const toRequest = (c) => ({ kind: c.kind, sourceId: c.sourceId });
+
+// One group of the add panel: a header with "add all" and its chips in two columns. A chip's name
+// is cut with an ellipsis; the tooltip shows the full name only when it was actually cut.
+function AddGroup({ group, tip }) {
+  const { t } = useTranslation();
   const { gameId, sceneId, run } = useCombat();
+  const add = (items) => run(() => addCombatEntries(gameId, sceneId, items.map(toRequest)));
+  const nameTip = (name) => ({
+    onMouseEnter: e => {
+      const label = e.currentTarget.querySelector('.combat-window__candidate-name');
+      if (label && label.scrollWidth > label.clientWidth) tip(name).onMouseEnter(e);
+    },
+    onMouseLeave: tip(name).onMouseLeave,
+  });
   return (
-    <ul className="combat-window__candidates">
-      {candidates.map(c => (
-        <li key={`${c.kind}:${c.sourceId}`}>
-          <button type="button" className="combat-window__candidate" onClick={() => run(() => addCombatEntries(gameId, sceneId, [{ kind: c.kind, sourceId: c.sourceId }]))}>
-            <CombatPortrait entry={c} small />
-            {c.name}
-          </button>
-        </li>
-      ))}
-    </ul>
+    <section className="combat-window__group">
+      <div className="combat-window__group-head">
+        <span className="combat-window__add-label">{t(`combat.window.group.${group.id}`)}</span>
+        <button type="button" className="combat-window__add-all" onClick={() => add(group.items)}>
+          <AddIcon style={{ fontSize: 14 }} /> {t(`combat.window.addAll.${group.id}`)}
+        </button>
+      </div>
+      <ul className="combat-window__candidates">
+        {group.items.map(c => (
+          <li key={`${c.kind}:${c.sourceId}`}>
+            <button type="button" className="combat-window__candidate" onClick={() => add([c])} {...nameTip(c.name)}>
+              <CombatPortrait entry={c} small />
+              <span className="combat-window__candidate-name">{c.name}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
-// Three ways in: any character of the game (on this scene or not), a tokens-layer image of this
-// scene, and a manual entry.
-function CombatAddPanel({ characters }) {
-  const { t } = useTranslation();
+// Ways in: the game's characters and NPCs (on this scene or not), tokens-layer images of this
+// scene, and a manual entry. Always shown: the window is where combat is set up (the strip over
+// the map runs it). A group shows only when it has someone left to add.
+function CombatAddPanel({ characters, tip }) {
+  const { t, i18n } = useTranslation();
   const { gameId, sceneId, scene, combat, run } = useCombat();
   const [name, setName] = useState('');
   const [initiative, setInitiative] = useState('0');
-  const characterOptions = characterCandidates(characters, combat);
-  const tokenOptions = tokenCandidates(scene, combat);
+  const groups = addGroups(characters, scene, combat, i18n.language);
 
   const addManual = (e) => {
     e.preventDefault();
@@ -170,12 +191,9 @@ function CombatAddPanel({ characters }) {
 
   return (
     <div className="combat-window__add">
-      <div className="combat-window__add-label">{t('combat.window.addCharacters')}</div>
-      {characterOptions.length === 0 && <p className="combat-window__hint">{t('combat.window.noCharacterCandidates')}</p>}
-      <CandidateList candidates={characterOptions} />
-      <div className="combat-window__add-label">{t('combat.window.addTokens')}</div>
-      {tokenOptions.length === 0 && <p className="combat-window__hint">{t('combat.window.noTokenCandidates')}</p>}
-      <CandidateList candidates={tokenOptions} />
+      <h3 className="combat-window__add-title">{t('combat.window.addTitle')}</h3>
+      {groups.length === 0 && <p className="combat-window__hint">{t('combat.window.allInCombat')}</p>}
+      {groups.map(g => <AddGroup key={g.id} group={g} tip={tip} />)}
       <div className="combat-window__add-label">{t('combat.window.addManualLabel')}</div>
       <form className="combat-window__manual" onSubmit={addManual}>
         <input value={name} maxLength={60} onChange={e => setName(e.target.value)} aria-label={t('combat.window.manualName')} placeholder={t('combat.window.manualName')} />
@@ -191,7 +209,6 @@ function CombatAddPanel({ characters }) {
 export default function CombatWindow({ characters = [] }) {
   const { t } = useTranslation();
   const { combat, isGM, windowOpen, setWindowOpen, gameId, sceneId, run } = useCombat();
-  const [adding, setAdding] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   // One tooltip for the whole window; rows get hover handlers through tip().
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
@@ -243,15 +260,6 @@ export default function CombatWindow({ characters = [] }) {
             <button
               type="button"
               className="combat-window__btn combat-window__btn--tool"
-              aria-pressed={adding}
-              onClick={() => setAdding(v => !v)}
-              {...tip(t('combat.window.addTip'))}
-            >
-              <AddIcon style={{ fontSize: 16 }} /> {t('combat.window.add')}
-            </button>
-            <button
-              type="button"
-              className="combat-window__btn combat-window__btn--tool"
               onClick={() => run(() => setCombatVisibility(gameId, sceneId, !combat.visibleToPlayers))}
               {...tip(t(combat.visibleToPlayers ? 'combat.window.hideTip' : 'combat.window.showTip'))}
             >
@@ -268,7 +276,7 @@ export default function CombatWindow({ characters = [] }) {
             </button>
           </div>
         </div>
-        {(adding || noEntries) && <CombatAddPanel characters={characters} />}
+        <CombatAddPanel characters={characters} tip={tip} />
       </div>
       {tooltipNode}
       <ConfirmModal

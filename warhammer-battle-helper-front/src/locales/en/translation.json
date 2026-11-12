@@ -810,11 +810,18 @@
       "entryShow": "Show to players",
       "remove": "Remove from combat",
       "rename": "Rename",
-      "add": "Add",
-      "addCharacters": "Characters",
-      "noCharacterCandidates": "Every character is already in combat.",
-      "addTokens": "Tokens",
-      "noTokenCandidates": "No tokens on this scene left to add.",
+      "addTitle": "Add participants",
+      "group": {
+        "characters": "Characters",
+        "npcs": "NPCs",
+        "tokens": "Tokens"
+      },
+      "addAll": {
+        "characters": "All",
+        "npcs": "All",
+        "tokens": "All"
+      },
+      "allInCombat": "Everyone is already in combat.",
       "addManualLabel": "Manual entry",
       "manualName": "Name",
       "addManual": "Add entry",
@@ -822,7 +829,6 @@
       "hideShort": "Hide",
       "showTip": "Combat is hidden — show it to players",
       "hideTip": "Players see the combat — hide it from them",
-      "addTip": "Add participants: characters, scene tokens or a manual entry",
       "endCombatTip": "End combat and clear the turn order",
       "endCombat": "End combat",
       "endCombatConfirm": "End combat? The turn order and round counter will be cleared."

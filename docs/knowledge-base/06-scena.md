@@ -40,6 +40,12 @@ z danego umieszczenia (paski ręczne, dodane paski). Każdy element może być u
 a pasek może ukrywać tylko liczby. Gracz bez karty dostaje gotowy `TokenView` z rozwiązanymi
 wartościami, nigdy surowe dane.
 
+Na niezaznaczonym tokenie (`showAtRest` w `TokenRingChrome`) stan widać tylko, gdy jest aktywny,
+pole i wybór — gdy mają wartość, a licznik (`number`) **zawsze**, z brakiem wartości jako 0.
+Pułapka: `ImageTokenSlot.Number` to `float64` z `omitempty`, więc zero w ogóle nie przychodzi
+w JSON. Warunek `number != null` chował każdy licznik równy 0 (domyślna wartość nowego slotu),
+a u postaci — każdy licznik, którego nikt jeszcze nie ustawił.
+
 **Ping** wskaźnikiem i linijka miarki to zdarzenia ulotne: klient wysyła je przez WebSocket,
 a hub przekazuje je dalej, nic nie zapisując.
 
@@ -60,7 +66,9 @@ podświetla wszystkie swoje tokeny, menu tokenu operuje na jej wpisie), obrazek 
 (`SceneImage.ID`) albo wpis ręczny. Wpis nigdy nie wskazuje rozstawienia — dawny kind `character`
 (`GameCharacter.ID`) usunięto w PLAYRPG-352, a `Prune` wyrzuca zapisane wpisy nieznanego rodzaju.
 Wpis postaci nie dziedziczy `Hidden` tokenu (MG ukrywa ręcznie); wpis obrazka startuje ukryty,
-gdy obrazek jest ukryty. Okno walki montuje `DndContext`, bo tylko tam jest
+gdy obrazek jest ukryty. Panel dodawania (zawsze widoczny pod stopką okna — okno służy do przygotowania walki) grupuje kandydatów (`addGroups`: postacie graczy, BN, tokeny;
+sortowanie `localeCompare` w języku UI, puste grupy pominięte), „Wszyscy” dodaje grupę jednym
+`POST .../combat/entries` (PLAYRPG-358). Okno walki montuje `DndContext`, bo tylko tam jest
 lista postaci (`initialCharacters`). Pasek u MG prowadzi walkę bez okna: jeden przycisk
 `next`/`end-round` (przełącza się na `allActed`), klik w portret = `activate`. Pasek to portal do `body` (`position: fixed`, z-index 1400 — nad
 panelami i ich uchwytami, pod oknami Window Managera od 1500); przeciąganie ogranicza okno

@@ -62,7 +62,8 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
     }
     return {
       id: slot.id, variant: 'chip', value: slot.number ?? 0, cap: slot.numberLabel,
-      showAtRest: slot.number != null,
+      // Always at rest: the server omits a zero number (omitempty), so `number != null` hid every 0 chip.
+      showAtRest: true,
       editable: selected && canEdit,
       numberValue: slot.number ?? 0,
       onSetNumber: (n) => setSlotNumber(slot.id, n),

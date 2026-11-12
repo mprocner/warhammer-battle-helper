@@ -50,11 +50,16 @@ Everyone sees a marker there.
 **GM.** The button with two fighters in the tool bar (after the divider) starts combat on the
 current scene. Combat starts hidden: add participants, enter initiative and click
 **Show** (the eye) in the Combat window. Add participants from the Combat window or with a right click on a token (an
-image has **Add to combat** in its menu; select a character token first, then right-click it). The
-window has three sources:
+image has **Add to combat** in its menu; select a character token first, then right-click it).
 
-- **Characters** — every player character and NPC from the left panel, on the map or not. A
-  character is always one entry: when it is active, all its tokens on the scene light up. The entry
+In the Combat window, under **Add participants** below the turn order, candidates are always
+shown, grouped and sorted alphabetically; a group disappears once
+all of it is in combat. A click adds one participant, **All** next to the heading adds the whole
+group:
+
+- **Characters** — player characters from the left panel, on the map or not. A character is always
+  one entry: when it is active, all its tokens on the scene light up.
+- **NPCs** — non-player characters from the left panel, also one entry per character. The entry
   does not hide along with its token — hide a hidden NPC with the eye next to the entry.
 - **Tokens** — tokens-layer images on the map.
 - **Manual entry** — just a name and initiative.

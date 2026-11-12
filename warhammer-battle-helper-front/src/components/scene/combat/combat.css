@@ -439,15 +439,52 @@
   border-top: 1px dashed var(--c-border);
 }
 
+.combat-window__add-title {
+  margin: 0 0 2px;
+  font-family: var(--font-display); text-transform: var(--display-transform);
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--c-heading);
+}
+
 .combat-window__add-label {
   font-family: var(--font-display); text-transform: var(--display-transform);
   font-size: 11px;
   color: var(--c-label);
 }
 
-.combat-window__candidates {
+.combat-window__group {
+  margin-top: 8px;
+}
+
+.combat-window__group-head {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.combat-window__add-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  color: var(--c-text-accent);
+  padding: 0 2px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.combat-window__add-all:hover {
+  text-decoration: underline;
+}
+
+/* Two equal columns: a long name is cut, never widens its column. */
+.combat-window__candidates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   margin: 4px 0;
   padding: 0;
@@ -455,9 +492,12 @@
 }
 
 .combat-window__candidate {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
   border: 1px solid var(--c-border);
   background: var(--c-input-bg);
   color: var(--c-text);
@@ -466,6 +506,13 @@
   cursor: pointer;
   font: inherit;
   font-size: 14px;
+}
+
+.combat-window__candidate-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .combat-window__manual {

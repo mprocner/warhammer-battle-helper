@@ -814,11 +814,18 @@
       "entryShow": "Pokaż graczom",
       "remove": "Usuń z walki",
       "rename": "Zmień nazwę",
-      "add": "Dodaj",
-      "addCharacters": "Postacie",
-      "noCharacterCandidates": "Wszystkie postacie już są w walce.",
-      "addTokens": "Tokeny",
-      "noTokenCandidates": "Na tej scenie nie ma tokenów do dodania.",
+      "addTitle": "Dodaj uczestników",
+      "group": {
+        "characters": "Postacie",
+        "npcs": "BN",
+        "tokens": "Tokeny"
+      },
+      "addAll": {
+        "characters": "Wszyscy",
+        "npcs": "Wszyscy",
+        "tokens": "Wszystkie"
+      },
+      "allInCombat": "Wszyscy są już w walce.",
       "addManualLabel": "Wpis ręczny",
       "manualName": "Nazwa",
       "addManual": "Dodaj wpis",
@@ -826,7 +833,6 @@
       "hideShort": "Ukryj",
       "showTip": "Walka jest ukryta — pokaż ją graczom",
       "hideTip": "Gracze widzą walkę — ukryj ją przed nimi",
-      "addTip": "Dodaj uczestników: postacie, tokeny ze sceny albo wpis ręczny",
       "endCombatTip": "Zakończ walkę i wyczyść kolejkę",
       "endCombat": "Zakończ walkę",
       "endCombatConfirm": "Zakończyć walkę? Kolejka i licznik rund zostaną wyczyszczone."

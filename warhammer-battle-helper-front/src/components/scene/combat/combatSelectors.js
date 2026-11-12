@@ -58,21 +58,29 @@ export const combatEntriesInSelection = (combat, selection, scene) =>
 
 const stripExtension = (name = '') => name.replace(/\.[^.]+$/, '');
 
-// Tokens-layer images of this scene not yet in combat.
-export const tokenCandidates = (scene, combat) =>
-  (scene?.images || [])
-    .filter(i => i.layer === 'tokens' && !isInCombat(combat, 'image', i.id))
-    .map(i => ({ kind: 'image', sourceId: i.id, name: stripExtension(i.fileName), avatar: i.fileUrl }));
+const characterOption = (c) => ({
+  kind: 'gameCharacter',
+  sourceId: c.id,
+  name: c.basicInfo?.name || c.name || '',
+  avatar: c.avatar || c.basicInfo?.avatar,
+});
 
-// Characters of the game not yet in combat, on this scene or not — players' characters first, then
-// NPCs.
-export const characterCandidates = (characters, combat) =>
-  (characters || [])
-    .filter(c => !isInCombat(combat, 'gameCharacter', c.id))
-    .sort((a, b) => Number(!!a.isNPC) - Number(!!b.isNPC))
-    .map(c => ({
-      kind: 'gameCharacter',
-      sourceId: c.id,
-      name: c.basicInfo?.name || c.name,
-      avatar: c.avatar || c.basicInfo?.avatar,
-    }));
+// The add panel's groups — players' characters, NPCs, tokens-layer images of this scene — each
+// holding what is not in combat yet, sorted by name in the UI language. Empty groups are left out.
+export const addGroups = (characters, scene, combat, locale) => {
+  const byName = (a, b) => a.name.localeCompare(b.name, locale, { sensitivity: 'base' });
+  const free = (characters || []).filter(c => !isInCombat(combat, 'gameCharacter', c.id));
+  const groups = [
+    { id: 'characters', items: free.filter(c => !c.isNPC).map(characterOption) },
+    { id: 'npcs', items: free.filter(c => c.isNPC).map(characterOption) },
+    {
+      id: 'tokens',
+      items: (scene?.images || [])
+        .filter(i => i.layer === 'tokens' && !isInCombat(combat, 'image', i.id))
+        .map(i => ({ kind: 'image', sourceId: i.id, name: stripExtension(i.fileName), avatar: i.fileUrl })),
+    },
+  ];
+  return groups
+    .map(g => ({ ...g, items: [...g.items].sort(byName) }))
+    .filter(g => g.items.length > 0);
+};

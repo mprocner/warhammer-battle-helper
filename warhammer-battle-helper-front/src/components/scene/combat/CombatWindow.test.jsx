@@ -85,7 +85,6 @@ test('end combat asks first', () => {
 
 test('adding a scene token and a manual entry', () => {
   mountWindow();
-  fireEvent.click(screen.getByText('Add'));
   fireEvent.click(screen.getByText('wolf'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'image', sourceId: 'i1' }]);
   fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Reinforcements' } });
@@ -95,12 +94,35 @@ test('adding a scene token and a manual entry', () => {
 
 test('a character with a token on the scene joins as a character', () => {
   mountWindow({ characters: [{ id: 'c1', name: 'Hero' }, { id: 'c2', name: 'Mage' }, { id: 'c9', isNPC: true, name: 'Ogre' }] });
-  fireEvent.click(screen.getByText('Add'));
   expect(screen.getAllByText('Hero')).toHaveLength(1); // in combat already: only its row
   fireEvent.click(screen.getByText('Mage'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'gameCharacter', sourceId: 'c2' }]);
   fireEvent.click(screen.getByText('Ogre'));
   expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [{ kind: 'gameCharacter', sourceId: 'c9' }]);
+});
+
+test('the add panel is always open, under its own heading', () => {
+  mountWindow({ characters: [{ id: 'c2', name: 'Mage' }] });
+  expect(screen.getByText('Add participants')).toBeInTheDocument();
+  expect(screen.getByText('Mage')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
+});
+
+test('a group shows only when it has someone to add, and "All" adds it in one request', () => {
+  mountWindow({ characters: [{ id: 'c1', name: 'Hero' }, { id: 'c2', name: 'Mage' }, { id: 'c8', name: 'Aldric' }] });
+  expect(screen.getByText('Characters')).toBeInTheDocument();
+  expect(screen.queryByText('NPCs')).not.toBeInTheDocument(); // no NPCs in this game
+  fireEvent.click(screen.getAllByText('All')[0]);
+  expect(api.addCombatEntries).toHaveBeenCalledWith('g', 's', [
+    { kind: 'gameCharacter', sourceId: 'c8' }, { kind: 'gameCharacter', sourceId: 'c2' },
+  ]);
+});
+
+test('with everyone in combat only the hint and the manual entry remain', () => {
+  mountWindow({ scene: { ...scene, images: [] }, characters: [{ id: 'c1', name: 'Hero' }] });
+  expect(screen.getByText('Everyone is already in combat.')).toBeInTheDocument();
+  expect(screen.queryByText('All')).not.toBeInTheDocument();
+  expect(screen.getByText('Add entry')).toBeInTheDocument();
 });
 
 test('Escape cancels a rename even when the input blurs as it unmounts', () => {

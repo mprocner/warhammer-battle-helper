@@ -94,7 +94,8 @@ export default function TokenOverlay({
         };
       }
       const cap = s.type === 'number' ? s.numberLabel : s.type === 'field' ? s.field?.label : '';
-      const v = displayValue(vs.value);
+      // A number slot nobody has set yet carries no value; it still reads as 0, like the GM's view.
+      const v = s.type === 'number' ? (displayValue(vs.value) ?? 0) : displayValue(vs.value);
       return { id: s.id, variant: 'chip', value: v, cap, showAtRest: v != null };
     });
     return (
@@ -160,7 +161,8 @@ export default function TokenOverlay({
     }
     let v = null;
     if (slot.type === 'field') v = displayValue(resolveField(character, slot.field).value);
-    else if (slot.type === 'number') v = value?.number ?? null;
+    // An unset number reads as 0 — the editable input shows 0 while selected, so the resting chip must too.
+    else if (slot.type === 'number') v = value?.number ?? 0;
     else if (slot.type === 'select') v = value?.select ?? null;
     const cap = slot.type === 'number' ? slot.numberLabel : slot.type === 'field' ? slot.field?.label : '';
     return {

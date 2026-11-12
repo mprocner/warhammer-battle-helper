@@ -1,7 +1,7 @@
 import {
   activeEntry, allActed, toolbarState, isInCombat, entryForSource, activeSource,
-  combatEntriesForSelection, combatEntriesInSelection, tokenCandidates,
-  characterCandidates, isCharacterTokenActive,
+  combatEntriesForSelection, combatEntriesInSelection, addGroups,
+  isCharacterTokenActive,
 } from './combatSelectors';
 
 const combat = {
@@ -60,25 +60,29 @@ test('combatEntriesForSelection ignores images outside the tokens layer', () => 
   expect(combatEntriesForSelection(sel, scene)).toEqual([{ kind: 'image', sourceId: 'i2' }]);
 });
 
-test('tokenCandidates lists tokens-layer images not yet in combat', () => {
-  expect(tokenCandidates(scene, combat)).toEqual([
-    { kind: 'image', sourceId: 'i2', name: 'dire-bear', avatar: '/b.webp' },
-  ]);
-});
-
-test('characterCandidates offers every character not in combat, on the scene or not, players first', () => {
+test('addGroups: players, NPCs and tokens not in combat, each sorted by name, on the scene or not', () => {
   const characters = [
     { id: 'c4', isNPC: true, basicInfo: { name: 'Ogre', avatar: '/o.png' } },
     { id: 'c1', name: 'Hero' }, // already in combat
-    { id: 'c2', name: 'Mage' }, // has a token on the scene: offered all the same (PLAYRPG-352)
-    { id: 'c5', name: 'Rogue', avatar: '/r.png' },
+    { id: 'c2', name: 'mage' }, // has a token on the scene: offered all the same (PLAYRPG-352)
+    { id: 'c6', isNPC: true, name: 'Łucznik' },
+    { id: 'c5', name: 'Aldric', avatar: '/r.png' },
+    { id: 'c7', isNPC: true, name: 'Lis' },
   ];
-  expect(characterCandidates(characters, combat)).toEqual([
-    { kind: 'gameCharacter', sourceId: 'c2', name: 'Mage', avatar: undefined },
-    { kind: 'gameCharacter', sourceId: 'c5', name: 'Rogue', avatar: '/r.png' },
-    { kind: 'gameCharacter', sourceId: 'c4', name: 'Ogre', avatar: '/o.png' },
+  const groups = addGroups(characters, scene, combat, 'pl');
+  expect(groups.map(g => g.id)).toEqual(['characters', 'npcs', 'tokens']);
+  expect(groups[0].items).toEqual([
+    { kind: 'gameCharacter', sourceId: 'c5', name: 'Aldric', avatar: '/r.png' },
+    { kind: 'gameCharacter', sourceId: 'c2', name: 'mage', avatar: undefined },
   ]);
-  expect(characterCandidates(undefined, null)).toEqual([]);
+  // Locale-aware: Ł sorts right after L, not after Z.
+  expect(groups[1].items.map(c => c.name)).toEqual(['Lis', 'Łucznik', 'Ogre']);
+  expect(groups[2].items).toEqual([{ kind: 'image', sourceId: 'i2', name: 'dire-bear', avatar: '/b.webp' }]);
+});
+
+test('addGroups leaves empty groups out', () => {
+  expect(addGroups([{ id: 'c5', name: 'Aldric' }], { images: [] }, null, 'en').map(g => g.id)).toEqual(['characters']);
+  expect(addGroups(undefined, null, null, 'en')).toEqual([]);
 });
 
 test('isCharacterTokenActive: every token of the active character', () => {
