@@ -806,3 +806,20 @@
   color: var(--c-text-muted);
   font-style: italic;
 }
+
+/* Visible grid (decoupled from the drop-target cells). Default: the theme's --c-border-light at
+   0.4 opacity. --custom: the scene's own gridColor (inline --grid-color), fully opaque, so the
+   picker swatch is what players see. Modifiers stay below the base rule — declared before it they
+   would lose on equal specificity. background-size is inline (it comes from CELL_SIZE). */
+.map-grid-background {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-color, var(--c-border-light)) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color, var(--c-border-light)) 1px, transparent 1px);
+  opacity: 0.4;
+}
+.map-grid-background--custom { opacity: 1; }
+.map-grid-background--hidden { background-image: none; }

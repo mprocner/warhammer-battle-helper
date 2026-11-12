@@ -1665,6 +1665,8 @@
     "gridHeight": "Wysokość Siatki",
     "gridSizeError": "Maksymalny rozmiar siatki to 50×50",
     "showGrid": "Pokaż Siatkę",
+    "gridColor": "Kolor siatki",
+    "gridColorReset": "Domyślny kolor",
     "assignedPlayers": "Przypisani Gracze",
     "noPlayers": "Brak graczy w grze",
     "assignAllPlayers": "Wszyscy gracze",

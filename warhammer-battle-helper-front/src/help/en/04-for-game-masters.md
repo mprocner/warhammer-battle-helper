@@ -37,7 +37,8 @@ In the **Scenes** tab:
 1. Create a scene: a name and a grid size (up to 50×50).
 2. Add a background: drag an image from the **Files** tab onto the map.
 3. In the scene settings, turn the grid and fog on or off, link **scene music**, and
-   **assign players**. A player always sees exactly one scene, the one you assigned them to.
+   **assign players**. If the grid is hard to see on the map, change its **grid colour**; the
+   button next to it restores the default. A player always sees exactly one scene, the one you assigned them to.
 
 You can work on a scene your players cannot see yet and show it when it is ready.
 

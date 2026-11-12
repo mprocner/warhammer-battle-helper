@@ -10,9 +10,10 @@ import ModalHeader from '../common/ModalHeader';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import TabHeader from './TabHeader';
+import GridColorField from './GridColorField';
 import './ScenesTab.css';
 
-const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange }) => {
+const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSceneChange, onPreviewScene }) => {
   const { t } = useTranslation();
   const [scenes, setScenes] = useState([]);
   const selectedSceneId = currentSceneId || null;
@@ -418,6 +419,13 @@ const ScenesTab = ({ gameId, token, gameState, isConnected, currentSceneId, onSc
               {t('scenes.showGrid')}
             </label>
           </div>
+
+          <GridColorField
+            value={selectedScene.gridColor || ''}
+            disabled={selectedScene.gridVisible === false}
+            onPreview={(color) => onPreviewScene?.(selectedScene.id, { gridColor: color })}
+            onCommit={(color) => handleUpdateScene('gridColor', color)}
+          />
 
           {/* Fog of War section */}
 

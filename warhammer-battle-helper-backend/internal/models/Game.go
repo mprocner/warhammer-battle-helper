@@ -411,6 +411,7 @@ type Scene struct {
 	ID              primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
 	Name            string               `bson:"name" json:"name"`
 	GridVisible     bool                 `bson:"gridVisible" json:"gridVisible"`
+	GridColor       string               `bson:"gridColor,omitempty" json:"gridColor,omitempty"` // "#rrggbb", opaque; "" = default grid (follows the theme)
 	GridWidth       int                  `bson:"gridWidth" json:"gridWidth"`
 	GridHeight      int                  `bson:"gridHeight" json:"gridHeight"`
 	Characters      []GameCharacter      `bson:"characters" json:"characters"`
@@ -546,6 +547,7 @@ type CreateSceneRequest struct {
 type UpdateSceneRequest struct {
 	Name           *string `json:"name"`
 	GridVisible    *bool   `json:"gridVisible"`
+	GridColor      *string `json:"gridColor"` // "" resets to the default grid
 	GridWidth      *int    `json:"gridWidth"`
 	GridHeight     *int    `json:"gridHeight"`
 	SceneMusicId   *string `json:"sceneMusicId"`

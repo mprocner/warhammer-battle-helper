@@ -130,6 +130,16 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     setLogs((prev) => [...prev, { id: crypto.randomUUID(), createdAt: now.getTime(), message, type, timestamp, data }]);
   }, []);
 
+  // Local-only scene patch for the GM's own live previews (e.g. the grid colour while the picker
+  // is open). Never sent anywhere: the real save goes through the API, and the SCENE_UPDATED it
+  // triggers refetches this state from the server.
+  const previewScenePatch = useCallback((sceneId, patch) => {
+    setGameState(prev => prev && {
+      ...prev,
+      scenes: (prev.scenes || []).map(s => (s.id === sceneId ? { ...s, ...patch } : s)),
+    });
+  }, []);
+
   // Resolves true when the game state loaded successfully, and false when the session
   // ended (access revoked / game gone) or the request failed. useWebSocket uses this
   // answer to decide whether to re-arm the socket after a reconnect probe.
@@ -1193,6 +1203,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
           isConnected={isConnected}
           currentSceneId={displayScene?.id}
           onSceneChange={setGmViewingSceneId}
+          onPreviewScene={previewScenePatch}
           imageEditLayer={imageEditLayer}
           musicState={musicState}
           audioRef={audioRef}

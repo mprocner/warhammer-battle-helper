@@ -23,6 +23,7 @@
       "scene": {
         "scenes": "Several scenes per game; the GM moves the party from one to the next.",
         "grid": "A grid with your own cell size, distance units and snapping.",
+        "gridColor": "Each scene can have its own grid colour, so the grid stays visible on any map.",
         "tools": "Select, ruler and drawing for everyone, plus fog of war for the GM.",
         "tokens": "Character and image tokens: move, box-select, rotate, resize and duplicate.",
         "overlays": "Health, condition slots and bars right on the token, and tokens hidden from players.",

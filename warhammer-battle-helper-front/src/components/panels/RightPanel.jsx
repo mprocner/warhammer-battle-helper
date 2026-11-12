@@ -37,6 +37,7 @@ const RightPanel = ({
   isConnected,
   currentSceneId,
   onSceneChange,
+  onPreviewScene,
   imageEditLayer = 'background',
   musicState,
   audioRef,
@@ -161,6 +162,7 @@ const RightPanel = ({
             isConnected={isConnected}
             currentSceneId={currentSceneId}
             onSceneChange={onSceneChange}
+            onPreviewScene={onPreviewScene}
           />
         );
       case 'handouts':

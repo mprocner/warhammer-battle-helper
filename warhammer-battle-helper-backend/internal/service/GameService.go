@@ -1327,6 +1327,11 @@ func (s *GameService) UpdateScene(gameID string, sceneID primitive.ObjectID, use
 	if _, err := s.requireGM(gameID, userID, "update scenes"); err != nil {
 		return err
 	}
+	if req.GridColor != nil {
+		if err := validateGridColor(*req.GridColor); err != nil {
+			return err
+		}
+	}
 
 	if err := s.gameRepo.UpdateScene(gameID, sceneID, req); err != nil {
 		return err

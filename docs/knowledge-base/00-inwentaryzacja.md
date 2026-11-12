@@ -70,6 +70,7 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 |---|---|---|
 | Wiele scen, przypisywanie aktywnej sceny | MG | `Scenes.md` |
 | Siatka, rozmiar komórki, jednostki odległości, przyciąganie do siatki | MG | — |
+| Kolor siatki per scena (domyślny z motywu) | MG | PLAYRPG-355 |
 | Tryby: zaznaczanie, miarka, mgła wojny (tylko MG), rysowanie | MG / G | — |
 | Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie, duplikowanie | MG / G | `SCENE - unifikacja renderowania tokenow….md` |
 | Nakładki na tokenach: HP, sloty, paski, widoczność | MG | `FEATURE-102 - token conditions.md` |

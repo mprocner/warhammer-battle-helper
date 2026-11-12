@@ -23,6 +23,7 @@
       "scene": {
         "scenes": "Wiele scen w grze; mistrz gry przenosi drużynę z jednej na drugą.",
         "grid": "Siatka z własnym rozmiarem pola, jednostkami odległości i przyciąganiem.",
+        "gridColor": "Każda scena może mieć własny kolor siatki, żeby siatka była widoczna na każdej mapie.",
         "tools": "Zaznaczanie, miarka i rysowanie dla wszystkich, a dla mistrza gry mgła wojny.",
         "tokens": "Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie i duplikowanie.",
         "overlays": "Zdrowie, sloty stanów i paski bezpośrednio na tokenie oraz tokeny ukryte przed graczami.",

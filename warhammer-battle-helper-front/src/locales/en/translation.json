@@ -1661,6 +1661,8 @@
     "gridHeight": "Grid Height",
     "gridSizeError": "Maximum grid size is 50×50",
     "showGrid": "Show Grid",
+    "gridColor": "Grid colour",
+    "gridColorReset": "Default colour",
     "assignedPlayers": "Assigned Players",
     "noPlayers": "No players in game",
     "assignAllPlayers": "All players",

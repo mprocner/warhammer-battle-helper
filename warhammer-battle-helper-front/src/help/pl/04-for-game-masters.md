@@ -36,7 +36,8 @@ W zakładce **Sceny**:
 1. Utwórz scenę: nazwa i rozmiar siatki (do 50×50).
 2. Dodaj tło: przeciągnij obrazek z zakładki **Pliki** na mapę.
 3. W ustawieniach sceny włącz lub wyłącz siatkę i mgłę, przypisz **muzykę sceny** i
-   **przypisz graczy**. Gracz widzi zawsze jedną scenę, tę, do której go przypisałeś.
+   **przypisz graczy**. Jeśli siatki nie widać na mapie, zmień jej **kolor siatki**; przycisk
+   obok przywraca kolor domyślny. Gracz widzi zawsze jedną scenę, tę, do której go przypisałeś.
 
 Możesz pracować na scenie, której gracze jeszcze nie widzą, i pokazać ją, gdy będzie gotowa.
 

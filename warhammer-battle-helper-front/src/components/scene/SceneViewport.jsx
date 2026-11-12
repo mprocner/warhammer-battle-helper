@@ -23,6 +23,7 @@ import { addCombatEntries, removeCombatEntry } from '../../api/combat';
 import { combatEntriesForSelection, combatEntriesInSelection } from './combat/combatSelectors';
 import { participantColor } from '../../utils/participants';
 import './SceneViewport.css';
+import { gridBackgroundProps } from './gridBackground';
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 // GM staging margin in px. Module-level (not derived from canvasSize) so handleFit can use the
@@ -646,6 +647,8 @@ const SceneViewport = ({
     });
   });
 
+  const grid = gridBackgroundProps(displayedScene);
+
   return (
     <ZoomContext.Provider value={{ zoom, gridWidth: dGridWidth, gridHeight: dGridHeight }}>
       <div className="scene-viewport-wrapper">
@@ -779,15 +782,8 @@ const SceneViewport = ({
 
                 {/* Visible grid as a CSS background (decoupled from drop-target cells). */}
                 <div
-                  className="map-grid-background"
-                  style={{
-                    position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                    backgroundImage: (displayedScene?.gridVisible !== false)
-                      ? 'linear-gradient(to right, var(--c-border-light) 1px, transparent 1px), linear-gradient(to bottom, var(--c-border-light) 1px, transparent 1px)'
-                      : 'none',
-                    backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
-                    opacity: 0.4,
-                  }}
+                  className={grid.className}
+                  style={{ ...grid.style, backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px` }}
                 />
 
                 {/* Unified tokens layer — character tokens + token-layer images, one z-order. */}

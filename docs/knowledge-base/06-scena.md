@@ -4,8 +4,15 @@
 
 **Sceny.** Gra ma wiele scen (`Game.Scenes`), jedna jest domyślna (`IsDefault`). MG przypisuje
 graczy do scen (`AssignedPlayers`). Przypisanie usuwa gracza ze wszystkich innych scen, więc
-gracz jest zawsze na jednej scenie. Scena ma siatkę (`GridWidth/Height`, `GridVisible`),
-opcjonalną muzykę sceny (`SceneMusic*`), mgłę i rysunki.
+gracz jest zawsze na jednej scenie. Scena ma siatkę (`GridWidth/Height`, `GridVisible`,
+`GridColor`), opcjonalną muzykę sceny (`SceneMusic*`), mgłę i rysunki.
+
+**Kolor siatki** (`Scene.GridColor`, PLAYRPG-355) MG ustawia w ustawieniach sceny. Pusty oznacza
+siatkę domyślną: `--c-border-light` motywu przy `opacity: 0.4`, więc wygląda inaczej w każdym
+motywie. Własny kolor (`#rrggbb`, serwer odrzuca inne formaty — `validateGridColor`) jest kolorem
+treści, wspólnym dla wszystkich widzów, i rysuje się w pełni kryjąco (`.map-grid-background--custom`),
+żeby próbka w pickerze była tym, co widzi gracz. Klasy i zmienną `--grid-color` składa
+`gridBackgroundProps` (`components/scene/gridBackground.js`).
 
 **Ustawienia mapy** są wspólne dla całej gry (`PATCH /mapSettings`): rozmiar komórki, jednostka
 odległości, przyciąganie do siatki lub swobodne ustawianie. Zmiana wywołuje refetch u
@@ -129,6 +136,13 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
   `top: 100%` dla prostokąta obróconego o 90° ląduje w środku grafiki.
 - Obrazy siedzą w `.scene-image-clip` (`overflow: hidden`, rozmiar siatki), tokeny postaci nie.
   Etykieta tokenu obrazkowego w dolnym rzędzie jest więc u gracza ucięta; MG widzi ją w marginesie.
+- `onChange` Reacta na `<input type="color">` strzela przy każdym ruchu w otwartym pickerze, a
+  każdy zapis sceny to `SCENE_UPDATED` i refetch u każdego gracza. `GridColorField` rozdziela
+  więc podgląd i zapis: każdy ruch od razu łata lokalny stan gry MG (`previewScenePatch`
+  w `GameSession`, nigdy nie wysyłany), a zapis idzie 400 ms po ostatnim ruchu. Zamknięcie pickera
+  (natywny `change`) albo odmontowanie pola zapisuje zaległy kolor od razu. Refetch po zapisie,
+  który wróci w trakcie dalszego przeciągania, może na moment przywrócić poprzedni kolor —
+  następny ruch znów go nadpisuje.
 - Podpis tokenu (`.token-name`) jest jasny, a mapa bywa jasna. Czytelność daje mu ostry kontur 1px
   (8 cieni bez rozmycia), **nie** mnożony przez `--shadow-k`. Motyw twenties ma `--shadow-k: 0`,
   więc cień mnożony przez ten współczynnik całkiem znika i napis zostaje gołą bielą.
