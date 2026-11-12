@@ -24,7 +24,10 @@ body::before {
     repeating-linear-gradient(0deg, transparent, transparent 2px, rgb(var(--c-leather-rgb) / 0.03) 2px, rgb(var(--c-leather-rgb) / 0.03) 4px),
     repeating-linear-gradient(90deg, transparent, transparent 2px, rgb(var(--c-leather-rgb) / 0.03) 2px, rgb(var(--c-leather-rgb) / 0.03) 4px);
   pointer-events: none;
-  z-index: 1;
+  /* 0, not 1: the scene's transform makes it a z-index 0 stacking context, so with 1 this
+     texture painted over every token and image. At 0 the tie goes to DOM order, and
+     ::before is body's first child, so everything positioned after it paints on top. */
+  z-index: 0;
 }
 
 header {
