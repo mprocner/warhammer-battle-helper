@@ -2791,6 +2791,8 @@
   "imageToken": {
     "configure": "Konfiguruj token",
     "configTitle": "Konfiguracja tokena",
+    "label": "Etykieta",
+    "labelPlaceholder": "Bez etykiety",
     "hpBars": "Paski",
     "noBars": "Brak pasków HP.",
     "barLabel": "Etykieta",

@@ -1,5 +1,5 @@
 import {
-  tokenRingGeometry, slotOffset,
+  tokenRingGeometry, slotOffset, rotatedHalfHeight,
   ACTIVE_PUSH, ACTIVE_HALF_HEIGHT, ACTIVE_HALF_WIDTH, HP_CLEAR, EQUATOR_STACK_STEP,
 } from './tokenRingGeometry';
 
@@ -66,4 +66,22 @@ test('the rotate handle clears the nearest ring slot on the smallest token', () 
   const HANDLE_HALF = 11; // handle is a 22px circle
   const SLOT_HALF = 11;   // icon slot when selected is 22px
   expect(handleX - nearestSlot.x).toBeGreaterThan(HANDLE_HALF + SLOT_HALF);
+});
+
+// The upright overlay box keeps the image's unrotated size, so anything anchored to "the token's
+// bottom/top edge" must use the rotated image's bounding box instead (PLAYRPG-354).
+describe('rotatedHalfHeight', () => {
+  test('an unrotated image is half its own height', () => {
+    expect(rotatedHalfHeight(100, 50, 0)).toBeCloseTo(25);
+  });
+  test('a quarter turn swaps width into the vertical extent', () => {
+    expect(rotatedHalfHeight(100, 50, 90)).toBeCloseTo(50);
+    expect(rotatedHalfHeight(100, 50, -90)).toBeCloseTo(50);
+  });
+  test('a half turn is the same as no turn', () => {
+    expect(rotatedHalfHeight(100, 50, 180)).toBeCloseTo(25);
+  });
+  test('a square at 45 degrees reaches half its diagonal', () => {
+    expect(rotatedHalfHeight(50, 50, 45)).toBeCloseTo(25 * Math.SQRT2);
+  });
 });

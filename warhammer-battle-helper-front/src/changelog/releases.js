@@ -7,7 +7,7 @@ export const RELEASES = [
     version: '1.0.0',
     date: '2026-11-06',
     sections: [
-      { id: 'scene', items: ['scenes', 'grid', 'tools', 'tokens', 'overlays', 'controls', 'combat'] },
+      { id: 'scene', items: ['scenes', 'grid', 'tools', 'tokens', 'overlays', 'tokenLabel', 'controls', 'combat'] },
       { id: 'characters', items: ['sheet', 'manage', 'conditions', 'rolls', 'favourites'] },
       { id: 'creator', items: ['fields', 'dice', 'presets', 'token', 'sharing', 'preview'] },
       { id: 'dice', items: ['chat', 'visibility', 'myRolls', 'animation'] },

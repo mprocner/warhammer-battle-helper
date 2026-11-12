@@ -2783,6 +2783,8 @@
   "imageToken": {
     "configure": "Configure token",
     "configTitle": "Token configuration",
+    "label": "Label",
+    "labelPlaceholder": "No label",
     "hpBars": "Bars",
     "noBars": "No HP bars yet.",
     "barLabel": "Label",

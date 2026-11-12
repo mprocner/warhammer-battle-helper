@@ -47,3 +47,12 @@ export function tokenRingGeometry(width, height, selected) {
   const equatorX = ringRadius + EQUATOR_GAP;
   return { halfLong, ringRadius, radius, equatorX };
 }
+
+// Half the vertical extent of a w×h image rotated by `deg` (CSS rotates around the centre): half
+// the height of its axis-aligned bounding box. Image-token chrome lives in a counter-rotated box
+// that keeps the UNROTATED size, so anything pinned to the token's top or bottom edge has to be
+// offset by this from the centre — `top: 100%` lands inside a rotated non-square image.
+export function rotatedHalfHeight(width, height, deg) {
+  const a = ((Number(deg) || 0) * Math.PI) / 180;
+  return (Math.abs(width * Math.sin(a)) + Math.abs(height * Math.cos(a))) / 2;
+}

@@ -21,6 +21,7 @@ import TokenSlotConfigModal from '../creator/TokenSlotConfigModal';
 
 const SLOT_COUNT = 8;
 const MAX_BARS = 4;
+const LABEL_MAX_LENGTH = 40; // mirrors MaxSceneImageLabelLength in the backend
 const genId = () => Math.random().toString(36).slice(2, 10);
 
 // Quick-pick bar colours (red / green / blue / yellow).
@@ -68,6 +69,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
   const { t } = useTranslation();
   const { showTooltip, hideTooltip, tooltipNode } = usePortalTooltip();
   const [draft, setDraft] = useState(() => draftFrom(image?.tokenOverlay));
+  const [label, setLabel] = useState(image?.label || '');
   const [saving, setSaving] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null); // index | null
   const [confirmLock, setConfirmLock] = useState(null); // { index, toLocked } | null
@@ -133,7 +135,7 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
     try {
       // Coerce the (possibly blank) bar numbers to real numbers for the backend float fields.
       const hpBars = draft.hpBars.map(b => ({ ...b, current: Number(b.current) || 0, max: Number(b.max) || 0 }));
-      await updateSceneImage(gameId, sceneId, image.id, { tokenOverlay: { ...draft, hpBars, enabled: true } });
+      await updateSceneImage(gameId, sceneId, image.id, { label, tokenOverlay: { ...draft, hpBars, enabled: true } });
       onClose();
     } catch {
       setSaving(false);
@@ -154,6 +156,12 @@ export default function ImageTokenConfigPanel({ image, gameId, sceneId, gameSyst
           <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent>
+          {/* Caption under the token on the map — the image-token analogue of a character's name. */}
+          <TextField size="small" variant="outlined" fullWidth label={t('imageToken.label')}
+            placeholder={t('imageToken.labelPlaceholder')} value={label}
+            onChange={e => setLabel(e.target.value)}
+            inputProps={{ maxLength: LABEL_MAX_LENGTH }} sx={{ mt: 1, mb: 2 }} />
+
           {/* HP bars — on top, matching how they render above the ring on the token. */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, mb: 1 }}>
             <Typography sx={headSx}>{t('imageToken.hpBars')} ({draft.hpBars.length}/{MAX_BARS})</Typography>

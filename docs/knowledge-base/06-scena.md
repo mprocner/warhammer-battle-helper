@@ -48,6 +48,13 @@ z danego umieszczenia (paski ręczne, dodane paski). Każdy element może być u
 a pasek może ukrywać tylko liczby. Gracz bez karty dostaje gotowy `TokenView` z rozwiązanymi
 wartościami, nigdy surowe dane.
 
+**Etykieta tokenu obrazkowego** (`SceneImage.Label`, PLAYRPG-354) to podpis pod obrazem na
+warstwie `tokens`, odpowiednik nazwy postaci, i ma tę samą klasę `.token-name`. Siedzi na samym
+obrazie, nie w `TokenOverlay`, więc widać ją także przy wyłączonym albo nieskonfigurowanym
+pierścieniu. MG ustawia ją w popupie z kołem zębatym, w tym samym `PUT` co pierścień. Serwer
+przycina spacje i odrzuca więcej niż 40 znaków (`normalizeSceneImageLabel`). Pusty tekst usuwa
+etykietę. Graczom idzie razem z obrazem, bez osobnego ukrywania. Duplikat ją kopiuje.
+
 Na niezaznaczonym tokenie (`showAtRest` w `TokenRingChrome`) stan widać tylko, gdy jest aktywny,
 pole i wybór — gdy mają wartość, a licznik (`number`) **zawsze**, z brakiem wartości jako 0.
 Pułapka: `ImageTokenSlot.Number` to `float64` z `omitempty`, więc zero w ogóle nie przychodzi
@@ -116,6 +123,15 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
 - Przypisanie gracza do sceny usuwa go z innych scen w pętli, bez transakcji. Błąd w połowie
   może zostawić gracza na dwóch scenach.
 - Warstwy canvasowe (`FogLayer`, `DrawingLayer`) i `SceneViewport` nie mają testów renderujących.
+- `.scene-image__upright` (kontr-obrót chrome tokenu obrazkowego) ma wymiary obrazu **przed**
+  obrotem. Wszystko, co ma przylegać do górnej lub dolnej krawędzi tokenu, liczy odległość od
+  środka z obwiedni obróconego obrazu (`rotatedHalfHeight` w `utils/tokenRingGeometry.js`).
+  `top: 100%` dla prostokąta obróconego o 90° ląduje w środku grafiki.
+- Obrazy siedzą w `.scene-image-clip` (`overflow: hidden`, rozmiar siatki), tokeny postaci nie.
+  Etykieta tokenu obrazkowego w dolnym rzędzie jest więc u gracza ucięta; MG widzi ją w marginesie.
+- Podpis tokenu (`.token-name`) jest jasny, a mapa bywa jasna. Czytelność daje mu ostry kontur 1px
+  (8 cieni bez rozmycia), **nie** mnożony przez `--shadow-k`. Motyw twenties ma `--shadow-k: 0`,
+  więc cień mnożony przez ten współczynnik całkiem znika i napis zostaje gołą bielą.
 - `Scene.Combat` ma `json:"-"`, bo surowy `Game` idzie do graczy i do lobby. Test
   `TestSceneCombatNeverSerialized` pilnuje, żeby nikt tego nie zdjął.
 - Każdy zapis walki jest warunkowy po `Combat.Version`. Przegrany wyścig wersji `mutate` powtarza

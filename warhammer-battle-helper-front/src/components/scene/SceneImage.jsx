@@ -8,6 +8,7 @@ import { CELL_SIZE } from '../../constants/scene';
 import { clampToWorkspace, clampSizeToWorkspace } from '../../utils/tokenGeometry';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import ImageTokenOverlay from '../token-display/ImageTokenOverlay';
+import ImageTokenLabel from '../token-display/ImageTokenLabel';
 import TokenResizeHandles from './TokenResizeHandles';
 import TokenRotateHandle from './TokenRotateHandle';
 import { useTokenRotate } from './useTokenRotate';
@@ -513,6 +514,9 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
                 canEdit={isGM}
                 gameSystem={gameSystem}
               />
+              {/* Outside the overlay on purpose: it returns null for an unconfigured ring, and the
+                  caption must still show then. */}
+              <ImageTokenLabel label={image.label} width={size.width} height={size.height} rotation={rotation} />
             </div>
           )}
 

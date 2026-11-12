@@ -1896,6 +1896,10 @@ func (s *GameService) UpdateSceneImage(gameID string, sceneID primitive.ObjectID
 		return err
 	}
 
+	if req.Label, err = normalizeSceneImageLabel(req.Label); err != nil {
+		return err
+	}
+
 	// If the image is locked, only the locked field itself may be changed (to unlock)
 	for _, scene := range game.Scenes {
 		if scene.ID != sceneID {

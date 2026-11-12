@@ -1,7 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"math"
+	"strings"
+	"unicode/utf8"
 
 	"battle-helper/internal/models"
 )
@@ -129,6 +132,9 @@ func applySceneImageUpdate(imgRect models.SceneImage, req models.UpdateSceneImag
 	if req.Hidden != nil {
 		out.Hidden = *req.Hidden
 	}
+	if req.Label != nil {
+		out.Label = *req.Label
+	}
 	return out
 }
 
@@ -149,4 +155,20 @@ func SceneImageWithinWorkspace(imgRect models.SceneImage, gridWidth, gridHeight 
 		imgRect.Y >= -margin &&
 		imgRect.X+imgRect.Width <= maxX &&
 		imgRect.Y+imgRect.Height <= maxY
+}
+
+// MaxSceneImageLabelLength caps an image-token caption, in characters (not bytes).
+const MaxSceneImageLabelLength = 40
+
+// normalizeSceneImageLabel trims a requested caption and enforces the length cap. nil (the field
+// was not sent) passes through untouched; a blank value becomes "" and clears the caption.
+func normalizeSceneImageLabel(label *string) (*string, error) {
+	if label == nil {
+		return nil, nil
+	}
+	trimmed := strings.TrimSpace(*label)
+	if utf8.RuneCountInString(trimmed) > MaxSceneImageLabelLength {
+		return nil, fmt.Errorf("label is longer than %d characters", MaxSceneImageLabelLength)
+	}
+	return &trimmed, nil
 }

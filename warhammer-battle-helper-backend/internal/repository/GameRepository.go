@@ -1346,6 +1346,9 @@ func (r *GameRepository) UpdateSceneImage(gameID string, sceneID primitive.Objec
 	if req.Hidden != nil {
 		setFields["scenes.$[scene].images.$[img].hidden"] = *req.Hidden
 	}
+	if req.Label != nil {
+		setFields["scenes.$[scene].images.$[img].label"] = *req.Label
+	}
 	if req.TokenOverlay != nil {
 		setFields["scenes.$[scene].images.$[img].tokenOverlay"] = *req.TokenOverlay
 	}

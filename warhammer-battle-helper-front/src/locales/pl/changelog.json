@@ -26,6 +26,7 @@
         "tools": "Zaznaczanie, miarka i rysowanie dla wszystkich, a dla mistrza gry mgła wojny.",
         "tokens": "Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie i duplikowanie.",
         "overlays": "Zdrowie, sloty stanów i paski bezpośrednio na tokenie oraz tokeny ukryte przed graczami.",
+        "tokenLabel": "Tokeny obrazkowe mają podpis pod spodem, jak nazwa postaci; mistrz gry ustawia go w konfiguracji tokenu.",
         "controls": "Ping na mapie, przesuwanie mapy prawym przyciskiem i wybór schematu sterowania.",
         "combat": "Kolejka tur na scenie: inicjatywa, rundy, ukryci uczestnicy i przycisk „Zakończ turę” dla graczy."
       },

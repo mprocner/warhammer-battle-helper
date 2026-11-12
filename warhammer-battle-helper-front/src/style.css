@@ -12434,7 +12434,10 @@ button.custom-sheet__row-table-expander:hover {
   opacity: 0.9;
   z-index: 999;
 }
-.map-char-token__name {
+/* Token caption under a character token (its name) or a tokens-layer image (its label). One class
+   for both so the two captions always look identical; the image variant overrides only `top`
+   inline, to clear a rotated image (see ImageTokenLabel). */
+.token-name {
   position: absolute;
   top: 100%;
   left: 50%;
@@ -12447,7 +12450,15 @@ button.custom-sheet__row-table-expander:hover {
   color: var(--c-text-on-dark);
   text-align: center;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgb(var(--c-shadow-rgb) / var(--shadow-k)), 0 0 3px rgb(var(--c-shadow-rgb) / var(--shadow-k));
+  /* A crisp 1px outline (8 unblurred offsets) keeps light text legible on a light map. It is not
+     scaled by --shadow-k: like a focus ring it is a legibility edge, not a soft shadow, and the
+     twenties theme sets --shadow-k to 0, which left the caption bare. The soft glow after it is. */
+  text-shadow:
+    -1px -1px 0 rgb(var(--c-shadow-rgb) / 0.85), 0 -1px 0 rgb(var(--c-shadow-rgb) / 0.85),
+    1px -1px 0 rgb(var(--c-shadow-rgb) / 0.85), -1px 0 0 rgb(var(--c-shadow-rgb) / 0.85),
+    1px 0 0 rgb(var(--c-shadow-rgb) / 0.85), -1px 1px 0 rgb(var(--c-shadow-rgb) / 0.85),
+    0 1px 0 rgb(var(--c-shadow-rgb) / 0.85), 1px 1px 0 rgb(var(--c-shadow-rgb) / 0.85),
+    0 1px 3px rgb(var(--c-shadow-rgb) / var(--shadow-k));
   pointer-events: none;
 }
 /* Shared token resize handles (character + image). z-index above the states/HP overlay. */

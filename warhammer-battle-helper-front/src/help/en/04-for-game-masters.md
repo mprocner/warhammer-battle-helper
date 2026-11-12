@@ -60,6 +60,9 @@ Every element can be hidden from players, and a bar can hide just its numbers. T
 all characters is set in the System Creator (**Token display**), and you can fine-tune a single
 token in its configuration.
 
+An image token can have a caption under it, like a character's name. Type it into the **Label**
+field of the token's configuration (the gear next to the selected token); an empty field removes it.
+
 ## Handouts {#handouts}
 
 The **Handout** button in the tab header (or **Add Handout** inside a folder) uploads an image, a PDF or a text file and asks who should see it: everyone or

@@ -59,6 +59,9 @@ możesz ukryć przed graczami albo ukryć same liczby paska. Układ dla wszystki
 ustawia się w kreatorze systemu (**Wygląd tokena**), a pojedynczy token możesz dostroić
 w jego konfiguracji.
 
+Token obrazkowy może mieć podpis pod spodem, jak nazwa postaci. Wpisz go w polu **Etykieta**
+w konfiguracji tokenu (koło zębate obok zaznaczonego tokenu); puste pole usuwa podpis.
+
 ## Handouty {#handouts}
 
 Przycisk **Handout** w nagłówku zakładki (albo **Dodaj Handout** w folderze) wgrywa obrazek, PDF albo plik tekstowy i pyta, kto ma go widzieć:

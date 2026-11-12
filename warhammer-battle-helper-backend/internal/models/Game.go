@@ -327,6 +327,11 @@ type SceneImage struct {
 	// is the image-token analogue of Character.VisibleTo (characters use a per-player allow-list).
 	Hidden bool `bson:"hidden,omitempty" json:"hidden,omitempty"`
 
+	// Label is the caption under a tokens-layer image, the image-token analogue of a character
+	// token's name. It lives on the image rather than in TokenOverlay so it still shows when the
+	// ring is disabled or was never configured. Empty = no caption.
+	Label string `bson:"label,omitempty" json:"label,omitempty"`
+
 	// TokenOverlay is the self-contained states/HP ring for an image on the "tokens" layer.
 	// Unlike the character overlay (TokenDisplayConfig layout kept separate from Character.States/
 	// TokenOverlay live values), config and live values are NOT split here: an image-token's
@@ -600,6 +605,9 @@ type UpdateSceneImageRequest struct {
 	Rotation *float64 `json:"rotation,omitempty"`
 	Killed   *bool    `json:"killed,omitempty"`
 	Hidden   *bool    `json:"hidden,omitempty"`
+	// Label sets the token caption; an empty string clears it. Trimmed and length-checked by the
+	// service (normalizeSceneImageLabel).
+	Label *string `json:"label,omitempty"`
 	// TokenOverlay replaces the whole overlay layout+values in one shot. Used by the GM's config
 	// panel (add/remove/rename slots and HP bars); frequent per-play value bumps go through the
 	// atomic PATCH .../tokenOverlay/hp|slot endpoints instead.

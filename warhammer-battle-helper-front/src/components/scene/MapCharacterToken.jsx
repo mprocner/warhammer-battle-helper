@@ -297,7 +297,7 @@ function MapCharacterToken({
       <div className="map-char-token__avatar" style={{ transform: `rotate(${angle}deg)` }}>
         <Avatar key={displayAvatar || 'default'} src={displayAvatar} />
       </div>
-      <span className="map-char-token__name">{displayName}</span>
+      <span className="token-name">{displayName}</span>
 
       {(tokenDisplay || tokenView) && (
         <TokenOverlay
