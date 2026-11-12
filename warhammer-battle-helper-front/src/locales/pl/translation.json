@@ -1191,8 +1191,8 @@
         "body": "Rozpocznij walkę na tej scenie. Zostaje ukryta, dopóki nie pokażesz jej graczom; tokeny dodasz prawym przyciskiem albo w oknie „Walka”."
       },
       "panelHeader": {
-        "title": "Przewodnik, nowości i samouczek",
-        "body": "Książka otwiera przewodnik, a gwiazdka pokazuje nowości w PlayRPG — obie w nowej karcie, więc gra zostaje otwarta. Znak zapytania uruchamia ten samouczek ponownie. Kontakt, regulamin i polityka prywatności są podlinkowane w zakładce Ogólne."
+        "title": "Pomoc i skróty",
+        "body": "Znak zapytania otwiera menu: przewodnik i nowości w PlayRPG (obie w nowej karcie, więc gra zostaje otwarta), skróty klawiszowe (albo naciśnij ?) i ponowne uruchomienie tego samouczka. Kropka na nim oznacza nowości od ostatniej wizyty w „Co nowego”. Kontakt, regulamin i polityka prywatności są podlinkowane w zakładce Ogólne."
       },
       "onlineUsers": {
         "title": "Kto jest przy stole",
@@ -1518,6 +1518,7 @@
   },
   "rightPanel": {
     "title": "Ustawienia",
+    "helpMenu": "Pomoc i skróty",
     "tabs": {
       "chat": "Czat",
       "scenes": "Sceny",
@@ -2855,6 +2856,32 @@
       "scifi": "Sci-fi",
       "twenties": "Lata 20.",
       "darkfantasy": "Dark fantasy"
+    }
+  },
+  "shortcuts": {
+    "title": "Skróty klawiszowe",
+    "button": "Skróty klawiszowe (?)",
+    "moreInHelp": "Więcej w przewodniku",
+    "contexts": {
+      "general": "Ogólne",
+      "scene": "Mapa",
+      "drawing": "Rysowanie",
+      "fog": "Mgła wojny"
+    },
+    "keys": {
+      "MiddleClick": "Środkowy przycisk",
+      "RightDrag": "Przeciągnięcie prawym",
+      "Drag": "Przeciągnięcie",
+      "HoldLeft": "Przytrzymanie lewego"
+    },
+    "items": {
+      "openShortcuts": "Pokaż tę listę",
+      "cycleTool": "Następne narzędzie",
+      "pan": "Przesuń mapę",
+      "addToSelection": "Dodaj do zaznaczenia (na pustej mapie)",
+      "ping": "Ping na mapie (bez ruchu, na pustej mapie)",
+      "deleteDrawing": "Usuń zaznaczony rysunek",
+      "cancelFogPolygon": "Anuluj wielokąt mgły"
     }
   }
 }

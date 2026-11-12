@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
 
 /**
  * DrawingLayer — canvas for freehand annotations visible to all participants.
@@ -314,17 +315,10 @@ const DrawingLayer = ({
     } : null);
   }, [render, activeTool, brushSize, color, fontSize]);
 
-  // Keyboard Delete/Backspace to delete selected path
-  useEffect(() => {
-    if (!isDrawingMode || activeTool !== 'select') return;
-    const handleKeyDown = (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPathId) {
-        onDeletePath?.(selectedPathId);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isDrawingMode, activeTool, selectedPathId, onDeletePath]);
+  // Delete/Backspace deletes the selected path (shortcut registry: drawing.deleteSelected).
+  useKeyboardShortcut('drawing.deleteSelected', () => onDeletePath?.(selectedPathId), {
+    enabled: isDrawingMode && activeTool === 'select' && !!selectedPathId,
+  });
 
   // Convert mouse event to scene-space coordinates
   const getSceneCoords = useCallback((e) => {

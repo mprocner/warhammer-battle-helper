@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
+import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
 
 /**
  * FogLayer — a canvas element that renders fog of war on top of the scene.
@@ -399,17 +400,10 @@ const FogLayer = ({
     }
   }, [render, onPathComplete, brushSize, fogCoverMode]);
 
-  // Escape key — cancel active polygon
-  useEffect(() => {
-    if (!inFogMode || fogTool !== 'polygon') return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && polygonActiveRef.current) {
-        finishPolygon(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inFogMode, fogTool, finishPolygon]);
+  // Escape cancels the active polygon (shortcut registry: fog.cancelPolygon).
+  useKeyboardShortcut('fog.cancelPolygon', () => {
+    if (polygonActiveRef.current) finishPolygon(false);
+  }, { enabled: inFogMode && fogTool === 'polygon' });
 
   // Reset lokalny, nie finishPolygon: ten efekt ma odpalać się wyłącznie przy zmianie
   // narzędzia, a finishPolygon zależy od brushSize i fogCoverMode — wciągnięcie go do

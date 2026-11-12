@@ -44,6 +44,22 @@ warstwy pojawia się po najechaniu). Rysowania to nie dotyczy.
 **Ping.** Przytrzymaj lewy przycisk w miejscu na pustej mapie przez około pół sekundy, nie
 ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 
+## Skróty klawiszowe {#keyboard-shortcuts}
+
+W grze naciśnij `?` albo wybierz **Skróty klawiszowe** z menu pod znakiem zapytania w nagłówku
+panelu, żeby zobaczyć ściągę. Na
+macOS zamiast Ctrl używasz ⌘. Skróty nie działają, gdy piszesz w polu tekstowym (np. na czacie)
+albo gdy otwarte jest okno.
+
+| Skrót | Kiedy | Co robi |
+|---|---|---|
+| `?` | zawsze | Pokazuje listę skrótów |
+| `Delete` / `Backspace` | rysowanie, narzędzie zaznaczania | Usuwa zaznaczony rysunek |
+| `Esc` | mgła wojny, wielokąt (MG) | Anuluje rysowany wielokąt |
+
+Gesty myszy (środkowy przycisk, przesuwanie mapy, Shift przy zaznaczaniu, ping) opisuje sekcja
+[Sterowanie mapą](02-game-screen.md#map-controls).
+
 ## Kolejka tur {#turn-order}
 
 **MG.** Przycisk z dwiema walczącymi postaciami w pasku narzędzi (za kreską) rozpoczyna walkę na
@@ -80,10 +96,10 @@ albo zwinąć przyciskiem walki.
 
 ## Samouczki {#tutorials}
 
-Przy pierwszym wejściu do gry uruchamia się samouczek ekranu. Możesz go powtórzyć znakiem
-zapytania w nagłówku panelu. Obok są dwie ikony: książka otwiera ten przewodnik, a gwiazdka
-listę zmian (**Co nowego**), obie w nowej karcie. Po najechaniu kursorem każda ikona od razu
-pokazuje swoją nazwę. Kontakt, regulamin, politykę prywatności
+Przy pierwszym wejściu do gry uruchamia się samouczek ekranu. Znak zapytania w nagłówku panelu
+otwiera menu **Pomoc i skróty**: ten przewodnik i listę zmian (**Co nowego**), obie w nowej
+karcie, [skróty klawiszowe](02-game-screen.md#keyboard-shortcuts) oraz ponowne uruchomienie
+samouczka. Kropka na znaku zapytania oznacza nowości od ostatniej wizyty w **Co nowego**. Kontakt, regulamin, politykę prywatności
 i licencje znajdziesz na samym dole zakładki **Ogólne**, w sekcji **Linki serwisu**. Zakładki mają własne, krótkie samouczki. Dymek samouczka ma link
 **Więcej w pomocy**, który otwiera w nowej karcie odpowiednią sekcję tego przewodnika — gra
 zostaje otwarta tam, gdzie była.

@@ -98,7 +98,8 @@ Role: **MG** = mistrz gry (twórca gry), **G** = gracz, **A** = admin, **K** = k
 |---|---|---|
 | Interaktywne samouczki: ekran gry, czat, sceny, handouty, pliki, muzyka, notatki, gracze, minigry, kreator | K | — |
 | Strona pomocy `/help` (przewodnik pl/en, publiczna) i linki „Więcej w pomocy” z dymków samouczka | każdy, także bez konta | — |
-| Stopka serwisu (regulamin, prywatność, licencje, kontakt, co nowego, pomoc) na każdej stronie poza grą; w grze przewodnik i co nowego przy `?` panelu, wszystkie linki w zakładce Ogólne | każdy, także bez konta | — |
+| Ściąga skrótów klawiszowych w grze (`?`, menu „Pomoc i skróty”) z rejestru skrótów | MG / G | PLAYRPG-359 |
+| Stopka serwisu (regulamin, prywatność, licencje, kontakt, co nowego, pomoc) na każdej stronie poza grą; w grze przewodnik, co nowego, skróty i samouczek w menu „Pomoc i skróty” nagłówka panelu, wszystkie linki w zakładce Ogólne | każdy, także bez konta | — |
 
 ## 9. Panel administratora (osobna aplikacja)
 | Funkcja | Kto | Spec |

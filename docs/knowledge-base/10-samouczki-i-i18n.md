@@ -33,6 +33,26 @@ Render robi `markdown-to-jsx` (bez surowego HTML), a linki `NN-plik.md#kotwica` 
 zamieniają się na trasy `/help/...`, więc te same pliki dobrze czytają się też na GitHubie.
 Język strony = język interfejsu; wszystko poza polskim pokazuje wersję angielską.
 
+### Skróty klawiszowe (PLAYRPG-359)
+Jedno źródło prawdy: `src/shortcuts/registry.js` (`SHORTCUTS`). Wpis ma `id`, `kind`
+(`key` / `mouse`), `combos` (alternatywy, np. Delete albo Backspace), `context`, `gmOnly`
+i `labelKey`. `Mod` to Ctrl, a na macOS ⌘.
+
+- Handlery klawiatury nie porównują `e.key` same. Używają `useKeyboardShortcut(id, handler,
+  { enabled })`, który dopasowuje przez `matches` i pomija klawisze wpisywane w pola
+  (`isTypingTarget`) oraz wciśnięte przy otwartym dialogu MUI (`isDialogOpen`). Hook zgłasza
+  `preventDefault` tylko dla obsłużonego klawisza.
+- Wpisy `mouse` służą tylko do wyświetlania. Obsługa myszy na scenie ma własne reguły
+  (CLAUDE.md, „Zdarzenia myszy na scenie”).
+- Ściąga `ShortcutsDialog` otwiera się klawiszem `?` i pozycją menu **Pomoc i skróty** w nagłówku
+  prawego panelu (jeden przycisk ze znakiem zapytania: przewodnik, co nowego, skróty, samouczek;
+  cztery osobne ikony nachodziły na wyśrodkowany tytuł). Kropka nowości siedzi na tym przycisku.
+  Grupuje wpisy według `context` i ukrywa graczowi wpisy `gmOnly`.
+- `shortcutsHelp.test.js` wymaga, żeby każda kombinacja klawiszy (w zapisie z Ctrl) była w sekcji
+  `#keyboard-shortcuts` w `02-game-screen.md` po polsku i po angielsku.
+
+**Nowy skrót = wpis w rejestrze + `useKeyboardShortcut` + wiersz tabeli w obu przewodnikach.**
+
 ### Nawigacja do stron serwisu (PLAYRPG-305)
 Regulamin, prywatność, licencje, kontakt, co nowego i pomoc mają być osiągalne z każdego głównego
 ekranu. Lista linków to `SITE_LINKS` w `src/components/common/SiteFooter.jsx`, jedno źródło dla
@@ -81,6 +101,7 @@ wyłącznie kluczy angielskich, np. `t('creator.addSection')`. Nazwy systemów s
 | Strona pomocy | `src/components/help/HelpPage.jsx`, `src/help/helpPages.js` (rejestr stron, linki, kotwice, ładowanie) |
 | Treść pomocy | `src/help/pl/*.md`, `src/help/en/*.md`, tytuły menu w `help.pages.*` |
 | Konfiguracja i18n | `src/i18n.js` |
+| Skróty klawiszowe | `src/shortcuts/` (`registry.js`, `useKeyboardShortcut.js`, `ShortcutsDialog.jsx`) |
 | Stopka i linki serwisu | `src/components/common/SiteFooter.jsx` (`SITE_LINKS`), `App.js`, `panels/RightPanel.jsx`, `tabs/GeneralTab.jsx` |
 
 ## Pułapki

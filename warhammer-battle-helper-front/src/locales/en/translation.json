@@ -1187,8 +1187,8 @@
         "body": "Start combat on this scene. It stays hidden until you show it to the players; add tokens with a right click or from the Combat window."
       },
       "panelHeader": {
-        "title": "Guide, news and tutorial",
-        "body": "The book opens the user guide and the star shows what is new in PlayRPG, both in a new tab so the game stays open. The question mark replays this tutorial. Contact, the terms and the privacy policy are linked in the General tab."
+        "title": "Help and shortcuts",
+        "body": "The question mark opens a menu: the user guide and what is new in PlayRPG (both in a new tab, so the game stays open), the keyboard shortcuts (or press ?) and a replay of this tutorial. A dot on it means unseen news. Contact, the terms and the privacy policy are linked in the General tab."
       },
       "onlineUsers": {
         "title": "Who is here",
@@ -1514,6 +1514,7 @@
   },
   "rightPanel": {
     "title": "Settings",
+    "helpMenu": "Help and shortcuts",
     "tabs": {
       "chat": "Chat",
       "scenes": "Scenes",
@@ -2847,6 +2848,32 @@
       "scifi": "Sci-fi",
       "twenties": "1920s",
       "darkfantasy": "Dark fantasy"
+    }
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "button": "Keyboard shortcuts (?)",
+    "moreInHelp": "More in the guide",
+    "contexts": {
+      "general": "General",
+      "scene": "Map",
+      "drawing": "Drawing",
+      "fog": "Fog of war"
+    },
+    "keys": {
+      "MiddleClick": "Middle click",
+      "RightDrag": "Right-drag",
+      "Drag": "Drag",
+      "HoldLeft": "Hold left button"
+    },
+    "items": {
+      "openShortcuts": "Show this list",
+      "cycleTool": "Next tool",
+      "pan": "Pan the map",
+      "addToSelection": "Add to selection (on empty map)",
+      "ping": "Ping the map (still, on empty map)",
+      "deleteDrawing": "Delete the selected drawing",
+      "cancelFogPolygon": "Cancel the fog polygon"
     }
   }
 }

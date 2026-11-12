@@ -45,6 +45,22 @@ Drawing is not limited to it.
 **Ping.** Hold the left button still on an empty spot of the map for about half a second.
 Everyone sees a marker there.
 
+## Keyboard shortcuts {#keyboard-shortcuts}
+
+In the game, press `?` or pick **Keyboard shortcuts** from the question-mark menu in the panel
+header for a cheat sheet. On macOS
+use ⌘ instead of Ctrl. Shortcuts do nothing while you type in a text field (the chat, say) or
+while a dialog is open.
+
+| Shortcut | When | What it does |
+|---|---|---|
+| `?` | always | Shows the shortcut list |
+| `Delete` / `Backspace` | drawing, select tool | Deletes the selected drawing |
+| `Esc` | fog of war, polygon (GM) | Cancels the polygon being drawn |
+
+Mouse gestures (middle button, panning, Shift when selecting, ping) are in
+[Map controls](02-game-screen.md#map-controls).
+
 ## Turn order {#turn-order}
 
 **GM.** The button with two fighters in the tool bar (after the divider) starts combat on the
@@ -82,10 +98,10 @@ map), or collapse it with the combat button.
 
 ## Tutorials {#tutorials}
 
-The game-screen tutorial starts on your first visit. Replay it with the question mark in the
-panel header. Next to it, the book opens this guide and the star opens the changelog
-(**What's new**), both in a new tab. Point at an icon and its name
-shows right away. Contact, the terms, the privacy policy and the licenses are
+The game-screen tutorial starts on your first visit. The question mark in the panel header opens
+the **Help and shortcuts** menu: this guide and the changelog (**What's new**), both in a new
+tab, the [keyboard shortcuts](02-game-screen.md#keyboard-shortcuts) and a replay of the
+tutorial. A dot on the question mark means there is news you have not seen yet. Contact, the terms, the privacy policy and the licenses are
 at the very bottom of the **General** tab, under **Site links**. Tabs have their own short tutorials. A tutorial bubble has a **Read more in the
 help** link that opens the matching section of this guide in a new tab, so the game stays where
 it was.

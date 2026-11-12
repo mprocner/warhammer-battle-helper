@@ -78,7 +78,8 @@
       "tutorials": {
         "tours": "Interactive tutorials: the question mark next to a tab header walks you through the screen.",
         "help": "Help pages: the full user guide inside the app under Help, linked from the tutorials.",
-        "links": "A footer on every page with the terms, privacy policy, licenses, contact, what's new and help. In a game, the guide and what's new sit next to the tutorial question mark, and the bottom of the General tab lists all of these links."
+        "links": "A footer on every page with the terms, privacy policy, licenses, contact, what's new and help. In a game, the guide and what's new sit next to the tutorial question mark, and the bottom of the General tab lists all of these links.",
+        "shortcuts": "A keyboard shortcut cheat sheet: press ? in the game or pick it from the question-mark menu in the panel header."
       },
       "accounts": {
         "register": "An account with email verification and a reset for a forgotten password.",
@@ -96,7 +97,7 @@
       "changed": {
         "privacy": "A fuller privacy policy: what data we store on the server, who processes it for us, how long we keep it, the legal bases and your rights under the GDPR.",
         "navigation": "The top bar labels its buttons. Settings and Logout sit in the menu under your email button, legal pages are in the footer, and on a phone every link is under one menu button.",
-        "panelHints": "The help, What's new and tutorial icons in the game panel header show their name as soon as you point at them."
+        "panelHints": "The guide, What's new, keyboard shortcuts and tutorial sit in one Help and shortcuts menu in the game panel header."
       },
       "fixed": {
         "language": "The game room speaks one language: log messages, button hints, the first scene name and error messages follow the chosen interface language."

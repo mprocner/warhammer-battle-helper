@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
+import SchoolIcon from '@mui/icons-material/School';
+import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import LogWindow from '../LogWindow';
 import DiceRollControls from '../log/DiceRollControls';
 import ChatInput from '../log/ChatInput';
@@ -20,6 +23,8 @@ import NotesTab from '../tabs/NotesTab';
 import MinigameTab from '../tabs/MinigameTab';
 import ChangelogDot from '../../changelog/ChangelogDot';
 import { usePortalTooltip } from '../common/PortalTooltip';
+import ShortcutsDialog from '../../shortcuts/ShortcutsDialog';
+import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
 import './RightPanel.css';
 
 /**
@@ -81,6 +86,10 @@ const RightPanel = ({
 
   const userId = getUserId();
   const isGM = gameState?.gameMasterId === userId;
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [helpMenuAnchor, setHelpMenuAnchor] = useState(null);
+  const closeHelpMenu = () => setHelpMenuAnchor(null);
+  useKeyboardShortcut('general.openShortcuts', () => setShortcutsOpen(true));
 
   const sendMessage = useCallback(async (text) => {
     if (!gameId || !token) {
@@ -234,43 +243,50 @@ const RightPanel = ({
       {/* Panel Header */}
       <header className="panel-header">
         <h2 className="panel-header__title">{t('rightPanel.title')}</h2>
-        {/* Guide and changelog open in a new tab: leaving this page would drop the session. */}
+        {/* One help button holding the guide, the changelog, the shortcuts and the tutorial: four
+            separate icons crowded the centred title. Guide and changelog open in a new tab —
+            leaving this page would drop the session. */}
         <div className="panel-header__actions">
-          <a
-            className="panel-header__help"
-            href="/help"
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={e => showTooltip(t('navigation.help'), e.currentTarget)}
-            onMouseLeave={hideTooltip}
-            aria-label={t('navigation.help')}
-          >
-            <MenuBookIcon fontSize="small" />
-          </a>
-          <a
-            className="panel-header__help"
-            href="/changelog"
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={e => showTooltip(t('navigation.changelog'), e.currentTarget)}
-            onMouseLeave={hideTooltip}
-            aria-label={t('navigation.changelog')}
-          >
-            <NewReleasesIcon fontSize="small" />
-            <ChangelogDot />
-          </a>
           <button
             type="button"
             className="panel-header__help"
-            onClick={onStartTutorial}
-            onMouseEnter={e => showTooltip(t('tutorial.button'), e.currentTarget)}
+            onClick={e => { hideTooltip(); setHelpMenuAnchor(e.currentTarget); }}
+            onMouseEnter={e => showTooltip(t('rightPanel.helpMenu'), e.currentTarget)}
             onMouseLeave={hideTooltip}
-            aria-label={t('tutorial.button')}
+            aria-label={t('rightPanel.helpMenu')}
+            aria-haspopup="menu"
           >
             <HelpOutlineIcon fontSize="small" />
+            <ChangelogDot />
           </button>
         </div>
+        <Menu
+          anchorEl={helpMenuAnchor}
+          open={Boolean(helpMenuAnchor)}
+          onClose={closeHelpMenu}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem component="a" href="/help" target="_blank" rel="noopener noreferrer" onClick={closeHelpMenu}>
+            <ListItemIcon><MenuBookIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('navigation.help')}</ListItemText>
+          </MenuItem>
+          <MenuItem component="a" href="/changelog" target="_blank" rel="noopener noreferrer" onClick={closeHelpMenu}>
+            <ListItemIcon><NewReleasesIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('navigation.changelog')}</ListItemText>
+            <ChangelogDot inline />
+          </MenuItem>
+          <MenuItem onClick={() => { closeHelpMenu(); setShortcutsOpen(true); }}>
+            <ListItemIcon><KeyboardIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('shortcuts.button')}</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => { closeHelpMenu(); onStartTutorial?.(); }}>
+            <ListItemIcon><SchoolIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t('tutorial.button')}</ListItemText>
+          </MenuItem>
+        </Menu>
         {tooltipNode}
+        <ShortcutsDialog open={shortcutsOpen} isGM={isGM} onClose={() => setShortcutsOpen(false)} />
       </header>
 
       {/* Tabs Wrapper */}

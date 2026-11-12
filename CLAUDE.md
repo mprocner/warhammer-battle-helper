@@ -70,6 +70,11 @@ const system = getSystem(game.gameSystem); // zwraca { CharacterSheet, Character
   jako `disabled` przez prop bramkujący (`showAffordances`), nie
   pomijaj. Kontrolka, której kreator nie pokazuje,
   to kontrolka, o której szerokość wiersza kłamie.
+- **Skróty klawiszowe tylko przez rejestr** (`src/shortcuts/registry.js`). Handler nie porównuje
+  `e.key` sam — używa `useKeyboardShortcut(id, handler, { enabled })`, który pomija pola tekstowe
+  i otwarte dialogi. Nowy skrót = wpis w rejestrze + wiersz tabeli `#keyboard-shortcuts`
+  w `02-game-screen.md` (pl i en); `shortcutsHelp.test.js` wywala brakujący opis. Wpis pojawia się
+  sam w ściądze (`?`).
 - **Samouczek linkuje do pomocy.** Samouczek (i opcjonalnie pojedynczy krok) ma pole `help` —
   referencję `'<strona>#<kotwica>'` albo obiekt `{ gm, player }`. Dymek pokazuje wtedy link
   „Więcej w pomocy” otwierany w nowej karcie. Nowy samouczek bez `help` wywala test.

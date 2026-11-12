@@ -13221,3 +13221,41 @@ button.custom-sheet__row-table-expander:hover {
     margin-left: 6px;
     vertical-align: middle;
 }
+
+/* Keyboard shortcut cheat sheet (shortcuts/ShortcutsDialog.jsx). */
+.shortcuts-dialog__group + .shortcuts-dialog__group { margin-top: 12px; }
+.shortcuts-dialog__heading {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: calc(0.5px * var(--tracking-k));
+  color: var(--c-label);
+}
+.shortcuts-dialog__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--c-text);
+}
+.shortcuts-dialog__combos { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.shortcuts-dialog__kbd {
+  padding: 1px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--c-text);
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+}
+.shortcuts-dialog__help {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--c-text-accent);
+}

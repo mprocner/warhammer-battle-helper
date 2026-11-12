@@ -15,7 +15,7 @@ export const RELEASES = [
       { id: 'games', items: ['lobby', 'lobbyFilter', 'players', 'inviteLink', 'participant', 'colors', 'themes', 'online'] },
       { id: 'systems', items: ['builtIn', 'custom'] },
       { id: 'minigames', items: ['dice'] },
-      { id: 'tutorials', items: ['tours', 'help', 'links'] },
+      { id: 'tutorials', items: ['tours', 'help', 'links', 'shortcuts'] },
       { id: 'accounts', items: ['register', 'profile', 'stats', 'language', 'legal', 'contact'] },
       { id: 'site', items: ['fonts', 'linkPreview', 'pageTitles'] },
       { id: 'changed', items: ['privacy', 'navigation', 'panelHints'] },
