@@ -3,7 +3,7 @@ import { getApiUrl, getApiHeaders } from '../../api/axios';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { resolveField } from '../../utils/tokenFieldResolver';
 import { tokenRingGeometry } from '../../utils/tokenRingGeometry';
-import TokenRingChrome, { TokenHpBar } from './TokenRingChrome';
+import TokenRingChrome, { TokenHpBar, hpStackLayout } from './TokenRingChrome';
 import CharacterTokenGearPanel from './CharacterTokenGearPanel';
 
 // TokenOverlay renders a character token's states/HP ring over the shared TokenRingChrome. Three
@@ -82,6 +82,7 @@ export default function TokenOverlay({
 
   // ── Card-less viewer: render the pre-resolved masked projection verbatim ──────────────────
   if (tokenView) {
+    const restGridView = hpStackLayout((tokenView.bars || []).length, selected);
     const slots = (tokenView.slots || []).map(vs => {
       if (!vs || !vs.slot || vs.slot.type === 'empty') return null;
       const s = vs.slot;
@@ -105,13 +106,14 @@ export default function TokenOverlay({
         killStrikeClassName="token-kill-strike" killToggleClassName="token-kill-toggle"
         slots={slots}
         renderHp={({ showTooltip, hideTooltip }) => (tokenView.bars || []).length > 0 ? (
-          <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''}`}>
+          <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''} ${restGridView.grid ? 'token-hp-stack--grid' : ''}`}>
             {tokenView.bars.map(bar => {
               const pct = bar.hideValues ? (bar.pct || 0) : (bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0);
               return (
                 <div key={bar.id} className="token-hp">
                   <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color} canEdit={false} onStep={() => {}}
-                    label={bar.label} selected={selected} valuesHidden={!!bar.hideValues} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+                    label={bar.label} selected={selected} valuesHidden={!!bar.hideValues} compact={restGridView.compact}
+                    showTooltip={showTooltip} hideTooltip={hideTooltip} />
                 </div>
               );
             })}
@@ -192,6 +194,7 @@ export default function TokenOverlay({
     else { const bv = barValues[bar.id]; current = bv?.current ?? 0; max = bv?.max ?? 0; }
     composedBars.push({ ...bar, current, max, manual: !bar.field });
   });
+  const restGrid = hpStackLayout(composedBars.length, selected);
 
   return (
     <>
@@ -206,14 +209,15 @@ export default function TokenOverlay({
       gearToggleClassName="token-gear"
       slots={slots}
       renderHp={({ showTooltip, hideTooltip }) => (overlayEnabled && composedBars.length > 0) ? (
-        <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''}`}>
+        <div className={`token-hp-stack ${selected ? 'token-hp-stack--expanded' : ''} ${restGrid.grid ? 'token-hp-stack--grid' : ''}`}>
           {composedBars.map(bar => {
             const pct = bar.max ? Math.max(0, Math.min(100, (bar.current / bar.max) * 100)) : 0;
             return (
               <div key={bar.id} className="token-hp">
                 <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpToneOf(pct)} color={bar.color}
                   canEdit={selected && canEdit && bar.manual} onStep={(d) => stepBar(bar.id, d)}
-                  label={bar.label} selected={selected} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+                  label={bar.label} selected={selected} compact={restGrid.compact}
+                  showTooltip={showTooltip} hideTooltip={hideTooltip} />
               </div>
             );
           })}

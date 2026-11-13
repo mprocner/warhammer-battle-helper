@@ -57,7 +57,9 @@ see-through (there is an opacity slider), to players it is solid.
 A token can show a ring of states (for example bleeding, stunned) with levels, counters and
 bars (for example health). Left-click a state to raise its level, right-click to lower it.
 Counters show on an unselected token too, even at 0; a state shows only while it is active.
-Every element can be hidden from players, and a bar can hide just its numbers. The layout for
+Every element can be hidden from players, and a bar can hide just its numbers. On an unselected
+token the bars sit right above it; with more than two they go two per row and show only the
+current value — select the token to see "current / max". The layout for
 all characters is set in the System Creator (**Token display**), and you can fine-tune a single
 token in its configuration.
 

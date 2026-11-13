@@ -29,3 +29,12 @@ test('valuesHidden hides the step buttons even when canEdit is true', () => {
   );
   expect(container.querySelector('.token-hp__btn')).toBeNull();
 });
+
+test('a compact (half-width) bar shows only the current value — "10 / 10" does not fit', () => {
+  const { container } = render(
+    <div>
+      <TokenHpBar current={6} max={10} pct={60} tone="good" canEdit={false} onStep={() => {}} compact />
+    </div>
+  );
+  expect(container.querySelector('.token-hp__text').textContent).toBe('6');
+});

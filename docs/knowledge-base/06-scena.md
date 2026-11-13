@@ -160,6 +160,23 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
   w refie: gdy eventy przyjdą pierwsze, sprawdzenie musi uruchomić sama odpowiedź.
 - Ctrl+C oddaje klawisz przeglądarce (`when` w `useKeyboardShortcut`), gdy nie ma zaznaczonych
   obrazów albo zaznaczony jest tekst. Inaczej skrót zabrałby kopiowanie tekstu z logu.
+- Paski nad niezaznaczonym tokenem (PLAYRPG-357) leżą na samej górnej krawędzi tokenu, sklejone:
+  `gap: 0`, wspólna 1px ramka (`margin-bottom: -1px` na późniejszym rodzeństwie, bo
+  `column-reverse` stawia je wyżej), a zaokrągla i przycina cały stos (`overflow: hidden`). Przy
+  więcej niż dwóch paskach (`hpStackLayout`) stos przechodzi w siatkę po dwa w rzędzie
+  (`--grid`, `flex-wrap: wrap-reverse`, dolny rząd pierwszy, nieparzysty ostatni na całą
+  szerokość), a połówkowe paski pokazują samą bieżącą wartość (`compact`), bo „10 / 10” się nie
+  mieści. Cztery paski zajmują 13 px. Reguły marginesów siatki mają podwojoną klasę — inaczej
+  przegrywają ze spoczynkową regułą `:not(--expanded)` o wyższej specyficzności. Token obrazkowy liczy to odsunięcie z `rotatedHalfHeight`, nie z promienia
+  pierścienia: promień idzie od dłuższego boku, więc paski szerokiego obrazu wisiały w powietrzu.
+  Spoczynkowy górny slot wystaje nad krawędź najwyżej o ~0,5 px (token 50 px), więc nie potrzebuje
+  odstępu. Zaznaczony token zachowuje dawny układ z `HP_CLEAR`.
+- Pierścień zaznaczonego tokenu siedzi w kontekście nakładania samego tokenu (obraz ma
+  `transform: rotate`), więc żaden `z-index` pierścienia nie wyjdzie ponad sąsiednie tokeny.
+  Dlatego na czas zaznaczenia (jedynego) podnosi się cały token: `MapTokensLayer` liczy
+  `topZIndex` = najwyższy `zIndex` w warstwie + 1, bo „na wierzch” nie ma górnej granicy. Grafika
+  aktywnego tokenu też wychodzi wtedy na wierzch. Przeciągana postać zostaje przy z-index
+  z `.map-char-token--dragging`.
 - Podpis tokenu (`.token-name`) jest jasny, a mapa bywa jasna. Czytelność daje mu ostry kontur 1px
   (8 cieni bez rozmycia), **nie** mnożony przez `--shadow-k`. Motyw twenties ma `--shadow-k: 0`,
   więc cień mnożony przez ten współczynnik całkiem znika i napis zostaje gołą bielą.

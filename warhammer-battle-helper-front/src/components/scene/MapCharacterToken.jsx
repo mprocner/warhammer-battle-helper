@@ -21,7 +21,7 @@ function MapCharacterToken({
   gameSystem = null, editingLayer = 'select', imageEditLayer = 'tokens',
   onCommitMove, onCommitResize, onCommitRotate,
   onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd,
-  multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart,
+  multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart, topZIndex,
 }) {
   const { zoom, gridWidth, gridHeight } = useZoom();
   const combatActive = isCharacterTokenActive(useCombat().combat, character?.id);
@@ -279,7 +279,9 @@ function MapCharacterToken({
     <div
       ref={containerRef}
       className={`map-char-token${isEnemy ? ' map-char-token--enemy' : ''}${selected ? ' map-char-token--selected' : ''}${isDragging ? ' map-char-token--dragging' : ''}${hiddenFromPlayers ? ' map-char-token--hidden' : ''}${multiSelected ? ' map-char-token--multi-selected' : ''}${combatActive ? ' map-char-token--combat-active' : ''}`}
-      style={{ position: 'absolute', ...px, cursor: dragEnabledNow ? (isDragging ? 'grabbing' : 'grab') : 'default', pointerEvents: 'auto' }}
+      // Raised above every token while it is the lone selection (MapTokensLayer.topZIndex); a drag
+      // keeps its own z-index from .map-char-token--dragging.
+      style={{ position: 'absolute', ...px, cursor: dragEnabledNow ? (isDragging ? 'grabbing' : 'grab') : 'default', pointerEvents: 'auto', ...(selected && topZIndex && !isDragging ? { zIndex: topZIndex } : {}) }}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >

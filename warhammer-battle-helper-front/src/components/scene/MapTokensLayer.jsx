@@ -20,12 +20,18 @@ const MapTokensLayer = ({
     ...characters.map(c => ({ kind: 'character', zIndex: c.zIndex || 0, key: `c:${c.character.id}`, data: c })),
     ...images.map(img => ({ kind: 'image', zIndex: img.zIndex || 0, key: `i:${img.id}`, data: img })),
   ].sort((a, b) => a.zIndex - b.zIndex);
+  // A lone selected token is raised to this while selected, so its ring sits above every other
+  // token: the ring lives inside the token's own stacking context (an image is rotated), so only
+  // raising the token itself gets it out. One above the highest z-index in the layer, because
+  // bring-to-front has no upper bound.
+  const topZIndex = Math.max(0, ...items.map(i => i.zIndex)) + 1;
 
   return (
     <div className="map-tokens-layer" style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}>
       {items.map(item => item.kind === 'image' ? (
         <SceneImage
           key={item.key}
+          topZIndex={topZIndex}
           image={item.data}
           isGM={isGM}
           gameId={gameId}
@@ -46,6 +52,7 @@ const MapTokensLayer = ({
       ) : (
         <MapCharacterToken
           key={item.key}
+          topZIndex={topZIndex}
           character={item.data.character}
           col={item.data.col}
           row={item.data.row}

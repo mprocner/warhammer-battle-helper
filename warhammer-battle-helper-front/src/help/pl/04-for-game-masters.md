@@ -56,7 +56,9 @@ półprzezroczysta (suwak przezroczystości), a dla graczy pełna.
 Token może pokazywać pierścień stanów (np. krwawienie, ogłuszenie) z poziomami, liczniki
 i paski (np. zdrowie). Lewy klik w stan podnosi poziom, a prawy go obniża. Liczniki widać
 także na niezaznaczonym tokenie, nawet gdy wynoszą 0; stan — tylko gdy jest aktywny. Każdy element
-możesz ukryć przed graczami albo ukryć same liczby paska. Układ dla wszystkich postaci
+możesz ukryć przed graczami albo ukryć same liczby paska. Na niezaznaczonym tokenie paski leżą
+tuż nad nim; gdy jest ich więcej niż dwa, układają się po dwa w rzędzie i pokazują samą bieżącą
+wartość — pełne „bieżąca / maksimum” widać po zaznaczeniu tokenu. Układ dla wszystkich postaci
 ustawia się w kreatorze systemu (**Wygląd tokena**), a pojedynczy token możesz dostroić
 w jego konfiguracji.
 

@@ -18,12 +18,14 @@ import { slotOffset, ACTIVE_PUSH, EQUATOR_STACK_STEP } from '../../utils/tokenRi
 // When selected AND a label is present, the track shows the label on the left and the value on
 // the right (labeled row); otherwise the value stays centered as before. Hovering a labelled bar
 // shows the full label via the caller-supplied portal tooltip (survives ellipsis truncation).
-export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, label, selected, showTooltip, hideTooltip, valuesHidden = false }) {
+// `compact` is a half-width bar of a resting grid stack (hpStackLayout): "10 / 10" does not fit
+// there, so it shows the current value only.
+export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, label, selected, showTooltip, hideTooltip, valuesHidden = false, compact = false }) {
   const hasLabel = !!label;
   const showLabel = selected && hasLabel;
   const showValue = !valuesHidden;
   const showSteps = canEdit && !valuesHidden;
-  const valueText = `${current}${max ? ` / ${max}` : ''}`;
+  const valueText = compact ? `${current}` : `${current}${max ? ` / ${max}` : ''}`;
   return (
     <>
       {showSteps && (
@@ -48,6 +50,14 @@ export function TokenHpBar({ current, max, pct, tone, color, canEdit, onStep, la
       )}
     </>
   );
+}
+
+// How a token's HP stack is laid out (shared by both overlays). At rest, more than two bars go two
+// per row (`grid`, bottom row first), so four bars take two rows above the token; their bars are
+// half width, hence `compact` values. A selected token always shows one full bar per row.
+export function hpStackLayout(count, selected) {
+  const grid = !selected && count > 2;
+  return { grid, compact: grid };
 }
 
 // One ring slot. `slot` is normalized: { variant:'icon'|'chip', showAtRest, ... }. `index` is the

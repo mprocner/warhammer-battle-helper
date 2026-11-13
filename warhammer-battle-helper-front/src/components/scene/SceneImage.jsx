@@ -19,7 +19,7 @@ import { canManipulateToken, isLoneSelection } from '../../utils/tokenManipulati
 
 const RESIZE_HANDLES = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
-const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart }) => {
+const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer, gameSystem, tokenPlacementMode = 'snap', onTokenDragMeasureStart, onTokenDragMeasureMove, onTokenDragMeasureEnd, multiSelected = false, multiSelectActive = false, onToggleSelect, groupDragDelta = null, onGroupDragStart, topZIndex }) => {
   const { t } = useTranslation();
   const combatCtx = useCombat();
   const combatEntry = entryForSource(combatCtx.combat, 'image', image.id);
@@ -461,7 +461,8 @@ const SceneImage = ({ image, isGM, gameId, sceneId, editingLayer, imageEditLayer
             top: pos.y + groupDy,
             width: size.width,
             height: size.height,
-            zIndex: image.zIndex || 0,
+            // Raised above every token while it is the lone selection (MapTokensLayer.topZIndex).
+            zIndex: selected && topZIndex ? topZIndex : (image.zIndex || 0),
             pointerEvents: 'auto',
             cursor: canDragImage ? (isDragging ? 'grabbing' : 'grab') : 'default',
             transform: `rotate(${rotation}deg)`,

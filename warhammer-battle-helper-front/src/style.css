@@ -12062,15 +12062,18 @@ button.custom-sheet__row-table-expander:hover {
 .token-hp-stack {
   position: absolute;
   left: 50%;
-  top: -11px;
+  /* At rest the stack sits right on the token's top edge, bars glued together (PLAYRPG-357): a
+     resting top chip reaches at most ~0.5px past the edge (see HP_CLEAR in tokenRingGeometry.js). */
+  top: 0;
   transform: translate(-50%, -100%);
   display: flex;
   flex-direction: column-reverse;
-  gap: 2px;
+  gap: 0;
   width: 46px;
   transition: top .25s ease, width .25s ease;
 }
 .token-hp-stack--expanded {
+  gap: 2px;
   /* -50 not -44: an ACTIVE top slot reaches RING_MARGIN + ACTIVE_PUSH + ACTIVE_HALF_HEIGHT = 47px
      above the token's top edge. halfLong cancels out of that sum, so one value holds for every
      token size. Those three constants live in utils/tokenRingGeometry.js and cannot be read from
@@ -12336,13 +12339,48 @@ button.custom-sheet__row-table-expander:hover {
   top: 50%;
   display: flex;
   flex-direction: column-reverse;
-  gap: 3px;
+  gap: 0;
   width: 60px;
   transition: transform .25s ease, width .25s ease;
 }
 .img-token-hp-stack--expanded {
+  gap: 3px;
   width: 96px;
 }
+/* Resting stacks read as one block (PLAYRPG-357): the stack itself is rounded and clips its bars,
+   whose own tracks go square, and neighbouring bars share their 1px border. In column-reverse the
+   later sibling sits ABOVE, so its margin-bottom is the seam. --expanded keeps separate rounded
+   bars with gaps and must not clip (its rows carry the ± buttons). */
+.token-hp-stack:not(.token-hp-stack--expanded),
+.img-token-hp-stack:not(.img-token-hp-stack--expanded) {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.token-hp-stack:not(.token-hp-stack--expanded) .token-hp__track,
+.img-token-hp-stack:not(.img-token-hp-stack--expanded) .token-hp__track { border-radius: 0; }
+.token-hp-stack:not(.token-hp-stack--expanded) .token-hp + .token-hp,
+.img-token-hp-stack:not(.img-token-hp-stack--expanded) .img-token-hp + .img-token-hp { margin-bottom: -1px; }
+
+/* More than two bars at rest (hpStackLayout): two per row, bottom row first (wrap-reverse), so
+   four bars take two rows. Each bar is half the stack plus 0.5px, and every right-hand bar steps
+   1px left onto its neighbour's border. Only bars from the third on overlap the row below. An odd
+   last bar spans the row. Modifier rules stay below the base rules they override. */
+.token-hp-stack--grid,
+.img-token-hp-stack--grid {
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+}
+.token-hp-stack--grid .token-hp,
+.img-token-hp-stack--grid .img-token-hp { width: calc(50% + 0.5px); }
+/* Margins: the class is doubled to outrank the resting `:not(--expanded)` seam rule above. */
+.token-hp-stack.token-hp-stack--grid .token-hp + .token-hp,
+.img-token-hp-stack.img-token-hp-stack--grid .img-token-hp + .img-token-hp { margin-bottom: 0; }
+.token-hp-stack--grid .token-hp:nth-child(even),
+.img-token-hp-stack--grid .img-token-hp:nth-child(even) { margin-left: -1px; }
+.token-hp-stack.token-hp-stack--grid .token-hp:nth-child(n + 3),
+.img-token-hp-stack.img-token-hp-stack--grid .img-token-hp:nth-child(n + 3) { margin-bottom: -1px; }
+.token-hp-stack--grid .token-hp:last-child:nth-child(odd),
+.img-token-hp-stack--grid .img-token-hp:last-child:nth-child(odd) { width: 100%; }
 .img-token-hp {
   display: flex;
   align-items: center;

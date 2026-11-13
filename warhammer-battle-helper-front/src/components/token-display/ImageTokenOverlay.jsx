@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { resolveIcon } from '../../utils/tokenIcons';
 import { patchSceneImageTokenHP, patchSceneImageTokenSlot, updateSceneImage } from '../../api/scenes';
-import { tokenRingGeometry, HP_CLEAR, REST_HP_CLEAR } from '../../utils/tokenRingGeometry';
+import { tokenRingGeometry, rotatedHalfHeight, HP_CLEAR } from '../../utils/tokenRingGeometry';
 import ImageTokenConfigPanel from './ImageTokenConfigPanel';
-import TokenRingChrome, { TokenHpBar } from './TokenRingChrome';
+import TokenRingChrome, { TokenHpBar, hpStackLayout } from './TokenRingChrome';
 
 const MAX_SLOTS = 8; // ring positions
 
@@ -29,10 +29,13 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
   const rawSlots = enabled ? (overlay.slots || []).slice(0, MAX_SLOTS) : [];
 
   const { radius, equatorX } = tokenRingGeometry(image?.width, image?.height, selected);
-  // A slot can only become active (pushed out, 28px tall) while the token is selected, so only the
-  // selected state needs the larger clearance. Mirrors how the character overlay scopes the same
-  // fix to .token-hp-stack--expanded.
-  const hpTransform = `translate(-50%, calc(-100% - ${radius + (selected ? HP_CLEAR : REST_HP_CLEAR)}px))`;
+  // Selected: the stack clears a pushed-out ring slot (a slot can only push out while selected).
+  // At rest it sits right on the image's top edge (PLAYRPG-357) — the rotated image's half height,
+  // since this overlay lives in the counter-rotated box. The ring radius follows the LONGER side
+  // and used to leave a wide image's bars floating above it.
+  const hpLift = selected ? radius + HP_CLEAR : rotatedHalfHeight(image?.width, image?.height, image?.rotation);
+  const hpTransform = `translate(-50%, calc(-100% - ${hpLift}px))`;
+  const restGrid = hpStackLayout(bars.length, selected);
 
   const stepHP = (barId, delta) => { if (canEdit) patchSceneImageTokenHP(gameId, sceneId, image.id, { barId, delta }).catch(() => {}); };
   const bumpSlot = (slotId, delta) => { if (canEdit) patchSceneImageTokenSlot(gameId, sceneId, image.id, { slotId, delta }).catch(() => {}); };
@@ -83,7 +86,7 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
       onToggleVisibility={toggleVisibility} visibilityToggleClassName="img-token-visibility-toggle"
       slots={slots}
       renderHp={({ showTooltip, hideTooltip }) => bars.length > 0 ? (
-        <div className={`img-token-hp-stack ${selected ? 'img-token-hp-stack--expanded' : ''}`} style={{ transform: hpTransform }}>
+        <div className={`img-token-hp-stack ${selected ? 'img-token-hp-stack--expanded' : ''} ${restGrid.grid ? 'img-token-hp-stack--grid' : ''}`} style={{ transform: hpTransform }}>
           {bars.map(bar => {
             // GM (canEdit) always sees the real numbers even when hideValues is set on the config;
             // only the masked player payload carries the zeroed current/max + baked pct.
@@ -93,7 +96,8 @@ export default function ImageTokenOverlay({ image, gameId, sceneId, selected, ca
               <div key={bar.id} className="img-token-hp">
                 <TokenHpBar current={bar.current} max={bar.max} pct={pct} tone={hpTone(pct)} color={bar.color}
                   canEdit={selected && canEdit} onStep={(d) => stepHP(bar.id, d)}
-                  label={bar.label} selected={selected} valuesHidden={valuesHidden} showTooltip={showTooltip} hideTooltip={hideTooltip} />
+                  label={bar.label} selected={selected} valuesHidden={valuesHidden} compact={restGrid.compact}
+                  showTooltip={showTooltip} hideTooltip={hideTooltip} />
               </div>
             );
           })}

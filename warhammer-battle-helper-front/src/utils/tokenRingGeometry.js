@@ -26,12 +26,11 @@ export const EQUATOR_GAP = ACTIVE_PUSH + ACTIVE_HALF_WIDTH + 11 + 4;
 // so the step must stay above 22.
 export const EQUATOR_STACK_STEP = 26;
 
-// HP stacks sit this far beyond the ring. Two values, because a chip can only become active while
-// the token is selected: HP_CLEAR clears an active, pushed-out 28px chip, REST_HP_CLEAR only has
-// to clear a resting 17px one. Using the active value at rest would strand the bars ~18px away
-// from a small token for no reason.
+// A selected token's HP stack sits this far beyond the ring, clearing an active, pushed-out 28px
+// chip (a chip can only become active while the token is selected). At rest the stack sits right
+// on the token's top edge instead: a resting top chip reaches at most ~0.5px past that edge (50px
+// token: rest radius 17 + half of 17px), so it needs no clearance of its own.
 export const HP_CLEAR = ACTIVE_PUSH + ACTIVE_HALF_HEIGHT + 4;
-export const REST_HP_CLEAR = 16;
 
 // Slot position at angle -90° + i·45° (0 = top, clockwise).
 export function slotOffset(i, radius) {
