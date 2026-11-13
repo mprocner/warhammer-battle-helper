@@ -20,8 +20,8 @@ func NewDrawingRepository(collection *mongo.Collection) *DrawingRepository {
 	return &DrawingRepository{Collection: collection}
 }
 
-// AddDrawingPath appends a drawing path to a scene's drawingPaths array
-func (r *DrawingRepository) AddDrawingPath(gameID string, sceneID primitive.ObjectID, path models.DrawingPath) error {
+// AddDrawingPaths appends drawing paths to a scene's drawingPaths array in one $push.
+func (r *DrawingRepository) AddDrawingPaths(gameID string, sceneID primitive.ObjectID, paths []models.DrawingPath) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -44,13 +44,13 @@ func (r *DrawingRepository) AddDrawingPath(gameID string, sceneID primitive.Obje
 		"scenes._id": sceneID,
 	}
 	update := bson.M{
-		"$push": bson.M{"scenes.$.drawingPaths": path},
+		"$push": bson.M{"scenes.$.drawingPaths": bson.M{"$each": paths}},
 		"$set":  bson.M{"scenes.$.updatedAt": time.Now(), "updatedAt": time.Now()},
 	}
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to add drawing path: %w", err)
+		return fmt.Errorf("failed to add drawing paths: %w", err)
 	}
 	if result.MatchedCount == 0 {
 		return fmt.Errorf("game or scene not found")
@@ -58,8 +58,8 @@ func (r *DrawingRepository) AddDrawingPath(gameID string, sceneID primitive.Obje
 	return nil
 }
 
-// RemoveDrawingPathByID removes a specific drawing path by its ObjectID
-func (r *DrawingRepository) RemoveDrawingPathByID(gameID string, sceneID primitive.ObjectID, pathID primitive.ObjectID) error {
+// RemoveDrawingPaths removes the listed drawing paths from a scene in one $pull.
+func (r *DrawingRepository) RemoveDrawingPaths(gameID string, sceneID primitive.ObjectID, pathIDs []primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -73,16 +73,52 @@ func (r *DrawingRepository) RemoveDrawingPathByID(gameID string, sceneID primiti
 		"scenes._id": sceneID,
 	}
 	update := bson.M{
-		"$pull": bson.M{"scenes.$.drawingPaths": bson.M{"_id": pathID}},
+		"$pull": bson.M{"scenes.$.drawingPaths": bson.M{"_id": bson.M{"$in": pathIDs}}},
 		"$set":  bson.M{"scenes.$.updatedAt": time.Now(), "updatedAt": time.Now()},
 	}
 
 	result, err := r.Collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to remove drawing path: %w", err)
+		return fmt.Errorf("failed to remove drawing paths: %w", err)
 	}
 	if result.MatchedCount == 0 {
 		return fmt.Errorf("game or scene not found")
+	}
+	return nil
+}
+
+// SetDrawingPathPoints writes the points of each given path (matched by ID) in one bulk write.
+// Only points are written, so a concurrent style edit of the same label is not overwritten.
+func (r *DrawingRepository) SetDrawingPathPoints(gameID string, sceneID primitive.ObjectID, paths []models.DrawingPath) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	objectID, err := primitive.ObjectIDFromHex(gameID)
+	if err != nil {
+		return fmt.Errorf("invalid game ID: %w", err)
+	}
+
+	now := time.Now()
+	writes := make([]mongo.WriteModel, 0, len(paths))
+	for _, p := range paths {
+		writes = append(writes, mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"_id": objectID}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"scenes.$[scene].drawingPaths.$[path].points": p.Points,
+				"scenes.$[scene].updatedAt":                   now,
+				"updatedAt":                                   now,
+			}}).
+			SetArrayFilters(options.ArrayFilters{
+				Filters: []interface{}{bson.M{"scene._id": sceneID}, bson.M{"path._id": p.ID}},
+			}))
+	}
+
+	result, err := r.Collection.BulkWrite(ctx, writes)
+	if err != nil {
+		return fmt.Errorf("failed to move drawing paths: %w", err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("game not found")
 	}
 	return nil
 }

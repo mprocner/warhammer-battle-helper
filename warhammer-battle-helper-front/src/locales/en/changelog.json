@@ -26,6 +26,7 @@
         "gridColor": "Each scene can have its own grid colour, so the grid stays visible on any map.",
         "tools": "Select, ruler and drawing for everyone, plus fog of war for the GM.",
         "drawingText": "Text on the map: edit it with a click, move it, and pick the font, size, bold, italic, outline or backdrop in a colour of your choice, rotation and multiple lines.",
+        "drawingSelection": "Several drawings at once: Shift+click or drag a frame to select them, then delete them, drag them together, or copy them with Ctrl+C / Ctrl+V, also onto another scene. For everyone, on their own drawings (the GM on all).",
         "tokens": "Character and image tokens: move, box-select, rotate, resize and duplicate.",
         "clipboard": "Ctrl+C / Ctrl+V for the GM: copy the selected images, several at once, and paste them under the cursor, also on another scene.",
         "overlays": "Health, condition slots and bars right on the token, and tokens hidden from players.",

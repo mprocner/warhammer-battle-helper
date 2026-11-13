@@ -238,3 +238,21 @@ describe('DrawingToolbar backdrop colour', () => {
     expect(onTextStyleChange).toHaveBeenLastCalledWith({ backdropColor: '' });
   });
 });
+
+describe('DrawingToolbar delete-selected button', () => {
+  const deleteButton = () => screen.getByText(i18n.t('scenes.drawingDelete')).closest('button');
+
+  it('is disabled with nothing selected', () => {
+    render(<DrawingToolbar {...baseProps} editingLayer="drawing" />);
+    expect(deleteButton()).toBeDisabled();
+  });
+
+  it('names how many drawings it deletes and deletes them on click', () => {
+    const onDeleteSelected = jest.fn();
+    render(<DrawingToolbar {...baseProps} editingLayer="drawing" selectedCount={3} onDeleteSelected={onDeleteSelected} />);
+    const button = screen.getByText(i18n.t('scenes.drawingDeleteCount', { count: 3 })).closest('button');
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(onDeleteSelected).toHaveBeenCalledTimes(1);
+  });
+});

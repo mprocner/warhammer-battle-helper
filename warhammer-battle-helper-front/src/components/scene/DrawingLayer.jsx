@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
-import { drawText, drawTextHighlight, ensureTextFont, hitTestText, isTextFontReady } from './drawingText';
+import { drawText, drawTextHighlight, ensureTextFont, isTextFontReady } from './drawingText';
+import {
+  findDeletablePathAt, findEditableTextAt, selectPathsInRect, groupBounds, clampDrawingDelta,
+  translatePath, toggleId, unionIds,
+} from './drawingSelection';
 
 /**
  * DrawingLayer — canvas for freehand annotations visible to all participants.
@@ -9,7 +13,7 @@ import { drawText, drawTextHighlight, ensureTextFont, hitTestText, isTextFontRea
  *  1. Clear canvas.
  *  2. Draw every saved path with its own colour/tool.
  *  3. During mouse drag, re-render with the in-progress path on top (live preview).
- *  4. If a path is selected, draw a cyan dashed highlight over it.
+ *  4. Draw a cyan dashed highlight over every selected path, and the marquee while it is drawn.
  *
  * Tool encoding:
  *  - freehand: polyline [[x,y], ...]
@@ -17,8 +21,10 @@ import { drawText, drawTextHighlight, ensureTextFont, hitTestText, isTextFontRea
  *  - rect: [[topLeft], [bottomRight]]
  *  - circle: [[cx,cy], [edgeX,edgeY]] — radius = hypot(edge - center)
  *  - text: [[x,y]] — top-left of the first line and the rotation pivot (see drawingText.js)
- *  - select: no drawing — click to select/deselect paths; drag a label to move it,
- *    double-click a label to edit it
+ *  - select: no drawing — click selects a path, Shift+click adds or removes one, a drag on
+ *    empty map draws a marquee (Shift adds to the selection), a drag on a selected path moves
+ *    the whole selection, double-click a label to edit it. The right button or Escape during
+ *    a move or marquee cancels it.
  *
  * Text tool: a click on a label the user may edit opens it for editing (onEditText); a click
  * elsewhere places a new one (onTextPlacement).
@@ -30,82 +36,7 @@ import { drawText, drawTextHighlight, ensureTextFont, hitTestText, isTextFontRea
  * Coordinate space: scene space (identical to FogLayer).
  */
 
-// Point-to-segment distance helper
-function distPointToSegment(px, py, x1, y1, x2, y2) {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  if (dx === 0 && dy === 0) return Math.hypot(px - x1, py - y1);
-  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
-}
-
-// Hit-test a path at scene point (px, py)
-function hitTestPath(path, px, py, tolerance = 10) {
-  if (!path || !path.points || path.points.length === 0) return false;
-
-  switch (path.tool) {
-    case 'freehand': {
-      if (path.points.length < 2) return false;
-      for (let i = 1; i < path.points.length; i++) {
-        if (distPointToSegment(px, py, path.points[i - 1][0], path.points[i - 1][1], path.points[i][0], path.points[i][1]) <= tolerance) return true;
-      }
-      return false;
-    }
-    case 'line':
-    case 'arrow': {
-      if (path.points.length < 2) return false;
-      return distPointToSegment(px, py, path.points[0][0], path.points[0][1], path.points[1][0], path.points[1][1]) <= tolerance;
-    }
-    case 'rect': {
-      if (path.points.length < 2) return false;
-      const x1 = Math.min(path.points[0][0], path.points[1][0]);
-      const y1 = Math.min(path.points[0][1], path.points[1][1]);
-      const x2 = Math.max(path.points[0][0], path.points[1][0]);
-      const y2 = Math.max(path.points[0][1], path.points[1][1]);
-      return (
-        (Math.abs(px - x1) <= tolerance && py >= y1 && py <= y2) ||
-        (Math.abs(px - x2) <= tolerance && py >= y1 && py <= y2) ||
-        (Math.abs(py - y1) <= tolerance && px >= x1 && px <= x2) ||
-        (Math.abs(py - y2) <= tolerance && px >= x1 && px <= x2)
-      );
-    }
-    case 'circle': {
-      if (path.points.length < 2) return false;
-      const [cx, cy] = path.points[0];
-      const [ex, ey] = path.points[1];
-      const radius = Math.hypot(ex - cx, ey - cy);
-      return Math.abs(Math.hypot(px - cx, py - cy) - radius) <= tolerance;
-    }
-    case 'text':
-      return hitTestText(path, px, py);
-    default:
-      return false;
-  }
-}
-
-// Topmost path under (px, py) that the caller is allowed to delete.
-// Paths the predicate rejects are skipped, not treated as blockers — a player
-// right-clicking through the GM's line still reaches their own drawing beneath it.
-export function findDeletablePathAt(paths, px, py, canDelete) {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    if (!canDelete(path)) continue;
-    if (hitTestPath(path, px, py)) return path.id;
-  }
-  return null;
-}
-
-// Topmost text label under (px, py) that the caller may edit — same skip rule as deletion.
-export function findEditableTextAt(paths, px, py, canEdit) {
-  for (let i = paths.length - 1; i >= 0; i--) {
-    const path = paths[i];
-    if (path.tool !== 'text' || !canEdit(path)) continue;
-    if (hitTestPath(path, px, py)) return path;
-  }
-  return null;
-}
-
-// Pointer travel (scene px) before a press on a label becomes a move rather than a click.
+// Pointer travel (scene px) before a press becomes a move or a marquee rather than a click.
 const MOVE_THRESHOLD = 3;
 
 const DrawingLayer = ({
@@ -118,12 +49,12 @@ const DrawingLayer = ({
   onPathComplete,
   onTextPlacement,
   onEditText,
-  onMoveText,
   hiddenPathId = null,
   pathOverride = null,
-  selectedPathId = null,
+  selectedPathIds = [],
   onSelectionChange,
-  onDeletePath,
+  onDeletePaths,
+  onMovePaths,
   userId = null,
   isGM = false,
   canvasWidth,
@@ -133,9 +64,14 @@ const DrawingLayer = ({
   const currentPathRef = useRef(null);
   const shapeStartRef = useRef(null);
   const isDrawingRef = useRef(false);
-  // A press on a label in the select tool: { id, start, origin, offset } — offset is null until
-  // the pointer has travelled past MOVE_THRESHOLD.
-  const textDragRef = useRef(null);
+  // The select tool's gesture from press to release:
+  //   { kind: 'pending' | 'drag' | 'marquee' | 'idle', start, hitId, ids, additive, collapseTo,
+  //     offset, rect }
+  // 'pending' until the pointer travels past MOVE_THRESHOLD; then a press on a selected path
+  // drags the selection (ids), a press on empty map draws a marquee, and a press on a path just
+  // shift-removed from the selection does nothing ('idle'). A ref, not state: it changes on every
+  // mouse move and only the canvas, repainted by hand, shows it.
+  const gestureRef = useRef(null);
   const [hoveredPathId, setHoveredPathId] = useState(null);
   // Bumped when a label font finishes loading, so the canvas repaints with the real face.
   const [fontTick, setFontTick] = useState(0);
@@ -305,18 +241,18 @@ const DrawingLayer = ({
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Live state layered over the saved paths: a label being dragged, a label being rotated by
-    // its handle (pathOverride), and the label open in the edit field (hidden — the field
-    // stands exactly in its place).
-    const drag = textDragRef.current;
+    // Live state layered over the saved paths: the selection being dragged, a label being
+    // rotated by its handle (pathOverride), and the label open in the edit field (hidden — the
+    // field stands exactly in its place).
+    const gesture = gestureRef.current;
+    const drag = gesture?.kind === 'drag' && gesture.offset ? gesture : null;
+    const dragged = new Set(drag ? drag.ids : []);
     const savedPaths = (scene?.drawingPaths || [])
       .filter(p => p.id !== hiddenPathId)
       .map((p) => {
         let out = p;
         if (pathOverride && p.id === pathOverride.id) out = { ...out, ...pathOverride };
-        if (drag?.offset && p.id === drag.id) {
-          out = { ...out, points: [[drag.origin[0] + drag.offset[0], drag.origin[1] + drag.offset[1]]] };
-        }
+        if (dragged.has(p.id)) out = translatePath(out, drag.offset.dx, drag.offset.dy);
         return out;
       });
     const allPaths = extraPath ? [...savedPaths, extraPath] : savedPaths;
@@ -328,11 +264,22 @@ const DrawingLayer = ({
       if (hov) drawHighlight(ctx, hov, { alpha: 0.35, dashed: false });
     }
 
-    if (selectedPathId) {
-      const sel = savedPaths.find(p => p.id === selectedPathId);
-      if (sel) drawHighlight(ctx, sel);
+    const selected = new Set(selectedPathIds);
+    savedPaths.filter(p => selected.has(p.id)).forEach(p => drawHighlight(ctx, p));
+
+    // The marquee is drawn on this canvas, in the same scene px as the paths it selects.
+    if (gesture?.kind === 'marquee' && gesture.rect) {
+      const { x, y, width, height } = gesture.rect;
+      ctx.save();
+      ctx.strokeStyle = '#00e5ff';
+      ctx.fillStyle = 'rgba(0, 229, 255, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 4]);
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeRect(x, y, width, height);
+      ctx.restore();
     }
-  }, [scene?.drawingPaths, drawPath, drawHighlight, selectedPathId, hoveredPathId, hiddenPathId, pathOverride]);
+  }, [scene?.drawingPaths, drawPath, drawHighlight, selectedPathIds, hoveredPathId, hiddenPathId, pathOverride]);
 
   // Re-render when saved paths or selection changes
   useEffect(() => {
@@ -346,9 +293,26 @@ const DrawingLayer = ({
     // fontTick: a label font finished loading — repaint with the real face.
   }, [render, activeTool, brushSize, color, fontSize, fontTick]);
 
-  // Delete/Backspace deletes the selected path (shortcut registry: drawing.deleteSelected).
-  useKeyboardShortcut('drawing.deleteSelected', () => onDeletePath?.(selectedPathId), {
-    enabled: isDrawingMode && activeTool === 'select' && !!selectedPathId,
+  const cancelGesture = useCallback(() => {
+    gestureRef.current = null;
+    render(null);
+  }, [render]);
+
+  const selectTool = isDrawingMode && activeTool === 'select';
+
+  // Delete/Backspace deletes the selection (shortcut registry: drawing.deleteSelected).
+  useKeyboardShortcut('drawing.deleteSelected', () => onDeletePaths?.(selectedPathIds), {
+    enabled: selectTool && selectedPathIds.length > 0,
+  });
+
+  // Escape cancels a move or a marquee in progress; otherwise it deselects
+  // (drawing.clearSelection).
+  useKeyboardShortcut('drawing.clearSelection', () => {
+    if (gestureRef.current) cancelGesture();
+    else onSelectionChange?.([]);
+  }, {
+    enabled: selectTool,
+    when: () => !!gestureRef.current || selectedPathIds.length > 0,
   });
 
   // Convert mouse event to scene-space coordinates
@@ -370,6 +334,15 @@ const DrawingLayer = ({
     if (!isDrawingMode) return;
     e.preventDefault();
 
+    // The right button during a select-tool move or marquee cancels it, and never deletes.
+    // `buttons & 1` covers the order in which the gesture was already cancelled by the right
+    // button's mousedown (Windows sends contextmenu after the release): the left is still held.
+    if (gestureRef.current) {
+      cancelGesture();
+      return;
+    }
+    if (e.buttons & 1) return;
+
     // Right-click mid-stroke abandons the shape. Zeroing currentPathRef matters as much
     // as the isDrawingRef flag: the render effect reads that ref for the live preview,
     // so a leftover value would repaint the abandoned shape on the next re-render.
@@ -383,11 +356,17 @@ const DrawingLayer = ({
 
     const [px, py] = getSceneCoords(e);
     const id = findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete);
-    if (id) onDeletePath?.(id);
-  }, [isDrawingMode, getSceneCoords, render, scene?.drawingPaths, canDelete, onDeletePath]);
+    if (id) onDeletePaths?.([id]);
+  }, [isDrawingMode, getSceneCoords, render, cancelGesture, scene?.drawingPaths, canDelete, onDeletePaths]);
 
   const handleMouseDown = useCallback((e) => {
     if (!isDrawingMode) return;
+    // A second button pressed during a select-tool gesture cancels it (a mouse is one pointer,
+    // but mousedown still fires for every button).
+    if (gestureRef.current && e.button !== 0) {
+      cancelGesture();
+      return;
+    }
     // Only a plain left button draws; the right button deletes (see handleContextMenu).
     // Ctrl+left-click is also rejected: on macOS it's the OS-level secondary-click
     // emulation, so the browser dispatches both `contextmenu` and this `mousedown` for the
@@ -401,18 +380,28 @@ const DrawingLayer = ({
     e.stopPropagation();
 
     if (activeTool === 'select') {
-      // Selection exists to feed the trash button and the Delete key, so it follows the same
-      // rule as the right button: you can only pick a path you may delete, and someone else's
-      // path is skipped rather than blocking the one underneath it. A miss deselects.
+      // Selection follows the right button's rule: you can only pick a path you may delete, and
+      // someone else's path is skipped rather than blocking the one underneath it.
       const [px, py] = getSceneCoords(e);
-      const paths = scene?.drawingPaths || [];
-      const hitId = findDeletablePathAt(paths, px, py, canDelete);
-      onSelectionChange?.(hitId);
-      // A press on a label may turn into a move; it only becomes one past MOVE_THRESHOLD.
-      const hit = hitId && paths.find(p => p.id === hitId);
-      if (hit?.tool === 'text') {
-        textDragRef.current = { id: hit.id, start: [px, py], origin: hit.points[0], offset: null };
+      const hitId = findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete);
+      const additive = e.shiftKey;
+      let ids = selectedPathIds;
+      let collapseTo = null;
+      if (hitId && additive) {
+        ids = toggleId(ids, hitId);
+        onSelectionChange?.(ids);
+      } else if (hitId && !ids.includes(hitId)) {
+        ids = [hitId];
+        onSelectionChange?.(ids);
+      } else if (hitId && ids.length > 1) {
+        // A press on a member of a bigger selection keeps it, so it can be dragged; a click
+        // without a move narrows the selection to this path on release.
+        collapseTo = hitId;
       }
+      gestureRef.current = {
+        kind: 'pending', start: [px, py], hitId, additive, collapseTo,
+        ids: hitId && ids.includes(hitId) ? ids : null, offset: null, rect: null,
+      };
       return;
     }
 
@@ -433,16 +422,31 @@ const DrawingLayer = ({
       shapeStartRef.current = [x, y];
       currentPathRef.current = [[x, y], [x, y]];
     }
-  }, [isDrawingMode, activeTool, getSceneCoords, onTextPlacement, onEditText, onSelectionChange, scene?.drawingPaths, canDelete]);
+  }, [isDrawingMode, activeTool, getSceneCoords, cancelGesture, onTextPlacement, onEditText, onSelectionChange, selectedPathIds, scene?.drawingPaths, canDelete]);
 
   const handleMouseMove = useCallback((e) => {
-    const drag = textDragRef.current;
-    if (drag) {
+    const gesture = gestureRef.current;
+    if (gesture) {
+      // The right button pressed mid-gesture shows up here as buttons 1 → 3 (see CLAUDE.md,
+      // "Zdarzenia myszy na scenie").
+      if (e.buttons & 2) {
+        cancelGesture();
+        return;
+      }
       const [x, y] = getSceneCoords(e);
-      const dx = x - drag.start[0];
-      const dy = y - drag.start[1];
-      if (drag.offset || Math.hypot(dx, dy) > MOVE_THRESHOLD) {
-        drag.offset = [dx, dy];
+      const dx = x - gesture.start[0];
+      const dy = y - gesture.start[1];
+      if (gesture.kind === 'pending') {
+        if (Math.hypot(dx, dy) <= MOVE_THRESHOLD) return;
+        gesture.kind = gesture.ids ? 'drag' : gesture.hitId ? 'idle' : 'marquee';
+      }
+      if (gesture.kind === 'drag') {
+        const moving = new Set(gesture.ids);
+        const bbox = groupBounds((scene?.drawingPaths || []).filter(p => moving.has(p.id)));
+        gesture.offset = clampDrawingDelta({ dx, dy }, bbox, { width: canvasWidth, height: canvasHeight });
+        render(null);
+      } else if (gesture.kind === 'marquee') {
+        gesture.rect = { x: gesture.start[0], y: gesture.start[1], width: dx, height: dy };
         render(null);
       }
       return;
@@ -475,16 +479,24 @@ const DrawingLayer = ({
       color,
       fontSize,
     });
-  }, [isDrawingMode, activeTool, getSceneCoords, render, brushSize, color, fontSize, scene?.drawingPaths, canDelete]);
+  }, [isDrawingMode, activeTool, getSceneCoords, render, cancelGesture, brushSize, color, fontSize, scene?.drawingPaths, canDelete, canvasWidth, canvasHeight]);
 
   const handleMouseUp = useCallback((e) => {
-    const drag = textDragRef.current;
-    if (drag) {
-      textDragRef.current = null;
-      if (drag.offset) {
-        onMoveText?.(drag.id, [drag.origin[0] + drag.offset[0], drag.origin[1] + drag.offset[1]]);
+    const gesture = gestureRef.current;
+    if (gesture) {
+      if (e.button !== 0) return;
+      gestureRef.current = null;
+      if (gesture.kind === 'drag' && gesture.offset && (gesture.offset.dx || gesture.offset.dy)) {
+        onMovePaths?.(gesture.ids, gesture.offset.dx, gesture.offset.dy);
+      } else if (gesture.kind === 'marquee' && gesture.rect) {
+        const hits = selectPathsInRect(scene?.drawingPaths || [], gesture.rect, canDelete);
+        onSelectionChange?.(gesture.additive ? unionIds(selectedPathIds, hits) : hits);
+      } else if (gesture.kind === 'pending') {
+        // A click without a move: on empty map it deselects (Shift keeps the selection).
+        if (!gesture.hitId && !gesture.additive) onSelectionChange?.([]);
+        else if (gesture.collapseTo) onSelectionChange?.([gesture.collapseTo]);
       }
-      // Repaint without the local offset; the caller's optimistic update keeps the label in place.
+      // Repaint without the local offset; the caller's optimistic update keeps the paths in place.
       render(null);
       return;
     }
@@ -513,11 +525,11 @@ const DrawingLayer = ({
       });
     }
     render(null);
-  }, [isDrawingMode, activeTool, onPathComplete, onMoveText, brushSize, color, fontSize, render]);
+  }, [isDrawingMode, activeTool, onPathComplete, onMovePaths, onSelectionChange, selectedPathIds, scene?.drawingPaths, canDelete, brushSize, color, fontSize, render]);
 
   const handleMouseLeave = useCallback((e) => {
     setHoveredPathId(null);
-    if (isDrawingRef.current || textDragRef.current) {
+    if (isDrawingRef.current || gestureRef.current) {
       handleMouseUp(e);
     }
   }, [handleMouseUp]);
@@ -537,7 +549,7 @@ const DrawingLayer = ({
     : activeTool === 'text'
       ? 'text'
       : activeTool === 'select'
-        ? (hoveredPath?.tool === 'text' ? 'move' : 'default')
+        ? (hoveredPath ? 'move' : 'default')
         : 'crosshair';
 
   return (

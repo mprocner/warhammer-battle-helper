@@ -1744,7 +1744,7 @@
     "drawingFontSize": "Font size",
     "drawingUndo": "Undo stroke",
     "drawingClear": "Clear all",
-    "drawingTool_select": "Select & Delete",
+    "drawingTool_select": "Select, move & delete",
     "drawingDelete": "Delete selected (or right-click a drawing)",
     "linkedMusic": "Linked music",
     "linkMusic": "Link music...",
@@ -1765,7 +1765,8 @@
     "moveToLayer": "Move to layer",
     "resetRotationAll": "Reset rotation (all)",
     "deleteAll": "Delete all",
-    "removeFromScene": "Remove selected from scene"
+    "removeFromScene": "Remove selected from scene",
+    "drawingDeleteCount": "Delete selected ({{count}})"
   },
   "files": {
     "title": "Files",
@@ -2881,7 +2882,8 @@
       "MiddleClick": "Middle click",
       "RightDrag": "Right-drag",
       "Drag": "Drag",
-      "HoldLeft": "Hold left button"
+      "HoldLeft": "Hold left button",
+      "Click": "Click"
     },
     "items": {
       "openShortcuts": "Show this list",
@@ -2889,12 +2891,16 @@
       "pan": "Pan the map",
       "addToSelection": "Add to selection (on empty map)",
       "ping": "Ping the map (still, on empty map)",
-      "deleteDrawing": "Delete the selected drawing",
+      "deleteDrawing": "Delete the selected drawings",
       "cancelFogPolygon": "Cancel the fog polygon",
       "copyImages": "Copy the selected images",
       "pasteImages": "Paste the images under the cursor (also on another scene)",
       "deleteSelected": "Delete the selected tokens",
-      "clearSelection": "Clear the selection"
+      "clearSelection": "Clear the selection",
+      "copyDrawings": "Copy the selected drawings",
+      "pasteDrawings": "Paste the drawings under the cursor (also on another scene)",
+      "clearDrawingSelection": "Deselect drawings (or cancel a move)",
+      "addDrawingToSelection": "Add a drawing to the selection, or take it out"
     }
   }
 }

@@ -117,6 +117,20 @@ export function hitTestText(path, px, py, tolerance = 4, measure = defaultMeasur
   return lx >= -pad && lx <= width + pad && ly >= -pad && ly <= height + pad;
 }
 
+// The label's hit box (the same one hitTestText uses) as four scene points, clockwise from the
+// anchor. Selection by marquee and the group bounds use it, so a rotated label is not reduced to
+// its unrotated box.
+export function textBoxCorners(path, tolerance = 0, measure = defaultMeasure) {
+  const { width, height } = measureTextBox(path, measure);
+  const pad = tolerance + (path.textBackdrop === 'box' ? BOX_PADDING : 0);
+  return [
+    fromTextLocal(path, -pad, -pad),
+    fromTextLocal(path, width + pad, -pad),
+    fromTextLocal(path, width + pad, height + pad),
+    fromTextLocal(path, -pad, height + pad),
+  ];
+}
+
 // Where the rotate handle sits: just past the end of the first line, along the text direction.
 export const ROTATE_HANDLE_GAP = 18;
 export function rotateHandlePoint(path, measure = defaultMeasure) {

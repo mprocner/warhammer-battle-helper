@@ -78,7 +78,7 @@ const DrawingToolbar = ({
   onUndoFog,
   onClearFog,
   onRevealAllFog,
-  selectedPathId,
+  selectedCount = 0,
   onDeleteSelected,
   isGM,
   canUndo,
@@ -400,10 +400,12 @@ const DrawingToolbar = ({
               <button
                 className="drawing-toolbar__action drawing-toolbar__action--danger"
                 onClick={() => onDeleteSelected?.()}
-                disabled={!selectedPathId}
+                disabled={selectedCount === 0}
               >
                 <DeleteIcon style={{ fontSize: 18 }} />
-                <span className="drawing-toolbar__tooltip">{t('scenes.drawingDelete')}</span>
+                <span className="drawing-toolbar__tooltip">
+                  {selectedCount > 0 ? t('scenes.drawingDeleteCount', { count: selectedCount }) : t('scenes.drawingDelete')}
+                </span>
               </button>
             )}
           </div>

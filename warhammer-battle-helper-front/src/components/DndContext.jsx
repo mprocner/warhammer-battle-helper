@@ -12,7 +12,7 @@ import CombatStrip from './scene/combat/CombatStrip';
 import CombatWindow from './scene/combat/CombatWindow';
 import OnlineUsersBar from './online-users/OnlineUsersBar';
 import PlayerSettingsPopup from './online-users/PlayerSettingsPopup';
-import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPath, deleteSceneImage, updateSceneImage, batchMoveTokens } from '../api/scenes';
+import { undoLastDrawingPath, clearDrawingPaths, undoLastFogPath, clearFogPaths, revealAllFog, deleteDrawingPaths, deleteSceneImage, updateSceneImage, batchMoveTokens } from '../api/scenes';
 import ConfirmModal from './common/ConfirmModal';
 import ResizableSplitPane from './common/ResizableSplitPane';
 import CharacterSidebarList from './CharacterSidebarList';
@@ -43,7 +43,7 @@ const generateFightZones = (width, height) => {
 };
 
 
-function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'select', onEditingLayerChange, imageEditLayer = 'tokens', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor, onDrawingColorChange, drawingTextStyle = DEFAULT_TEXT_STYLE, onDrawingTextStyleChange, onDrawingPathComplete, onUpdateDrawingPath, onDeleteDrawingPath, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern', onCharactersLoaded }) {
+function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSystem = 'warhammer4e', characterUpdateTrigger = 0, characterDataTrigger = 0, isHidden = false, onTogglePanel, currentScene = null, isGM = false, userId = null, participants = [], editingLayer = 'select', onEditingLayerChange, imageEditLayer = 'tokens', onImageEditLayerChange, fogCoverMode = false, onFogCoverModeChange, sendMessage = null, pointerPings = [], onRemovePing, mapRulers = {}, onFogPathComplete, activeTool = 'freehand', onActiveToolChange, brushSize = 10, onBrushSizeChange, fogGmOpacity = 0.5, onFogGmOpacityChange, drawingColor, onDrawingColorChange, drawingTextStyle = DEFAULT_TEXT_STYLE, onDrawingTextStyleChange, onDrawingPathComplete, onUpdateDrawingPath, onMoveDrawingPaths, currentSceneId = null, sceneSelector = null, rollVisibility = 'all', game = null, onlineUserIds = [], onParticipantUpdated, controlScheme = 'modern', onCharactersLoaded }) {
   const { t } = useTranslation();
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [initialCharacters, setInitialCharacters] = useState([]);
@@ -790,21 +790,19 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [characterDataTrigger, fetchCharacters, fetchGameCharacters, gameId, token]);
 
-  // Selected drawing path (for select/delete tool)
-  const [selectedDrawingPathId, setSelectedDrawingPathId] = useState(null);
+  // Selected drawing paths (select tool): ids in selection order.
+  const [selectedDrawingPathIds, setSelectedDrawingPathIds] = useState([]);
 
-  // Clear selection when the selected path is removed by any user
+  // Drop ids whose path is gone — deleted by anyone, or the scene changed. Returning `prev` when
+  // nothing is gone keeps the array identity, so this effect does not loop.
   useEffect(() => {
-    if (!selectedDrawingPathId) return;
-    const paths = currentScene?.drawingPaths || [];
-    if (!paths.find(p => p.id === selectedDrawingPathId)) {
-      setSelectedDrawingPathId(null);
-    }
-  }, [currentScene?.drawingPaths, selectedDrawingPathId]);
+    const present = new Set((currentScene?.drawingPaths || []).map(p => p.id));
+    setSelectedDrawingPathIds(prev => (prev.every(id => present.has(id)) ? prev : prev.filter(id => present.has(id))));
+  }, [currentScene?.drawingPaths]);
 
   // Clear selection when switching away from select tool
   useEffect(() => {
-    if (activeTool !== 'select') setSelectedDrawingPathId(null);
+    if (activeTool !== 'select') setSelectedDrawingPathIds([]);
   }, [activeTool]);
 
   // Drawing undo/clear handlers
@@ -854,22 +852,17 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     }
   }, [gameId, currentSceneId]);
 
-  // Delete the currently selected drawing path
-  const handleDeleteSelectedDrawing = useCallback(async (pathId) => {
-    const id = pathId || selectedDrawingPathId;
-    if (!gameId || !currentSceneId || !id) return;
+  // Delete drawing paths: the selection (trash button, Delete key) or one path (right-click, a
+  // label emptied in its field). The selection follows by itself — the prune effect above drops
+  // ids once DRAWING_PATHS_REMOVED has removed them.
+  const handleDeleteDrawings = useCallback(async (pathIds) => {
+    if (!gameId || !currentSceneId || !pathIds?.length) return;
     try {
-      await deleteDrawingPath(gameId, currentSceneId, id);
-      // Only clear when we deleted the actual selection (toolbar/keyboard call with no
-      // explicit pathId). The right-click call site passes an explicit pathId that may be
-      // a different path than the current selection — the effect above already clears the
-      // selection if that path is the one that disappears, so it doesn't need this too.
-      if (!pathId) setSelectedDrawingPathId(null);
-      // WS DRAWING_PATH_REMOVED will update game state
+      await deleteDrawingPaths(gameId, currentSceneId, pathIds);
     } catch (err) {
-      console.error('Failed to delete drawing path:', err);
+      console.error('Failed to delete drawing paths:', err);
     }
-  }, [gameId, currentSceneId, selectedDrawingPathId]);
+  }, [gameId, currentSceneId]);
 
   // ── Text labels (PLAYRPG-251/252) ──
   // The open label field lives here, not in SceneViewport, because the toolbar (a sibling of the
@@ -877,12 +870,12 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const handleTextCommit = useCallback(({ coords, text, style, editingPath }) => {
     if (editingPath) {
       // Clearing a label's text is deleting it.
-      if (!text) handleDeleteSelectedDrawing(editingPath.id);
+      if (!text) handleDeleteDrawings([editingPath.id]);
       else onUpdateDrawingPath?.(editingPath.id, { text, ...style });
       return;
     }
     onDrawingPathComplete?.({ tool: 'text', points: [coords], brushSize, text, ...style });
-  }, [handleDeleteSelectedDrawing, onUpdateDrawingPath, onDrawingPathComplete, brushSize]);
+  }, [handleDeleteDrawings, onUpdateDrawingPath, onDrawingPathComplete, brushSize]);
 
   const textSession = useDrawingTextInput({ onCommit: handleTextCommit });
 
@@ -896,13 +889,15 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
     ...textSession,
     placeAt: (coords) => textSession.placeAt(coords, { ...drawingTextStyle, color: drawingColor }),
     editPath: (path) => {
-      setSelectedDrawingPathId(null);
+      setSelectedDrawingPathIds([]);
       textSession.editPath(path, { ...pickTextStyle(path), color: path.color });
     },
   };
 
-  const selectedTextPath = activeTool === 'select'
-    ? (currentScene?.drawingPaths || []).find(p => p.id === selectedDrawingPathId && p.tool === 'text') ?? null
+  // The text controls act on a selected label only when it is the whole selection; with several
+  // drawings selected they set the style of the next label.
+  const selectedTextPath = activeTool === 'select' && selectedDrawingPathIds.length === 1
+    ? (currentScene?.drawingPaths || []).find(p => p.id === selectedDrawingPathIds[0] && p.tool === 'text') ?? null
     : null;
 
   // What the toolbar's text controls (and its colour swatches, for a label) act on:
@@ -934,10 +929,6 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
   const handleToolbarColorChange = textTarget === 'defaults'
     ? onDrawingColorChange
     : (color) => handleTextStyleChange({ color });
-
-  const handleMoveText = useCallback((pathId, point) => {
-    onUpdateDrawingPath?.(pathId, { points: [point] });
-  }, [onUpdateDrawingPath]);
 
   const handleRotateText = useCallback((pathId, rotation) => {
     onUpdateDrawingPath?.(pathId, { rotation });
@@ -1104,8 +1095,8 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
                 onUndoFog={handleUndoFog}
                 onClearFog={handleClearFog}
                 onRevealAllFog={handleRevealAllFog}
-                selectedPathId={selectedDrawingPathId}
-                onDeleteSelected={handleDeleteSelectedDrawing}
+                selectedCount={selectedDrawingPathIds.length}
+                onDeleteSelected={() => handleDeleteDrawings(selectedDrawingPathIds)}
                 isGM={isGM}
                 canUndo={(currentScene?.drawingPaths || []).length > 0}
                 canUndoFog={(currentScene?.revealPaths || []).length > 0}
@@ -1114,7 +1105,7 @@ function DragAndDropContext({ addLogMessage, gameId = null, token = null, gameSy
           )}
 
           {/* Fight Grid with Scene Layers */}
-          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} onEditingLayerChange={onEditingLayerChange} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} participants={participants} brushSize={brushSize} fogGmOpacity={fogGmOpacity} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} onDrawingPathComplete={onDrawingPathComplete} textInput={textInput} onMoveText={handleMoveText} onRotateText={handleRotateText} selectedPathId={selectedDrawingPathId} onSelectionChange={setSelectedDrawingPathId} onDeletePath={handleDeleteSelectedDrawing} controlScheme={controlScheme} onBackgroundClick={clearSelection} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} onCommitRotate={handleRotateCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
+          <SceneViewport scene={currentScene} isGM={isGM} gameId={gameId} editingLayer={editingLayer} onEditingLayerChange={onEditingLayerChange} imageEditLayer={imageEditLayer} gridWidth={gridWidth} gridHeight={gridHeight} onZoomChange={setViewportZoom} sendMessage={sendMessage} pointerPings={pointerPings} onRemovePing={onRemovePing} participants={participants} brushSize={brushSize} fogGmOpacity={fogGmOpacity} activeTool={activeTool} fogCoverMode={fogCoverMode} onFogPathComplete={onFogPathComplete} drawingColor={drawingColor} onDrawingPathComplete={onDrawingPathComplete} textInput={textInput} onRotateText={handleRotateText} selectedPathIds={selectedDrawingPathIds} onSelectionChange={setSelectedDrawingPathIds} onDeletePaths={handleDeleteDrawings} onMovePaths={onMoveDrawingPaths} onActiveToolChange={onActiveToolChange} controlScheme={controlScheme} onBackgroundClick={clearSelection} gameSystem={gameSystem} tokenPlacementMode={tokenPlacementMode} userId={userId} userName={userName} measurementMetric={measurementMetric} cellDistance={cellDistance} distanceUnit={distanceUnit} mapRulers={sceneRulers} dragRuler={dragRuler} onTokenDragMeasureStart={handleTokenDragMeasureStart} onTokenDragMeasureMove={handleTokenDragMeasureMove} onTokenDragMeasureEnd={handleTokenDragMeasureEnd} aoeEnabled={aoeMeasure} placedCharacters={placedCharacters} isMultiplayer={isMultiplayer} tokenDisplay={tokenDisplay} token={token} onCommitMove={handleCommitCharacterMove} onCommitResize={handleResizeCharacter} onCommitRotate={handleRotateCharacter} selectedTokens={selectedTokens} onMarqueeSelect={handleMarqueeSelect} onCommitGroupMove={handleCommitGroupMove} isTokenSelected={isTokenSelected} onToggleTokenSelected={toggleTokenSelected} onGroupDelete={handleGroupDelete} onGroupSetLock={handleGroupSetLock} onGroupSetLayer={handleGroupSetLayer} onGroupResetRotation={handleGroupResetRotation} />
         </div>
       </div>
 

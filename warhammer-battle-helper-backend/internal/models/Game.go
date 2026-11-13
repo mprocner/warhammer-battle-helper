@@ -611,6 +611,23 @@ type AddDrawingPathRequest struct {
 	BackdropColor string       `json:"backdropColor"`
 }
 
+// PasteDrawingPathsRequest creates several drawing paths at once (Ctrl+V of copied drawings).
+type PasteDrawingPathsRequest struct {
+	Paths []AddDrawingPathRequest `json:"paths" binding:"required"`
+}
+
+// DrawingPathIDsRequest names the drawing paths a batch operation acts on.
+type DrawingPathIDsRequest struct {
+	PathIDs []string `json:"pathIds" binding:"required"`
+}
+
+// MoveDrawingPathsRequest shifts every listed drawing path by the same scene-px delta.
+type MoveDrawingPathsRequest struct {
+	PathIDs []string `json:"pathIds" binding:"required"`
+	DX      float64  `json:"dx"`
+	DY      float64  `json:"dy"`
+}
+
 // UpdateDrawingPathRequest is a partial update of a text drawing path. Absent fields keep their
 // stored value.
 type UpdateDrawingPathRequest struct {

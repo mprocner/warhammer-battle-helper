@@ -98,7 +98,7 @@ edytować: `PATCH .../drawing/path/:pathId` (autor albo MG, inne narzędzia → 
 waliduje całość w `normalizeTextPath` (to samo przy dodawaniu: krój z listy `sans|serif|display|
 gothic|mono`, rozmiar 8–120, ≤ 500 znaków i 20 linii, rotacja do (−180, 180], `backdropColor`
 `#rrggbb` albo `""` = automatyczny kontrast; w PATCH `""` to wartość, nie „brak pola”) i rozsyła
-`DRAWING_PATH_UPDATED {sceneId, path}`. `points[0]` to **lewy-górny róg pierwszej linii** i oś
+`DRAWING_PATHS_UPDATED {sceneId, paths: [path]}`. `points[0]` to **lewy-górny róg pierwszej linii** i oś
 obrotu. Geometria jest w jednym miejscu, `drawingText.js`: canvas (`drawText`), hit-test
 (odwrotna rotacja do układu napisu), pole edycji (`DrawingTextField`) i uchwyt obrotu liczą
 pudełko tą samą `measureTextBox`, więc po zapisie tekst nie podskakuje.
@@ -117,6 +117,35 @@ pudełko tą samą `measureTextBox`, więc po zapisie tekst nie podskakuje.
 - Canvas nie czeka na czcionki: `ensureTextFont` leniwie importuje Grenze i warianty B/I Roboto,
   czeka na `document.fonts.load` i `DrawingLayer` przerysowuje (`fontTick`). Bez tego napis
   zostaje w czcionce zastępczej do następnej zmiany.
+
+**Zaznaczanie wielu rysunków** (PLAYRPG-254). Zaznaczenie to `selectedDrawingPathIds` w
+`DndContext` (tablica; efekt usuwa id, których scena już nie ma). Zaznaczyć można tylko to, co się
+może usunąć (`isGM || path.userId === userId`) — cudzy rysunek jest przezroczysty dla kliku
+i ramki. Geometria w `drawingSelection.js`: ramka łapie rysunek, gdy dotyka jego **kreski**
+(odcinki Liang–Barsky, okrąg `najbliższy ≤ r ≤ najdalszy` punkt ramki), więc ramka w środku
+dużego prostokąta go nie łapie — tak jak klik. Napis liczy się całym pudełkiem
+(`textBoxCorners`, z rotacją).
+
+- `DrawingLayer` ma jeden automat gestu w refie (`pending → drag | marquee | idle`, próg 3 px).
+  Przerwanie: `mousedown` innym przyciskiem, `buttons & 2` w `mousemove`, `contextmenu` (zawsze
+  bez usuwania, także z `buttons & 1` po kolejności Windows), Escape (`drawing.clearSelection`).
+- Przesunięcie grupy: klient przycina deltę do canvasu (bbox grupy), przesuwa optymistycznie
+  w `GameSession`, `POST .../drawing/paths/move {pathIds, dx, dy}`. Serwer liczy nowe punkty
+  w Go (`translatePoints` — nowa tablica, wejście zostaje) i zapisuje je `$set` per ścieżka
+  w jednym `BulkWrite`, tylko `points` — styl napisu zmieniany równolegle nie przepada. Last
+  write wins.
+- Usuwanie: `POST .../drawing/paths/delete {pathIds}` — jeden `$pull` z `$in`. Pojedynczego
+  `DELETE .../path/:id` już nie ma; prawy klik i pusty napis też idą przez batch. Limit 200 id;
+  cudze id bez MG → błąd całości, brakujące id są pomijane.
+- Kopiuj/wklej: `useDrawingClipboard` (klawisze `drawing.copy`/`drawing.paste`, dla wszystkich,
+  schowek w pamięci przeżywa zmianę sceny). `POST .../drawing/paths {paths}` (≤ 50, frontend dzieli)
+  buduje każdą ścieżkę tą samą `buildDrawingPath` co pojedynczy add, z autorem = wklejający,
+  i zwraca je; kopie zostają zaznaczone dopiero, gdy scena je ma (HTTP i WS w dowolnej kolejności).
+- Eventy rysunków są zawsze zbiorcze: `DRAWING_PATHS_ADDED {sceneId, paths}`,
+  `DRAWING_PATHS_UPDATED {sceneId, paths}`, `DRAWING_PATHS_REMOVED {sceneId, pathIds}`
+  (pojedyncza zmiana = tablica jednoelementowa) i `DRAWING_CLEARED`.
+- Kontrolki tekstu i uchwyt obrotu działają na zaznaczonym napisie tylko, gdy jest on całym
+  zaznaczeniem.
 
 **Kolejka tur (PLAYRPG-1).** Każda scena może mieć walkę (`Scene.Combat`, `json:"-"`). Wpisy:
 postać (`gameCharacter`, `Character.ID` — na scenie czy nie; jeden wpis na postać, aktywna

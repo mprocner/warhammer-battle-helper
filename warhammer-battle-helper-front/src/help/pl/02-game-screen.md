@@ -35,7 +35,7 @@ W obu schematach:
 | **Zaznacz / Przesuń** | wszyscy | Wybór i przesuwanie tokenów, obracanie i zmiana rozmiaru |
 | **Pomiar odległości** | wszyscy | Linijka w jednostkach gry, opcjonalnie z obszarem działania. Inni widzą twoją linijkę na żywo |
 | **Mgła Wojny** | MG | Zakrywanie i odkrywanie mapy przed graczami |
-| **Rysowanie** | wszyscy | Odręcznie, linia, prostokąt, koło, strzałka, wielokąt i tekst, widoczne dla wszystkich |
+| **Rysowanie** | wszyscy | Odręcznie, linia, prostokąt, koło, strzałka, wielokąt i tekst, widoczne dla wszystkich; Zaznacz przesuwa, usuwa i kopiuje kilka rysunków naraz |
 
 **Warstwy.** Mapa składa się z warstw: tokeny, warstwa MG (widzi ją tylko MG) i tło. Przesuwanie
 lub usuwanie obrazków działa tylko na warstwie wybranej w selektorze warstw (ikony po prawej; nazwa
@@ -62,6 +62,25 @@ zapisuje napis.
   napisu obraca go wokół początku pierwszej linii (przyciąga co 45°).
 - **Cofnij** usuwa ostatnio dodany rysunek, nie cofa edycji napisu.
 
+### Zaznaczanie rysunków {#drawing-selection}
+
+Narzędzie **Zaznacz** w trybie rysowania działa na rysunkach: twoich, a u MG na wszystkich.
+Cudzy rysunek jest pomijany, więc klik przechodzi przez niego do twojego pod spodem.
+
+- **Zaznaczanie.** Kliknij rysunek. **Shift+klik** dodaje go do zaznaczenia albo go z niego
+  zdejmuje. Przeciągnięcie po pustym miejscu rysuje ramkę: zaznacza każdy rysunek, którego linii
+  dotknie (ramka narysowana w środku dużego prostokąta albo koła go nie złapie, tak jak klik w jego
+  środek). Z Shiftem ramka dodaje do zaznaczenia. Klik w puste miejsce odznacza, **Esc** też.
+- **Przesuwanie.** Przeciągnij jeden z zaznaczonych rysunków, a całe zaznaczenie pojedzie z nim.
+  Zatrzymuje się na krawędzi mapy. Prawy przycisk albo **Esc** w trakcie przeciągania odkłada je
+  na miejsce.
+- **Usuwanie.** Kosz w panelu rysowania albo **Delete** usuwa wszystko, co zaznaczone. Prawy klik
+  dalej usuwa jeden rysunek pod kursorem.
+- **Kopiowanie.** **Ctrl+C** kopiuje zaznaczenie, **Ctrl+V** wkleja je pod kursorem, także na
+  innej scenie (z kursorem poza mapą kopia ląduje obok oryginału). Kopie są twoje i zostają
+  zaznaczone, gotowe do przeciągnięcia.
+- **Cofnij** usuwa rysunki po jednym, od ostatnio dodanego; nie cofa przesunięcia ani usunięcia.
+
 ## Skróty klawiszowe {#keyboard-shortcuts}
 
 W grze naciśnij `?` albo wybierz **Skróty klawiszowe** z menu pod znakiem zapytania w nagłówku
@@ -76,7 +95,10 @@ albo gdy otwarte jest okno.
 | `Ctrl + V` | zaznaczanie (MG) | Wkleja skopiowane obrazy pod kursorem, także na innej scenie; kopie zostają zaznaczone |
 | `Delete` / `Backspace` | zaznaczanie (MG) | Usuwa zaznaczone tokeny (zablokowane obrazy zostają) |
 | `Esc` | zaznaczanie | Odznacza wszystko |
-| `Delete` / `Backspace` | rysowanie, narzędzie zaznaczania | Usuwa zaznaczony rysunek |
+| `Delete` / `Backspace` | rysowanie, narzędzie zaznaczania | Usuwa zaznaczone rysunki |
+| `Ctrl + C` | rysowanie, narzędzie zaznaczania | Kopiuje zaznaczone rysunki |
+| `Ctrl + V` | rysowanie | Wkleja skopiowane rysunki pod kursorem, także na innej scenie |
+| `Esc` | rysowanie, narzędzie zaznaczania | Odznacza rysunki albo przerywa przesuwanie |
 | `Esc` | mgła wojny, wielokąt (MG) | Anuluje rysowany wielokąt |
 
 Kopia zachowuje warstwę, ukrycie przed graczami, etykietę i pierścień tokenu, ale zaczyna się

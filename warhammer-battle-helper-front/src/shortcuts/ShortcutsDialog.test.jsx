@@ -12,7 +12,7 @@ describe('ShortcutsDialog', () => {
   test('a player does not', () => {
     render(<ShortcutsDialog open isGM={false} onClose={() => {}} />);
     expect(screen.queryByText('Cancel the fog polygon')).toBeNull();
-    expect(screen.getByText('Delete the selected drawing')).toBeInTheDocument();
+    expect(screen.getByText('Delete the selected drawings')).toBeInTheDocument();
   });
 
   test('links to the guide section in a new tab', () => {

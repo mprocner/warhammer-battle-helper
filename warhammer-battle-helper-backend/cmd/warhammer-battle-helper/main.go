@@ -349,9 +349,11 @@ func main() {
 	// Drawing
 	game.POST("/scenes/:sceneId/drawing/path", drawingHandler.AddDrawingPath)
 	game.DELETE("/scenes/:sceneId/drawing/path/last", drawingHandler.UndoLastDrawingPath)
-	game.DELETE("/scenes/:sceneId/drawing/path/:pathId", drawingHandler.DeleteDrawingPath)
 	game.PATCH("/scenes/:sceneId/drawing/path/:pathId", drawingHandler.UpdateDrawingPath)
 	game.DELETE("/scenes/:sceneId/drawing/paths", drawingHandler.ClearDrawingPaths)
+	game.POST("/scenes/:sceneId/drawing/paths", drawingHandler.PasteDrawingPaths)
+	game.POST("/scenes/:sceneId/drawing/paths/delete", drawingHandler.DeleteDrawingPaths)
+	game.POST("/scenes/:sceneId/drawing/paths/move", drawingHandler.MoveDrawingPaths)
 
 	// Handouts
 	game.POST("/handouts/upload", handoutHandler.UploadHandoutFile)

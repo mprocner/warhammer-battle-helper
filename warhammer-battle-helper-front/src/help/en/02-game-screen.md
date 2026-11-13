@@ -35,7 +35,7 @@ In both schemes:
 | **Select / Move** | everyone | Select, move, rotate and resize tokens |
 | **Measure distance** | everyone | A ruler in game units, optionally with an area of effect. Others see your ruler live |
 | **Fog of War** | GM | Hide and reveal parts of the map from players |
-| **Drawing** | everyone | Freehand, line, rectangle, circle, arrow, polygon and text, visible to everyone |
+| **Drawing** | everyone | Freehand, line, rectangle, circle, arrow, polygon and text, visible to everyone; Select moves, deletes and copies several drawings at once |
 
 **Layers.** The map is stacked from layers: tokens, the GM layer (only the GM sees it) and the
 background. Moving or deleting images only affects the layer picked in the layer selector (icons on
@@ -62,6 +62,25 @@ adds a line, **Esc** discards the changes. Clicking elsewhere on the map saves t
   it around the start of the first line (snapping every 45°).
 - **Undo** removes the most recently added drawing; it does not undo a text edit.
 
+### Selecting drawings {#drawing-selection}
+
+The **Select** tool in drawing mode works on drawings: your own, and for the GM everyone's.
+Someone else's drawing is skipped, so a click goes through it to yours underneath.
+
+- **Select.** Click a drawing. **Shift+click** adds one or takes it out of the selection. Drag on
+  an empty spot to draw a frame: it selects every drawing whose line it touches (a frame drawn
+  inside a big rectangle or circle does not catch it, the same as a click in its middle). With
+  Shift the frame adds to the selection. A click on an empty spot deselects; so does **Esc**.
+- **Move.** Drag one of the selected drawings and the whole selection moves with it. It stops at
+  the edge of the map. The right button or **Esc** during the drag puts it back.
+- **Delete.** The bin in the drawing panel or **Delete** removes everything selected. A right
+  click still deletes the single drawing under the cursor.
+- **Copy and paste.** **Ctrl+C** copies the selection, **Ctrl+V** pastes it under the cursor,
+  also on another scene (with the cursor off the map the copy lands next to the original). The
+  copies are yours and stay selected, ready to be dragged.
+- **Undo** removes drawings one at a time, the last added first; it does not undo a move or a
+  delete.
+
 ## Keyboard shortcuts {#keyboard-shortcuts}
 
 In the game, press `?` or pick **Keyboard shortcuts** from the question-mark menu in the panel
@@ -76,7 +95,10 @@ while a dialog is open.
 | `Ctrl + V` | select tool (GM) | Pastes the copied images under the cursor, also on another scene; the copies stay selected |
 | `Delete` / `Backspace` | select tool (GM) | Deletes the selected tokens (locked images stay) |
 | `Esc` | select tool | Clears the selection |
-| `Delete` / `Backspace` | drawing, select tool | Deletes the selected drawing |
+| `Delete` / `Backspace` | drawing, select tool | Deletes the selected drawings |
+| `Ctrl + C` | drawing, select tool | Copies the selected drawings |
+| `Ctrl + V` | drawing | Pastes the copied drawings under the cursor, also on another scene |
+| `Esc` | drawing, select tool | Deselects drawings, or cancels a move |
 | `Esc` | fog of war, polygon (GM) | Cancels the polygon being drawn |
 
 A copy keeps its layer, its hidden-from-players state, its label and its token ring, but starts

@@ -22,7 +22,8 @@ import { useDrawingTools } from '../hooks/useDrawingTools';
 import { participantColor } from '../utils/participants';
 import { useFogTools } from '../hooks/useFogTools';
 import { getApiUrl, getApiHeaders } from '../api/axios';
-import { addFogPath, addDrawingPath, deleteDrawingPath, updateDrawingPath } from '../api/scenes';
+import { addFogPath, addDrawingPath, moveDrawingPaths, updateDrawingPath } from '../api/scenes';
+import { translatePath } from './scene/drawingSelection';
 import { getMinigameState } from '../api/minigame';
 import SceneSelector from './scene/SceneSelector';
 import WindowBar from './WindowBar';
@@ -842,50 +843,29 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         });
         break;
 
-      case WS_EVENTS.DRAWING_PATH_ADDED:
+      // Drawing changes always come as batches (a single path is a batch of one).
+      case WS_EVENTS.DRAWING_PATHS_ADDED:
+      case WS_EVENTS.DRAWING_PATHS_UPDATED:
+      case WS_EVENTS.DRAWING_PATHS_REMOVED: {
+        const { sceneId, paths = [], pathIds = [] } = message.payload;
+        const byId = new Map(paths.map(p => [p.id, p]));
+        const removed = new Set(pathIds);
+        const apply = {
+          [WS_EVENTS.DRAWING_PATHS_ADDED]: (list) => [...list.filter(p => !byId.has(p.id)), ...paths],
+          [WS_EVENTS.DRAWING_PATHS_UPDATED]: (list) => list.map(p => byId.get(p.id) || p),
+          [WS_EVENTS.DRAWING_PATHS_REMOVED]: (list) => list.filter(p => !removed.has(p.id)),
+        }[message.type];
         setGameState(prev => {
           if (!prev) return prev;
-          const { sceneId, path } = message.payload;
           return {
             ...prev,
             scenes: prev.scenes.map(s =>
-              s.id === sceneId
-                ? { ...s, drawingPaths: [...(s.drawingPaths || []), path] }
-                : s
+              s.id === sceneId ? { ...s, drawingPaths: apply(s.drawingPaths || []) } : s
             ),
           };
         });
         break;
-
-      case WS_EVENTS.DRAWING_PATH_UPDATED:
-        setGameState(prev => {
-          if (!prev) return prev;
-          const { sceneId, path } = message.payload;
-          return {
-            ...prev,
-            scenes: prev.scenes.map(s =>
-              s.id === sceneId
-                ? { ...s, drawingPaths: (s.drawingPaths || []).map(p => (p.id === path.id ? path : p)) }
-                : s
-            ),
-          };
-        });
-        break;
-
-      case WS_EVENTS.DRAWING_PATH_REMOVED:
-        setGameState(prev => {
-          if (!prev) return prev;
-          const { sceneId, pathId } = message.payload;
-          return {
-            ...prev,
-            scenes: prev.scenes.map(s =>
-              s.id === sceneId
-                ? { ...s, drawingPaths: (s.drawingPaths || []).filter(p => p.id !== pathId) }
-                : s
-            ),
-          };
-        });
-        break;
+      }
 
       case WS_EVENTS.DRAWING_CLEARED:
         setGameState(prev => {
@@ -1067,7 +1047,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   // Text label edits (content, move, style). The label changes locally at once; the request
   // waits until the edits stop for TEXT_PATCH_DEBOUNCE_MS and carries every field changed in
   // the meantime, so dragging a slider sends one PATCH, not one per step. The server's
-  // DRAWING_PATH_UPDATED then replaces the label with the stored, normalized version.
+  // DRAWING_PATHS_UPDATED then replaces the label with the stored, normalized version.
   const pendingTextPatchesRef = useRef(new Map());
   useEffect(() => {
     const pending = pendingTextPatchesRef.current;
@@ -1106,14 +1086,30 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     pending.set(pathId, { patch: merged, timer });
   }, [gameId, displayScene]);
 
-  const handleDeleteDrawingPath = useCallback(async (pathId) => {
-    if (!displayScene || !pathId) return;
+  // Group move of drawings (select tool). The paths move locally at once — otherwise they would
+  // jump back until DRAWING_PATHS_UPDATED arrives — and the server's answer replaces them.
+  const handleMoveDrawingPaths = useCallback(async (pathIds, dx, dy) => {
+    if (!displayScene || pathIds.length === 0) return;
+    const sceneId = displayScene.id;
+    const moved = new Set(pathIds);
+    setGameState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        scenes: prev.scenes.map(s =>
+          s.id === sceneId
+            ? { ...s, drawingPaths: (s.drawingPaths || []).map(p => (moved.has(p.id) ? translatePath(p, dx, dy) : p)) }
+            : s
+        ),
+      };
+    });
     try {
-      await deleteDrawingPath(gameId, displayScene.id, pathId);
+      await moveDrawingPaths(gameId, sceneId, pathIds, dx, dy);
     } catch (err) {
-      console.error('Failed to delete drawing path:', err);
+      console.error('Failed to move drawing paths:', err);
+      fetchGameState();
     }
-  }, [gameId, displayScene]);
+  }, [gameId, displayScene, fetchGameState]);
 
   if (loading) {
     return (
@@ -1239,7 +1235,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
               onDrawingTextStyleChange={updateDrawingTextStyle}
               onDrawingPathComplete={handleDrawingPathComplete}
               onUpdateDrawingPath={handleDrawingPathUpdate}
-              onDeleteDrawingPath={handleDeleteDrawingPath}
+              onMoveDrawingPaths={handleMoveDrawingPaths}
               currentSceneId={displayScene?.id}
               rollVisibility={rollVisibility}
               game={gameState}

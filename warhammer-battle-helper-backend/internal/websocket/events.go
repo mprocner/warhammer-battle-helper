@@ -79,10 +79,12 @@ const (
 	EventSceneCombatUpdated = "SCENE_COMBAT_UPDATED"
 
 	// Drawing
-	EventDrawingPathAdded   = "DRAWING_PATH_ADDED"
-	EventDrawingPathRemoved = "DRAWING_PATH_REMOVED"
-	EventDrawingPathUpdated = "DRAWING_PATH_UPDATED"
-	EventDrawingCleared     = "DRAWING_CLEARED"
+	// Every drawing change is a batch — a single path is a batch of one — so clients keep one
+	// handler per kind of change.
+	EventDrawingPathsAdded   = "DRAWING_PATHS_ADDED"   // {sceneId, paths}
+	EventDrawingPathsRemoved = "DRAWING_PATHS_REMOVED" // {sceneId, pathIds}
+	EventDrawingPathsUpdated = "DRAWING_PATHS_UPDATED" // {sceneId, paths}
+	EventDrawingCleared      = "DRAWING_CLEARED"
 
 	// Notes
 	EventNoteCreated = "NOTE_CREATED"

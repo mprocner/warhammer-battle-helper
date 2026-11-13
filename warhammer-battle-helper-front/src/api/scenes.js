@@ -125,7 +125,18 @@ export const updateDrawingPath = async (gameId, sceneId, pathId, data) => {
   return response.data;
 };
 
-export const deleteDrawingPath = async (gameId, sceneId, pathId) => {
-  const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/drawing/path/${pathId}`);
+// Batch operations on drawings (PLAYRPG-254). Paste returns the created paths.
+export const pasteDrawingPaths = async (gameId, sceneId, paths) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/drawing/paths`, { paths });
+  return response.data.paths;
+};
+
+export const deleteDrawingPaths = async (gameId, sceneId, pathIds) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/drawing/paths/delete`, { pathIds });
+  return response.data;
+};
+
+export const moveDrawingPaths = async (gameId, sceneId, pathIds, dx, dy) => {
+  const response = await axiosInstance.post(`/games/${gameId}/scenes/${sceneId}/drawing/paths/move`, { pathIds, dx, dy });
   return response.data;
 };

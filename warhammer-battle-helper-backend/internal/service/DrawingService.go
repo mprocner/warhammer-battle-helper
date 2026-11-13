@@ -51,48 +51,17 @@ func (s *DrawingService) AddDrawingPath(gameID string, sceneID primitive.ObjectI
 		return err
 	}
 
-	brushSize := req.BrushSize
-	if brushSize <= 0 {
-		brushSize = 3
+	path, err := buildDrawingPath(req, userID)
+	if err != nil {
+		return err
 	}
-	fontSize := req.FontSize
-	if fontSize <= 0 {
-		fontSize = 16
-	}
-	color := req.Color
-	if color == "" {
-		color = "#ff0000"
-	}
-
-	path := models.DrawingPath{
-		ID:            primitive.NewObjectID(),
-		UserID:        userID,
-		Tool:          req.Tool,
-		Points:        req.Points,
-		BrushSize:     brushSize,
-		Color:         color,
-		Text:          req.Text,
-		FontSize:      fontSize,
-		FontFamily:    req.FontFamily,
-		Bold:          req.Bold,
-		Italic:        req.Italic,
-		Rotation:      req.Rotation,
-		TextBackdrop:  req.TextBackdrop,
-		BackdropColor: req.BackdropColor,
-	}
-	if path.Tool == "text" {
-		if err := normalizeTextPath(&path); err != nil {
-			return err
-		}
-	}
-
-	if err := s.drawingRepo.AddDrawingPath(gameID, sceneID, path); err != nil {
+	if err := s.drawingRepo.AddDrawingPaths(gameID, sceneID, []models.DrawingPath{path}); err != nil {
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathAdded, map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathsAdded, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
-		"path":    path,
+		"paths":   []models.DrawingPath{path},
 	})
 	return nil
 }
@@ -146,55 +115,10 @@ func (s *DrawingService) UndoLastDrawingPath(gameID string, sceneID primitive.Ob
 		}
 	}
 
-	if err := s.drawingRepo.RemoveDrawingPathByID(gameID, sceneID, pathID); err != nil {
+	if err := s.drawingRepo.RemoveDrawingPaths(gameID, sceneID, []primitive.ObjectID{pathID}); err != nil {
 		return err
 	}
-
-	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathRemoved, map[string]interface{}{
-		"sceneId": sceneID.Hex(),
-		"pathId":  pathID.Hex(),
-	})
-	return nil
-}
-
-// DeleteDrawingPath removes a specific drawing path by ID.
-// Only the path owner or the GM can delete it.
-func (s *DrawingService) DeleteDrawingPath(gameID string, sceneID primitive.ObjectID, pathID primitive.ObjectID, userID primitive.ObjectID) error {
-	game, err := s.drawingRepo.GetGame(gameID)
-	if err != nil {
-		return err
-	}
-
-	// Find the path to verify ownership
-	var foundPath *models.DrawingPath
-	for i := range game.Scenes {
-		if game.Scenes[i].ID != sceneID {
-			continue
-		}
-		for j := range game.Scenes[i].DrawingPaths {
-			if game.Scenes[i].DrawingPaths[j].ID == pathID {
-				foundPath = &game.Scenes[i].DrawingPaths[j]
-				break
-			}
-		}
-		break
-	}
-	if foundPath == nil {
-		return fmt.Errorf("drawing path not found")
-	}
-
-	if game.GameMasterID != userID && foundPath.UserID != userID {
-		return fmt.Errorf("permission denied: only the path owner or GM can delete it")
-	}
-
-	if err := s.drawingRepo.RemoveDrawingPathByID(gameID, sceneID, pathID); err != nil {
-		return err
-	}
-
-	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathRemoved, map[string]interface{}{
-		"sceneId": sceneID.Hex(),
-		"pathId":  pathID.Hex(),
-	})
+	s.broadcastPathsRemoved(gameID, sceneID, []primitive.ObjectID{pathID})
 	return nil
 }
 
@@ -257,9 +181,9 @@ func (s *DrawingService) UpdateDrawingPath(gameID string, sceneID primitive.Obje
 		return err
 	}
 
-	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathUpdated, map[string]interface{}{
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathsUpdated, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
-		"path":    updated,
+		"paths":   []models.DrawingPath{updated},
 	})
 	return nil
 }

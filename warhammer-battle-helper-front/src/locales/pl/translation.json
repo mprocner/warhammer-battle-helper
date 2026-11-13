@@ -1748,8 +1748,8 @@
     "drawingFontSize": "Rozmiar czcionki",
     "drawingUndo": "Cofnij pociągnięcie",
     "drawingClear": "Wyczyść wszystko",
-    "drawingTool_select": "Zaznacz i usuń",
-    "drawingDelete": "Usuń zaznaczony (lub prawy klik na rysunku)",
+    "drawingTool_select": "Zaznacz, przesuń i usuń",
+    "drawingDelete": "Usuń zaznaczone (lub prawy klik na rysunku)",
     "linkedMusic": "Muzyka sceny",
     "linkMusic": "Przypisz muzykę...",
     "noMusicLinked": "Brak muzyki",
@@ -1769,7 +1769,8 @@
     "moveToLayer": "Przenieś na warstwę",
     "resetRotationAll": "Resetuj obrót (wszystkie)",
     "deleteAll": "Usuń wszystkie",
-    "removeFromScene": "Zdejmij zaznaczone ze sceny"
+    "removeFromScene": "Zdejmij zaznaczone ze sceny",
+    "drawingDeleteCount": "Usuń zaznaczone ({{count}})"
   },
   "files": {
     "title": "Pliki",
@@ -2889,7 +2890,8 @@
       "MiddleClick": "Środkowy przycisk",
       "RightDrag": "Przeciągnięcie prawym",
       "Drag": "Przeciągnięcie",
-      "HoldLeft": "Przytrzymanie lewego"
+      "HoldLeft": "Przytrzymanie lewego",
+      "Click": "Klik"
     },
     "items": {
       "openShortcuts": "Pokaż tę listę",
@@ -2897,12 +2899,16 @@
       "pan": "Przesuń mapę",
       "addToSelection": "Dodaj do zaznaczenia (na pustej mapie)",
       "ping": "Ping na mapie (bez ruchu, na pustej mapie)",
-      "deleteDrawing": "Usuń zaznaczony rysunek",
+      "deleteDrawing": "Usuń zaznaczone rysunki",
       "cancelFogPolygon": "Anuluj wielokąt mgły",
       "copyImages": "Kopiuj zaznaczone obrazy",
       "pasteImages": "Wklej obrazy pod kursorem (także na innej scenie)",
       "deleteSelected": "Usuń zaznaczone tokeny",
-      "clearSelection": "Odznacz wszystko"
+      "clearSelection": "Odznacz wszystko",
+      "copyDrawings": "Kopiuj zaznaczone rysunki",
+      "pasteDrawings": "Wklej rysunki pod kursorem (także na innej scenie)",
+      "clearDrawingSelection": "Odznacz rysunki (albo przerwij przesuwanie)",
+      "addDrawingToSelection": "Dodaj rysunek do zaznaczenia albo go zdejmij"
     }
   }
 }

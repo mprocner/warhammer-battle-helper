@@ -26,6 +26,7 @@ import { participantColor } from '../../utils/participants';
 import './SceneViewport.css';
 import { gridBackgroundProps } from './gridBackground';
 import useSceneClipboard from './useSceneClipboard';
+import useDrawingClipboard from './useDrawingClipboard';
 
 const FRAME_SIZE = GRID_BORDER + GRID_PADDING; // 26px — outer border + inner frame
 // GM staging margin in px. Module-level (not derived from canvasSize) so handleFit can use the
@@ -42,8 +43,8 @@ const SceneViewport = ({
   onZoomChange, sendMessage, pointerPings = [], onRemovePing, participants = [],
   brushSize = 10, fogGmOpacity = 0.5, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
   drawingColor, onDrawingPathComplete,
-  selectedPathId = null, onSelectionChange, onDeletePath,
-  textInput, onMoveText, onRotateText,
+  selectedPathIds = [], onSelectionChange, onDeletePaths, onMovePaths, onActiveToolChange,
+  textInput, onRotateText,
   controlScheme = 'modern', onBackgroundClick,
   gameSystem = 'warhammer4e',
   tokenPlacementMode = 'snap',
@@ -540,8 +541,9 @@ const SceneViewport = ({
 
   // Live angle of the label whose rotate handle is being dragged ({ id, rotation } or null).
   const [textRotatePreview, setTextRotatePreview] = useState(null);
-  const selectedTextPath = isDrawingMode && activeTool === 'select' && !textInput?.pos
-    ? (displayedScene?.drawingPaths || []).find(p => p.id === selectedPathId && p.tool === 'text')
+  // The rotate handle belongs to a label that is the whole selection.
+  const selectedTextPath = isDrawingMode && activeTool === 'select' && !textInput?.pos && selectedPathIds.length === 1
+    ? (displayedScene?.drawingPaths || []).find(p => p.id === selectedPathIds[0] && p.tool === 'text')
     : null;
 
   const scenePings = useMemo(
@@ -601,6 +603,29 @@ const SceneViewport = ({
     },
     snap: tokenPlacementMode === 'snap',
     onSelect: onMarqueeSelect,
+  });
+
+  // Ctrl+C / Ctrl+V of drawings, for everyone in drawing mode (registry: drawing.copy /
+  // drawing.paste). Copy needs the select tool and a selection; a paste switches to the select
+  // tool, so the copies show up selected and can be dragged at once.
+  const handleDrawingsPasted = useCallback((ids) => {
+    onActiveToolChange?.('select');
+    onSelectionChange?.(ids);
+  }, [onActiveToolChange, onSelectionChange]);
+  useDrawingClipboard({
+    enabled: isDrawingMode,
+    canCopy: activeTool === 'select' && selectedPathIds.length > 0,
+    gameId,
+    sceneId: displayedScene?.id,
+    paths: displayedScene?.drawingPaths,
+    selectedIds: selectedPathIds,
+    viewportRef,
+    clientToScenePx: (clientX, clientY) => {
+      const { col, row } = clientToCell(clientX, clientY);
+      return { x: col * CELL_SIZE, y: row * CELL_SIZE };
+    },
+    canvasSize,
+    onPasted: handleDrawingsPasted,
   });
 
   if (!scene) {
@@ -893,12 +918,12 @@ const SceneViewport = ({
                     onPathComplete={onDrawingPathComplete}
                     onTextPlacement={textInput?.placeAt}
                     onEditText={textInput?.editPath}
-                    onMoveText={onMoveText}
                     hiddenPathId={textInput?.editingPath?.id ?? null}
                     pathOverride={textRotatePreview}
-                    selectedPathId={selectedPathId}
+                    selectedPathIds={selectedPathIds}
                     onSelectionChange={onSelectionChange}
-                    onDeletePath={onDeletePath}
+                    onDeletePaths={onDeletePaths}
+                    onMovePaths={onMovePaths}
                     userId={userId}
                     isGM={isGM}
                     canvasWidth={canvasSize.width}

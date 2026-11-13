@@ -23,6 +23,10 @@ export const SHORTCUTS = [
   { id: 'scene.addToSelection', kind: 'mouse', combos: [['Shift', 'Drag']], context: 'scene', labelKey: 'shortcuts.items.addToSelection' },
   { id: 'scene.ping', kind: 'mouse', combos: [['HoldLeft']], context: 'scene', labelKey: 'shortcuts.items.ping' },
   { id: 'drawing.deleteSelected', kind: 'key', combos: [['Delete'], ['Backspace']], context: 'drawing', labelKey: 'shortcuts.items.deleteDrawing' },
+  { id: 'drawing.copy', kind: 'key', combos: [['Mod', 'C']], context: 'drawing', labelKey: 'shortcuts.items.copyDrawings' },
+  { id: 'drawing.paste', kind: 'key', combos: [['Mod', 'V']], context: 'drawing', labelKey: 'shortcuts.items.pasteDrawings' },
+  { id: 'drawing.clearSelection', kind: 'key', combos: [['Escape']], context: 'drawing', labelKey: 'shortcuts.items.clearDrawingSelection' },
+  { id: 'drawing.addToSelection', kind: 'mouse', combos: [['Shift', 'Click'], ['Shift', 'Drag']], context: 'drawing', labelKey: 'shortcuts.items.addDrawingToSelection' },
   { id: 'fog.cancelPolygon', kind: 'key', combos: [['Escape']], context: 'fog', gmOnly: true, labelKey: 'shortcuts.items.cancelFogPolygon' },
 ];
 
@@ -54,7 +58,7 @@ export function matches(entry, e) {
 }
 
 const KEY_LABELS = { Escape: 'Esc' };
-const MOUSE_TOKENS = new Set(['MiddleClick', 'RightDrag', 'Drag', 'HoldLeft']);
+const MOUSE_TOKENS = new Set(['MiddleClick', 'RightDrag', 'Drag', 'Click', 'HoldLeft']);
 
 // Human-readable combo, e.g. 'Ctrl + C' / '⌘ + C'. Mouse tokens go through i18n
 // (shortcuts.keys.<token>); key names are language-neutral, as the guide writes them.
