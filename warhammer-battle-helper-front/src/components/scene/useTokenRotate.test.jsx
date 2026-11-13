@@ -3,12 +3,12 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useTokenRotate } from './useTokenRotate';
 
 // Harness: a 100x100 box whose centre sits at (150, 150) in screen coordinates.
-function Harness({ enabled = true, onCommit = () => {}, initial = 0 }) {
+function Harness({ enabled = true, onCommit = () => {}, initial = 0, getPivot }) {
   const containerRef = useRef(null);
   const [rotation, setRotation] = useState(initial);
   const [lastConsumed, setLastConsumed] = useState(null);
   const { isRotating, handleRotateStart, consumeJustFinished } = useTokenRotate({
-    containerRef, rotation, setRotation, enabled, onCommit,
+    containerRef, getPivot, rotation, setRotation, enabled, onCommit,
   });
   return (
     <div ref={containerRef} data-testid="box">
@@ -54,6 +54,16 @@ describe('useTokenRotate', () => {
     // Grab at 12 o'clock (dx 0, dy -50), drag to 3 o'clock (dx +50, dy 0): a quarter turn.
     fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
     fireEvent.mouseMove(document, { clientX: 200, clientY: 150 });
+    expect(screen.getByTestId('angle')).toHaveTextContent('90');
+  });
+
+  it('rotates around getPivot instead of the box centre when given one', () => {
+    // Pivot at the box's top-left corner (100, 100): grab straight right of it, drag straight
+    // below it — a quarter turn around the corner, not around the centre.
+    render(<Harness getPivot={() => ({ x: 100, y: 100 })} />);
+    stubBox();
+    fireEvent.mouseDown(screen.getByTestId('handle'), { clientX: 150, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 100, clientY: 150 });
     expect(screen.getByTestId('angle')).toHaveTextContent('90');
   });
 

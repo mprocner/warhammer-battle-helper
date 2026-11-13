@@ -44,6 +44,24 @@ warstwy pojawia się po najechaniu). Rysowania to nie dotyczy.
 **Ping.** Przytrzymaj lewy przycisk w miejscu na pustej mapie przez około pół sekundy, nie
 ruszając myszą. Wszyscy zobaczą znacznik w tym miejscu.
 
+### Napisy na mapie {#map-text}
+
+Narzędzie **Tekst** w trybie rysowania: kliknij puste miejsce i pisz. **Enter** zapisuje,
+**Shift+Enter** dodaje nową linię, **Esc** porzuca zmiany. Kliknięcie gdzie indziej na mapie też
+zapisuje napis.
+
+- **Edycja.** Kliknij narzędziem Tekst w swój napis (MG: w dowolny) albo kliknij go dwukrotnie
+  narzędziem Zaznacz. Usunięcie całej treści i zapis kasuje napis.
+- **Styl.** Pod paletą kolorów jest sekcja tekstu: krój pisma, rozmiar, pogrubienie, kursywa,
+  tło (brak, obrys albo tło pod tekstem, przydaje się na ciemnej mapie) i obrót. Kolor obrysu
+  i tła jest domyślnie automatyczny (czarny albo biały, kontrastowy do tekstu); możesz wybrać
+  własny, a różdżką wrócić do automatycznego. Gdy pole jest
+  otwarte, zmieniasz styl tego napisu. Gdy narzędziem Zaznacz wybrany jest napis, zmieniasz jego.
+  W pozostałych przypadkach ustawiasz styl następnego napisu.
+- **Przesuwanie i obrót.** Narzędziem Zaznacz przeciągnij napis. Kółko ze strzałką za końcem
+  napisu obraca go wokół początku pierwszej linii (przyciąga co 45°).
+- **Cofnij** usuwa ostatnio dodany rysunek, nie cofa edycji napisu.
+
 ## Skróty klawiszowe {#keyboard-shortcuts}
 
 W grze naciśnij `?` albo wybierz **Skróty klawiszowe** z menu pod znakiem zapytania w nagłówku

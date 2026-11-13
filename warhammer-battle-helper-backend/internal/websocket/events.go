@@ -81,6 +81,7 @@ const (
 	// Drawing
 	EventDrawingPathAdded   = "DRAWING_PATH_ADDED"
 	EventDrawingPathRemoved = "DRAWING_PATH_REMOVED"
+	EventDrawingPathUpdated = "DRAWING_PATH_UPDATED"
 	EventDrawingCleared     = "DRAWING_CLEARED"
 
 	// Notes

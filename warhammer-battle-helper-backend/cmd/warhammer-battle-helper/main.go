@@ -350,6 +350,7 @@ func main() {
 	game.POST("/scenes/:sceneId/drawing/path", drawingHandler.AddDrawingPath)
 	game.DELETE("/scenes/:sceneId/drawing/path/last", drawingHandler.UndoLastDrawingPath)
 	game.DELETE("/scenes/:sceneId/drawing/path/:pathId", drawingHandler.DeleteDrawingPath)
+	game.PATCH("/scenes/:sceneId/drawing/path/:pathId", drawingHandler.UpdateDrawingPath)
 	game.DELETE("/scenes/:sceneId/drawing/paths", drawingHandler.ClearDrawingPaths)
 
 	// Handouts

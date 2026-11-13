@@ -22,7 +22,7 @@ import { useDrawingTools } from '../hooks/useDrawingTools';
 import { participantColor } from '../utils/participants';
 import { useFogTools } from '../hooks/useFogTools';
 import { getApiUrl, getApiHeaders } from '../api/axios';
-import { addFogPath, addDrawingPath, deleteDrawingPath } from '../api/scenes';
+import { addFogPath, addDrawingPath, deleteDrawingPath, updateDrawingPath } from '../api/scenes';
 import { getMinigameState } from '../api/minigame';
 import SceneSelector from './scene/SceneSelector';
 import WindowBar from './WindowBar';
@@ -43,6 +43,8 @@ import { createDiceController } from './dice3d/diceController';
 import DiceAnimationContext from './dice3d/DiceAnimationContext';
 
 const TOAST_ROLL_EVENTS = new Set([WS_EVENTS.DICE_ROLLED, WS_EVENTS.SKILL_ROLLED, WS_EVENTS.WEAPON_ROLLED]);
+// Quiet time after the last text-label edit before the PATCH goes out (handleDrawingPathUpdate).
+const TEXT_PATCH_DEBOUNCE_MS = 250;
 
 /**
  * GameSession component - manages a multiplayer game session with real-time sync
@@ -98,7 +100,7 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
   const { userId } = useCurrentUser(token);
   const { onlineUserIds, handleOnlineUsersMessage } = useOnlineUsers();
   const { audioRef, musicState, playerVolume, onPlayerVolumeChange, onGmVolumeChange, handleMusicMessage, handleSceneAssignAll, syncFromGame } = useGameMusic(gameId);
-  const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingFontSize, setDrawingFontSize } = useDrawingTools(participantColor(gameState?.participants, userId));
+  const { activeTool, setActiveTool, brushSize, setBrushSize, drawingColor, setDrawingColor, drawingTextStyle, updateDrawingTextStyle } = useDrawingTools(participantColor(gameState?.participants, userId));
   const { editingLayer, setEditingLayer, fogCoverMode, setFogCoverMode, imageEditLayer, setImageEditLayer } = useFogTools();
 
   // Block browser back button and tab close while in game
@@ -855,6 +857,21 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
         });
         break;
 
+      case WS_EVENTS.DRAWING_PATH_UPDATED:
+        setGameState(prev => {
+          if (!prev) return prev;
+          const { sceneId, path } = message.payload;
+          return {
+            ...prev,
+            scenes: prev.scenes.map(s =>
+              s.id === sceneId
+                ? { ...s, drawingPaths: (s.drawingPaths || []).map(p => (p.id === path.id ? path : p)) }
+                : s
+            ),
+          };
+        });
+        break;
+
       case WS_EVENTS.DRAWING_PATH_REMOVED:
         setGameState(prev => {
           if (!prev) return prev;
@@ -1047,6 +1064,48 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
     }
   }, [gameId, displayScene, userId]);
 
+  // Text label edits (content, move, style). The label changes locally at once; the request
+  // waits until the edits stop for TEXT_PATCH_DEBOUNCE_MS and carries every field changed in
+  // the meantime, so dragging a slider sends one PATCH, not one per step. The server's
+  // DRAWING_PATH_UPDATED then replaces the label with the stored, normalized version.
+  const pendingTextPatchesRef = useRef(new Map());
+  useEffect(() => {
+    const pending = pendingTextPatchesRef.current;
+    return () => pending.forEach(({ timer }) => clearTimeout(timer));
+  }, []);
+
+  const handleDrawingPathUpdate = useCallback((pathId, patch) => {
+    // A label still waiting for its server id cannot be addressed yet.
+    if (!displayScene || !pathId || String(pathId).startsWith('temp-')) return;
+    const sceneId = displayScene.id;
+    setGameState(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        scenes: prev.scenes.map(s =>
+          s.id === sceneId
+            ? { ...s, drawingPaths: (s.drawingPaths || []).map(p => (p.id === pathId ? { ...p, ...patch } : p)) }
+            : s
+        ),
+      };
+    });
+
+    const pending = pendingTextPatchesRef.current;
+    const entry = pending.get(pathId);
+    clearTimeout(entry?.timer);
+    const merged = { ...entry?.patch, ...patch };
+    const timer = setTimeout(async () => {
+      pending.delete(pathId);
+      try {
+        await updateDrawingPath(gameId, sceneId, pathId, merged);
+      } catch (err) {
+        // The local edit stays until the next refetch; the next WS update or reload corrects it.
+        console.error('Failed to update drawing path:', err);
+      }
+    }, TEXT_PATCH_DEBOUNCE_MS);
+    pending.set(pathId, { patch: merged, timer });
+  }, [gameId, displayScene]);
+
   const handleDeleteDrawingPath = useCallback(async (pathId) => {
     if (!displayScene || !pathId) return;
     try {
@@ -1176,9 +1235,10 @@ const GameSession = ({ gameId, token, onGoToGameList, onSessionEnded, onLogout }
               onFogGmOpacityChange={setFogGmOpacity}
               drawingColor={drawingColor}
               onDrawingColorChange={setDrawingColor}
-              drawingFontSize={drawingFontSize}
-              onDrawingFontSizeChange={setDrawingFontSize}
+              drawingTextStyle={drawingTextStyle}
+              onDrawingTextStyleChange={updateDrawingTextStyle}
               onDrawingPathComplete={handleDrawingPathComplete}
+              onUpdateDrawingPath={handleDrawingPathUpdate}
               onDeleteDrawingPath={handleDeleteDrawingPath}
               currentSceneId={displayScene?.id}
               rollVisibility={rollVisibility}

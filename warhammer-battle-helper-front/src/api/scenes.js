@@ -120,6 +120,11 @@ export const clearDrawingPaths = async (gameId, sceneId) => {
   return response.data;
 };
 
+export const updateDrawingPath = async (gameId, sceneId, pathId, data) => {
+  const response = await axiosInstance.patch(`/games/${gameId}/scenes/${sceneId}/drawing/path/${pathId}`, data);
+  return response.data;
+};
+
 export const deleteDrawingPath = async (gameId, sceneId, pathId) => {
   const response = await axiosInstance.delete(`/games/${gameId}/scenes/${sceneId}/drawing/path/${pathId}`);
   return response.data;

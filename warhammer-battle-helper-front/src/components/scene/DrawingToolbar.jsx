@@ -18,10 +18,28 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import FoggyIcon from '@mui/icons-material/Foggy';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import NotInterestedIcon from '@mui/icons-material/NotInterested';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
+import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { modesForRole } from './sceneModes';
+import { TEXT_FONTS, TEXT_FONT_SIZE_MAX, TEXT_FONT_SIZE_MIN } from './drawingText';
 import './DrawingToolbar.css';
 
 const PRESET_COLORS = ['#000000', '#ff0000', '#00c853', '#2979ff', '#ffea00', '#ffffff'];
+
+const TEXT_BACKDROP_OPTIONS = [
+  { value: 'none', Icon: NotInterestedIcon, labelKey: 'scenes.textBackdrop_none' },
+  { value: 'outline', Icon: BorderColorIcon, labelKey: 'scenes.textBackdrop_outline' },
+  { value: 'box', Icon: FormatColorFillIcon, labelKey: 'scenes.textBackdrop_box' },
+];
+
+// Text-section buttons must not take focus: the open label field saves itself on blur, and a
+// click on B / I / backdrop is styling that very label (see DrawingTextField).
+const keepFocus = (e) => e.preventDefault();
 
 // fogCompat: true → narzędzie widoczne w trybie mgły; false → ukryte w fog mode
 // fogOnly: true → narzędzie widoczne TYLKO w trybie mgły (ukryte w trybie rysowania)
@@ -51,8 +69,10 @@ const DrawingToolbar = ({
   onFogGmOpacityChange,
   drawingColor,
   onDrawingColorChange,
-  drawingFontSize,
-  onDrawingFontSizeChange,
+  showTextControls = false,
+  textStyle,
+  onTextStyleChange,
+  textBackdropColor,
   onUndoDrawing,
   onClearDrawing,
   onUndoFog,
@@ -177,6 +197,7 @@ const DrawingToolbar = ({
                   key={c}
                   className={`drawing-toolbar__color ${drawingColor === c ? 'drawing-toolbar__color--active' : ''}`}
                   style={{ background: c }}
+                  onMouseDown={keepFocus}
                   onClick={() => onDrawingColorChange(c)}
                   title={c}
                 />
@@ -191,18 +212,23 @@ const DrawingToolbar = ({
             </div>
           )}
 
-          {/* Brush size — zawsze widoczny */}
-          <div className="drawing-toolbar__slider-row">
-            <span className="drawing-toolbar__label">{brushSize}px</span>
-            <input
-              type="range"
-              min="1"
-              max="80"
-              value={brushSize}
-              onChange={e => onBrushSizeChange(Number(e.target.value))}
-              className="drawing-toolbar__slider"
-            />
-          </div>
+          {/* Brush size — only for tools that draw strokes. Text has its own size slider in the text
+              section (one px slider at a time), and the select tool draws nothing. Fog has no
+              select tool, so its brush always shows. */}
+          {(isFogMode || (!showTextControls && activeTool !== 'select')) && (
+            <div className="drawing-toolbar__slider-row">
+              <span className="drawing-toolbar__label">{brushSize}px</span>
+              <input
+                type="range"
+                min="1"
+                max="80"
+                value={brushSize}
+                onChange={e => onBrushSizeChange(Number(e.target.value))}
+                className="drawing-toolbar__slider"
+                aria-label={t('scenes.brushSize')}
+              />
+            </div>
+          )}
 
           {/* Fog preview opacity — a GM preference, not a scene setting.
               Changes only what the GM sees; players always get full fog. */}
@@ -222,18 +248,113 @@ const DrawingToolbar = ({
             </div>
           )}
 
-          {/* Font size — tylko dla narzędzia tekst */}
-          {!isFogMode && activeTool === 'text' && (
-            <div className="drawing-toolbar__slider-row">
-              <span className="drawing-toolbar__label">{drawingFontSize}pt</span>
-              <input
-                type="range"
-                min="10"
-                max="72"
-                value={drawingFontSize}
-                onChange={e => onDrawingFontSizeChange(Number(e.target.value))}
-                className="drawing-toolbar__slider"
-              />
+          {/* Text style — for the text tool and for a selected label. The parent decides what the
+              controls act on: the open label, the selected label, or the next new label. */}
+          {!isFogMode && showTextControls && textStyle && (
+            <div className="drawing-toolbar__text">
+              <select
+                className="drawing-toolbar__select"
+                value={textStyle.fontFamily}
+                onChange={e => onTextStyleChange({ fontFamily: e.target.value })}
+                aria-label={t('scenes.textFont')}
+              >
+                {TEXT_FONTS.map(f => (
+                  <option key={f.id} value={f.id} style={{ fontFamily: f.css }}>{t(f.labelKey)}</option>
+                ))}
+              </select>
+
+              <div className="drawing-toolbar__slider-row">
+                <span className="drawing-toolbar__label">{textStyle.fontSize}px</span>
+                <input
+                  type="range"
+                  min={TEXT_FONT_SIZE_MIN}
+                  max={TEXT_FONT_SIZE_MAX}
+                  value={textStyle.fontSize}
+                  onChange={e => onTextStyleChange({ fontSize: Number(e.target.value) })}
+                  className="drawing-toolbar__slider"
+                  aria-label={t('scenes.textSize')}
+                />
+              </div>
+
+              <div className="drawing-toolbar__text-toggles">
+                <button
+                  className={`drawing-toolbar__tool drawing-toolbar__tool--small ${textStyle.bold ? 'drawing-toolbar__tool--active' : ''}`}
+                  onMouseDown={keepFocus}
+                  onClick={() => onTextStyleChange({ bold: !textStyle.bold })}
+                  aria-pressed={!!textStyle.bold}
+                >
+                  <FormatBoldIcon style={{ fontSize: 18 }} />
+                  <span className="drawing-toolbar__tooltip">{t('scenes.textBold')}</span>
+                </button>
+                <button
+                  className={`drawing-toolbar__tool drawing-toolbar__tool--small ${textStyle.italic ? 'drawing-toolbar__tool--active' : ''}`}
+                  onMouseDown={keepFocus}
+                  onClick={() => onTextStyleChange({ italic: !textStyle.italic })}
+                  aria-pressed={!!textStyle.italic}
+                >
+                  <FormatItalicIcon style={{ fontSize: 18 }} />
+                  <span className="drawing-toolbar__tooltip">{t('scenes.textItalic')}</span>
+                </button>
+                <span className="drawing-toolbar__text-divider" />
+                {TEXT_BACKDROP_OPTIONS.map(({ value, Icon, labelKey }) => (
+                  <button
+                    key={value}
+                    className={`drawing-toolbar__tool drawing-toolbar__tool--small ${textStyle.textBackdrop === value ? 'drawing-toolbar__tool--active' : ''}`}
+                    onMouseDown={keepFocus}
+                    onClick={() => onTextStyleChange({ textBackdrop: value })}
+                    aria-pressed={textStyle.textBackdrop === value}
+                  >
+                    <Icon style={{ fontSize: 16 }} />
+                    <span className="drawing-toolbar__tooltip">{t(labelKey)}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Backdrop colour — only once there is a backdrop to colour. textBackdropColor is
+                  the colour actually drawn (the automatic one when backdropColor is ''). */}
+              {textStyle.textBackdrop !== 'none' && (
+                <div className="drawing-toolbar__text-toggles">
+                  <span className="drawing-toolbar__label drawing-toolbar__label--left">{t('scenes.textBackdropColor')}</span>
+                  <input
+                    type="color"
+                    value={textBackdropColor}
+                    onChange={e => onTextStyleChange({ backdropColor: e.target.value })}
+                    className="drawing-toolbar__color-picker"
+                    aria-label={t('scenes.textBackdropColor')}
+                  />
+                  <button
+                    className={`drawing-toolbar__tool drawing-toolbar__tool--small ${!textStyle.backdropColor ? 'drawing-toolbar__tool--active' : ''}`}
+                    onMouseDown={keepFocus}
+                    onClick={() => onTextStyleChange({ backdropColor: '' })}
+                    aria-pressed={!textStyle.backdropColor}
+                  >
+                    <AutoFixHighIcon style={{ fontSize: 16 }} />
+                    <span className="drawing-toolbar__tooltip">{t('scenes.textBackdropColorAuto')}</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="drawing-toolbar__slider-row">
+                <span className="drawing-toolbar__label">{Math.round(textStyle.rotation)}°</span>
+                <input
+                  type="range"
+                  min="-180"
+                  max="180"
+                  value={Math.round(textStyle.rotation)}
+                  onChange={e => onTextStyleChange({ rotation: Number(e.target.value) })}
+                  className="drawing-toolbar__slider"
+                  aria-label={t('scenes.textRotate')}
+                />
+                <button
+                  className="drawing-toolbar__action drawing-toolbar__action--small"
+                  onMouseDown={keepFocus}
+                  onClick={() => onTextStyleChange({ rotation: 0 })}
+                  disabled={!textStyle.rotation}
+                >
+                  <RestartAltIcon style={{ fontSize: 16 }} />
+                  <span className="drawing-toolbar__tooltip">{t('scenes.textRotateReset')}</span>
+                </button>
+              </div>
             </div>
           )}
 

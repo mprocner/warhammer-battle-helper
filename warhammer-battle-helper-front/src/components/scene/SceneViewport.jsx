@@ -11,7 +11,8 @@ import MapTokensLayer from './MapTokensLayer';
 import MarqueeOverlay from './MarqueeOverlay';
 import SceneTokenMultiContextMenu from './SceneTokenMultiContextMenu';
 import ModeSwitchLabel from './ModeSwitchLabel';
-import { useDrawingTextInput } from './useDrawingTextInput';
+import DrawingTextField from './DrawingTextField';
+import DrawingTextRotateHandle from './DrawingTextRotateHandle';
 import { useRightDragPan } from './useRightDragPan';
 import { nextMode, modeLabelKey, isModeCycleClick } from './sceneModes';
 import useMapRuler from '../../hooks/useMapRuler';
@@ -40,8 +41,9 @@ const SceneViewport = ({
   scene, isGM, gameId, editingLayer, onEditingLayerChange, imageEditLayer = 'tokens', gridWidth, gridHeight, children,
   onZoomChange, sendMessage, pointerPings = [], onRemovePing, participants = [],
   brushSize = 10, fogGmOpacity = 0.5, activeTool = 'freehand', fogCoverMode = false, onFogPathComplete,
-  drawingColor, drawingFontSize = 16, onDrawingPathComplete,
+  drawingColor, onDrawingPathComplete,
   selectedPathId = null, onSelectionChange, onDeletePath,
+  textInput, onMoveText, onRotateText,
   controlScheme = 'modern', onBackgroundClick,
   gameSystem = 'warhammer4e',
   tokenPlacementMode = 'snap',
@@ -536,20 +538,11 @@ const SceneViewport = ({
 
   const isDrawingMode = editingLayer === 'drawing';
 
-  // The hook owns when a label is saved or dropped; the styling of the resulting path is
-  // this component's business, so it stays here.
-  const handleTextCommit = useCallback(({ coords, text }) => {
-    onDrawingPathComplete?.({
-      tool: 'text',
-      points: [coords],
-      brushSize,
-      color: drawingColor,
-      fontSize: drawingFontSize,
-      text,
-    });
-  }, [brushSize, drawingColor, drawingFontSize, onDrawingPathComplete]);
-
-  const textInput = useDrawingTextInput({ onCommit: handleTextCommit });
+  // Live angle of the label whose rotate handle is being dragged ({ id, rotation } or null).
+  const [textRotatePreview, setTextRotatePreview] = useState(null);
+  const selectedTextPath = isDrawingMode && activeTool === 'select' && !textInput?.pos
+    ? (displayedScene?.drawingPaths || []).find(p => p.id === selectedPathId && p.tool === 'text')
+    : null;
 
   const scenePings = useMemo(
     () => pointerPings.filter(p => p.sceneId === displayedScene?.id),
@@ -897,9 +890,12 @@ const SceneViewport = ({
                     activeTool={activeTool}
                     brushSize={brushSize}
                     color={drawingColor}
-                    fontSize={drawingFontSize}
                     onPathComplete={onDrawingPathComplete}
-                    onTextPlacement={textInput.placeAt}
+                    onTextPlacement={textInput?.placeAt}
+                    onEditText={textInput?.editPath}
+                    onMoveText={onMoveText}
+                    hiddenPathId={textInput?.editingPath?.id ?? null}
+                    pathOverride={textRotatePreview}
                     selectedPathId={selectedPathId}
                     onSelectionChange={onSelectionChange}
                     onDeletePath={onDeletePath}
@@ -944,31 +940,14 @@ const SceneViewport = ({
                   />
                 )}
 
-                {textInput.pos && (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={textInput.value}
-                    onChange={e => textInput.setValue(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') textInput.commit();
-                      if (e.key === 'Escape') textInput.cancel();
-                    }}
-                    onBlur={textInput.commit}
-                    style={{
-                      position: 'absolute',
-                      left: textInput.pos[0],
-                      top: textInput.pos[1],
-                      zIndex: 30,
-                      background: 'rgb(var(--c-shadow-rgb) / 0.7)',
-                      color: drawingColor,
-                      border: `1px solid ${drawingColor}`,
-                      fontSize: drawingFontSize,
-                      fontFamily: 'sans-serif',
-                      padding: '2px 4px',
-                      outline: 'none',
-                      minWidth: 80,
-                    }}
+                {textInput && <DrawingTextField textInput={textInput} />}
+
+                {selectedTextPath && (
+                  <DrawingTextRotateHandle
+                    path={selectedTextPath}
+                    contentRef={contentRef}
+                    onPreview={setTextRotatePreview}
+                    onCommit={onRotateText}
                   />
                 )}
               </div>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
+import { drawText, drawTextHighlight, ensureTextFont, hitTestText, isTextFontReady } from './drawingText';
 
 /**
  * DrawingLayer — canvas for freehand annotations visible to all participants.
@@ -15,8 +16,12 @@ import useKeyboardShortcut from '../../shortcuts/useKeyboardShortcut';
  *  - line, arrow: [[x0,y0], [x1,y1]]
  *  - rect: [[topLeft], [bottomRight]]
  *  - circle: [[cx,cy], [edgeX,edgeY]] — radius = hypot(edge - center)
- *  - text: [[x,y]]
- *  - select: no drawing — click to select/deselect paths
+ *  - text: [[x,y]] — top-left of the first line and the rotation pivot (see drawingText.js)
+ *  - select: no drawing — click to select/deselect paths; drag a label to move it,
+ *    double-click a label to edit it
+ *
+ * Text tool: a click on a label the user may edit opens it for editing (onEditText); a click
+ * elsewhere places a new one (onTextPlacement).
  *
  * Right button (every tool): deletes the topmost path under the cursor that the user may
  * delete, or abandons the in-progress shape when pressed mid-stroke.
@@ -71,13 +76,8 @@ function hitTestPath(path, px, py, tolerance = 10) {
       const radius = Math.hypot(ex - cx, ey - cy);
       return Math.abs(Math.hypot(px - cx, py - cy) - radius) <= tolerance;
     }
-    case 'text': {
-      if (path.points.length === 0 || !path.text) return false;
-      const [tx, ty] = path.points[0];
-      const charW = (path.fontSize || 16) * 0.6;
-      const charH = (path.fontSize || 16) * 1.2;
-      return px >= tx && px <= tx + path.text.length * charW && py >= ty - charH && py <= ty + 4;
-    }
+    case 'text':
+      return hitTestText(path, px, py);
     default:
       return false;
   }
@@ -95,6 +95,19 @@ export function findDeletablePathAt(paths, px, py, canDelete) {
   return null;
 }
 
+// Topmost text label under (px, py) that the caller may edit — same skip rule as deletion.
+export function findEditableTextAt(paths, px, py, canEdit) {
+  for (let i = paths.length - 1; i >= 0; i--) {
+    const path = paths[i];
+    if (path.tool !== 'text' || !canEdit(path)) continue;
+    if (hitTestPath(path, px, py)) return path;
+  }
+  return null;
+}
+
+// Pointer travel (scene px) before a press on a label becomes a move rather than a click.
+const MOVE_THRESHOLD = 3;
+
 const DrawingLayer = ({
   scene,
   isDrawingMode,
@@ -104,6 +117,10 @@ const DrawingLayer = ({
   fontSize = 16,
   onPathComplete,
   onTextPlacement,
+  onEditText,
+  onMoveText,
+  hiddenPathId = null,
+  pathOverride = null,
   selectedPathId = null,
   onSelectionChange,
   onDeletePath,
@@ -116,7 +133,20 @@ const DrawingLayer = ({
   const currentPathRef = useRef(null);
   const shapeStartRef = useRef(null);
   const isDrawingRef = useRef(false);
+  // A press on a label in the select tool: { id, start, origin, offset } — offset is null until
+  // the pointer has travelled past MOVE_THRESHOLD.
+  const textDragRef = useRef(null);
   const [hoveredPathId, setHoveredPathId] = useState(null);
+  // Bumped when a label font finishes loading, so the canvas repaints with the real face.
+  const [fontTick, setFontTick] = useState(0);
+
+  useEffect(() => {
+    const pending = (scene?.drawingPaths || []).filter(p => p.tool === 'text' && !isTextFontReady(p));
+    if (pending.length === 0) return undefined;
+    let alive = true;
+    Promise.all(pending.map(ensureTextFont)).then(() => { if (alive) setFontTick(t => t + 1); });
+    return () => { alive = false; };
+  }, [scene?.drawingPaths]);
 
   // Leaving drawing mode drops the hover — the canvas stops receiving mouse events,
   // so there would be no later event to clear it.
@@ -199,13 +229,9 @@ const DrawingLayer = ({
         ctx.stroke();
         break;
       }
-      case 'text': {
-        if (path.points.length === 0 || !path.text) break;
-        const [tx, ty] = path.points[0];
-        ctx.font = `${path.fontSize || 16}px sans-serif`;
-        ctx.fillText(path.text, tx, ty);
+      case 'text':
+        drawText(ctx, path);
         break;
-      }
       default:
         break;
     }
@@ -263,18 +289,9 @@ const DrawingLayer = ({
         ctx.stroke();
         break;
       }
-      case 'text': {
-        if (path.points.length === 0 || !path.text) break;
-        const [tx, ty] = path.points[0];
-        ctx.font = `${path.fontSize || 16}px sans-serif`;
-        ctx.lineWidth = 1;
-        ctx.setLineDash(dashed ? [8, 4] : []);
-        ctx.strokeStyle = '#00e5ff';
-        const textWidth = path.text.length * (path.fontSize || 16) * 0.6;
-        const textHeight = (path.fontSize || 16) * 1.2;
-        ctx.strokeRect(tx - 3, ty - textHeight, textWidth + 6, textHeight + 4);
+      case 'text':
+        drawTextHighlight(ctx, path);
         break;
-      }
       default:
         break;
     }
@@ -288,7 +305,20 @@ const DrawingLayer = ({
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const savedPaths = scene?.drawingPaths || [];
+    // Live state layered over the saved paths: a label being dragged, a label being rotated by
+    // its handle (pathOverride), and the label open in the edit field (hidden — the field
+    // stands exactly in its place).
+    const drag = textDragRef.current;
+    const savedPaths = (scene?.drawingPaths || [])
+      .filter(p => p.id !== hiddenPathId)
+      .map((p) => {
+        let out = p;
+        if (pathOverride && p.id === pathOverride.id) out = { ...out, ...pathOverride };
+        if (drag?.offset && p.id === drag.id) {
+          out = { ...out, points: [[drag.origin[0] + drag.offset[0], drag.origin[1] + drag.offset[1]]] };
+        }
+        return out;
+      });
     const allPaths = extraPath ? [...savedPaths, extraPath] : savedPaths;
     allPaths.forEach(path => drawPath(ctx, path));
 
@@ -302,7 +332,7 @@ const DrawingLayer = ({
       const sel = savedPaths.find(p => p.id === selectedPathId);
       if (sel) drawHighlight(ctx, sel);
     }
-  }, [scene?.drawingPaths, drawPath, drawHighlight, selectedPathId, hoveredPathId]);
+  }, [scene?.drawingPaths, drawPath, drawHighlight, selectedPathId, hoveredPathId, hiddenPathId, pathOverride]);
 
   // Re-render when saved paths or selection changes
   useEffect(() => {
@@ -313,7 +343,8 @@ const DrawingLayer = ({
       color,
       fontSize,
     } : null);
-  }, [render, activeTool, brushSize, color, fontSize]);
+    // fontTick: a label font finished loading — repaint with the real face.
+  }, [render, activeTool, brushSize, color, fontSize, fontTick]);
 
   // Delete/Backspace deletes the selected path (shortcut registry: drawing.deleteSelected).
   useKeyboardShortcut('drawing.deleteSelected', () => onDeletePath?.(selectedPathId), {
@@ -353,7 +384,7 @@ const DrawingLayer = ({
     const [px, py] = getSceneCoords(e);
     const id = findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete);
     if (id) onDeletePath?.(id);
-  }, [isDrawingMode, activeTool, getSceneCoords, render, scene?.drawingPaths, canDelete, onDeletePath]);
+  }, [isDrawingMode, getSceneCoords, render, scene?.drawingPaths, canDelete, onDeletePath]);
 
   const handleMouseDown = useCallback((e) => {
     if (!isDrawingMode) return;
@@ -374,13 +405,22 @@ const DrawingLayer = ({
       // rule as the right button: you can only pick a path you may delete, and someone else's
       // path is skipped rather than blocking the one underneath it. A miss deselects.
       const [px, py] = getSceneCoords(e);
-      onSelectionChange?.(findDeletablePathAt(scene?.drawingPaths || [], px, py, canDelete));
+      const paths = scene?.drawingPaths || [];
+      const hitId = findDeletablePathAt(paths, px, py, canDelete);
+      onSelectionChange?.(hitId);
+      // A press on a label may turn into a move; it only becomes one past MOVE_THRESHOLD.
+      const hit = hitId && paths.find(p => p.id === hitId);
+      if (hit?.tool === 'text') {
+        textDragRef.current = { id: hit.id, start: [px, py], origin: hit.points[0], offset: null };
+      }
       return;
     }
 
     if (activeTool === 'text') {
       const coords = getSceneCoords(e);
-      onTextPlacement?.(coords);
+      const label = findEditableTextAt(scene?.drawingPaths || [], coords[0], coords[1], canDelete);
+      if (label) onEditText?.(label);
+      else onTextPlacement?.(coords);
       return;
     }
 
@@ -393,9 +433,21 @@ const DrawingLayer = ({
       shapeStartRef.current = [x, y];
       currentPathRef.current = [[x, y], [x, y]];
     }
-  }, [isDrawingMode, activeTool, getSceneCoords, onTextPlacement, onSelectionChange, scene?.drawingPaths, canDelete]);
+  }, [isDrawingMode, activeTool, getSceneCoords, onTextPlacement, onEditText, onSelectionChange, scene?.drawingPaths, canDelete]);
 
   const handleMouseMove = useCallback((e) => {
+    const drag = textDragRef.current;
+    if (drag) {
+      const [x, y] = getSceneCoords(e);
+      const dx = x - drag.start[0];
+      const dy = y - drag.start[1];
+      if (drag.offset || Math.hypot(dx, dy) > MOVE_THRESHOLD) {
+        drag.offset = [dx, dy];
+        render(null);
+      }
+      return;
+    }
+
     // Hover runs only between strokes — one gesture at a time. Returning `prev`
     // unchanged makes React bail out, so the canvas repaints on enter/leave only,
     // not on every mouse event.
@@ -426,6 +478,17 @@ const DrawingLayer = ({
   }, [isDrawingMode, activeTool, getSceneCoords, render, brushSize, color, fontSize, scene?.drawingPaths, canDelete]);
 
   const handleMouseUp = useCallback((e) => {
+    const drag = textDragRef.current;
+    if (drag) {
+      textDragRef.current = null;
+      if (drag.offset) {
+        onMoveText?.(drag.id, [drag.origin[0] + drag.offset[0], drag.origin[1] + drag.offset[1]]);
+      }
+      // Repaint without the local offset; the caller's optimistic update keeps the label in place.
+      render(null);
+      return;
+    }
+
     // Mirrors handleMouseDown's button guard. Without it, a right-button release during
     // a left-drag can reach here first on browsers/OSes that fire mouseup before
     // contextmenu (event order is unspecified across browsers) — completing and saving
@@ -450,22 +513,31 @@ const DrawingLayer = ({
       });
     }
     render(null);
-  }, [isDrawingMode, activeTool, onPathComplete, brushSize, color, fontSize, render]);
+  }, [isDrawingMode, activeTool, onPathComplete, onMoveText, brushSize, color, fontSize, render]);
 
   const handleMouseLeave = useCallback((e) => {
     setHoveredPathId(null);
-    if (isDrawingRef.current) {
+    if (isDrawingRef.current || textDragRef.current) {
       handleMouseUp(e);
     }
   }, [handleMouseUp]);
 
+  // Select tool: double-click opens a label for editing (the text tool does it on a single click).
+  const handleDoubleClick = useCallback((e) => {
+    if (!isDrawingMode || activeTool !== 'select') return;
+    const [px, py] = getSceneCoords(e);
+    const label = findEditableTextAt(scene?.drawingPaths || [], px, py, canDelete);
+    if (label) onEditText?.(label);
+  }, [isDrawingMode, activeTool, getSceneCoords, scene?.drawingPaths, canDelete, onEditText]);
+
+  const hoveredPath = hoveredPathId && (scene?.drawingPaths || []).find(p => p.id === hoveredPathId);
   const isInteractive = isDrawingMode;
   const cursor = !isInteractive
     ? 'default'
     : activeTool === 'text'
       ? 'text'
       : activeTool === 'select'
-        ? 'default'
+        ? (hoveredPath?.tool === 'text' ? 'move' : 'default')
         : 'crosshair';
 
   return (
@@ -487,6 +559,7 @@ const DrawingLayer = ({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
     />
   );

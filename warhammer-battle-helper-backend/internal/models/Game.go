@@ -404,6 +404,16 @@ type DrawingPath struct {
 	Color     string             `bson:"color"         json:"color"`    // hex, e.g. "#ff0000"
 	Text      string             `bson:"text"          json:"text"`     // only for tool=="text"
 	FontSize  float64            `bson:"fontSize"      json:"fontSize"` // only for tool=="text"
+	// Text styling (tool=="text" only). Points[0] is the top-left corner of the first line and
+	// the rotation pivot; rotation is in degrees, normalized to (-180, 180].
+	FontFamily   string  `bson:"fontFamily"   json:"fontFamily"` // sans|serif|display|gothic|mono
+	Bold         bool    `bson:"bold"         json:"bold"`
+	Italic       bool    `bson:"italic"       json:"italic"`
+	Rotation     float64 `bson:"rotation"     json:"rotation"`
+	TextBackdrop string  `bson:"textBackdrop" json:"textBackdrop"` // none|outline|box
+	// BackdropColor colours the outline/box; "" means automatic (black or white, whichever
+	// contrasts with the text colour).
+	BackdropColor string `bson:"backdropColor" json:"backdropColor"`
 }
 
 // Scene represents a battle scene with its own grid and characters
@@ -587,12 +597,33 @@ type AddFogPathRequest struct {
 
 // AddDrawingPathRequest is the request body for adding a drawing path
 type AddDrawingPathRequest struct {
-	Tool      string       `json:"tool" binding:"required"`
-	Points    [][2]float64 `json:"points" binding:"required"`
-	BrushSize float64      `json:"brushSize"`
-	Color     string       `json:"color"`
-	Text      string       `json:"text"`
-	FontSize  float64      `json:"fontSize"`
+	Tool          string       `json:"tool" binding:"required"`
+	Points        [][2]float64 `json:"points" binding:"required"`
+	BrushSize     float64      `json:"brushSize"`
+	Color         string       `json:"color"`
+	Text          string       `json:"text"`
+	FontSize      float64      `json:"fontSize"`
+	FontFamily    string       `json:"fontFamily"`
+	Bold          bool         `json:"bold"`
+	Italic        bool         `json:"italic"`
+	Rotation      float64      `json:"rotation"`
+	TextBackdrop  string       `json:"textBackdrop"`
+	BackdropColor string       `json:"backdropColor"`
+}
+
+// UpdateDrawingPathRequest is a partial update of a text drawing path. Absent fields keep their
+// stored value.
+type UpdateDrawingPathRequest struct {
+	Text          *string       `json:"text,omitempty"`
+	Points        *[][2]float64 `json:"points,omitempty"`
+	Color         *string       `json:"color,omitempty"`
+	FontSize      *float64      `json:"fontSize,omitempty"`
+	FontFamily    *string       `json:"fontFamily,omitempty"`
+	Bold          *bool         `json:"bold,omitempty"`
+	Italic        *bool         `json:"italic,omitempty"`
+	Rotation      *float64      `json:"rotation,omitempty"`
+	TextBackdrop  *string       `json:"textBackdrop,omitempty"`
+	BackdropColor *string       `json:"backdropColor,omitempty"`
 }
 
 // UpdateSceneImageRequest is the request body for updating a scene image

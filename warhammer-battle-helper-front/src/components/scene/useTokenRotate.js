@@ -8,7 +8,10 @@ import { snapAngle } from '../../utils/angleSnap';
 //
 // The caller owns the angle (rotation/setRotation) so it can reconcile with server state; the hook
 // only drives it during a drag and reports the final value once, on mouseup.
-export function useTokenRotate({ containerRef, rotation, setRotation, enabled = true, onCommit }) {
+//
+// getPivot (optional) replaces the container-centre pivot with any client-space point — drawing
+// labels rotate around their anchor corner, not their centre.
+export function useTokenRotate({ containerRef, getPivot, rotation, setRotation, enabled = true, onCommit }) {
   const [isRotating, setIsRotating] = useState(false);
   const startRef = useRef(null);
   // Movement-threshold guard (same shape as the hosts' drag `movedRef`): a rotate-handle press that
@@ -48,12 +51,16 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
     Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
 
   const handleRotateStart = useCallback((e) => {
-    if (!enabled || e.button !== 0 || !containerRef.current) return;
+    if (!enabled || e.button !== 0) return;
+    let pivot = getPivot?.();
+    if (!pivot && containerRef?.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      pivot = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+    if (!pivot) return;
     e.preventDefault();
     e.stopPropagation(); // never let the host start a drag, or the viewport start a marquee
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const { x: centerX, y: centerY } = pivot;
     startRef.current = {
       centerX,
       centerY,
@@ -64,7 +71,7 @@ export function useTokenRotate({ containerRef, rotation, setRotation, enabled = 
     };
     movedRef.current = false;
     setIsRotating(true);
-  }, [enabled, containerRef, rotation]);
+  }, [enabled, containerRef, getPivot, rotation]);
 
   useEffect(() => {
     if (!isRotating) return;

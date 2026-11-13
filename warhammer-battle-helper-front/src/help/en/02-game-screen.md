@@ -45,6 +45,23 @@ Drawing is not limited to it.
 **Ping.** Hold the left button still on an empty spot of the map for about half a second.
 Everyone sees a marker there.
 
+### Text on the map {#map-text}
+
+The **Text** tool in drawing mode: click an empty spot and type. **Enter** saves, **Shift+Enter**
+adds a line, **Esc** discards the changes. Clicking elsewhere on the map saves the text too.
+
+- **Editing.** Click your own text with the Text tool (the GM: any text), or double-click it with
+  the Select tool. Clearing all of it and saving deletes the text.
+- **Style.** Below the colour palette there is a text section: font, size, bold, italic, backdrop
+  (none, outline or a box behind the text, handy on a dark map) and rotation. The outline and box
+  colour is automatic by default (black or white, contrasting with the text); pick your own, or
+  press the wand to go back to automatic. While the field is
+  open you style that text. With the Select tool and a text selected, you style that one.
+  Otherwise you set the style of the next text.
+- **Moving and rotating.** Drag a text with the Select tool. The arrow circle past its end rotates
+  it around the start of the first line (snapping every 45°).
+- **Undo** removes the most recently added drawing; it does not undo a text edit.
+
 ## Keyboard shortcuts {#keyboard-shortcuts}
 
 In the game, press `?` or pick **Keyboard shortcuts** from the question-mark menu in the panel

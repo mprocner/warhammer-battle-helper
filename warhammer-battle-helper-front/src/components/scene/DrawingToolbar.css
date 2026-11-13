@@ -329,3 +329,57 @@
   background: var(--c-accent-bg);
   opacity: 0.6;
 }
+
+/* ── Text style (text tool / selected label) ── */
+.drawing-toolbar__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--c-border-light);
+}
+
+.drawing-toolbar__select {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-border);
+  background: var(--c-input-bg);
+  color: var(--c-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.drawing-toolbar__select:focus {
+  outline: none;
+  border-color: var(--c-border-strong);
+}
+
+.drawing-toolbar__text-toggles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawing-toolbar__tool.drawing-toolbar__tool--small {
+  width: 32px;
+  height: 30px;
+}
+
+.drawing-toolbar__action.drawing-toolbar__action--small {
+  width: 30px;
+  height: 26px;
+}
+
+.drawing-toolbar__text-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--c-border-light);
+}
+
+.drawing-toolbar__label.drawing-toolbar__label--left {
+  flex: 1;
+  text-align: left;
+}

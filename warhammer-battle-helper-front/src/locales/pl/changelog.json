@@ -25,6 +25,7 @@
         "grid": "Siatka z własnym rozmiarem pola, jednostkami odległości i przyciąganiem.",
         "gridColor": "Każda scena może mieć własny kolor siatki, żeby siatka była widoczna na każdej mapie.",
         "tools": "Zaznaczanie, miarka i rysowanie dla wszystkich, a dla mistrza gry mgła wojny.",
+        "drawingText": "Napisy na mapie: edycja po kliknięciu, przesuwanie, krój pisma, rozmiar, pogrubienie, kursywa, obrys lub tło w wybranym kolorze, obrót i wiele linii.",
         "tokens": "Tokeny postaci i obrazków: przesuwanie, zaznaczanie ramką, obrót, skalowanie i duplikowanie.",
         "clipboard": "Ctrl+C / Ctrl+V dla mistrza gry: kopiowanie zaznaczonych obrazów, także kilku naraz, i wklejanie pod kursorem, także na innej scenie.",
         "overlays": "Zdrowie, sloty stanów i paski bezpośrednio na tokenie oraz tokeny ukryte przed graczami.",

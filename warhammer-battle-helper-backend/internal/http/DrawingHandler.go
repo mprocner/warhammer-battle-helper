@@ -101,6 +101,39 @@ func (h *DrawingHandler) DeleteDrawingPath(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Drawing path deleted"})
 }
 
+// UpdateDrawingPath edits a text drawing path (owner or GM only)
+func (h *DrawingHandler) UpdateDrawingPath(c *gin.Context) {
+	sceneID, err := primitive.ObjectIDFromHex(c.Param("sceneId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid scene ID"})
+		return
+	}
+	pathID, err := primitive.ObjectIDFromHex(c.Param("pathId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid path ID"})
+		return
+	}
+
+	var req models.UpdateDrawingPathRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	if err := h.DrawingService.UpdateDrawingPath(c.Param("id"), sceneID, pathID, userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Drawing path updated"})
+}
+
 // ClearDrawingPaths removes all drawing paths from a scene (GM only)
 func (h *DrawingHandler) ClearDrawingPaths(c *gin.Context) {
 	gameID := c.Param("id")

@@ -93,6 +93,31 @@ wygrywa wybór ręczny.
 **Współrzędne** mgły i rysunków są zapisywane w przestrzeni sceny, nie w pikselach ekranu, więc
 działają przy każdym zoomie.
 
+**Napisy** (PLAYRPG-251/252) to `DrawingPath` z `tool: 'text'` i jedyny kształt, który można
+edytować: `PATCH .../drawing/path/:pathId` (autor albo MG, inne narzędzia → 400) scala pola,
+waliduje całość w `normalizeTextPath` (to samo przy dodawaniu: krój z listy `sans|serif|display|
+gothic|mono`, rozmiar 8–120, ≤ 500 znaków i 20 linii, rotacja do (−180, 180], `backdropColor`
+`#rrggbb` albo `""` = automatyczny kontrast; w PATCH `""` to wartość, nie „brak pola”) i rozsyła
+`DRAWING_PATH_UPDATED {sceneId, path}`. `points[0]` to **lewy-górny róg pierwszej linii** i oś
+obrotu. Geometria jest w jednym miejscu, `drawingText.js`: canvas (`drawText`), hit-test
+(odwrotna rotacja do układu napisu), pole edycji (`DrawingTextField`) i uchwyt obrotu liczą
+pudełko tą samą `measureTextBox`, więc po zapisie tekst nie podskakuje.
+
+- Sesję pola edycji (`useDrawingTextInput`) trzyma `DndContext`, bo toolbar stylizuje otwarte
+  pole, a toolbar i viewport to rodzeństwo. Cel kontrolek tekstu: otwarte pole (edytowany napis
+  — tylko on; nowy — także domyślne), zaznaczony napis (PATCH), albo domyślne.
+- Pole zapisuje się na `blur`, **chyba że** fokus idzie do `.drawing-toolbar` (select kroju,
+  suwaki). Przyciski toolbara mają `preventDefault` na `mousedown`, więc fokusu nie biorą.
+  Nowy przycisk w sekcji tekstu bez tego zamknie edytowany napis.
+- `commit` hooka ma stałą tożsamość (`onCommit` przez ref): `DndContext` zapisuje pole efektem
+  na zmianę narzędzia, a `commit` zmieniający się z `onCommit` zamykałby pole zaraz po otwarciu.
+- Edycje idą przez `handleDrawingPathUpdate` w `GameSession`: optymistyczny merge od razu,
+  PATCH z debounce 250 ms ze scalonym patchem. „Cofnij” nadal usuwa ostatnio dodaną ścieżkę;
+  edycje nie są w historii.
+- Canvas nie czeka na czcionki: `ensureTextFont` leniwie importuje Grenze i warianty B/I Roboto,
+  czeka na `document.fonts.load` i `DrawingLayer` przerysowuje (`fontTick`). Bez tego napis
+  zostaje w czcionce zastępczej do następnej zmiany.
+
 **Kolejka tur (PLAYRPG-1).** Każda scena może mieć walkę (`Scene.Combat`, `json:"-"`). Wpisy:
 postać (`gameCharacter`, `Character.ID` — na scenie czy nie; jeden wpis na postać, aktywna
 podświetla wszystkie swoje tokeny, menu tokenu operuje na jej wpisie), obrazek z warstwy tokenów

@@ -65,14 +65,25 @@ func (s *DrawingService) AddDrawingPath(gameID string, sceneID primitive.ObjectI
 	}
 
 	path := models.DrawingPath{
-		ID:        primitive.NewObjectID(),
-		UserID:    userID,
-		Tool:      req.Tool,
-		Points:    req.Points,
-		BrushSize: brushSize,
-		Color:     color,
-		Text:      req.Text,
-		FontSize:  fontSize,
+		ID:            primitive.NewObjectID(),
+		UserID:        userID,
+		Tool:          req.Tool,
+		Points:        req.Points,
+		BrushSize:     brushSize,
+		Color:         color,
+		Text:          req.Text,
+		FontSize:      fontSize,
+		FontFamily:    req.FontFamily,
+		Bold:          req.Bold,
+		Italic:        req.Italic,
+		Rotation:      req.Rotation,
+		TextBackdrop:  req.TextBackdrop,
+		BackdropColor: req.BackdropColor,
+	}
+	if path.Tool == "text" {
+		if err := normalizeTextPath(&path); err != nil {
+			return err
+		}
 	}
 
 	if err := s.drawingRepo.AddDrawingPath(gameID, sceneID, path); err != nil {
@@ -199,6 +210,56 @@ func (s *DrawingService) ClearDrawingPaths(gameID string, sceneID primitive.Obje
 
 	s.hub.BroadcastToGame(gameID, websocket.EventDrawingCleared, map[string]interface{}{
 		"sceneId": sceneID.Hex(),
+	})
+	return nil
+}
+
+// UpdateDrawingPath edits a text path in place (content, position, style). Only the path owner or
+// the GM can edit it; other shapes are immutable and stay delete-only.
+func (s *DrawingService) UpdateDrawingPath(gameID string, sceneID primitive.ObjectID, pathID primitive.ObjectID, userID primitive.ObjectID, req models.UpdateDrawingPathRequest) error {
+	game, err := s.drawingRepo.GetGame(gameID)
+	if err != nil {
+		return err
+	}
+	if !CanAccessGame(game, userID) {
+		return fmt.Errorf("user is not a participant of this game")
+	}
+
+	var stored *models.DrawingPath
+	for i := range game.Scenes {
+		if game.Scenes[i].ID != sceneID {
+			continue
+		}
+		for j := range game.Scenes[i].DrawingPaths {
+			if game.Scenes[i].DrawingPaths[j].ID == pathID {
+				stored = &game.Scenes[i].DrawingPaths[j]
+				break
+			}
+		}
+		break
+	}
+	if stored == nil {
+		return fmt.Errorf("drawing path not found")
+	}
+	if game.GameMasterID != userID && stored.UserID != userID {
+		return fmt.Errorf("permission denied: only the path owner or GM can edit it")
+	}
+	if stored.Tool != "text" {
+		return fmt.Errorf("only text paths can be edited")
+	}
+
+	updated := applyDrawingPathUpdate(*stored, req)
+	if err := normalizeTextPath(&updated); err != nil {
+		return err
+	}
+
+	if err := s.drawingRepo.UpdateDrawingPath(gameID, sceneID, updated); err != nil {
+		return err
+	}
+
+	s.hub.BroadcastToGame(gameID, websocket.EventDrawingPathUpdated, map[string]interface{}{
+		"sceneId": sceneID.Hex(),
+		"path":    updated,
 	})
 	return nil
 }
