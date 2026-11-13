@@ -91,3 +91,12 @@ test('isCharacterTokenActive: every token of the active character', () => {
   expect(isCharacterTokenActive(combat, 'c1')).toBe(false); // an image is active
   expect(isCharacterTokenActive(null, 'c1')).toBe(false);
 });
+
+test('addGroups: an image token is offered under its label, the file name only without one', () => {
+  const labelled = { images: [
+    { id: 'i1', layer: 'tokens', fileName: 'wolf.png', label: 'Alpha wolf' },
+    { id: 'i2', layer: 'tokens', fileName: 'bear.png', label: '' },
+  ] };
+  const tokens = addGroups([], labelled, null, 'en').find(g => g.id === 'tokens');
+  expect(tokens.items.map(i => i.name)).toEqual(['Alpha wolf', 'bear']);
+});

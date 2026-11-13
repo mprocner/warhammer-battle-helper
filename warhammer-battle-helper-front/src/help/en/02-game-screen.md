@@ -84,7 +84,8 @@ group:
   one entry: when it is active, all its tokens on the scene light up.
 - **NPCs** — non-player characters from the left panel, also one entry per character. The entry
   does not hide along with its token — hide a hidden NPC with the eye next to the entry.
-- **Tokens** — tokens-layer images on the map.
+- **Tokens** — tokens-layer images on the map, under their label (without one, under the file
+  name). An entry keeps the name it was added with; rename it in the Combat window.
 - **Manual entry** — just a name and initiative.
 
 - Order follows initiative (highest first); drag a row to break a tie.

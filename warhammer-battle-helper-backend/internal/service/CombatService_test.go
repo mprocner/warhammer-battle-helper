@@ -81,6 +81,11 @@ func TestBuildEntryFromSource(t *testing.T) {
 	if err != nil || e.Name != "dire-wolf" || !e.Hidden || e.Initiative != 12 {
 		t.Fatalf("image: name from the file without extension, a hidden token starts hidden: %+v %v", e, err)
 	}
+	labelled := models.SceneImage{ID: primitive.NewObjectID(), FileName: "wolf.png", Layer: "tokens", Label: "Alpha wolf"}
+	scene.Images = append(scene.Images, labelled)
+	if e, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "image", SourceID: labelled.ID.Hex()}); err != nil || e.Name != "Alpha wolf" {
+		t.Fatalf("image with a label: the label names the entry, not the file: %+v %v", e, err)
+	}
 	if _, err = buildEntry(scene, nil, models.CombatSourceRequest{Kind: "image", SourceID: primitive.NewObjectID().Hex()}); !errors.Is(err, ErrCombatInvalid) {
 		t.Fatalf("image from another scene: %v", err)
 	}

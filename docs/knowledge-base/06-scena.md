@@ -195,7 +195,10 @@ bez wartości, ukryta tura → `LastVisibleActiveID`). Zapis wyłącznie przez `
   każdym odczycie i zapisie. Nowa ścieżka usuwania tokenu nie musi wiedzieć o walce, ale klient musi
   refetchować walkę na jej evencie (`onSourcesChanged` w `GameSession`).
 - Zmiany walki ukrytej przed graczami idą eventem tylko do MG — sam event zdradzałby jej istnienie.
-- Do walki trafiają tylko obrazki z warstwy `tokens` — `buildEntry` odrzuca inne.
+- Do walki trafiają tylko obrazki z warstwy `tokens` — `buildEntry` odrzuca inne. Wpis obrazka
+  bierze nazwę z etykiety tokenu (`SceneImage.Label`), a bez niej z nazwy pliku bez rozszerzenia —
+  tak samo w `buildEntry` (Go) i w `addGroups` (lista kandydatów, JS). Nazwa jest zapisywana przy
+  dodaniu, więc późniejsza zmiana etykiety nie zmienia istniejącego wpisu.
 - ID rozstawienia (`GameCharacter.ID`) nadaje repozytorium (`AddSceneCharacter`, `AddCharacter`),
   dlatego zwraca zapisany obiekt i to on idzie w evencie. Broadcast własnej kopii z serwisu
   wysyłał `"id": "000000000000000000000000"` (`json:"id"` bez `omitempty`), a klient dopisuje

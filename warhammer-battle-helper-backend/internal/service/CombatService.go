@@ -246,7 +246,11 @@ func buildEntry(scene *models.Scene, chars map[primitive.ObjectID]*models.Charac
 					return e, ErrCombatInvalid
 				}
 				e.SourceID, e.Hidden = id, e.Hidden || img.Hidden
-				e.Name = strings.TrimSuffix(img.FileName, filepath.Ext(img.FileName))
+				// The token's label names it, as it does on the map; the file name is the fallback.
+				e.Name = img.Label
+				if e.Name == "" {
+					e.Name = strings.TrimSuffix(img.FileName, filepath.Ext(img.FileName))
+				}
 				if req.Name != "" {
 					if e.Name, err = cleanName(req.Name); err != nil {
 						return e, err

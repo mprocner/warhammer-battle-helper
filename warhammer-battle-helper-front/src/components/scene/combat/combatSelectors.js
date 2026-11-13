@@ -77,7 +77,9 @@ export const addGroups = (characters, scene, combat, locale) => {
       id: 'tokens',
       items: (scene?.images || [])
         .filter(i => i.layer === 'tokens' && !isInCombat(combat, 'image', i.id))
-        .map(i => ({ kind: 'image', sourceId: i.id, name: stripExtension(i.fileName), avatar: i.fileUrl })),
+        // Named by the token's label, as on the map; the file name is the fallback (the server
+        // names the entry the same way — CombatService.buildEntry).
+        .map(i => ({ kind: 'image', sourceId: i.id, name: i.label || stripExtension(i.fileName), avatar: i.fileUrl })),
     },
   ];
   return groups

@@ -400,8 +400,11 @@
 }
 
 /* Management row: three quieter, equally tall outlined buttons; widths follow their labels. */
+/* Equal halves, like the turn buttons above: a 0 basis ignores the label length ("Hide" vs
+   "End combat"), and min-width: 0 lets a long label shrink instead of widening its half. */
 .combat-window__btn--tool {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
   font-size: 11px;
   padding: 6px 8px;
   border-color: var(--c-border);

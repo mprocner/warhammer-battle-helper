@@ -82,7 +82,8 @@ z niej już walczą. Kliknięcie dodaje jedną pozycję, **Wszyscy** przy nagł�
   gdy jest aktywna, podświetlają się wszystkie jej tokeny na scenie.
 - **BN** — bohaterowie niezależni z lewego panelu, tak samo jeden wpis na postać. Wpis nie ukrywa
   się sam razem z tokenem — ukrytego BN ukryj okiem przy wpisie.
-- **Tokeny** — obrazki z warstwy tokenów stojące na mapie.
+- **Tokeny** — obrazki z warstwy tokenów stojące na mapie, pod swoją etykietą (bez etykiety —
+  pod nazwą pliku). Wpis zachowuje nazwę z chwili dodania; zmienisz ją w oknie „Walka”.
 - **Wpis ręczny** — sama nazwa i inicjatywa.
 
 - Kolejność wynika z inicjatywy (malejąco); przeciągnij wiersz, żeby rozstrzygnąć remis.
