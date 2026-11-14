@@ -122,6 +122,20 @@ Dotyczy też merge'a cudzego brancha: brakujące wpisy dopisz przed mergem. Pomi
 czysto techniczne (refaktor, testy) — te ruszają bazę wiedzy wyłącznie, gdy zmieniają opisany
 mechanizm albo pułapkę.
 
+### Ukryte systemy — WFRP i CoC nigdzie publicznie
+
+Warhammer Fantasy Roleplay 4e oraz Call of Cthulhu (7e, Dark Ages) zostają w kodzie, ale są
+**ukryte** — używane wyłącznie prywatnie, za bramką dostępu do systemów (PLAYRPG-243). Powód:
+licencje (cudze IP). Publicznie istnieją tylko **SRD 5.2** (CC-BY) i **własne szablony**.
+
+- Nigdy nie wymieniaj ich nazw ani nie opisuj ich mechanik (cechy WS/BS, Fortune, Sanity itp.)
+  w treściach widocznych dla użytkownika: landing, FAQ, changelog (`changelog.json`), przewodnik
+  `/help` (`src/help/`), meta/OG, zrzuty ekranu, opisy funkcji.
+- Przykłady w changelogu i pomocy buduj na SRD albo na własnym szablonie.
+- Zrzuty ekranu do materiałów publicznych rób w grze na SRD lub własnym szablonie.
+- Nazwy w UI za bramką (`gameSystems.*` w `translation.json`, sam kod systemów) zostają — widzi je
+  tylko konto z dostępem.
+
 ### Kluczowe konwencje
 - **Komentarze w kodzie ZAWSZE po angielsku** — backend i frontend, bez wyjątków. Dotyczy nowych
   i modyfikowanych komentarzy; istniejących polskich nie tłumaczymy hurtem, tylko przy okazji
