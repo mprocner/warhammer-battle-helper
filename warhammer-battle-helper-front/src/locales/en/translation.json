@@ -493,7 +493,7 @@
     "noMatchingGamesQuery": "No games match “{{query}}”",
     "noMatchingGamesRole": "No games in this view",
     "clearFilters": "Clear filters",
-    "accessRevoked": "You no longer have access to this game.",
+    "accessRevoked": "You don't have access to this game.",
     "kickedFromGame": "The Game Master removed you from this game.",
     "connectionLost": "Connection lost. Reconnecting…",
     "gameNotFound": "This game no longer exists.",

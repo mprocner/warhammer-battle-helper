@@ -174,6 +174,34 @@ describe('gtag transport', () => {
     expect(sanitizePath('/joined/x')).toBe('/joined/x');
   });
 
+  // PLAYRPG-338: a game session lives at /games/<id>. The id is not a secret, but every game would
+  // be its own page in the reports — GA gets one placeholder path for all sessions.
+  it('sanitizePath collapses a game session path to /games/:id', () => {
+    const { sanitizePath } = loadModule();
+    expect(sanitizePath('/games/6731a2f0c9e4b1d2a3f45678')).toBe('/games/:id');
+    expect(sanitizePath('/games/6731a2f0c9e4b1d2a3f45678/extra')).toBe('/games/:id');
+    expect(sanitizePath('/games')).toBe('/games');
+    expect(sanitizePath('/games/')).toBe('/games/');
+    expect(sanitizePath('/gamesx/1')).toBe('/gamesx/1');
+  });
+
+  it('never sends the game id in page_location, page_referrer or page_path', () => {
+    window.history.replaceState(null, '', '/games/6731a2f0c9e4b1d2a3f45678');
+    Object.defineProperty(document, 'referrer', {
+      value: 'https://playrpg.net/games/aaaabbbbccccddddeeeeffff',
+      configurable: true,
+    });
+    const gtag = loadModule();
+    gtag.enable();
+    gtag.trackEvent('page_view', { page_path: '/games/6731a2f0c9e4b1d2a3f45678' });
+
+    const eventCall = dataLayerCalls().find((args) => args[0] === 'event' && args[1] === 'page_view');
+    expect(eventCall[2].page_location).toBe(`${window.location.origin}/games/:id`);
+    expect(eventCall[2].page_referrer).toBe('https://playrpg.net/games/:id');
+    expect(eventCall[2].page_path).toBe('/games/:id');
+    expect(JSON.stringify(dataLayerCalls())).not.toMatch(/6731a2f0c9e4b1d2a3f45678|aaaabbbbccccddddeeeeffff/);
+  });
+
   it('caller nie może nadpisać sanitized page_location/page_referrer przez własne params', () => {
     const gtag = loadModule();
     gtag.enable();

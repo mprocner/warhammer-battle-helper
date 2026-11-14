@@ -15,10 +15,29 @@ chipy „Wszystkie / Prowadzę / Gram” pojawiają się tylko u kogoś, kto ma 
 odrzuciliśmy: pole pojawiające się znienacka było nieintuicyjne i znikało z wpisaną frazą. Szukanie obejmuje nazwę gry i etykietę systemu z karty
 (`systemLabel`), przez `findMatch` z `systemOptions.js` (bez wielkości liter i polskich znaków).
 Wszystko we froncie (`lobbyFilter.js`), backend bez zmian. Stan siedzi w URL (`?role=gm&q=…`,
-`useLobbyFilter`, `replace: true`), bo gra otwiera się dziś pod tym samym `/games` i lobby się
-odmontowuje — URL przeżywa wejście do gry i F5. **Pułapka:** `role` przy ukrytych chipach jest
+`useLobbyFilter`, `replace: true`), bo wejście do gry odmontowuje lobby — URL przeżywa wejście
+do gry, powrót (wpis historii lobby razem z query stringiem, patrz niżej) i F5. **Pułapka:** `role` przy ukrytych chipach jest
 ignorowane (stare `?role=player` u kogoś, kto przestał grać, nie chowa gier). Fraza nie trafia
 do GA, bo `gtag.js` obcina query string.
+
+**Adres gry** (PLAYRPG-338). Lobby to `/games`, sesja gry to `/games/:gameId` — osobne route'y
+w `App.js`, `GameSessionRoute` montuje `GameSession` z `key={gameId}` (przejście z gry A prosto
+do B przemontowuje sesję: stan, socket, log). Wejście i wyjście tylko przez `useGameRoute`
+(`src/hooks/useGameRoute.js`): `openGame` robi push z `state.fromLobby` (gdy wołane z `/games`),
+`leaveGame` robi `navigate(-1)`, gdy gra przyszła z lobby — wraca wpis lobby z jego filtrem,
+a Wstecz nie otwiera gry ponownie — albo `navigate('/games', { replace: true })`, gdy grę
+otwarto z linku / zakładki i za nią nie ma lobby. Wszystkie wejścia (lista, nowa gra, invite)
+idą przez `handleJoinGame`, wszystkie wyjścia (powrót do listy, `onSessionEnded`: kick, usunięta
+gra, 403/404) przez `leaveGame`. `BrowserRouter` jest w `index.js`, nad `App`, bo `App` sam
+nawiguje. Gość na `/games/:id` trafia na `/login` z `state.from`, a `/login` po zalogowaniu wraca
+tam (`returnPathAfterLogin` w `ProtectedRoute.jsx`, tylko ścieżki zaczynające się od `/`).
+Nie-uczestnik dostaje z `GameParticipantMiddleware` 403 i ląduje w lobby z `game.accessRevoked`
+(„Nie masz dostępu do tej gry” — jeden tekst dla wyrzuconego i dla obcego z linkiem; 404 dla
+nie-uczestnika odrzucone, bo backend i tak nie odróżni „nigdy nie był” od „wyrzucony”, a 404
+dałoby wyrzuconemu fałszywe „gra nie istnieje”). F5 na `/games/:id` w produkcji działa dzięki
+`try_files … /index.html` w `nginx.conf`. **Pułapka:** sesja może skończyć się dwa razy w jednym
+ticku (`GAME_DELETED` + 404 z refetchu) — `leaveGame` pamięta `location.key` wpisu, który już
+opuścił, bez tego drugi `navigate(-1)` wyszedłby za lobby.
 
 **Szablon w grze to kopia.** Gra własnego systemu osadza kopię szablonu
 (`Game.customSystemTemplate`). Zmiany w kreatorze nie trafiają do gry same: MG klika „Synchronizuj” na karcie gry
@@ -41,7 +60,7 @@ broadcast `PARTICIPANT_JOINED`.
 Front: `/join/:token` (`src/invite/JoinGame.jsx`) odkłada token do `localStorage`
 (`pendingInvite.js`) i od razu przekierowuje: zalogowanego na `/games`, gościa na `/login`
 (z podpowiedzią `PendingInviteHint` także na `/register`). `useInviteJoin` w `App.js` zużywa
-token przy każdym zalogowaniu i otwiera grę przez `handleJoinGame`, jak lobby. Martwy link
+token przy każdym zalogowaniu i otwiera grę przez `handleJoinGame` (`/games/:gameId`), jak lobby. Martwy link
 kończy się powiadomieniem w lobby (`game.inviteLinkInvalid`). Ścieżka „nie mam konta”
 (rejestracja → e-mail → logowanie) działa, bo `localStorage` jest wspólny dla kart tej samej
 przeglądarki. Na innym urządzeniu token przepada i trzeba otworzyć link jeszcze raz.

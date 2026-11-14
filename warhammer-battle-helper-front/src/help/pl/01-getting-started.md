@@ -33,6 +33,11 @@ albo systemu, wielkość liter i polskie znaki nie mają znaczenia. Wybór zosta
 strony, więc po wyjściu z gry i po odświeżeniu lista jest dalej zawężona. Gdy nic nie pasuje, **Wyczyść filtry**
 pokazuje znowu wszystko.
 
+Każda gra ma własny adres. Odświeżenie strony zostawia cię w grze, grę możesz dodać do zakładek,
+a przycisk **Wstecz** w przeglądarce wraca z gry do listy. Link do gry otwarty bez zalogowania
+po zalogowaniu prowadzi prosto do niej. Gra, do której nie należysz, wraca na listę
+z komunikatem o braku dostępu.
+
 ## Tworzenie gry (dla mistrza gry) {#creating-a-game-game-masters}
 
 1. Kliknij **Utwórz Nową Grę**.

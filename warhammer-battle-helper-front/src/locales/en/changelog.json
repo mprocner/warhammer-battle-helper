@@ -64,6 +64,7 @@
       "games": {
         "lobby": "A game list; create a game for the system of your choice, filtered by language.",
         "lobbyFilter": "Search the game list by game or system name; if you both run and play games, show only one kind with a click.",
+        "gameLink": "Every game has its own address: reloading the page keeps you in the game, you can bookmark a game, and the browser's Back button returns to the game list with your filter. A game link opened while logged out takes you straight to the game after you log in.",
         "players": "Invite players, remove them or leave a game.",
         "inviteLink": "Invite link: the GM copies one link and pastes it on Discord; whoever opens it joins the game, even if they still have to register first.",
         "participant": "Your avatar and name in each game: from your account, from your character or your own.",

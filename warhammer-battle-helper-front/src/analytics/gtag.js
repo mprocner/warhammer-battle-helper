@@ -93,7 +93,14 @@ export const disable = () => {
 // The game invite link (PLAYRPG-303) carries its secret in the PATH, /join/<token> — anyone who
 // reads it can join the game. Every path we send collapses that to /join.
 const INVITE_PATH = /^\/join(\/.*)?$/;
-export const sanitizePath = (pathname) => (INVITE_PATH.test(pathname) ? '/join' : pathname);
+// A game session lives at /games/<id> (PLAYRPG-338). The id is no secret, but sent as-is it would
+// make every game its own page in the reports, so all sessions share one placeholder path.
+const GAME_SESSION_PATH = /^\/games\/[^/]+(\/.*)?$/;
+export const sanitizePath = (pathname) => {
+    if (INVITE_PATH.test(pathname)) return '/join';
+    if (GAME_SESSION_PATH.test(pathname)) return '/games/:id';
+    return pathname;
+};
 
 const sanitizedLocation = () => `${window.location.origin}${sanitizePath(window.location.pathname)}`;
 

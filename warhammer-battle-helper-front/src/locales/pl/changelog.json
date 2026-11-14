@@ -64,6 +64,7 @@
       "games": {
         "lobby": "Lista gier; tworzenie gry w wybranym systemie, z filtrem języka.",
         "lobbyFilter": "Wyszukiwarka gier po nazwie gry lub systemu, a gdy i prowadzisz, i grasz — jednym kliknięciem pokażesz tylko jedne z nich.",
+        "gameLink": "Każda gra ma własny adres: odświeżenie strony zostawia cię w grze, link do gry możesz zapisać w zakładkach, a przycisk Wstecz w przeglądarce wraca do listy gier z twoim filtrem. Link otwarty bez zalogowania po zalogowaniu prowadzi prosto do gry.",
         "players": "Zapraszanie i wyrzucanie graczy oraz opuszczanie gry.",
         "inviteLink": "Link z zaproszeniem: MG kopiuje jeden link i wkleja go na Discordzie, a kto go otworzy, dołącza do gry, nawet jeśli musi najpierw założyć konto.",
         "participant": "Twój avatar i podpis w każdej grze: z konta, z postaci albo własny.",

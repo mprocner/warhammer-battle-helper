@@ -1,7 +1,7 @@
 import { sessionEndReasonForStatus } from './sessionAccess';
 
 describe('sessionEndReasonForStatus', () => {
-  it('reads 403 as revoked access', () => {
+  it('reads 403 as no access to the game', () => {
     expect(sessionEndReasonForStatus(403)).toBe('accessRevoked');
   });
 

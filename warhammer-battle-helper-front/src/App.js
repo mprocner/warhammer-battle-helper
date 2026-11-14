@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import axiosInstance from './api/axios';
@@ -18,7 +18,7 @@ import HelpPage from './components/help/HelpPage';
 import Changelog from './components/Changelog';
 import Navigation from './components/Navigation';
 import SiteFooter from './components/common/SiteFooter';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute, { returnPathAfterLogin } from './components/ProtectedRoute';
 import GameLobby from './components/GameLobby';
 import GameSession from './components/GameSession';
 import CharacterSheetPage from './components/CharacterSheetPage';
@@ -31,12 +31,20 @@ import { usePageViews } from './analytics/usePageViews';
 import { setUserId } from './analytics/gtag';
 import JoinGame from './invite/JoinGame';
 import { useInviteJoin } from './invite/useInviteJoin';
+import useGameRoute from './hooks/useGameRoute';
 
-// usePageViews potrzebuje useLocation, a więc kontekstu Routera. App renderuje
-// Router dopiero w swoim JSX, dlatego hook mieszka w osobnym komponencie w środku.
+// usePageViews lives in its own component so it sits after AnalyticsGate in the tree: that
+// order makes enable() commit before the first page_view (see the comment in the JSX below).
 const PageViewTracker = () => {
     usePageViews();
     return null;
+};
+
+// /games/:gameId. The key remounts the session when the URL switches straight to another game,
+// so nothing (state, socket, log) carries over from the previous one.
+const GameSessionRoute = (props) => {
+    const { gameId } = useParams();
+    return <GameSession key={gameId} gameId={gameId} {...props} />;
 };
 
 function App() {
@@ -50,7 +58,6 @@ function App() {
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [currentGameId, setCurrentGameId] = useState(null);
     const [lobbyNotice, setLobbyNotice] = useState(null);
 
     // Example: Add a new log message
@@ -106,9 +113,12 @@ function App() {
         addLogMessage(`User ${email} registered successfully. Please log in.`, 'success');
     };
 
+    const location = useLocation();
+    const { gameId: currentGameId, openGame, leaveGame } = useGameRoute();
+
     const handleJoinGame = (gameId) => {
         setLobbyNotice(null);
-        setCurrentGameId(gameId);
+        openGame(gameId);
         addLogMessage(`Joining game ${gameId}`, 'info');
     };
 
@@ -121,7 +131,7 @@ function App() {
     });
 
     const handleGoToGameList = () => {
-        setCurrentGameId(null);
+        leaveGame();
         addLogMessage('Returned to game list', 'info');
     };
 
@@ -129,14 +139,15 @@ function App() {
     // useCallback keeps the reference stable: GameSession puts it in fetchGameState's deps,
     // and an unstable one would refetch the whole game state on every App render.
     const handleSessionEnded = useCallback((reason) => {
-        setCurrentGameId(null);
+        leaveGame();
         setLobbyNotice(reason);
-    }, []);
+    }, [leaveGame]);
 
     // The footer (and the full-height page column that pins it down) is for regular pages; the
     // game room and the standalone character sheet use the whole viewport. Same rule as the
     // header: Navigation hides itself in game, and is skipped on /character-sheet.
-    const showSiteChrome = !currentGameId && window.location.pathname !== '/character-sheet';
+    const isCharacterSheet = location.pathname === '/character-sheet';
+    const showSiteChrome = !currentGameId && !isCharacterSheet;
 
     // Show loading spinner while checking auth status
     if (loading) {
@@ -157,95 +168,97 @@ function App() {
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <ConsentProvider>
-                {/* Musi wyrenderować się przed <Router> — usePageViews (w PageViewTracker
-                    niżej) zależy teraz też od consent, więc na ścieżce „zgoda już zapisana
-                    przy starcie" ta kolejność gwarantuje, że efekt enable() z AnalyticsGate
-                    commituje się przed efektem page_view i nie ma podwójnego wysyłania. */}
+                {/* Must render before PageViewTracker: usePageViews also depends on consent, so
+                    on the "consent already stored at startup" path this order guarantees that
+                    AnalyticsGate's enable() effect commits before the page_view effect, and no
+                    page view is sent twice. */}
                 <AnalyticsGate />
-                <Router>
-                    <ConsentBanner />
-                    <PageViewTracker />
-                    <div className={showSiteChrome ? 'App App--page' : 'App'}>
-                        {window.location.pathname !== '/character-sheet' && (
-                            <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
-                        )}
+                <ConsentBanner />
+                <PageViewTracker />
+                <div className={showSiteChrome ? 'App App--page' : 'App'}>
+                    {!isCharacterSheet && (
+                        <Navigation user={user} onLogout={handleLogout} inGame={!!currentGameId} />
+                    )}
 
-                        <Routes>
-                        <Route
-                            path="/login"
-                            element={
-                                user ?
-                                <Navigate to="/games" replace /> :
-                                <Login onLogin={handleLogin} addLogMessage={addLogMessage} />
-                            }
-                        />
-                        <Route
-                            path="/register"
-                            element={
-                                user ?
-                                <Navigate to="/games" replace /> :
-                                <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
-                            }
-                        />
+                    <Routes>
+                    <Route
+                        path="/login"
+                        element={
+                            user ?
+                            <Navigate to={returnPathAfterLogin(location.state)} replace /> :
+                            <Login onLogin={handleLogin} addLogMessage={addLogMessage} />
+                        }
+                    />
+                    <Route
+                        path="/register"
+                        element={
+                            user ?
+                            <Navigate to="/games" replace /> :
+                            <Register onRegisterSuccess={handleRegisterSuccess} addLogMessage={addLogMessage} />
+                        }
+                    />
 
-                        <Route
-                            path="/settings"
-                            element={
-                                <ProtectedRoute user={user}>
-                                    <SettingsPage />
-                                </ProtectedRoute>
-                            }
-                        />
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute user={user}>
+                                <SettingsPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
-                        <Route path="/verify-email" element={<EmailVerification />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/reset-password" element={<ResetPassword />} />
-                        <Route path="/privacy" element={<PrivacyPolicy />} />
-                        <Route path="/terms" element={<TermsOfService />} />
-                        <Route path="/licenses" element={<Licenses />} />
-                        <Route path="/contact" element={<Contact user={user} />} />
-                        <Route path="/help" element={<HelpPage />} />
-                        <Route path="/help/:page" element={<HelpPage />} />
-                        <Route path="/changelog" element={<Changelog />} />
-                        <Route path="/join/:token" element={<JoinGame user={user} onInviteReady={consumeInvite} />} />
+                    <Route path="/verify-email" element={<EmailVerification />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsOfService />} />
+                    <Route path="/licenses" element={<Licenses />} />
+                    <Route path="/contact" element={<Contact user={user} />} />
+                    <Route path="/help" element={<HelpPage />} />
+                    <Route path="/help/:page" element={<HelpPage />} />
+                    <Route path="/changelog" element={<Changelog />} />
+                    <Route path="/join/:token" element={<JoinGame user={user} onInviteReady={consumeInvite} />} />
 
-                        {/* Standalone character sheet window */}
-                        <Route
-                            path="/character-sheet"
-                            element={<CharacterSheetPage />}
-                        />
+                    {/* Standalone character sheet window */}
+                    <Route
+                        path="/character-sheet"
+                        element={<CharacterSheetPage />}
+                    />
 
-                        <Route path="/" element={<LandingPage user={user} />} />
+                    <Route path="/" element={<LandingPage user={user} />} />
 
-                        {/* Game Lobby - Main multiplayer hub. ProtectedRoute sends guests to /login. */}
-                        <Route
-                            path="/games"
-                            element={
-                                <ProtectedRoute user={user}>
-                                    {currentGameId ? (
-                                        <GameSession
-                                            gameId={currentGameId}
-                                            token={user?.token}
-                                            onGoToGameList={handleGoToGameList}
-                                            onSessionEnded={handleSessionEnded}
-                                            onLogout={handleLogout}
-                                        />
-                                    ) : (
-                                        <GameLobby
-                                            onJoinGame={handleJoinGame}
-                                            token={user?.token}
-                                            userEmail={user?.email}
-                                            notice={lobbyNotice}
-                                            onDismissNotice={() => setLobbyNotice(null)}
-                                        />
-                                    )}
-                                </ProtectedRoute>
-                            }
-                        />
-                        </Routes>
-                        {showSiteChrome && <SiteFooter />}
-                    </div>
-                </Router>
+                    {/* Game Lobby - Main multiplayer hub. ProtectedRoute sends guests to /login. */}
+                    <Route
+                        path="/games"
+                        element={
+                            <ProtectedRoute user={user}>
+                                <GameLobby
+                                    onJoinGame={handleJoinGame}
+                                    token={user?.token}
+                                    userEmail={user?.email}
+                                    notice={lobbyNotice}
+                                    onDismissNotice={() => setLobbyNotice(null)}
+                                />
+                            </ProtectedRoute>
+                        }
+                    />
+                    {/* Game session (PLAYRPG-338): its own URL, so reload, bookmarks and Back work. */}
+                    <Route
+                        path="/games/:gameId"
+                        element={
+                            <ProtectedRoute user={user}>
+                                <GameSessionRoute
+                                    token={user?.token}
+                                    onGoToGameList={handleGoToGameList}
+                                    onSessionEnded={handleSessionEnded}
+                                    onLogout={handleLogout}
+                                />
+                            </ProtectedRoute>
+                        }
+                    />
+                    </Routes>
+                    {showSiteChrome && <SiteFooter />}
+                </div>
             </ConsentProvider>
         </ThemeProvider>
     );

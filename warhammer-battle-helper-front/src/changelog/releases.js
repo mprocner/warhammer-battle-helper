@@ -12,7 +12,7 @@ export const RELEASES = [
       { id: 'creator', items: ['fields', 'dice', 'presets', 'token', 'sharing', 'preview'] },
       { id: 'dice', items: ['chat', 'visibility', 'myRolls', 'animation'] },
       { id: 'materials', items: ['handouts', 'files', 'music', 'notes'] },
-      { id: 'games', items: ['lobby', 'lobbyFilter', 'players', 'inviteLink', 'participant', 'colors', 'themes', 'online'] },
+      { id: 'games', items: ['lobby', 'lobbyFilter', 'gameLink', 'players', 'inviteLink', 'participant', 'colors', 'themes', 'online'] },
       { id: 'systems', items: ['builtIn', 'custom'] },
       { id: 'minigames', items: ['dice'] },
       { id: 'tutorials', items: ['tours', 'help', 'links', 'shortcuts'] },

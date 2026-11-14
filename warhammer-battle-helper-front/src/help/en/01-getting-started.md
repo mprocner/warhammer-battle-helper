@@ -33,6 +33,11 @@ system name, letter case and accents do not matter. Your choice stays in the pag
 the list is still narrowed after you leave a game or reload. When nothing matches, **Clear filters**
 shows everything again.
 
+Every game has its own address. Reloading the page keeps you in the game, you can bookmark a
+game, and the browser's **Back** button takes you from a game back to the list. A game link
+opened while logged out takes you straight to the game after you log in. A game you are not
+part of sends you back to the list with a no-access message.
+
 ## Creating a game (game masters) {#creating-a-game-game-masters}
 
 1. Click **Create New Game**.

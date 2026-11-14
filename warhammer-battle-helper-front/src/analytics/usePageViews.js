@@ -3,9 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { trackEvent, setPageContext, sanitizePath } from './gtag';
 import { useConsent } from './ConsentContext';
 
-// Deliberate limit: the lobby and the game session share the /games route (currentGameId
-// is state in App.js), so page views separate the landing ("/"), login, registration,
-// settings and /games, but not lobby vs session. The funnel relies on events, not page views.
+// The lobby is /games and a game session is /games/:id (PLAYRPG-338), so page views tell
+// them apart; sanitizePath sends every session as the same /games/:id.
 //
 // I3: efekt musi zależeć też od consent, nie tylko od pathname. Pierwsze wejście
 // nowego odwiedzającego odpala ten efekt, gdy consent jest jeszcze null — trackEvent

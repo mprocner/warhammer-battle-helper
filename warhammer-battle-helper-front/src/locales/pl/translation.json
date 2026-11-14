@@ -493,7 +493,7 @@
     "noMatchingGamesQuery": "Brak gier pasujących do „{{query}}”",
     "noMatchingGamesRole": "Brak gier w tym widoku",
     "clearFilters": "Wyczyść filtry",
-    "accessRevoked": "Nie masz już dostępu do tej gry.",
+    "accessRevoked": "Nie masz dostępu do tej gry.",
     "kickedFromGame": "Mistrz Gry usunął Cię z tej gry.",
     "connectionLost": "Utracono połączenie. Ponawianie…",
     "gameNotFound": "Ta gra już nie istnieje.",

@@ -24,6 +24,7 @@ import './theme/themes/scifi.css';
 import './theme/themes/twenties.css';
 import './theme/themes/darkfantasy.css';
 import './index.css';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import './style.css';
@@ -32,7 +33,11 @@ import './i18n';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    {/* The router wraps App (not the other way round) so App itself can navigate — entering and
+        leaving a game is a route change (PLAYRPG-338). */}
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 

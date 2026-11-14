@@ -52,6 +52,7 @@ prawdziwy `gtag.js` złożony jak w `App.js`, plus `gtag.test.js`, `ConsentBanne
 | Wycofanie w innej karcie wycisza bieżącą | ✔ |
 | Bez measurement ID baner ukryty, `enable()` nic nie robi | ✔ |
 | `page_location` / `page_referrer` bez query stringa (tokeny resetu hasła) | ✔ |
+| Ścieżki przez `sanitizePath`: `/join/<token>` → `/join` (sekret zaproszenia), `/games/<id>` → `/games/:id` (PLAYRPG-338: ID to nie sekret, ale każda gra byłaby osobną stroną w raportach) | ✔ |
 
 Błędów w przepływie zgody nie znaleziono. Jedyny wyciek przed zgodą był poza nim — Google Fonts
 w `index.html` (naprawione, sekcja wyżej).
@@ -105,7 +106,7 @@ bezwzględnym URL-em pliku, który faktycznie leży w `public/`.
 i przy odmontowaniu wraca do gołego `PlayRPG`. Strona podaje już przetłumaczony tekst, więc zmiana
 języka po prostu re-renderuje ją z nową wartością. Klucze leżą w `pageTitle.*` (en/pl); wyjątki:
 
-- `/games` — w lobby „Twoje gry”, w sesji **nazwa gry** (`gameState.name`; do czasu fetchu tytuł lobby),
+- `/games` — „Twoje gry”; `/games/:id` — **nazwa gry** (`gameState.name`; do czasu fetchu tytuł lobby),
 - `/character-sheet` — imię postaci (okno karty łatwo znaleźć wśród kart przeglądarki),
 - `/help/:page` — `„<strona przewodnika> · Pomoc · PlayRPG”`, przegląd to samo `„Pomoc”`,
 - `/changelog` — nagłówek strony z przestrzeni `changelog` (`title`).

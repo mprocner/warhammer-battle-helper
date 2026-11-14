@@ -6,8 +6,8 @@ import { filterLobbyGames, lobbyFilterVisibility } from '../components/lobby/lob
 const ROLES = ['gm', 'player'];
 
 // Lobby filter state lives in the URL (?role=gm&q=...), not in component state: entering a game
-// unmounts the lobby under the same /games path, and the URL is what survives the round trip
-// and a reload. The role param is ignored while the chips are hidden, so nothing filters invisibly.
+// (/games/:id) unmounts the lobby, and leaving walks Back to the lobby's history entry, query
+// string included (useGameRoute). The URL is what survives that round trip and a reload. The role param is ignored while the chips are hidden, so nothing filters invisibly.
 export default function useLobbyFilter(games, userEmail) {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
